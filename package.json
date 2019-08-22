@@ -1,0 +1,67 @@
+{
+  "name": "deepcode",
+  "displayName": "DeepCode",
+  "description": "Detect bugs and quality issues in JavaScript, TypeScript, React, Vue and more...",
+  "version": "0.0.1",
+  "icon": "images/deepCodeLogo.png",
+  "publisher": "deepcode",
+  "homepage": "https://www.deepcode.ai/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DeepCodeAI/vscode-extension.git"
+  },
+  "engines": {
+    "vscode": "^1.36.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "code analysis",
+    "linters"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "deepcode.start",
+        "title": "DeepCode"
+      },
+      {
+        "command": "deepcode.settings",
+        "title": "DeepCode Settings"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "webpack --mode production",
+    "webpack": "webpack --mode development",
+    "watch": "tsc -watch -p ./",
+    "test-compile": "tsc -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^10.12.21",
+    "ts-loader": "^6.0.4",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.1",
+    "vscode": "^1.1.28",
+    "webpack": "^4.36.1",
+    "webpack-cli": "^3.3.6"
+  },
+  "dependencies": {
+    "@types/git-repo-name": "^1.0.0",
+    "@types/git-username": "^1.0.0",
+    "@types/mz": "^0.0.32",
+    "@types/request-promise": "^4.1.44",
+    "git-repo-name": "^1.0.1",
+    "git-username": "^1.0.0",
+    "mz": "^2.7.0",
+    "open": "^6.4.0",
+    "request-promise": "^4.2.4"
+  }
+}
