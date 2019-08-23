@@ -3,7 +3,8 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import {
   EXPIRED_REQUEST,
   ATTEMPTS_AMMOUNT,
-  statusCodes
+  statusCodes,
+  MISSING_CONSENT
 } from "../../constants/statusCodes";
 import http from "../../http/requests";
 import {
@@ -16,6 +17,7 @@ import {
 // import {createGitBundle} from '../../utils/gitUtils';
 import { createBundleBody } from "../../utils/httpUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
+import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
 class BundlesModule extends LoginModule {
@@ -142,8 +144,16 @@ class BundlesModule extends LoginModule {
       );
       await this.processBundleFromServer(serverBundle, workspacePath);
     } catch (err) {
-      this.errorHandler.processError(this, err, {
+      let removedBundle = false;
+      if (err.error === MISSING_CONSENT) {
+        if (this.remoteBundles[workspacePath]) {
+          await delete this.remoteBundles[workspacePath];
+          removedBundle = true;
+        }
+      }
+      await this.errorHandler.processError(this, err, {
         workspacePath,
+        ...(removedBundle && { removedBundle }),
         errorDetails: {
           message: errorsLogs.createBundle,
           endpoint: this.config.createBundleUrl
@@ -235,6 +245,9 @@ class BundlesModule extends LoginModule {
     workspacePath: string,
     attempts: number = ATTEMPTS_AMMOUNT
   ): Promise<void> {
+    if (!this.remoteBundles[workspacePath]) {
+      return;
+    }
     const endpoint = this.config.getbundleIdUrl(
       this.remoteBundles[workspacePath].bundleId
     );
@@ -300,6 +313,10 @@ class BundlesModule extends LoginModule {
     }>,
     workspacePath: string
   ): Promise<void> {
+    if (!this.remoteBundles[workspacePath]) {
+      return;
+    }
+
     const extendBatchBody: {
       files: { [key: string]: string };
       removedFiles: Array<string>;
@@ -330,12 +347,23 @@ class BundlesModule extends LoginModule {
       });
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
     } catch (err) {
+      let removedBundle = false;
+      if (err.error === MISSING_CONSENT) {
+        if (this.remoteBundles[workspacePath]) {
+          await delete this.remoteBundles[workspacePath];
+          removedBundle = true;
+        }
+      }
+      //
       this.errorHandler.processError(this, err, {
         workspacePath,
+        ...(removedBundle && { removedBundle }),
         errorDetails: {
           message: errorsLogs.extendBundle,
           endpoint,
-          bundleId: this.remoteBundles[workspacePath].bundleId,
+          bundleId: this.remoteBundles[workspacePath]
+            ? this.remoteBundles[workspacePath].bundleId
+            : "",
           data: {
             ...extendBatchBody
           }

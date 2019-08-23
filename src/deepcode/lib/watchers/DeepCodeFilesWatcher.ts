@@ -62,11 +62,16 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
           updatedFiles,
           workspacePath
         );
-        await extension.extendBundleOnServer(updatedFiles, workspacePath);
-        await extension.checkBundleOnServer(workspacePath);
+
+        if (extension.remoteBundles[workspacePath]) {
+          await extension.extendBundleOnServer(updatedFiles, workspacePath);
+          await extension.checkBundleOnServer(workspacePath);
+        } else {
+          await extension.performBundlesActions(workspacePath);
+        }
+        const debouncedAnalyzeFunc = debounce(extension.analyzer.reviewCode);
+        await debouncedAnalyzeFunc(extension);
       }
-      const debouncedAnalyzeFunc = debounce(extension.analyzer.reviewCode);
-      await debouncedAnalyzeFunc(extension);
     }
     this.emptyChangedFilesLists();
   }

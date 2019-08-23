@@ -10,7 +10,10 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
 
   private createExtensionConfig() {
     const extensionConfig = {
-      baseApiUrl: "https://www.deepcode.ai/publicapi",
+      deepcodeUrl: "https://www.deepcode.ai/",
+      get baseApiUrl() {
+        return `${this.deepcodeUrl}publicapi`;
+      },
       get loginUrl(): string {
         return `${this.baseApiUrl}/login`;
       },
@@ -37,6 +40,11 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
       },
       get errorUrl(): string {
         return `${this.baseApiUrl}/error`;
+      },
+      get configureAccountUrl(): string {
+        return `${
+          this.deepcodeUrl
+        }cloud-login?redirectURL=%2Fapp%2F~platform/account`;
       }
     };
     return extensionConfig;

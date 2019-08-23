@@ -223,6 +223,12 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     vscodeProgress: vscode.Progress<{ increment: number }>,
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
+    if (!extension.remoteBundles[path]) {
+      if (this.deepcodeReview && this.analysisResultsCollection[path]) {
+        delete this.analysisResultsCollection[path];
+      }
+      return;
+    }
     const missingFiles = extension.remoteBundles[path].missingFiles;
     if (missingFiles && Array.isArray(missingFiles) && missingFiles.length) {
       return;
@@ -238,11 +244,14 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     extension: DeepCode.ExtensionInterface,
     workspacePath: string = ""
   ): Promise<void> {
+    const self = this || extension.analyzer;
     if (!Object.keys(extension.remoteBundles).length) {
+      if (self.deepcodeReview) {
+        self.deepcodeReview.clear();
+      }
       return;
     }
 
-    const self = this || extension.analyzer;
     if (self.analysisQueueCount === 0) {
       self.analysisQueueCount++;
     }

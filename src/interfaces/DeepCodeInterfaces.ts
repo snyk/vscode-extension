@@ -103,6 +103,7 @@ namespace DeepCode {
   }
 
   export interface DeepCodeConfig {
+    deepcodeUrl: string;
     baseApiUrl: string;
     loginUrl: string;
     checkSessionUrl: string;
@@ -113,6 +114,7 @@ namespace DeepCode {
     getAnalysisUrl: Function;
     getDifAnalysisUrl: Function;
     errorUrl: string;
+    configureAccountUrl: string;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
