@@ -168,7 +168,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     }
     const hashedFilesBundle = extension.hashesBundles[fileWorkspacePath];
     const filePathInBundle = filePath.split(fileWorkspacePath)[1];
-    if (!Object.keys(hashedFilesBundle).length) {
+    if (!hashedFilesBundle || !Object.keys(hashedFilesBundle).length) {
       return "";
     }
     const originFilePath = Object.keys(hashedFilesBundle).find(path =>

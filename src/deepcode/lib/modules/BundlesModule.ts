@@ -17,7 +17,6 @@ import {
 // import {createGitBundle} from '../../utils/gitUtils';
 import { createBundleBody } from "../../utils/httpUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
 class BundlesModule extends LoginModule {
@@ -144,16 +143,14 @@ class BundlesModule extends LoginModule {
       );
       await this.processBundleFromServer(serverBundle, workspacePath);
     } catch (err) {
-      let removedBundle = false;
       if (err.error === MISSING_CONSENT) {
         if (this.remoteBundles[workspacePath]) {
-          await delete this.remoteBundles[workspacePath];
-          removedBundle = true;
+          this.remoteBundles = {};
         }
       }
       await this.errorHandler.processError(this, err, {
         workspacePath,
-        ...(removedBundle && { removedBundle }),
+        removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.createBundle,
           endpoint: this.config.createBundleUrl
@@ -347,17 +344,15 @@ class BundlesModule extends LoginModule {
       });
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
     } catch (err) {
-      let removedBundle = false;
       if (err.error === MISSING_CONSENT) {
         if (this.remoteBundles[workspacePath]) {
-          await delete this.remoteBundles[workspacePath];
-          removedBundle = true;
+          this.remoteBundles = {};
         }
       }
-      //
+
       this.errorHandler.processError(this, err, {
         workspacePath,
-        ...(removedBundle && { removedBundle }),
+        removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.extendBundle,
           endpoint,

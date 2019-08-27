@@ -6,6 +6,7 @@ export default class DeepCodeLib extends BundlesModule {
     this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
+    this.settingsWatcher.activate(this);
     await this.activateExtensionStartActions();
   }
   public async activateExtensionStartActions(): Promise<void> {
@@ -30,6 +31,9 @@ export default class DeepCodeLib extends BundlesModule {
     await this.updateHashesBundles();
     for await (const path of this.workspacesPaths) {
       await this.performBundlesActions(path);
+      if (!this.remoteBundles[path]) {
+        break;
+      }
     }
     await this.analyzer.reviewCode(this);
   }

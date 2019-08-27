@@ -25,6 +25,19 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "title": "DeepCode configuration",
+        "properties": {
+          "deepcode.review.results.hideInformationIssues": {
+            "type": "boolean",
+            "default": false,
+            "description": "Hide information issues",
+            "scope": "window"
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "deepcode.start",
