@@ -139,6 +139,10 @@ namespace DeepCode {
       extension: DeepCode.ExtensionInterface,
       updatedFile: openedTextEditorType
     ): Promise<void>;
+    configureIssuesDisplayBySeverity(
+      severity: number,
+      hide: boolean
+    ): Promise<void>;
   }
 
   export interface StatusBarItemInterface {
@@ -176,6 +180,7 @@ namespace DeepCode {
     statusBarItem: StatusBarItemInterface;
     filesWatcher: DeepCodeWatcherInterface;
     workspacesWatcher: DeepCodeWatcherInterface;
+    settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
     activate?(context: ExtensionContext): void;
     startExtension?(): any;

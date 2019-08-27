@@ -54,7 +54,6 @@ class DeepCodeWorkspaceFoldersWatcher
           await extension.updateExtensionRemoteBundles(path);
           // remove analysis
           await extension.analyzer.removeReviewResults(path);
-          await extension.analyzer.createReviewResults();
         }
       }
     );
