@@ -4,12 +4,14 @@ import http from "../../http/requests";
 import { ping } from "../../utils/httpUtils";
 import { updateFileReviewResultsPositions } from "../../utils/analysisUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
-import { analysisStatus } from "../../constants/analysis";
+import { ANALYSIS_STATUS, DEEPCODE_SEVERITIES } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
-  private SEVERITIES: { [key: number]: vscode.DiagnosticSeverity };
+  private SEVERITIES: {
+    [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
+  };
   private analysisProgressValue: number = 1; // default value for progress to make it visible from start
   private progress = vscode.window.withProgress;
   private analysisInProgress: boolean = false;
@@ -17,10 +19,14 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
   public constructor() {
+    const { information, error, warning } = DEEPCODE_SEVERITIES;
     this.SEVERITIES = {
-      1: vscode.DiagnosticSeverity.Information,
-      2: vscode.DiagnosticSeverity.Warning,
-      3: vscode.DiagnosticSeverity.Error
+      [information]: {
+        name: vscode.DiagnosticSeverity.Information,
+        show: true
+      },
+      [warning]: { name: vscode.DiagnosticSeverity.Warning, show: true },
+      [error]: { name: vscode.DiagnosticSeverity.Error, show: true }
     };
 
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(
@@ -68,6 +74,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   ) {
     const issuesList: vscode.Diagnostic[] = [];
     for (const issue in fileIssuesList) {
+      if (!this.SEVERITIES[suggestions[issue].severity].show) {
+        continue;
+      }
       const message = suggestions[issue].message;
 
       for (const issuePosition of fileIssuesList[issue]) {
@@ -77,7 +86,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           range: this.createIssueRange({
             ...this.createCorrectPlacement(issuePosition)
           }),
-          severity: this.SEVERITIES[suggestions[issue].severity],
+          severity: this.SEVERITIES[suggestions[issue].severity].name,
           source: DEEPCODE_NAME
         });
       }
@@ -104,6 +113,16 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         const issues = this.createIssuesList(fileIssuesList, suggestions);
         this.deepcodeReview.set(fileUri, [...issues]);
       }
+    }
+  }
+
+  public async configureIssuesDisplayBySeverity(
+    severity: number,
+    hide: boolean
+  ): Promise<void> {
+    this.SEVERITIES[severity].show = !hide;
+    if (Object.keys(this.analysisResultsCollection).length) {
+      await this.createReviewResults();
     }
   }
 
@@ -171,13 +190,13 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           analyzer.analysisProgressValue < currentProgress
             ? currentProgress
             : analyzer.analysisProgressValue;
-        if (analysisResponse.status === analysisStatus.failed) {
+        if (analysisResponse.status === ANALYSIS_STATUS.failed) {
           attemptsIfFailedStatus--;
           return !attemptsIfFailedStatus
             ? { success: false }
             : await ping(fetchAnalysisResults);
         }
-        if (analysisResponse.status !== analysisStatus.done) {
+        if (analysisResponse.status !== ANALYSIS_STATUS.done) {
           return await ping(fetchAnalysisResults);
         }
         return { ...analysisResponse.analysisResults, success: true };
@@ -223,6 +242,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     vscodeProgress: vscode.Progress<{ increment: number }>,
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
+    if (!extension.remoteBundles[path]) {
+      return;
+    }
     const missingFiles = extension.remoteBundles[path].missingFiles;
     if (missingFiles && Array.isArray(missingFiles) && missingFiles.length) {
       return;
@@ -238,11 +260,15 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     extension: DeepCode.ExtensionInterface,
     workspacePath: string = ""
   ): Promise<void> {
+    const self = this || extension.analyzer;
     if (!Object.keys(extension.remoteBundles).length) {
+      if (self.deepcodeReview) {
+        self.deepcodeReview.clear();
+        self.analysisResultsCollection = {};
+      }
       return;
     }
 
-    const self = this || extension.analyzer;
     if (self.analysisQueueCount === 0) {
       self.analysisQueueCount++;
     }

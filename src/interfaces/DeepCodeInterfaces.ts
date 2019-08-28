@@ -103,6 +103,7 @@ namespace DeepCode {
   }
 
   export interface DeepCodeConfig {
+    deepcodeUrl: string;
     baseApiUrl: string;
     loginUrl: string;
     checkSessionUrl: string;
@@ -113,6 +114,7 @@ namespace DeepCode {
     getAnalysisUrl: Function;
     getDifAnalysisUrl: Function;
     errorUrl: string;
+    configureAccountUrl: string;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
@@ -136,6 +138,10 @@ namespace DeepCode {
     updateReviewResultsPositions(
       extension: DeepCode.ExtensionInterface,
       updatedFile: openedTextEditorType
+    ): Promise<void>;
+    configureIssuesDisplayBySeverity(
+      severity: number,
+      hide: boolean
     ): Promise<void>;
   }
 
@@ -174,6 +180,7 @@ namespace DeepCode {
     statusBarItem: StatusBarItemInterface;
     filesWatcher: DeepCodeWatcherInterface;
     workspacesWatcher: DeepCodeWatcherInterface;
+    settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
     activate?(context: ExtensionContext): void;
     startExtension?(): any;

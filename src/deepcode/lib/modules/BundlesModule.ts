@@ -3,7 +3,8 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import {
   EXPIRED_REQUEST,
   ATTEMPTS_AMMOUNT,
-  statusCodes
+  statusCodes,
+  MISSING_CONSENT
 } from "../../constants/statusCodes";
 import http from "../../http/requests";
 import {
@@ -142,8 +143,14 @@ class BundlesModule extends LoginModule {
       );
       await this.processBundleFromServer(serverBundle, workspacePath);
     } catch (err) {
-      this.errorHandler.processError(this, err, {
+      if (err.error === MISSING_CONSENT) {
+        if (this.remoteBundles[workspacePath]) {
+          this.remoteBundles = {};
+        }
+      }
+      await this.errorHandler.processError(this, err, {
         workspacePath,
+        removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.createBundle,
           endpoint: this.config.createBundleUrl
@@ -235,6 +242,9 @@ class BundlesModule extends LoginModule {
     workspacePath: string,
     attempts: number = ATTEMPTS_AMMOUNT
   ): Promise<void> {
+    if (!this.remoteBundles[workspacePath]) {
+      return;
+    }
     const endpoint = this.config.getbundleIdUrl(
       this.remoteBundles[workspacePath].bundleId
     );
@@ -300,6 +310,10 @@ class BundlesModule extends LoginModule {
     }>,
     workspacePath: string
   ): Promise<void> {
+    if (!this.remoteBundles[workspacePath]) {
+      return;
+    }
+
     const extendBatchBody: {
       files: { [key: string]: string };
       removedFiles: Array<string>;
@@ -330,12 +344,21 @@ class BundlesModule extends LoginModule {
       });
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
     } catch (err) {
+      if (err.error === MISSING_CONSENT) {
+        if (this.remoteBundles[workspacePath]) {
+          this.remoteBundles = {};
+        }
+      }
+
       this.errorHandler.processError(this, err, {
         workspacePath,
+        removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.extendBundle,
           endpoint,
-          bundleId: this.remoteBundles[workspacePath].bundleId,
+          bundleId: this.remoteBundles[workspacePath]
+            ? this.remoteBundles[workspacePath].bundleId
+            : "",
           data: {
             ...extendBatchBody
           }

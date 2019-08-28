@@ -10,3 +10,4 @@ export const statusCodes: { [key: string]: number } = {
 
 export const EXPIRED_REQUEST = "expiredRequest";
 export const ATTEMPTS_AMMOUNT = 5;
+export const MISSING_CONSENT = "MISSING_CONSENT";
