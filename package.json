@@ -73,6 +73,7 @@
     "@types/request-promise": "^4.1.44",
     "git-repo-name": "^1.0.1",
     "git-username": "^1.0.0",
+    "ignore": "^5.1.4",
     "mz": "^2.7.0",
     "open": "^6.4.0",
     "request-promise": "^4.2.4"
