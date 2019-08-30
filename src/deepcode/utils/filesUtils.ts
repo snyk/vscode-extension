@@ -1,5 +1,6 @@
 import * as crypto from "crypto";
 import * as nodePath from "path";
+import ignore from 'ignore';
 import { Buffer } from "buffer";
 import { fs } from "mz";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import {ExclusionRule, ExclusionFilter} from './ignoreUtils';
 
 export const createFileHash = (file: string): string => {
   return crypto
@@ -33,10 +35,16 @@ export const createFilesHashesBundle = async (
   folderPath: string,
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
 ): Promise<{ [key: string]: string }> => {
+  const exclusionFilter = new ExclusionFilter();
+  const rootExclusionRule = new ExclusionRule();
+  rootExclusionRule.addExclusions(EXCLUDED_NAMES, '');
+  exclusionFilter.addExclusionRule(rootExclusionRule);
   const bundle = await createListOfDirFilesHashes(
     serverFilesFilterList,
     folderPath,
-    {}
+    {},
+    folderPath,
+    exclusionFilter,
   );
   return bundle;
 };
@@ -46,36 +54,47 @@ export const createListOfDirFilesHashes = async (
   folderPath: string,
   list: { [key: string]: string },
   path: string = folderPath,
-  exludedFiles: Array<string> = [...EXCLUDED_NAMES]
+  exclusionFilter: ExclusionFilter,
 ) => {
   const dirContent: string[] = await fs.readdir(path);
+  // First look for a .gitignore file. 
+  for (const name of dirContent) {
+    const fullChildPath = nodePath.join(path, name);
+    if (name === GITIGNORE_FILENAME) {
+      // We found a gitignore file -> We need to modify the exclusion rules so we have
+      // to create a copy of the exclusionFilter.
+      const relativeDirPath = nodePath.relative(folderPath, path);
+      const exclusionRule = new ExclusionRule();
+      exclusionRule.addExclusions(await parseGitignoreFile(fullChildPath),
+                                  relativeDirPath);
+      exclusionFilter = exclusionFilter.copy();
+      exclusionFilter.addExclusionRule(exclusionRule);
+    }
+  }
+  // Iterate through directory after potentially updating exclusion rules.
   for (const name of dirContent) {
     try {
-      if (name === GITIGNORE_FILENAME) {
-        exludedFiles.push(
-          ...(await parseGitignoreFile(nodePath.join(path, name)))
-        );
-      }
-
-      if (exludedFiles.includes(name)) {
+      const relativeDirPath = nodePath.relative(folderPath, path);
+      const relativeChildPath = nodePath.join(relativeDirPath, name);
+      const fullChildPath = nodePath.join(path, name);
+      if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
       }
-
       if (
-        fs.lstatSync(nodePath.join(path, name)).isFile() &&
+        fs.lstatSync(fullChildPath).isFile() &&
         acceptFileToBundle(name, serverFilesFilterList)
       ) {
         const filePath = path.split(folderPath)[1];
-        const fileContent = await readFile(nodePath.join(path, name));
+        const fileContent = await readFile(fullChildPath);
         list[`${filePath}/${name}`] = createFileHash(fileContent);
       }
-      if (fs.lstatSync(nodePath.join(path, name)).isDirectory()) {
+      if (fs.lstatSync(fullChildPath).isDirectory()) {
         list = await createListOfDirFilesHashes(
           serverFilesFilterList,
           folderPath,
           { ...list },
           `${path}/${name}`,
-          exludedFiles
+          exclusionFilter,
         );
       }
     } catch (err) {
