@@ -115,6 +115,7 @@ namespace DeepCode {
     getDifAnalysisUrl: Function;
     errorUrl: string;
     configureAccountUrl: string;
+    termsConditionsUrl: string;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;

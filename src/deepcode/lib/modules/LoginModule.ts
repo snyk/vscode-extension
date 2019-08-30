@@ -107,19 +107,22 @@ class LoginModule extends BaseDeepCodeModule {
     if (isUploadConfirmed) {
       return true;
     }
-    const { confirmUploadFilesToServer } = deepCodeMessages;
-    const { msg, button } = confirmUploadFilesToServer;
+    const { msg, button, link } = deepCodeMessages.confirmUploadFilesToServer;
     const pressedButton:
       | string
-      | undefined = await vscode.window.showInformationMessage(msg, button);
+      | undefined = await vscode.window.showInformationMessage(msg, button, link);
     if (pressedButton === button) {
       await this.store.actions.setConfirmUploadStatus(true);
       if (extension.activateExtensionStartActions) {
         await extension.activateExtensionStartActions();
       }
-
       return true;
     }
+    else if (pressedButton === link) {
+      await open(extension.config.termsConditionsUrl);
+      return true;
+    }
+
     if (!this.firstConfirmAborted) {
       this.firstConfirmAborted = true;
       this.cancelFirstSaveFlag();

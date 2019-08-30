@@ -2,13 +2,16 @@ export const deepCodeMessages = {
   confirmUploadFilesToServer: {
     msg:
       "The Deepcode extension will transfer your code to the Deepcode server to perform its AI analysis. Your code is protected and used only for the purpose of informing you about issues in your code.",
-    button: "Confirm"
+    button: "Confirm",
+    link: 'Terms and Conditions'
   },
-  notConfirmedFileUpload: {
-    msg:
-      "To use DeepCode extension, please confirm transfering your code to DeepCode server for inspection.",
-    button: "Confirm now"
-  },
+
+  // Not used
+  // notConfirmedFileUpload: {
+  //   msg:
+  //     "To use DeepCode extension, please confirm transfering your code to DeepCode server for inspection.",
+  //   button: "Confirm now"
+  // },
   login: {
     msg: "Use your GitHub or Bitbucket account to authenticate with DeepCode.",
     button: "Login"
@@ -33,7 +36,8 @@ export const deepCodeMessages = {
   },
   configureAccountType: {
     msg:
-      'The DeepCode extension works only with private DeepCode accounts at the moment. Please click on the "Configure" button to change your account type.',
-    button: "Configure"
+      'The DeepCode extension works only with private DeepCode accounts at the moment. Please click on the "Configure" button to change your account type',
+    button: "Configure",
+    link: 'Terms and Conditions'
   }
 };
