@@ -1,3 +1,4 @@
+// Changing this requires changing display name in package.json.
 export const DEEPCODE_NAME = "DeepCode (Beta)";
 export const DEEPCODE_START_COMMAND = "deepcode.start";
 export const DEEPCODE_SETTINGS_COMMAND = "deepcode.settings";

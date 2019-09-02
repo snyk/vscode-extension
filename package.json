@@ -1,5 +1,6 @@
 {
   "name": "deepcode",
+  "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode (Beta)",
   "description": "Detect bugs and quality issues in JavaScript, TypeScript, React, Vue and more...",
   "version": "0.0.1",
