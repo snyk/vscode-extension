@@ -110,7 +110,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
       this.missingConsentMessageCount += 1;
       const { msg, button } = deepCodeMessages.configureAccountType;
       const userResponseBtn = await vscode.window.showWarningMessage(
-        msg,
+        msg(extension.config.termsConditionsUrl),
         button
       );
       if (userResponseBtn === button) {
