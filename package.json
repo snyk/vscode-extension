@@ -35,6 +35,12 @@
             "default": false,
             "description": "Hide information issues",
             "scope": "window"
+          },
+          "deepcode.api.cloudBackend": {
+            "type": "string",
+            "default": "",
+            "description": "Deepcode cloud backend",
+            "scope": "application"
           }
         }
       }

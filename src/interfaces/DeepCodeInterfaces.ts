@@ -116,6 +116,7 @@ namespace DeepCode {
     errorUrl: string;
     configureAccountUrl: string;
     termsConditionsUrl: string;
+    changeDeepCodeUrl: Function;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
@@ -125,6 +126,7 @@ namespace DeepCode {
     selectors: StateSelectorsInterface;
     actions: StateSelectorsInterface;
     createStore(context: ExtensionContext): Promise<void>;
+    cleanStore(): void;
   }
 
   export interface AnalyzerInterface {
@@ -184,7 +186,11 @@ namespace DeepCode {
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
     activate?(context: ExtensionContext): void;
+    preActivateActions?(): Promise<void>;
+    activateActions(): Promise<void>;
+    configureExtension(): Promise<void>;
     startExtension?(): any;
+    manageExtensionStatus(): string;
     cancelFirstSaveFlag(): void;
     login(): Promise<boolean>;
     firstSaveCheck(extension: ExtensionInterface): Promise<boolean>;
@@ -221,7 +227,7 @@ namespace DeepCode {
       }>,
       workspacePath: string
     ): Promise<void>;
-    activateActions?(): Promise<void>;
+    activateWatchers?(): Promise<void>;
     activateExtensionStartActions?(): Promise<void>;
   }
 }

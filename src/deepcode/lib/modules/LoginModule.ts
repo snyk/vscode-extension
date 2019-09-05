@@ -110,10 +110,10 @@ class LoginModule extends BaseDeepCodeModule {
     const { msg, button } = deepCodeMessages.confirmUploadFilesToServer;
     const pressedButton:
       | string
-      | undefined = await vscode.window.showInformationMessage
-          (msg(extension.config.termsConditionsUrl),
-          button
-          );
+      | undefined = await vscode.window.showInformationMessage(
+      msg(extension.config.termsConditionsUrl),
+      button
+    );
     if (pressedButton === button) {
       await this.store.actions.setConfirmUploadStatus(true);
       if (extension.activateExtensionStartActions) {

@@ -1,16 +1,27 @@
+import * as vscode from "vscode";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
-import { ExtensionContext } from "vscode";
+import { DEFAULT_DEEPCODE_ENDPOINT } from "../deepcode/constants/general";
+import { DEEPCODE_CLOUD_BACKEND } from "../deepcode/constants/settings";
+
 class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
   public deepcode: DeepCode.DeepCodeConfig;
   constructor() {
-    this.deepcode = {
-      ...this.createExtensionConfig()
-    };
+    this.deepcode = this.createExtensionConfig();
+  }
+
+  private getDeepCodeCloudBackend(): string {
+    const cloudBackend = vscode.workspace
+      .getConfiguration()
+      .get(DEEPCODE_CLOUD_BACKEND);
+    if (cloudBackend) {
+      return `${cloudBackend}`;
+    }
+    return DEFAULT_DEEPCODE_ENDPOINT;
   }
 
   private createExtensionConfig() {
     const extensionConfig = {
-      deepcodeUrl: "https://www.deepcode.ai/",
+      deepcodeUrl: "",
       get baseApiUrl() {
         return `${this.deepcodeUrl}publicapi`;
       },
@@ -48,6 +59,9 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
       },
       get termsConditionsUrl(): string {
         return `${this.deepcodeUrl}tc`;
+      },
+      changeDeepCodeUrl: (url: string): void => {
+        this.deepcode.deepcodeUrl = url;
       }
     };
     return extensionConfig;

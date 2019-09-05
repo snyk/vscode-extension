@@ -136,9 +136,9 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
-    if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
-      return;
-    }
+    // if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
+    //   return;
+    // }
     if (!this.changedFilesList.includes(filePath)) {
       this.changedFilesList.push(filePath);
       if (
@@ -185,6 +185,9 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
+    if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
+      return;
+    }
     const originFilePath = await this.ignoreFilesCaches(filePath, extension);
     if (originFilePath) {
       this.updateFiles(originFilePath, extension, type);
