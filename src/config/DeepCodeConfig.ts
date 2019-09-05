@@ -9,16 +9,6 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
     this.deepcode = this.createExtensionConfig();
   }
 
-  private getDeepCodeCloudBackend(): string {
-    const cloudBackend = vscode.workspace
-      .getConfiguration()
-      .get(DEEPCODE_CLOUD_BACKEND);
-    if (cloudBackend) {
-      return `${cloudBackend}`;
-    }
-    return DEFAULT_DEEPCODE_ENDPOINT;
-  }
-
   private createExtensionConfig() {
     const extensionConfig = {
       deepcodeUrl: "",
@@ -53,9 +43,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
         return `${this.baseApiUrl}/error`;
       },
       get configureAccountUrl(): string {
-        return `${
-          this.deepcodeUrl
-        }cloud-login?redirectURL=%2Fapp%2F~platform/account`;
+        return `${this.deepcodeUrl}cloud-login?redirectURL=%2Fapp%2F~platform/account`;
       },
       get termsConditionsUrl(): string {
         return `${this.deepcodeUrl}tc`;

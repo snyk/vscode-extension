@@ -158,6 +158,12 @@ class LoginModule extends BaseDeepCodeModule {
     if (!this.firstSaveAlreadyHappened) {
       this.firstSaveAlreadyHappened = true;
 
+      const isBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
+      if (!isBackendConfigured) {
+        await extension.configureExtension();
+        return false;
+      }
+
       if (!isLoggedIn) {
         await this.login();
         const {

@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 import { compareFileChanges, acceptFileToBundle } from "../../utils/filesUtils";
 import { debounce } from "../../utils/tsUtils";
-import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
+import {
+  FILE_CURRENT_STATUS,
+  GIT_FILENAME
+} from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
@@ -136,9 +139,9 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
-    // if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
-    //   return;
-    // }
+    if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
+      return;
+    }
     if (!this.changedFilesList.includes(filePath)) {
       this.changedFilesList.push(filePath);
       if (
@@ -159,7 +162,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
       this.emptyChangedFilesLists();
       return "";
     }
-
     const fileWorkspacePath = extension.workspacesPaths.find(path =>
       filePath.includes(path)
     );
@@ -185,7 +187,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
-    if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
+    if (filePath.includes(GIT_FILENAME)) {
       return;
     }
     const originFilePath = await this.ignoreFilesCaches(filePath, extension);

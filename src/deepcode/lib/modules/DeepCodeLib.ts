@@ -26,7 +26,7 @@ export default class DeepCodeLib extends BundlesModule {
   }
 
   public async preActivateActions(): Promise<void> {
-    let status = INSTALL_STATUS.justInstalled; //INSTALL_STATUS.installed
+    let status = INSTALL_STATUS.justInstalled; //INSTALL_STATUS.installed fter tests
     if (process.env.NODE_ENV === "production") {
       status = this.manageExtensionStatus();
     }
@@ -68,7 +68,7 @@ export default class DeepCodeLib extends BundlesModule {
         "deepcode"
       );
     }
-    if (configBackendReply === cloudBtn || configBackendReply === undefined) {
+    if (configBackendReply === cloudBtn) {
       await this.config.changeDeepCodeUrl(DEFAULT_DEEPCODE_ENDPOINT);
       await vscode.workspace
         .getConfiguration()
@@ -77,6 +77,7 @@ export default class DeepCodeLib extends BundlesModule {
           DEFAULT_DEEPCODE_ENDPOINT,
           vscode.ConfigurationTarget.Global
         );
+      await this.store.actions.setBackendConfigStatus(true);
       await this.activateActions();
     }
   }

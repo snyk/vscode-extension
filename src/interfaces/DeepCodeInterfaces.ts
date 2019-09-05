@@ -186,7 +186,7 @@ namespace DeepCode {
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
     activate?(context: ExtensionContext): void;
-    preActivateActions?(): Promise<void>;
+    preActivateActions(): Promise<void>;
     activateActions(): Promise<void>;
     configureExtension(): Promise<void>;
     startExtension?(): any;

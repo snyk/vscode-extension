@@ -58,6 +58,8 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
       if (globalValue && globalValue !== defaultValue) {
         extension.config.changeDeepCodeUrl(`${globalValue}`);
         await extension.store.cleanStore();
+        await extension.store.actions.setBackendConfigStatus(true);
+        extension.cancelFirstSaveFlag();
         await extension.activateActions();
       }
     }
