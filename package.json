@@ -28,13 +28,19 @@
   "contributes": {
     "configuration": [
       {
-        "title": "DeepCode configuration",
+        "title": "DeepCode",
         "properties": {
           "deepcode.review.results.hideInformationIssues": {
             "type": "boolean",
             "default": false,
             "description": "Hide information issues",
             "scope": "window"
+          },
+          "deepcode.api.cloudBackend": {
+            "type": "string",
+            "default": "",
+            "description": "Deepcode cloud backend",
+            "scope": "application"
           }
         }
       }

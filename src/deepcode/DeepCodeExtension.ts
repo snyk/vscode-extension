@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
 
@@ -13,6 +12,8 @@ class DeepCodeExtension extends DeepCodeLib
   implements DeepCode.ExtensionInterface {
   public activate(context: vscode.ExtensionContext): void {
     this.store.createStore(context);
+    this.activateWatchers();
+    this.statusBarItem.show();
 
     let deepcodeCommand = vscode.commands.registerCommand(
       DEEPCODE_START_COMMAND,
@@ -35,8 +36,7 @@ class DeepCodeExtension extends DeepCodeLib
 
   public startExtension(): any {
     (async (): Promise<void> => {
-      await this.login();
-      await this.activateActions();
+      this.preActivateActions();
     })();
   }
 }

@@ -9,6 +9,7 @@ import {
   TextDocument
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
+import { INSTALL_STATUS } from "../deepcode/constants/general";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -116,6 +117,7 @@ namespace DeepCode {
     errorUrl: string;
     configureAccountUrl: string;
     termsConditionsUrl: string;
+    changeDeepCodeUrl: Function;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
@@ -125,6 +127,7 @@ namespace DeepCode {
     selectors: StateSelectorsInterface;
     actions: StateSelectorsInterface;
     createStore(context: ExtensionContext): Promise<void>;
+    cleanStore(): void;
   }
 
   export interface AnalyzerInterface {
@@ -184,10 +187,22 @@ namespace DeepCode {
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
     activate?(context: ExtensionContext): void;
+    preActivateActions(): Promise<void>;
+    activateActions(): Promise<void>;
+    configureExtension(): Promise<void>;
     startExtension?(): any;
+    manageExtensionStatus(): string;
     cancelFirstSaveFlag(): void;
     login(): Promise<boolean>;
-    firstSaveCheck(extension: ExtensionInterface): Promise<boolean>;
+    checkUploadConfirm(folderPath: string): boolean;
+    showConfirmMsg(
+      extension: DeepCode.ExtensionInterface | any,
+      folderPath: string
+    ): Promise<boolean>;
+    firstSaveCheck(
+      extension: ExtensionInterface,
+      folderPath: string
+    ): Promise<boolean>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
@@ -221,7 +236,7 @@ namespace DeepCode {
       }>,
       workspacePath: string
     ): Promise<void>;
-    activateActions?(): Promise<void>;
+    activateWatchers?(): Promise<void>;
     activateExtensionStartActions?(): Promise<void>;
   }
 }

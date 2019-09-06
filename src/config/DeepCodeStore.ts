@@ -1,77 +1,81 @@
-import * as nodeFs from "fs";
-import * as path from "path";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
-import { ExtensionContext, Memento, extensions } from "vscode";
+import { ExtensionContext, Memento } from "vscode";
 import { stateNames } from "../deepcode/constants/stateNames";
-import {
-  INSTALL_STATUS,
-  STATUSFILE_NAME,
-  DEEPCODE_NAME
-} from "../deepcode/constants/general";
 
 class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
-  private state: Memento | any = {};
+  private globalState: Memento | any = {};
+  private workspaceState: Memento | any = {};
   public selectors: DeepCode.StateSelectorsInterface = {};
   public actions: DeepCode.StateSelectorsInterface = {};
 
   private createSelectors(): DeepCode.StateSelectorsInterface {
     return {
       getLoggedInStatus: (): string | undefined =>
-        this.state.get(stateNames.isLoggedIn),
+        this.globalState.get(stateNames.isLoggedIn),
 
       getAccountType: (): string | undefined =>
-        this.state.get(stateNames.accountType),
+        this.globalState.get(stateNames.accountType),
 
-      getConfirmUploadStatus: (): string | undefined =>
-        this.state.get(stateNames.confirmedDownload),
-
+      getConfirmUploadStatus: (
+        // workspace can contain multiple folders and each of them will have is confirm status
+        folderPath: ""
+      ): string | undefined | { [key: string]: boolean } => {
+        const workspaceConfirms = this.workspaceState.get(
+          stateNames.confirmedDownload
+        );
+        if (!folderPath) {
+          return workspaceConfirms;
+        }
+        return workspaceConfirms[folderPath];
+      },
       getSessionToken: (): string | undefined =>
-        this.state.get(stateNames.sessionToken)
+        this.globalState.get(stateNames.sessionToken),
+      getBackendConfigStatus: (): string | undefined =>
+        this.globalState.get(stateNames.isBackendConfigured)
     };
   }
 
   private createStateActions(): DeepCode.StateSelectorsInterface {
     return {
       setLoggedInStatus: (status: boolean): Thenable<void> =>
-        this.state.update(stateNames.isLoggedIn, status),
+        this.globalState.update(stateNames.isLoggedIn, status),
       setAccountType: (type: string): Thenable<void> =>
-        this.state.update(stateNames.accountType, type),
-      setConfirmUploadStatus: (status: boolean): Thenable<void> =>
-        this.state.update(stateNames.confirmedDownload, status),
+        this.globalState.update(stateNames.accountType, type),
+      setConfirmUploadStatus: (
+        folderPath: string,
+        status: boolean
+      ): Thenable<void> => {
+        if (!folderPath && !status) {
+          return this.workspaceState.update(stateNames.confirmedDownload, {});
+        }
+        const workspaceConfirms = this.selectors.getConfirmUploadStatus();
+        return this.workspaceState.update(stateNames.confirmedDownload, {
+          ...workspaceConfirms,
+          [folderPath]: status
+        });
+      },
       setSessionToken: (token: string): Thenable<void> =>
-        this.state.update(stateNames.sessionToken, token)
+        this.globalState.update(stateNames.sessionToken, token),
+      setBackendConfigStatus: (status: boolean = true): Thenable<void> =>
+        this.globalState.update(stateNames.isBackendConfigured, status)
     };
   }
 
-  private cleanGlobalStore(): void {
+  public cleanStore(): void {
     this.actions.setLoggedInStatus(false);
     this.actions.setSessionToken("");
-    this.actions.setConfirmUploadStatus(false);
+    this.actions.setConfirmUploadStatus();
     this.actions.setAccountType("");
+    this.actions.setBackendConfigStatus(false);
   }
 
-  private manageExtensionStatus(): void {
-    const extension = extensions.all.find(
-      el => el.packageJSON.displayName === DEEPCODE_NAME
-    );
-    if (extension) {
-      const statusFilePath = path.join(
-        extension.extensionPath,
-        `/${STATUSFILE_NAME}`
-      );
-      const extensionStatus = nodeFs.readFileSync(statusFilePath, "utf8");
-      if (extensionStatus === INSTALL_STATUS.justInstalled) {
-        this.cleanGlobalStore();
-        nodeFs.writeFileSync(statusFilePath, INSTALL_STATUS.installed);
-      }
-    }
-  }
   public async createStore(context: ExtensionContext): Promise<void> {
-    this.state = context.globalState;
+    this.globalState = context.globalState;
+    this.workspaceState = context.workspaceState;
     this.selectors = { ...this.createSelectors() };
     this.actions = { ...this.createStateActions() };
-    if (process.env.NODE_ENV === "production") {
-      this.manageExtensionStatus();
+    if (!this.selectors.getConfirmUploadStatus()) {
+      this.actions.setConfirmUploadStatus();
     }
   }
 }

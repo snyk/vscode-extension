@@ -9,3 +9,4 @@ export const INSTALL_STATUS = {
 };
 export const STATUSFILE_NAME = ".extensionStatus";
 export const IDE_NAME = "vscode";
+export const DEFAULT_DEEPCODE_ENDPOINT = "https://www.deepcode.ai/";
