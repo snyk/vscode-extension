@@ -44,7 +44,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
       get configureAccountUrl(): string {
         return `${
           this.deepcodeUrl
-        }cloud-login?redirectURL=%2Fapp%2F~platform/account`;
+        }app/~platform/account`;
       },
       get termsConditionsUrl(): string {
         return `${this.deepcodeUrl}tc`;
