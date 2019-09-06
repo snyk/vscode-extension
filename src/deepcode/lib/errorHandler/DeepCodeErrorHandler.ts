@@ -76,6 +76,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     };
     try {
       if (process.env.NODE_ENV === "production") {
+        // please disable request sending in dev mode to avoid unnecessary reports to server
         const response = await http.post(extension.config.errorUrl, { body });
       }
     } catch (err) {

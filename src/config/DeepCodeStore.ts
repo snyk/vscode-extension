@@ -16,10 +16,17 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       getAccountType: (): string | undefined =>
         this.globalState.get(stateNames.accountType),
 
-      getConfirmUploadStatus: (): string | undefined =>
-        // TODO: change to workspace state
-        this.globalState.get(stateNames.confirmedDownload),
-
+      getConfirmUploadStatus: (
+        folderPath: ""
+      ): string | undefined | { [key: string]: boolean } => {
+        const workspaceConfirms = this.workspaceState.get(
+          stateNames.confirmedDownload
+        );
+        if (!folderPath) {
+          return workspaceConfirms;
+        }
+        return workspaceConfirms[folderPath];
+      },
       getSessionToken: (): string | undefined =>
         this.globalState.get(stateNames.sessionToken),
       getBackendConfigStatus: (): string | undefined =>
@@ -33,9 +40,19 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
         this.globalState.update(stateNames.isLoggedIn, status),
       setAccountType: (type: string): Thenable<void> =>
         this.globalState.update(stateNames.accountType, type),
-      setConfirmUploadStatus: (status: boolean): Thenable<void> =>
-        // TODO: change to workspace state
-        this.globalState.update(stateNames.confirmedDownload, status),
+      setConfirmUploadStatus: (
+        folderPath: string,
+        status: boolean
+      ): Thenable<void> => {
+        if (!folderPath && !status) {
+          return this.workspaceState.update(stateNames.confirmedDownload, {});
+        }
+        const workspaceConfirms = this.selectors.getConfirmUploadStatus();
+        return this.workspaceState.update(stateNames.confirmedDownload, {
+          ...workspaceConfirms,
+          [folderPath]: status
+        });
+      },
       setSessionToken: (token: string): Thenable<void> =>
         this.globalState.update(stateNames.sessionToken, token),
       setBackendConfigStatus: (status: boolean = true): Thenable<void> =>
@@ -46,20 +63,19 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   public cleanStore(): void {
     this.actions.setLoggedInStatus(false);
     this.actions.setSessionToken("");
-    this.actions.setConfirmUploadStatus(false);
+    this.actions.setConfirmUploadStatus();
     this.actions.setAccountType("");
     this.actions.setBackendConfigStatus(false);
   }
 
   public async createStore(context: ExtensionContext): Promise<void> {
     this.globalState = context.globalState;
-    // this.workspaceState = context.workspaceState;
+    this.workspaceState = context.workspaceState;
     this.selectors = { ...this.createSelectors() };
     this.actions = { ...this.createStateActions() };
-    // TODO: remove after tests
-    // this.cleanStore();
-    // console.log(this.selectors.getConfirmUploadStatus());
-    //
+    if (!this.selectors.getConfirmUploadStatus()) {
+      this.actions.setConfirmUploadStatus();
+    }
   }
 }
 

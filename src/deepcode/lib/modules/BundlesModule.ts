@@ -25,8 +25,8 @@ class BundlesModule extends LoginModule {
     this.currentWorkspacePath = newWorkspacePath;
   }
   public createWorkspacesList(workspaces: vscode.WorkspaceFolder[]): void {
-    for (const space of workspaces) {
-      this.workspacesPaths.push(space.uri.fsPath);
+    for (const folder of workspaces) {
+      this.workspacesPaths.push(folder.uri.fsPath);
     }
   }
   public changeWorkspaceList(
@@ -67,7 +67,10 @@ class BundlesModule extends LoginModule {
   }
 
   public async performBundlesActions(path: string): Promise<void> {
-    if (!Object.keys(this.serverFilesFilterList).length) {
+    if (
+      !Object.keys(this.serverFilesFilterList).length ||
+      !this.checkUploadConfirm(path)
+    ) {
       return;
     }
     await this.sendRemoteBundleToServer(

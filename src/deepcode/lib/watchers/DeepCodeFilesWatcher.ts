@@ -19,10 +19,18 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   private async checksBeforeActions(
-    extension: DeepCode.ExtensionInterface
+    extension: DeepCode.ExtensionInterface,
+    filePath: string
   ): Promise<boolean> {
     // first save checks
-    if (!(await extension.firstSaveCheck(extension))) {
+    let fileWorkspacePath = extension.workspacesPaths.find(path =>
+      filePath.includes(path)
+    );
+    if (!fileWorkspacePath) {
+      fileWorkspacePath = "";
+    }
+
+    if (!(await extension.firstSaveCheck(extension, fileWorkspacePath))) {
       return false;
     }
     return true;
@@ -65,7 +73,9 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
           updatedFiles,
           workspacePath
         );
-
+        if (!extension.checkUploadConfirm(workspacePath)) {
+          continue;
+        }
         if (extension.remoteBundles[workspacePath]) {
           await extension.extendBundleOnServer(updatedFiles, workspacePath);
           await extension.checkBundleOnServer(workspacePath);
@@ -158,7 +168,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     filePath: string,
     extension: DeepCode.ExtensionInterface
   ): Promise<string> {
-    if (!(await this.checksBeforeActions(extension))) {
+    if (!(await this.checksBeforeActions(extension, filePath))) {
       this.emptyChangedFilesLists();
       return "";
     }

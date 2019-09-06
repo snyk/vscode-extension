@@ -9,6 +9,7 @@ import {
   TextDocument
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
+import { INSTALL_STATUS } from "../deepcode/constants/general";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -193,7 +194,15 @@ namespace DeepCode {
     manageExtensionStatus(): string;
     cancelFirstSaveFlag(): void;
     login(): Promise<boolean>;
-    firstSaveCheck(extension: ExtensionInterface): Promise<boolean>;
+    checkUploadConfirm(folderPath: string): boolean;
+    showConfirmMsg(
+      extension: DeepCode.ExtensionInterface | any,
+      folderPath: string
+    ): Promise<boolean>;
+    firstSaveCheck(
+      extension: ExtensionInterface,
+      folderPath: string
+    ): Promise<boolean>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;

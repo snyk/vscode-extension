@@ -32,28 +32,44 @@ class DeepCodeWorkspaceFoldersWatcher
   }
 
   private watchWorkspacesChanges(extension: DeepCode.ExtensionInterface): void {
+    const proceedWithBundlesActions = async (p: string) => {
+      await extension.performBundlesActions(p);
+      await extension.analyzer.reviewCode(extension, p);
+    };
+
     vscode.workspace.onDidChangeWorkspaceFolders(
       async (
         workspaceFolders: vscode.WorkspaceFoldersChangeEvent
       ): Promise<void> => {
-        // if workspace was added
         if (workspaceFolders.added.length) {
-          const path = workspaceFolders.added[0].uri.fsPath;
-          extension.changeWorkspaceList(path);
-          await extension.updateHashesBundles(path);
-          await extension.performBundlesActions(path);
-          await extension.analyzer.reviewCode(extension, path);
+          for await (const workspace of workspaceFolders.added) {
+            const path = workspace.uri.fsPath;
+            extension.changeWorkspaceList(path);
+            await extension.updateHashesBundles(path);
+
+            if (!extension.checkUploadConfirm(path)) {
+              await extension.showConfirmMsg(extension, path);
+              if (extension.checkUploadConfirm(path)) {
+                proceedWithBundlesActions(path);
+              }
+            } else {
+              proceedWithBundlesActions(path);
+            }
+          }
         }
 
         if (workspaceFolders.removed.length) {
           const deleteFlag = true;
-          const path = workspaceFolders.removed[0].uri.fsPath;
-          extension.changeWorkspaceList(path, deleteFlag);
-          await extension.updateHashesBundles(path, deleteFlag);
-          // remove server bundle from remote bundles
-          await extension.updateExtensionRemoteBundles(path);
-          // remove analysis
-          await extension.analyzer.removeReviewResults(path);
+          for await (const workspace of workspaceFolders.removed) {
+            const path = workspace.uri.fsPath;
+            await extension.store.actions.setConfirmUploadStatus(path, false);
+            extension.changeWorkspaceList(path, deleteFlag);
+            await extension.updateHashesBundles(path, deleteFlag);
+            // remove server bundle from remote bundles
+            await extension.updateExtensionRemoteBundles(path);
+            // remove analysis
+            await extension.analyzer.removeReviewResults(path);
+          }
         }
       }
     );

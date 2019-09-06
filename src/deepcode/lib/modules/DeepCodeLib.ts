@@ -21,17 +21,27 @@ export default class DeepCodeLib extends BundlesModule {
   }
 
   public async activateActions(): Promise<void> {
-    await this.login();
-    await this.activateExtensionStartActions();
+    const loginStatus = await this.login();
+    if (loginStatus) {
+      await this.activateExtensionStartActions();
+    }
   }
 
   public async preActivateActions(): Promise<void> {
-    let status = INSTALL_STATUS.justInstalled; //INSTALL_STATUS.installed fter tests
+    let status = INSTALL_STATUS.installed;
     if (process.env.NODE_ENV === "production") {
       status = this.manageExtensionStatus();
     }
     if (status === INSTALL_STATUS.justInstalled) {
       return this.configureExtension();
+    }
+    const backendUrl = await vscode.workspace
+      .getConfiguration()
+      .get(DEEPCODE_CLOUD_BACKEND);
+    if (backendUrl) {
+      this.config.changeDeepCodeUrl(backendUrl);
+    } else {
+      this.config.changeDeepCodeUrl(DEFAULT_DEEPCODE_ENDPOINT);
     }
     await this.activateActions();
   }
@@ -54,7 +64,6 @@ export default class DeepCodeLib extends BundlesModule {
     }
     return INSTALL_STATUS.installed;
   }
-
   public async configureExtension(): Promise<void> {
     const { msg, onPremiseBtn, cloudBtn } = deepCodeMessages.configureBackend;
     const configBackendReply = await vscode.window.showInformationMessage(
@@ -83,30 +92,41 @@ export default class DeepCodeLib extends BundlesModule {
   }
 
   public async activateExtensionStartActions(): Promise<void> {
-    // check if user is loggedIn and has confirmed uploading code
-    const loggedInAndConfirmedUser =
-      this.store.selectors.getLoggedInStatus() &&
-      this.store.selectors.getConfirmUploadStatus();
-
-    if (!loggedInAndConfirmedUser) {
+    // check if user is loggedIn
+    const isLoggedInUser = await this.store.selectors.getLoggedInStatus();
+    if (!isLoggedInUser) {
       return;
     }
+
     const workspaceFolders: vscode.WorkspaceFolder[] | undefined =
       vscode.workspace.workspaceFolders;
 
     if (!workspaceFolders || !workspaceFolders.length) {
       return;
-    }
-    this.createWorkspacesList(workspaceFolders);
-    this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
-    await this.createFilesFilterList();
-    await this.updateHashesBundles();
-    for await (const path of this.workspacesPaths) {
-      await this.performBundlesActions(path);
-      if (!this.remoteBundles[path]) {
-        break;
+    } else {
+      for await (const folder of workspaceFolders) {
+        // check if upload confirmed for each of workspaces
+        if (!this.checkUploadConfirm(folder.uri.fsPath)) {
+          await this.showConfirmMsg(this, folder.uri.fsPath);
+        }
       }
     }
-    await this.analyzer.reviewCode(this);
+
+    this.createWorkspacesList(workspaceFolders);
+    if (this.workspacesPaths.length) {
+      this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
+      await this.createFilesFilterList();
+      await this.updateHashesBundles();
+      for await (const path of this.workspacesPaths) {
+        if (!this.checkUploadConfirm(path)) {
+          continue;
+        }
+        await this.performBundlesActions(path);
+        if (!this.remoteBundles[path]) {
+          break;
+        }
+      }
+      await this.analyzer.reviewCode(this);
+    }
   }
 }

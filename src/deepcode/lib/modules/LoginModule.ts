@@ -6,13 +6,14 @@ import http from "../../http/requests";
 import { ping } from "../../utils/httpUtils";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { DEEPCODE_START_COMMAND, IDE_NAME } from "../../constants/general";
+import { IDE_NAME } from "../../constants/general";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 class LoginModule extends BaseDeepCodeModule {
-  private analysisOnSaveAllowed: boolean = false;
-  private firstSaveAlreadyHappened: boolean = false;
+  private analysisOnSaveAllowed: { [key: string]: boolean } = {};
+  private firstSaveAlreadyHappened: { [key: string]: boolean } = {};
   private firstConfirmAborted: boolean = false;
+  private pendingLogin: boolean = false;
 
   public async login(): Promise<boolean> {
     const isUserLoggedIn = this.store.selectors.getLoggedInStatus();
@@ -22,8 +23,8 @@ class LoginModule extends BaseDeepCodeModule {
       await this.showLoginMsg();
     }
 
-    await this.checkLoginStatus();
-    return true;
+    const loginStatus = await this.checkLoginStatus();
+    return loginStatus;
   }
 
   private async showLoginMsg(): Promise<boolean> {
@@ -63,27 +64,27 @@ class LoginModule extends BaseDeepCodeModule {
     return false;
   }
 
-  private async checkLoginStatus(): Promise<boolean> {
+  private async checkLoginStatus(): Promise<any> {
     if (!this.token) {
       return false;
     }
     const extension: any = this;
-    let pingLogin = await ping(async function pingLoginStatus() {
+    return await ping(async function pingLoginStatus() {
+      extension.pendingLogin = true;
       let result: { [key: string]: number | string | object } | undefined;
       try {
         result = await http.get(
           extension.config.checkSessionUrl,
           extension.token
         );
+        await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setAccountType(result.type);
         await extension.store.actions.setSessionToken(extension.token);
-        await extension.store.actions.setLoggedInStatus(true);
-        await extension.showConfirmMsg(extension);
+        extension.pendingLogin = false;
+        return true;
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
-          (async () => {
-            pingLogin = await ping(pingLoginStatus);
-          })();
+          return await ping(pingLoginStatus);
         } else {
           extension.errorHandler.processError(extension, err, {
             ...(err.statusCode === statusCodes.notFound && {
@@ -94,16 +95,19 @@ class LoginModule extends BaseDeepCodeModule {
               endpoint: extension.config.checkSessionUrl
             }
           });
+          return false;
         }
       }
     });
-    return this.store.selectors.getLoggedInStatus();
   }
 
-  private async showConfirmMsg(
-    extension: DeepCode.ExtensionInterface | any
+  public async showConfirmMsg(
+    extension: DeepCode.ExtensionInterface | any,
+    folderPath: string
   ): Promise<boolean> {
-    const isUploadConfirmed = this.store.selectors.getConfirmUploadStatus();
+    const isUploadConfirmed = this.store.selectors.getConfirmUploadStatus(
+      folderPath
+    );
     if (isUploadConfirmed) {
       return true;
     }
@@ -111,15 +115,14 @@ class LoginModule extends BaseDeepCodeModule {
     const pressedButton:
       | string
       | undefined = await vscode.window.showInformationMessage(
-      msg(extension.config.termsConditionsUrl),
+      msg(extension.config.termsConditionsUrl, folderPath),
       button
     );
     if (pressedButton === button) {
-      await this.store.actions.setConfirmUploadStatus(true);
-      if (extension.activateExtensionStartActions) {
-        await extension.activateExtensionStartActions();
-      }
+      await this.store.actions.setConfirmUploadStatus(folderPath, true);
       return true;
+    } else {
+      await this.store.actions.setConfirmUploadStatus(folderPath, false);
     }
 
     if (!this.firstConfirmAborted) {
@@ -129,58 +132,81 @@ class LoginModule extends BaseDeepCodeModule {
     return false;
   }
 
-  private getLoggedAndConfirmStatus(): { [key: string]: boolean } {
+  private getLoggedAndConfirmStatus(
+    folderPath: string
+  ): { [key: string]: boolean } {
     return {
       isLoggedIn: this.store.selectors.getLoggedInStatus(),
-      isUploadConfirmed: this.store.selectors.getConfirmUploadStatus()
+      isUploadConfirmed: this.store.selectors.getConfirmUploadStatus(folderPath)
     };
   }
 
   public cancelFirstSaveFlag(): void {
-    if (this.firstSaveAlreadyHappened) {
-      this.firstSaveAlreadyHappened = false;
+    if (Object.keys(this.firstSaveAlreadyHappened).length) {
+      this.firstSaveAlreadyHappened = {};
     }
   }
 
-  public async firstSaveCheck(
-    extension: DeepCode.ExtensionInterface
-  ): Promise<boolean> {
-    if (this.analysisOnSaveAllowed) {
-      return true;
-    }
+  public checkUploadConfirm(folderPath: string): boolean {
+    const isAllowed = this.store.selectors.getConfirmUploadStatus(folderPath);
+    return isAllowed;
+  }
 
-    const { isLoggedIn, isUploadConfirmed } = this.getLoggedAndConfirmStatus();
-    if (isLoggedIn && isUploadConfirmed && !this.analysisOnSaveAllowed) {
-      this.analysisOnSaveAllowed = true;
-      this.firstSaveAlreadyHappened = true;
+  public async firstSaveCheck(
+    extension: DeepCode.ExtensionInterface,
+    folderPath: string
+  ): Promise<boolean> {
+    if (this.analysisOnSaveAllowed[folderPath]) {
       return true;
     }
-    if (!this.firstSaveAlreadyHappened) {
-      this.firstSaveAlreadyHappened = true;
+    const { isLoggedIn, isUploadConfirmed } = this.getLoggedAndConfirmStatus(
+      folderPath
+    );
+    if (
+      isLoggedIn &&
+      isUploadConfirmed &&
+      !this.analysisOnSaveAllowed[folderPath]
+    ) {
+      this.analysisOnSaveAllowed[folderPath] = true;
+      this.firstSaveAlreadyHappened[folderPath] = true;
+      return true;
+    }
+    if (!this.firstSaveAlreadyHappened[folderPath]) {
+      this.firstSaveAlreadyHappened[folderPath] = !!folderPath;
 
       const isBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
       if (!isBackendConfigured) {
         await extension.configureExtension();
+        const latestIsBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
+        if (latestIsBackendConfigured) {
+          this.firstSaveAlreadyHappened[folderPath] = false;
+        }
         return false;
       }
 
-      if (!isLoggedIn) {
-        await this.login();
+      if (!isLoggedIn && !this.pendingLogin) {
+        await extension.activateActions();
         const {
           isLoggedIn,
           isUploadConfirmed
-        } = this.getLoggedAndConfirmStatus();
-        this.analysisOnSaveAllowed = isLoggedIn && isUploadConfirmed;
-        return this.analysisOnSaveAllowed;
+        } = this.getLoggedAndConfirmStatus(folderPath);
+
+        this.analysisOnSaveAllowed[folderPath] =
+          isLoggedIn && isUploadConfirmed;
+        return this.analysisOnSaveAllowed[folderPath];
       }
 
-      if (isLoggedIn && !isUploadConfirmed) {
-        const resultOfConfirm = await this.showConfirmMsg(extension);
-        this.analysisOnSaveAllowed = resultOfConfirm;
+      if (isLoggedIn && !isUploadConfirmed && folderPath) {
+        const resultOfConfirm = await this.showConfirmMsg(
+          extension,
+          folderPath
+        );
+
+        this.analysisOnSaveAllowed[folderPath] = resultOfConfirm;
         return resultOfConfirm;
       }
     }
-    return this.analysisOnSaveAllowed;
+    return this.analysisOnSaveAllowed[folderPath];
   }
 }
 
