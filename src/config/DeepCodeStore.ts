@@ -17,6 +17,7 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
         this.globalState.get(stateNames.accountType),
 
       getConfirmUploadStatus: (
+        // workspace can contain multiple folders and each of them will have is confirm status
         folderPath: ""
       ): string | undefined | { [key: string]: boolean } => {
         const workspaceConfirms = this.workspaceState.get(

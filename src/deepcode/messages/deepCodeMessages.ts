@@ -1,14 +1,12 @@
 export const deepCodeMessages = {
   configureBackend: {
-    msg: `If you want to use the cloud backend (https://www.deepcode.ai) press "Cloud". 
-    If you want to use the extension with an on-premise installation of DeepCode please enter the URL of the on-premise backend in the settings by clicking "On-Premise".`,
+    msg: `To use the cloud AI backend (https://www.deepcode.ai) select "Cloud". To configure an on-premise AI backend select "On-Premise".`,
     cloudBtn: "Cloud",
     onPremiseBtn: "On-Premise"
   },
   confirmUploadFilesToServer: {
     msg: (termsConditionsUrl: string, folderPath: string): string =>
-      `You have not yet given your consent to upload folder ${folderPath} to DeepCode. Please give your consent by clicking ‘Confirm’.
-      The Deepcode extension will transfer your code to the Deepcode server to perform its AI analysis. Your code is protected and used only for the purpose of informing you about issues in your code. [Terms & Conditions](${termsConditionsUrl})`,
+      `Confirm remote analysis of ${folderPath} ([Terms & Conditions](${termsConditionsUrl}))`,
     button: "Confirm"
   },
   login: {

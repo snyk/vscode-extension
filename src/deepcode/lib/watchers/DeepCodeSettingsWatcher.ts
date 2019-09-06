@@ -47,6 +47,12 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     }
   }
 
+  private prepareBackendUrlFromSettings(url: string) {
+    const SLASH = "/";
+    const lastletter = url.charAt(url.length - 1);
+    return lastletter === SLASH ? url : `${url}/`;
+  }
+
   private async changeDeepCodeCloudBackend(
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
@@ -56,7 +62,8 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     if (deepcodeCloudBackend) {
       const { globalValue, defaultValue } = deepcodeCloudBackend;
       if (globalValue && globalValue !== defaultValue) {
-        extension.config.changeDeepCodeUrl(`${globalValue}`);
+        const backendUrl = this.prepareBackendUrlFromSettings(`${globalValue}`);
+        extension.config.changeDeepCodeUrl(backendUrl);
         await extension.store.cleanStore();
         await extension.store.actions.setBackendConfigStatus(true);
         extension.cancelFirstSaveFlag();
