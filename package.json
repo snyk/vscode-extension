@@ -15,11 +15,15 @@
     "vscode": "^1.36.0"
   },
   "categories": [
-    "Linters"
+    "Programming Languages",
+    "Other"
   ],
   "keywords": [
     "code analysis",
-    "linters"
+    "java",
+    "javascript",
+    "typescript",
+    "python"
   ],
   "activationEvents": [
     "*"
