@@ -16,6 +16,10 @@ class LoginModule extends BaseDeepCodeModule {
   private pendingLogin: boolean = false;
 
   public async login(): Promise<boolean> {
+    if (this.pendingLogin) {
+      return false;
+    }
+    this.pendingLogin = true;
     const isUserLoggedIn = this.store.selectors.getLoggedInStatus();
     this.token = this.store.selectors.getSessionToken();
 
@@ -24,6 +28,7 @@ class LoginModule extends BaseDeepCodeModule {
     }
 
     const loginStatus = await this.checkLoginStatus();
+    this.pendingLogin = false;
     return loginStatus;
   }
 
@@ -70,7 +75,6 @@ class LoginModule extends BaseDeepCodeModule {
     }
     const extension: any = this;
     return await ping(async function pingLoginStatus() {
-      extension.pendingLogin = true;
       let result: { [key: string]: number | string | object } | undefined;
       try {
         result = await http.get(
@@ -80,7 +84,6 @@ class LoginModule extends BaseDeepCodeModule {
         await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setAccountType(result.type);
         await extension.store.actions.setSessionToken(extension.token);
-        extension.pendingLogin = false;
         return true;
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
@@ -162,19 +165,19 @@ class LoginModule extends BaseDeepCodeModule {
     const { isLoggedIn, isUploadConfirmed } = this.getLoggedAndConfirmStatus(
       folderPath
     );
+    const isBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
     if (
       isLoggedIn &&
       isUploadConfirmed &&
-      !this.analysisOnSaveAllowed[folderPath]
+      !this.analysisOnSaveAllowed[folderPath] &&
+      isBackendConfigured
     ) {
       this.analysisOnSaveAllowed[folderPath] = true;
       this.firstSaveAlreadyHappened[folderPath] = true;
       return true;
     }
     if (!this.firstSaveAlreadyHappened[folderPath]) {
-      this.firstSaveAlreadyHappened[folderPath] = !!folderPath;
-
-      const isBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
+      this.firstSaveAlreadyHappened[folderPath] = true;
       if (!isBackendConfigured) {
         await extension.configureExtension();
         const latestIsBackendConfigured = await extension.store.selectors.getBackendConfigStatus();
