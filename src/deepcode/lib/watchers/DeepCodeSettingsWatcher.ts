@@ -68,6 +68,11 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
         await extension.store.actions.setBackendConfigStatus(true);
         extension.cancelFirstSaveFlag();
         await extension.activateActions();
+        return;
+      }
+      if (!globalValue) {
+        await extension.store.cleanStore();
+        extension.cancelFirstSaveFlag();
       }
     }
   }

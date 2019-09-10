@@ -38,12 +38,14 @@ export default class DeepCodeLib extends BundlesModule {
     const backendUrl = await vscode.workspace
       .getConfiguration()
       .get(DEEPCODE_CLOUD_BACKEND);
+
     if (backendUrl) {
-      this.config.changeDeepCodeUrl(backendUrl);
+      await this.config.changeDeepCodeUrl(backendUrl);
+      await this.activateActions();
     } else {
-      this.config.changeDeepCodeUrl(DEFAULT_DEEPCODE_ENDPOINT);
+      await this.store.actions.setBackendConfigStatus(false);
+      await this.configureExtension();
     }
-    await this.activateActions();
   }
 
   public manageExtensionStatus(): string {
