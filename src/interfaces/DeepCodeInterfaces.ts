@@ -1,15 +1,11 @@
 import {
   ExtensionContext,
-  Memento,
   DiagnosticCollection,
   StatusBarItem,
-  Uri,
   WorkspaceFolder,
-  Range,
   TextDocument
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
-import { INSTALL_STATUS } from "../deepcode/constants/general";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -171,7 +167,7 @@ namespace DeepCode {
     ): Promise<void>;
   }
 
-  export interface ExtensionInterface {
+  export interface BaseDeepCodeModuleInterface {
     config: DeepCode.DeepCodeConfig;
     store: DeepCode.ExtensionStoreInterface;
     currentWorkspacePath: string;
@@ -186,23 +182,23 @@ namespace DeepCode {
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
-    activate?(context: ExtensionContext): void;
-    preActivateActions(): Promise<void>;
-    activateActions(): Promise<void>;
-    configureExtension(): Promise<void>;
-    startExtension?(): any;
-    manageExtensionStatus(): string;
-    cancelFirstSaveFlag(): void;
+  }
+
+  export interface LoginModuleInterface {
     login(): Promise<boolean>;
     checkUploadConfirm(folderPath: string): boolean;
     showConfirmMsg(
       extension: DeepCode.ExtensionInterface | any,
       folderPath: string
     ): Promise<boolean>;
-    firstSaveCheck(
+    cancelFirstSaveFlag(): void;
+    checkPermissions(
       extension: ExtensionInterface,
       folderPath: string
     ): Promise<boolean>;
+  }
+
+  export interface BundlesModuleInterface {
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
@@ -236,8 +232,24 @@ namespace DeepCode {
       }>,
       workspacePath: string
     ): Promise<void>;
-    activateWatchers?(): Promise<void>;
+  }
+
+  export interface DeepCodeLibInterface {
+    preActivateActions(): Promise<void>;
+    activateActions(): Promise<void>;
+    configureExtension(): Promise<void>;
+    activateWatchers(): Promise<void>;
     activateExtensionStartActions?(): Promise<void>;
+    manageExtensionStatus(): string;
+  }
+
+  export interface ExtensionInterface
+    extends BaseDeepCodeModuleInterface,
+      LoginModuleInterface,
+      BundlesModuleInterface,
+      DeepCodeLibInterface {
+    activate(context: ExtensionContext): void;
+    startExtension(): any;
   }
 }
 

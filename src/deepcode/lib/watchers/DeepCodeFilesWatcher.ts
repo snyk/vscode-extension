@@ -30,7 +30,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
       fileWorkspacePath = "";
     }
 
-    if (!(await extension.firstSaveCheck(extension, fileWorkspacePath))) {
+    if (!(await extension.checkPermissions(extension, fileWorkspacePath))) {
       return false;
     }
     return true;

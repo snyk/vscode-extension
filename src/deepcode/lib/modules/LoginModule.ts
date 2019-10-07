@@ -9,7 +9,8 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { IDE_NAME } from "../../constants/general";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
-class LoginModule extends BaseDeepCodeModule {
+class LoginModule extends BaseDeepCodeModule
+  implements DeepCode.LoginModuleInterface {
   private analysisOnSaveAllowed: { [key: string]: boolean } = {};
   private firstSaveAlreadyHappened: { [key: string]: boolean } = {};
   private firstConfirmAborted: boolean = false;
@@ -155,7 +156,7 @@ class LoginModule extends BaseDeepCodeModule {
     return isAllowed;
   }
 
-  public async firstSaveCheck(
+  public async checkPermissions(
     extension: DeepCode.ExtensionInterface,
     folderPath: string
   ): Promise<boolean> {

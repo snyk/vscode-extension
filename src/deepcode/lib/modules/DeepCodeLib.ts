@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as nodeFs from "fs";
 
+import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import {
@@ -12,7 +13,8 @@ import {
 } from "../../constants/general";
 import { DEEPCODE_CLOUD_BACKEND } from "../../constants/settings";
 
-export default class DeepCodeLib extends BundlesModule {
+export default class DeepCodeLib extends BundlesModule
+  implements DeepCode.DeepCodeLibInterface {
   public async activateWatchers(): Promise<void> {
     this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);

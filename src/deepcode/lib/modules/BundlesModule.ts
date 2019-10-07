@@ -19,7 +19,8 @@ import { createBundleBody } from "../../utils/httpUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
-class BundlesModule extends LoginModule {
+class BundlesModule extends LoginModule
+  implements DeepCode.BundlesModuleInterface {
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
     this.currentWorkspacePath = newWorkspacePath;
