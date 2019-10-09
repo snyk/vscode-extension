@@ -12,7 +12,8 @@ import { DEEPCODE_NAME } from "../../constants/general";
 import {
   ANALYSIS_STATUS,
   DEEPCODE_SEVERITIES,
-  IGNORE_TIP_FOR_USER
+  IGNORE_TIP_FOR_USER,
+  ISSUES_MARKERS_DECORATION_STYLE
 } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -29,6 +30,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private issueHoverProvider: vscode.Disposable | undefined;
   private ignoreActionsProvider: vscode.Disposable | undefined;
   private analysisQueueCount: number = 0;
+  private issuesMarkersdecorationType:
+    | vscode.TextEditorDecorationType
+    | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
   public constructor() {
@@ -135,47 +139,47 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     return issuesList;
   }
 
-  // TODO when analysis results endpoint will send markers for issue, highlight markers
-  private createIssueMarkersTextDecoration() {
-    const editor = vscode.window.activeTextEditor;
+  // TODO when analysis results endpoint will send markers for issue, highlight markers and update on changing editors
+  public setIssuesMarkersDecoration(
+    editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
+  ): void {
     if (
       editor &&
       this.deepcodeReview &&
       this.deepcodeReview.has(editor.document.uri)
     ) {
-      const currentFileReviewIssues = this.deepcodeReview.get(
-        editor.document.uri
+      // TODO: for real markers =>find issues for current editor => get markers positions of issue and use it for decoration
+      // const currentFileReviewIssues = this.deepcodeReview.get(
+      //   editor.document.uri
+      // );
+      this.clearPrevIssuesMarkersDecoration();
+      this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(
+        ISSUES_MARKERS_DECORATION_STYLE
       );
-      editor.setDecorations(
-        vscode.window.createTextEditorDecorationType({
-          // TODO: set needed styles for marked text
-          // cursor: "crosshair",
-          // use a themable color. See package.json for the declaration and default values.
-          // backgroundColor: "#c7254eb8"
-          // textDecoration: "blue wavy underline"
-          // isWholeLine: true
-          border: "1px",
-          borderColor: "green",
-          borderStyle: "none none dashed none"
-        }),
-        [
-          // TODO: here should be placed positions of issue markers
-          {
-            range: new vscode.Range(
-              new vscode.Position(84, 10),
-              new vscode.Position(84, 22)
-            ),
-            hoverMessage: "Hint for issue(Deepcode)(Test string)"
-          },
-          {
-            range: new vscode.Range(
-              new vscode.Position(85, 10),
-              new vscode.Position(85, 22)
-            ),
-            hoverMessage: "Hint for issue2(Deepcode)(Test string)"
-          }
-        ]
-      );
+      // test hardcoded markers
+      editor.setDecorations(this.issuesMarkersdecorationType, [
+        // TODO: here should be placed positions of issue markers, like example below
+        {
+          range: new vscode.Range(
+            new vscode.Position(84, 10),
+            new vscode.Position(84, 22)
+          ),
+          hoverMessage: "Hint for issue(Deepcode)(Test string)"
+        },
+        {
+          range: new vscode.Range(
+            new vscode.Position(85, 10),
+            new vscode.Position(85, 22)
+          ),
+          hoverMessage: "Hint for issue2(Deepcode)(Test string)"
+        }
+      ]);
+    }
+  }
+
+  private clearPrevIssuesMarkersDecoration() {
+    if (this.issuesMarkersdecorationType) {
+      this.issuesMarkersdecorationType.dispose();
     }
   }
 
@@ -203,6 +207,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
+    // set issues markers decoration
+    this.setIssuesMarkersDecoration();
   }
 
   public async configureIssuesDisplayBySeverity(

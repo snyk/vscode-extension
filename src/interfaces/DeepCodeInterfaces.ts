@@ -3,7 +3,8 @@ import {
   DiagnosticCollection,
   StatusBarItem,
   WorkspaceFolder,
-  TextDocument
+  TextDocument,
+  TextEditor
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
 
@@ -145,6 +146,7 @@ namespace DeepCode {
       severity: number,
       hide: boolean
     ): Promise<void>;
+    setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
   }
 
   export interface StatusBarItemInterface {
