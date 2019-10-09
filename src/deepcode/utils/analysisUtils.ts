@@ -1,4 +1,58 @@
+import * as vscode from "vscode";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
+
+export const createDeepCodeProgress = (progress: number): number => {
+  const progressOffset = 100;
+  return Math.round(progress * progressOffset);
+};
+
+export const createCorrectIssuePlacement = (
+  item: DeepCode.IssuePositionsInterface
+): { [key: string]: { [key: string]: number } } => {
+  const rowOffset = 1;
+  const createPosition = (i: number): number =>
+    i - rowOffset < 0 ? 0 : i - rowOffset;
+  return {
+    cols: {
+      start: createPosition(item.cols[0]),
+      end: item.cols[1]
+    },
+    rows: {
+      start: createPosition(item.rows[0]),
+      end: createPosition(item.rows[1])
+    }
+  };
+};
+
+export const createIssueRange = (position: {
+  [key: string]: { [key: string]: number };
+}) => {
+  return new vscode.Range(
+    new vscode.Position(position.rows.start, position.cols.start),
+    new vscode.Position(position.rows.end, position.cols.end)
+  );
+};
+
+export const createIssueCorrectRange = (
+  issuePosition: DeepCode.IssuePositionsInterface
+): vscode.Range => {
+  return createIssueRange({
+    ...createCorrectIssuePlacement(issuePosition)
+  });
+};
+
+export const findIssueWithRange = (
+  matchingRange: vscode.Range | vscode.Position,
+  issuesList: readonly vscode.Diagnostic[] | undefined
+): vscode.Diagnostic | undefined => {
+  return (
+    issuesList &&
+    issuesList.find((issue: vscode.Diagnostic) => {
+      return issue.range.contains(matchingRange);
+    })
+  );
+};
+
 export const updateFileReviewResultsPositions = (
   analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
   updatedFile: DeepCode.openedTextEditorType

@@ -72,11 +72,13 @@ namespace DeepCode {
     configFiles?: Array<string>;
   }
 
+  export interface IssuePositionsInterface {
+    cols: Array<number>;
+    rows: Array<number>;
+  }
+
   export interface AnalysisResultsFileResultsInterface {
-    [suggestionIndex: number]: Array<{
-      cols: Array<number>;
-      rows: Array<number>;
-    }>;
+    [suggestionIndex: number]: Array<IssuePositionsInterface>;
   }
 
   export interface AnalysisResultsFilesInterface {

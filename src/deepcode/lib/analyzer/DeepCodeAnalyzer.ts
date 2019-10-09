@@ -2,11 +2,22 @@ import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { ping } from "../../utils/httpUtils";
-import { updateFileReviewResultsPositions } from "../../utils/analysisUtils";
+import {
+  updateFileReviewResultsPositions,
+  findIssueWithRange,
+  createDeepCodeProgress,
+  createIssueCorrectRange
+} from "../../utils/analysisUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
-import { ANALYSIS_STATUS, DEEPCODE_SEVERITIES } from "../../constants/analysis";
+import {
+  ANALYSIS_STATUS,
+  DEEPCODE_SEVERITIES,
+  IGNORE_TIP_FOR_USER
+} from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+
+import { IgnoreIssuesActionProvider } from "./DeepCodeIssuesActionsProviders";
 
 class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private SEVERITIES: {
@@ -15,6 +26,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private analysisProgressValue: number = 1; // default value for progress to make it visible from start
   private progress = vscode.window.withProgress;
   private analysisInProgress: boolean = false;
+  private issueHoverProvider: vscode.Disposable | undefined;
+  private ignoreActionsProvider: vscode.Disposable | undefined;
   private analysisQueueCount: number = 0;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
@@ -34,64 +47,136 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     );
 
     this.analysisResultsCollection = {};
+    this.createHoverTipsProviderForIssues();
+    this.createIgnoreIssueActions();
   }
 
-  private createVscodeProgress(progress: number): number {
-    const progressOffset = 100;
-    return Math.round(progress * progressOffset);
-  }
-
-  private createCorrectPlacement(item: {
-    [key: string]: Array<number>;
-  }): { [key: string]: { [key: string]: number } } {
-    const rowOffset = 1;
-    const createPosition = (i: number): number =>
-      i - rowOffset < 0 ? 0 : i - rowOffset;
-    return {
-      cols: {
-        start: createPosition(item.cols[0]),
-        end: item.cols[1]
-      },
-      rows: {
-        start: createPosition(item.rows[0]),
-        end: createPosition(item.rows[1])
+  private createHoverTipsProviderForIssues() {
+    // create hover provider for instructions tips
+    if (this.issueHoverProvider) {
+      this.issueHoverProvider.dispose();
+    }
+    const reviewList = this.deepcodeReview;
+    this.issueHoverProvider = vscode.languages.registerHoverProvider(
+      { scheme: "file", language: "*" },
+      {
+        provideHover(document, position, token) {
+          if (!reviewList || !reviewList.has(document.uri)) {
+            return;
+          }
+          const currentFileReviewIssues = reviewList.get(document.uri);
+          if (findIssueWithRange(position, currentFileReviewIssues)) {
+            return new vscode.Hover(IGNORE_TIP_FOR_USER);
+          }
+        }
       }
-    };
+    );
   }
 
-  private createIssueRange(position: {
-    [key: string]: { [key: string]: number };
-  }) {
-    return new vscode.Range(
-      new vscode.Position(position.rows.start, position.cols.start),
-      new vscode.Position(position.rows.end, position.cols.end)
+  private createIgnoreIssueActions() {
+    if (this.ignoreActionsProvider) {
+      this.ignoreActionsProvider.dispose();
+    }
+    this.ignoreActionsProvider = vscode.languages.registerCodeActionsProvider(
+      { scheme: "file", language: "*" },
+      new IgnoreIssuesActionProvider(this.deepcodeReview),
+      {
+        providedCodeActionKinds:
+          IgnoreIssuesActionProvider.providedCodeActionKinds
+      }
     );
   }
 
   private createIssuesList(
     fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface,
-    suggestions: DeepCode.analysisSuggestionsType
-  ) {
+    suggestions: DeepCode.analysisSuggestionsType,
+    fileUri: vscode.Uri
+  ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
     for (const issue in fileIssuesList) {
       if (!this.SEVERITIES[suggestions[issue].severity].show) {
         continue;
       }
       const message = suggestions[issue].message;
-
       for (const issuePosition of fileIssuesList[issue]) {
-        issuesList.push({
+        const issueDiagnostics = {
           code: "",
           message,
-          range: this.createIssueRange({
-            ...this.createCorrectPlacement(issuePosition)
-          }),
+          range: createIssueCorrectRange(issuePosition),
           severity: this.SEVERITIES[suggestions[issue].severity].name,
           source: DEEPCODE_NAME
-        });
+          // TODO: set issue markers into related information, like below
+          // relatedInformation: [
+          //   new vscode.DiagnosticRelatedInformation(
+          //     new vscode.Location(
+          //       fileUri,
+          //       new vscode.Range(
+          //         new vscode.Position(84, 10),
+          //         new vscode.Position(84, 22)
+          //       )
+          //     ),
+          //     "Hint for issue(this string can be changed)"
+          //   ),
+          //   new vscode.DiagnosticRelatedInformation(
+          //     new vscode.Location(
+          //       fileUri,
+          //       new vscode.Range(
+          //         new vscode.Position(85, 10),
+          //         new vscode.Position(85, 22)
+          //       )
+          //     ),
+          //     "Hint for issue2(this string can be changed)"
+          //   )
+          // ]
+        };
+        issuesList.push(issueDiagnostics);
       }
     }
     return issuesList;
+  }
+
+  // TODO when analysis results endpoint will send markers for issue, highlight markers
+  private createIssueMarkersTextDecoration() {
+    const editor = vscode.window.activeTextEditor;
+    if (
+      editor &&
+      this.deepcodeReview &&
+      this.deepcodeReview.has(editor.document.uri)
+    ) {
+      const currentFileReviewIssues = this.deepcodeReview.get(
+        editor.document.uri
+      );
+      editor.setDecorations(
+        vscode.window.createTextEditorDecorationType({
+          // TODO: set needed styles for marked text
+          // cursor: "crosshair",
+          // use a themable color. See package.json for the declaration and default values.
+          // backgroundColor: "#c7254eb8"
+          // textDecoration: "blue wavy underline"
+          // isWholeLine: true
+          border: "1px",
+          borderColor: "green",
+          borderStyle: "none none dashed none"
+        }),
+        [
+          // TODO: here should be placed positions of issue markers
+          {
+            range: new vscode.Range(
+              new vscode.Position(84, 10),
+              new vscode.Position(84, 22)
+            ),
+            hoverMessage: "Hint for issue(Deepcode)(Test string)"
+          },
+          {
+            range: new vscode.Range(
+              new vscode.Position(85, 10),
+              new vscode.Position(85, 22)
+            ),
+            hoverMessage: "Hint for issue2(Deepcode)(Test string)"
+          }
+        ]
+      );
+    }
   }
 
   public async createReviewResults(): Promise<void> {
@@ -110,7 +195,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           return;
         }
         const fileIssuesList = files[filePath];
-        const issues = this.createIssuesList(fileIssuesList, suggestions);
+        const issues = this.createIssuesList(
+          fileIssuesList,
+          suggestions,
+          fileUri
+        );
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
@@ -151,7 +240,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       if (this.deepcodeReview) {
         const issues = this.createIssuesList(
           fileIssuesList,
-          this.analysisResultsCollection[updatedFile.workspace].suggestions
+          this.analysisResultsCollection[updatedFile.workspace].suggestions,
+          vscode.Uri.file(updatedFile.fullPath)
         );
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
           ...issues
@@ -183,7 +273,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           endpoint,
           extension.token
         );
-        const currentProgress = analyzer.createVscodeProgress(
+        // TODO: remove console
+        console.log({ analysisResponse });
+        const currentProgress = createDeepCodeProgress(
           analysisResponse.progress
         );
         analyzer.analysisProgressValue =
