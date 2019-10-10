@@ -8,7 +8,7 @@ export const createBundleBody = (bundle: {
   };
 };
 
-export const ping = (f: Function, pingTime: number = 1500) => {
+export const httpDelay = (f: Function, pingTime: number = 1500) => {
   const promiseFunc = (): Promise<any> => {
     const promise = new Promise(function(resolve) {
       setTimeout(() => {

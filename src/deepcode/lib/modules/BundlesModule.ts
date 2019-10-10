@@ -8,14 +8,15 @@ import {
 } from "../../constants/statusCodes";
 import http from "../../http/requests";
 import {
-  createMissingFilesPayload,
+  createMissingFilesPayloadUtil,
   createFilesHashesBundle,
   processServerFilesFilterList,
   processPayloadSize
 } from "../../utils/filesUtils";
 // creating git bundles is disabled, may be used in future
 // import {createGitBundle} from '../../utils/gitUtils';
-import { createBundleBody } from "../../utils/httpUtils";
+import { createBundleBody, httpDelay } from "../../utils/httpUtils";
+import { debounce } from "../../utils/tsUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
@@ -70,7 +71,8 @@ class BundlesModule extends LoginModule
   public async performBundlesActions(path: string): Promise<void> {
     if (
       !Object.keys(this.serverFilesFilterList).length ||
-      !this.checkUploadConfirm(path)
+      !this.checkUploadConfirm(path) ||
+      !Object.keys(this.hashesBundles[path]).length
     ) {
       return;
     }
@@ -180,7 +182,7 @@ class BundlesModule extends LoginModule
   ): Promise<Array<DeepCode.PayloadMissingFileInterface>> {
     const path = this.workspacesPaths.find(path => path === workspacePath);
     if (Array.isArray(missingFiles) && path) {
-      return await createMissingFilesPayload([...missingFiles], path);
+      return await createMissingFilesPayloadUtil([...missingFiles], path);
     }
     return [];
   }
@@ -194,11 +196,14 @@ class BundlesModule extends LoginModule
     let payload: Array<DeepCode.PayloadMissingFileInterface> = [];
     const sendUploadRequest = async (chunkPayload: any): Promise<void> => {
       try {
-        const uploadResponse = await http.post(endpoint, {
-          body: chunkPayload,
-          token: this.token,
-          fileUpload: true
-        });
+        const uploadResponse = await httpDelay(
+          async () =>
+            await http.post(endpoint, {
+              body: chunkPayload,
+              token: this.token,
+              fileUpload: true
+            })
+        );
       } catch (err) {
         if (err.statusCode === statusCodes.bigPayload) {
           await this.uploadMissingFilesToServerBundle(
@@ -256,9 +261,8 @@ class BundlesModule extends LoginModule
       if (!attempts) {
         throw new Error(EXPIRED_REQUEST);
       }
-      const latestServerBundle: DeepCode.RemoteBundleInterface = await http.get(
-        endpoint,
-        this.token
+      const latestServerBundle: DeepCode.RemoteBundleInterface = await httpDelay(
+        async () => await http.get(endpoint, this.token)
       );
       await this.processBundleFromServer(latestServerBundle, workspacePath);
       if (this.remoteBundles[workspacePath].missingFiles) {
@@ -319,7 +323,7 @@ class BundlesModule extends LoginModule
     }
 
     const extendBatchBody: {
-      files: { [key: string]: string };
+      files?: { [key: string]: string };
       removedFiles: Array<string>;
     } = {
       files: {},

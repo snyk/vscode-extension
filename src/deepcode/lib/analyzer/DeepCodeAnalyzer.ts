@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { ping } from "../../utils/httpUtils";
+import { httpDelay } from "../../utils/httpUtils";
 import { updateFileReviewResultsPositions } from "../../utils/analysisUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
 import { ANALYSIS_STATUS, DEEPCODE_SEVERITIES } from "../../constants/analysis";
@@ -194,10 +194,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           attemptsIfFailedStatus--;
           return !attemptsIfFailedStatus
             ? { success: false }
-            : await ping(fetchAnalysisResults);
+            : await httpDelay(fetchAnalysisResults);
         }
         if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await ping(fetchAnalysisResults);
+          return await httpDelay(fetchAnalysisResults);
         }
         return { ...analysisResponse.analysisResults, success: true };
       } catch (err) {
@@ -211,7 +211,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         return { success: false };
       }
     }
-    return await ping(fetchAnalysisResults);
+    return await httpDelay(fetchAnalysisResults);
   }
 
   private async performAnalysis(

@@ -127,7 +127,7 @@ export const parseGitignoreFile = async (
   return gitignoreContent;
 };
 
-export const createMissingFilesPayload = async (
+export const createMissingFilesPayloadUtil = async (
   missingFiles: Array<string>,
   currentWorkspacePath: string
 ): Promise<Array<DeepCode.PayloadMissingFileInterface>> => {

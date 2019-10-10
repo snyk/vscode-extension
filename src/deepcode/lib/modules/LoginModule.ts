@@ -3,7 +3,7 @@ import * as open from "open";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { ping } from "../../utils/httpUtils";
+import { httpDelay } from "../../utils/httpUtils";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { IDE_NAME } from "../../constants/general";
@@ -75,7 +75,7 @@ class LoginModule extends BaseDeepCodeModule
       return false;
     }
     const extension: any = this;
-    return await ping(async function pingLoginStatus() {
+    return await httpDelay(async function pingLoginStatus() {
       let result: { [key: string]: number | string | object } | undefined;
       try {
         result = await http.get(
@@ -88,7 +88,7 @@ class LoginModule extends BaseDeepCodeModule
         return true;
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
-          return await ping(pingLoginStatus);
+          return await httpDelay(pingLoginStatus);
         } else {
           extension.errorHandler.processError(extension, err, {
             ...(err.statusCode === statusCodes.notFound && {
