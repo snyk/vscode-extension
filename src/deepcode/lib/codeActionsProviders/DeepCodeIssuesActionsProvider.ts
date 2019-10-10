@@ -5,7 +5,7 @@ import {
   IGNORE_ISSUE_COMMENT_TEXT
 } from "../../constants/analysis";
 
-export class IgnoreIssuesActionProvider implements vscode.CodeActionProvider {
+class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [
     vscode.CodeActionKind.QuickFix
   ];
@@ -31,6 +31,30 @@ export class IgnoreIssuesActionProvider implements vscode.CodeActionProvider {
     return text;
   }
 
+  private createIgnoreIssueAction(
+    document: vscode.TextDocument,
+    matchedIssue: vscode.Diagnostic
+  ): vscode.CodeAction {
+    const ignoreIssueAction = new vscode.CodeAction(
+      IGNORE_ISSUE_ACTION_NAME,
+      DeepCodeIssuesActionProvider.providedCodeActionKinds[0]
+    );
+    ignoreIssueAction.edit = new vscode.WorkspaceEdit();
+    const symbolIndexToInsert = document.lineAt(matchedIssue.range.start.line)
+      .firstNonWhitespaceCharacterIndex;
+    const text = this.addSpacesToText(
+      `${IGNORE_ISSUE_COMMENT_TEXT}\n`,
+      symbolIndexToInsert
+    );
+    ignoreIssueAction.edit.insert(
+      document.uri,
+      new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert),
+      text
+    );
+    ignoreIssueAction.command = { ...this.saveCommand };
+    return ignoreIssueAction;
+  }
+
   public provideCodeActions(
     document: vscode.TextDocument,
     clickedRange: vscode.Range
@@ -41,24 +65,13 @@ export class IgnoreIssuesActionProvider implements vscode.CodeActionProvider {
     const fileIssues = this.issuesList && this.issuesList.get(document.uri);
     const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
-      const fix = new vscode.CodeAction(
-        IGNORE_ISSUE_ACTION_NAME,
-        IgnoreIssuesActionProvider.providedCodeActionKinds[0]
+      const ignoreIssueAction = this.createIgnoreIssueAction(
+        document,
+        matchedIssue
       );
-      fix.edit = new vscode.WorkspaceEdit();
-      const symbolIndexToInsert = document.lineAt(matchedIssue.range.start.line)
-        .firstNonWhitespaceCharacterIndex;
-      const text = this.addSpacesToText(
-        `${IGNORE_ISSUE_COMMENT_TEXT}\n`,
-        symbolIndexToInsert
-      );
-      fix.edit.insert(
-        document.uri,
-        new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert),
-        text
-      );
-      fix.command = { ...this.saveCommand };
-      return [fix];
+      return [ignoreIssueAction];
     }
   }
 }
+
+export default DeepCodeIssuesActionProvider;

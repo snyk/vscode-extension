@@ -18,7 +18,7 @@ import {
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
-import { IgnoreIssuesActionProvider } from "./DeepCodeIssuesActionsProviders";
+import DeepCodeIssuesActionProvider from "../codeActionsProviders/DeepCodeIssuesActionsProvider";
 
 class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private SEVERITIES: {
@@ -83,10 +83,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
     this.ignoreActionsProvider = vscode.languages.registerCodeActionsProvider(
       { scheme: "file", language: "*" },
-      new IgnoreIssuesActionProvider(this.deepcodeReview),
+      new DeepCodeIssuesActionProvider(this.deepcodeReview),
       {
         providedCodeActionKinds:
-          IgnoreIssuesActionProvider.providedCodeActionKinds
+          DeepCodeIssuesActionProvider.providedCodeActionKinds
       }
     );
   }
