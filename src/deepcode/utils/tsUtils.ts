@@ -36,3 +36,8 @@ export function debounce<F extends Procedure>(
     }
   } as any;
 }
+
+export const getSubstring = (
+  str: string,
+  [startIdx, endIdx]: number[]
+): string => str.substring(startIdx, endIdx);

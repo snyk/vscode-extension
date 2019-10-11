@@ -5,20 +5,23 @@ import {
   updateFileReviewResultsPositions,
   findIssueWithRange,
   createDeepCodeProgress,
-  createIssueCorrectRange
+  createIssueCorrectRange,
+  createIssuesMarkersDecorationOptions,
+  createIssueRelatedInformation,
+  createDeepCodeSeveritiesMap
 } from "../../utils/analysisUtils";
 import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
 import {
   ANALYSIS_STATUS,
-  DEEPCODE_SEVERITIES,
   IGNORE_TIP_FOR_USER,
-  ISSUES_MARKERS_DECORATION_STYLE
+  ISSUES_MARKERS_DECORATION_TYPE
 } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
-import DeepCodeIssuesActionProvider from "../codeActionsProviders/DeepCodeIssuesActionsProvider";
+import { DisposableCodeActionsProvider } from "../deepCodeProviders/codeActionsProvider/DeepCodeIssuesActionsProvider";
+import { DisposableHoverProvider } from "../deepCodeProviders/hoverProvider/DeepCodeHoverProvider";
 
 class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private SEVERITIES: {
@@ -36,59 +39,69 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
   public constructor() {
-    const { information, error, warning } = DEEPCODE_SEVERITIES;
-    this.SEVERITIES = {
-      [information]: {
-        name: vscode.DiagnosticSeverity.Information,
-        show: true
-      },
-      [warning]: { name: vscode.DiagnosticSeverity.Warning, show: true },
-      [error]: { name: vscode.DiagnosticSeverity.Error, show: true }
-    };
-
+    this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(
       DEEPCODE_NAME
     );
 
     this.analysisResultsCollection = {};
-    this.createHoverTipsProviderForIssues();
-    this.createIgnoreIssueActions();
+    this.ignoreActionsProvider = new DisposableCodeActionsProvider(
+      this.deepcodeReview
+    );
+    this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
 
-  private createHoverTipsProviderForIssues() {
-    // create hover provider for instructions tips
-    if (this.issueHoverProvider) {
-      this.issueHoverProvider.dispose();
-    }
-    const reviewList = this.deepcodeReview;
-    this.issueHoverProvider = vscode.languages.registerHoverProvider(
-      { scheme: "file", language: "*" },
+  private createIssueDiagnosticInfo({
+    issue,
+    issuePositions,
+    suggestions,
+    fileUri
+  }: {
+    issue: number;
+    issuePositions: DeepCode.IssuePositionsInterface;
+    suggestions: DeepCode.analysisSuggestionsType;
+    fileUri: vscode.Uri;
+  }): vscode.Diagnostic {
+    // TODO: markers will be in issuesPositions as prop 'markers'
+    // TODO replace mocked markers list
+    // mocked temporary markers existance flag
+    const markersExist = true || !!issuePositions.markers;
+    const markersList: Array<DeepCode.IssueMarkersInterface> = [
+      // mocked data
       {
-        provideHover(document, position, token) {
-          if (!reviewList || !reviewList.has(document.uri)) {
-            return;
+        msg: [1, 20],
+        pos: [
+          {
+            cols: [5, 15],
+            rows: [issuePositions.rows[0] + 1, issuePositions.rows[1] + 1]
           }
-          const currentFileReviewIssues = reviewList.get(document.uri);
-          if (findIssueWithRange(position, currentFileReviewIssues)) {
-            return new vscode.Hover(IGNORE_TIP_FOR_USER);
-          }
-        }
-      }
-    );
-  }
-
-  private createIgnoreIssueActions() {
-    if (this.ignoreActionsProvider) {
-      this.ignoreActionsProvider.dispose();
-    }
-    this.ignoreActionsProvider = vscode.languages.registerCodeActionsProvider(
-      { scheme: "file", language: "*" },
-      new DeepCodeIssuesActionProvider(this.deepcodeReview),
+        ]
+      },
       {
-        providedCodeActionKinds:
-          DeepCodeIssuesActionProvider.providedCodeActionKinds
+        msg: [6, 8],
+        pos: [
+          {
+            cols: [10, 25],
+            rows: [issuePositions.rows[0] + 3, issuePositions.rows[1] + 3]
+          }
+        ]
       }
-    );
+    ];
+    const message: string = suggestions[issue].message;
+    return {
+      code: "",
+      message,
+      range: createIssueCorrectRange(issuePositions),
+      severity: this.SEVERITIES[suggestions[issue].severity].name,
+      source: DEEPCODE_NAME,
+      ...(markersExist && {
+        relatedInformation: createIssueRelatedInformation({
+          markersList,
+          fileUri,
+          message
+        })
+      })
+    };
   }
 
   private createIssuesList(
@@ -101,45 +114,27 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       if (!this.SEVERITIES[suggestions[issue].severity].show) {
         continue;
       }
-      const message = suggestions[issue].message;
-      for (const issuePosition of fileIssuesList[issue]) {
-        const issueDiagnostics = {
-          code: "",
-          message,
-          range: createIssueCorrectRange(issuePosition),
-          severity: this.SEVERITIES[suggestions[issue].severity].name,
-          source: DEEPCODE_NAME
-          // TODO: set issue markers into related information, like below
-          // relatedInformation: [
-          //   new vscode.DiagnosticRelatedInformation(
-          //     new vscode.Location(
-          //       fileUri,
-          //       new vscode.Range(
-          //         new vscode.Position(84, 10),
-          //         new vscode.Position(84, 22)
-          //       )
-          //     ),
-          //     "Hint for issue(this string can be changed)"
-          //   ),
-          //   new vscode.DiagnosticRelatedInformation(
-          //     new vscode.Location(
-          //       fileUri,
-          //       new vscode.Range(
-          //         new vscode.Position(85, 10),
-          //         new vscode.Position(85, 22)
-          //       )
-          //     ),
-          //     "Hint for issue2(this string can be changed)"
-          //   )
-          // ]
-        };
-        issuesList.push(issueDiagnostics);
+      for (const issuePositions of fileIssuesList[issue]) {
+        issuesList.push(
+          this.createIssueDiagnosticInfo({
+            issue: +issue,
+            issuePositions,
+            suggestions,
+            fileUri
+          })
+        );
       }
     }
     return issuesList;
   }
 
-  // TODO when analysis results endpoint will send markers for issue, highlight markers and update on changing editors
+  private clearPrevIssuesMarkersDecoration() {
+    if (this.issuesMarkersdecorationType) {
+      this.issuesMarkersdecorationType.dispose();
+    }
+  }
+
+  // TODO test how this works when backend is ready
   public setIssuesMarkersDecoration(
     editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
   ): void {
@@ -148,38 +143,17 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       this.deepcodeReview &&
       this.deepcodeReview.has(editor.document.uri)
     ) {
-      // TODO: for real markers =>find issues for current editor => get markers positions of issue and use it for decoration
-      // const currentFileReviewIssues = this.deepcodeReview.get(
-      //   editor.document.uri
-      // );
       this.clearPrevIssuesMarkersDecoration();
       this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(
-        ISSUES_MARKERS_DECORATION_STYLE
+        ISSUES_MARKERS_DECORATION_TYPE
       );
-      // test hardcoded markers
-      editor.setDecorations(this.issuesMarkersdecorationType, [
-        // TODO: here should be placed positions of issue markers, like example below
-        {
-          range: new vscode.Range(
-            new vscode.Position(84, 10),
-            new vscode.Position(84, 22)
-          ),
-          hoverMessage: "Hint for issue(Deepcode)(Test string)"
-        },
-        {
-          range: new vscode.Range(
-            new vscode.Position(85, 10),
-            new vscode.Position(85, 22)
-          ),
-          hoverMessage: "Hint for issue2(Deepcode)(Test string)"
-        }
-      ]);
-    }
-  }
-
-  private clearPrevIssuesMarkersDecoration() {
-    if (this.issuesMarkersdecorationType) {
-      this.issuesMarkersdecorationType.dispose();
+      const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
+        this.deepcodeReview.get(editor.document.uri)
+      );
+      editor.setDecorations(
+        this.issuesMarkersdecorationType,
+        issuesMarkersDecorationsOptions
+      );
     }
   }
 
@@ -207,7 +181,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
-    // set issues markers decoration
+    // TODO set issues markers decoration
     this.setIssuesMarkersDecoration();
   }
 
@@ -279,7 +253,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           endpoint,
           extension.token
         );
-        // TODO: remove console
+        // TODO: remove test console after testing issues markers
         console.log({ analysisResponse });
         const currentProgress = createDeepCodeProgress(
           analysisResponse.progress

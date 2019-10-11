@@ -240,7 +240,3 @@ export const splitPayloadIntoChunks = (
   }
   return { chunks: true, payload: [...chunkedPayload] };
 };
-
-// export const isEmptyHashBundle = (hashBundlePath: string): boolean => {
-
-// }

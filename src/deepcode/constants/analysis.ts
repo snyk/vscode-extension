@@ -17,7 +17,7 @@ export const IGNORE_ISSUE_ACTION_NAME = "Ignore this issue(Deepcode)";
 export const IGNORE_TIP_FOR_USER =
   "To ignore this issue choose 'Ignore this issue' in QuickFix dropdown";
 
-export const ISSUES_MARKERS_DECORATION_STYLE = {
+export const ISSUES_MARKERS_DECORATION_TYPE = {
   border: "1px",
   borderColor: "green",
   borderStyle: "none none dashed none"

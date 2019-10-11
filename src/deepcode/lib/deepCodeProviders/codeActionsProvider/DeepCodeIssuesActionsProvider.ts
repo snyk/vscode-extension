@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { findIssueWithRange } from "../../utils/analysisUtils";
+import { findIssueWithRange } from "../../../utils/analysisUtils";
 import {
   IGNORE_ISSUE_ACTION_NAME,
   IGNORE_ISSUE_COMMENT_TEXT
-} from "../../constants/analysis";
+} from "../../../constants/analysis";
 
-class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
+export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [
     vscode.CodeActionKind.QuickFix
   ];
@@ -74,4 +74,29 @@ class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   }
 }
 
-export default DeepCodeIssuesActionProvider;
+// disposable provider
+export class DisposableCodeActionsProvider implements vscode.Disposable {
+  private disposableProvider: vscode.Disposable | undefined;
+  constructor(deepcodeReview: vscode.DiagnosticCollection | undefined) {
+    this.registerProvider(deepcodeReview);
+  }
+
+  private registerProvider(
+    deepcodeReview: vscode.DiagnosticCollection | undefined
+  ) {
+    this.disposableProvider = vscode.languages.registerCodeActionsProvider(
+      { scheme: "file", language: "*" },
+      new DeepCodeIssuesActionProvider(deepcodeReview),
+      {
+        providedCodeActionKinds:
+          DeepCodeIssuesActionProvider.providedCodeActionKinds
+      }
+    );
+  }
+
+  public dispose() {
+    if (this.disposableProvider) {
+      this.disposableProvider.dispose();
+    }
+  }
+}

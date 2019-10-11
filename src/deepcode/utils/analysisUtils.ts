@@ -1,5 +1,19 @@
 import * as vscode from "vscode";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import { getSubstring } from "./tsUtils";
+import { DEEPCODE_SEVERITIES } from "../constants/analysis";
+
+export const createDeepCodeSeveritiesMap = () => {
+  const { information, error, warning } = DEEPCODE_SEVERITIES;
+  return {
+    [information]: {
+      name: vscode.DiagnosticSeverity.Information,
+      show: true
+    },
+    [warning]: { name: vscode.DiagnosticSeverity.Warning, show: true },
+    [error]: { name: vscode.DiagnosticSeverity.Error, show: true }
+  };
+};
 
 export const createDeepCodeProgress = (progress: number): number => {
   const progressOffset = 100;
@@ -151,4 +165,58 @@ export const updateFileReviewResultsPositions = (
     }
   }
   return fileIssuesList;
+};
+
+export const createIssueMarkerMsg = (
+  originalMsg: string,
+  [markerStartIdx, markerEndIdx]: number[]
+): string => getSubstring(originalMsg, [markerStartIdx, markerEndIdx + 1]);
+
+export const createIssuesMarkersDecorationOptions = (
+  currentFileReviewIssues: readonly vscode.Diagnostic[] | undefined
+): vscode.DecorationOptions[] => {
+  if (!currentFileReviewIssues) {
+    return [];
+  }
+  const issueMarkersDecorationOptions = currentFileReviewIssues.reduce(
+    (markersRanges, issue) => {
+      if (issue.relatedInformation) {
+        for (const markerInfo of issue.relatedInformation) {
+          markersRanges.push({
+            range: markerInfo.location.range,
+            hoverMessage: markerInfo.message
+          });
+        }
+      }
+      return markersRanges;
+    },
+    Array()
+  );
+  return issueMarkersDecorationOptions;
+};
+
+export const createIssueRelatedInformation = ({
+  markersList,
+  fileUri,
+  message
+}: {
+  markersList: Array<DeepCode.IssueMarkersInterface>;
+  fileUri: vscode.Uri;
+  message: string;
+}) => {
+  const relatedInformation: vscode.DiagnosticRelatedInformation[] = markersList.reduce(
+    (relatedInfoList, marker) => {
+      const { msg: markerMsgIdxs, pos: markerPositions } = marker;
+      for (const position of markerPositions) {
+        const relatedInfo = new vscode.DiagnosticRelatedInformation(
+          new vscode.Location(fileUri, createIssueCorrectRange(position)),
+          createIssueMarkerMsg(message, markerMsgIdxs)
+        );
+        relatedInfoList.push(relatedInfo);
+      }
+      return relatedInfoList;
+    },
+    Array()
+  );
+  return relatedInformation;
 };

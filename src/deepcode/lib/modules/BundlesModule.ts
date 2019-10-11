@@ -13,7 +13,10 @@ import {
   processServerFilesFilterList,
   processPayloadSize
 } from "../../utils/filesUtils";
-import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
+import {
+  checkIfBundleIsEmpty,
+  extendLocalHashBundle
+} from "../../utils/bundlesUtils";
 // creating git bundles is disabled, may be used in future
 // import {createGitBundle} from '../../utils/gitUtils';
 import { createBundleBody, httpDelay } from "../../utils/httpUtils";
@@ -87,11 +90,7 @@ class BundlesModule extends LoginModule
   private async createSingleHashBundle(
     path: string
   ): Promise<DeepCode.BundlesInterface> {
-    const newBundle: DeepCode.BundlesInterface = await createFilesHashesBundle(
-      path,
-      this.serverFilesFilterList
-    );
-    return newBundle;
+    return await createFilesHashesBundle(path, this.serverFilesFilterList);
   }
 
   public async updateHashesBundles(
@@ -300,25 +299,12 @@ class BundlesModule extends LoginModule
     }>,
     workspacePath: string
   ): Promise<void> {
-    const currentWorkspaceBundle = {
-      ...this.hashesBundles[workspacePath]
-    };
-    for (const updatedFile of updatedFiles) {
-      if (
-        updatedFile.status === FILE_CURRENT_STATUS.deleted &&
-        currentWorkspaceBundle[updatedFile.filePath]
-      ) {
-        delete currentWorkspaceBundle[updatedFile.filePath];
-      }
-      if (
-        updatedFile.status === FILE_CURRENT_STATUS.modified ||
-        updatedFile.status === FILE_CURRENT_STATUS.created
-      ) {
-        currentWorkspaceBundle[updatedFile.filePath] = updatedFile.fileHash;
-      }
-    }
+    const updatedHashBundle = await extendLocalHashBundle(
+      updatedFiles,
+      this.hashesBundles[workspacePath]
+    );
     this.hashesBundles[workspacePath] = {
-      ...currentWorkspaceBundle
+      ...updatedHashBundle
     };
   }
 

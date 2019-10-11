@@ -73,9 +73,19 @@ namespace DeepCode {
     configFiles?: Array<string>;
   }
 
-  export interface IssuePositionsInterface {
+  export interface SingleIssuePositionInterface {
     cols: Array<number>;
     rows: Array<number>;
+  }
+
+  export interface IssuePositionsInterface
+    extends SingleIssuePositionInterface {
+    markers?: Array<IssueMarkersInterface>;
+  }
+
+  export interface IssueMarkersInterface {
+    msg: Array<number>;
+    pos: Array<SingleIssuePositionInterface>;
   }
 
   export interface AnalysisResultsFileResultsInterface {
