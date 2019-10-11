@@ -180,7 +180,10 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     }
     const hashedFilesBundle = extension.hashesBundles[fileWorkspacePath];
     const filePathInBundle = filePath.split(fileWorkspacePath)[1];
-    if (!hashedFilesBundle || !Object.keys(hashedFilesBundle).length) {
+    // if (!hashedFilesBundle || !Object.keys(hashedFilesBundle).length) {
+    //   return "";
+    // }
+    if (!hashedFilesBundle) {
       return "";
     }
     const originFilePath = Object.keys(hashedFilesBundle).find(path =>

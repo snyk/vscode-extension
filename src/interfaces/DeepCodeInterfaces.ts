@@ -236,6 +236,8 @@ namespace DeepCode {
       }>,
       workspacePath: string
     ): Promise<void>;
+    checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
+    checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;
   }
 
   export interface DeepCodeLibInterface {

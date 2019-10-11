@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { ping } from "../../utils/httpUtils";
 import {
   updateFileReviewResultsPositions,
   findIssueWithRange,
   createDeepCodeProgress,
   createIssueCorrectRange
 } from "../../utils/analysisUtils";
+import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
 import {
   ANALYSIS_STATUS,
@@ -292,10 +292,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           attemptsIfFailedStatus--;
           return !attemptsIfFailedStatus
             ? { success: false }
-            : await ping(fetchAnalysisResults);
+            : await httpDelay(fetchAnalysisResults);
         }
         if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await ping(fetchAnalysisResults);
+          return await httpDelay(fetchAnalysisResults);
         }
         return { ...analysisResponse.analysisResults, success: true };
       } catch (err) {
@@ -309,7 +309,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         return { success: false };
       }
     }
-    return await ping(fetchAnalysisResults);
+    return await httpDelay(fetchAnalysisResults);
   }
 
   private async performAnalysis(
@@ -359,7 +359,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     workspacePath: string = ""
   ): Promise<void> {
     const self = this || extension.analyzer;
-    if (!Object.keys(extension.remoteBundles).length) {
+    const hashesBundlesAreEmpty = extension.workspacesPaths.every(path =>
+      extension.checkIfHashesBundlesIsEmpty(path)
+    );
+    const remoteBundlesAreEmpty = extension.checkIfRemoteBundlesIsEmpty();
+    if (remoteBundlesAreEmpty || hashesBundlesAreEmpty) {
       if (self.deepcodeReview) {
         self.deepcodeReview.clear();
         self.analysisResultsCollection = {};
