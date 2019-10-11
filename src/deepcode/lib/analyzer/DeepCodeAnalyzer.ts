@@ -261,7 +261,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     workspacePath: string = ""
   ): Promise<void> {
     const self = this || extension.analyzer;
-    if (!Object.keys(extension.remoteBundles).length) {
+    const isHashesBundleIsEmpty = extension.checkIfHashesBundlesIsEmpty(
+      workspacePath || extension.currentWorkspacePath
+    );
+    const isRemoteBundlesEmpty = extension.checkIfRemoteBundlesIsEmpty();
+    if (isRemoteBundlesEmpty || isHashesBundleIsEmpty) {
       if (self.deepcodeReview) {
         self.deepcodeReview.clear();
         self.analysisResultsCollection = {};

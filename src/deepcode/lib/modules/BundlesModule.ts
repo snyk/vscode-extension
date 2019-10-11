@@ -13,6 +13,7 @@ import {
   processServerFilesFilterList,
   processPayloadSize
 } from "../../utils/filesUtils";
+import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
 // creating git bundles is disabled, may be used in future
 // import {createGitBundle} from '../../utils/gitUtils';
 import { createBundleBody, httpDelay } from "../../utils/httpUtils";
@@ -72,7 +73,7 @@ class BundlesModule extends LoginModule
     if (
       !Object.keys(this.serverFilesFilterList).length ||
       !this.checkUploadConfirm(path) ||
-      !Object.keys(this.hashesBundles[path]).length
+      this.checkIfHashesBundlesIsEmpty(path)
     ) {
       return;
     }
@@ -111,6 +112,15 @@ class BundlesModule extends LoginModule
       workspacePath
     );
   }
+
+  public checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean {
+    return checkIfBundleIsEmpty(this.hashesBundles, bundlePath);
+  }
+
+  public checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean {
+    return checkIfBundleIsEmpty(this.remoteBundles, bundlePath);
+  }
+
   // processing remote server bundles
   public async updateExtensionRemoteBundles(
     workspacePath: string,
@@ -318,7 +328,13 @@ class BundlesModule extends LoginModule
     }>,
     workspacePath: string
   ): Promise<void> {
-    if (!this.remoteBundles[workspacePath]) {
+    const remoteBundleDoesNotExists: boolean = !this.remoteBundles[
+      workspacePath
+    ];
+    const hashesBundleIsEmpty: boolean = this.checkIfHashesBundlesIsEmpty(
+      workspacePath
+    );
+    if (remoteBundleDoesNotExists || hashesBundleIsEmpty) {
       return;
     }
 
