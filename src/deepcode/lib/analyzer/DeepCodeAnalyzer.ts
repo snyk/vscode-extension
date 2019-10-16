@@ -3,7 +3,6 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import {
   updateFileReviewResultsPositions,
-  findIssueWithRange,
   createDeepCodeProgress,
   createIssueCorrectRange,
   createIssuesMarkersDecorationOptions,
@@ -14,7 +13,6 @@ import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
 import {
   ANALYSIS_STATUS,
-  IGNORE_TIP_FOR_USER,
   ISSUES_MARKERS_DECORATION_TYPE
 } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";

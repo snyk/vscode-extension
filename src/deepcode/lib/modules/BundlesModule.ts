@@ -20,7 +20,6 @@ import {
 // creating git bundles is disabled, may be used in future
 // import {createGitBundle} from '../../utils/gitUtils';
 import { createBundleBody, httpDelay } from "../../utils/httpUtils";
-import { debounce } from "../../utils/tsUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
