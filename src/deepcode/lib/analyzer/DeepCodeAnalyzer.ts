@@ -7,7 +7,8 @@ import {
   createIssueCorrectRange,
   createIssuesMarkersDecorationOptions,
   createIssueRelatedInformation,
-  createDeepCodeSeveritiesMap
+  createDeepCodeSeveritiesMap,
+  extractSuggestionIdFromSuggestionsMap
 } from "../../utils/analysisUtils";
 import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
@@ -44,7 +45,12 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
 
     this.analysisResultsCollection = {};
     this.ignoreActionsProvider = new DisposableCodeActionsProvider(
-      this.deepcodeReview
+      this.deepcodeReview,
+      {
+        findSuggestionId: extractSuggestionIdFromSuggestionsMap(
+          this.analysisResultsCollection
+        )
+      }
     );
     this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
@@ -57,13 +63,13 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   }: {
     issue: number;
     issuePositions: DeepCode.IssuePositionsInterface;
-    suggestions: DeepCode.analysisSuggestionsType;
+    suggestions: DeepCode.AnalysisSuggestionsInterface;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
     // TODO: markers will be in issuesPositions as prop 'markers'
     // TODO replace mocked markers list
     // mocked temporary markers existance flag
-    const markersExist = true || !!issuePositions.markers;
+    const markersExist = false || !!issuePositions.markers;
     const markersList: Array<DeepCode.IssueMarkersInterface> = [
       // mocked data
       {
@@ -104,7 +110,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
 
   private createIssuesList(
     fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface,
-    suggestions: DeepCode.analysisSuggestionsType,
+    suggestions: DeepCode.AnalysisSuggestionsInterface,
     fileUri: vscode.Uri
   ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
@@ -180,7 +186,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       }
     }
     // TODO set issues markers decoration
-    this.setIssuesMarkersDecoration();
+    // this.setIssuesMarkersDecoration();
   }
 
   public async configureIssuesDisplayBySeverity(
@@ -199,10 +205,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   ): Promise<void> {
     try {
       if (
-        !this.analysisResultsCollection[updatedFile.workspace] ||
-        !this.analysisResultsCollection[updatedFile.workspace].files[
-          updatedFile.filePathInWorkspace
-        ] ||
+        !this.deepcodeReview ||
+        !this.deepcodeReview.has(updatedFile.document.uri) ||
         !updatedFile.contentChanges.length ||
         !updatedFile.contentChanges[0].range
       ) {
@@ -224,6 +228,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
           ...issues
         ]);
+        // TODO: update markers
+        // this.setIssuesMarkersDecoration();
       }
     } catch (err) {
       extension.errorHandler.sendErrorToServer(extension, err, {
@@ -252,7 +258,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           extension.token
         );
         // TODO: remove test console after testing issues markers
-        console.log({ analysisResponse });
+        console.log("ANALYSIS RESPONSE", { analysisResponse });
         const currentProgress = createDeepCodeProgress(
           analysisResponse.progress
         );

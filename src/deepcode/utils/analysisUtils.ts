@@ -1,7 +1,13 @@
 import * as vscode from "vscode";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { getSubstring } from "./tsUtils";
-import { DEEPCODE_SEVERITIES } from "../constants/analysis";
+import {
+  DEEPCODE_SEVERITIES,
+  IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  GLOBAL_IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  IGNORE_ISSUE_REASON_TIP,
+  ISSUE_ID_SPLITTER
+} from "../constants/analysis";
 
 export const createDeepCodeSeveritiesMap = () => {
   const { information, error, warning } = DEEPCODE_SEVERITIES;
@@ -92,7 +98,7 @@ export const updateFileReviewResultsPositions = (
         if (offsetedline < position.rows[row]) {
           position.rows[row] += updatedFile.lineCount.prevOffset;
         } else if (offsetedline === position.rows[row]) {
-          if (!changesRange.start.character && !changesRange.end.character) {
+          if (changesRange.start.character < position.rows[row]) {
             position.rows[row] += updatedFile.lineCount.prevOffset;
           }
         }
@@ -110,10 +116,10 @@ export const updateFileReviewResultsPositions = (
         ) {
           if (
             changesRange.start.character < position.cols[0] &&
-            changesText.includes(goToNewLine)
+            !changesText.includes(goToNewLine)
           ) {
-            for (const char in position.cols) {
-              position.cols[char] += changesText.length;
+            for (const col in position.cols) {
+              position.cols[col] += changesText.length;
             }
           }
           // if char is inside issue range
@@ -219,4 +225,42 @@ export const createIssueRelatedInformation = ({
     Array()
   );
   return relatedInformation;
+};
+
+export const extractSuggestionIdFromSuggestionsMap = (
+  analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface
+): Function => (suggestionName: string, filePath: string): string => {
+  const workspaceAnalysisPath: string | undefined = Object.keys(
+    analysisResultsCollection
+  ).find((path: string): boolean => filePath.includes(path));
+
+  if (
+    !workspaceAnalysisPath ||
+    !analysisResultsCollection[workspaceAnalysisPath] ||
+    !analysisResultsCollection[workspaceAnalysisPath].suggestions
+  ) {
+    return "";
+  }
+  const suggestion = Object.values(
+    analysisResultsCollection[workspaceAnalysisPath].suggestions
+  ).find(
+    (suggestion: DeepCode.analysisSuggestionsType) =>
+      suggestion.message === suggestionName
+  );
+  return suggestion ? suggestion.id : "";
+};
+
+export const extractIssueNameOutOfId = (issueId: string): string => {
+  const strippedIssueIdList = issueId.split(ISSUE_ID_SPLITTER);
+  return strippedIssueIdList[strippedIssueIdList.length - 1];
+};
+
+export const ignoreIssueCommentText = (
+  issueId: string,
+  isGlobalIgnore?: boolean
+): string => {
+  const deepcodeComment = isGlobalIgnore
+    ? GLOBAL_IGNORE_ISSUE_BASE_COMMENT_TEXT
+    : IGNORE_ISSUE_BASE_COMMENT_TEXT;
+  return `${deepcodeComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
 };

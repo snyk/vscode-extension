@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
-import { DEEPCODE_START_COMMAND, DEEPCODE_NAME } from "../constants/general";
-import { stateNames } from "../constants/stateNames";
+import { DEEPCODE_NAME } from "../constants/general";
+import {
+  DEEPCODE_START_COMMAND,
+  VSCODE_GO_TO_SETTINGS_COMMAND
+} from "../constants/commands";
 
 export const getDeepcodeExtensionId = (): string => {
   const extension = vscode.extensions.all.find(
@@ -11,7 +14,7 @@ export const getDeepcodeExtensionId = (): string => {
 
 export const openDeepcodeSettingsCommand = (): void => {
   const deepcodeId = getDeepcodeExtensionId();
-  vscode.commands.executeCommand("_extensions.manage", deepcodeId);
+  vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, deepcodeId);
 };
 
 export const startDeepCodeCommand = (): void => {

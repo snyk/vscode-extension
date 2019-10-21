@@ -15,7 +15,9 @@ import { DEEPCODE_CLOUD_BACKEND } from "../../constants/settings";
 
 export default class DeepCodeLib extends BundlesModule
   implements DeepCode.DeepCodeLibInterface {
-  public async activateWatchers(): Promise<void> {
+  private watchersAreActivated: boolean = false;
+
+  public activateWatchers(): void {
     this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
@@ -26,6 +28,10 @@ export default class DeepCodeLib extends BundlesModule
     const loginStatus = await this.login();
     if (loginStatus) {
       await this.activateExtensionStartActions();
+      if (!this.watchersAreActivated) {
+        this.activateWatchers();
+        this.watchersAreActivated = true;
+      }
     }
   }
 

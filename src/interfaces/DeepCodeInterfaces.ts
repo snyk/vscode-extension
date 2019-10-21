@@ -30,11 +30,9 @@ namespace DeepCode {
   };
 
   export type analysisSuggestionsType = {
-    [suggestionIndex: number]: {
-      id: string;
-      message: string;
-      severity: number;
-    };
+    id: string;
+    message: string;
+    severity: number;
   };
 
   export interface PayloadMissingFileInterface {
@@ -98,9 +96,13 @@ namespace DeepCode {
     };
   }
 
+  export interface AnalysisSuggestionsInterface {
+    [suggestionIndex: number]: analysisSuggestionsType;
+  }
+
   export interface AnalysisServerResultsInterface
     extends AnalysisResultsFilesInterface {
-    suggestions: analysisSuggestionsType;
+    suggestions: AnalysisSuggestionsInterface;
   }
 
   export interface AnalysisResultsInterface
@@ -254,7 +256,7 @@ namespace DeepCode {
     preActivateActions(): Promise<void>;
     activateActions(): Promise<void>;
     configureExtension(): Promise<void>;
-    activateWatchers(): Promise<void>;
+    activateWatchers(): void;
     activateExtensionStartActions?(): Promise<void>;
     manageExtensionStatus(): string;
   }
