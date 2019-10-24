@@ -66,31 +66,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     suggestions: DeepCode.AnalysisSuggestionsInterface;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
-    // TODO: markers will be in issuesPositions as prop 'markers'
-    // TODO replace mocked markers list
-    // mocked temporary markers existance flag
-    const markersExist = false || !!issuePositions.markers;
-    const markersList: Array<DeepCode.IssueMarkersInterface> = [
-      // mocked data
-      {
-        msg: [1, 20],
-        pos: [
-          {
-            cols: [5, 15],
-            rows: [issuePositions.rows[0] + 1, issuePositions.rows[1] + 1]
-          }
-        ]
-      },
-      {
-        msg: [6, 8],
-        pos: [
-          {
-            cols: [10, 25],
-            rows: [issuePositions.rows[0] + 3, issuePositions.rows[1] + 3]
-          }
-        ]
-      }
-    ];
+    //issues markers will be in issuesPositions as prop 'markers', need to be tested
     const message: string = suggestions[issue].message;
     return {
       code: "",
@@ -98,9 +74,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       range: createIssueCorrectRange(issuePositions),
       severity: this.SEVERITIES[suggestions[issue].severity].name,
       source: DEEPCODE_NAME,
-      ...(markersExist && {
+      ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation({
-          markersList,
+          markersList: issuePositions.markers,
           fileUri,
           message
         })
@@ -138,7 +114,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  // TODO test how this works when backend is ready
   public setIssuesMarkersDecoration(
     editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
   ): void {
@@ -185,8 +160,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
-    // TODO set issues markers decoration
-    // this.setIssuesMarkersDecoration();
+    this.setIssuesMarkersDecoration();
   }
 
   public async configureIssuesDisplayBySeverity(
@@ -228,8 +202,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
           ...issues
         ]);
-        // TODO: update markers
-        // this.setIssuesMarkersDecoration();
+        this.setIssuesMarkersDecoration();
       }
     } catch (err) {
       extension.errorHandler.sendErrorToServer(extension, err, {
@@ -257,8 +230,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           endpoint,
           extension.token
         );
-        // TODO: remove test console after testing issues markers
-        console.log("ANALYSIS RESPONSE", { analysisResponse });
         const currentProgress = createDeepCodeProgress(
           analysisResponse.progress
         );

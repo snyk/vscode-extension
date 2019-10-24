@@ -179,7 +179,8 @@ class BundlesModule extends LoginModule
   ): Promise<void> {
     await this.updateExtensionRemoteBundles(workspacePath, serverBundle);
     // if server bundles has missing files - upload them to server
-    if (this.remoteBundles[workspacePath].missingFiles) {
+    const { missingFiles } = this.remoteBundles[workspacePath];
+    if (missingFiles && missingFiles.length) {
       await this.uploadMissingFilesToServerBundle(workspacePath);
     }
   }
@@ -273,7 +274,8 @@ class BundlesModule extends LoginModule
         async () => await http.get(endpoint, this.token)
       );
       await this.processBundleFromServer(latestServerBundle, workspacePath);
-      if (this.remoteBundles[workspacePath].missingFiles) {
+      const { missingFiles } = this.remoteBundles[workspacePath];
+      if (missingFiles && missingFiles.length) {
         await this.checkBundleOnServer(workspacePath, attempts--);
       }
     } catch (err) {
