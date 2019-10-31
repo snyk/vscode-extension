@@ -1,15 +1,12 @@
 import {
   ExtensionContext,
-  Memento,
   DiagnosticCollection,
   StatusBarItem,
-  Uri,
   WorkspaceFolder,
-  Range,
-  TextDocument
+  TextDocument,
+  TextEditor
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
-import { INSTALL_STATUS } from "../deepcode/constants/general";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -33,11 +30,9 @@ namespace DeepCode {
   };
 
   export type analysisSuggestionsType = {
-    [suggestionIndex: number]: {
-      id: string;
-      message: string;
-      severity: number;
-    };
+    id: string;
+    message: string;
+    severity: number;
   };
 
   export interface PayloadMissingFileInterface {
@@ -76,11 +71,23 @@ namespace DeepCode {
     configFiles?: Array<string>;
   }
 
+  export interface SingleIssuePositionInterface {
+    cols: Array<number>;
+    rows: Array<number>;
+  }
+
+  export interface IssuePositionsInterface
+    extends SingleIssuePositionInterface {
+    markers?: Array<IssueMarkersInterface>;
+  }
+
+  export interface IssueMarkersInterface {
+    msg: Array<number>;
+    pos: Array<SingleIssuePositionInterface>;
+  }
+
   export interface AnalysisResultsFileResultsInterface {
-    [suggestionIndex: number]: Array<{
-      cols: Array<number>;
-      rows: Array<number>;
-    }>;
+    [suggestionIndex: number]: Array<IssuePositionsInterface>;
   }
 
   export interface AnalysisResultsFilesInterface {
@@ -89,9 +96,13 @@ namespace DeepCode {
     };
   }
 
+  export interface AnalysisSuggestionsInterface {
+    [suggestionIndex: number]: analysisSuggestionsType;
+  }
+
   export interface AnalysisServerResultsInterface
     extends AnalysisResultsFilesInterface {
-    suggestions: analysisSuggestionsType;
+    suggestions: AnalysisSuggestionsInterface;
   }
 
   export interface AnalysisResultsInterface
@@ -147,6 +158,7 @@ namespace DeepCode {
       severity: number,
       hide: boolean
     ): Promise<void>;
+    setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
   }
 
   export interface StatusBarItemInterface {
@@ -171,7 +183,7 @@ namespace DeepCode {
     ): Promise<void>;
   }
 
-  export interface ExtensionInterface {
+  export interface BaseDeepCodeModuleInterface {
     config: DeepCode.DeepCodeConfig;
     store: DeepCode.ExtensionStoreInterface;
     currentWorkspacePath: string;
@@ -186,23 +198,23 @@ namespace DeepCode {
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
-    activate?(context: ExtensionContext): void;
-    preActivateActions(): Promise<void>;
-    activateActions(): Promise<void>;
-    configureExtension(): Promise<void>;
-    startExtension?(): any;
-    manageExtensionStatus(): string;
-    cancelFirstSaveFlag(): void;
+  }
+
+  export interface LoginModuleInterface {
     login(): Promise<boolean>;
     checkUploadConfirm(folderPath: string): boolean;
     showConfirmMsg(
       extension: DeepCode.ExtensionInterface | any,
       folderPath: string
     ): Promise<boolean>;
-    firstSaveCheck(
+    cancelFirstSaveFlag(): void;
+    checkPermissions(
       extension: ExtensionInterface,
       folderPath: string
     ): Promise<boolean>;
+  }
+
+  export interface BundlesModuleInterface {
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
@@ -236,8 +248,26 @@ namespace DeepCode {
       }>,
       workspacePath: string
     ): Promise<void>;
-    activateWatchers?(): Promise<void>;
+    checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
+    checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;
+  }
+
+  export interface DeepCodeLibInterface {
+    preActivateActions(): Promise<void>;
+    activateActions(): Promise<void>;
+    configureExtension(): Promise<void>;
+    activateWatchers(): void;
     activateExtensionStartActions?(): Promise<void>;
+    manageExtensionStatus(): string;
+  }
+
+  export interface ExtensionInterface
+    extends BaseDeepCodeModuleInterface,
+      LoginModuleInterface,
+      BundlesModuleInterface,
+      DeepCodeLibInterface {
+    activate(context: ExtensionContext): void;
+    startExtension(): any;
   }
 }
 

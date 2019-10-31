@@ -6,7 +6,7 @@ type Options = {
 
 export function debounce<F extends Procedure>(
   func: F,
-  waitMilliseconds = 100,
+  waitMilliseconds: number = 100,
   options: Options = {
     isImmediate: false
   }
@@ -36,3 +36,8 @@ export function debounce<F extends Procedure>(
     }
   } as any;
 }
+
+export const getSubstring = (
+  str: string,
+  [startIdx, endIdx]: number[]
+): string => str.substring(startIdx, endIdx);

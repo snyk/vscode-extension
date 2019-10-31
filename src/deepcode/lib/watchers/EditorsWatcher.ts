@@ -36,6 +36,8 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
         if (editor && !this.currentTextEditors[editor.document.fileName]) {
           this.createEditorInfo(extension, editor);
         }
+        // set issues markers decorations when navigating between opened editors
+        extension.analyzer.setIssuesMarkersDecoration(editor);
       }
     );
   }

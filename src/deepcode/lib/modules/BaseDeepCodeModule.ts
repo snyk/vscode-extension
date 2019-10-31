@@ -10,7 +10,8 @@ import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import DeepCodeErrorhandler from "../errorHandler/DeepCodeErrorHandler";
 
-export default class BaseDeepCodeModule {
+export default class BaseDeepCodeModule
+  implements DeepCode.BaseDeepCodeModuleInterface {
   public config: DeepCode.DeepCodeConfig;
   public store: DeepCode.ExtensionStoreInterface;
   public currentWorkspacePath: string;

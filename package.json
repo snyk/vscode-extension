@@ -4,7 +4,7 @@
   "displayName": "DeepCode (Beta)",
   "description": "Detect bugs and quality issues in JavaScript, TypeScript, React, Vue and more...",
   "version": "0.0.1",
-  "icon": "images/deepCodeLogo.png",
+  "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
   "homepage": "https://www.deepcode.ai/",
   "repository": {

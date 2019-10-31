@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import * as nodePath from "path";
-import ignore from 'ignore';
+import ignore from "ignore";
 import { Buffer } from "buffer";
 import { fs } from "mz";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
-import {ExclusionRule, ExclusionFilter} from './ignoreUtils';
+import { ExclusionRule, ExclusionFilter } from "./ignoreUtils";
 
 export const createFileHash = (file: string): string => {
   return crypto
@@ -37,14 +37,14 @@ export const createFilesHashesBundle = async (
 ): Promise<{ [key: string]: string }> => {
   const exclusionFilter = new ExclusionFilter();
   const rootExclusionRule = new ExclusionRule();
-  rootExclusionRule.addExclusions(EXCLUDED_NAMES, '');
+  rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
   const bundle = await createListOfDirFilesHashes(
     serverFilesFilterList,
     folderPath,
     {},
     folderPath,
-    exclusionFilter,
+    exclusionFilter
   );
   return bundle;
 };
@@ -54,10 +54,10 @@ export const createListOfDirFilesHashes = async (
   folderPath: string,
   list: { [key: string]: string },
   path: string = folderPath,
-  exclusionFilter: ExclusionFilter,
+  exclusionFilter: ExclusionFilter
 ) => {
   const dirContent: string[] = await fs.readdir(path);
-  // First look for a .gitignore file. 
+  // First look for a .gitignore file.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(path, name);
     if (name === GITIGNORE_FILENAME) {
@@ -65,8 +65,10 @@ export const createListOfDirFilesHashes = async (
       // to create a copy of the exclusionFilter.
       const relativeDirPath = nodePath.relative(folderPath, path);
       const exclusionRule = new ExclusionRule();
-      exclusionRule.addExclusions(await parseGitignoreFile(fullChildPath),
-                                  relativeDirPath);
+      exclusionRule.addExclusions(
+        await parseGitignoreFile(fullChildPath),
+        relativeDirPath
+      );
       exclusionFilter = exclusionFilter.copy();
       exclusionFilter.addExclusionRule(exclusionRule);
     }
@@ -94,7 +96,7 @@ export const createListOfDirFilesHashes = async (
           folderPath,
           { ...list },
           `${path}/${name}`,
-          exclusionFilter,
+          exclusionFilter
         );
       }
     } catch (err) {
@@ -127,7 +129,7 @@ export const parseGitignoreFile = async (
   return gitignoreContent;
 };
 
-export const createMissingFilesPayload = async (
+export const createMissingFilesPayloadUtil = async (
   missingFiles: Array<string>,
   currentWorkspacePath: string
 ): Promise<Array<DeepCode.PayloadMissingFileInterface>> => {

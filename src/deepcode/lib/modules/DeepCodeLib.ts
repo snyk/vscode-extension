@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as nodeFs from "fs";
 
+import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import {
@@ -12,8 +13,11 @@ import {
 } from "../../constants/general";
 import { DEEPCODE_CLOUD_BACKEND } from "../../constants/settings";
 
-export default class DeepCodeLib extends BundlesModule {
-  public async activateWatchers(): Promise<void> {
+export default class DeepCodeLib extends BundlesModule
+  implements DeepCode.DeepCodeLibInterface {
+  private watchersAreActivated: boolean = false;
+
+  public activateWatchers(): void {
     this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
@@ -24,6 +28,10 @@ export default class DeepCodeLib extends BundlesModule {
     const loginStatus = await this.login();
     if (loginStatus) {
       await this.activateExtensionStartActions();
+      if (!this.watchersAreActivated) {
+        this.activateWatchers();
+        this.watchersAreActivated = true;
+      }
     }
   }
 
@@ -124,9 +132,6 @@ export default class DeepCodeLib extends BundlesModule {
           continue;
         }
         await this.performBundlesActions(path);
-        if (!this.remoteBundles[path]) {
-          break;
-        }
       }
       await this.analyzer.reviewCode(this);
     }

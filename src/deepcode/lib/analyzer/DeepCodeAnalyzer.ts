@@ -1,12 +1,26 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { ping } from "../../utils/httpUtils";
-import { updateFileReviewResultsPositions } from "../../utils/analysisUtils";
+import {
+  updateFileReviewResultsPositions,
+  createDeepCodeProgress,
+  createIssueCorrectRange,
+  createIssuesMarkersDecorationOptions,
+  createIssueRelatedInformation,
+  createDeepCodeSeveritiesMap,
+  extractSuggestionIdFromSuggestionsMap
+} from "../../utils/analysisUtils";
+import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
-import { ANALYSIS_STATUS, DEEPCODE_SEVERITIES } from "../../constants/analysis";
+import {
+  ANALYSIS_STATUS,
+  ISSUES_MARKERS_DECORATION_TYPE
+} from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+
+import { DisposableCodeActionsProvider } from "../deepCodeProviders/codeActionsProvider/DeepCodeIssuesActionsProvider";
+import { DisposableHoverProvider } from "../deepCodeProviders/hoverProvider/DeepCodeHoverProvider";
 
 class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private SEVERITIES: {
@@ -15,83 +29,111 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private analysisProgressValue: number = 1; // default value for progress to make it visible from start
   private progress = vscode.window.withProgress;
   private analysisInProgress: boolean = false;
+  private issueHoverProvider: vscode.Disposable | undefined;
+  private ignoreActionsProvider: vscode.Disposable | undefined;
   private analysisQueueCount: number = 0;
+  private issuesMarkersdecorationType:
+    | vscode.TextEditorDecorationType
+    | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
   public constructor() {
-    const { information, error, warning } = DEEPCODE_SEVERITIES;
-    this.SEVERITIES = {
-      [information]: {
-        name: vscode.DiagnosticSeverity.Information,
-        show: true
-      },
-      [warning]: { name: vscode.DiagnosticSeverity.Warning, show: true },
-      [error]: { name: vscode.DiagnosticSeverity.Error, show: true }
-    };
-
+    this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(
       DEEPCODE_NAME
     );
 
     this.analysisResultsCollection = {};
-  }
-
-  private createVscodeProgress(progress: number): number {
-    const progressOffset = 100;
-    return Math.round(progress * progressOffset);
-  }
-
-  private createCorrectPlacement(item: {
-    [key: string]: Array<number>;
-  }): { [key: string]: { [key: string]: number } } {
-    const rowOffset = 1;
-    const createPosition = (i: number): number =>
-      i - rowOffset < 0 ? 0 : i - rowOffset;
-    return {
-      cols: {
-        start: createPosition(item.cols[0]),
-        end: item.cols[1]
-      },
-      rows: {
-        start: createPosition(item.rows[0]),
-        end: createPosition(item.rows[1])
+    this.ignoreActionsProvider = new DisposableCodeActionsProvider(
+      this.deepcodeReview,
+      {
+        findSuggestionId: extractSuggestionIdFromSuggestionsMap(
+          this.analysisResultsCollection
+        )
       }
-    };
+    );
+    this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
 
-  private createIssueRange(position: {
-    [key: string]: { [key: string]: number };
-  }) {
-    return new vscode.Range(
-      new vscode.Position(position.rows.start, position.cols.start),
-      new vscode.Position(position.rows.end, position.cols.end)
-    );
+  private createIssueDiagnosticInfo({
+    issue,
+    issuePositions,
+    suggestions,
+    fileUri
+  }: {
+    issue: number;
+    issuePositions: DeepCode.IssuePositionsInterface;
+    suggestions: DeepCode.AnalysisSuggestionsInterface;
+    fileUri: vscode.Uri;
+  }): vscode.Diagnostic {
+    //issues markers will be in issuesPositions as prop 'markers', need to be tested
+    const message: string = suggestions[issue].message;
+    return {
+      code: "",
+      message,
+      range: createIssueCorrectRange(issuePositions),
+      severity: this.SEVERITIES[suggestions[issue].severity].name,
+      source: DEEPCODE_NAME,
+      ...(issuePositions.markers && {
+        relatedInformation: createIssueRelatedInformation({
+          markersList: issuePositions.markers,
+          fileUri,
+          message
+        })
+      })
+    };
   }
 
   private createIssuesList(
     fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface,
-    suggestions: DeepCode.analysisSuggestionsType
-  ) {
+    suggestions: DeepCode.AnalysisSuggestionsInterface,
+    fileUri: vscode.Uri
+  ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
     for (const issue in fileIssuesList) {
       if (!this.SEVERITIES[suggestions[issue].severity].show) {
         continue;
       }
-      const message = suggestions[issue].message;
-
-      for (const issuePosition of fileIssuesList[issue]) {
-        issuesList.push({
-          code: "",
-          message,
-          range: this.createIssueRange({
-            ...this.createCorrectPlacement(issuePosition)
-          }),
-          severity: this.SEVERITIES[suggestions[issue].severity].name,
-          source: DEEPCODE_NAME
-        });
+      for (const issuePositions of fileIssuesList[issue]) {
+        issuesList.push(
+          this.createIssueDiagnosticInfo({
+            issue: +issue,
+            issuePositions,
+            suggestions,
+            fileUri
+          })
+        );
       }
     }
     return issuesList;
+  }
+
+  private clearPrevIssuesMarkersDecoration() {
+    if (this.issuesMarkersdecorationType) {
+      this.issuesMarkersdecorationType.dispose();
+    }
+  }
+
+  public setIssuesMarkersDecoration(
+    editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
+  ): void {
+    if (
+      editor &&
+      this.deepcodeReview &&
+      this.deepcodeReview.has(editor.document.uri)
+    ) {
+      this.clearPrevIssuesMarkersDecoration();
+      this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(
+        ISSUES_MARKERS_DECORATION_TYPE
+      );
+      const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
+        this.deepcodeReview.get(editor.document.uri)
+      );
+      editor.setDecorations(
+        this.issuesMarkersdecorationType,
+        issuesMarkersDecorationsOptions
+      );
+    }
   }
 
   public async createReviewResults(): Promise<void> {
@@ -110,10 +152,15 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           return;
         }
         const fileIssuesList = files[filePath];
-        const issues = this.createIssuesList(fileIssuesList, suggestions);
+        const issues = this.createIssuesList(
+          fileIssuesList,
+          suggestions,
+          fileUri
+        );
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
+    this.setIssuesMarkersDecoration();
   }
 
   public async configureIssuesDisplayBySeverity(
@@ -132,10 +179,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   ): Promise<void> {
     try {
       if (
-        !this.analysisResultsCollection[updatedFile.workspace] ||
-        !this.analysisResultsCollection[updatedFile.workspace].files[
-          updatedFile.filePathInWorkspace
-        ] ||
+        !this.deepcodeReview ||
+        !this.deepcodeReview.has(updatedFile.document.uri) ||
         !updatedFile.contentChanges.length ||
         !updatedFile.contentChanges[0].range
       ) {
@@ -151,11 +196,13 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       if (this.deepcodeReview) {
         const issues = this.createIssuesList(
           fileIssuesList,
-          this.analysisResultsCollection[updatedFile.workspace].suggestions
+          this.analysisResultsCollection[updatedFile.workspace].suggestions,
+          vscode.Uri.file(updatedFile.fullPath)
         );
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
           ...issues
         ]);
+        this.setIssuesMarkersDecoration();
       }
     } catch (err) {
       extension.errorHandler.sendErrorToServer(extension, err, {
@@ -183,7 +230,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           endpoint,
           extension.token
         );
-        const currentProgress = analyzer.createVscodeProgress(
+        const currentProgress = createDeepCodeProgress(
           analysisResponse.progress
         );
         analyzer.analysisProgressValue =
@@ -194,10 +241,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           attemptsIfFailedStatus--;
           return !attemptsIfFailedStatus
             ? { success: false }
-            : await ping(fetchAnalysisResults);
+            : await httpDelay(fetchAnalysisResults);
         }
         if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await ping(fetchAnalysisResults);
+          return await httpDelay(fetchAnalysisResults);
         }
         return { ...analysisResponse.analysisResults, success: true };
       } catch (err) {
@@ -211,7 +258,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         return { success: false };
       }
     }
-    return await ping(fetchAnalysisResults);
+    return await httpDelay(fetchAnalysisResults);
   }
 
   private async performAnalysis(
@@ -261,7 +308,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     workspacePath: string = ""
   ): Promise<void> {
     const self = this || extension.analyzer;
-    if (!Object.keys(extension.remoteBundles).length) {
+    const hashesBundlesAreEmpty = extension.workspacesPaths.every(path =>
+      extension.checkIfHashesBundlesIsEmpty(path)
+    );
+    const remoteBundlesAreEmpty = extension.checkIfRemoteBundlesIsEmpty();
+    if (remoteBundlesAreEmpty || hashesBundlesAreEmpty) {
       if (self.deepcodeReview) {
         self.deepcodeReview.clear();
         self.analysisResultsCollection = {};

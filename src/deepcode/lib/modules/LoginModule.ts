@@ -3,13 +3,14 @@ import * as open from "open";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { ping } from "../../utils/httpUtils";
+import { httpDelay } from "../../utils/httpUtils";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { IDE_NAME } from "../../constants/general";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
-class LoginModule extends BaseDeepCodeModule {
+class LoginModule extends BaseDeepCodeModule
+  implements DeepCode.LoginModuleInterface {
   private analysisOnSaveAllowed: { [key: string]: boolean } = {};
   private firstSaveAlreadyHappened: { [key: string]: boolean } = {};
   private firstConfirmAborted: boolean = false;
@@ -74,7 +75,7 @@ class LoginModule extends BaseDeepCodeModule {
       return false;
     }
     const extension: any = this;
-    return await ping(async function pingLoginStatus() {
+    return await httpDelay(async function pingLoginStatus() {
       let result: { [key: string]: number | string | object } | undefined;
       try {
         result = await http.get(
@@ -87,7 +88,7 @@ class LoginModule extends BaseDeepCodeModule {
         return true;
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
-          return await ping(pingLoginStatus);
+          return await httpDelay(pingLoginStatus);
         } else {
           extension.errorHandler.processError(extension, err, {
             ...(err.statusCode === statusCodes.notFound && {
@@ -155,7 +156,7 @@ class LoginModule extends BaseDeepCodeModule {
     return isAllowed;
   }
 
-  public async firstSaveCheck(
+  public async checkPermissions(
     extension: DeepCode.ExtensionInterface,
     folderPath: string
   ): Promise<boolean> {

@@ -5,14 +5,13 @@ import DeepCodeLib from "./lib/modules/DeepCodeLib";
 import {
   DEEPCODE_START_COMMAND,
   DEEPCODE_SETTINGS_COMMAND
-} from "./constants/general";
+} from "./constants/commands";
 import { openDeepcodeSettingsCommand } from "./utils/vscodeCommandsUtils";
 
 class DeepCodeExtension extends DeepCodeLib
   implements DeepCode.ExtensionInterface {
   public activate(context: vscode.ExtensionContext): void {
     this.store.createStore(context);
-    this.activateWatchers();
     this.statusBarItem.show();
 
     let deepcodeCommand = vscode.commands.registerCommand(
