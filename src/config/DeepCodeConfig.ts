@@ -43,7 +43,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
         return `${this.baseApiUrl}/error`;
       },
       get configureAccountUrl(): string {
-        return `${this.deepcodeUrl}cloud-login?redirectURL=%2Fapp%2F~platform/account`;
+        return `${this.deepcodeUrl}app/~platform/account`;
       },
       get termsConditionsUrl(): string {
         return `${this.deepcodeUrl}tc`;
