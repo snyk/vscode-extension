@@ -10,7 +10,7 @@ export const deepCodeMessages = {
     button: "Confirm"
   },
   login: {
-    msg: "Use your GitHub or Bitbucket account to authenticate with DeepCode.",
+    msg: "Use your GitHub, Bitbucket or GitLab account to authenticate with DeepCode.",
     button: "Login"
   },
   unauthorized: {
