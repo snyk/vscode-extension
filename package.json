@@ -69,7 +69,9 @@
   },
   "devDependencies": {
     "@types/mocha": "^2.2.42",
+    "@types/nock": "^11.1.0",
     "@types/node": "^10.12.21",
+    "nock": "^11.7.0",
     "ts-loader": "^6.0.4",
     "tslint": "^5.12.1",
     "typescript": "^3.3.1",

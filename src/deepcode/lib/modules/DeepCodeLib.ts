@@ -27,7 +27,7 @@ export default class DeepCodeLib extends BundlesModule
   public async activateActions(): Promise<void> {
     const loginStatus = await this.login();
     if (loginStatus) {
-      await this.activateExtensionStartActions();
+      await this.activateExtensionAnalyzeActions();
       if (!this.watchersAreActivated) {
         this.activateWatchers();
         this.watchersAreActivated = true;
@@ -101,7 +101,7 @@ export default class DeepCodeLib extends BundlesModule
     }
   }
 
-  public async activateExtensionStartActions(): Promise<void> {
+  public async activateExtensionAnalyzeActions(): Promise<void> {
     // check if user is loggedIn
     const isLoggedInUser = await this.store.selectors.getLoggedInStatus();
     if (!isLoggedInUser) {

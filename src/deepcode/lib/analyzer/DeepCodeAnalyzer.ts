@@ -258,7 +258,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         return { success: false };
       }
     }
-    return await httpDelay(fetchAnalysisResults);
+    return await fetchAnalysisResults();
   }
 
   private async performAnalysis(
