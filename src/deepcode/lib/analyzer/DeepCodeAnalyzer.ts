@@ -66,7 +66,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     suggestions: DeepCode.AnalysisSuggestionsInterface;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
-    //issues markers will be in issuesPositions as prop 'markers', need to be tested
     const message: string = suggestions[issue].message;
     return {
       code: "",
@@ -74,6 +73,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       range: createIssueCorrectRange(issuePositions),
       severity: this.SEVERITIES[suggestions[issue].severity].name,
       source: DEEPCODE_NAME,
+      //issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation({
           markersList: issuePositions.markers,
