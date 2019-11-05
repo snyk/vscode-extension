@@ -230,7 +230,8 @@ namespace DeepCode {
     ): Promise<void>;
     uploadMissingFilesToServerBundle(
       workspacePath: string,
-      chunkedPayload?: Array<PayloadMissingFileInterface>
+      chunkedPayload?: Array<PayloadMissingFileInterface>,
+      isDelay?: boolean
     ): Promise<void>;
     checkBundleOnServer(
       workspacePath: string,
@@ -257,7 +258,7 @@ namespace DeepCode {
     activateActions(): Promise<void>;
     configureExtension(): Promise<void>;
     activateWatchers(): void;
-    activateExtensionStartActions?(): Promise<void>;
+    activateExtensionAnalyzeActions?(): Promise<void>;
     manageExtensionStatus(): string;
   }
 

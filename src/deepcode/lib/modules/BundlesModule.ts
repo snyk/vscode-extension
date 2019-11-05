@@ -198,26 +198,30 @@ class BundlesModule extends LoginModule
 
   public async uploadMissingFilesToServerBundle(
     workspacePath: string,
-    chunkedPayload: any = []
+    chunkedPayload: DeepCode.PayloadMissingFileInterface[] = [],
+    isDelay: boolean = false
   ): Promise<void> {
     const { bundleId } = this.remoteBundles[workspacePath];
     const endpoint = this.config.getUploadFilesUrl(bundleId);
     let payload: Array<DeepCode.PayloadMissingFileInterface> = [];
     const sendUploadRequest = async (chunkPayload: any): Promise<void> => {
       try {
-        const uploadResponse = await httpDelay(
-          async () =>
-            await http.post(endpoint, {
-              body: chunkPayload,
-              token: this.token,
-              fileUpload: true
-            })
-        );
+        const uploadFilesReq = async () =>
+          await http.post(endpoint, {
+            body: chunkPayload,
+            token: this.token,
+            fileUpload: true
+          });
+        const uploadResponse = isDelay
+          ? await httpDelay(uploadFilesReq)
+          : await uploadFilesReq();
       } catch (err) {
         if (err.statusCode === statusCodes.bigPayload) {
+          const isDelay = true;
           await this.uploadMissingFilesToServerBundle(
             workspacePath,
-            chunkPayload
+            chunkPayload,
+            isDelay
           );
         } else {
           this.errorHandler.processError(this, err, {
@@ -258,7 +262,8 @@ class BundlesModule extends LoginModule
   // check bundle server status
   public async checkBundleOnServer(
     workspacePath: string,
-    attempts: number = ATTEMPTS_AMMOUNT
+    attempts: number = ATTEMPTS_AMMOUNT,
+    isDelay = false
   ): Promise<void> {
     if (!this.remoteBundles[workspacePath]) {
       return;
@@ -270,13 +275,15 @@ class BundlesModule extends LoginModule
       if (!attempts) {
         throw new Error(EXPIRED_REQUEST);
       }
-      const latestServerBundle: DeepCode.RemoteBundleInterface = await httpDelay(
-        async () => await http.get(endpoint, this.token)
-      );
+      const checkBundleReq = async () => await http.get(endpoint, this.token);
+      const latestServerBundle: DeepCode.RemoteBundleInterface = isDelay
+        ? await httpDelay(checkBundleReq)
+        : await checkBundleReq();
       await this.processBundleFromServer(latestServerBundle, workspacePath);
       const { missingFiles } = this.remoteBundles[workspacePath];
       if (missingFiles && missingFiles.length) {
-        await this.checkBundleOnServer(workspacePath, attempts--);
+        const isDelay = true;
+        await this.checkBundleOnServer(workspacePath, attempts--, isDelay);
       }
     } catch (err) {
       let message = errorsLogs.checkBundle;

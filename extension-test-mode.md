@@ -10,7 +10,11 @@ This file must be modified before publishing extension to marketplace.
 
 1. clone the repo
 2. open the project with VSCode
-3. start debug mode(F5) - VSCode will start Extension Development Host in new window
+3. start debug mode(F5) with 'Run Extension' debug configuration - VSCode will start Extension Development Host in new window
+
+#### Tests
+
+To start extension tests, start debug mode(F5) with 'Extension Tests' configuration. The results of tests will be displayed in Debug Console of vscode
 
 #### To test extension right from istallation, do following steps:
 
