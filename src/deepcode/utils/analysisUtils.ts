@@ -4,7 +4,7 @@ import { getSubstring } from "./tsUtils";
 import {
   DEEPCODE_SEVERITIES,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
-  GLOBAL_IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_REASON_TIP,
   ISSUE_ID_SPLITTER,
   ISSUE_MARKER_HELPER_MSG
@@ -261,10 +261,10 @@ export const extractIssueNameOutOfId = (issueId: string): string => {
 
 export const ignoreIssueCommentText = (
   issueId: string,
-  isGlobalIgnore?: boolean
+  isFileIgnore?: boolean
 ): string => {
-  const deepcodeComment = isGlobalIgnore
-    ? GLOBAL_IGNORE_ISSUE_BASE_COMMENT_TEXT
+  const deepcodeComment = isFileIgnore
+    ? FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT
     : IGNORE_ISSUE_BASE_COMMENT_TEXT;
   return `${deepcodeComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
 };

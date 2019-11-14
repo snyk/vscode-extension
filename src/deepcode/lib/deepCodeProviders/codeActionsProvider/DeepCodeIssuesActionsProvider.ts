@@ -6,7 +6,7 @@ import {
 } from "../../../utils/analysisUtils";
 import {
   IGNORE_ISSUE_ACTION_NAME,
-  GLOBAL_IGNORE_ACTION_NAME,
+  FILE_IGNORE_ACTION_NAME,
   IGNORE_ISSUE_BASE_COMMENT_TEXT
 } from "../../../constants/analysis";
 import {
@@ -115,14 +115,14 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   private createIgnoreIssueAction({
     document,
     matchedIssue,
-    isGlobalIgnore
+    isFileIgnore
   }: {
     document: vscode.TextDocument;
     matchedIssue: vscode.Diagnostic;
-    isGlobalIgnore?: boolean;
+    isFileIgnore?: boolean;
   }): vscode.CodeAction {
     const ignoreIssueAction = new vscode.CodeAction(
-      isGlobalIgnore ? GLOBAL_IGNORE_ACTION_NAME : IGNORE_ISSUE_ACTION_NAME,
+      isFileIgnore ? FILE_IGNORE_ACTION_NAME : IGNORE_ISSUE_ACTION_NAME,
       DeepCodeIssuesActionProvider.providedCodeActionKinds[0]
     );
 
@@ -133,7 +133,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     const issueNameForComment: string = extractIssueNameOutOfId(issueFullId);
     const issueText: string = ignoreIssueCommentText(
       issueNameForComment,
-      isGlobalIgnore
+      isFileIgnore
     );
 
     ignoreIssueAction.command = {
@@ -157,12 +157,12 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     if (matchedIssue) {
       const codeActionParams = { document, matchedIssue };
       const ignoreIssueAction = this.createIgnoreIssueAction(codeActionParams);
-      const globalIgnoreIssueAction = this.createIgnoreIssueAction({
+      const fileIgnoreIssueAction = this.createIgnoreIssueAction({
         ...codeActionParams,
-        isGlobalIgnore: true
+        isFileIgnore: true
       });
       // returns list of actions, all new actions should be added to this list
-      return [ignoreIssueAction, globalIgnoreIssueAction];
+      return [ignoreIssueAction, fileIgnoreIssueAction];
     }
   }
 }

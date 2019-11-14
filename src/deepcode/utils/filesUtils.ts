@@ -79,6 +79,7 @@ export const createListOfDirFilesHashes = async (
       const relativeDirPath = nodePath.relative(folderPath, path);
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
+      // console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
       }

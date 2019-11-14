@@ -363,7 +363,7 @@ export const COMMON_IGNORE_DIRS = [
 ".mfractor/",
 "MigrationBackup/",
 "/[Mm]emoryCaptures/",
-"modules/",
+// "modules/",
 ".mono/",
 "msg_gen/",
 ".mtj.tmp/",

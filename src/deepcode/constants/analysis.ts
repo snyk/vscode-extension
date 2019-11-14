@@ -14,15 +14,15 @@ export const DEEPCODE_SEVERITIES: { [key: string]: number } = {
 
 export const IGNORE_ISSUE_BASE_COMMENT_TEXT: string = "deepcode ignore";
 
-export const GLOBAL_IGNORE_ISSUE_BASE_COMMENT_TEXT: string = `global ${IGNORE_ISSUE_BASE_COMMENT_TEXT}`;
+export const FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT: string = `file ${IGNORE_ISSUE_BASE_COMMENT_TEXT}`;
 
 export const IGNORE_ISSUE_REASON_TIP: string =
   "<please specify a reason of ignoring this>";
 
 export const IGNORE_ISSUE_ACTION_NAME: string =
-  "Ignore this issue for DeepCode";
-export const GLOBAL_IGNORE_ACTION_NAME: string =
-  "Ignore this issue globally for DeepCode";
+  "Ignore this particular suggestion (DeepCode)";
+export const FILE_IGNORE_ACTION_NAME: string =
+  "Ignore this suggestion in current file (DeepCode)";
 export const IGNORE_TIP_FOR_USER: string =
   "To ignore this issue for DeepCode choose 'Ignore this issue' in QuickFix dropdown";
 
