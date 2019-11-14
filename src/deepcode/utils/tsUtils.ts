@@ -16,20 +16,18 @@ export function debounce<F extends Procedure>(
   return function(this: any, ...args: any[]) {
     const context = this;
 
-    const doLater = function() {
-      timeoutId = undefined;
-      if (!options.isImmediate) {
-        func.apply(context, args);
-      }
-    };
-
     const shouldCallNow = options.isImmediate && timeoutId === undefined;
 
     if (timeoutId !== undefined) {
       clearTimeout(timeoutId);
     }
 
-    timeoutId = setTimeout(doLater, waitMilliseconds);
+    timeoutId = setTimeout(() => {
+      timeoutId = undefined;
+      if (!options.isImmediate) {
+        func.apply(context, args);
+      }
+    }, waitMilliseconds);
 
     if (shouldCallNow) {
       func.apply(context, args);
