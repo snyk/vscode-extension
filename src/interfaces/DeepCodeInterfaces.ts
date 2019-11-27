@@ -37,6 +37,7 @@ namespace DeepCode {
 
   export interface PayloadMissingFileInterface {
     fileHash: string;
+    filePath: string;
     fileContent: string;
   }
 

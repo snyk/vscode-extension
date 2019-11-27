@@ -79,9 +79,17 @@ export const createListOfDirFilesHashes = async (
       const relativeDirPath = nodePath.relative(folderPath, path);
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
-      // console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
+      //console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
+      }
+      // Exclude files which are too large to be transferred via http. There is currently no
+      // way to process them in multiple chunks
+      let fileContentSize = fs.statSync(fullChildPath).size;
+      if (fileContentSize > SAFE_PAYLOAD_SIZE) {
+        console.log("Excluding file " + fullChildPath + " from processing: size " +
+                    fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
+	      continue;
       }
       if (
         fs.lstatSync(fullChildPath).isFile() &&
@@ -136,13 +144,17 @@ export const createMissingFilesPayloadUtil = async (
 ): Promise<Array<DeepCode.PayloadMissingFileInterface>> => {
   const result: {
     fileHash: string;
+    filePath: string;
     fileContent: string;
   }[] = [];
   for await (const file of missingFiles) {
     if (currentWorkspacePath) {
-      const fileContent = await readFile(`${currentWorkspacePath}${file}`);
+
+      let filePath = `${currentWorkspacePath}${file}`;
+      const fileContent = await readFile(filePath);
       result.push({
         fileHash: createFileHash(fileContent),
+        filePath,
         fileContent
       });
     }
@@ -219,25 +231,40 @@ export const processPayloadSize = (
   return chunkedPayload;
 };
 
+// NW the file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
+const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests - 2MB in bytes
+
+
 export const splitPayloadIntoChunks = (
   payload: {
     fileHash: string;
+    filePath: string;
     fileContent: string;
   }[],
   payloadByteSize: number
 ) => {
-  const SAVE_PAYLOAD_SIZE = 1024 * 1024 * 2; // save size for requests - 2MB in bytes
-  const oneFileAproxSize = payloadByteSize / payload.length; // bytes divided into number of files
-  const chunkLength = Math.floor(SAVE_PAYLOAD_SIZE / oneFileAproxSize);
-
   const chunkedPayload = [];
+
+  // Break input array of files
+  //     [  {hash1, content1},    {hash2, content2},   ...]
+  // into array of chunks limited by an upper size bound to avoid http 413 errors
+  //     [  [{hash1, content1}],  [{hash2, content2}, {hash3, content3}]  ]
+  let currentChunkSize = 0;
   for (let i = 0; i < payload.length; i++) {
-    const last = chunkedPayload[chunkedPayload.length - 1];
-    if (!last || last.length === chunkLength) {
+    const currentChunkElement = payload[i];
+    const currentWorstCaseChunkElementSize = Buffer.byteLength( Buffer.from( JSON.stringify(currentChunkElement) ) ); // TODO more precision?
+    const lastChunk = chunkedPayload[chunkedPayload.length - 1];
+
+    if (!lastChunk || currentChunkSize + currentWorstCaseChunkElementSize > SAFE_PAYLOAD_SIZE) {
+      // Start a new chunk
       chunkedPayload.push([payload[i]]);
+      currentChunkSize = 0;
     } else {
-      last.push(payload[i]);
+      // Append item to current chunk
+      lastChunk.push(payload[i]);
+      currentChunkSize += currentWorstCaseChunkElementSize;
     }
   }
+
   return { chunks: true, payload: [...chunkedPayload] };
 };
