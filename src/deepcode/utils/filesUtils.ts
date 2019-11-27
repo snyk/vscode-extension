@@ -231,8 +231,9 @@ export const processPayloadSize = (
   return chunkedPayload;
 };
 
-// NW the file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
-const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests - 2MB in bytes
+// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
+// TODO what exactly is transmitted eventually and what is a good exact limit?
+const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests
 
 
 export const splitPayloadIntoChunks = (
