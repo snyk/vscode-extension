@@ -8,6 +8,7 @@ import {
   ENCODE_TYPE,
   FILE_FORMAT,
   GITIGNORE_FILENAME,
+  DCIGNORE_FILENAME,
   EXCLUDED_NAMES,
   FILE_CURRENT_STATUS
 } from "../constants/filesConstants";
@@ -113,7 +114,7 @@ export const createListOfDirFilesHashes = async (
   // First look for a .gitignore file.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(path, name);
-    if (name === GITIGNORE_FILENAME) {
+    if (name === GITIGNORE_FILENAME || name == DCIGNORE_FILENAME) {
       // We found a gitignore file -> We need to modify the exclusion rules so we have
       // to create a copy of the exclusionFilter.
       const relativeDirPath = nodePath.relative(folderPath, path);
