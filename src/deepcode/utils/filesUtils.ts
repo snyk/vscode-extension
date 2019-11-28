@@ -137,7 +137,7 @@ export const createListOfDirFilesHashes = async (
       if (!isDirectory) {
         // Update progress window on processed (non-directory) files
         ++progress.filesProcessed;
-        if (progress.filesProcessed % 100 == 0) {
+        if (progress.filesProcessed % 100 === 0) {
           const currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
           const percentDoneIncrement = currentPercentDone - progress.percentDone;
 
