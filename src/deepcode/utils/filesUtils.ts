@@ -12,8 +12,10 @@ import {
   FILE_CURRENT_STATUS
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
+import { deepCodeMessages } from "../messages/deepCodeMessages";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "./ignoreUtils";
+import { window, ProgressLocation, Progress } from "vscode";
 
 export const createFileHash = (file: string): string => {
   return crypto
@@ -39,22 +41,74 @@ export const createFilesHashesBundle = async (
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
-  const bundle = await createListOfDirFilesHashes(
-    serverFilesFilterList,
-    folderPath,
-    {},
-    folderPath,
-    exclusionFilter
-  );
-  return bundle;
+
+  let bundle = null;
+  bundle = await window.withProgress({
+    location: ProgressLocation.Notification,
+    title: deepCodeMessages.fileLoadingProgress.msg,
+    cancellable: false
+  }, async (progress, token) => {
+    // Get a directory size overview for progress reporting
+    let count = await scanFileCountFromDirectory(folderPath);
+
+    console.log(`Loading ${count} files...`);
+    progress.report({increment: 1});
+    let filesProcessed = 0;
+
+    // Filter, read and hash all files
+    bundle = await createListOfDirFilesHashes(
+      serverFilesFilterList,
+      folderPath,
+      {},
+      folderPath,
+      exclusionFilter,
+      { // progress data
+        filesProcessed: 0,
+        totalFiles: count,
+        percentDone: 0,
+        progressWindow: progress
+      }
+    );
+
+    progress.report({increment: 100});
+    console.log("Loaded all files");
+    return bundle;
+  });
+  return bundle; // final window result
 };
 
+// Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
+const scanFileCountFromDirectory = async (
+  folderPath: string
+) => {
+  const dirContent: string[] = await fs.readdir(folderPath);
+  let subFileCount = 0;
+
+  for (const name of dirContent) {
+    const fullChildPath = nodePath.join(folderPath, name);
+    if (fs.lstatSync(fullChildPath).isDirectory()) {
+       let subCount = await scanFileCountFromDirectory(fullChildPath);
+       subFileCount += subCount;
+    } else {
+       ++subFileCount;
+    }
+  }
+  return subFileCount;
+}
+
+// Load and hash all files in directory (recursively)
 export const createListOfDirFilesHashes = async (
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface,
   folderPath: string,
   list: { [key: string]: string },
   path: string = folderPath,
-  exclusionFilter: ExclusionFilter
+  exclusionFilter: ExclusionFilter,
+  progress : {
+    filesProcessed: number,
+    totalFiles: number,
+    percentDone: number,
+    progressWindow: Progress<{increment: number, message: string}>
+  }
 ) => {
   const dirContent: string[] = await fs.readdir(path);
   // First look for a .gitignore file.
@@ -79,6 +133,23 @@ export const createListOfDirFilesHashes = async (
       const relativeDirPath = nodePath.relative(folderPath, path);
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
+      const isDirectory = fs.lstatSync(fullChildPath).isDirectory();
+
+      if (!isDirectory) {
+        // Update progress window on processed (non-directory) files
+        ++progress.filesProcessed;
+        if (progress.filesProcessed % 100 == 0) {
+          let currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
+          let percentDoneIncrement = currentPercentDone - progress.percentDone;
+
+          if (percentDoneIncrement > 0) {
+            progress.progressWindow.report({increment: percentDoneIncrement,
+                                            message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)` })
+            progress.percentDone = currentPercentDone;
+          }
+        }
+      }
+
       //console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
@@ -99,19 +170,21 @@ export const createListOfDirFilesHashes = async (
         const fileContent = await readFile(fullChildPath);
         list[`${filePath}/${name}`] = createFileHash(fileContent);
       }
-      if (fs.lstatSync(fullChildPath).isDirectory()) {
+      if (isDirectory) {
         list = await createListOfDirFilesHashes(
           serverFilesFilterList,
           folderPath,
           { ...list },
           `${path}/${name}`,
-          exclusionFilter
+          exclusionFilter,
+          progress
         );
       }
     } catch (err) {
       continue;
     }
   }
+
   return { ...list };
 };
 

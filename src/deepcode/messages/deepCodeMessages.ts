@@ -28,6 +28,9 @@ export const deepCodeMessages = {
       }. This is an issue on our side and it will be looked into as soon as possible. You can manually retry the analysis by clicking "Retry" or we will retry after you edit and save a file.`,
     button: "Try again"
   },
+  fileLoadingProgress: {
+    msg: "DeepCode is loading files" // no "..." due to composite title
+  },
   analysisProgress: {
     msg: "DeepCode analysis is running..."
   },
