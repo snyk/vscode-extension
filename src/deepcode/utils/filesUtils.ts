@@ -87,8 +87,7 @@ const scanFileCountFromDirectory = async (
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(folderPath, name);
     if (fs.lstatSync(fullChildPath).isDirectory()) {
-       let subCount = await scanFileCountFromDirectory(fullChildPath);
-       subFileCount += subCount;
+       subFileCount += await scanFileCountFromDirectory(fullChildPath);
     } else {
        ++subFileCount;
     }
@@ -139,8 +138,8 @@ export const createListOfDirFilesHashes = async (
         // Update progress window on processed (non-directory) files
         ++progress.filesProcessed;
         if (progress.filesProcessed % 100 == 0) {
-          let currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
-          let percentDoneIncrement = currentPercentDone - progress.percentDone;
+          const currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
+          const percentDoneIncrement = currentPercentDone - progress.percentDone;
 
           if (percentDoneIncrement > 0) {
             progress.progressWindow.report({increment: percentDoneIncrement,
@@ -156,7 +155,7 @@ export const createListOfDirFilesHashes = async (
       }
       // Exclude files which are too large to be transferred via http. There is currently no
       // way to process them in multiple chunks
-      let fileContentSize = fs.statSync(fullChildPath).size;
+      const fileContentSize = fs.statSync(fullChildPath).size;
       if (fileContentSize > SAFE_PAYLOAD_SIZE) {
         console.log("Excluding file " + fullChildPath + " from processing: size " +
                     fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
@@ -222,8 +221,7 @@ export const createMissingFilesPayloadUtil = async (
   }[] = [];
   for await (const file of missingFiles) {
     if (currentWorkspacePath) {
-
-      let filePath = `${currentWorkspacePath}${file}`;
+      const filePath = `${currentWorkspacePath}${file}`;
       const fileContent = await readFile(filePath);
       result.push({
         fileHash: createFileHash(fileContent),

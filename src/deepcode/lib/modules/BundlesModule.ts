@@ -196,7 +196,6 @@ class BundlesModule extends LoginModule
     return [];
   }
 
-  // Process missing files - which apparently only a side effect of errors, such as temporary http errors
   public async uploadMissingFilesToServerBundle(
     workspacePath: string,
     chunkedPayload: DeepCode.PayloadMissingFileInterface[] = [],
@@ -262,7 +261,7 @@ class BundlesModule extends LoginModule
     if (processedPayload.chunks) {
       for await (const chunkPayload of processedPayload.payload) {
         await sendUploadRequest(chunkPayload);
-	    }
+      }
     } else {
       await sendUploadRequest(processedPayload.payload);
     }
