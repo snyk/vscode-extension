@@ -6,7 +6,13 @@ export const FILE_FORMAT = "utf-8";
 export const GIT_FILENAME = ".git";
 export const GITIGNORE_FILENAME = ".gitignore";
 export const DCIGNORE_FILENAME = ".dcignore";
-export const EXCLUDED_NAMES = ["node_modules", ".git", GITIGNORE_FILENAME, DCIGNORE_FILENAME, ...COMMON_IGNORE_DIRS];
+export const EXCLUDED_NAMES = [
+  GIT_FILENAME,
+  GITIGNORE_FILENAME,
+  DCIGNORE_FILENAME,
+  "node_modules",
+  ...COMMON_IGNORE_DIRS
+];
 
 export const FILE_CURRENT_STATUS = {
   modified: "modified",
