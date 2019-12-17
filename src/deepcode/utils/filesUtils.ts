@@ -324,13 +324,13 @@ export const splitPayloadIntoChunks = (
   let currentChunkSize = 0;
   for (let i = 0; i < payload.length; i++) {
     const currentChunkElement = payload[i];
-    const currentWorstCaseChunkElementSize = Buffer.byteLength( Buffer.from( JSON.stringify(currentChunkElement) ) ); // TODO more precision?
+    const currentWorstCaseChunkElementSize = Buffer.byteLength(Buffer.from(JSON.stringify(currentChunkElement)));
     const lastChunk = chunkedPayload[chunkedPayload.length - 1];
 
     if (!lastChunk || currentChunkSize + currentWorstCaseChunkElementSize > SAFE_PAYLOAD_SIZE) {
       // Start a new chunk
       chunkedPayload.push([payload[i]]);
-      currentChunkSize = 0;
+      currentChunkSize = currentWorstCaseChunkElementSize;
     } else {
       // Append item to current chunk
       lastChunk.push(payload[i]);
@@ -338,5 +338,5 @@ export const splitPayloadIntoChunks = (
     }
   }
 
-  return { chunks: true, payload: [...chunkedPayload] };
+  return { chunks: true, payload: chunkedPayload };
 };
