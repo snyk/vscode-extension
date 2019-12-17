@@ -10,6 +10,7 @@ import {
   GITIGNORE_FILENAME,
   DCIGNORE_FILENAME,
   EXCLUDED_NAMES,
+  DEFAULT_IGNORE,
   FILE_CURRENT_STATUS
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
@@ -39,9 +40,6 @@ export const createFilesHashesBundle = async (
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
 ): Promise<{ [key: string]: string }> => {
   const exclusionFilter = new ExclusionFilter();
-  const rootExclusionRule = new ExclusionRule();
-  rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
-  exclusionFilter.addExclusionRule(rootExclusionRule);
 
   let bundle = null;
   bundle = await window.withProgress({
@@ -111,26 +109,35 @@ export const createListOfDirFilesHashes = async (
   }
 ) => {
   const dirContent: string[] = await fs.readdir(path);
-  // First look for a .gitignore file.
+  const relativeDirPath = nodePath.relative(folderPath, path);
+  let useDefaultIgnore: boolean = true;
+  // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(path, name);
-    if (name === GITIGNORE_FILENAME || name == DCIGNORE_FILENAME) {
-      // We found a gitignore file -> We need to modify the exclusion rules so we have
-      // to create a copy of the exclusionFilter.
-      const relativeDirPath = nodePath.relative(folderPath, path);
+    if (name === DCIGNORE_FILENAME) useDefaultIgnore = false;
+    if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
+      // We've found a ignore file.
       const exclusionRule = new ExclusionRule();
       exclusionRule.addExclusions(
         await parseGitignoreFile(fullChildPath),
         relativeDirPath
       );
+      // We need to modify the exclusion rules so we have to create a copy of the exclusionFilter.
       exclusionFilter = exclusionFilter.copy();
       exclusionFilter.addExclusionRule(exclusionRule);
     }
   }
-  // Iterate through directory after potentially updating exclusion rules.
+  // If no .dcignore file was found, use the standard exclusion.
+  if (useDefaultIgnore) {
+    const exclusionRule = new ExclusionRule();
+    exclusionRule.addExclusions(DEFAULT_IGNORE, relativeDirPath);
+    // We need to modify the exclusion rules so we have to create a copy of the exclusionFilter.
+    exclusionFilter = exclusionFilter.copy();
+    exclusionFilter.addExclusionRule(exclusionRule);
+  }
+  // Iterate through directory after updating exclusion rules.
   for (const name of dirContent) {
     try {
-      const relativeDirPath = nodePath.relative(folderPath, path);
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
       const isDirectory = fs.lstatSync(fullChildPath).isDirectory();
