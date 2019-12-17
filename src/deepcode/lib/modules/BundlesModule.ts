@@ -204,6 +204,7 @@ class BundlesModule extends LoginModule
     const { bundleId } = this.remoteBundles[workspacePath];
     const endpoint = this.config.getUploadFilesUrl(bundleId);
     let payload: Array<DeepCode.PayloadMissingFileInterface> = [];
+
     const sendUploadRequest = async (chunkPayload: any): Promise<void> => {
       try {
         const uploadFilesReq = async () =>
@@ -212,12 +213,18 @@ class BundlesModule extends LoginModule
             token: this.token,
             fileUpload: true
           });
+
+        // Wait/retry later (invoked below for bigPayload case)
         const uploadResponse = isDelay
           ? await httpDelay(uploadFilesReq)
           : await uploadFilesReq();
       } catch (err) {
         if (err.statusCode === statusCodes.bigPayload) {
           const isDelay = true;
+
+          // Assume temporary Retry-After and retry
+          // TODO if the assumption is incorrect, we'll loop indefinitely on oversized items
+          // See also https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
           await this.uploadMissingFilesToServerBundle(
             workspacePath,
             chunkPayload,

@@ -12,8 +12,10 @@ import {
   FILE_CURRENT_STATUS
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
+import { deepCodeMessages } from "../messages/deepCodeMessages";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "./ignoreUtils";
+import { window, ProgressLocation, Progress } from "vscode";
 
 export const createFileHash = (file: string): string => {
   return crypto
@@ -39,22 +41,73 @@ export const createFilesHashesBundle = async (
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
-  const bundle = await createListOfDirFilesHashes(
-    serverFilesFilterList,
-    folderPath,
-    {},
-    folderPath,
-    exclusionFilter
-  );
-  return bundle;
+
+  let bundle = null;
+  bundle = await window.withProgress({
+    location: ProgressLocation.Notification,
+    title: deepCodeMessages.fileLoadingProgress.msg,
+    cancellable: false
+  }, async (progress, token) => {
+    // Get a directory size overview for progress reporting
+    let count = await scanFileCountFromDirectory(folderPath);
+
+    console.log(`Loading ${count} files...`);
+    progress.report({increment: 1});
+    let filesProcessed = 0;
+
+    // Filter, read and hash all files
+    bundle = await createListOfDirFilesHashes(
+      serverFilesFilterList,
+      folderPath,
+      {},
+      folderPath,
+      exclusionFilter,
+      { // progress data
+        filesProcessed: 0,
+        totalFiles: count,
+        percentDone: 0,
+        progressWindow: progress
+      }
+    );
+
+    progress.report({increment: 100});
+    console.log("Loaded all files");
+    return bundle;
+  });
+  return bundle; // final window result
 };
 
+// Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
+const scanFileCountFromDirectory = async (
+  folderPath: string
+) => {
+  const dirContent: string[] = await fs.readdir(folderPath);
+  let subFileCount = 0;
+
+  for (const name of dirContent) {
+    const fullChildPath = nodePath.join(folderPath, name);
+    if (fs.lstatSync(fullChildPath).isDirectory()) {
+       subFileCount += await scanFileCountFromDirectory(fullChildPath);
+    } else {
+       ++subFileCount;
+    }
+  }
+  return subFileCount;
+}
+
+// Load and hash all files in directory (recursively)
 export const createListOfDirFilesHashes = async (
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface,
   folderPath: string,
   list: { [key: string]: string },
   path: string = folderPath,
-  exclusionFilter: ExclusionFilter
+  exclusionFilter: ExclusionFilter,
+  progress : {
+    filesProcessed: number,
+    totalFiles: number,
+    percentDone: number,
+    progressWindow: Progress<{increment: number, message: string}>
+  }
 ) => {
   const dirContent: string[] = await fs.readdir(path);
   // First look for a .gitignore file.
@@ -79,9 +132,34 @@ export const createListOfDirFilesHashes = async (
       const relativeDirPath = nodePath.relative(folderPath, path);
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
-      // console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
+      const isDirectory = fs.lstatSync(fullChildPath).isDirectory();
+
+      if (!isDirectory) {
+        // Update progress window on processed (non-directory) files
+        ++progress.filesProcessed;
+        if (progress.filesProcessed % 100 === 0) {
+          const currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
+          const percentDoneIncrement = currentPercentDone - progress.percentDone;
+
+          if (percentDoneIncrement > 0) {
+            progress.progressWindow.report({increment: percentDoneIncrement,
+                                            message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)` })
+            progress.percentDone = currentPercentDone;
+          }
+        }
+      }
+
+      //console.log(`relativeChildPath ${relativeChildPath} excluded --> `, exclusionFilter.excludes(relativeChildPath));
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
+      }
+      // Exclude files which are too large to be transferred via http. There is currently no
+      // way to process them in multiple chunks
+      const fileContentSize = fs.statSync(fullChildPath).size;
+      if (fileContentSize > SAFE_PAYLOAD_SIZE) {
+        console.log("Excluding file " + fullChildPath + " from processing: size " +
+                    fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
+	      continue;
       }
       if (
         fs.lstatSync(fullChildPath).isFile() &&
@@ -91,19 +169,21 @@ export const createListOfDirFilesHashes = async (
         const fileContent = await readFile(fullChildPath);
         list[`${filePath}/${name}`] = createFileHash(fileContent);
       }
-      if (fs.lstatSync(fullChildPath).isDirectory()) {
+      if (isDirectory) {
         list = await createListOfDirFilesHashes(
           serverFilesFilterList,
           folderPath,
           { ...list },
           `${path}/${name}`,
-          exclusionFilter
+          exclusionFilter,
+          progress
         );
       }
     } catch (err) {
       continue;
     }
   }
+
   return { ...list };
 };
 
@@ -136,13 +216,16 @@ export const createMissingFilesPayloadUtil = async (
 ): Promise<Array<DeepCode.PayloadMissingFileInterface>> => {
   const result: {
     fileHash: string;
+    filePath: string;
     fileContent: string;
   }[] = [];
   for await (const file of missingFiles) {
     if (currentWorkspacePath) {
-      const fileContent = await readFile(`${currentWorkspacePath}${file}`);
+      const filePath = `${currentWorkspacePath}${file}`;
+      const fileContent = await readFile(filePath);
       result.push({
         fileHash: createFileHash(fileContent),
+        filePath,
         fileContent
       });
     }
@@ -219,25 +302,41 @@ export const processPayloadSize = (
   return chunkedPayload;
 };
 
+// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
+// TODO what exactly is transmitted eventually and what is a good exact limit?
+const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests
+
+
 export const splitPayloadIntoChunks = (
   payload: {
     fileHash: string;
+    filePath: string;
     fileContent: string;
   }[],
   payloadByteSize: number
 ) => {
-  const SAVE_PAYLOAD_SIZE = 1024 * 1024 * 2; // save size for requests - 2MB in bytes
-  const oneFileAproxSize = payloadByteSize / payload.length; // bytes divided into number of files
-  const chunkLength = Math.floor(SAVE_PAYLOAD_SIZE / oneFileAproxSize);
-
   const chunkedPayload = [];
+
+  // Break input array of files
+  //     [  {hash1, content1},    {hash2, content2},   ...]
+  // into array of chunks limited by an upper size bound to avoid http 413 errors
+  //     [  [{hash1, content1}],  [{hash2, content2}, {hash3, content3}]  ]
+  let currentChunkSize = 0;
   for (let i = 0; i < payload.length; i++) {
-    const last = chunkedPayload[chunkedPayload.length - 1];
-    if (!last || last.length === chunkLength) {
+    const currentChunkElement = payload[i];
+    const currentWorstCaseChunkElementSize = Buffer.byteLength(Buffer.from(JSON.stringify(currentChunkElement)));
+    const lastChunk = chunkedPayload[chunkedPayload.length - 1];
+
+    if (!lastChunk || currentChunkSize + currentWorstCaseChunkElementSize > SAFE_PAYLOAD_SIZE) {
+      // Start a new chunk
       chunkedPayload.push([payload[i]]);
+      currentChunkSize = currentWorstCaseChunkElementSize;
     } else {
-      last.push(payload[i]);
+      // Append item to current chunk
+      lastChunk.push(payload[i]);
+      currentChunkSize += currentWorstCaseChunkElementSize;
     }
   }
-  return { chunks: true, payload: [...chunkedPayload] };
+
+  return { chunks: true, payload: chunkedPayload };
 };

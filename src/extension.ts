@@ -4,6 +4,7 @@ import DeepCodeExtension from "./deepcode/DeepCodeExtension";
 const extension = new DeepCodeExtension();
 
 export function activate(context: vscode.ExtensionContext): void {
+  console.log("Activating DeepCodeExtension");
   extension.activate(context);
 }
 export function deactivate() {}
