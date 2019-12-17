@@ -40,7 +40,10 @@ export const createFilesHashesBundle = async (
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
 ): Promise<{ [key: string]: string }> => {
   const exclusionFilter = new ExclusionFilter();
-
+  const rootExclusionRule = new ExclusionRule();
+  rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
+  exclusionFilter.addExclusionRule(rootExclusionRule);
+  
   let bundle = null;
   bundle = await window.withProgress({
     location: ProgressLocation.Notification,
