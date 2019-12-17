@@ -43,7 +43,7 @@ export const createFilesHashesBundle = async (
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
-  
+
   let bundle = null;
   bundle = await window.withProgress({
     location: ProgressLocation.Notification,

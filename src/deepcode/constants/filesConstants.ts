@@ -40,5 +40,3 @@ export const DEFAULT_IGNORE = [
   "hs_err_pid*",
   ".mtj.tmp/",
 ];
-
-
