@@ -3,8 +3,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import {
   EXPIRED_REQUEST,
   ATTEMPTS_AMMOUNT,
-  statusCodes,
-  MISSING_CONSENT
+  statusCodes
 } from "../../constants/statusCodes";
 import http from "../../http/requests";
 import {
@@ -85,6 +84,7 @@ class BundlesModule extends LoginModule
     );
     await this.checkBundleOnServer(path);
   }
+
   // processing bundles of files hashes
   private async createSingleHashBundle(
     path: string
@@ -157,11 +157,6 @@ class BundlesModule extends LoginModule
       );
       await this.processBundleFromServer(serverBundle, workspacePath);
     } catch (err) {
-      if (err.error === MISSING_CONSENT) {
-        if (this.remoteBundles[workspacePath]) {
-          this.remoteBundles = {};
-        }
-      }
       await this.errorHandler.processError(this, err, {
         workspacePath,
         removedBundle: !!Object.keys(this.remoteBundles).length,
@@ -369,12 +364,6 @@ class BundlesModule extends LoginModule
       });
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
     } catch (err) {
-      if (err.error === MISSING_CONSENT) {
-        if (this.remoteBundles[workspacePath]) {
-          this.remoteBundles = {};
-        }
-      }
-
       this.errorHandler.processError(this, err, {
         workspacePath,
         removedBundle: !!Object.keys(this.remoteBundles).length,
