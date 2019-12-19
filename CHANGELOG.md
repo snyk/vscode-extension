@@ -1,3 +1,9 @@
+## [1.0.0] - 2019-12-19
+- Bugfixing
+- Improved stability
+- Improved working with large repositories
+- Added .dcignore feature to ignore folders/files
+
 ## [0.1.1] - 2019-11-14
 - Users can ignore suggestions
 - Highlighting helper places in a code related to particular issue
