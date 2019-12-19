@@ -7,7 +7,7 @@ export const checkIfBundleIsEmpty = (
     | DeepCode.RemoteBundlesCollectionInterface,
   bundlePath?: string
 ): boolean =>
-  !Object.keys(bundlePath ? bundlesBatch[bundlePath] : bundlesBatch).length;
+  !Object.keys(bundlePath ? bundlesBatch[bundlePath] || {} : bundlesBatch).length;
 
 export const extendLocalHashBundle = (
   updatedFiles: Array<{

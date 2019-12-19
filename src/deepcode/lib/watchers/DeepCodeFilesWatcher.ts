@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { compareFileChanges, acceptFileToBundle } from "../../utils/filesUtils";
+import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
 import { debounce } from "../../utils/tsUtils";
 import {
   FILE_CURRENT_STATUS,
@@ -12,7 +12,11 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   private changedFilesList: Array<string> = [];
   private watcher: vscode.FileSystemWatcher;
   private FILES_TO_SAVE_LIST_FIRST_ELEMENT: number = 1;
-  private filesForUpdatingServerBundle: any = {};
+  private filesForUpdatingServerBundle: {
+    [key: string]: Array<{
+      [key: string]: string;
+    }>
+  } = {};
 
   constructor() {
     this.watcher = vscode.workspace.createFileSystemWatcher("**/*.*");
@@ -69,14 +73,19 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     if (Object.keys(this.filesForUpdatingServerBundle).length) {
       for (const workspacePath in this.filesForUpdatingServerBundle) {
         const updatedFiles = this.filesForUpdatingServerBundle[workspacePath];
+        if (!extension.checkUploadConfirm(workspacePath)) {
+          continue;
+        }
         await extension.extendWorkspaceHashesBundle(
           updatedFiles,
           workspacePath
         );
-        if (!extension.checkUploadConfirm(workspacePath)) {
-          continue;
+        let updated = false;
+        if (updatedFiles.some(({filePath}) => isFileChangingBundle(filePath))) {
+          await extension.updateHashesBundles(workspacePath);
+          updated = true;
         }
-        if (extension.remoteBundles[workspacePath]) {
+        if (extension.remoteBundles[workspacePath] && !updated) {
           await extension.extendBundleOnServer(updatedFiles, workspacePath);
           await extension.checkBundleOnServer(workspacePath);
         } else {
@@ -149,7 +158,10 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
-    if (!acceptFileToBundle(filePath, extension.serverFilesFilterList)) {
+    if (
+      !acceptFileToBundle(filePath, extension.serverFilesFilterList) &&
+      !isFileChangingBundle(filePath)
+    ) {
       return;
     }
     if (!this.changedFilesList.includes(filePath)) {
@@ -197,7 +209,8 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
-    if (filePath.includes(GIT_FILENAME)) {
+    // Exclude changes to the .git directory.
+    if (filePath.includes(`/${GIT_FILENAME}/`)) {
       return;
     }
     const originFilePath = await this.ignoreFilesCaches(filePath, extension);

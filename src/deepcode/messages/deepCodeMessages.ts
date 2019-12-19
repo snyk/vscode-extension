@@ -21,6 +21,10 @@ export const deepCodeMessages = {
     msg: "DeepCode encountered a problem.",
     button: "Restart"
   },
+  payloadSizeError: {
+    msg: "The current workspace is too big for DeepCode to process. You can manually exclude files and subdirectories by creating or editing the `.dcignore` file.",
+    button: "Try again"
+  },
   codeReviewFailed: {
     msg: (name: string): string =>
       `Whoops! DeepCode encountered a problem ${

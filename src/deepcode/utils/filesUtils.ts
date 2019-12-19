@@ -19,6 +19,10 @@ import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "./ignoreUtils";
 import { window, ProgressLocation, Progress } from "vscode";
 
+// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
+// TODO what exactly is transmitted eventually and what is a good exact limit?
+const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests
+
 export const createFileHash = (file: string): string => {
   return crypto
     .createHash(HASH_ALGORITHM)
@@ -43,9 +47,10 @@ export const createFilesHashesBundle = async (
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
-
-  let bundle = null;
-  bundle = await window.withProgress({
+  const {
+    bundle: finalBundle,
+    progress: finalProgress,
+  } = await window.withProgress({
     location: ProgressLocation.Notification,
     title: deepCodeMessages.fileLoadingProgress.msg,
     cancellable: false
@@ -53,15 +58,12 @@ export const createFilesHashesBundle = async (
     // Get a directory size overview for progress reporting
     let count = await scanFileCountFromDirectory(folderPath);
 
-    console.log(`Loading ${count} files...`);
+    console.log(`Checking ${count} files...`);
     progress.report({increment: 1});
-    let filesProcessed = 0;
-
     // Filter, read and hash all files
-    bundle = await createListOfDirFilesHashes(
+    const res = await createListOfDirFilesHashes(
       serverFilesFilterList,
       folderPath,
-      {},
       folderPath,
       exclusionFilter,
       { // progress data
@@ -71,12 +73,11 @@ export const createFilesHashesBundle = async (
         progressWindow: progress
       }
     );
-
     progress.report({increment: 100});
-    console.log("Loaded all files");
-    return bundle;
+    return res;
   });
-  return bundle; // final window result
+  console.log(`Hashed ${Object.keys(finalBundle).length} files`);
+  return finalBundle; // final window result
 };
 
 // Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
@@ -101,7 +102,6 @@ const scanFileCountFromDirectory = async (
 export const createListOfDirFilesHashes = async (
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface,
   folderPath: string,
-  list: { [key: string]: string },
   path: string = folderPath,
   exclusionFilter: ExclusionFilter,
   progress : {
@@ -111,6 +111,7 @@ export const createListOfDirFilesHashes = async (
     progressWindow: Progress<{increment: number, message: string}>
   }
 ) => {
+  let list: { [key: string]: string } = {};
   const dirContent: string[] = await fs.readdir(path);
   const relativeDirPath = nodePath.relative(folderPath, path);
   let useDefaultIgnore: boolean = true;
@@ -143,11 +144,14 @@ export const createListOfDirFilesHashes = async (
     try {
       const relativeChildPath = nodePath.join(relativeDirPath, name);
       const fullChildPath = nodePath.join(path, name);
-      const isDirectory = fs.lstatSync(fullChildPath).isDirectory();
+      const fileStats = fs.statSync(fullChildPath);
+      const isDirectory = fileStats.isDirectory();
+      const isFile = fileStats.isFile();
 
-      if (!isDirectory) {
+      if (isFile) {
         // Update progress window on processed (non-directory) files
         ++progress.filesProcessed;
+        // This check is just to throttle the reporting process
         if (progress.filesProcessed % 100 === 0) {
           const currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
           const percentDoneIncrement = currentPercentDone - progress.percentDone;
@@ -164,50 +168,72 @@ export const createListOfDirFilesHashes = async (
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
       }
-      // Exclude files which are too large to be transferred via http. There is currently no
-      // way to process them in multiple chunks
-      const fileContentSize = fs.statSync(fullChildPath).size;
-      if (fileContentSize > SAFE_PAYLOAD_SIZE) {
-        console.log("Excluding file " + fullChildPath + " from processing: size " +
-                    fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
-	      continue;
-      }
-      if (
-        fs.lstatSync(fullChildPath).isFile() &&
-        acceptFileToBundle(name, serverFilesFilterList)
-      ) {
+
+      if (isFile) {
+        if (!acceptFileToBundle(name, serverFilesFilterList)) continue;
+      
+        // Exclude files which are too large to be transferred via http. There is currently no
+        // way to process them in multiple chunks
+        const fileContentSize = fileStats.size;
+        if (fileContentSize > SAFE_PAYLOAD_SIZE) {
+          console.log("Excluding file " + fullChildPath + " from processing: size " +
+                      fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
+          continue;
+        }
         const filePath = path.split(folderPath)[1];
         const fileContent = await readFile(fullChildPath);
         list[`${filePath}/${name}`] = createFileHash(fileContent);
       }
+
       if (isDirectory) {
-        list = await createListOfDirFilesHashes(
+        const {
+          bundle: subBundle,
+          progress: subProgress,
+        } = await createListOfDirFilesHashes(
           serverFilesFilterList,
           folderPath,
-          { ...list },
           `${path}/${name}`,
           exclusionFilter,
           progress
         );
+        progress = subProgress;
+        for (let key of Object.keys(subBundle)) {
+          progress.filesProcessed
+          list[key] = subBundle[key];
+        }
       }
     } catch (err) {
       continue;
     }
   }
-
-  return { ...list };
+  return {
+    bundle: list,
+    progress,
+  };
+  
 };
 
 export const acceptFileToBundle = (
   name: string,
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
 ): boolean => {
+  name = nodePath.basename(name);
   if (
     (serverFilesFilterList.configFiles &&
       serverFilesFilterList.configFiles.includes(name)) ||
     (serverFilesFilterList.extensions &&
       serverFilesFilterList.extensions.includes(nodePath.extname(name)))
   ) {
+    return true;
+  }
+  return false;
+};
+
+export const isFileChangingBundle = (
+  name: string,
+): boolean => {
+  name = nodePath.basename(name);
+  if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
     return true;
   }
   return false;
@@ -312,11 +338,6 @@ export const processPayloadSize = (
   const chunkedPayload = splitPayloadIntoChunks(payload, payloadByteSize);
   return chunkedPayload;
 };
-
-// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
-// TODO what exactly is transmitted eventually and what is a good exact limit?
-const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests
-
 
 export const splitPayloadIntoChunks = (
   payload: {

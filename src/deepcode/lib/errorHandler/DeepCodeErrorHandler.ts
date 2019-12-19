@@ -2,8 +2,7 @@ import * as vscode from "vscode";
 import * as open from "open";
 import {
   statusCodes,
-  ATTEMPTS_AMMOUNT,
-  MISSING_CONSENT
+  ATTEMPTS_AMMOUNT
 } from "../../constants/statusCodes";
 import { accountTypes } from "../../constants/accountTypes";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
@@ -15,8 +14,6 @@ import http from "../../http/requests";
 
 class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   private unauthorizedErrorSolveAttemts: number = ATTEMPTS_AMMOUNT;
-  private missingConsentMessageCount: number = 0;
-  private MISSING_CONSENT_DISPLAY_AMMOUNT: number = 2;
   private firstWorkspaceFlag: boolean = false;
 
   private async generalError(): Promise<void> {
@@ -42,10 +39,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     await this.sendErrorToServer(extension, error, options);
     switch (error.statusCode) {
       case unauthorizedUser:
-        const { error: errorName } = error;
-        if (errorName && errorName === MISSING_CONSENT) {
-          return this.missingConsentError(extension, options);
-        }
         return this.unauthorizedUser(extension);
       case bigPayload:
         return this.bigPayloadHandler();
@@ -98,29 +91,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     }
   }
 
-  private async missingConsentError(
-    extension: DeepCode.ExtensionInterface,
-    options: { [key: string]: any }
-  ): Promise<void> {
-    if (options.removedBundle) {
-      this.missingConsentMessageCount = 0;
-    }
-    if (
-      this.missingConsentMessageCount < this.MISSING_CONSENT_DISPLAY_AMMOUNT
-    ) {
-      this.missingConsentMessageCount += 1;
-      const { msg, button } = deepCodeMessages.configureAccountType;
-      const userResponseBtn = await vscode.window.showWarningMessage(
-        msg(extension.config.termsConditionsUrl),
-        button
-      );
-      if (userResponseBtn === button) {
-        this.missingConsentMessageCount = this.MISSING_CONSENT_DISPLAY_AMMOUNT;
-        await open(extension.config.configureAccountUrl);
-      }
-    }
-  }
-
   private async unauthorizedUser(
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
@@ -153,7 +123,11 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   }
 
   private async bigPayloadHandler(): Promise<void> {
-    this.generalError();
+    const { msg, button } = deepCodeMessages.payloadSizeError;
+    const res = await vscode.window.showErrorMessage(msg, button);
+    if (button === res) {
+      startDeepCodeCommand();
+    }
   }
 }
 
