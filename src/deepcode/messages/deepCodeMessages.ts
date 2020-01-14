@@ -1,6 +1,6 @@
 export const deepCodeMessages = {
   configureBackend: {
-    msg: `To use DeepCode free of charge (with your own Github, Bitbucket or Gitlab account) select "Cloud". If you are using self-managed Bitbucket or Gitlab select "Self-Managed".`,
+    msg: `To use DeepCode with your Github, Bitbucket or Gitlab account select "Cloud". If you are using self-managed DeepCode server with Bitbucket or Gitlab select "Self-Managed".`,
     cloudBtn: "Cloud",
     selfManagedBtn: "Self-Managed"
   },
