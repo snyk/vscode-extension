@@ -43,7 +43,7 @@
           "deepcode.api.cloudBackend": {
             "type": "string",
             "default": "",
-            "description": "In order to use a self-managed Bitbucket or Gitlab instance, update the instance url below:",
+            "description": "In order to use a self-managed DeepCode server with Bitbucket or Gitlab instance, update the instance url below:",
             "scope": "application"
           }
         }
