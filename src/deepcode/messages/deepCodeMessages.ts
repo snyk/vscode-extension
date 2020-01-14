@@ -1,8 +1,8 @@
 export const deepCodeMessages = {
   configureBackend: {
-    msg: `To use the cloud AI backend (https://www.deepcode.ai) select "Cloud". To configure an on-premise AI backend select "On-Premise".`,
+    msg: `To use DeepCode free of charge, with your own Github, Bitbucket or Gitlab account select "Cloud". If you are using self-managed Bitbucket or Gitlab select "Self-Managed".`,
     cloudBtn: "Cloud",
-    onPremiseBtn: "On-Premise"
+    selfManagedBtn: "Self-Managed"
   },
   confirmUploadFilesToServer: {
     msg: (termsConditionsUrl: string, folderPath: string): string =>
