@@ -75,13 +75,13 @@ export default class DeepCodeLib extends BundlesModule
     return INSTALL_STATUS.installed;
   }
   public async configureExtension(): Promise<void> {
-    const { msg, onPremiseBtn, cloudBtn } = deepCodeMessages.configureBackend;
+    const { msg, selfManagedBtn, cloudBtn } = deepCodeMessages.configureBackend;
     const configBackendReply = await vscode.window.showInformationMessage(
       msg,
       cloudBtn,
-      onPremiseBtn
+      selfManagedBtn
     );
-    if (configBackendReply === onPremiseBtn) {
+    if (configBackendReply === selfManagedBtn) {
       await vscode.commands.executeCommand(
         "workbench.action.openSettings",
         "deepcode"
