@@ -30,7 +30,7 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 
 - We've prepared a short video on how to install the extension. Head over to youtube to quickly get the extension up and running:
 
-<a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
+  <a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
 
 ## Tips on the installation process
 
