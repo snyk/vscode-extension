@@ -7,6 +7,12 @@
    1. [Video on how to install the extension](#video-on-how-to-install-the-extension)
    2. [Tips on the installation process](tips-on-the-installation-process)
 3. [How to use it?](#how-to-use-it)
+   1. [PROTIP: DeepCode analysis on Save](#protip-deepcode-analysis-on-save)
+   2. [Video on how to use the extension](#video-on-how-to-use-the-extension)
+   3. [DeepCode in action](#deepcode-in-action)
+   4. [How to ignore suggestions (text)](#how-to-ignore-suggestions-text)
+   5. [How to ignore suggestions (video)](#how-to-ignore-suggestions-video)
+   6. [.dcignore file](#dcignore-file)
 4. [Feedback and contact](#feedback-and-contact)
 
 # DeepCode extension
@@ -38,22 +44,48 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 - select **"Cloud"** when you want to use your (cloud) Github, BitBucket or Gitlab account.
 - select **"Self-managed"** when the organization you are part of has a DeepCode Server installation. The DeepCode service is likely running in combination with self-managed BitBucket or Gitlab.
 
-# How it works
+# How it use it?
 
-DeepCode extension analyses your code:
-![deepcode progress](images/progress.png)
+## PROTIP - DeepCode analysis on Save
 
-Inspect all found issues using "Problems" tab and syntax highlight:
+- DeepCode's extension runs automatically when you hit Save (or the keyboard shortcut).
+- If you don't like to save while working we strongly recommend to [enable the AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
+
+## Video on how to use the extension
+
+- Here is a video on how to use the extension. In short - don't forget to save and you would be in good hands:
+
+<a href="https://www.youtube.com/watch?v=NIDeVYLWkMI" target="_blank"><img src="images/how-to-use-vs-code-extension.png"></a>
+
+## DeepCode in action 
+
+- Here is how it looks like when inspecting all issues using the "Problems" tab and syntax highlight:
+
 ![deepcode problem](images/problem.png)
 
-Ignore certain files/folders, by adding a file .dcignore to any folder. The file syntax is identical to .gitignore:
+## How to ignore suggestions (text)
+
+There are two key steps here:
+    
+   1. Ignore particular alert directly within its suggestions tooltip or 'bulb' menu:
+
+   ![deepcode ignore menu](images/ignore_menu.png)
+
+   2. Deepcode will create a comment, that will inform our analysis engine to ignore it. Don't forget to specify a description why you think it needs to be ignored. Your feedback will improve our engine over time:
+
+   ![deepcode ignore comment](images/ignore_comment.png)
+
+## How to ignore suggestions (video)
+
+- If the above information is not enough and want to see it in action, here is a video:
+
+<a href="https://www.youtube.com/watch?v=sjDuDqUy7pw" target="_blank"><img src="images/how-to-toggle-suggestions.png"></a>
+
+## .dcignore file 
+
+- If you want to ugnore certain files/folders (like node_modules for example), create a .dcignore file. You can create it in any folder on any level starting from the directory where your project resides. The file syntax is identical to .gitignore:
+
 ![deepcode dcignore](images/ignore_file.png)
-
-Ignore particular alert directly within its suggestions tooltip or 'bulb' menu:
-![deepcode ignore menu](images/ignore_menu.png)
-
-Deepcode will create a comment, that will inform analysis engine to ignore it. Don't forget to specify a description why you think it needs to be ignored. Your feedback will improve our engine over time:
-![deepcode ignore comment](images/ignore_comment.png)
 
 # Feedback and contact
 
