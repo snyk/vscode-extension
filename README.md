@@ -4,6 +4,8 @@
 
 1. [DeepCode extension - what is it?](#deepcode-extension)
 2. [Installation](#installation)
+   1. [Video on how to install the extension](#video-on-how-to-install-the-extension)
+   2. [Tips on the installation process](tips-on-the-installation-process)
 3. [How it works?](#how-it-works)
 
 # DeepCode extension
@@ -24,20 +26,18 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 
 # Installation
 
-- We've prepared a nice video on how to install the extension. Head over to youtube to quickly get the extension up and running:
+## Video on how to install the extension
+
+- We've prepared a short video on how to install the extension. Head over to youtube to quickly get the extension up and running:
 
 <a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
 
+## Tips on the installation process
+
+- select **"Cloud"** when you want to use your (cloud) Github, BitBucket or Gitlab account.
+- select **"Self-managed"** when the organization you are part of has a DeepCode Server installation. The DeepCode service is likely running in combination with self-managed BitBucket or Gitlab.
+
 # How it works
-
-Select desired environment between Cloud and Self-managed:
-![deepcode environment](images/environment.png)
-
-Login Deepcode extension using your Bitbucket.org, Github.com or GitLab.com account:
-![deepcode login](images/login.png)
-
-Confirm uploading your code to DeepCode server. Your code is protected and used only for the purpose of informing you about issues in code:
-![deepcode consent](images/consent.png)
 
 DeepCode extension analyses your code:
 ![deepcode progress](images/progress.png)
