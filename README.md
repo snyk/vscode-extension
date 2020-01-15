@@ -83,7 +83,7 @@ There are two key steps here:
 
 ## .dcignore file 
 
-- If you want to ugnore certain files/folders (like node_modules for example), create a .dcignore file. You can create it in any folder on any level starting from the directory where your project resides. The file syntax is identical to .gitignore:
+- If you want to ignore certain files/folders (like node_modules for example), create a .dcignore file. You can create it in any folder on any level starting from the directory where your project resides. The file syntax is identical to .gitignore:
 
 ![deepcode dcignore](images/ignore_file.png)
 
