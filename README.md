@@ -1,12 +1,32 @@
+**The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and and critical vulnerabilities in your code. We support Java, Python, JavaScript, TypeScript and XML.**
+
+# Table of Contents
+
+1. [DeepCode extension - what is it?](#deepcode-extension)
+2. [Installation](#installation)
+3. [How it works?](#how-it-works)
+
 # DeepCode extension
 
-***VS Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> to detect important bugs and issues in your code. Supports Java, Python, JavaScript, TypeScript and XML***
+Through the extension you can quickly start using DeepCode's code review and analysis within your development workflow. The extension will automatically alert you about critical vulnerabilities you need to solve in your code the moment when you hit Save in your IDE. With DeepCode's superior code review you save time finding and fixing bugs before they go to production. 
 
-DeepCode's AI algorithms continuously learn from bugs and issues fixed on open source
-repos. The extension will automatically alert you about critical vulnerabilities you need to solve
-in your code every time you save a file. Don't let security bugs go to production. Save time
-finding and fixing them.
+## DeepCode's AI Engine finds bugs
 
+DeepCode uses symbolic AI to process hundreds of millions of commits in open source software projects and learns how to find serious coding issues. Because the platform determines the intent of the code — and not only the syntax mistakes — DeepCode identifies 10x more critical bugs and security vulnerabilities than other tools. 
+
+## Our AI provides explanation behind found bugs
+
+In order to show detailed explanation why something was flagged as bug we introduced a new AI technique called Ontology. With Ontology, we’ve integrated the capability to present logical conclusions within the DeepCode engine. 
+
+## Supported languages
+
+Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ support is coming soon.
+
+# Installation
+
+- We've prepared a nice video on how to install the extension. Head over to youtube to quickly get the extension up and running:
+
+<a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
 
 # How it works
 
