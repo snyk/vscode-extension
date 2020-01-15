@@ -6,7 +6,8 @@
 2. [Installation](#installation)
    1. [Video on how to install the extension](#video-on-how-to-install-the-extension)
    2. [Tips on the installation process](tips-on-the-installation-process)
-3. [How it works?](#how-it-works)
+3. [How to use it?](#how-to-use-it)
+4. [Feedback and contact](#feedback-and-contact)
 
 # DeepCode extension
 
@@ -53,3 +54,7 @@ Ignore particular alert directly within its suggestions tooltip or 'bulb' menu:
 
 Deepcode will create a comment, that will inform analysis engine to ignore it. Don't forget to specify a description why you think it needs to be ignored. Your feedback will improve our engine over time:
 ![deepcode ignore comment](images/ignore_comment.png)
+
+# Feedback and contact
+
+In case you need to contact us or provide feedback, we would love to hear from you - [here is how to get in touch with us](https://www.deepcode.ai/feedback).
