@@ -7,7 +7,7 @@
    1. [Video on how to install the extension](#video-on-how-to-install-the-extension)
    2. [Tips on the installation process](tips-on-the-installation-process)
 3. [How to use it?](#how-to-use-it)
-   1. [PROTIP: DeepCode analysis on Save](#protip-deepcode-analysis-on-save)
+   1. [PROTIP: DeepCode analysis on Save](#protip---deepcode-analysis-on-save)
    2. [Video on how to use the extension](#video-on-how-to-use-the-extension)
    3. [DeepCode in action](#deepcode-in-action)
    4. [How to ignore suggestions (text)](#how-to-ignore-suggestions-text)
