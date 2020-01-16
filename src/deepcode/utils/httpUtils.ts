@@ -17,5 +17,6 @@ export const httpDelay = (f: Function, pingTime: number = 1000) => {
     });
     return promise;
   };
+  // deepcode ignore PromiseNotCaughtGeneral: it's caught in a parent file
   return promiseFunc().then((result: { [key: string]: object }) => result);
 };

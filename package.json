@@ -77,7 +77,8 @@
     "typescript": "^3.3.1",
     "vscode": "^1.1.28",
     "webpack": "^4.36.1",
-    "webpack-cli": "^3.3.6"
+    "webpack-cli": "^3.3.6",
+    "serialize-javascript": "^2.1.1"
   },
   "dependencies": {
     "@types/git-repo-name": "^1.0.0",
