@@ -5,7 +5,7 @@
 1. [DeepCode extension - what is it?](#deepcode-extension)
 2. [Installation](#installation)
    1. [Video on how to install the extension](#video-on-how-to-install-the-extension)
-   2. [Tips on the installation process](tips-on-the-installation-process)
+   2. [Tips on the installation process](#tips-on-the-installation-process)
 3. [How to use it?](#how-to-use-it)
    1. [PROTIP: DeepCode analysis on Save](#protip---deepcode-analysis-on-save)
    2. [Video on how to use the extension](#video-on-how-to-use-the-extension)
@@ -44,7 +44,7 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 - select **"Cloud"** when you want to use your (cloud) Github, BitBucket or Gitlab account.
 - select **"Self-managed"** when the organization you are part of has a DeepCode Server installation. The DeepCode service is likely running in combination with self-managed BitBucket or Gitlab.
 
-# How it use it?
+# How to use it?
 
 ## PROTIP - DeepCode analysis on Save
 
