@@ -9,7 +9,7 @@ This file must be modified before publishing extension to marketplace.
 #### Starting extension in development mode:
 
 1. clone the repo
-2. run "yarn install" in the main directory
+2. run "npm install" in the main directory
 3. open the project with VSCode
 4. start debug mode(F5) with 'Run Extension' debug configuration - VSCode will start Extension Development Host in new window
 

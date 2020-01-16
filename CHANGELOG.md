@@ -1,3 +1,7 @@
+## [1.0.1] - 2019-01-15
+- Improved documentation and tutorial
+- Improved stability
+
 ## [1.0.0] - 2019-12-19
 - Bugfixing
 - Improved stability
