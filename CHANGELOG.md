@@ -1,6 +1,7 @@
 ## [1.0.1-1.0.2] - 2019-01-16
 - Improved documentation and tutorial
 - Improved stability
+- Removed deprecated setting to ignore ALL 'info' suggestions, as we have fully featured ignoring functionality
 
 ## [1.0.0] - 2019-12-19
 - Bugfixing
