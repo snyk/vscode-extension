@@ -13,9 +13,6 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       getLoggedInStatus: (): string | undefined =>
         this.globalState.get(stateNames.isLoggedIn),
 
-      getAccountType: (): string | undefined =>
-        this.globalState.get(stateNames.accountType),
-
       getConfirmUploadStatus: (
         // workspace can contain multiple folders and each of them will have is confirm status
         folderPath: ""
@@ -39,8 +36,6 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
     return {
       setLoggedInStatus: (status: boolean): Thenable<void> =>
         this.globalState.update(stateNames.isLoggedIn, status),
-      setAccountType: (type: string): Thenable<void> =>
-        this.globalState.update(stateNames.accountType, type),
       setConfirmUploadStatus: (
         folderPath: string,
         status: boolean
@@ -65,7 +60,6 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
     this.actions.setLoggedInStatus(false);
     this.actions.setSessionToken("");
     this.actions.setConfirmUploadStatus();
-    this.actions.setAccountType("");
     this.actions.setBackendConfigStatus(false);
   }
 

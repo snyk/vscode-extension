@@ -82,25 +82,23 @@ class LoginModule extends BaseDeepCodeModule
           extension.config.checkSessionUrl,
           extension.token
         );
+        if (result.statusCode === statusCodes.loginInProgress) {
+          return await httpDelay(pingLoginStatus);
+        }
         await extension.store.actions.setLoggedInStatus(true);
-        await extension.store.actions.setAccountType(result.type);
         await extension.store.actions.setSessionToken(extension.token);
         return true;
       } catch (err) {
-        if (err.statusCode === statusCodes.loginInProgress) {
-          return await httpDelay(pingLoginStatus);
-        } else {
-          extension.errorHandler.processError(extension, err, {
-            ...(err.statusCode === statusCodes.notFound && {
-              loginNotFound: true
-            }),
-            errorDetails: {
-              message: errorsLogs.loginStatus,
-              endpoint: extension.config.checkSessionUrl
-            }
-          });
-          return false;
-        }
+        extension.errorHandler.processError(extension, err, {
+          ...(err.statusCode === statusCodes.notFound && {
+            loginNotFound: true
+          }),
+          errorDetails: {
+            message: errorsLogs.loginStatus,
+            endpoint: extension.config.checkSessionUrl
+          }
+        });
+        return false;
       }
     });
   }

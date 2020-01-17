@@ -37,10 +37,5 @@ export const deepCodeMessages = {
   },
   analysisProgress: {
     msg: "DeepCode analysis is running..."
-  },
-  configureAccountType: {
-    msg: (termsConditionsUrl: string): string =>
-      `The DeepCode extension works only with private DeepCode accounts at the moment. Please click on the "Configure" button to change your account type. [Terms & Conditions](${termsConditionsUrl})`,
-    button: "Configure"
   }
 };

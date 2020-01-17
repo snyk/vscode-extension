@@ -4,7 +4,6 @@ import {
   statusCodes,
   ATTEMPTS_AMMOUNT
 } from "../../constants/statusCodes";
-import { accountTypes } from "../../constants/accountTypes";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { startDeepCodeCommand } from "../../utils/vscodeCommandsUtils";
@@ -94,7 +93,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   private async unauthorizedUser(
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
-    await extension.store.actions.setAccountType(accountTypes.unauthorized);
     await extension.store.actions.setLoggedInStatus(false);
     extension.token = "";
     extension.store.actions.setSessionToken("");

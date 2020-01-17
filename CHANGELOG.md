@@ -1,4 +1,4 @@
-## [1.0.1] - 2019-01-15
+## [1.0.1-1.0.2] - 2019-01-16
 - Improved documentation and tutorial
 - Improved stability
 
