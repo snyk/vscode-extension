@@ -89,6 +89,10 @@ class LoginModule extends BaseDeepCodeModule
         await extension.store.actions.setSessionToken(extension.token);
         return true;
       } catch (err) {
+        if (err.statusCode === statusCodes.loginInProgress) {
+          return await httpDelay(pingLoginStatus);
+        }
+        
         extension.errorHandler.processError(extension, err, {
           ...(err.statusCode === statusCodes.notFound && {
             loginNotFound: true
