@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 import DeepCodeExtension from "./deepcode/DeepCodeExtension";
 
 const extension = new DeepCodeExtension();
