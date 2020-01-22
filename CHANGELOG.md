@@ -1,3 +1,9 @@
+## [1.1.0] - 2019-01-22
+- Improved documentation and tutorial
+- Performance optimization 
+- Upgraded to newer vscode engine 1.41.0
+- Improved test suite
+
 ## [1.0.1-1.0.2] - 2019-01-16
 - Improved documentation and tutorial
 - Improved stability
