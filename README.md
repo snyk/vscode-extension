@@ -37,7 +37,7 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 
 - We've prepared a short video on how to install the extension. Head over to youtube to quickly get the extension up and running:
 
-  <a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
+  <a href="https://www.youtube.com/watch?v=Cfe4OMvlfpc&utm_source=vscode-extension-readme" target="_blank"><img src="images/how-to-install-vs-code-extension.png"></a>
 
 ## Tips on the installation process
 
@@ -55,7 +55,7 @@ Java, JavaScript, Python, TypeScript and XML are currently supported. C/C++ supp
 
 - Here is a video on how to use the extension. In short - don't forget to save and you would be in good hands:
 
-<a href="https://www.youtube.com/watch?v=NIDeVYLWkMI" target="_blank"><img src="images/how-to-use-vs-code-extension.png"></a>
+<a href="https://www.youtube.com/watch?v=NIDeVYLWkMI&utm_source=vscode-extension-readme" target="_blank"><img src="images/how-to-use-vs-code-extension.png"></a>
 
 ## DeepCode in action 
 
@@ -79,7 +79,7 @@ There are two key steps here:
 
 - If the above information is not enough and want to see it in action, here is a video:
 
-<a href="https://www.youtube.com/watch?v=sjDuDqUy7pw" target="_blank"><img src="images/how-to-toggle-suggestions.png"></a>
+<a href="https://www.youtube.com/watch?v=sjDuDqUy7pw&utm_source=vscode-extension-readme" target="_blank"><img src="images/how-to-toggle-suggestions.png"></a>
 
 ## .dcignore file 
 
