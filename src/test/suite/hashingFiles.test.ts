@@ -4,9 +4,9 @@ import {
   readFile,
   createFileHash,
   createFilesHashesBundle
-} from "../deepcode/utils/filesUtils";
+} from "../../deepcode/utils/filesUtils";
 
-suite("Hashing Files Tests", function() {
+suite("Hashing Files Tests", () => {
   // Defines a Mocha unit test
   const mockedFilesDirPath = __dirname.replace("out/test", "src/test");
   const mockedFilesFilters = {
@@ -25,7 +25,7 @@ suite("Hashing Files Tests", function() {
   };
 
   test("Creating hash of file", async () => {
-    const filePath = path.join(mockedFilesDirPath, "mocked_data/test.java");
+    const filePath = path.join(mockedFilesDirPath, "../mocked_data/test.java");
     const fileUtf8Content = await readFile(filePath);
     const fileHash = createFileHash(fileUtf8Content);
     const expectedHash =
@@ -36,7 +36,7 @@ suite("Hashing Files Tests", function() {
   test("Creating hash bundle of files", async () => {
     const folderPath = path.join(
       mockedFilesDirPath,
-      "mocked_data/sample_repository"
+      "../mocked_data/sample_repository"
     );
     const hashesBundle = await createFilesHashesBundle(
       folderPath,

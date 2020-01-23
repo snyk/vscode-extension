@@ -7,8 +7,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as nock from "nock";
 //
-import * as extension from "../extension";
-import Deepcode from "../interfaces/DeepCodeInterfaces";
+import * as extension from "../../extension";
+import Deepcode from "../../interfaces/DeepCodeInterfaces";
 
 // mocked data for tests
 const testHost = "http://localhost:3000/";
@@ -17,7 +17,7 @@ const testToken = "TEST_TOKEN";
 const testBundleId = "testBundleId";
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
 const mockedFolderPath = vscode.Uri.parse(
-  "scheme:" + path.join(mockedTestFilesDirPath, "mocked_data"),
+  "scheme:" + path.join(mockedTestFilesDirPath, "../mocked_data"),
   true
 ).fsPath;
 
@@ -76,7 +76,7 @@ const preTestConfigureExtension = () => {
   return testExtension;
 };
 
-suite("Deepcode Extension Tests", function() {
+suite("Deepcode Extension Tests", () => {
   let testExtension: Deepcode.ExtensionInterface;
   test("Pre-test configuring", () => {
     testExtension = preTestConfigureExtension();
@@ -84,7 +84,7 @@ suite("Deepcode Extension Tests", function() {
     assert.equal(testExtension.config.deepcodeUrl, testHost);
     assert.equal(
       testExtension.workspacesPaths[0],
-      path.join(mockedTestFilesDirPath, "mocked_data")
+      path.join(mockedTestFilesDirPath, "../mocked_data")
     );
   });
 
