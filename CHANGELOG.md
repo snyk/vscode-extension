@@ -1,4 +1,4 @@
-## [1.1.0] - 2019-01-22
+## [1.1.0] - 2019-02-02
 - Improved documentation and tutorial
 - Performance optimization 
 - Upgraded to newer vscode engine 1.41.0
