@@ -1,6 +1,25 @@
 import * as request from "request-promise";
+import {
+  ServiceAI,
+  StartSessionRequestDto,
+  StartSessionResponseDto,
+  CheckSessionRequestDto,
+  CheckSessionResponseDto,
+} from "@deepcode/tsc";
+
+import DeepCodeErrorHandler from "../lib/errorHandler/DeepCodeErrorHandler";
+import { BASE_URL, IDE_NAME } from "../constants/general";
+
+const AI = new ServiceAI();
+AI.init({
+  baseURL: BASE_URL,
+  useDebug: true,
+});
 
 const http = {
+
+  errorHandler: new DeepCodeErrorHandler(),
+
   generalOptions: {
     resolveWithFullResponse: true,
     json: true
@@ -66,6 +85,24 @@ const http = {
       }
     });
     return { statusCode, ...responseBody };
+  },
+
+  async login(): Promise<StartSessionResponseDto> {
+    const options: StartSessionRequestDto = {
+      source: IDE_NAME,
+    };
+    const result = await AI.startSession(options);
+
+    return Promise.resolve(result as StartSessionResponseDto);
+  },
+
+  async checkLoginStatus(sessionToken: string): Promise<CheckSessionResponseDto> {
+    const options: CheckSessionRequestDto = {
+      sessionToken,
+    };
+    const result = await AI.checkSession(options);
+
+    return Promise.resolve(result as CheckSessionResponseDto);
   }
 };
 

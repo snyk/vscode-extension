@@ -43,9 +43,7 @@ class LoginModule extends BaseDeepCodeModule
     );
     if (pressedButton === login.button) {
       try {
-        const result = await http.post(this.config.loginUrl, {
-          body: { source: IDE_NAME }
-        });
+        const result = await http.login();
         const { sessionToken, loginURL } = result;
         if (!sessionToken || !loginURL) {
           throw new Error();
@@ -75,19 +73,23 @@ class LoginModule extends BaseDeepCodeModule
       return false;
     }
     const extension: any = this;
+
     return await httpDelay(async function pingLoginStatus() {
-      let result: { [key: string]: number | string | object } | undefined;
       try {
-        result = await http.get(
-          extension.config.checkSessionUrl,
-          extension.token
-        );
-        if (result.statusCode === statusCodes.loginInProgress) {
+        const result = await http.checkLoginStatus(extension.token);
+        // result = await http.get(
+        //   extension.config.checkSessionUrl,
+        //   extension.token
+        // );
+        if (!result.isLoggedIn) {
           return await httpDelay(pingLoginStatus);
         }
+        
         await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setSessionToken(extension.token);
+
         return true;
+
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
           return await httpDelay(pingLoginStatus);
@@ -102,6 +104,7 @@ class LoginModule extends BaseDeepCodeModule
             endpoint: extension.config.checkSessionUrl
           }
         });
+
         return false;
       }
     });
