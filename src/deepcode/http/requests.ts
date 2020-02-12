@@ -1,25 +1,29 @@
 import * as request from "request-promise";
 import {
   ServiceAI,
+  IConfig,
+  IFiles,
   StartSessionRequestDto,
   StartSessionResponseDto,
   CheckSessionRequestDto,
   CheckSessionResponseDto,
+  GetFiltersRequestDto,
+  GetFiltersResponseDto,
+  CreateBundleRequestDto,
+  CheckBundleRequestDto,
+  ExtendBundleRequestDto,
 } from "@deepcode/tsc";
 
-import DeepCodeErrorHandler from "../lib/errorHandler/DeepCodeErrorHandler";
+import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { BASE_URL, IDE_NAME } from "../constants/general";
 
 const AI = new ServiceAI();
 AI.init({
   baseURL: BASE_URL,
   useDebug: true,
-});
+} as IConfig);
 
 const http = {
-
-  errorHandler: new DeepCodeErrorHandler(),
-
   generalOptions: {
     resolveWithFullResponse: true,
     json: true
@@ -103,6 +107,47 @@ const http = {
     const result = await AI.checkSession(options);
 
     return Promise.resolve(result as CheckSessionResponseDto);
+  },
+
+  async getFilters(sessionToken: string): Promise<GetFiltersResponseDto> {
+    const options: GetFiltersRequestDto = {
+      sessionToken,
+    };
+    const result = await AI.getFilters(options);
+
+    return Promise.resolve(result as GetFiltersResponseDto);
+  },
+
+  async createBundle(sessionToken: string, files: object): Promise<DeepCode.RemoteBundleInterface> {
+    const options: CreateBundleRequestDto = {
+      sessionToken,
+      files: (files as IFiles),
+    };
+    const result = await AI.createBundle(options);
+
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
+
+  async checkBundle(sessionToken: string, bundleId: string): Promise<DeepCode.RemoteBundleInterface> {
+    const options: CheckBundleRequestDto = {
+      sessionToken,
+      bundleId,
+    };
+    const result = await AI.checkBundle(options);
+
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
+
+  async extendBundle(sessionToken: string, bundleId: string, body: DeepCode.RemoteExtendBundleInterface): Promise<DeepCode.RemoteBundleInterface> {
+    const options: ExtendBundleRequestDto = {
+      sessionToken,
+      bundleId,
+      files: (body.files as IFiles),
+      removedFiles: body.removedFiles,
+    };
+    const result = await AI.extendBundle(options);
+
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
   }
 };
 

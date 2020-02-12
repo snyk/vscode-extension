@@ -63,6 +63,11 @@ namespace DeepCode {
     uploadURL?: string;
   }
 
+  export interface RemoteExtendBundleInterface {
+    files?: { [key: string]: string };
+    removedFiles?: Array<string>;
+  }
+
   export interface RemoteBundlesCollectionInterface {
     [key: string]: RemoteBundleInterface;
   }

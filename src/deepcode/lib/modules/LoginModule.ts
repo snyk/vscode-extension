@@ -6,11 +6,10 @@ import http from "../../http/requests";
 import { httpDelay } from "../../utils/httpUtils";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { IDE_NAME } from "../../constants/general";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
-class LoginModule extends BaseDeepCodeModule
-  implements DeepCode.LoginModuleInterface {
+
+class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInterface {
   private analysisOnSaveAllowed: { [key: string]: boolean } = {};
   private firstSaveAlreadyHappened: { [key: string]: boolean } = {};
   private firstConfirmAborted: boolean = false;
@@ -77,14 +76,10 @@ class LoginModule extends BaseDeepCodeModule
     return await httpDelay(async function pingLoginStatus() {
       try {
         const result = await http.checkLoginStatus(extension.token);
-        // result = await http.get(
-        //   extension.config.checkSessionUrl,
-        //   extension.token
-        // );
         if (!result.isLoggedIn) {
           return await httpDelay(pingLoginStatus);
         }
-        
+
         await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setSessionToken(extension.token);
 

@@ -22,6 +22,7 @@ import { createBundleBody, httpDelay } from "../../utils/httpUtils";
 import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
+
 class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   // processing workspaces
@@ -50,10 +51,7 @@ class BundlesModule extends LoginModule
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
     try {
-      const serverFilesFilters = await http.get(
-        this.config.filtersUrl,
-        this.token
-      );
+      const serverFilesFilters = await http.getFilters(this.token);
       const { extensions, configFiles } = serverFilesFilters;
       const processedFilters = processServerFilesFilterList({
         extensions,
@@ -146,16 +144,14 @@ class BundlesModule extends LoginModule
     }
   ): Promise<void> {
     try {
-      const serverBundle: DeepCode.RemoteBundleInterface = await http.post(
-        this.config.createBundleUrl,
-        {
-          body: bundleForServer.repo
-            ? bundleForServer
-            : createBundleBody(bundleForServer),
-          token: this.token
-        }
-      );
+      const files = bundleForServer.repo
+        ? (bundleForServer as object)
+        : (createBundleBody(bundleForServer).files as object);
+
+      const serverBundle = await http.createBundle(this.token, files);
+
       await this.processBundleFromServer(serverBundle, workspacePath);
+
     } catch (err) {
       await this.errorHandler.processError(this, err, {
         workspacePath,
@@ -270,23 +266,28 @@ class BundlesModule extends LoginModule
     if (!this.remoteBundles[workspacePath]) {
       return;
     }
-    const endpoint = this.config.getbundleIdUrl(
-      this.remoteBundles[workspacePath].bundleId
-    );
+
+    const bundleId = this.remoteBundles[workspacePath].bundleId || '';
+    const endpoint = this.config.getbundleIdUrl(bundleId);
+    
     try {
       if (!attempts) {
         throw new Error(EXPIRED_REQUEST);
       }
-      const checkBundleReq = async () => await http.get(endpoint, this.token);
+      // const checkBundleReq = async () => await http.get(endpoint, this.token);
+      const checkBundleReq = async () => await http.checkBundle(this.token, bundleId);
       const latestServerBundle: DeepCode.RemoteBundleInterface = isDelay
         ? await httpDelay(checkBundleReq)
         : await checkBundleReq();
+
       await this.processBundleFromServer(latestServerBundle, workspacePath);
+
       const { missingFiles } = this.remoteBundles[workspacePath];
       if (missingFiles && missingFiles.length) {
         const isDelay = true;
         await this.checkBundleOnServer(workspacePath, attempts--, isDelay);
       }
+
     } catch (err) {
       let message = errorsLogs.checkBundle;
       if (err.message === EXPIRED_REQUEST) {
@@ -297,7 +298,7 @@ class BundlesModule extends LoginModule
         errorDetails: {
           message,
           endpoint,
-          bundleId: this.remoteBundles[workspacePath].bundleId
+          bundleId,
         }
       });
     }
@@ -334,10 +335,7 @@ class BundlesModule extends LoginModule
       return;
     }
 
-    const extendBatchBody: {
-      files?: { [key: string]: string };
-      removedFiles: Array<string>;
-    } = {
+    const extendBatchBody: DeepCode.RemoteExtendBundleInterface = {
       files: {},
       removedFiles: []
     };
@@ -350,19 +348,18 @@ class BundlesModule extends LoginModule
           [filePath]: fileHash
         };
       }
-      if (status === deleted) {
+      if (status === deleted && extendBatchBody.removedFiles) {
         extendBatchBody.removedFiles.push(filePath);
       }
     }
-    const endpoint = this.config.getbundleIdUrl(
-      this.remoteBundles[workspacePath].bundleId
-    );
+
+    const bundleId = this.remoteBundles[workspacePath].bundleId || '';
+    const endpoint = this.config.getbundleIdUrl(bundleId);
+
     try {
-      const extendedServerBundle = await http.put(endpoint, {
-        body: extendBatchBody,
-        token: this.token
-      });
+      const extendedServerBundle = await http.extendBundle(this.token, bundleId, extendBatchBody);
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
+
     } catch (err) {
       this.errorHandler.processError(this, err, {
         workspacePath,
@@ -370,9 +367,7 @@ class BundlesModule extends LoginModule
         errorDetails: {
           message: errorsLogs.extendBundle,
           endpoint,
-          bundleId: this.remoteBundles[workspacePath]
-            ? this.remoteBundles[workspacePath].bundleId
-            : "",
+          bundleId,
           data: {
             ...extendBatchBody
           }
