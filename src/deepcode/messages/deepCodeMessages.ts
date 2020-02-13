@@ -1,20 +1,20 @@
 export const deepCodeMessages = {
   configureBackend: {
-    msg: `To use DeepCode with your Github, Bitbucket or Gitlab account select "Cloud". If you are using self-managed DeepCode server with Bitbucket or Gitlab select "Self-Managed".`,
+    msg: `Hey 👋, thanks for installing DeepCode 🚀. To use DeepCode with your Github, Bitbucket or Gitlab account select "Cloud". If you are using self-managed DeepCode server with Bitbucket or Gitlab select "Self-Managed".`,
     cloudBtn: "Cloud",
     selfManagedBtn: "Self-Managed"
   },
+  login: {
+    msg: "Cloud login selected 👍 🥰.\nPlease use your GitHub, Bitbucket or GitLab account to authenticate and start analysing the code with DeepCode.",
+    button: "Cloud login"
+  },
   confirmUploadFilesToServer: {
     msg: (termsConditionsUrl: string, folderPath: string): string =>
-      `Confirm remote analysis of ${folderPath} ([Terms & Conditions](${termsConditionsUrl}))`,
-    button: "Confirm"
-  },
-  login: {
-    msg: "Use your GitHub, Bitbucket or GitLab account to authenticate with DeepCode.",
-    button: "Login"
+      `You are almost set 🤗. Let's confirm and start the remote analysis of ${folderPath} ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
+    button: "Confirm and start analysing my code"
   },
   unauthorized: {
-    msg: "To use DeepCode extension you should login.",
+    msg: "Oh, it seems you are not logged in.",
     button: "Try login again"
   },
   error: {
