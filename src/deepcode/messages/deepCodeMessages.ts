@@ -6,11 +6,11 @@ export const deepCodeMessages = {
   },
   login: {
     msg: "Cloud login selected 👍 🥰.\nPlease use your GitHub, Bitbucket or GitLab account to authenticate and start analysing the code with DeepCode.",
-    button: "Login"
+    button: "Cloud login"
   },
   confirmUploadFilesToServer: {
     msg: (termsConditionsUrl: string, folderPath: string): string =>
-      `You are almost set 🤗. Let's confirm the remote analysis of ${folderPath} ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
+      `You are almost set 🤗. Let's confirm and start the remote analysis of ${folderPath} ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
     button: "Confirm and start analysing my code"
   },
   unauthorized: {
