@@ -86,10 +86,11 @@ $ git clone https://github.com/DeepCodeAI/tsc.git
 > $ git clone https://github.com/DeepCodeAI/tsc.git -b dev
 > ```
 
-2. Go to the package folder, install dependencies and create symlink:
+2. Go to the package folder, install dependencies, build package and create symlink:
 ```shell script
 $ cd tsc
 $ npm install
+$ npm run build
 $ npm link
 ```
 
