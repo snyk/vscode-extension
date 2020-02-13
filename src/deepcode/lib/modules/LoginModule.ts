@@ -58,7 +58,6 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
           }),
           errorDetails: {
             message: errorsLogs.login,
-            endpoint: this.config.loginUrl
           }
         });
         return false;
@@ -96,7 +95,6 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
           }),
           errorDetails: {
             message: errorsLogs.loginStatus,
-            endpoint: extension.config.checkSessionUrl
           }
         });
 

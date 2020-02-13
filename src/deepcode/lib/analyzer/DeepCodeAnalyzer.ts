@@ -223,16 +223,12 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   ): Promise<any> {
     const analyzer = this;
     let attemptsIfFailedStatus = 2;
-    const endpoint = extension.config.getAnalysisUrl(bundleId);
+
     async function fetchAnalysisResults() {
       try {
-        const analysisResponse: { [key: string]: any } = await http.get(
-          endpoint,
-          extension.token
-        );
-        const currentProgress = createDeepCodeProgress(
-          analysisResponse.progress
-        );
+        const analysisResponse = await http.getAnalysis(extension.token, bundleId);
+        const currentProgress = createDeepCodeProgress(analysisResponse.progress);
+
         analyzer.analysisProgressValue =
           analyzer.analysisProgressValue < currentProgress
             ? currentProgress
@@ -247,11 +243,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           return await httpDelay(fetchAnalysisResults);
         }
         return { ...analysisResponse.analysisResults, success: true };
+
       } catch (err) {
         extension.errorHandler.processError(extension, err, {
           errorDetails: {
             message: errorsLogs.failedAnalysis,
-            endpoint,
             bundleId
           }
         });
@@ -369,7 +365,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     extension.errorHandler.sendErrorToServer(extension, new Error(), {
       errorDetails: {
         message: errorsLogs.failedStatusOfAnalysis,
-        endpoint: extension.config.getAnalysisUrl(bundleId),
         bundleId
       }
     });

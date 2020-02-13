@@ -11,8 +11,8 @@ import * as extension from "../../extension";
 import Deepcode from "../../interfaces/DeepCodeInterfaces";
 
 // mocked data for tests
-const testHost = "http://localhost:3000/";
-const testHostPrefix = "publicapi";
+const testHost = "http://localhost:3000";
+const testHostPrefix = "/publicapi";
 const testToken = "TEST_TOKEN";
 const testBundleId = "testBundleId";
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
@@ -64,15 +64,26 @@ mockedServer.get(`/analysis/${testBundleId}`).reply(200, mockedAnalysisResults);
 const preTestConfigureExtension = () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
+  
   // set test token
   testExtension.token = testToken;
+  
   // set test backend host
   testExtension.config.changeDeepCodeUrl(testHost);
+  
+  // init HTTP module
+  testExtension.initAPI({
+    baseURL: testHost,
+    useDebug: true,
+  });
+
   // mock login and upload confirm to always true
   testExtension.checkUploadConfirm = () => true;
   testExtension.login = async () => true;
+  
   // set workspace path for tests
   testExtension.workspacesPaths = [mockedFolderPath];
+  
   return testExtension;
 };
 

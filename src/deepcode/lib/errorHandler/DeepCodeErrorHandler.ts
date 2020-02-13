@@ -69,14 +69,14 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     try {
       if (process.env.NODE_ENV === "production") {
         // please disable request sending in dev mode to avoid unnecessary reports to server
-        const response = await http.post(extension.config.errorUrl, { body });
+        await http.sendError(body);
       }
+
     } catch (err) {
       const updatedBody = {
         ...body,
         type: `${err.statusCode || ""} ${err.name || ""}`.trim(),
         message: errorsLogs.errorReportFail,
-        path: extension.config.errorUrl,
         data: {
           failedErrorReport: {
             ...body
@@ -84,9 +84,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
         }
       };
 
-      await http.post(extension.config.errorUrl, {
-        body: { ...updatedBody }
-      });
+      await http.sendError(updatedBody);
     }
   }
 

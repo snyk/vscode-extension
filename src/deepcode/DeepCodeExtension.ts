@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
+import { IConfig } from "@deepcode/tsc";
+
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
+import http from "./http/requests";
 
 import {
   DEEPCODE_START_COMMAND,
@@ -37,6 +40,10 @@ class DeepCodeExtension extends DeepCodeLib
     (async (): Promise<void> => {
       this.preActivateActions();
     })();
+  }
+
+  public initAPI(config: IConfig): void {
+    http.init(config);
   }
 }
 

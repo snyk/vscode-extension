@@ -62,7 +62,6 @@ class BundlesModule extends LoginModule
       this.errorHandler.processError(this, err, {
         errorDetails: {
           message: errorsLogs.filtersFiles,
-          endpoint: this.config.filtersUrl
         }
       });
     }
@@ -158,7 +157,6 @@ class BundlesModule extends LoginModule
         removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.createBundle,
-          endpoint: this.config.createBundleUrl
         }
       });
     }
@@ -192,18 +190,18 @@ class BundlesModule extends LoginModule
     chunkedPayload: DeepCode.PayloadMissingFileInterface[] = [],
     isDelay: boolean = false
   ): Promise<void> {
-    const { bundleId } = this.remoteBundles[workspacePath];
-    const endpoint = this.config.getUploadFilesUrl(bundleId);
+
+    const bundleId = this.remoteBundles[workspacePath].bundleId || '';
     let payload: Array<DeepCode.PayloadMissingFileInterface> = [];
 
     const sendUploadRequest = async (chunkPayload: any): Promise<void> => {
       try {
         const uploadFilesReq = async () =>
-          await http.post(endpoint, {
-            body: chunkPayload,
-            token: this.token,
-            fileUpload: true
-          });
+          await http.uploadFiles(
+            this.token,
+            bundleId,
+            chunkPayload,
+          );
 
         // Wait/retry later (invoked below for bigPayload case)
         const uploadResponse = isDelay
@@ -225,7 +223,6 @@ class BundlesModule extends LoginModule
           this.errorHandler.processError(this, err, {
             errorDetails: {
               message: errorsLogs.uploadFiles,
-              endpoint,
               bundleId,
               data: {
                 missingFiles: chunkPayload
@@ -257,6 +254,7 @@ class BundlesModule extends LoginModule
       await sendUploadRequest(processedPayload.payload);
     }
   }
+  
   // check bundle server status
   public async checkBundleOnServer(
     workspacePath: string,
@@ -268,13 +266,10 @@ class BundlesModule extends LoginModule
     }
 
     const bundleId = this.remoteBundles[workspacePath].bundleId || '';
-    const endpoint = this.config.getbundleIdUrl(bundleId);
-    
     try {
       if (!attempts) {
         throw new Error(EXPIRED_REQUEST);
       }
-      // const checkBundleReq = async () => await http.get(endpoint, this.token);
       const checkBundleReq = async () => await http.checkBundle(this.token, bundleId);
       const latestServerBundle: DeepCode.RemoteBundleInterface = isDelay
         ? await httpDelay(checkBundleReq)
@@ -297,7 +292,6 @@ class BundlesModule extends LoginModule
         workspacePath,
         errorDetails: {
           message,
-          endpoint,
           bundleId,
         }
       });
@@ -354,8 +348,6 @@ class BundlesModule extends LoginModule
     }
 
     const bundleId = this.remoteBundles[workspacePath].bundleId || '';
-    const endpoint = this.config.getbundleIdUrl(bundleId);
-
     try {
       const extendedServerBundle = await http.extendBundle(this.token, bundleId, extendBatchBody);
       await this.processBundleFromServer(extendedServerBundle, workspacePath);
@@ -366,7 +358,6 @@ class BundlesModule extends LoginModule
         removedBundle: !!Object.keys(this.remoteBundles).length,
         errorDetails: {
           message: errorsLogs.extendBundle,
-          endpoint,
           bundleId,
           data: {
             ...extendBatchBody

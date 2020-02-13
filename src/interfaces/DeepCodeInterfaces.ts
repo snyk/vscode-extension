@@ -6,14 +6,14 @@ import {
   TextDocument,
   TextEditor
 } from "vscode";
-import { StatusCodeError } from "request-promise/errors";
+import { IConfig } from "@deepcode/tsc";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
 
   export type configType = string | Function;
 
-  export type errorType = StatusCodeError | Error | any;
+  export type errorType = Error | any;
 
   export type filesForSaveListType = Array<string>;
 
@@ -116,23 +116,19 @@ namespace DeepCode {
     success: boolean;
   }
 
+  export interface AnalysisServerResponseInterface {
+    status: string;
+    progress: number;
+    analysisURL: string;
+    analysisResults?: AnalysisServerResultsInterface;
+  }
+
   export interface AnalysisResultsCollectionInterface {
     [key: string]: AnalysisResultsInterface;
   }
 
   export interface DeepCodeConfig {
     deepcodeUrl: string;
-    baseApiUrl: string;
-    loginUrl: string;
-    checkSessionUrl: string;
-    filtersUrl: string;
-    createBundleUrl: string;
-    getUploadFilesUrl: Function;
-    getbundleIdUrl: Function;
-    getAnalysisUrl: Function;
-    getDifAnalysisUrl: Function;
-    errorUrl: string;
-    configureAccountUrl: string;
     termsConditionsUrl: string;
     changeDeepCodeUrl: Function;
   }
@@ -266,6 +262,7 @@ namespace DeepCode {
     activateWatchers(): void;
     activateExtensionAnalyzeActions?(): Promise<void>;
     manageExtensionStatus(): string;
+    initAPI(config: IConfig): void;
   }
 
   export interface ExtensionInterface

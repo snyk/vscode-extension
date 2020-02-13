@@ -1,8 +1,8 @@
-import * as request from "request-promise";
 import {
   ServiceAI,
   IConfig,
   IFiles,
+  IFileContent,
   StartSessionRequestDto,
   StartSessionResponseDto,
   CheckSessionRequestDto,
@@ -12,6 +12,8 @@ import {
   CreateBundleRequestDto,
   CheckBundleRequestDto,
   ExtendBundleRequestDto,
+  UploadFilesRequestDto,
+  GetAnalysisRequestDto,
 } from "@deepcode/tsc";
 
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
@@ -24,71 +26,8 @@ AI.init({
 } as IConfig);
 
 const http = {
-  generalOptions: {
-    resolveWithFullResponse: true,
-    json: true
-  },
-  async get(uri: string, token: string = ""): Promise<{ [key: string]: any }> {
-    const { body, statusCode } = await request({
-      ...this.generalOptions,
-      uri,
-      ...(token && { headers: { "Session-Token": token } })
-    });
-    return { statusCode, ...body };
-  },
-
-  async post(
-    uri: string,
-    options: { [key: string]: any } = {
-      body: null,
-      token: "",
-      fileUpload: false
-    }
-  ): Promise<{ [key: string]: any }> {
-    const { body, token, fileUpload } = options;
-
-    const createHeaders = () => {
-      const headers: { [key: string]: string } = {};
-      if (body) {
-        headers["Content-Type"] = fileUpload
-          ? "application/json;charset=utf-8"
-          : "application/json";
-      }
-      if (token) {
-        headers["Session-Token"] = token;
-      }
-      return headers;
-    };
-
-    const { body: responseBody, statusCode } = await request({
-      ...this.generalOptions,
-      method: "POST",
-      uri,
-      ...(body && { body }),
-      headers: createHeaders()
-    });
-    return { statusCode, ...responseBody };
-  },
-
-  async put(
-    uri: string,
-    options: { [key: string]: any } = {
-      body: null,
-      token: ""
-    }
-  ): Promise<{ [key: string]: any }> {
-    const { body, token } = options;
-    const { body: responseBody, statusCode } = await request({
-      ...this.generalOptions,
-      method: "PUT",
-      uri,
-      ...(body && { body }),
-      headers: {
-        "Content-Type": "application/json",
-        "Session-Token": token
-      }
-    });
-    return { statusCode, ...responseBody };
+  init(config: IConfig): void {
+    AI.init(config);
   },
 
   async login(): Promise<StartSessionResponseDto> {
@@ -148,6 +87,33 @@ const http = {
     const result = await AI.extendBundle(options);
 
     return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
+
+  async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
+    const options: UploadFilesRequestDto = {
+      sessionToken,
+      bundleId,
+      content: (body as IFileContent[]),
+    };
+    await AI.uploadFiles(options);
+
+    return Promise.resolve();
+  },
+
+  async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
+    const options: GetAnalysisRequestDto = {
+      sessionToken,
+      bundleId,
+    };
+    const result = await AI.getAnalysis(options);
+
+    return Promise.resolve(result as DeepCode.AnalysisServerResponseInterface);
+  },
+
+  // TODO: when API package will implement such functionality
+  // we would have the possibility to send an error to server
+  async sendError(body: any): Promise<void> {
+    return Promise.resolve();
   }
 };
 
