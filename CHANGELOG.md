@@ -1,3 +1,6 @@
+## [1.1.1] - 2019-03-04
+- Added support for GitPod
+
 ## [1.1.0] - 2019-02-02
 - Improved documentation and tutorial
 - Performance optimization 

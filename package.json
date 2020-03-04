@@ -3,7 +3,7 @@
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode (Beta)",
   "description": "Detect bugs and quality issues in JavaScript, TypeScript, Python and Java...",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
   "homepage": "https://www.deepcode.ai/",
