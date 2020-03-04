@@ -46,7 +46,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
         return `${this.deepcodeUrl}app/~platform/account`;
       },
       get termsConditionsUrl(): string {
-        return `${this.deepcodeUrl}tc`;
+        return `${this.deepcodeUrl}tc?utm_source=vsc`;
       },
       changeDeepCodeUrl: (url: string): void => {
         this.deepcode.deepcodeUrl = url;
