@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as open from "open";
 import {
   statusCodes,
   ATTEMPTS_AMMOUNT

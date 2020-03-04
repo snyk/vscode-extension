@@ -52,7 +52,13 @@ class LoginModule extends BaseDeepCodeModule
         }
         this.token = sessionToken;
 
-        await open(loginURL);
+        let options: open.Options | undefined;
+        if (process.env['GITPOD_WORKSPACE_ID']) {
+            options = {
+                app: ['gp', 'preview']
+            };
+        }
+        await open(loginURL, options);
         return true;
       } catch (err) {
         this.errorHandler.processError(this, err, {
