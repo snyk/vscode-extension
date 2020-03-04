@@ -67,6 +67,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
       : [payload];
   }
 
+  // TODO: check if this need to be updated ( calling checkBundleOnServer() )
   private async performBundlesAndReviewActions(
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {

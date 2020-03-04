@@ -217,69 +217,72 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  private async requestAnalysisFromServer(
-    extension: DeepCode.ExtensionInterface,
-    bundleId: string
-  ): Promise<any> {
-    const analyzer = this;
-    let attemptsIfFailedStatus = 2;
+  // TODO: remove getAnalysis
+  // private async requestAnalysisFromServer(
+  //   extension: DeepCode.ExtensionInterface,
+  //   bundleId: string
+  // ): Promise<any> {
+  //   const analyzer = this;
+  //   let attemptsIfFailedStatus = 2;
 
-    async function fetchAnalysisResults() {
-      try {
-        const analysisResponse = await http.getAnalysis(extension.token, bundleId);
-        const currentProgress = createDeepCodeProgress(analysisResponse.progress);
+  //   async function fetchAnalysisResults() {
+  //     try {
+  //       const analysisResponse = await http.getAnalysis(extension.token, bundleId);
+  //       const currentProgress = createDeepCodeProgress(analysisResponse.progress);
 
-        analyzer.analysisProgressValue =
-          analyzer.analysisProgressValue < currentProgress
-            ? currentProgress
-            : analyzer.analysisProgressValue;
-        if (analysisResponse.status === ANALYSIS_STATUS.failed) {
-          attemptsIfFailedStatus--;
-          return !attemptsIfFailedStatus
-            ? { success: false }
-            : await httpDelay(fetchAnalysisResults);
-        }
-        if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await httpDelay(fetchAnalysisResults);
-        }
-        return { ...analysisResponse.analysisResults, success: true };
+  //       analyzer.analysisProgressValue =
+  //         analyzer.analysisProgressValue < currentProgress
+  //           ? currentProgress
+  //           : analyzer.analysisProgressValue;
+  //       if (analysisResponse.status === ANALYSIS_STATUS.failed) {
+  //         attemptsIfFailedStatus--;
+  //         return !attemptsIfFailedStatus
+  //           ? { success: false }
+  //           : await httpDelay(fetchAnalysisResults);
+  //       }
+  //       if (analysisResponse.status !== ANALYSIS_STATUS.done) {
+  //         return await httpDelay(fetchAnalysisResults);
+  //       }
+  //       return { ...analysisResponse.analysisResults, success: true };
 
-      } catch (err) {
-        extension.errorHandler.processError(extension, err, {
-          errorDetails: {
-            message: errorsLogs.failedAnalysis,
-            bundleId
-          }
-        });
-        return { success: false };
-      }
-    }
-    return await fetchAnalysisResults();
-  }
+  //     } catch (err) {
+  //       extension.errorHandler.processError(extension, err, {
+  //         errorDetails: {
+  //           message: errorsLogs.failedAnalysis,
+  //           bundleId
+  //         }
+  //       });
+  //       return { success: false };
+  //     }
+  //   }
+  //   return await fetchAnalysisResults();
+  // }
 
-  private async performAnalysis(
-    extension: DeepCode.ExtensionInterface | any,
-    workspacePath: string
-  ): Promise<DeepCode.AnalysisResultsInterface | { success: boolean }> {
-    const { bundleId } = await extension.remoteBundles[workspacePath];
-    if (!bundleId) {
-      return {
-        success: false
-      };
-    }
-    const analysisResults: DeepCode.AnalysisResultsInterface = await this.requestAnalysisFromServer(
-      extension,
-      bundleId
-    );
+  // TODO: (?) REMOVE performAnalysis
+  // private async performAnalysis(
+  //   extension: DeepCode.ExtensionInterface | any,
+  //   workspacePath: string
+  // ): Promise<DeepCode.AnalysisResultsInterface | { success: boolean }> {
+  //   const { bundleId } = await extension.remoteBundles[workspacePath];
+  //   if (!bundleId) {
+  //     return {
+  //       success: false
+  //     };
+  //   }
+  //   const analysisResults: DeepCode.AnalysisResultsInterface = await this.requestAnalysisFromServer(
+  //     extension,
+  //     bundleId
+  //   );
 
-    if (analysisResults.success) {
-      this.analysisResultsCollection[workspacePath] = {
-        ...analysisResults
-      };
-    }
-    return analysisResults;
-  }
+  //   if (analysisResults.success) {
+  //     this.analysisResultsCollection[workspacePath] = {
+  //       ...analysisResults
+  //     };
+  //   }
+  //   return analysisResults;
+  // }
 
+  // FIXME: check if need to be deleted ? (move progress tracking to subscriptions)
   private async reviewWithProgress(
     path: string,
     vscodeProgress: vscode.Progress<{ increment: number }>,
@@ -292,10 +295,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     if (missingFiles && Array.isArray(missingFiles) && missingFiles.length) {
       return;
     }
-    const analysisResult = await this.performAnalysis(extension, path);
-    if (!analysisResult.success) {
-      await this.processFailedReviewCodeResults(extension, path);
-    }
+    // const analysisResult = await this.performAnalysis(extension, path);
+    // if (!analysisResult.success) {
+    //   await this.processFailedReviewCodeResults(extension, path);
+    // }
     vscodeProgress.report({ increment: this.analysisProgressValue });
   }
 

@@ -21,7 +21,7 @@ import { window, ProgressLocation, Progress } from "vscode";
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?
-const SAFE_PAYLOAD_SIZE =  ALLOWED_PAYLOAD_SIZE / 2;   // safe size for requests
+const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests
 
 export const createFileHash = (file: string): string => {
   return crypto
@@ -49,54 +49,58 @@ export const createFilesHashesBundle = async (
   exclusionFilter.addExclusionRule(rootExclusionRule);
   const {
     bundle: finalBundle,
-    progress: finalProgress,
-  } = await window.withProgress({
-    location: ProgressLocation.Notification,
-    title: deepCodeMessages.fileLoadingProgress.msg,
-    cancellable: false
-  }, async (progress, token) => {
-    // Get a directory size overview for progress reporting
-    let count = await scanFileCountFromDirectory(folderPath);
+    progress: finalProgress
+  } = await window.withProgress(
+    {
+      location: ProgressLocation.Notification,
+      title: deepCodeMessages.fileLoadingProgress.msg,
+      cancellable: false
+    },
+    async (progress, token) => {
+      // Get a directory size overview for progress reporting
+      let count = await scanFileCountFromDirectory(folderPath);
 
-    console.log(`Checking ${count} files...`);
-    progress.report({increment: 1});
-    // Filter, read and hash all files
-    const res = await createListOfDirFilesHashes(
-      serverFilesFilterList,
-      folderPath,
-      folderPath,
-      exclusionFilter,
-      { // progress data
-        filesProcessed: 0,
-        totalFiles: count,
-        percentDone: 0,
-        progressWindow: progress
-      }
-    );
-    progress.report({increment: 100});
-    return res;
-  });
+      console.log(`Checking ${count} files...`);
+      progress.report({ increment: 1 });
+      // Filter, read and hash all files
+      const res = await createListOfDirFilesHashes(
+        serverFilesFilterList,
+        folderPath,
+        folderPath,
+        exclusionFilter,
+        {
+          // progress data
+          filesProcessed: 0,
+          totalFiles: count,
+          percentDone: 0,
+          progressWindow: progress
+        }
+      );
+      progress.report({ increment: 100 });
+      return res;
+    }
+  );
   console.log(`Hashed ${Object.keys(finalBundle).length} files`);
   return finalBundle; // final window result
 };
 
 // Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
-const scanFileCountFromDirectory = async (
-  folderPath: string
-) => {
+export const scanFileCountFromDirectory = async (folderPath: string) => {
   const dirContent: string[] = await fs.readdir(folderPath);
   let subFileCount = 0;
 
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(folderPath, name);
     if (fs.lstatSync(fullChildPath).isDirectory()) {
-       subFileCount += await scanFileCountFromDirectory(fullChildPath);
+      subFileCount += await scanFileCountFromDirectory(fullChildPath);
     } else {
-       ++subFileCount;
+      ++subFileCount;
     }
   }
   return subFileCount;
-}
+};
+
+export let filesProgress = { processed: 0, total: 0 };
 
 // Load and hash all files in directory (recursively)
 export const createListOfDirFilesHashes = async (
@@ -104,11 +108,11 @@ export const createListOfDirFilesHashes = async (
   folderPath: string,
   path: string = folderPath,
   exclusionFilter: ExclusionFilter,
-  progress : {
-    filesProcessed: number,
-    totalFiles: number,
-    percentDone: number,
-    progressWindow: Progress<{increment: number, message: string}>
+  progress: {
+    filesProcessed: number;
+    totalFiles: number;
+    percentDone: number;
+    progressWindow: Progress<{ increment: number; message: string }>;
   }
 ) => {
   let list: { [key: string]: string } = {};
@@ -118,7 +122,9 @@ export const createListOfDirFilesHashes = async (
   // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(path, name);
-    if (name === DCIGNORE_FILENAME) useDefaultIgnore = false;
+    if (name === DCIGNORE_FILENAME) {
+      useDefaultIgnore = false;
+    }
     if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
       // We've found a ignore file.
       const exclusionRule = new ExclusionRule();
@@ -153,12 +159,17 @@ export const createListOfDirFilesHashes = async (
         ++progress.filesProcessed;
         // This check is just to throttle the reporting process
         if (progress.filesProcessed % 100 === 0) {
-          const currentPercentDone =  Math.round((progress.filesProcessed / progress.totalFiles) * 100);
-          const percentDoneIncrement = currentPercentDone - progress.percentDone;
+          const currentPercentDone = Math.round(
+            (progress.filesProcessed / progress.totalFiles) * 100
+          );
+          const percentDoneIncrement =
+            currentPercentDone - progress.percentDone;
 
           if (percentDoneIncrement > 0) {
-            progress.progressWindow.report({increment: percentDoneIncrement,
-                                            message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)` })
+            progress.progressWindow.report({
+              increment: percentDoneIncrement,
+              message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+            });
             progress.percentDone = currentPercentDone;
           }
         }
@@ -171,13 +182,19 @@ export const createListOfDirFilesHashes = async (
 
       if (isFile) {
         if (!acceptFileToBundle(name, serverFilesFilterList)) continue;
-      
+
         // Exclude files which are too large to be transferred via http. There is currently no
         // way to process them in multiple chunks
         const fileContentSize = fileStats.size;
         if (fileContentSize > SAFE_PAYLOAD_SIZE) {
-          console.log("Excluding file " + fullChildPath + " from processing: size " +
-                      fileContentSize + " exceeds payload size limit " + SAFE_PAYLOAD_SIZE);
+          console.log(
+            "Excluding file " +
+              fullChildPath +
+              " from processing: size " +
+              fileContentSize +
+              " exceeds payload size limit " +
+              SAFE_PAYLOAD_SIZE
+          );
           continue;
         }
         const filePath = path.split(folderPath)[1];
@@ -188,7 +205,7 @@ export const createListOfDirFilesHashes = async (
       if (isDirectory) {
         const {
           bundle: subBundle,
-          progress: subProgress,
+          progress: subProgress
         } = await createListOfDirFilesHashes(
           serverFilesFilterList,
           folderPath,
@@ -198,7 +215,7 @@ export const createListOfDirFilesHashes = async (
         );
         progress = subProgress;
         for (let key of Object.keys(subBundle)) {
-          progress.filesProcessed
+          progress.filesProcessed;
           list[key] = subBundle[key];
         }
       }
@@ -206,11 +223,18 @@ export const createListOfDirFilesHashes = async (
       continue;
     }
   }
+  filesProgress = {
+    processed: progress.filesProcessed,
+    total: progress.totalFiles
+  };
+  // console.log('HERE: ====>',{
+  //   bundle: list,
+  //   progress
+  // });
   return {
     bundle: list,
-    progress,
+    progress
   };
-  
 };
 
 export const acceptFileToBundle = (
@@ -229,9 +253,7 @@ export const acceptFileToBundle = (
   return false;
 };
 
-export const isFileChangingBundle = (
-  name: string,
-): boolean => {
+export const isFileChangingBundle = (name: string): boolean => {
   name = nodePath.basename(name);
   if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
     return true;
@@ -356,10 +378,15 @@ export const splitPayloadIntoChunks = (
   let currentChunkSize = 0;
   for (let i = 0; i < payload.length; i++) {
     const currentChunkElement = payload[i];
-    const currentWorstCaseChunkElementSize = Buffer.byteLength(Buffer.from(JSON.stringify(currentChunkElement)));
+    const currentWorstCaseChunkElementSize = Buffer.byteLength(
+      Buffer.from(JSON.stringify(currentChunkElement))
+    );
     const lastChunk = chunkedPayload[chunkedPayload.length - 1];
 
-    if (!lastChunk || currentChunkSize + currentWorstCaseChunkElementSize > SAFE_PAYLOAD_SIZE) {
+    if (
+      !lastChunk ||
+      currentChunkSize + currentWorstCaseChunkElementSize > SAFE_PAYLOAD_SIZE
+    ) {
       // Start a new chunk
       chunkedPayload.push([payload[i]]);
       currentChunkSize = currentWorstCaseChunkElementSize;

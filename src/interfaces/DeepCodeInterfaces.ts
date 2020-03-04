@@ -230,27 +230,28 @@ namespace DeepCode {
       workspacePath: string,
       bundle?: DeepCode.RemoteBundleInterface
     ): Promise<void>;
-    uploadMissingFilesToServerBundle(
-      workspacePath: string,
-      chunkedPayload?: Array<PayloadMissingFileInterface>,
-      isDelay?: boolean
-    ): Promise<void>;
-    checkBundleOnServer(
-      workspacePath: string,
-      attempts?: number
-    ): Promise<void>;
-    extendWorkspaceHashesBundle(
-      updatedFiles: Array<{
-        [key: string]: string;
-      }>,
-      workspacePath: string
-    ): Promise<void>;
-    extendBundleOnServer(
-      updatedFiles: Array<{
-        [key: string]: string;
-      }>,
-      workspacePath: string
-    ): Promise<void>;
+    // FIXME: Check if these fields are need in other places
+    // uploadMissingFilesToServerBundle(
+    //   workspacePath: string,
+    //   chunkedPayload?: Array<PayloadMissingFileInterface>,
+    //   isDelay?: boolean
+    // ): Promise<void>;
+    // checkBundleOnServer(
+    //   workspacePath: string,
+    //   attempts?: number
+    // ): Promise<void>;
+    // extendWorkspaceHashesBundle(
+    //   updatedFiles: Array<{
+    //     [key: string]: string;
+    //   }>,
+    //   workspacePath: string
+    // ): Promise<void>;
+    // extendBundleOnServer(
+    //   updatedFiles: Array<{
+    //     [key: string]: string;
+    //   }>,
+    //   workspacePath: string
+    // ): Promise<void>;
     checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
     checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;
   }
