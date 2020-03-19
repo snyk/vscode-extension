@@ -6,6 +6,7 @@ import {
   TextDocument,
   TextEditor
 } from "vscode";
+import * as vscode from "vscode";
 import { IConfig } from "@deepcode/tsc";
 
 namespace DeepCode {
@@ -93,7 +94,7 @@ namespace DeepCode {
   }
 
   export interface AnalysisResultsFileResultsInterface {
-    [suggestionIndex: number]: Array<IssuePositionsInterface>;
+    [suggestionIndex: string]: Array<IssuePositionsInterface>;
   }
 
   export interface AnalysisResultsFilesInterface {
@@ -125,6 +126,17 @@ namespace DeepCode {
 
   export interface AnalysisResultsCollectionInterface {
     [key: string]: AnalysisResultsInterface;
+  }
+
+  export interface IssuesListInterface {
+    [suggestionIndex: number]: Array<DeepCode.IssuePositionsInterface>;
+  }
+
+  // TODO: update interface according to createIssuesList fn args
+  export interface IssuesListOptionsInterface {
+    fileIssuesList: IssuesListInterface;
+    suggestions: AnalysisSuggestionsInterface;
+    fileUri: vscode.Uri;
   }
 
   export interface DeepCodeConfig {
@@ -161,6 +173,7 @@ namespace DeepCode {
       hide: boolean
     ): Promise<void>;
     setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
+    updateAnalysisResultsCollection(results: AnalysisResultsCollectionInterface): void;
   }
 
   export interface StatusBarItemInterface {
@@ -230,28 +243,6 @@ namespace DeepCode {
       workspacePath: string,
       bundle?: DeepCode.RemoteBundleInterface
     ): Promise<void>;
-    // FIXME: Check if these fields are need in other places
-    // uploadMissingFilesToServerBundle(
-    //   workspacePath: string,
-    //   chunkedPayload?: Array<PayloadMissingFileInterface>,
-    //   isDelay?: boolean
-    // ): Promise<void>;
-    // checkBundleOnServer(
-    //   workspacePath: string,
-    //   attempts?: number
-    // ): Promise<void>;
-    // extendWorkspaceHashesBundle(
-    //   updatedFiles: Array<{
-    //     [key: string]: string;
-    //   }>,
-    //   workspacePath: string
-    // ): Promise<void>;
-    // extendBundleOnServer(
-    //   updatedFiles: Array<{
-    //     [key: string]: string;
-    //   }>,
-    //   workspacePath: string
-    // ): Promise<void>;
     checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
     checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;
   }

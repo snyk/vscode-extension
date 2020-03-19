@@ -63,64 +63,66 @@ const http = {
   },
 
   // TODO: remove
-  // async createBundle(sessionToken: string, files: object): Promise<DeepCode.RemoteBundleInterface> {
-  //   const options: CreateBundleRequestDto = {
-  //     sessionToken,
-  //     files: (files as IFiles),
-  //   };
-  //   const result = await AI.createBundle(options);
+  async createBundle(sessionToken: string, files: object): Promise<DeepCode.RemoteBundleInterface> {
+    const options: CreateBundleRequestDto = {
+      sessionToken,
+      files: (files as IFiles),
+    };
+    const result = await AI.createBundle(options);
 
-  //   return Promise.resolve(result as DeepCode.RemoteBundleInterface);
-  // },
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
 
-  // async checkBundle(sessionToken: string, bundleId: string): Promise<DeepCode.RemoteBundleInterface> {
-  //   const options: CheckBundleRequestDto = {
-  //     sessionToken,
-  //     bundleId,
-  //   };
-  //   const result = await AI.checkBundle(options);
+  async checkBundle(sessionToken: string, bundleId: string): Promise<DeepCode.RemoteBundleInterface> {
+    const options: CheckBundleRequestDto = {
+      sessionToken,
+      bundleId,
+    };
+    const result = await AI.checkBundle(options);
 
-  //   return Promise.resolve(result as DeepCode.RemoteBundleInterface);
-  // },
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
   
-  // async extendBundle(sessionToken: string, bundleId: string, body: DeepCode.RemoteExtendBundleInterface): Promise<DeepCode.RemoteBundleInterface> {
-  //   const options: ExtendBundleRequestDto = {
-  //     sessionToken,
-  //     bundleId,
-  //     files: (body.files as IFiles),
-  //     removedFiles: body.removedFiles,
-  //   };
-  //   const result = await AI.extendBundle(options);
+  async extendBundle(sessionToken: string, bundleId: string, body: DeepCode.RemoteExtendBundleInterface): Promise<DeepCode.RemoteBundleInterface> {
+    const options: ExtendBundleRequestDto = {
+      sessionToken,
+      bundleId,
+      files: (body.files as IFiles),
+      removedFiles: body.removedFiles,
+    };
+    const result = await AI.extendBundle(options);
 
-  //   return Promise.resolve(result as DeepCode.RemoteBundleInterface);
-  // },
+    return Promise.resolve(result as DeepCode.RemoteBundleInterface);
+  },
 
-  // async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
-  //   const options: UploadFilesRequestDto = {
-  //     sessionToken,
-  //     bundleId,
-  //     content: (body as IFileContent[]),
-  //   };
-  //   await AI.uploadFiles(options);
+  async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
+    const options: UploadFilesRequestDto = {
+      sessionToken,
+      bundleId,
+      content: (body as IFileContent[]),
+    };
+    await AI.uploadFiles(options);
 
-  //   return Promise.resolve();
-  // },
+    return Promise.resolve();
+  },
 
-  // async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
-  //   const options: GetAnalysisRequestDto = {
-  //     sessionToken,
-  //     bundleId,
-  //   };
-  //   const result = await AI.getAnalysis(options);
+  async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
+    const options: GetAnalysisRequestDto = {
+      sessionToken,
+      bundleId,
+    };
+    const result = await AI.getAnalysis(options);
 
-  //   return Promise.resolve(result as DeepCode.AnalysisServerResponseInterface);
-  // },
+    return Promise.resolve(result as DeepCode.AnalysisServerResponseInterface);
+  },
 
-  async analyse(files: string[], sessionToken: string) {
+  async analyse(files: string[], sessionToken: string, removedFiles: string[] = []) {
     const options: AnalyseRequestDto = {
       files,
-      sessionToken
+      sessionToken,
+      removedFiles,
     };
+    
     try {
       return AI.analyse(options);
 

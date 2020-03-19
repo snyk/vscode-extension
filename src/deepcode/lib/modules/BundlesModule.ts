@@ -1,44 +1,26 @@
 import * as vscode from "vscode";
+import http from "../../http/requests";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
-import {
-  EXPIRED_REQUEST,
-  ATTEMPTS_AMMOUNT,
-  statusCodes
-} from "../../constants/statusCodes";
-import http from "../../http/requests";
-import {
-  createMissingFilesPayloadUtil,
-  createFilesHashesBundle,
-  processServerFilesFilterList,
-  processPayloadSize,
-  scanFileCountFromDirectory,
-  createListOfDirFilesHashes
-} from "../../utils/filesUtils";
-import {
-  checkIfBundleIsEmpty,
-  extendLocalHashBundle
-} from "../../utils/bundlesUtils";
-// creating git bundles is disabled, may be used in future
-// import {createGitBundle} from '../../utils/gitUtils';
-import { createBundleBody, httpDelay } from "../../utils/httpUtils";
-import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
+import { window, ProgressLocation, Progress } from "vscode";
+import { deepCodeMessages } from "../../messages/deepCodeMessages";
+import { processServerFilesFilterList } from "../../utils/filesUtils";
+import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
+import { startFilesUpload } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import LoginModule from "../../lib/modules/LoginModule";
-import { ExclusionRule, ExclusionFilter } from "../../utils/ignoreUtils";
-import { window, ProgressLocation, Progress } from "vscode";
-import { EXCLUDED_NAMES } from "../../constants/filesConstants";
+import { getExtension } from "../../../extension";
 
 class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   private rootPath = "";
 
+  files: string[] = [];
+  serviceAI = http.getServiceAI();
+
   constructor() {
     super();
-
-    const serviceAI = http.getServiceAI();
 
     this.onBuildBundleProgress = this.onBuildBundleProgress.bind(this);
     this.onBuildBundleFinish = this.onBuildBundleFinish.bind(this);
@@ -48,114 +30,57 @@ class BundlesModule extends LoginModule
     this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
     this.onError = this.onError.bind(this);
 
-    serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, this.onBuildBundleProgress);
-    serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, this.onBuildBundleFinish);
-    serviceAI.on(
+    this.serviceAI.on(
       BUNDLE_EVENTS.uploadBundleProgress,
       this.onUploadBundleProgress
     );
-    serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, this.onUploadBundleFinish);
-    serviceAI.on(BUNDLE_EVENTS.analyseProgress, this.onAnalyseProgress);
-    serviceAI.on(BUNDLE_EVENTS.analyseFinish, this.onAnalyseFinish);
-    serviceAI.on(BUNDLE_EVENTS.error, this.onError);
+    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, this.onAnalyseProgress);
+    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
   }
 
   onBuildBundleProgress() {
-    setTimeout(async () => {
-      // await CommonUtils.sleep(100);
-      // Store.set(STORE_KEYS.composingInProcess, true);
-    }, 0);
+    console.warn("BUILD BUNDLE PROGRESS event");
   }
 
   onBuildBundleFinish() {
-    setTimeout(async () => {
-      // await CommonUtils.sleep(100);
-      // Store.set(STORE_KEYS.composingInProcess, false);
-    }, 0);
+    console.warn("BUILD BUNDLE FINISH event");
   }
 
   onUploadBundleProgress(processed: number, total: number) {
-    setTimeout(async () => {
-      // Store.setMany({
-      //   [STORE_KEYS.uploadInProgress]: true,
-      //   [STORE_KEYS.uploadCompleted]: processed,
-      //   [STORE_KEYS.uploadTotal]: total
-      // });
-
-      
-      const exclusionFilter = new ExclusionFilter();
-      const rootExclusionRule = new ExclusionRule();
-      rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
-      exclusionFilter.addExclusionRule(rootExclusionRule);
-
-      const {
-        bundle: finalBundle,
-        progress: finalProgress
-      } = await window.withProgress(
-        {
-          location: ProgressLocation.Notification,
-          title: deepCodeMessages.fileLoadingProgress.msg,
-          cancellable: false
-        },
-        async (progress, token) => {
-          // Get a directory size overview for progress reporting
-          let count = await scanFileCountFromDirectory(this.rootPath);
-
-          console.warn(`Checking ${count} files...`);
-          progress.report({ increment: 1 });
-          // Filter, read and hash all files
-          const res = await createListOfDirFilesHashes(
-            // get the correct value of - 'serverFilesFilterList'
-            this.serverFilesFilterList,
-            this.rootPath,
-            this.rootPath,
-            exclusionFilter,
-            {
-              // progress data
-              filesProcessed: 0,
-              totalFiles: count,
-              percentDone: 0,
-              progressWindow: progress
-            }
-          );
-          progress.report({ increment: 100 });
-          // console.log('HERE: ====> ', res);
-          return res;
-        }
-      );
-      console.warn(`Hashed ${Object.keys(finalBundle).length} files`);
-      return finalBundle; // final window result
-    }, 0);
+    console.warn("on UploadBundle Progress");
   }
 
   onUploadBundleFinish() {
-    setTimeout(async () => {
-      // Store.set(STORE_KEYS.uploadInProgress, false);
-    }, 0);
+    console.warn("UPLOAD BUNDLE FINISH event");
   }
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
-    setTimeout(async () => {
-      // const adaptedResults = await Analyser.adaptResults(
-      //   analysisResults.analysisResults
-      // );
-      // Store.set(STORE_KEYS.analysisResults, adaptedResults);
-      // Store.set(STORE_KEYS.analysisInProgress, true);
-    }, 0);
+    console.warn("on Analyse Progress");
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
-    setTimeout(async () => {
-      // const adaptedResults = await Analyser.adaptResults(
-      //   analysisResults.analysisResults
-      // );
-      // Store.set(STORE_KEYS.analysisResults, adaptedResults);
-      // Store.set(STORE_KEYS.analysisInProgress, false);
-    }, 0);
+    type ResultFiles = {
+      [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
+    };
+    const resultFiles = (
+      analysisResults.analysisResults.files as unknown as ResultFiles
+    );
+    const result = ({
+      files: { ...resultFiles },
+      suggestions: analysisResults.analysisResults
+        .suggestions as DeepCode.AnalysisSuggestionsInterface,
+      success: true
+    } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
+    console.error("Analysis Result is ready");
+
+    this.analyzer.updateAnalysisResultsCollection(result);
+
+    return Promise.resolve();
   }
 
   onError(error: Error) {
-    // Logger.log(error);
+    console.error(error);
+    return Promise.reject(error);
   }
 
   // processing workspaces
@@ -203,34 +128,64 @@ class BundlesModule extends LoginModule
   }
 
   public async performBundlesActions(path: string): Promise<void> {
-    if (
-      !Object.keys(this.serverFilesFilterList).length ||
-      !this.checkUploadConfirm(path) ||
-      this.checkIfHashesBundlesIsEmpty(path)
-    ) {
+    if (!Object.keys(this.serverFilesFilterList).length) {
       return;
     }
-    // TODO: Remove next two methods
-    // await this.sendRemoteBundleToServer(
-    //   path,
-    //   await this.createRemoteBundleForServer(path)
-    // );
-    // await this.checkBundleOnServer(path);
 
-    // FIXME: ANANLYSE starts here
-    const files = this.getFiles(
-      await this.createRemoteBundleForServer(path),
-      path
-    );
-    await http.analyse(files, this.token);
+    this.files = await startFilesUpload(path, this.serverFilesFilterList);
+    const files: string[] = this.getFiles(this.files, path);
+
+    const progressOptions = {
+      location: ProgressLocation.Notification,
+      title: deepCodeMessages.fileLoadingProgress.msg,
+      cancellable: false
+    };
+
+    window.withProgress(progressOptions, async progress => {
+      this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
+        progress.report({ increment: 33 });
+        this.onBuildBundleFinish();
+      });
+      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+        progress.report({ increment: 66 });
+        this.onUploadBundleFinish();
+      });
+      this.serviceAI.on(
+        BUNDLE_EVENTS.analyseFinish,
+        (analysisResults: IQueueAnalysisCheckResult) => {
+          progress.report({ increment: 100 });
+          this.onAnalyseFinish(analysisResults);
+        }
+      );
+      this.serviceAI.on(BUNDLE_EVENTS.error, () => {
+        progress.report({ increment: 100 });
+        this.onError(new Error("analyse process faild"));
+      });
+
+      try {
+        await http.analyse(files, this.token);
+      } catch(error) {
+        console.log(error);
+      }
+    });
   }
 
-  // processing bundles of files hashes
+  // TODO: REMOVE or just update?
   private async createSingleHashBundle(
     path: string
   ): Promise<DeepCode.BundlesInterface> {
     this.rootPath = path;
-    return await createFilesHashesBundle(path, this.serverFilesFilterList);
+
+    // convert string[] to BundleInterface
+    const filesBundle: { [key: string]: string } = {};
+    let resultBundle: { [key: string]: string } = this.files.reduce(
+      (resultBundle, filePath) => {
+        resultBundle[filePath] = filePath;
+        return resultBundle;
+      },
+      filesBundle
+    );
+    return resultBundle;
   }
 
   public async updateHashesBundles(
@@ -272,46 +227,10 @@ class BundlesModule extends LoginModule
     delete this.remoteBundles[workspacePath];
   }
 
-  private async createRemoteBundleForServer(
-    workspacePath: string
-  ): Promise<DeepCode.BundlesInterface> {
-    let bundleForServer = this.hashesBundles[workspacePath];
-    // GIT REPOS ARE TEMPORARILY DISABLED
-    return bundleForServer;
+  private getFiles(bundleForServer: string[], path: string) {
+    const files = bundleForServer.map(file => path + file);
+    return files;
   }
-
-  private getFiles(bundleForServer: { [key: string]: string }, path: string) {
-    const files = bundleForServer.repo
-      ? (bundleForServer as object)
-      : (createBundleBody(bundleForServer).files as object);
-
-    return Object.keys(files).map(file => path + file);
-  }
-
-  // TODO: remove CREATE BUNDLE
-  // private async sendRemoteBundleToServer(
-  //   workspacePath: string,
-  //   bundleForServer: {
-  //     [key: string]: string;
-  //   }
-  // ): Promise<void> {
-  //   try {
-  //     const files = bundleForServer.repo
-  //       ? (bundleForServer as object)
-  //       : (createBundleBody(bundleForServer).files as object);
-  //     const serverBundle = await http.createBundle(this.token, files);
-
-  //     await this.processBundleFromServer(serverBundle, workspacePath);
-  //   } catch (err) {
-  //     await this.errorHandler.processError(this, err, {
-  //       workspacePath,
-  //       removedBundle: !!Object.keys(this.remoteBundles).length,
-  //       errorDetails: {
-  //         message: errorsLogs.createBundle
-  //       }
-  //     });
-  //   }
-  // }
 
   // TODO: REMOVE
   // private async processBundleFromServer(
