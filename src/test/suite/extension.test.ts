@@ -127,7 +127,6 @@ suite("Deepcode Extension Tests", () => {
     );
   });
   test("Analyzing", async () => {
-    await testExtension.analyzer.reviewCode(testExtension);
     const { analysisResults } = mockedAnalysisResults;
     assert.deepEqual(
       testExtension.analyzer.analysisResultsCollection[mockedFolderPath].files,

@@ -1,6 +1,5 @@
 import * as crypto from "crypto";
 import * as nodePath from "path";
-import ignore from "ignore";
 import { Buffer } from "buffer";
 import { fs } from "mz";
 import {
@@ -9,15 +8,10 @@ import {
   FILE_FORMAT,
   GITIGNORE_FILENAME,
   DCIGNORE_FILENAME,
-  EXCLUDED_NAMES,
-  DEFAULT_IGNORE,
   FILE_CURRENT_STATUS
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
-import { deepCodeMessages } from "../messages/deepCodeMessages";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
-import { ExclusionRule, ExclusionFilter } from "./ignoreUtils";
-import { window, ProgressLocation, Progress } from "vscode";
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
-import { debounce } from "../../utils/tsUtils";
 import {
   FILE_CURRENT_STATUS,
   GIT_FILENAME
@@ -67,7 +66,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
       : [payload];
   }
 
-  // TODO: check if this need to be updated ( calling checkBundleOnServer() )
   private async performBundlesAndReviewActions(
     extension: DeepCode.ExtensionInterface
   ): Promise<void> {
@@ -77,10 +75,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
         if (!extension.checkUploadConfirm(workspacePath)) {
           continue;
         }
-        // await extension.extendWorkspaceHashesBundle(
-        //   updatedFiles,
-        //   workspacePath
-        // );
         let updated = false;
         if (updatedFiles.some(({filePath}) => isFileChangingBundle(filePath))) {
           await extension.updateHashesBundles(workspacePath);
@@ -92,8 +86,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
         } else {
           await extension.performBundlesActions(workspacePath);
         }
-        const debouncedAnalyzeFunc = debounce(extension.analyzer.reviewCode);
-        await debouncedAnalyzeFunc(extension);
       }
     }
     this.emptyChangedFilesLists();

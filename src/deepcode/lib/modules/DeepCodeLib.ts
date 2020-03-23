@@ -142,7 +142,6 @@ export default class DeepCodeLib extends BundlesModule
         }
         await this.performBundlesActions(path);
       }
-      await this.analyzer.reviewCode(this);
     }
   }
 

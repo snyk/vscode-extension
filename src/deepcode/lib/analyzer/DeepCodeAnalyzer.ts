@@ -90,9 +90,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   }
 
   private createIssuesList(
-    // fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface,
-    // suggestions: DeepCode.AnalysisSuggestionsInterface,
-    // fileUri: vscode.Uri
     options: DeepCode.IssuesListOptionsInterface
   ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
@@ -224,154 +221,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  // TODO: remove getAnalysis
-  private async requestAnalysisFromServer(
-    extension: DeepCode.ExtensionInterface,
-    bundleId: string
-  ): Promise<any> {
-    const analyzer = this;
-    let attemptsIfFailedStatus = 2;
-
-    async function fetchAnalysisResults() {
-      try {
-        const analysisResponse = await http.getAnalysis(extension.token, bundleId);
-        const currentProgress = createDeepCodeProgress(analysisResponse.progress);
-
-        analyzer.analysisProgressValue =
-          analyzer.analysisProgressValue < currentProgress
-            ? currentProgress
-            : analyzer.analysisProgressValue;
-        if (analysisResponse.status === ANALYSIS_STATUS.failed) {
-          attemptsIfFailedStatus--;
-          return !attemptsIfFailedStatus
-            ? { success: false }
-            : await httpDelay(fetchAnalysisResults);
-        }
-        if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await httpDelay(fetchAnalysisResults);
-        }
-        return { ...analysisResponse.analysisResults, success: true };
-
-      } catch (err) {
-        extension.errorHandler.processError(extension, err, {
-          errorDetails: {
-            message: errorsLogs.failedAnalysis,
-            bundleId
-          }
-        });
-        return { success: false };
-      }
-    }
-    return await fetchAnalysisResults();
-  }
-
-  // TODO: (?) REMOVE performAnalysis
-  private async performAnalysis(
-    extension: DeepCode.ExtensionInterface | any,
-    workspacePath: string
-  ): Promise<DeepCode.AnalysisResultsInterface | { success: boolean }> {
-    const { bundleId } = await extension.remoteBundles[workspacePath];
-    if (!bundleId) {
-      return {
-        success: false
-      };
-    }
-    const analysisResults: DeepCode.AnalysisResultsInterface = await this.requestAnalysisFromServer(
-      extension,
-      bundleId
-    );
-
-    if (analysisResults.success) {
-      this.analysisResultsCollection[workspacePath] = {
-        ...analysisResults
-      };
-    }
-    return analysisResults;
-  }
-
-  // FIXME: check if need to be deleted ? (move progress tracking to subscriptions)
-  private async reviewWithProgress(
-    path: string,
-    vscodeProgress: vscode.Progress<{ increment: number }>,
-    extension: DeepCode.ExtensionInterface
-  ): Promise<void> {
-    if (!extension.remoteBundles[path]) {
-      return;
-    }
-    const missingFiles = extension.remoteBundles[path].missingFiles;
-    if (missingFiles && Array.isArray(missingFiles) && missingFiles.length) {
-      return;
-    }
-
-    // added to run pkg Analyse
-    await this.processFailedReviewCodeResults(extension, path);
-
-    // TODO: REMOVE the following?
-    const analysisResult = await this.performAnalysis(extension, path);
-    if (!analysisResult.success) {
-      await this.processFailedReviewCodeResults(extension, path);
-    }
-    vscodeProgress.report({ increment: this.analysisProgressValue });
-  }
-
-  // FIXME: check if can be deleted
-  public async reviewCode(
-    extension: DeepCode.ExtensionInterface,
-    workspacePath: string = ""
-  ): Promise<void> {
-    const self = this || extension.analyzer;
-    const hashesBundlesAreEmpty = extension.workspacesPaths.every(path =>
-      extension.checkIfHashesBundlesIsEmpty(path)
-    );
-    const remoteBundlesAreEmpty = extension.checkIfRemoteBundlesIsEmpty();
-    if (remoteBundlesAreEmpty || hashesBundlesAreEmpty) {
-      if (self.deepcodeReview) {
-        self.deepcodeReview.clear();
-        self.analysisResultsCollection = {};
-      }
-      return;
-    }
-
-    if (self.analysisQueueCount === 0) {
-      self.analysisQueueCount++;
-    }
-    // analysis is performed with progress bar
-    if (!self.analysisInProgress) {
-      self.analysisInProgress = true;
-      await self.progress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: deepCodeMessages.analysisProgress.msg,
-          cancellable: false
-        },
-        async function progressCallback(vscodeProgress, token) {
-          if (self.analysisQueueCount > 0) {
-            self.analysisQueueCount--;
-          }
-
-          vscodeProgress.report({ increment: self.analysisProgressValue });
-          if (!workspacePath) {
-            for await (const path of extension.workspacesPaths) {
-              await self.reviewWithProgress(path, vscodeProgress, extension);
-            }
-          } else {
-            await self.reviewWithProgress(
-              workspacePath,
-              vscodeProgress,
-              extension
-            );
-          }
-          if (self.analysisQueueCount > 0) {
-            await progressCallback(vscodeProgress, token);
-          } else {
-            self.analysisInProgress = false;
-          }
-        }
-      );
-    }
-    await self.createReviewResults();
-  }
-
   // TODO: check - if smth can be moved to onErro event ?
   // Analysis error handle
   private async processFailedReviewCodeResults(
@@ -406,7 +255,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       // we create new bundle, send it, check it and trigger new review
       await extension.updateHashesBundles(path);
       await extension.performBundlesActions(path);
-      await this.reviewCode(extension, path);
     }
   }
 

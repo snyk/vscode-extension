@@ -131,8 +131,6 @@ namespace DeepCode {
   export interface IssuesListInterface {
     [suggestionIndex: number]: Array<DeepCode.IssuePositionsInterface>;
   }
-
-  // TODO: update interface according to createIssuesList fn args
   export interface IssuesListOptionsInterface {
     fileIssuesList: IssuesListInterface;
     suggestions: AnalysisSuggestionsInterface;
@@ -158,10 +156,6 @@ namespace DeepCode {
   export interface AnalyzerInterface {
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
-    reviewCode(
-      extension: DeepCode.ExtensionInterface | any,
-      workspacePath?: string
-    ): Promise<void>;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
