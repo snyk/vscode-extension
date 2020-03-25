@@ -10,7 +10,6 @@ import { startFilesUpload } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
-import { getExtension } from "../../../extension";
 
 class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
@@ -30,32 +29,26 @@ class BundlesModule extends LoginModule
     this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
     this.onError = this.onError.bind(this);
 
-    this.serviceAI.on(
-      BUNDLE_EVENTS.uploadBundleProgress,
-      this.onUploadBundleProgress
-    );
-    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, this.onAnalyseProgress);
-    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
-  }
+    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);  }
 
-  onBuildBundleProgress() {
-    console.warn("BUILD BUNDLE PROGRESS event");
+  onBuildBundleProgress(processed: number, total: number) {
+    console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
   }
 
   onBuildBundleFinish() {
-    console.warn("BUILD BUNDLE FINISH event");
+    console.log("BUILD BUNDLE FINISH");
   }
 
   onUploadBundleProgress(processed: number, total: number) {
-    console.warn("on UploadBundle Progress");
+    console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
   }
 
   onUploadBundleFinish() {
-    console.warn("UPLOAD BUNDLE FINISH event");
+    console.log("UPLOAD BUNDLE FINISH");
   }
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
-    console.warn("on Analyse Progress");
+    console.log("on Analyse Progress");
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
@@ -71,7 +64,7 @@ class BundlesModule extends LoginModule
         .suggestions as DeepCode.AnalysisSuggestionsInterface,
       success: true
     } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
-    console.error("Analysis Result is ready");
+    console.log("Analysis Result is ready");
 
     this.analyzer.updateAnalysisResultsCollection(result);
 
@@ -79,7 +72,7 @@ class BundlesModule extends LoginModule
   }
 
   onError(error: Error) {
-    console.error(error);
+    console.log(error);
     return Promise.reject(error);
   }
 
@@ -141,25 +134,51 @@ class BundlesModule extends LoginModule
       cancellable: false
     };
 
+    const countStep = (processed: number, total: number): number => {
+      const lastPhaseProgress = 33;
+      const currentProgress = (processed / total * 33) + lastPhaseProgress;
+      return currentProgress;
+    };
+
     window.withProgress(progressOptions, async progress => {
+      this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
+        this.onBuildBundleProgress(processed, total);
+      });
+
       this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
         progress.report({ increment: 33 });
         this.onBuildBundleFinish();
       });
-      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
-        progress.report({ increment: 66 });
-        this.onUploadBundleFinish();
+
+      this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
+        const currentProgress = countStep(processed, total);
+        this.onUploadBundleProgress(processed, total);
+        progress.report({ increment: currentProgress });
       });
+
+      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+        this.onUploadBundleFinish();
+        progress.report({ increment: 80 });
+      });
+
+      this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
+        progress.report({ increment: 90 });
+        this.onAnalyseProgress(analysisResults);
+      });
+
       this.serviceAI.on(
         BUNDLE_EVENTS.analyseFinish,
         (analysisResults: IQueueAnalysisCheckResult) => {
           progress.report({ increment: 100 });
-          this.onAnalyseFinish(analysisResults);
+          this.onAnalyseFinish(analysisResults);        
+          this.serviceAI.removeListeners();
         }
       );
+
       this.serviceAI.on(BUNDLE_EVENTS.error, () => {
         progress.report({ increment: 100 });
         this.onError(new Error("analyse process faild"));
+        this.serviceAI.removeListeners();
       });
 
       try {
@@ -170,7 +189,6 @@ class BundlesModule extends LoginModule
     });
   }
 
-  // TODO: REMOVE or just update?
   private async createSingleHashBundle(
     path: string
   ): Promise<DeepCode.BundlesInterface> {

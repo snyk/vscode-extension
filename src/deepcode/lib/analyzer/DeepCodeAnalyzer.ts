@@ -221,8 +221,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  // TODO: check - if smth can be moved to onErro event ?
-  // Analysis error handle
   private async processFailedReviewCodeResults(
     extension: DeepCode.ExtensionInterface,
     path: string
