@@ -66,7 +66,16 @@ class BundlesModule extends LoginModule
     } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
     console.log("Analysis Result is ready");
 
-    this.analyzer.updateAnalysisResultsCollection(result);
+    const analysedFiles: ResultFiles = {};
+
+    for (let filePath in result.files) {
+      const path = filePath.replace(this.rootPath, '');
+      // @ts-ignore
+      analysedFiles[path] = result.files[filePath];
+    }
+
+    result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
+    this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
 
     return Promise.resolve();
   }

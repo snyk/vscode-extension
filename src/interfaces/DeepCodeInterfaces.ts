@@ -167,7 +167,7 @@ namespace DeepCode {
       hide: boolean
     ): Promise<void>;
     setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
-    updateAnalysisResultsCollection(results: AnalysisResultsCollectionInterface): void;
+    updateAnalysisResultsCollection(results: AnalysisResultsCollectionInterface, rootPath: string): void;
   }
 
   export interface StatusBarItemInterface {
