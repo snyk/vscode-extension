@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import * as open from "open";
 import {
   statusCodes,
-  ATTEMPTS_AMMOUNT
+  ATTEMPTS_AMMOUNT,
+  SERVER_CONNECTION_TIMEOUT,
 } from "../../constants/statusCodes";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -23,6 +24,23 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     }
   }
 
+  private async serverErrorHandler(extension: DeepCode.ExtensionInterface | any,): Promise<void> {
+    let ATTEMPTS_AMMOUNT = await extension.store.selectors.getServerConnectionAttempts();
+
+    if (!ATTEMPTS_AMMOUNT) {
+      await extension.store.actions.setServerConnectionAttempts(10);
+      return;
+    }
+    
+    const { msg } = deepCodeMessages.noConnection;
+    vscode.window.showErrorMessage(msg);
+    
+    setTimeout(async () => {
+      startDeepCodeCommand();
+      await extension.store.actions.setServerConnectionAttempts(--ATTEMPTS_AMMOUNT);
+    }, SERVER_CONNECTION_TIMEOUT);
+  }
+
   public async processError(
     extension: DeepCode.ExtensionInterface | any,
     error: DeepCode.errorType,
@@ -33,7 +51,11 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
       unauthorizedContent,
       unauthorizedBundleAccess,
       notFound,
-      bigPayload
+      bigPayload,
+      serverError,
+      badGateway,
+      serviceUnavailable,
+      timeout
     } = statusCodes;
     await this.sendErrorToServer(extension, error, options);
     switch (error.statusCode) {
@@ -45,6 +67,11 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
       case unauthorizedBundleAccess:
       case notFound:
         return this.unauthorizedBundleOrContent(extension, options);
+      case serverError:
+      case badGateway:
+      case serviceUnavailable:
+      case timeout:
+        return this.serverErrorHandler(extension);
       default:
         return this.generalError();
     }

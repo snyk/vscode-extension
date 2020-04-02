@@ -81,6 +81,7 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
 
         await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setSessionToken(extension.token);
+        await extension.store.actions.setServerConnectionAttempts(10);
 
         return true;
 

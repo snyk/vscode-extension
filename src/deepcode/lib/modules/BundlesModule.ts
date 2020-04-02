@@ -184,9 +184,9 @@ class BundlesModule extends LoginModule
         }
       );
 
-      this.serviceAI.on(BUNDLE_EVENTS.error, () => {
+      this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
         progress.report({ increment: 100 });
-        this.onError(new Error("analyse process faild"));
+        this.onError(error);
         this.serviceAI.removeListeners();
       });
 
