@@ -16,19 +16,21 @@ let filesProgress = { processed: 0, total: 0 };
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?
-const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests
+const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests0
+
+interface ProgressInterface {
+  filesProcessed: number;
+  totalFiles: number;
+  percentDone: number;
+  progressWindow: Progress<{ increment: number; message: string }>;
+}
 
 interface CreateListOfFiles {
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface;
   folderPath: string;
   path: string;
   exclusionFilter: ExclusionFilter;
-  progress: {
-    filesProcessed: number;
-    totalFiles: number;
-    percentDone: number;
-    progressWindow: Progress<{ increment: number; message: string }>;
-  };
+  progress: ProgressInterface;
 }
 
 // Helper function - read files and count progress
@@ -36,19 +38,20 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
   let {
     serverFilesFilterList,
     folderPath,
-    path = folderPath,
+    path,
     exclusionFilter,
     progress
   } = options;
 
   let list: string[] = [];
-  const dirContent: string[] = await fs.readdir(path);
-  const relativeDirPath = nodePath.relative(folderPath, path);
+  const dirPath = path || folderPath;
+  const dirContent: string[] = await fs.readdir(dirPath);
+  const relativeDirPath = nodePath.relative(folderPath, dirPath);
   let useDefaultIgnore: boolean = true;
 
   // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
-    const fullChildPath = nodePath.join(path, name);
+    const fullChildPath = nodePath.join(dirPath, name);
 
     if (name === DCIGNORE_FILENAME) {
       useDefaultIgnore = false;
@@ -80,7 +83,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
   for (const name of dirContent) {
     try {
       const relativeChildPath = nodePath.join(relativeDirPath, name);
-      const fullChildPath = nodePath.join(path, name);
+      const fullChildPath = nodePath.join(dirPath, name);
       const fileStats = fs.statSync(fullChildPath);
       const isDirectory = fileStats.isDirectory();
       const isFile = fileStats.isFile();
@@ -131,7 +134,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
           continue;
         }
 
-        const filePath = path.split(folderPath)[1];
+        const filePath = dirPath.split(folderPath)[1];
         list.push(`${filePath}/${name}`);
       }
 
@@ -142,7 +145,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
         } = await createListOfDirFiles({
           serverFilesFilterList,
           folderPath,
-          path: `${path}/${name}`,
+          path: `${dirPath}/${name}`,
           exclusionFilter,
           progress
         });

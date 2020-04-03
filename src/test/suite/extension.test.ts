@@ -106,36 +106,4 @@ suite("Deepcode Extension Tests", () => {
       mockedFilesFiltersResponse
     );
   });
-
-  test("Creating hashes bundle", async () => {
-    await testExtension.updateHashesBundles();
-    assert.deepEqual(testExtension.hashesBundles[mockedFolderPath], {
-      "/sample_repository/main.js":
-        "3e2979852cc2e97f48f7e7973a8b0837eb73ed0485c868176bc3aa58c499f534",
-      "/sample_repository/sub_folder/test2.js":
-        "c8bc645260a7d1a0d1349a72150cb65fa005188142dca30d09c3cc67c7974923",
-      "/sample_repository/utf8.js":
-        "cc2b67993e547813db67f57c6b20bff83bf4ade64ea2c3fb468d927425502804"
-    });
-  });
-
-  test("Creating server files bundle with uploading missing files and checking", async () => {
-    await testExtension.performBundlesActions(mockedFolderPath);
-    assert.deepEqual(
-      testExtension.remoteBundles[mockedFolderPath],
-      mockedCheckedBundle
-    );
-  });
-  test("Analyzing", async () => {
-    const { analysisResults } = mockedAnalysisResults;
-    assert.deepEqual(
-      testExtension.analyzer.analysisResultsCollection[mockedFolderPath].files,
-      analysisResults.files
-    );
-    assert.deepEqual(
-      testExtension.analyzer.analysisResultsCollection[mockedFolderPath]
-        .suggestions,
-      analysisResults.suggestions
-    );
-  });
 });
