@@ -58,6 +58,14 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
       timeout
     } = statusCodes;
     await this.sendErrorToServer(extension, error, options);
+
+    if (error.error) {
+      const {code, message } = error.error;
+      if (code === "ENOTFOUND" && message === 'getaddrinfo ENOTFOUND www.deepcode.ai') {
+        return this.serverErrorHandler(extension);
+      }
+    }
+    
     switch (error.statusCode) {
       case unauthorizedUser:
         return this.unauthorizedUser(extension);
