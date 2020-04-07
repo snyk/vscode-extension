@@ -10,6 +10,8 @@ import * as nock from "nock";
 import * as extension from "../../extension";
 import Deepcode from "../../interfaces/DeepCodeInterfaces";
 
+import http from "../../deepcode/http/requests";
+
 // mocked data for tests
 const testHost = "http://localhost:3000";
 const testHostPrefix = "/publicapi";
@@ -47,7 +49,7 @@ const mockedAnalysisResults = {
   analysisURL: "test_analysis_url"
 };
 // mocked endpoints
-mockedServer.get("/session").reply(200, { type: "private" });
+mockedServer.get('/session').query(true).reply(200, { type: "private" });
 mockedServer.get("/filters").reply(200, mockedFilesFiltersResponse);
 mockedServer
   .post("/bundle")
@@ -87,6 +89,18 @@ const preTestConfigureExtension = () => {
   return testExtension;
 };
 
+const uri = vscode.Uri.file(
+  path.join(mockedTestFilesDirPath, "../mocked_data/sample_repository", "main.js"),
+);
+
+const testIgnoreComment = '// deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>';
+const testFilesList = [
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/utf8.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/main.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/sub_folder/test2.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/test.java'),
+];
+
 suite("Deepcode Extension Tests", () => {
   let testExtension: Deepcode.ExtensionInterface;
   test("Pre-test configuring", () => {
@@ -105,5 +119,24 @@ suite("Deepcode Extension Tests", () => {
       testExtension.serverFilesFilterList,
       mockedFilesFiltersResponse
     );
+  });
+
+  test('Insert ignore comment line', async () => {
+    const document = await vscode.workspace.openTextDocument(uri);
+    const editor = await vscode.window.showTextDocument(document, 1, false);
+    return editor.edit(textEditor => {
+      textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
+    }).then(inserted => {
+      assert.equal(document.lineAt(18).text, testIgnoreComment);
+    });
+  });
+
+  test('Send files list to analyse', async () => {
+    try {
+      await http.analyse(testFilesList, testToken);
+      assert.equal(true, true);
+    } catch(error) {
+      console.log(error);
+    }
   });
 });
