@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode (Beta)",
-  "description": "Detect bugs and quality issues in JavaScript, TypeScript, Python and Java...",
+  "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. Supported languages are Java, C/C++, JavaScript, Python, TypeScript and XML. Integrations with GitHub, BitBucket and Gitlab.",
   "version": "1.1.1",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
@@ -14,17 +14,29 @@
   "engines": {
     "vscode": "^1.41.0"
   },
+  "galleryBanner": {
+    "color": "#283e55",
+    "theme": "dark"
+  },
   "categories": [
     "Programming Languages",
     "Linters",
     "Other"
   ],
   "keywords": [
-    "code analysis",
-    "java",
-    "javascript",
-    "typescript",
-    "python"
+    "Code Analysis",
+    "JavaScript",
+    "Java",
+    "TypeScript",
+    "ts",
+    "Python",
+    "C/C++",
+    "XML",
+    "Vue",
+    "Angular",
+    "React",
+    "Static Code Analysis",
+    "Code Quality"
   ],
   "activationEvents": [
     "*"
