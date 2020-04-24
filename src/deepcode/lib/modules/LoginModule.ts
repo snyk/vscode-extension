@@ -46,19 +46,16 @@ class LoginModule extends BaseDeepCodeModule
         const result = await http.post(this.config.loginUrl, {
           body: { source: IDE_NAME }
         });
-        const { sessionToken, loginURL } = result;
+        let { sessionToken, loginURL } = result;
         if (!sessionToken || !loginURL) {
           throw new Error();
         }
         this.token = sessionToken;
 
-        let options: open.Options | undefined;
         if (process.env['GITPOD_WORKSPACE_ID']) {
-            options = {
-                app: ['gp', 'preview']
-            };
+          loginURL = `${loginURL}${loginURL.includes('?') ? '&' : '?'}source=gitpod`;
         }
-        await open(loginURL, options);
+        await open(loginURL);
         return true;
       } catch (err) {
         this.errorHandler.processError(this, err, {
@@ -98,7 +95,7 @@ class LoginModule extends BaseDeepCodeModule
         if (err.statusCode === statusCodes.loginInProgress) {
           return await httpDelay(pingLoginStatus);
         }
-        
+
         extension.errorHandler.processError(extension, err, {
           ...(err.statusCode === statusCodes.notFound && {
             loginNotFound: true
