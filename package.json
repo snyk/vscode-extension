@@ -3,7 +3,7 @@
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode (Beta)",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. Supported languages are Java, C/C++, JavaScript, Python, TypeScript and XML. Integrations with GitHub, BitBucket and Gitlab.",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
   "homepage": "https://www.deepcode.ai/",

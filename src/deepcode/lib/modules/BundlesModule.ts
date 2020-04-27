@@ -90,7 +90,7 @@ class BundlesModule extends LoginModule
     this.currentWorkspacePath = newWorkspacePath;
   }
 
-  public createWorkspacesList(workspaces: vscode.WorkspaceFolder[]): void {
+  public createWorkspacesList(workspaces: readonly vscode.WorkspaceFolder[]): void {
     for (const folder of workspaces) {
       this.workspacesPaths.push(folder.uri.fsPath);
     }

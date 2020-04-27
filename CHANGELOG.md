@@ -1,3 +1,7 @@
+## [2.0.0] - 2019-04-27
+- Major version. Big refactoring
+- Separated a module @deepcode/tsc for all API integration
+
 ## [1.1.1] - 2019-03-04
 - Added support for GitPod
 

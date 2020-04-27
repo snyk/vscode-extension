@@ -117,17 +117,17 @@ export default class DeepCodeLib extends BundlesModule
       return;
     }
 
-    const workspaceFolders: vscode.WorkspaceFolder[] | undefined =
+    const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
       vscode.workspace.workspaceFolders;
 
     if (!workspaceFolders || !workspaceFolders.length) {
       return;
-    } else {
-      for await (const folder of workspaceFolders) {
-        // check if upload confirmed for each of workspaces
-        if (!this.checkUploadConfirm(folder.uri.fsPath)) {
-          await this.showConfirmMsg(this, folder.uri.fsPath);
-        }
+    } 
+    
+    for await (const folder of workspaceFolders) {
+      // check if upload confirmed for each of workspaces
+      if (!this.checkUploadConfirm(folder.uri.fsPath)) {
+        await this.showConfirmMsg(this, folder.uri.fsPath);
       }
     }
 
