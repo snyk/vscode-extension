@@ -8,6 +8,7 @@ import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
+import { IDE_NAME } from "../../constants/general";
 
 class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInterface {
   private analysisOnSaveAllowed: { [key: string]: boolean } = {};
@@ -42,20 +43,15 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
     );
     if (pressedButton === login.button) {
       try {
-        const result = await http.login();
-        const { sessionToken, loginURL } = result;
+        const source = process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
+        const result = await http.login(source);
+        let { sessionToken, loginURL } = result;
         if (!sessionToken || !loginURL) {
           throw new Error();
         }
         this.token = sessionToken;
 
-        let options: open.Options | undefined;
-        if (process.env['GITPOD_WORKSPACE_ID']) {
-            options = {
-                app: ['gp', 'preview']
-            };
-        }
-        await open(loginURL, options);
+        await open(loginURL);
         return true;
       } catch (err) {
         this.errorHandler.processError(this, err, {
@@ -95,7 +91,7 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
         if (err.statusCode === statusCodes.loginInProgress) {
           return await httpDelay(pingLoginStatus);
         }
-        
+
         extension.errorHandler.processError(extension, err, {
           ...(err.statusCode === statusCodes.notFound && {
             loginNotFound: true

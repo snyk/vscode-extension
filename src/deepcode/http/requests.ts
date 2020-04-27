@@ -28,10 +28,8 @@ const http = {
     AI.init(config);
   },
 
-  async login(): Promise<StartSessionResponseDto> {
-    const options: StartSessionRequestDto = {
-      source: IDE_NAME,
-    };
+  async login(source: string = IDE_NAME): Promise<StartSessionResponseDto> {
+    const options: StartSessionRequestDto = { source };
     const result = await AI.startSession(options);
 
     return Promise.resolve(result as StartSessionResponseDto);
