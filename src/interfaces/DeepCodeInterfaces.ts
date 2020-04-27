@@ -6,14 +6,15 @@ import {
   TextDocument,
   TextEditor
 } from "vscode";
-import { StatusCodeError } from "request-promise/errors";
+import * as vscode from "vscode";
+import { IConfig } from "@deepcode/tsc";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
 
   export type configType = string | Function;
 
-  export type errorType = StatusCodeError | Error | any;
+  export type errorType = Error | any;
 
   export type filesForSaveListType = Array<string>;
 
@@ -63,6 +64,11 @@ namespace DeepCode {
     uploadURL?: string;
   }
 
+  export interface RemoteExtendBundleInterface {
+    files?: { [key: string]: string };
+    removedFiles?: Array<string>;
+  }
+
   export interface RemoteBundlesCollectionInterface {
     [key: string]: RemoteBundleInterface;
   }
@@ -88,7 +94,7 @@ namespace DeepCode {
   }
 
   export interface AnalysisResultsFileResultsInterface {
-    [suggestionIndex: number]: Array<IssuePositionsInterface>;
+    [suggestionIndex: string]: Array<IssuePositionsInterface>;
   }
 
   export interface AnalysisResultsFilesInterface {
@@ -111,23 +117,28 @@ namespace DeepCode {
     success: boolean;
   }
 
+  export interface AnalysisServerResponseInterface {
+    status: string;
+    progress: number;
+    analysisURL: string;
+    analysisResults?: AnalysisServerResultsInterface;
+  }
+
   export interface AnalysisResultsCollectionInterface {
     [key: string]: AnalysisResultsInterface;
   }
 
+  export interface IssuesListInterface {
+    [suggestionIndex: number]: Array<DeepCode.IssuePositionsInterface>;
+  }
+  export interface IssuesListOptionsInterface {
+    fileIssuesList: IssuesListInterface;
+    suggestions: AnalysisSuggestionsInterface;
+    fileUri: vscode.Uri;
+  }
+
   export interface DeepCodeConfig {
     deepcodeUrl: string;
-    baseApiUrl: string;
-    loginUrl: string;
-    checkSessionUrl: string;
-    filtersUrl: string;
-    createBundleUrl: string;
-    getUploadFilesUrl: Function;
-    getbundleIdUrl: Function;
-    getAnalysisUrl: Function;
-    getDifAnalysisUrl: Function;
-    errorUrl: string;
-    configureAccountUrl: string;
     termsConditionsUrl: string;
     changeDeepCodeUrl: Function;
   }
@@ -145,10 +156,6 @@ namespace DeepCode {
   export interface AnalyzerInterface {
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
-    reviewCode(
-      extension: DeepCode.ExtensionInterface | any,
-      workspacePath?: string
-    ): Promise<void>;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
@@ -160,6 +167,7 @@ namespace DeepCode {
       hide: boolean
     ): Promise<void>;
     setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
+    updateAnalysisResultsCollection(results: AnalysisResultsCollectionInterface, rootPath: string): void;
   }
 
   export interface StatusBarItemInterface {
@@ -229,27 +237,6 @@ namespace DeepCode {
       workspacePath: string,
       bundle?: DeepCode.RemoteBundleInterface
     ): Promise<void>;
-    uploadMissingFilesToServerBundle(
-      workspacePath: string,
-      chunkedPayload?: Array<PayloadMissingFileInterface>,
-      isDelay?: boolean
-    ): Promise<void>;
-    checkBundleOnServer(
-      workspacePath: string,
-      attempts?: number
-    ): Promise<void>;
-    extendWorkspaceHashesBundle(
-      updatedFiles: Array<{
-        [key: string]: string;
-      }>,
-      workspacePath: string
-    ): Promise<void>;
-    extendBundleOnServer(
-      updatedFiles: Array<{
-        [key: string]: string;
-      }>,
-      workspacePath: string
-    ): Promise<void>;
     checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
     checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;
   }
@@ -261,6 +248,7 @@ namespace DeepCode {
     activateWatchers(): void;
     activateExtensionAnalyzeActions?(): Promise<void>;
     manageExtensionStatus(): string;
+    initAPI(config: IConfig): void;
   }
 
   export interface ExtensionInterface

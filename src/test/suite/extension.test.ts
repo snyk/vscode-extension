@@ -10,9 +10,11 @@ import * as nock from "nock";
 import * as extension from "../../extension";
 import Deepcode from "../../interfaces/DeepCodeInterfaces";
 
+import http from "../../deepcode/http/requests";
+
 // mocked data for tests
-const testHost = "http://localhost:3000/";
-const testHostPrefix = "publicapi";
+const testHost = "http://localhost:3000";
+const testHostPrefix = "/publicapi";
 const testToken = "TEST_TOKEN";
 const testBundleId = "testBundleId";
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
@@ -47,7 +49,7 @@ const mockedAnalysisResults = {
   analysisURL: "test_analysis_url"
 };
 // mocked endpoints
-mockedServer.get("/session").reply(200, { type: "private" });
+mockedServer.get('/session').query(true).reply(200, { type: "private" });
 mockedServer.get("/filters").reply(200, mockedFilesFiltersResponse);
 mockedServer
   .post("/bundle")
@@ -64,17 +66,40 @@ mockedServer.get(`/analysis/${testBundleId}`).reply(200, mockedAnalysisResults);
 const preTestConfigureExtension = () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
+  
   // set test token
   testExtension.token = testToken;
+  
   // set test backend host
   testExtension.config.changeDeepCodeUrl(testHost);
+  
+  // init HTTP module
+  testExtension.initAPI({
+    baseURL: testHost,
+    useDebug: true,
+  });
+
   // mock login and upload confirm to always true
   testExtension.checkUploadConfirm = () => true;
   testExtension.login = async () => true;
+  
   // set workspace path for tests
   testExtension.workspacesPaths = [mockedFolderPath];
+  
   return testExtension;
 };
+
+const uri = vscode.Uri.file(
+  path.join(mockedTestFilesDirPath, "../mocked_data/sample_repository", "main.js"),
+);
+
+const testIgnoreComment = '// deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>';
+const testFilesList = [
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/utf8.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/main.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/sub_folder/test2.js'),
+  path.join(mockedTestFilesDirPath, '../mocked_data/test.java'),
+];
 
 suite("Deepcode Extension Tests", () => {
   let testExtension: Deepcode.ExtensionInterface;
@@ -96,36 +121,22 @@ suite("Deepcode Extension Tests", () => {
     );
   });
 
-  test("Creating hashes bundle", async () => {
-    await testExtension.updateHashesBundles();
-    assert.deepEqual(testExtension.hashesBundles[mockedFolderPath], {
-      "/sample_repository/main.js":
-        "3e2979852cc2e97f48f7e7973a8b0837eb73ed0485c868176bc3aa58c499f534",
-      "/sample_repository/sub_folder/test2.js":
-        "c8bc645260a7d1a0d1349a72150cb65fa005188142dca30d09c3cc67c7974923",
-      "/sample_repository/utf8.js":
-        "cc2b67993e547813db67f57c6b20bff83bf4ade64ea2c3fb468d927425502804"
+  test('Insert ignore comment line', async () => {
+    const document = await vscode.workspace.openTextDocument(uri);
+    const editor = await vscode.window.showTextDocument(document, 1, false);
+    return editor.edit(textEditor => {
+      textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
+    }).then(inserted => {
+      assert.equal(document.lineAt(18).text, testIgnoreComment);
     });
   });
 
-  test("Creating server files bundle with uploading missing files and checking", async () => {
-    await testExtension.performBundlesActions(mockedFolderPath);
-    assert.deepEqual(
-      testExtension.remoteBundles[mockedFolderPath],
-      mockedCheckedBundle
-    );
-  });
-  test("Analyzing", async () => {
-    await testExtension.analyzer.reviewCode(testExtension);
-    const { analysisResults } = mockedAnalysisResults;
-    assert.deepEqual(
-      testExtension.analyzer.analysisResultsCollection[mockedFolderPath].files,
-      analysisResults.files
-    );
-    assert.deepEqual(
-      testExtension.analyzer.analysisResultsCollection[mockedFolderPath]
-        .suggestions,
-      analysisResults.suggestions
-    );
+  test('Send files list to analyse', async () => {
+    try {
+      await http.analyse(testFilesList, testToken);
+      assert.equal(true, true);
+    } catch(error) {
+      console.log(error);
+    }
   });
 });

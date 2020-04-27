@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
-import { debounce } from "../../utils/tsUtils";
 import {
   FILE_CURRENT_STATUS,
   GIT_FILENAME
@@ -76,23 +75,17 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
         if (!extension.checkUploadConfirm(workspacePath)) {
           continue;
         }
-        await extension.extendWorkspaceHashesBundle(
-          updatedFiles,
-          workspacePath
-        );
         let updated = false;
         if (updatedFiles.some(({filePath}) => isFileChangingBundle(filePath))) {
           await extension.updateHashesBundles(workspacePath);
           updated = true;
         }
         if (extension.remoteBundles[workspacePath] && !updated) {
-          await extension.extendBundleOnServer(updatedFiles, workspacePath);
-          await extension.checkBundleOnServer(workspacePath);
+          // await extension.extendBundleOnServer(updatedFiles, workspacePath);
+          // await extension.checkBundleOnServer(workspacePath);
         } else {
           await extension.performBundlesActions(workspacePath);
         }
-        const debouncedAnalyzeFunc = debounce(extension.analyzer.reviewCode);
-        await debouncedAnalyzeFunc(extension);
       }
     }
     this.emptyChangedFilesLists();
