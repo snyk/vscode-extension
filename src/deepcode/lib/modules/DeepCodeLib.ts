@@ -1,12 +1,15 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as nodeFs from "fs";
+import { IConfig } from "@deepcode/tsc";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
+import http from "../../http/requests";
+
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import {
-  DEFAULT_DEEPCODE_ENDPOINT,
+  BASE_URL,
   INSTALL_STATUS,
   STATUSFILE_NAME,
   DEEPCODE_NAME
@@ -74,6 +77,7 @@ export default class DeepCodeLib extends BundlesModule
     }
     return INSTALL_STATUS.installed;
   }
+
   public async configureExtension(): Promise<void> {
     const { msg, selfManagedBtn, cloudBtn } = deepCodeMessages.configureBackend;
     const configBackendReply = await vscode.window.showInformationMessage(
@@ -88,12 +92,17 @@ export default class DeepCodeLib extends BundlesModule
       );
     }
     if (configBackendReply === cloudBtn) {
-      await this.config.changeDeepCodeUrl(DEFAULT_DEEPCODE_ENDPOINT);
+      this.initAPI({
+        baseURL: BASE_URL,
+        useDebug: true,
+      });
+      
+      await this.config.changeDeepCodeUrl(BASE_URL);
       await vscode.workspace
         .getConfiguration()
         .update(
           DEEPCODE_CLOUD_BACKEND,
-          DEFAULT_DEEPCODE_ENDPOINT,
+          BASE_URL,
           vscode.ConfigurationTarget.Global
         );
       await this.store.actions.setBackendConfigStatus(true);
@@ -133,7 +142,10 @@ export default class DeepCodeLib extends BundlesModule
         }
         await this.performBundlesActions(path);
       }
-      await this.analyzer.reviewCode(this);
     }
+  }
+
+  public initAPI(config: IConfig): void {
+    http.init(config);
   }
 }

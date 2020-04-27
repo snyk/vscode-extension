@@ -37,5 +37,8 @@ export const deepCodeMessages = {
   },
   analysisProgress: {
     msg: "DeepCode analysis is running..."
+  },
+  noConnection: {
+    msg: "No connection to Deepcode server. Retrying..."
   }
 };

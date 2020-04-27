@@ -71,3 +71,55 @@ When extension is installed or running in dev mode, go to 'Settings'(settings ic
 ##### 'DeepCode':
 
 restarts extension. this might be usefull if user refused to login or refused to confirm sending files to server. in this case running this command will reactivate extension and user will be able to complete all actions to start review
+
+## Usage with local package `@deepcode/tsc`
+
+In order to test plugin with local package `@deepcode/tsc` you should make the following steps.
+
+1. Clone package repository:
+```shell script
+$ git clone https://github.com/DeepCodeAI/tsc.git
+```
+
+> Probably you will need the `dev` branch with the latest changes:
+> ```shell script
+> $ git clone https://github.com/DeepCodeAI/tsc.git -b dev
+> ```
+
+2. Go to the package folder, install dependencies, build package and create symlink:
+```shell script
+$ cd tsc
+$ npm install
+$ npm run build
+$ npm link
+```
+
+3. Go to the extension folder and install package from local symlink:
+```shell script
+$ cd vscode-extension
+$ npm link @deepcode/tsc
+```
+
+After that you can add package to your `package.json`:
+```json
+"dependencies": {
+ "@deepcode/tsc": "^1.0.0"
+}
+```
+           
+and use this package as usual:
+```javascript
+import { ServiceAI, IConfig } from '@deepcode/tsc';
+
+const AI = new ServiceAI();
+const config: IConfig = {
+  baseURL: 'https://www.deepcode.ai',
+  useDebug: true,
+};
+AI.init(config);
+
+async login(): Promise<string> {
+ const { sessionToken } = await AI.startSession({ source: IDE_NAME });
+ return Promise.resolve(sessionToken);
+}
+```

@@ -1,21 +1,15 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import http from "../../http/requests";
 import {
   updateFileReviewResultsPositions,
-  createDeepCodeProgress,
   createIssueCorrectRange,
   createIssuesMarkersDecorationOptions,
   createIssueRelatedInformation,
   createDeepCodeSeveritiesMap,
   extractSuggestionIdFromSuggestionsMap
 } from "../../utils/analysisUtils";
-import { httpDelay } from "../../utils/httpUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
-import {
-  ANALYSIS_STATUS,
-  ISSUES_MARKERS_DECORATION_TYPE
-} from "../../constants/analysis";
+import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
@@ -55,6 +49,12 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
 
+
+  public updateAnalysisResultsCollection(results: DeepCode.AnalysisResultsCollectionInterface, rootPath: string): void {
+    this.analysisResultsCollection[rootPath] = {...results} as unknown as DeepCode.AnalysisResultsInterface;
+    this.createReviewResults();
+  }
+ 
   private createIssueDiagnosticInfo({
     issue,
     issuePositions,
@@ -85,11 +85,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   }
 
   private createIssuesList(
-    fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface,
-    suggestions: DeepCode.AnalysisSuggestionsInterface,
-    fileUri: vscode.Uri
+    options: DeepCode.IssuesListOptionsInterface
   ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
+    const { fileIssuesList, suggestions, fileUri } = options;
+
     for (const issue in fileIssuesList) {
       if (!this.SEVERITIES[suggestions[issue].severity].show) {
         continue;
@@ -152,11 +152,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
           return;
         }
         const fileIssuesList = files[filePath];
-        const issues = this.createIssuesList(
+        const issues = this.createIssuesList({
           fileIssuesList,
           suggestions,
           fileUri
-        );
+        });
         this.deepcodeReview.set(fileUri, [...issues]);
       }
     }
@@ -194,11 +194,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         updatedFile.filePathInWorkspace
       ] = { ...fileIssuesList };
       if (this.deepcodeReview) {
-        const issues = this.createIssuesList(
+        const issues = this.createIssuesList({
           fileIssuesList,
-          this.analysisResultsCollection[updatedFile.workspace].suggestions,
-          vscode.Uri.file(updatedFile.fullPath)
-        );
+          suggestions: this.analysisResultsCollection[updatedFile.workspace].suggestions,
+          fileUri: vscode.Uri.file(updatedFile.fullPath)
+        });
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
           ...issues
         ]);
@@ -217,150 +217,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  private async requestAnalysisFromServer(
-    extension: DeepCode.ExtensionInterface,
-    bundleId: string
-  ): Promise<any> {
-    const analyzer = this;
-    let attemptsIfFailedStatus = 2;
-    const endpoint = extension.config.getAnalysisUrl(bundleId);
-    async function fetchAnalysisResults() {
-      try {
-        const analysisResponse: { [key: string]: any } = await http.get(
-          endpoint,
-          extension.token
-        );
-        const currentProgress = createDeepCodeProgress(
-          analysisResponse.progress
-        );
-        analyzer.analysisProgressValue =
-          analyzer.analysisProgressValue < currentProgress
-            ? currentProgress
-            : analyzer.analysisProgressValue;
-        if (analysisResponse.status === ANALYSIS_STATUS.failed) {
-          attemptsIfFailedStatus--;
-          return !attemptsIfFailedStatus
-            ? { success: false }
-            : await httpDelay(fetchAnalysisResults);
-        }
-        if (analysisResponse.status !== ANALYSIS_STATUS.done) {
-          return await httpDelay(fetchAnalysisResults);
-        }
-        return { ...analysisResponse.analysisResults, success: true };
-      } catch (err) {
-        extension.errorHandler.processError(extension, err, {
-          errorDetails: {
-            message: errorsLogs.failedAnalysis,
-            endpoint,
-            bundleId
-          }
-        });
-        return { success: false };
-      }
-    }
-    return await fetchAnalysisResults();
-  }
-
-  private async performAnalysis(
-    extension: DeepCode.ExtensionInterface | any,
-    workspacePath: string
-  ): Promise<DeepCode.AnalysisResultsInterface | { success: boolean }> {
-    const { bundleId } = await extension.remoteBundles[workspacePath];
-    if (!bundleId) {
-      return {
-        success: false
-      };
-    }
-    const analysisResults: DeepCode.AnalysisResultsInterface = await this.requestAnalysisFromServer(
-      extension,
-      bundleId
-    );
-
-    if (analysisResults.success) {
-      this.analysisResultsCollection[workspacePath] = {
-        ...analysisResults
-      };
-    }
-    return analysisResults;
-  }
-
-  private async reviewWithProgress(
-    path: string,
-    vscodeProgress: vscode.Progress<{ increment: number }>,
-    extension: DeepCode.ExtensionInterface
-  ): Promise<void> {
-    if (!extension.remoteBundles[path]) {
-      return;
-    }
-    const missingFiles = extension.remoteBundles[path].missingFiles;
-    if (missingFiles && Array.isArray(missingFiles) && missingFiles.length) {
-      return;
-    }
-    const analysisResult = await this.performAnalysis(extension, path);
-    if (!analysisResult.success) {
-      await this.processFailedReviewCodeResults(extension, path);
-    }
-    vscodeProgress.report({ increment: this.analysisProgressValue });
-  }
-
-  public async reviewCode(
-    extension: DeepCode.ExtensionInterface,
-    workspacePath: string = ""
-  ): Promise<void> {
-    const self = this || extension.analyzer;
-    const hashesBundlesAreEmpty = extension.workspacesPaths.every(path =>
-      extension.checkIfHashesBundlesIsEmpty(path)
-    );
-    const remoteBundlesAreEmpty = extension.checkIfRemoteBundlesIsEmpty();
-    if (remoteBundlesAreEmpty || hashesBundlesAreEmpty) {
-      if (self.deepcodeReview) {
-        self.deepcodeReview.clear();
-        self.analysisResultsCollection = {};
-      }
-      return;
-    }
-
-    if (self.analysisQueueCount === 0) {
-      self.analysisQueueCount++;
-    }
-    // analysis is performed with progress bar
-    if (!self.analysisInProgress) {
-      self.analysisInProgress = true;
-      await self.progress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: deepCodeMessages.analysisProgress.msg,
-          cancellable: false
-        },
-        async function progressCallback(vscodeProgress, token) {
-          if (self.analysisQueueCount > 0) {
-            self.analysisQueueCount--;
-          }
-
-          vscodeProgress.report({ increment: self.analysisProgressValue });
-          if (!workspacePath) {
-            for await (const path of extension.workspacesPaths) {
-              await self.reviewWithProgress(path, vscodeProgress, extension);
-            }
-          } else {
-            await self.reviewWithProgress(
-              workspacePath,
-              vscodeProgress,
-              extension
-            );
-          }
-          if (self.analysisQueueCount > 0) {
-            await progressCallback(vscodeProgress, token);
-          } else {
-            self.analysisInProgress = false;
-          }
-        }
-      );
-    }
-    await self.createReviewResults();
-  }
-
-  // Analysis error handle
   private async processFailedReviewCodeResults(
     extension: DeepCode.ExtensionInterface,
     path: string
@@ -369,7 +225,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     extension.errorHandler.sendErrorToServer(extension, new Error(), {
       errorDetails: {
         message: errorsLogs.failedStatusOfAnalysis,
-        endpoint: extension.config.getAnalysisUrl(bundleId),
         bundleId
       }
     });
@@ -394,7 +249,6 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       // we create new bundle, send it, check it and trigger new review
       await extension.updateHashesBundles(path);
       await extension.performBundlesActions(path);
-      await this.reviewCode(extension, path);
     }
   }
 

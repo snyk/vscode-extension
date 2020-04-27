@@ -1,71 +1,104 @@
-import * as request from "request-promise";
+import {
+  ServiceAI,
+  IConfig,
+  IFiles,
+  IFileContent,
+  StartSessionRequestDto,
+  StartSessionResponseDto,
+  CheckSessionRequestDto,
+  CheckSessionResponseDto,
+  GetFiltersRequestDto,
+  GetFiltersResponseDto,
+  UploadFilesRequestDto,
+  GetAnalysisRequestDto,
+  AnalyseRequestDto
+} from "@deepcode/tsc";
+
+import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import { BASE_URL, IDE_NAME } from "../constants/general";
+
+const AI = new ServiceAI();
+AI.init({
+  baseURL: BASE_URL,
+  useDebug: true,
+} as IConfig);
 
 const http = {
-  generalOptions: {
-    resolveWithFullResponse: true,
-    json: true
-  },
-  async get(uri: string, token: string = ""): Promise<{ [key: string]: any }> {
-    const { body, statusCode } = await request({
-      ...this.generalOptions,
-      uri,
-      ...(token && { headers: { "Session-Token": token } })
-    });
-    return { statusCode, ...body };
+  init(config: IConfig): void {
+    AI.init(config);
   },
 
-  async post(
-    uri: string,
-    options: { [key: string]: any } = {
-      body: null,
-      token: "",
-      fileUpload: false
-    }
-  ): Promise<{ [key: string]: any }> {
-    const { body, token, fileUpload } = options;
+  async login(source: string = IDE_NAME): Promise<StartSessionResponseDto> {
+    const options: StartSessionRequestDto = { source };
+    const result = await AI.startSession(options);
 
-    const createHeaders = () => {
-      const headers: { [key: string]: string } = {};
-      if (body) {
-        headers["Content-Type"] = fileUpload
-          ? "application/json;charset=utf-8"
-          : "application/json";
-      }
-      if (token) {
-        headers["Session-Token"] = token;
-      }
-      return headers;
+    return Promise.resolve(result as StartSessionResponseDto);
+  },
+
+  async checkLoginStatus(sessionToken: string): Promise<CheckSessionResponseDto> {
+    const options: CheckSessionRequestDto = {
+      sessionToken,
     };
+    const result = await AI.checkSession(options);
 
-    const { body: responseBody, statusCode } = await request({
-      ...this.generalOptions,
-      method: "POST",
-      uri,
-      ...(body && { body }),
-      headers: createHeaders()
-    });
-    return { statusCode, ...responseBody };
+    return Promise.resolve(result as CheckSessionResponseDto);
   },
 
-  async put(
-    uri: string,
-    options: { [key: string]: any } = {
-      body: null,
-      token: ""
+  async getFilters(sessionToken: string): Promise<GetFiltersResponseDto> {
+    const options: GetFiltersRequestDto = {
+      sessionToken,
+    };
+    const result = await AI.getFilters(options);
+
+    return Promise.resolve(result as GetFiltersResponseDto);
+  },
+
+  getServiceAI() {
+    return AI;
+  },
+
+  async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
+    const options: UploadFilesRequestDto = {
+      sessionToken,
+      bundleId,
+      content: (body as IFileContent[]),
+    };
+    await AI.uploadFiles(options);
+
+    return Promise.resolve();
+  },
+
+  async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
+    const options: GetAnalysisRequestDto = {
+      sessionToken,
+      bundleId,
+    };
+    const result = await AI.getAnalysis(options);
+
+    return Promise.resolve(result as unknown as DeepCode.AnalysisServerResponseInterface);
+  },
+
+  async analyse(files: string[], sessionToken: string, removedFiles: string[] = []) {
+    const options: AnalyseRequestDto = {
+      files,
+      sessionToken,
+      removedFiles,
+    };
+    
+    try {
+      return AI.analyse(options);
+
+    } catch (error) {
+      const { statusCode } = error;
+
+      return Promise.resolve({ error, statusCode });
     }
-  ): Promise<{ [key: string]: any }> {
-    const { body, token } = options;
-    const { body: responseBody, statusCode } = await request({
-      ...this.generalOptions,
-      method: "PUT",
-      uri,
-      ...(body && { body }),
-      headers: {
-        "Content-Type": "application/json",
-        "Session-Token": token
-      }
-    });
-    return { statusCode, ...responseBody };
+  },
+
+  // TODO: when API package will implement such functionality
+  // we would have the possibility to send an error to server
+  async sendError(body: any): Promise<void> {
+    return Promise.resolve();
   }
 };
 

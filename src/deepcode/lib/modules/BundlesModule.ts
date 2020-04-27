@@ -1,38 +1,101 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import {
-  EXPIRED_REQUEST,
-  ATTEMPTS_AMMOUNT,
-  statusCodes
-} from "../../constants/statusCodes";
 import http from "../../http/requests";
-import {
-  createMissingFilesPayloadUtil,
-  createFilesHashesBundle,
-  processServerFilesFilterList,
-  processPayloadSize
-} from "../../utils/filesUtils";
-import {
-  checkIfBundleIsEmpty,
-  extendLocalHashBundle
-} from "../../utils/bundlesUtils";
-// creating git bundles is disabled, may be used in future
-// import {createGitBundle} from '../../utils/gitUtils';
-import { createBundleBody, httpDelay } from "../../utils/httpUtils";
-import { FILE_CURRENT_STATUS } from "../../constants/filesConstants";
+import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
+import { window, ProgressLocation, Progress } from "vscode";
+import { deepCodeMessages } from "../../messages/deepCodeMessages";
+import { processServerFilesFilterList } from "../../utils/filesUtils";
+import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
+import { startFilesUpload } from "../../utils/packageUtils";
+import { BUNDLE_EVENTS } from "../../constants/events";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
+
 class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
+  private rootPath = "";
+
+  files: string[] = [];
+  serviceAI = http.getServiceAI();
+
+  constructor() {
+    super();
+
+    this.onBuildBundleProgress = this.onBuildBundleProgress.bind(this);
+    this.onBuildBundleFinish = this.onBuildBundleFinish.bind(this);
+    this.onUploadBundleProgress = this.onUploadBundleProgress.bind(this);
+    this.onUploadBundleFinish = this.onUploadBundleFinish.bind(this);
+    this.onAnalyseProgress = this.onAnalyseProgress.bind(this);
+    this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
+    this.onError = this.onError.bind(this);
+
+    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);  }
+
+  onBuildBundleProgress(processed: number, total: number) {
+    console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
+  }
+
+  onBuildBundleFinish() {
+    console.log("BUILD BUNDLE FINISH");
+  }
+
+  onUploadBundleProgress(processed: number, total: number) {
+    console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
+  }
+
+  onUploadBundleFinish() {
+    console.log("UPLOAD BUNDLE FINISH");
+  }
+
+  onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
+    console.log("on Analyse Progress");
+  }
+
+  onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
+    type ResultFiles = {
+      [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
+    };
+    const resultFiles = (
+      analysisResults.analysisResults.files as unknown as ResultFiles
+    );
+    const result = ({
+      files: { ...resultFiles },
+      suggestions: analysisResults.analysisResults
+        .suggestions as DeepCode.AnalysisSuggestionsInterface,
+      success: true
+    } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
+    console.log("Analysis Result is ready");
+
+    const analysedFiles: ResultFiles = {};
+
+    for (let filePath in result.files) {
+      const path = filePath.replace(this.rootPath, '');
+      // @ts-ignore
+      analysedFiles[path] = result.files[filePath];
+    }
+
+    result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
+    this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
+
+    return Promise.resolve();
+  }
+
+  onError(error: Error) {
+    console.log(error);
+    return Promise.reject(error);
+  }
+
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
     this.currentWorkspacePath = newWorkspacePath;
   }
+
   public createWorkspacesList(workspaces: vscode.WorkspaceFolder[]): void {
     for (const folder of workspaces) {
       this.workspacesPaths.push(folder.uri.fsPath);
     }
   }
+
   public changeWorkspaceList(
     workspacePath: string,
     deleteFlag: boolean = false
@@ -50,10 +113,7 @@ class BundlesModule extends LoginModule
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
     try {
-      const serverFilesFilters = await http.get(
-        this.config.filtersUrl,
-        this.token
-      );
+      const serverFilesFilters = await http.getFilters(this.token);
       const { extensions, configFiles } = serverFilesFilters;
       const processedFilters = processServerFilesFilterList({
         extensions,
@@ -63,33 +123,96 @@ class BundlesModule extends LoginModule
     } catch (err) {
       this.errorHandler.processError(this, err, {
         errorDetails: {
-          message: errorsLogs.filtersFiles,
-          endpoint: this.config.filtersUrl
+          message: errorsLogs.filtersFiles
         }
       });
     }
   }
 
   public async performBundlesActions(path: string): Promise<void> {
-    if (
-      !Object.keys(this.serverFilesFilterList).length ||
-      !this.checkUploadConfirm(path) ||
-      this.checkIfHashesBundlesIsEmpty(path)
-    ) {
+    if (!Object.keys(this.serverFilesFilterList).length) {
       return;
     }
-    await this.sendRemoteBundleToServer(
-      path,
-      await this.createRemoteBundleForServer(path)
-    );
-    await this.checkBundleOnServer(path);
+
+    this.files = await startFilesUpload(path, this.serverFilesFilterList);
+    const files: string[] = this.getFiles(this.files, path);
+
+    const progressOptions = {
+      location: ProgressLocation.Notification,
+      title: deepCodeMessages.analysisProgress.msg,
+      cancellable: false
+    };
+
+    const countStep = (processed: number, total: number): number => {
+      const lastPhaseProgress = 33;
+      const currentProgress = (processed / total * 33) + lastPhaseProgress;
+      return currentProgress;
+    };
+
+    window.withProgress(progressOptions, async progress => {
+      this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
+        this.onBuildBundleProgress(processed, total);
+      });
+
+      this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
+        progress.report({ increment: 33 });
+        this.onBuildBundleFinish();
+      });
+
+      this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
+        const currentProgress = countStep(processed, total);
+        this.onUploadBundleProgress(processed, total);
+        progress.report({ increment: currentProgress });
+      });
+
+      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+        this.onUploadBundleFinish();
+        progress.report({ increment: 80 });
+      });
+
+      this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
+        progress.report({ increment: 90 });
+        this.onAnalyseProgress(analysisResults);
+      });
+
+      this.serviceAI.on(
+        BUNDLE_EVENTS.analyseFinish,
+        (analysisResults: IQueueAnalysisCheckResult) => {
+          progress.report({ increment: 100 });
+          this.onAnalyseFinish(analysisResults);        
+          this.serviceAI.removeListeners();
+        }
+      );
+
+      this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
+        progress.report({ increment: 100 });
+        this.onError(error);
+        this.serviceAI.removeListeners();
+      });
+
+      try {
+        await http.analyse(files, this.token);
+      } catch(error) {
+        console.log(error);
+      }
+    });
   }
 
-  // processing bundles of files hashes
   private async createSingleHashBundle(
     path: string
   ): Promise<DeepCode.BundlesInterface> {
-    return await createFilesHashesBundle(path, this.serverFilesFilterList);
+    this.rootPath = path;
+
+    // convert string[] to BundleInterface
+    const filesBundle: { [key: string]: string } = {};
+    let resultBundle: { [key: string]: string } = this.files.reduce(
+      (resultBundle, filePath) => {
+        resultBundle[filePath] = filePath;
+        return resultBundle;
+      },
+      filesBundle
+    );
+    return resultBundle;
   }
 
   public async updateHashesBundles(
@@ -131,254 +254,9 @@ class BundlesModule extends LoginModule
     delete this.remoteBundles[workspacePath];
   }
 
-  private async createRemoteBundleForServer(
-    workspacePath: string
-  ): Promise<DeepCode.BundlesInterface> {
-    let bundleForServer = this.hashesBundles[workspacePath];
-    // GIT REPOS ARE TEMPORARILY DISABLED
-    return bundleForServer;
-  }
-
-  private async sendRemoteBundleToServer(
-    workspacePath: string,
-    bundleForServer: {
-      [key: string]: string;
-    }
-  ): Promise<void> {
-    try {
-      const serverBundle: DeepCode.RemoteBundleInterface = await http.post(
-        this.config.createBundleUrl,
-        {
-          body: bundleForServer.repo
-            ? bundleForServer
-            : createBundleBody(bundleForServer),
-          token: this.token
-        }
-      );
-      await this.processBundleFromServer(serverBundle, workspacePath);
-    } catch (err) {
-      await this.errorHandler.processError(this, err, {
-        workspacePath,
-        removedBundle: !!Object.keys(this.remoteBundles).length,
-        errorDetails: {
-          message: errorsLogs.createBundle,
-          endpoint: this.config.createBundleUrl
-        }
-      });
-    }
-  }
-
-  private async processBundleFromServer(
-    serverBundle: DeepCode.RemoteBundleInterface,
-    workspacePath: string
-  ): Promise<void> {
-    await this.updateExtensionRemoteBundles(workspacePath, serverBundle);
-    // if server bundles has missing files - upload them to server
-    const { missingFiles } = this.remoteBundles[workspacePath];
-    if (missingFiles && missingFiles.length) {
-      await this.uploadMissingFilesToServerBundle(workspacePath);
-    }
-  }
-  // processing missing files in bundles
-  private async createMissingFilesPayload(
-    missingFiles: Array<string> | undefined,
-    workspacePath: string
-  ): Promise<Array<DeepCode.PayloadMissingFileInterface>> {
-    const path = this.workspacesPaths.find(path => path === workspacePath);
-    if (Array.isArray(missingFiles) && path) {
-      return await createMissingFilesPayloadUtil([...missingFiles], path);
-    }
-    return [];
-  }
-
-  public async uploadMissingFilesToServerBundle(
-    workspacePath: string,
-    chunkedPayload: DeepCode.PayloadMissingFileInterface[] = [],
-    isDelay: boolean = false
-  ): Promise<void> {
-    const { bundleId } = this.remoteBundles[workspacePath];
-    const endpoint = this.config.getUploadFilesUrl(bundleId);
-    let payload: Array<DeepCode.PayloadMissingFileInterface> = [];
-
-    const sendUploadRequest = async (chunkPayload: any): Promise<void> => {
-      try {
-        const uploadFilesReq = async () =>
-          await http.post(endpoint, {
-            body: chunkPayload,
-            token: this.token,
-            fileUpload: true
-          });
-
-        // Wait/retry later (invoked below for bigPayload case)
-        const uploadResponse = isDelay
-          ? await httpDelay(uploadFilesReq)
-          : await uploadFilesReq();
-      } catch (err) {
-        if (err.statusCode === statusCodes.bigPayload) {
-          const isDelay = true;
-
-          // Assume temporary Retry-After and retry
-          // TODO if the assumption is incorrect, we'll loop indefinitely on oversized items
-          // See also https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
-          await this.uploadMissingFilesToServerBundle(
-            workspacePath,
-            chunkPayload,
-            isDelay
-          );
-        } else {
-          this.errorHandler.processError(this, err, {
-            errorDetails: {
-              message: errorsLogs.uploadFiles,
-              endpoint,
-              bundleId,
-              data: {
-                missingFiles: chunkPayload
-              }
-            }
-          });
-        }
-      }
-    };
-
-    if (!chunkedPayload.length) {
-      const { missingFiles } = this.remoteBundles[workspacePath];
-      payload = await this.createMissingFilesPayload(
-        missingFiles,
-        workspacePath
-      );
-      if (!payload.length) {
-        return;
-      }
-    } else {
-      payload = chunkedPayload;
-    }
-    const processedPayload = processPayloadSize(payload);
-    if (processedPayload.chunks) {
-      for await (const chunkPayload of processedPayload.payload) {
-        await sendUploadRequest(chunkPayload);
-      }
-    } else {
-      await sendUploadRequest(processedPayload.payload);
-    }
-  }
-  // check bundle server status
-  public async checkBundleOnServer(
-    workspacePath: string,
-    attempts: number = ATTEMPTS_AMMOUNT,
-    isDelay = false
-  ): Promise<void> {
-    if (!this.remoteBundles[workspacePath]) {
-      return;
-    }
-    const endpoint = this.config.getbundleIdUrl(
-      this.remoteBundles[workspacePath].bundleId
-    );
-    try {
-      if (!attempts) {
-        throw new Error(EXPIRED_REQUEST);
-      }
-      const checkBundleReq = async () => await http.get(endpoint, this.token);
-      const latestServerBundle: DeepCode.RemoteBundleInterface = isDelay
-        ? await httpDelay(checkBundleReq)
-        : await checkBundleReq();
-      await this.processBundleFromServer(latestServerBundle, workspacePath);
-      const { missingFiles } = this.remoteBundles[workspacePath];
-      if (missingFiles && missingFiles.length) {
-        const isDelay = true;
-        await this.checkBundleOnServer(workspacePath, attempts--, isDelay);
-      }
-    } catch (err) {
-      let message = errorsLogs.checkBundle;
-      if (err.message === EXPIRED_REQUEST) {
-        message = errorsLogs.checkBundleAfterAttempts(ATTEMPTS_AMMOUNT);
-      }
-      this.errorHandler.processError(this, err, {
-        workspacePath,
-        errorDetails: {
-          message,
-          endpoint,
-          bundleId: this.remoteBundles[workspacePath].bundleId
-        }
-      });
-    }
-  }
-  // extending bundles
-  public async extendWorkspaceHashesBundle(
-    updatedFiles: Array<{
-      [key: string]: string;
-    }>,
-    workspacePath: string
-  ): Promise<void> {
-    const updatedHashBundle = await extendLocalHashBundle(
-      updatedFiles,
-      this.hashesBundles[workspacePath]
-    );
-    this.hashesBundles[workspacePath] = {
-      ...updatedHashBundle
-    };
-  }
-
-  public async extendBundleOnServer(
-    updatedFiles: Array<{
-      [key: string]: string;
-    }>,
-    workspacePath: string
-  ): Promise<void> {
-    const remoteBundleDoesNotExists: boolean = !this.remoteBundles[
-      workspacePath
-    ];
-    const hashesBundleIsEmpty: boolean = this.checkIfHashesBundlesIsEmpty(
-      workspacePath
-    );
-    if (remoteBundleDoesNotExists || hashesBundleIsEmpty) {
-      return;
-    }
-
-    const extendBatchBody: {
-      files?: { [key: string]: string };
-      removedFiles: Array<string>;
-    } = {
-      files: {},
-      removedFiles: []
-    };
-    const { created, modified, deleted } = FILE_CURRENT_STATUS;
-    for await (const updatedFile of updatedFiles) {
-      const { status, filePath = "", fileHash = "" } = updatedFile;
-      if (status === modified || status === created) {
-        extendBatchBody.files = {
-          ...extendBatchBody.files,
-          [filePath]: fileHash
-        };
-      }
-      if (status === deleted) {
-        extendBatchBody.removedFiles.push(filePath);
-      }
-    }
-    const endpoint = this.config.getbundleIdUrl(
-      this.remoteBundles[workspacePath].bundleId
-    );
-    try {
-      const extendedServerBundle = await http.put(endpoint, {
-        body: extendBatchBody,
-        token: this.token
-      });
-      await this.processBundleFromServer(extendedServerBundle, workspacePath);
-    } catch (err) {
-      this.errorHandler.processError(this, err, {
-        workspacePath,
-        removedBundle: !!Object.keys(this.remoteBundles).length,
-        errorDetails: {
-          message: errorsLogs.extendBundle,
-          endpoint,
-          bundleId: this.remoteBundles[workspacePath]
-            ? this.remoteBundles[workspacePath].bundleId
-            : "",
-          data: {
-            ...extendBatchBody
-          }
-        }
-      });
-    }
+  private getFiles(bundleForServer: string[], path: string) {
+    const files = bundleForServer.map(file => path + file);
+    return files;
   }
 }
 

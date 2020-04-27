@@ -27,6 +27,8 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       },
       getSessionToken: (): string | undefined =>
         this.globalState.get(stateNames.sessionToken),
+      getServerConnectionAttempts: (): number =>
+        this.globalState.get(stateNames.serverConnectionAttempts),
       getBackendConfigStatus: (): string | undefined =>
         this.globalState.get(stateNames.isBackendConfigured)
     };
@@ -52,13 +54,16 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       setSessionToken: (token: string): Thenable<void> =>
         this.globalState.update(stateNames.sessionToken, token),
       setBackendConfigStatus: (status: boolean = true): Thenable<void> =>
-        this.globalState.update(stateNames.isBackendConfigured, status)
+        this.globalState.update(stateNames.isBackendConfigured, status),
+      setServerConnectionAttempts: (attempts: number): Thenable<void> =>
+        this.globalState.update(stateNames.serverConnectionAttempts, attempts),
     };
   }
 
   public cleanStore(): void {
     this.actions.setLoggedInStatus(false);
     this.actions.setSessionToken("");
+    this.actions.setServerConnectionAttempts(10);
     this.actions.setConfirmUploadStatus();
     this.actions.setBackendConfigStatus(false);
   }

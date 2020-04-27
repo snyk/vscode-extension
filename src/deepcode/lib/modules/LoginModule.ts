@@ -6,11 +6,11 @@ import http from "../../http/requests";
 import { httpDelay } from "../../utils/httpUtils";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { IDE_NAME } from "../../constants/general";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
-class LoginModule extends BaseDeepCodeModule
-  implements DeepCode.LoginModuleInterface {
+import { IDE_NAME } from "../../constants/general";
+
+class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInterface {
   private analysisOnSaveAllowed: { [key: string]: boolean } = {};
   private firstSaveAlreadyHappened: { [key: string]: boolean } = {};
   private firstConfirmAborted: boolean = false;
@@ -43,18 +43,14 @@ class LoginModule extends BaseDeepCodeModule
     );
     if (pressedButton === login.button) {
       try {
-        const result = await http.post(this.config.loginUrl, {
-          body: { source: IDE_NAME }
-        });
+        const source = process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
+        const result = await http.login(source);
         let { sessionToken, loginURL } = result;
         if (!sessionToken || !loginURL) {
           throw new Error();
         }
         this.token = sessionToken;
 
-        if (process.env['GITPOD_WORKSPACE_ID']) {
-          loginURL = `${loginURL}${loginURL.includes('?') ? '&' : '?'}source=gitpod`;
-        }
         await open(loginURL);
         return true;
       } catch (err) {
@@ -64,7 +60,6 @@ class LoginModule extends BaseDeepCodeModule
           }),
           errorDetails: {
             message: errorsLogs.login,
-            endpoint: this.config.loginUrl
           }
         });
         return false;
@@ -78,19 +73,20 @@ class LoginModule extends BaseDeepCodeModule
       return false;
     }
     const extension: any = this;
+
     return await httpDelay(async function pingLoginStatus() {
-      let result: { [key: string]: number | string | object } | undefined;
       try {
-        result = await http.get(
-          extension.config.checkSessionUrl,
-          extension.token
-        );
-        if (result.statusCode === statusCodes.loginInProgress) {
+        const result = await http.checkLoginStatus(extension.token);
+        if (!result.isLoggedIn) {
           return await httpDelay(pingLoginStatus);
         }
+
         await extension.store.actions.setLoggedInStatus(true);
         await extension.store.actions.setSessionToken(extension.token);
+        await extension.store.actions.setServerConnectionAttempts(10);
+
         return true;
+
       } catch (err) {
         if (err.statusCode === statusCodes.loginInProgress) {
           return await httpDelay(pingLoginStatus);
@@ -102,9 +98,9 @@ class LoginModule extends BaseDeepCodeModule
           }),
           errorDetails: {
             message: errorsLogs.loginStatus,
-            endpoint: extension.config.checkSessionUrl
           }
         });
+
         return false;
       }
     });
