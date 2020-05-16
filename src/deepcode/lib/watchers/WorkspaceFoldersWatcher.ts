@@ -46,14 +46,7 @@ class DeepCodeWorkspaceFoldersWatcher
             extension.changeWorkspaceList(path);
             await extension.updateHashesBundles(path);
 
-            if (!extension.checkUploadConfirm(path)) {
-              await extension.showConfirmMsg(extension, path);
-              if (extension.checkUploadConfirm(path)) {
-                proceedWithBundlesActions(path);
-              }
-            } else {
-              proceedWithBundlesActions(path);
-            }
+            proceedWithBundlesActions(path);
           }
         }
 
@@ -61,7 +54,6 @@ class DeepCodeWorkspaceFoldersWatcher
           const deleteFlag = true;
           for await (const workspace of workspaceFolders.removed) {
             const path = workspace.uri.fsPath;
-            await extension.store.actions.setConfirmUploadStatus(path, false);
             extension.changeWorkspaceList(path, deleteFlag);
             await extension.updateHashesBundles(path, deleteFlag);
             // remove server bundle from remote bundles

@@ -50,7 +50,7 @@ const mockedAnalysisResults = {
 };
 // mocked endpoints
 mockedServer.get('/session').query(true).reply(200, { type: "private" });
-mockedServer.get("/filters").reply(200, mockedFilesFiltersResponse);
+mockedServer.get('/filters').reply(200, mockedFilesFiltersResponse);
 mockedServer
   .post("/bundle")
   .matchHeader("Content-Type", "application/json")
@@ -66,21 +66,13 @@ mockedServer.get(`/analysis/${testBundleId}`).reply(200, mockedAnalysisResults);
 const preTestConfigureExtension = () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
-  
-  // set test token
-  testExtension.token = testToken;
-  
-  // set test backend host
-  testExtension.config.changeDeepCodeUrl(testHost);
-  
-  // init HTTP module
-  testExtension.initAPI({
-    baseURL: testHost,
-    useDebug: true,
-  });
 
-  // mock login and upload confirm to always true
-  testExtension.checkUploadConfirm = () => true;
+  // set test token
+  testExtension.store.actions.setSessionToken(testToken);
+
+  // set test backend host
+  testExtension.defaultBaseURL = testHost;
+  
   testExtension.login = async () => true;
   
   // set workspace path for tests
@@ -106,7 +98,7 @@ suite("Deepcode Extension Tests", () => {
   test("Pre-test configuring", () => {
     testExtension = preTestConfigureExtension();
     assert.equal(testExtension.token, testToken);
-    assert.equal(testExtension.config.deepcodeUrl, testHost);
+    assert.equal(testExtension.baseURL, testHost);
     assert.equal(
       testExtension.workspacesPaths[0],
       path.join(mockedTestFilesDirPath, "../mocked_data")
@@ -133,7 +125,7 @@ suite("Deepcode Extension Tests", () => {
 
   test('Send files list to analyse', async () => {
     try {
-      await http.analyse(testFilesList, testToken);
+      await http.analyse(testHost, testToken, testFilesList);
       assert.equal(true, true);
     } catch(error) {
       console.log(error);

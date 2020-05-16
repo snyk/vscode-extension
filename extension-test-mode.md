@@ -66,12 +66,6 @@
 Extension has one command.
 When extension is installed or running in dev mode, go to 'Settings'(settings icon is in the left bottom of vscode window), choose 'Command Pallete...' and in opened input type commands(vscode will help with autocomplete)
 
-#### Here are commands:
-
-##### 'DeepCode':
-
-restarts extension. this might be usefull if user refused to login or refused to confirm sending files to server. in this case running this command will reactivate extension and user will be able to complete all actions to start review
-
 ## Usage with local package `@deepcode/tsc`
 
 In order to test plugin with local package `@deepcode/tsc` you should make the following steps.
@@ -103,23 +97,20 @@ $ npm link @deepcode/tsc
 After that you can add package to your `package.json`:
 ```json
 "dependencies": {
- "@deepcode/tsc": "^1.0.0"
+ "@deepcode/tsc": "^1.0.1"
 }
 ```
            
 and use this package as usual:
 ```javascript
-import { ServiceAI, IConfig } from '@deepcode/tsc';
+import { ServiceAI } from '@deepcode/tsc';
+
+const baseURL = 'https://www.deepcode.ai';
 
 const AI = new ServiceAI();
-const config: IConfig = {
-  baseURL: 'https://www.deepcode.ai',
-  useDebug: true,
-};
-AI.init(config);
 
 async login(): Promise<string> {
- const { sessionToken } = await AI.startSession({ source: IDE_NAME });
+ const { sessionToken } = await AI.startSession({ baseURL, source: IDE_NAME });
  return Promise.resolve(sessionToken);
 }
 ```

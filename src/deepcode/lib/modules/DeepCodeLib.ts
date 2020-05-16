@@ -1,23 +1,17 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as nodeFs from "fs";
-import { IConfig } from "@deepcode/tsc";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
-import http from "../../http/requests";
 
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import {
-  BASE_URL,
   INSTALL_STATUS,
   STATUSFILE_NAME,
   DEEPCODE_NAME
 } from "../../constants/general";
-import { DEEPCODE_CLOUD_BACKEND } from "../../constants/settings";
 
-export default class DeepCodeLib extends BundlesModule
-  implements DeepCode.DeepCodeLibInterface {
+export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   private watchersAreActivated: boolean = false;
 
   public activateWatchers(): void {
@@ -28,14 +22,14 @@ export default class DeepCodeLib extends BundlesModule
   }
 
   public async activateActions(): Promise<void> {
-    const loginStatus = await this.login();
-    if (loginStatus) {
-      await this.activateExtensionAnalyzeActions();
-      if (!this.watchersAreActivated) {
-        this.activateWatchers();
-        this.watchersAreActivated = true;
-      }
+    await this.activateExtensionAnalyzeActions();
+
+    if (!this.watchersAreActivated) {
+      this.activateWatchers();
+      this.watchersAreActivated = true;
     }
+    
+    await this.login();
   }
 
   public async preActivateActions(): Promise<void> {
@@ -43,20 +37,7 @@ export default class DeepCodeLib extends BundlesModule
     if (process.env.NODE_ENV === "production") {
       status = this.manageExtensionStatus();
     }
-    if (status === INSTALL_STATUS.justInstalled) {
-      return this.configureExtension();
-    }
-    const backendUrl = await vscode.workspace
-      .getConfiguration()
-      .get(DEEPCODE_CLOUD_BACKEND);
-
-    if (backendUrl) {
-      await this.config.changeDeepCodeUrl(backendUrl);
-      await this.activateActions();
-    } else {
-      await this.store.actions.setBackendConfigStatus(false);
-      await this.configureExtension();
-    }
+    await this.activateActions();    
   }
 
   public manageExtensionStatus(): string {
@@ -64,10 +45,7 @@ export default class DeepCodeLib extends BundlesModule
       el => el.packageJSON.displayName === DEEPCODE_NAME
     );
     if (extension) {
-      const statusFilePath = path.join(
-        extension.extensionPath,
-        `/${STATUSFILE_NAME}`
-      );
+      const statusFilePath = path.join(extension.extensionPath, `/${STATUSFILE_NAME}`);
       const extensionStatus = nodeFs.readFileSync(statusFilePath, "utf8");
       if (extensionStatus === INSTALL_STATUS.justInstalled) {
         this.store.cleanStore();
@@ -78,74 +56,26 @@ export default class DeepCodeLib extends BundlesModule
     return INSTALL_STATUS.installed;
   }
 
-  public async configureExtension(): Promise<void> {
-    const { msg, selfManagedBtn, cloudBtn } = deepCodeMessages.configureBackend;
-    const configBackendReply = await vscode.window.showInformationMessage(
-      msg,
-      cloudBtn,
-      selfManagedBtn
-    );
-    if (configBackendReply === selfManagedBtn) {
-      await vscode.commands.executeCommand(
-        "workbench.action.openSettings",
-        "deepcode"
-      );
-    }
-    if (configBackendReply === cloudBtn) {
-      this.initAPI({
-        baseURL: BASE_URL,
-        useDebug: true,
-      });
-      
-      await this.config.changeDeepCodeUrl(BASE_URL);
-      await vscode.workspace
-        .getConfiguration()
-        .update(
-          DEEPCODE_CLOUD_BACKEND,
-          BASE_URL,
-          vscode.ConfigurationTarget.Global
-        );
-      await this.store.actions.setBackendConfigStatus(true);
-      await this.activateActions();
-    }
-  }
-
   public async activateExtensionAnalyzeActions(): Promise<void> {
-    // check if user is loggedIn
-    const isLoggedInUser = await this.store.selectors.getLoggedInStatus();
-    if (!isLoggedInUser) {
-      return;
-    }
-
     const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
       vscode.workspace.workspaceFolders;
 
     if (!workspaceFolders || !workspaceFolders.length) {
       return;
     } 
-    
-    for await (const folder of workspaceFolders) {
-      // check if upload confirmed for each of workspaces
-      if (!this.checkUploadConfirm(folder.uri.fsPath)) {
-        await this.showConfirmMsg(this, folder.uri.fsPath);
-      }
-    }
 
+    if (this.token) {
+      await this.createFilesFilterList();
+    }
+    
     this.createWorkspacesList(workspaceFolders);
     if (this.workspacesPaths.length) {
       this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
-      await this.createFilesFilterList();
+      
       await this.updateHashesBundles();
       for await (const path of this.workspacesPaths) {
-        if (!this.checkUploadConfirm(path)) {
-          continue;
-        }
         await this.performBundlesActions(path);
       }
     }
-  }
-
-  public initAPI(config: IConfig): void {
-    http.init(config);
   }
 }

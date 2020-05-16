@@ -7,4 +7,3 @@ export const INSTALL_STATUS = {
 };
 export const STATUSFILE_NAME = ".extensionStatus";
 export const IDE_NAME = "vscode";
-export const BASE_URL = "https://www.deepcode.ai";

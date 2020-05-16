@@ -50,7 +50,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
       unauthorizedContent,
       unauthorizedBundleAccess,
       notFound,
-      bigPayload,
       serverError,
       badGateway,
       serviceUnavailable,
@@ -68,8 +67,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     switch (error.statusCode) {
       case unauthorizedUser:
         return this.unauthorizedUser(extension);
-      case bigPayload:
-        return this.bigPayloadHandler();
       case unauthorizedContent:
       case unauthorizedBundleAccess:
       case notFound:
@@ -122,17 +119,9 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     }
   }
 
-  private async unauthorizedUser(
-    extension: DeepCode.ExtensionInterface
-  ): Promise<void> {
-    await extension.store.actions.setLoggedInStatus(false);
-    extension.token = "";
+  private async unauthorizedUser(extension: DeepCode.ExtensionInterface): Promise<void> {
     extension.store.actions.setSessionToken("");
-    const { msg, button } = deepCodeMessages.unauthorized;
-    const loginAgainBtn = await vscode.window.showWarningMessage(msg, button);
-    if (loginAgainBtn === button) {
-      startDeepCodeCommand();
-    }
+    startDeepCodeCommand();
   }
 
   private async unauthorizedBundleOrContent(
@@ -152,13 +141,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     await extension.performBundlesActions(options.workspacePath);
   }
 
-  private async bigPayloadHandler(): Promise<void> {
-    const { msg, button } = deepCodeMessages.payloadSizeError;
-    const res = await vscode.window.showErrorMessage(msg, button);
-    if (button === res) {
-      startDeepCodeCommand();
-    }
-  }
 }
 
 export default DeepCodeErrorHandler;

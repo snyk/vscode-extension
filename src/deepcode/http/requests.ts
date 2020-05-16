@@ -1,7 +1,5 @@
 import {
   ServiceAI,
-  IConfig,
-  IFiles,
   IFileContent,
   StartSessionRequestDto,
   StartSessionResponseDto,
@@ -15,39 +13,29 @@ import {
 } from "@deepcode/tsc";
 
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
-import { BASE_URL, IDE_NAME } from "../constants/general";
+import { IDE_NAME } from "../constants/general";
 
 const AI = new ServiceAI();
-AI.init({
-  baseURL: BASE_URL,
-  useDebug: true,
-} as IConfig);
 
 const http = {
-  init(config: IConfig): void {
-    AI.init(config);
-  },
-
-  async login(source: string = IDE_NAME): Promise<StartSessionResponseDto> {
-    const options: StartSessionRequestDto = { source };
+  
+  async login(baseURL: string, source: string = IDE_NAME): Promise<StartSessionResponseDto> {
+    const options: StartSessionRequestDto = { baseURL, source };
     const result = await AI.startSession(options);
 
     return Promise.resolve(result as StartSessionResponseDto);
   },
 
-  async checkLoginStatus(sessionToken: string): Promise<CheckSessionResponseDto> {
-    const options: CheckSessionRequestDto = {
-      sessionToken,
-    };
+  async checkLoginStatus(baseURL: string, sessionToken: string): Promise<CheckSessionResponseDto> {
+    const options: CheckSessionRequestDto = { baseURL, sessionToken };
     const result = await AI.checkSession(options);
 
     return Promise.resolve(result as CheckSessionResponseDto);
   },
 
-  async getFilters(sessionToken: string): Promise<GetFiltersResponseDto> {
-    const options: GetFiltersRequestDto = {
-      sessionToken,
-    };
+  async getFilters(baseURL: string, sessionToken: string): Promise<GetFiltersResponseDto> {
+    const options: GetFiltersRequestDto = { baseURL, sessionToken};
+    console.log('filters options --> ', options);
     const result = await AI.getFilters(options);
 
     return Promise.resolve(result as GetFiltersResponseDto);
@@ -57,8 +45,9 @@ const http = {
     return AI;
   },
 
-  async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
+  async uploadFiles(baseURL: string, sessionToken: string, bundleId: string, body: any): Promise<void> {
     const options: UploadFilesRequestDto = {
+      baseURL,
       sessionToken,
       bundleId,
       content: (body as IFileContent[]),
@@ -68,8 +57,9 @@ const http = {
     return Promise.resolve();
   },
 
-  async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
+  async getAnalysis(baseURL: string, sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
     const options: GetAnalysisRequestDto = {
+      baseURL,
       sessionToken,
       bundleId,
     };
@@ -78,10 +68,11 @@ const http = {
     return Promise.resolve(result as unknown as DeepCode.AnalysisServerResponseInterface);
   },
 
-  async analyse(files: string[], sessionToken: string, removedFiles: string[] = []) {
+  async analyse(baseURL: string, sessionToken: string, files: string[], removedFiles: string[] = []) {
     const options: AnalyseRequestDto = {
-      files,
+      baseURL,
       sessionToken,
+      files,
       removedFiles,
     };
     

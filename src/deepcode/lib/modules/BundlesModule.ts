@@ -64,7 +64,7 @@ class BundlesModule extends LoginModule
         .suggestions as DeepCode.AnalysisSuggestionsInterface,
       success: true
     } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
-    console.log("Analysis Result is ready");
+    console.log("Analysis Result is ready with results --> ", analysisResults);
 
     const analysedFiles: ResultFiles = {};
 
@@ -113,7 +113,7 @@ class BundlesModule extends LoginModule
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
     try {
-      const serverFilesFilters = await http.getFilters(this.token);
+      const serverFilesFilters = await http.getFilters(this.baseURL, this.token);
       const { extensions, configFiles } = serverFilesFilters;
       const processedFilters = processServerFilesFilterList({
         extensions,
@@ -191,7 +191,7 @@ class BundlesModule extends LoginModule
       });
 
       try {
-        await http.analyse(files, this.token);
+        await http.analyse(this.baseURL, this.token, files);
       } catch(error) {
         console.log(error);
       }
@@ -255,8 +255,7 @@ class BundlesModule extends LoginModule
   }
 
   private getFiles(bundleForServer: string[], path: string) {
-    const files = bundleForServer.map(file => path + file);
-    return files;
+    return bundleForServer.map(file => path + file);
   }
 }
 

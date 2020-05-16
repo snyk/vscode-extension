@@ -9,7 +9,7 @@ import {
   scanFileCountFromDirectory,
   parseGitignoreFile,
 } from "../utils/filesUtils";
-import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, DEFAULT_IGNORE, EXCLUDED_NAMES } from "../constants/filesConstants";
+import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 
 let filesProgress = { processed: 0, total: 0 };
@@ -47,15 +47,10 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
   const dirPath = path || folderPath;
   const dirContent: string[] = await fs.readdir(dirPath);
   const relativeDirPath = nodePath.relative(folderPath, dirPath);
-  let useDefaultIgnore: boolean = true;
-
+  
   // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(dirPath, name);
-
-    if (name === DCIGNORE_FILENAME) {
-      useDefaultIgnore = false;
-    }
 
     if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
       // We've found a ignore file.
@@ -68,15 +63,6 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       exclusionFilter = exclusionFilter.copy();
       exclusionFilter.addExclusionRule(exclusionRule);
     }
-  }
-
-  // If no .dcignore file was found, use the standard exclusion.
-  if (useDefaultIgnore) {
-    const exclusionRule = new ExclusionRule();
-    exclusionRule.addExclusions(DEFAULT_IGNORE, relativeDirPath);
-    // We need to modify the exclusion rules so we have to create a copy of the exclusionFilter.
-    exclusionFilter = exclusionFilter.copy();
-    exclusionFilter.addExclusionRule(exclusionRule);
   }
 
   // Iterate through directory after updating exclusion rules.

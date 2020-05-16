@@ -7,7 +7,6 @@ import {
   TextEditor
 } from "vscode";
 import * as vscode from "vscode";
-import { IConfig } from "@deepcode/tsc";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -137,15 +136,6 @@ namespace DeepCode {
     fileUri: vscode.Uri;
   }
 
-  export interface DeepCodeConfig {
-    deepcodeUrl: string;
-    termsConditionsUrl: string;
-    changeDeepCodeUrl: Function;
-  }
-  export interface ExtensionConfigInterface {
-    deepcode: DeepCodeConfig;
-  }
-
   export interface ExtensionStoreInterface {
     selectors: StateSelectorsInterface;
     actions: StateSelectorsInterface;
@@ -193,13 +183,15 @@ namespace DeepCode {
   }
 
   export interface BaseDeepCodeModuleInterface {
-    config: DeepCode.DeepCodeConfig;
     store: DeepCode.ExtensionStoreInterface;
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
     hashesBundles: HashesBundlesInterface;
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
+    defaultBaseURL: string;
+    baseURL: string;
+    termsConditionsUrl: string;
     token: string;
     analyzer: DeepCode.AnalyzerInterface;
     statusBarItem: StatusBarItemInterface;
@@ -211,16 +203,6 @@ namespace DeepCode {
 
   export interface LoginModuleInterface {
     login(): Promise<boolean>;
-    checkUploadConfirm(folderPath: string): boolean;
-    showConfirmMsg(
-      extension: DeepCode.ExtensionInterface | any,
-      folderPath: string
-    ): Promise<boolean>;
-    cancelFirstSaveFlag(): void;
-    checkPermissions(
-      extension: ExtensionInterface,
-      folderPath: string
-    ): Promise<boolean>;
   }
 
   export interface BundlesModuleInterface {
@@ -244,11 +226,9 @@ namespace DeepCode {
   export interface DeepCodeLibInterface {
     preActivateActions(): Promise<void>;
     activateActions(): Promise<void>;
-    configureExtension(): Promise<void>;
     activateWatchers(): void;
     activateExtensionAnalyzeActions?(): Promise<void>;
     manageExtensionStatus(): string;
-    initAPI(config: IConfig): void;
   }
 
   export interface ExtensionInterface

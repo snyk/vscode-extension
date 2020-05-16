@@ -47,7 +47,7 @@
       {
         "title": "DeepCode",
         "properties": {
-          "deepcode.api.cloudBackend": {
+          "deepcode.url": {
             "type": "string",
             "default": "",
             "description": "In order to use a self-managed DeepCode server with Bitbucket or Gitlab instance, update the instance url below:",
@@ -96,6 +96,6 @@
     "ignore": "^5.1.4",
     "mz": "^2.7.0",
     "open": "^7.0.0",
-    "@deepcode/tsc": "^1.0.0"
+    "@deepcode/tsc": "^1.0.1"
   }
 }
