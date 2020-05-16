@@ -23,7 +23,7 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
       const draftToken = await this.initiateLogin();
       const loginStatus = await this.checkLoginStatus(draftToken);
       if (loginStatus) {
-        this.store.actions.setSessionToken(draftToken);
+        this.token = draftToken;
       }
     }
 
@@ -37,7 +37,6 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
     do {
       pressedButton = await vscode.window.showInformationMessage(login.msg, login.button);
       if (pressedButton === login.button) {
-        console.log('pressed login')
         try {
           const source = process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
           const result = await http.login(this.baseURL, source);

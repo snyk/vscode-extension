@@ -68,7 +68,7 @@ const preTestConfigureExtension = () => {
   const testExtension = extension.getExtension();
 
   // set test token
-  testExtension.store.actions.setSessionToken(testToken);
+  testExtension.token = '';
 
   // set test backend host
   testExtension.defaultBaseURL = testHost;

@@ -28,8 +28,6 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
       this.activateWatchers();
       this.watchersAreActivated = true;
     }
-    
-    await this.login();
   }
 
   public async preActivateActions(): Promise<void> {

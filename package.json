@@ -52,6 +52,12 @@
             "default": "",
             "description": "In order to use a self-managed DeepCode server with Bitbucket or Gitlab instance, update the instance url below:",
             "scope": "application"
+          },
+          "deepcode.token": {
+            "type": "string",
+            "default": "",
+            "description": "API key",
+            "scope": "application"
           }
         }
       }

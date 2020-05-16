@@ -52,8 +52,12 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     return `${this.baseURL}tc?utm_source=vsc`;
   }
 
-
   public get token(): string {
-    return this.store.selectors.getSessionToken();
+    // @ts-ignore */}
+    return vscode.workspace.getConfiguration('deepcode').get('token');
+  }
+
+  public set token(value) {
+    vscode.workspace.getConfiguration('deepcode').update('token', value, true);
   }
 }

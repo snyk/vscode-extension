@@ -120,8 +120,9 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   }
 
   private async unauthorizedUser(extension: DeepCode.ExtensionInterface): Promise<void> {
-    extension.store.actions.setSessionToken("");
-    startDeepCodeCommand();
+    extension.token = '';
+    await extension.login();
+    await startDeepCodeCommand();
   }
 
   private async unauthorizedBundleOrContent(
