@@ -1,6 +1,5 @@
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import { ExtensionContext, Memento } from "vscode";
-import { stateNames } from "../deepcode/constants/stateNames";
 
 class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   private globalState: Memento | any = {};
@@ -8,21 +7,14 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   public actions: DeepCode.StateSelectorsInterface = {};
 
   private createSelectors(): DeepCode.StateSelectorsInterface {
-    return {
-      getServerConnectionAttempts: (): number =>
-        this.globalState.get(stateNames.serverConnectionAttempts)
-    };
+    return {};
   }
 
   private createStateActions(): DeepCode.StateSelectorsInterface {
-    return {
-      setServerConnectionAttempts: (attempts: number): Thenable<void> =>
-        this.globalState.update(stateNames.serverConnectionAttempts, attempts),
-    };
+    return {};
   }
 
   public cleanStore(): void {
-    this.actions.setServerConnectionAttempts(10);
   }
 
   public async createStore(context: ExtensionContext): Promise<void> {

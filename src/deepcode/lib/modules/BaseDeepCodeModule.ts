@@ -24,6 +24,9 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public settingsWatcher: DeepCode.DeepCodeWatcherInterface;
   public errorHandler: DeepCode.ErrorHandlerInterface;
 
+  // These attributes are used in tests
+  public staticToken = '';
+  public staticBaseURL = '';
   public defaultBaseURL = 'https://www.deepcode.ai';
 
   constructor() {
@@ -44,8 +47,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
 
   public get baseURL(): string {
     // @ts-ignore */}
-    const url: string = vscode.workspace.getConfiguration('deepcode').get('url');
-    return url || this.defaultBaseURL;
+    return this.staticBaseURL || vscode.workspace.getConfiguration('deepcode').get('url') || this.defaultBaseURL;
   }
 
   public get termsConditionsUrl(): string {
@@ -54,10 +56,11 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
 
   public get token(): string {
     // @ts-ignore */}
-    return vscode.workspace.getConfiguration('deepcode').get('token');
+    return this.staticToken || vscode.workspace.getConfiguration('deepcode').get('token');
   }
 
   public set token(value) {
+    this.staticToken = '';
     vscode.workspace.getConfiguration('deepcode').update('token', value, true);
   }
 }

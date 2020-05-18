@@ -9,6 +9,7 @@ export const errorsLogs = {
     `Failed fetching bundle status on server after ${attempts} attempts`,
   extendBundle: "Failed to extend bundle on server with files",
   failedStatusOfAnalysis: "Analysis results have status FAILED",
+  analyze: "Analysis request failed",
   failedAnalysis: "Failed fetching analysis results",
   undefinedError: "Unrecognized error",
   watchFileBeforeExtendBundle:

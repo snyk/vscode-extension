@@ -67,13 +67,9 @@ const preTestConfigureExtension = () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
 
-  // set test token
-  testExtension.token = '';
-
-  // set test backend host
-  testExtension.defaultBaseURL = testHost;
-  
-  testExtension.login = async () => true;
+  // set test token and backend host
+  testExtension.staticToken = testToken;
+  testExtension.staticBaseURL = testHost;
   
   // set workspace path for tests
   testExtension.workspacesPaths = [mockedFolderPath];
@@ -87,10 +83,10 @@ const uri = vscode.Uri.file(
 
 const testIgnoreComment = '// deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>';
 const testFilesList = [
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/utf8.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/main.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/sub_folder/test2.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/test.java'),
+  '../mocked_data/sample_repository/utf8.js',
+  '../mocked_data/sample_repository/main.js',
+  '../mocked_data/sample_repository/sub_folder/test2.js',
+  '../mocked_data/test.java',
 ];
 
 suite("Deepcode Extension Tests", () => {
@@ -125,7 +121,7 @@ suite("Deepcode Extension Tests", () => {
 
   test('Send files list to analyse', async () => {
     try {
-      await http.analyse(testHost, testToken, testFilesList);
+      await http.analyse(testHost, testToken, mockedTestFilesDirPath, testFilesList);
       assert.equal(true, true);
     } catch(error) {
       console.log(error);

@@ -94,11 +94,7 @@
     "nock": "^11.7.2"
   },
   "dependencies": {
-    "@types/git-repo-name": "^1.0.0",
-    "@types/git-username": "^1.0.0",
     "@types/mz": "^0.0.32",
-    "git-repo-name": "^1.0.1",
-    "git-username": "^1.0.0",
     "ignore": "^5.1.4",
     "mz": "^2.7.0",
     "open": "^7.0.0",

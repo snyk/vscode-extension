@@ -98,24 +98,19 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
             extension.hashesBundles[fileWorkspacePath]
           );
           const { modified, created, deleted } = FILE_CURRENT_STATUS;
-          if (
-            updatedFile.status === modified ||
-            updatedFile.status === created ||
-            updatedFile.status === deleted
-          ) {
+          if ( [modified, created, deleted].includes(updatedFile.status)) {
             this.updateCorrespondingFilesList(fileWorkspacePath, filePath, {
               ...updatedFile
             });
           }
         } catch (err) {
           const filePathInBundle = filePath.split(fileWorkspacePath)[1];
-          extension.errorHandler.processError(extension, err, {
-            errorDetails: {
-              message: errorsLogs.watchFileBeforeExtendBundle,
-              bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
-              data: {
-                [filePathInBundle]: errorsLogs.modifiedFile(type)
-              }
+          
+          await extension.errorHandler.processError(extension, err, {
+            message: errorsLogs.watchFileBeforeExtendBundle,
+            bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
+            data: {
+              [filePathInBundle]: errorsLogs.modifiedFile(type)
             }
           });
         }

@@ -3,10 +3,7 @@ import * as vscode from "vscode";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
 
-import {
-  DEEPCODE_START_COMMAND,
-  DEEPCODE_SETTINGS_COMMAND
-} from "./constants/commands";
+import { DEEPCODE_START_COMMAND, DEEPCODE_SETTINGS_COMMAND } from "./constants/commands";
 import { openDeepcodeSettingsCommand } from "./utils/vscodeCommandsUtils";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
@@ -14,26 +11,28 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     this.store.createStore(context);
     this.statusBarItem.show();
 
-    let deepcodeCommand = vscode.commands.registerCommand(
-      DEEPCODE_START_COMMAND,
-      this.startExtension.bind(this)
+    context.subscriptions.push( 
+      vscode.commands.registerCommand(
+        DEEPCODE_START_COMMAND,
+        this.activateExtensionAnalyzeActions.bind(this)
+      )
     );
 
-    let deepcodeSettingsCommand = vscode.commands.registerCommand(
-      DEEPCODE_SETTINGS_COMMAND,
-      openDeepcodeSettingsCommand
+    context.subscriptions.push( 
+      vscode.commands.registerCommand(
+        DEEPCODE_SETTINGS_COMMAND,
+        openDeepcodeSettingsCommand
+      )
     );
+    
     context.subscriptions.push(
       { dispose: this.startExtension() },
-      deepcodeCommand,
-      deepcodeSettingsCommand
     );
   }
 
   public startExtension(): any {
-    (async (): Promise<void> => {
-      this.preActivateActions();
-    })();
+    this.activateWatchers();
+    this.activateExtensionAnalyzeActions();
   }
 
 }

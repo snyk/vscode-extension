@@ -12,6 +12,3 @@ export const statusCodes: { [key: string]: number } = {
   timeout: 504,
 };
 
-export const EXPIRED_REQUEST = "expiredRequest";
-export const ATTEMPTS_AMMOUNT = 5;
-export const SERVER_CONNECTION_TIMEOUT = 60000;

@@ -175,11 +175,6 @@ namespace DeepCode {
       error: errorType,
       options?: { [key: string]: any }
     ): void;
-    sendErrorToServer(
-      extension: DeepCode.ExtensionInterface,
-      error: DeepCode.errorType,
-      options: { [key: string]: any }
-    ): Promise<void>;
   }
 
   export interface BaseDeepCodeModuleInterface {
@@ -189,7 +184,9 @@ namespace DeepCode {
     hashesBundles: HashesBundlesInterface;
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
+    staticToken: string;
     defaultBaseURL: string;
+    staticBaseURL: string;
     baseURL: string;
     termsConditionsUrl: string;
     token: string;
@@ -202,7 +199,7 @@ namespace DeepCode {
   }
 
   export interface LoginModuleInterface {
-    login(): Promise<boolean>;
+    initiateLogin(): Promise<void>;
   }
 
   export interface BundlesModuleInterface {
@@ -224,11 +221,11 @@ namespace DeepCode {
   }
 
   export interface DeepCodeLibInterface {
-    preActivateActions(): Promise<void>;
-    activateActions(): Promise<void>;
+    // preActivateActions(): Promise<void>;
+    // activateActions(): Promise<void>;
     activateWatchers(): void;
-    activateExtensionAnalyzeActions?(): Promise<void>;
-    manageExtensionStatus(): string;
+    activateExtensionAnalyzeActions(): Promise<void>;
+    // manageExtensionStatus(): string;
   }
 
   export interface ExtensionInterface

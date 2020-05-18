@@ -3,7 +3,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
 class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
   
-  private async changeDeepCodeCloudBackend(extension: DeepCode.ExtensionInterface): Promise<void> {
+  private async onChangeBaseURL(extension: DeepCode.ExtensionInterface): Promise<void> {
     const extensionConfig = vscode.workspace.getConfiguration('deepcode');
     // @ts-ignore */}
     const url: string = extensionConfig.get('url');
@@ -13,7 +13,7 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
       extensionConfig.update('url', cleaned, true);
     } else {
       await extension.store.cleanStore();
-      await extension.startExtension();
+      await extension.activateExtensionAnalyzeActions();
     }
   }
 
@@ -21,7 +21,7 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     vscode.workspace.onDidChangeConfiguration(
       (event: vscode.ConfigurationChangeEvent): void => {
         if (event.affectsConfiguration('deepcode.url')) {
-          this.changeDeepCodeCloudBackend(extension);
+          this.onChangeBaseURL(extension);
         }
       }
     );
