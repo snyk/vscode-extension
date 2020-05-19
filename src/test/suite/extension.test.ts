@@ -19,7 +19,7 @@ const testToken = "TEST_TOKEN";
 const testBundleId = "testBundleId";
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
 const mockedFolderPath = vscode.Uri.parse(
-  "scheme:" + path.join(mockedTestFilesDirPath, "../mocked_data"),
+  "scheme:" + path.join(mockedTestFilesDirPath, "/../mocked_data"),
   true
 ).fsPath;
 
@@ -81,12 +81,12 @@ const uri = vscode.Uri.file(
   path.join(mockedTestFilesDirPath, "../mocked_data/sample_repository", "main.js"),
 );
 
-const testIgnoreComment = '// deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>';
+const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 const testFilesList = [
-  '../mocked_data/sample_repository/utf8.js',
-  '../mocked_data/sample_repository/main.js',
-  '../mocked_data/sample_repository/sub_folder/test2.js',
-  '../mocked_data/test.java',
+  '/../mocked_data/sample_repository/utf8.js',
+  '/../mocked_data/sample_repository/main.js',
+  '/../mocked_data/sample_repository/sub_folder/test2.js',
+  '/../mocked_data/test.java',
 ];
 
 suite("Deepcode Extension Tests", () => {
@@ -115,7 +115,9 @@ suite("Deepcode Extension Tests", () => {
     return editor.edit(textEditor => {
       textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
     }).then(inserted => {
-      assert.equal(document.lineAt(18).text, testIgnoreComment);
+      assert.equal(`${document.lineAt(18).text}\n`, testIgnoreComment);
+      // TODO: find a way to undo this change
+      // TODO: check actual analysis results with ignored line
     });
   });
 
