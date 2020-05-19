@@ -54,10 +54,8 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     
     switch (error.statusCode) {
       case unauthorizedUser:
-        console.log('unauthorizedUser');
         return this.unauthorizedAccess(extension);
       case notFound:
-        console.log('notFound');
         return this.unauthorizedAccess(extension);
       case unauthorizedContent:
       case unauthorizedBundleAccess:
@@ -82,6 +80,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
         //for testing edpoint use source: 'test'
         source: IDE_NAME,
         type: `${error.statusCode || ""} ${error.name || ""}`.trim(),
+        errorTrace: JSON.stringify(error),
         message: options.message || errorsLogs.undefinedError,
         ...(extension.token && { sessionToken: extension.token }),
         ...(options.endpoint && { path: options.endpoint }),

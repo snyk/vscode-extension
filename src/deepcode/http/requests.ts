@@ -26,16 +26,13 @@ const http = {
   },
 
   analyse(baseURL: string, sessionToken: string, baseDir: string, files: string[], removedFiles: string[] = []) {
-    const options: AnalyseRequestDto = {
+    return AI.analyse({
       baseURL,
       sessionToken,
       baseDir,
       files,
       removedFiles,
-    };
-    console.log('options --> ', options);
-    
-    return AI.analyse(options);
+    });
   },
 
   // TODO: when API package will implement such functionality

@@ -200,6 +200,7 @@ namespace DeepCode {
 
   export interface LoginModuleInterface {
     initiateLogin(): Promise<void>;
+    checkSession(): Promise<boolean> | boolean;
   }
 
   export interface BundlesModuleInterface {

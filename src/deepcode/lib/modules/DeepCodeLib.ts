@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
-import * as path from "path";
-import * as nodeFs from "fs";
+// import * as path from "path";
+// import * as nodeFs from "fs";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import http from "../../http/requests";
 import BundlesModule from "./BundlesModule";
 
 // import { INSTALL_STATUS, STATUSFILE_NAME, DEEPCODE_NAME } from "../../constants/general";
@@ -48,11 +49,22 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     }
 
     this.createWorkspacesList(workspaceFolders);
+
     if (this.workspacesPaths.length) {
       this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
       
       await this.updateHashesBundles();
 
+      let loggedIn = await this.checkSession();
+      if (!loggedIn) {
+        await this.initiateLogin();
+        loggedIn = await this.checkSession();
+      }
+
+      if (!loggedIn) {
+        return;
+      }
+      
       try {
         // Main entry point to 
         for await (const path of this.workspacesPaths) {

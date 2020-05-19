@@ -34,25 +34,29 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
           throw new Error();
         }
         await open(loginURL);
-        await this.waitLoginOnline(sessionToken);
+        this.token = sessionToken;
+        await this.waitLoginConfirmation();
       }
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  private async waitLoginOnline(token: string): Promise<void> {
+  public checkSession(): Promise<boolean> | boolean {
+    if (!this.token) return false;
+    return http.checkSession(this.baseURL, this.token);
+  }
+
+  private async waitLoginConfirmation(): Promise<void> {
+    if (!this.token) return;
     // 20 attempts to wait for user's login & consent
     for (let i = 0; i < 20; i++) {
       await sleep(1000);
       
-      const confirmed = await http.checkSession(this.baseURL, token);
-      if (!confirmed) {
-        continue
+      const confirmed = await this.checkSession();
+      if (confirmed) {
+        return
       }
-
-      this.token = token;
-      return;
     }
   }
 

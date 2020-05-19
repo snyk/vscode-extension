@@ -1,3 +1,8 @@
+## [2.1.0] - 2019-05-19
+- Major version. Big refactoring of confguration and authentication and error handling layers.
+- Windows support fixed
+- Relative paths in analysis results
+
 ## [2.0.0] - 2019-04-27
 - Major version. Big refactoring
 - Separated a module @deepcode/tsc for all API integration
