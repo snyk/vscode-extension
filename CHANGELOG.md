@@ -2,6 +2,7 @@
 - Major version. Big refactoring of confguration and authentication and error handling layers.
 - Windows support fixed
 - Relative paths in analysis results
+- Improved user consent for uploading files with a feature "Always yes"
 
 ## [2.0.0] - 2019-04-27
 - Major version. Big refactoring
