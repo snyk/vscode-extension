@@ -58,6 +58,12 @@
             "default": "",
             "description": "API key",
             "scope": "application"
+          },
+          "deepcode.uploadApproved": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "User consent for code upload to `#deepcode.url#`",
+            "scope": "window"
           }
         }
       }

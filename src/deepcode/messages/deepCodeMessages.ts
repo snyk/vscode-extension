@@ -3,6 +3,12 @@ export const deepCodeMessages = {
     msg: "Login to your account to obtain your API key and start analysing the code with DeepCode.",
     button: "Proceed"
   },
+  uploadApproval: {
+    msg: (termsConditionsUrl: string): string =>	
+    `You are almost set 🤗. Let's confirm and start the remote analysis of this workspace ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
+    workspace: "Yes",
+    global: "Always yes"
+  },
   error: {
     msg: "DeepCode encountered a problem.",
     button: "Restart"

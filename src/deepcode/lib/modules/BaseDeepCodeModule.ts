@@ -28,6 +28,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public staticToken = '';
   public staticBaseURL = '';
   public defaultBaseURL = 'https://www.deepcode.ai';
+  public staticuUploadApproved = false;
 
   constructor() {
     this.store = new DeepCodeStore();
@@ -51,7 +52,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   }
 
   public get termsConditionsUrl(): string {
-    return `${this.baseURL}tc?utm_source=vsc`;
+    return `${this.baseURL}/tc?utm_source=vsc`;
   }
 
   public get token(): string {
@@ -63,4 +64,13 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     this.staticToken = '';
     vscode.workspace.getConfiguration('deepcode').update('token', value, true);
   }
+
+  public get uploadApproved(): boolean {
+    return this.staticuUploadApproved || !!(vscode.workspace.getConfiguration('deepcode').get('uploadApproved'));
+  }
+
+  public async approveUpload(isGlobal: boolean = false): Promise<void> {
+    await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', true, isGlobal);
+  }
+  
 }

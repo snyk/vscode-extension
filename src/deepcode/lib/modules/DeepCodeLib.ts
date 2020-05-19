@@ -55,16 +55,25 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
       
       await this.updateHashesBundles();
 
+      // First, check logged in or not
       let loggedIn = await this.checkSession();
       if (!loggedIn) {
         await this.initiateLogin();
         loggedIn = await this.checkSession();
+        if (!loggedIn) {
+          return;
+        }
       }
 
-      if (!loggedIn) {
-        return;
+      // Second, check user consent on sending files to server
+      if (!this.uploadApproved) {
+        await this.askUploadApproval();
+        if (!this.uploadApproved) {
+          return;
+        }
       }
-      
+
+      // Third, initiate analysis
       try {
         // Main entry point to 
         for await (const path of this.workspacesPaths) {

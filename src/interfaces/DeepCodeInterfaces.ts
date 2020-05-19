@@ -190,6 +190,8 @@ namespace DeepCode {
     baseURL: string;
     termsConditionsUrl: string;
     token: string;
+    uploadApproved: boolean;
+    approveUpload(): Promise<void>;
     analyzer: DeepCode.AnalyzerInterface;
     statusBarItem: StatusBarItemInterface;
     filesWatcher: DeepCodeWatcherInterface;
@@ -204,6 +206,7 @@ namespace DeepCode {
   }
 
   export interface BundlesModuleInterface {
+    askUploadApproval(): Promise<void>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;

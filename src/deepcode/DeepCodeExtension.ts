@@ -28,6 +28,18 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       { dispose: this.startExtension() },
     );
+
+    this.runMigration();
+  }
+
+  private runMigration() {
+    // TODO: remove it after 01.06.2020
+    // Move 'deepcode.api.cloudBackend' to 'deepcode.url' configuration
+    const config = vscode.workspace.getConfiguration('deepcode');
+    const oldBaseURL = config.get('api.cloudBackend');
+    if (!config.get('url') && oldBaseURL) {
+      config.update('url', oldBaseURL, true);
+    }
   }
 
   public startExtension(): any {

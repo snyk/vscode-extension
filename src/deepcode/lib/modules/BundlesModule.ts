@@ -85,6 +85,16 @@ class BundlesModule extends LoginModule
     throw error;
   }
 
+  public async askUploadApproval(): Promise<void> {
+    const { uploadApproval } = deepCodeMessages;
+    let pressedButton: string | undefined;
+    
+    pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
+    if (pressedButton) {
+      await this.approveUpload(pressedButton === uploadApproval.global);
+    }
+  }
+
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
     this.currentWorkspacePath = newWorkspacePath;
