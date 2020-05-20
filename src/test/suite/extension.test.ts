@@ -68,6 +68,7 @@ const preTestConfigureExtension = () => {
   const testExtension = extension.getExtension();
 
   // set test token and backend host
+  testExtension.staticUploadApproved = true;
   testExtension.staticToken = testToken;
   testExtension.staticBaseURL = testHost;
   

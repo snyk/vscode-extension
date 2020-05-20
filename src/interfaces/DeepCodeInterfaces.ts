@@ -184,14 +184,16 @@ namespace DeepCode {
     hashesBundles: HashesBundlesInterface;
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
+    source: string;
     staticToken: string;
     defaultBaseURL: string;
     staticBaseURL: string;
     baseURL: string;
     termsConditionsUrl: string;
     token: string;
+    setToken(token: string): Promise<void>;
     uploadApproved: boolean;
-    approveUpload(): Promise<void>;
+    approveUpload(isGlobal: boolean): Promise<void>;
     analyzer: DeepCode.AnalyzerInterface;
     statusBarItem: StatusBarItemInterface;
     filesWatcher: DeepCodeWatcherInterface;
@@ -225,11 +227,8 @@ namespace DeepCode {
   }
 
   export interface DeepCodeLibInterface {
-    // preActivateActions(): Promise<void>;
-    // activateActions(): Promise<void>;
     activateWatchers(): void;
     activateExtensionAnalyzeActions(): Promise<void>;
-    // manageExtensionStatus(): string;
   }
 
   export interface ExtensionInterface

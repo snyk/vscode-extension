@@ -91,11 +91,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   }
 
   private async unauthorizedAccess(extension: DeepCode.ExtensionInterface): Promise<void> {
-    do {
-      await extension.initiateLogin();
-    } while (!extension.token)
-
-    await sleep(2000);
+    await sleep(1000);
     await extension.activateExtensionAnalyzeActions();
   }
 

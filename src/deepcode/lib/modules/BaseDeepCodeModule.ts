@@ -8,6 +8,7 @@ import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import DeepCodeErrorhandler from "../errorHandler/DeepCodeErrorHandler";
+import { IDE_NAME } from "../../constants/general";
 
 export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   public store: DeepCode.ExtensionStoreInterface;
@@ -28,7 +29,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public staticToken = '';
   public staticBaseURL = '';
   public defaultBaseURL = 'https://www.deepcode.ai';
-  public staticuUploadApproved = false;
+  public staticUploadApproved = false;
 
   constructor() {
     this.store = new DeepCodeStore();
@@ -60,13 +61,17 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     return this.staticToken || vscode.workspace.getConfiguration('deepcode').get('token');
   }
 
-  public set token(value) {
+  public async setToken(token: string): Promise<void>  {
     this.staticToken = '';
-    vscode.workspace.getConfiguration('deepcode').update('token', value, true);
+    await vscode.workspace.getConfiguration('deepcode').update('token', token, true);
+  }
+
+  public get source(): string {
+    return process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME; 
   }
 
   public get uploadApproved(): boolean {
-    return this.staticuUploadApproved || !!(vscode.workspace.getConfiguration('deepcode').get('uploadApproved'));
+    return this.staticUploadApproved || this.source !== IDE_NAME || !!(vscode.workspace.getConfiguration('deepcode').get('uploadApproved'));
   }
 
   public async approveUpload(isGlobal: boolean = false): Promise<void> {

@@ -1,12 +1,7 @@
 import * as vscode from "vscode";
-// import * as path from "path";
-// import * as nodeFs from "fs";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import http from "../../http/requests";
 import BundlesModule from "./BundlesModule";
-
-// import { INSTALL_STATUS, STATUSFILE_NAME, DEEPCODE_NAME } from "../../constants/general";
 
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   
@@ -17,31 +12,27 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     this.settingsWatcher.activate(this);
   }
 
-  // public async preActivateActions(): Promise<void> {
-  //   // let status = INSTALL_STATUS.installed;
-  //   // if (process.env.NODE_ENV === "production") {
-  //   //   status = this.manageExtensionStatus();
-  //   // }
-  //   await this.activateActions();    
-  // }
-
-  // public manageExtensionStatus(): string {
-  //   const extension = vscode.extensions.all.find(
-  //     el => el.packageJSON.displayName === DEEPCODE_NAME
-  //   );
-  //   if (extension) {
-  //     const statusFilePath = path.join(extension.extensionPath, `/${STATUSFILE_NAME}`);
-  //     const extensionStatus = nodeFs.readFileSync(statusFilePath, "utf8");
-  //     if (extensionStatus === INSTALL_STATUS.justInstalled) {
-  //       this.store.cleanStore();
-  //       nodeFs.writeFileSync(statusFilePath, INSTALL_STATUS.installed);
-  //       return INSTALL_STATUS.justInstalled;
-  //     }
-  //   }
-  //   return INSTALL_STATUS.installed;
-  // }
 
   public async activateExtensionAnalyzeActions(): Promise<void> {
+
+    // First, check logged in or not
+    let loggedIn = await this.checkSession();
+    if (!loggedIn) {
+      await this.initiateLogin();
+      loggedIn = await this.checkSession();
+      if (!loggedIn) {
+        return;
+      }
+    }
+
+    // Second, check user consent on sending files to server
+    if (!this.uploadApproved) {
+      await this.askUploadApproval();
+      if (!this.uploadApproved) {
+        return;
+      }
+    }
+
     const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
 
     if (!workspaceFolders || !workspaceFolders.length) {
@@ -54,24 +45,6 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
       this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
       
       await this.updateHashesBundles();
-
-      // First, check logged in or not
-      let loggedIn = await this.checkSession();
-      if (!loggedIn) {
-        await this.initiateLogin();
-        loggedIn = await this.checkSession();
-        if (!loggedIn) {
-          return;
-        }
-      }
-
-      // Second, check user consent on sending files to server
-      if (!this.uploadApproved) {
-        await this.askUploadApproval();
-        if (!this.uploadApproved) {
-          return;
-        }
-      }
 
       // Third, initiate analysis
       try {

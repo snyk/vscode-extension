@@ -5,8 +5,6 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
-import { statusCodes } from "../../constants/statusCodes";
-import { IDE_NAME } from "../../constants/general";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -14,7 +12,6 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
   private pendingLogin: boolean = false;
 
   public async initiateLogin(): Promise<void> {
-    
     if (this.pendingLogin) {
       return
     }
@@ -26,15 +23,14 @@ class LoginModule extends BaseDeepCodeModule implements DeepCode.LoginModuleInte
       
       pressedButton = await vscode.window.showInformationMessage(login.msg, login.button);
       if (pressedButton === login.button) {
-        const source = process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
-        const result = await http.login(this.baseURL, source);
+        const result = await http.login(this.baseURL, this.source);
         
         let { sessionToken, loginURL } = result;
         if (!sessionToken || !loginURL) {
           throw new Error();
         }
         await open(loginURL);
-        this.token = sessionToken;
+        await this.setToken(sessionToken);
         await this.waitLoginConfirmation();
       }
     } finally {
