@@ -18,6 +18,14 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     }
   }
 
+  private async systemError(error: object): Promise<void> {
+    const restartButton = deepCodeMessages.error.button;
+    const pressed = await vscode.window.showErrorMessage(String(error), restartButton);
+    if (pressed === restartButton) {
+      startDeepCodeCommand();
+    }
+  }
+
   private async serverErrorHandler(extension: DeepCode.ExtensionInterface | any): Promise<void> {
     const { msg } = deepCodeMessages.noConnection;
     vscode.window.showErrorMessage(msg);
@@ -51,7 +59,11 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
         return this.serverErrorHandler(extension);
       }
     }
-    
+
+    if (error.errno) {
+      return this.systemError(error);
+    }
+
     switch (error.statusCode) {
       case unauthorizedUser:
         return this.unauthorizedAccess(extension);
