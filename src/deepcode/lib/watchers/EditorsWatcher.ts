@@ -51,48 +51,28 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
   private watchEditorCodeChanges(extension: DeepCode.ExtensionInterface) {
     vscode.workspace.onDidChangeTextDocument(
       (event: vscode.TextDocumentChangeEvent) => {
-        try {
-          const currentEditorFileName = event.document.fileName;
-          if (
-            this.currentTextEditors[currentEditorFileName] &&
-            event.contentChanges &&
-            event.contentChanges.length
-          ) {
-            const curentLineCount = this.currentTextEditors[
-              currentEditorFileName
-            ].lineCount.current;
-            this.currentTextEditors[currentEditorFileName] = {
-              ...this.currentTextEditors[currentEditorFileName],
-              lineCount: {
-                current: event.document.lineCount,
-                prevOffset: event.document.lineCount - curentLineCount
-              },
-              contentChanges: [...event.contentChanges],
-              document: event.document
-            };
-            extension.analyzer.updateReviewResultsPositions(
-              extension,
-              this.currentTextEditors[currentEditorFileName]
-            );
-          }
-        } catch (err) {
-          const workspacePath = Object.keys(extension.remoteBundles).find(
-            bundlePath => event.document.fileName.includes(bundlePath)
+        const currentEditorFileName = event.document.fileName;
+        if (
+          this.currentTextEditors[currentEditorFileName] &&
+          event.contentChanges &&
+          event.contentChanges.length
+        ) {
+          const curentLineCount = this.currentTextEditors[
+            currentEditorFileName
+          ].lineCount.current;
+          this.currentTextEditors[currentEditorFileName] = {
+            ...this.currentTextEditors[currentEditorFileName],
+            lineCount: {
+              current: event.document.lineCount,
+              prevOffset: event.document.lineCount - curentLineCount
+            },
+            contentChanges: [...event.contentChanges],
+            document: event.document
+          };
+          extension.analyzer.updateReviewResultsPositions(
+            extension,
+            this.currentTextEditors[currentEditorFileName]
           );
-          extension.errorHandler.sendErrorToServer(extension, err, {
-            errorDetails: {
-              message: errorsLogs.vscodeFileChanges,
-              bundleId: workspacePath
-                ? extension.remoteBundles[workspacePath].bundleId
-                : "",
-              data: {
-                ...(workspacePath && {
-                  [event.document.fileName.split(workspacePath)[1]]:
-                    event.contentChanges
-                })
-              }
-            }
-          });
         }
       }
     );

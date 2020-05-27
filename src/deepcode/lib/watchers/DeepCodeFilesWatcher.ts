@@ -21,24 +21,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     this.watcher = vscode.workspace.createFileSystemWatcher("**/*.*");
   }
 
-  private async checksBeforeActions(
-    extension: DeepCode.ExtensionInterface,
-    filePath: string
-  ): Promise<boolean> {
-    // first save checks
-    let fileWorkspacePath = extension.workspacesPaths.find(path =>
-      filePath.includes(path)
-    );
-    if (!fileWorkspacePath) {
-      fileWorkspacePath = "";
-    }
-
-    if (!(await extension.checkPermissions(extension, fileWorkspacePath))) {
-      return false;
-    }
-    return true;
-  }
-
   private emptyChangedFilesLists(): void {
     // clear files lists
     this.changedFilesList.length = 0;
@@ -72,9 +54,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     if (Object.keys(this.filesForUpdatingServerBundle).length) {
       for (const workspacePath in this.filesForUpdatingServerBundle) {
         const updatedFiles = this.filesForUpdatingServerBundle[workspacePath];
-        if (!extension.checkUploadConfirm(workspacePath)) {
-          continue;
-        }
         let updated = false;
         if (updatedFiles.some(({filePath}) => isFileChangingBundle(filePath))) {
           await extension.updateHashesBundles(workspacePath);
@@ -119,24 +98,19 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
             extension.hashesBundles[fileWorkspacePath]
           );
           const { modified, created, deleted } = FILE_CURRENT_STATUS;
-          if (
-            updatedFile.status === modified ||
-            updatedFile.status === created ||
-            updatedFile.status === deleted
-          ) {
+          if ( [modified, created, deleted].includes(updatedFile.status)) {
             this.updateCorrespondingFilesList(fileWorkspacePath, filePath, {
               ...updatedFile
             });
           }
         } catch (err) {
           const filePathInBundle = filePath.split(fileWorkspacePath)[1];
-          extension.errorHandler.processError(extension, err, {
-            errorDetails: {
-              message: errorsLogs.watchFileBeforeExtendBundle,
-              bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
-              data: {
-                [filePathInBundle]: errorsLogs.modifiedFile(type)
-              }
+          
+          await extension.errorHandler.processError(extension, err, {
+            message: errorsLogs.watchFileBeforeExtendBundle,
+            bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
+            data: {
+              [filePathInBundle]: errorsLogs.modifiedFile(type)
             }
           });
         }
@@ -173,10 +147,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     filePath: string,
     extension: DeepCode.ExtensionInterface
   ): Promise<string> {
-    if (!(await this.checksBeforeActions(extension, filePath))) {
-      this.emptyChangedFilesLists();
-      return "";
-    }
     const fileWorkspacePath = extension.workspacesPaths.find(path =>
       filePath.includes(path)
     );

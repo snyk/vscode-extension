@@ -5,6 +5,7 @@ export const statusCodes: { [key: string]: number } = {
   unauthorizedUser: 401,
   unauthorizedBundleAccess: 403,
   notFound: 404,
+  analysisTimeout: 408,
   bigPayload: 413,
   serverError: 500,
   badGateway: 502,
@@ -12,6 +13,3 @@ export const statusCodes: { [key: string]: number } = {
   timeout: 504,
 };
 
-export const EXPIRED_REQUEST = "expiredRequest";
-export const ATTEMPTS_AMMOUNT = 5;
-export const SERVER_CONNECTION_TIMEOUT = 60000;

@@ -1,98 +1,38 @@
 import {
   ServiceAI,
-  IConfig,
-  IFiles,
-  IFileContent,
-  StartSessionRequestDto,
-  StartSessionResponseDto,
-  CheckSessionRequestDto,
-  CheckSessionResponseDto,
-  GetFiltersRequestDto,
-  GetFiltersResponseDto,
-  UploadFilesRequestDto,
-  GetAnalysisRequestDto,
   AnalyseRequestDto
 } from "@deepcode/tsc";
 
-import DeepCode from "../../interfaces/DeepCodeInterfaces";
-import { BASE_URL, IDE_NAME } from "../constants/general";
+import { IDE_NAME } from "../constants/general";
 
 const AI = new ServiceAI();
-AI.init({
-  baseURL: BASE_URL,
-  useDebug: true,
-} as IConfig);
 
 const http = {
-  init(config: IConfig): void {
-    AI.init(config);
+  
+  login(baseURL: string, source: string = IDE_NAME): Promise<any> {
+    return AI.startSession({ baseURL, source });
   },
 
-  async login(source: string = IDE_NAME): Promise<StartSessionResponseDto> {
-    const options: StartSessionRequestDto = { source };
-    const result = await AI.startSession(options);
-
-    return Promise.resolve(result as StartSessionResponseDto);
+  async checkSession(baseURL: string, sessionToken: string): Promise<any> {
+    return AI.checkSession({ baseURL, sessionToken });
   },
 
-  async checkLoginStatus(sessionToken: string): Promise<CheckSessionResponseDto> {
-    const options: CheckSessionRequestDto = {
-      sessionToken,
-    };
-    const result = await AI.checkSession(options);
-
-    return Promise.resolve(result as CheckSessionResponseDto);
-  },
-
-  async getFilters(sessionToken: string): Promise<GetFiltersResponseDto> {
-    const options: GetFiltersRequestDto = {
-      sessionToken,
-    };
-    const result = await AI.getFilters(options);
-
-    return Promise.resolve(result as GetFiltersResponseDto);
+  getFilters(baseURL: string, sessionToken: string): Promise<any> {
+    return AI.getFilters({ baseURL, sessionToken});
   },
 
   getServiceAI() {
     return AI;
   },
 
-  async uploadFiles(sessionToken: string, bundleId: string, body: any): Promise<void> {
-    const options: UploadFilesRequestDto = {
+  analyse(baseURL: string, sessionToken: string, baseDir: string, files: string[], removedFiles: string[] = []) {
+    return AI.analyse({
+      baseURL,
       sessionToken,
-      bundleId,
-      content: (body as IFileContent[]),
-    };
-    await AI.uploadFiles(options);
-
-    return Promise.resolve();
-  },
-
-  async getAnalysis(sessionToken: string, bundleId: string): Promise<DeepCode.AnalysisServerResponseInterface> {
-    const options: GetAnalysisRequestDto = {
-      sessionToken,
-      bundleId,
-    };
-    const result = await AI.getAnalysis(options);
-
-    return Promise.resolve(result as unknown as DeepCode.AnalysisServerResponseInterface);
-  },
-
-  async analyse(files: string[], sessionToken: string, removedFiles: string[] = []) {
-    const options: AnalyseRequestDto = {
+      baseDir,
       files,
-      sessionToken,
       removedFiles,
-    };
-    
-    try {
-      return AI.analyse(options);
-
-    } catch (error) {
-      const { statusCode } = error;
-
-      return Promise.resolve({ error, statusCode });
-    }
+    });
   },
 
   // TODO: when API package will implement such functionality

@@ -19,7 +19,7 @@ const testToken = "TEST_TOKEN";
 const testBundleId = "testBundleId";
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
 const mockedFolderPath = vscode.Uri.parse(
-  "scheme:" + path.join(mockedTestFilesDirPath, "../mocked_data"),
+  "scheme:" + path.join(mockedTestFilesDirPath, "/../mocked_data"),
   true
 ).fsPath;
 
@@ -50,7 +50,7 @@ const mockedAnalysisResults = {
 };
 // mocked endpoints
 mockedServer.get('/session').query(true).reply(200, { type: "private" });
-mockedServer.get("/filters").reply(200, mockedFilesFiltersResponse);
+mockedServer.get('/filters').reply(200, mockedFilesFiltersResponse);
 mockedServer
   .post("/bundle")
   .matchHeader("Content-Type", "application/json")
@@ -66,22 +66,11 @@ mockedServer.get(`/analysis/${testBundleId}`).reply(200, mockedAnalysisResults);
 const preTestConfigureExtension = () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
-  
-  // set test token
-  testExtension.token = testToken;
-  
-  // set test backend host
-  testExtension.config.changeDeepCodeUrl(testHost);
-  
-  // init HTTP module
-  testExtension.initAPI({
-    baseURL: testHost,
-    useDebug: true,
-  });
 
-  // mock login and upload confirm to always true
-  testExtension.checkUploadConfirm = () => true;
-  testExtension.login = async () => true;
+  // set test token and backend host
+  testExtension.staticUploadApproved = true;
+  testExtension.staticToken = testToken;
+  testExtension.staticBaseURL = testHost;
   
   // set workspace path for tests
   testExtension.workspacesPaths = [mockedFolderPath];
@@ -93,12 +82,12 @@ const uri = vscode.Uri.file(
   path.join(mockedTestFilesDirPath, "../mocked_data/sample_repository", "main.js"),
 );
 
-const testIgnoreComment = '// deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>';
+const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 const testFilesList = [
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/utf8.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/main.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/sample_repository/sub_folder/test2.js'),
-  path.join(mockedTestFilesDirPath, '../mocked_data/test.java'),
+  '/../mocked_data/sample_repository/utf8.js',
+  '/../mocked_data/sample_repository/main.js',
+  '/../mocked_data/sample_repository/sub_folder/test2.js',
+  '/../mocked_data/test.java',
 ];
 
 suite("Deepcode Extension Tests", () => {
@@ -106,7 +95,7 @@ suite("Deepcode Extension Tests", () => {
   test("Pre-test configuring", () => {
     testExtension = preTestConfigureExtension();
     assert.equal(testExtension.token, testToken);
-    assert.equal(testExtension.config.deepcodeUrl, testHost);
+    assert.equal(testExtension.baseURL, testHost);
     assert.equal(
       testExtension.workspacesPaths[0],
       path.join(mockedTestFilesDirPath, "../mocked_data")
@@ -127,13 +116,15 @@ suite("Deepcode Extension Tests", () => {
     return editor.edit(textEditor => {
       textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
     }).then(inserted => {
-      assert.equal(document.lineAt(18).text, testIgnoreComment);
+      assert.equal(`${document.lineAt(18).text}\n`, testIgnoreComment);
+      // TODO: find a way to undo this change
+      // TODO: check actual analysis results with ignored line
     });
   });
 
   test('Send files list to analyse', async () => {
     try {
-      await http.analyse(testFilesList, testToken);
+      await http.analyse(testHost, testToken, mockedTestFilesDirPath, testFilesList);
       assert.equal(true, true);
     } catch(error) {
       console.log(error);

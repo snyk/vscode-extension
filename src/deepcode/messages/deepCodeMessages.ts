@@ -1,29 +1,17 @@
 export const deepCodeMessages = {
-  configureBackend: {
-    msg: `Hey 👋, thanks for installing DeepCode 🚀. To use DeepCode with your Github, Bitbucket or Gitlab account select "Cloud". If you are using self-managed DeepCode server with Bitbucket or Gitlab select "Self-Managed".`,
-    cloudBtn: "Cloud",
-    selfManagedBtn: "Self-Managed"
-  },
   login: {
-    msg: "Cloud login selected 👍 🥰.\nPlease use your GitHub, Bitbucket or GitLab account to authenticate and start analysing the code with DeepCode.",
-    button: "Cloud login"
+    msg: "Login to your account to obtain your API key and start analysing the code with DeepCode.",
+    button: "Proceed"
   },
-  confirmUploadFilesToServer: {
-    msg: (termsConditionsUrl: string, folderPath: string): string =>
-      `You are almost set 🤗. Let's confirm and start the remote analysis of ${folderPath} ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
-    button: "Confirm and start analysing my code"
-  },
-  unauthorized: {
-    msg: "Oh, it seems you are not logged in.",
-    button: "Try login again"
+  uploadApproval: {
+    msg: (termsConditionsUrl: string): string =>	
+    `You are almost set 🤗. Let's confirm and start the remote analysis of this workspace ([DeepCode's Terms & Conditions](${termsConditionsUrl}))`,
+    workspace: "Yes",
+    global: "Always yes"
   },
   error: {
     msg: "DeepCode encountered a problem.",
     button: "Restart"
-  },
-  payloadSizeError: {
-    msg: "The current workspace is too big for DeepCode to process. You can manually exclude files and subdirectories by creating or editing the `.dcignore` file.",
-    button: "Try again"
   },
   codeReviewFailed: {
     msg: (name: string): string =>

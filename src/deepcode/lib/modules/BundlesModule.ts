@@ -64,7 +64,7 @@ class BundlesModule extends LoginModule
         .suggestions as DeepCode.AnalysisSuggestionsInterface,
       success: true
     } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
-    console.log("Analysis Result is ready");
+    console.log("Analysis Result is ready with results --> ", analysisResults);
 
     const analysedFiles: ResultFiles = {};
 
@@ -81,8 +81,18 @@ class BundlesModule extends LoginModule
   }
 
   onError(error: Error) {
-    console.log(error);
-    return Promise.reject(error);
+    this.errorHandler.processError(this, error);
+    throw error;
+  }
+
+  public async askUploadApproval(): Promise<void> {
+    const { uploadApproval } = deepCodeMessages;
+    let pressedButton: string | undefined;
+    
+    pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
+    if (pressedButton) {
+      await this.approveUpload(pressedButton === uploadApproval.global);
+    }
   }
 
   // processing workspaces
@@ -112,31 +122,26 @@ class BundlesModule extends LoginModule
 
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
-    try {
-      const serverFilesFilters = await http.getFilters(this.token);
-      const { extensions, configFiles } = serverFilesFilters;
-      const processedFilters = processServerFilesFilterList({
-        extensions,
-        configFiles
-      });
-      this.serverFilesFilterList = { ...processedFilters };
-    } catch (err) {
-      this.errorHandler.processError(this, err, {
-        errorDetails: {
-          message: errorsLogs.filtersFiles
-        }
-      });
-    }
+    const { extensions, configFiles } = await http.getFilters(this.baseURL, this.token);
+    const processedFilters = processServerFilesFilterList({ extensions, configFiles });
+    this.serverFilesFilterList = { ...processedFilters };
   }
 
   public async performBundlesActions(path: string): Promise<void> {
     if (!Object.keys(this.serverFilesFilterList).length) {
-      return;
+      await this.createFilesFilterList();
+
+      if (!Object.keys(this.serverFilesFilterList).length) {
+        return;
+      }
+    }
+
+    if (!this.token) {
+      return
     }
 
     this.files = await startFilesUpload(path, this.serverFilesFilterList);
-    const files: string[] = this.getFiles(this.files, path);
-
+    
     const progressOptions = {
       location: ProgressLocation.Notification,
       title: deepCodeMessages.analysisProgress.msg,
@@ -190,11 +195,7 @@ class BundlesModule extends LoginModule
         this.serviceAI.removeListeners();
       });
 
-      try {
-        await http.analyse(files, this.token);
-      } catch(error) {
-        console.log(error);
-      }
+      await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
     });
   }
 
@@ -252,11 +253,6 @@ class BundlesModule extends LoginModule
       return;
     }
     delete this.remoteBundles[workspacePath];
-  }
-
-  private getFiles(bundleForServer: string[], path: string) {
-    const files = bundleForServer.map(file => path + file);
-    return files;
   }
 }
 

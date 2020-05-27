@@ -33,9 +33,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
-    this.deepcodeReview = vscode.languages.createDiagnosticCollection(
-      DEEPCODE_NAME
-    );
+    this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
 
     this.analysisResultsCollection = {};
     this.ignoreActionsProvider = new DisposableCodeActionsProvider(
@@ -205,13 +203,11 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.setIssuesMarkersDecoration();
       }
     } catch (err) {
-      extension.errorHandler.sendErrorToServer(extension, err, {
-        errorDetails: {
-          message: errorsLogs.updateReviewPositions,
-          bundleId: extension.remoteBundles[updatedFile.workspace],
-          data: {
-            [updatedFile.filePathInWorkspace]: updatedFile.contentChanges
-          }
+      extension.errorHandler.processError(extension, err, {
+        message: errorsLogs.updateReviewPositions,
+        bundleId: extension.remoteBundles[updatedFile.workspace].bundleId,
+        data: {
+          [updatedFile.filePathInWorkspace]: updatedFile.contentChanges
         }
       });
     }
@@ -222,11 +218,9 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     path: string
   ): Promise<void> {
     const { bundleId } = extension.remoteBundles[path];
-    extension.errorHandler.sendErrorToServer(extension, new Error(), {
-      errorDetails: {
-        message: errorsLogs.failedStatusOfAnalysis,
-        bundleId
-      }
+    extension.errorHandler.processError(extension, new Error(), {
+      message: errorsLogs.failedStatusOfAnalysis,
+      bundleId
     });
     const workspace = vscode.workspace.workspaceFolders
       ? vscode.workspace.workspaceFolders.find(folder => {
