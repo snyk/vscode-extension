@@ -8,7 +8,7 @@ import { IDE_NAME } from "../constants/general";
 const AI = new ServiceAI();
 
 const http = {
-  
+
   login(baseURL: string, source: string = IDE_NAME): Promise<any> {
     return AI.startSession({ baseURL, source });
   },
@@ -35,10 +35,11 @@ const http = {
     });
   },
 
-  // TODO: when API package will implement such functionality
-  // we would have the possibility to send an error to server
-  async sendError(body: any): Promise<void> {
-    return Promise.resolve();
+  async sendError(baseURL: string, options: object): Promise<any> {
+    return AI.reportError({
+      baseURL,
+      ...options
+    });
   }
 };
 

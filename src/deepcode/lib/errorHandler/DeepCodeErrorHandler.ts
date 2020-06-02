@@ -29,7 +29,7 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   private async serverErrorHandler(extension: DeepCode.ExtensionInterface | any): Promise<void> {
     const { msg } = deepCodeMessages.noConnection;
     vscode.window.showErrorMessage(msg);
-    
+
     setTimeout(async () => {
       startDeepCodeCommand();
     }, 5000);
@@ -86,19 +86,23 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     error: DeepCode.errorType,
     options: { [key: string]: any }
   ): Promise<void> {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || extension.baseURL !== extension.defaultBaseURL) {
       // please disable request sending in dev mode to avoid unnecessary reports to server
-      await http.sendError({
-        //for testing edpoint use source: 'test'
-        source: IDE_NAME,
-        type: `${error.statusCode || ""} ${error.name || ""}`.trim(),
-        errorTrace: JSON.stringify(error),
-        message: options.message || errorsLogs.undefinedError,
-        ...(extension.token && { sessionToken: extension.token }),
-        ...(options.endpoint && { path: options.endpoint }),
-        ...(options.bundleId && { bundleId: options.bundleId }),
-        ...(options.data && { data: options.data })
-      });
+      await http.sendError(
+        extension.baseURL,
+        {
+          source: extension.source,
+          type: `${error.statusCode || ""} ${error.name || ""}`.trim(),
+          message: options.message || errorsLogs.undefinedError,
+          ...(extension.token && { sessionToken: extension.token }),
+          ...(options.endpoint && { path: options.endpoint }),
+          ...(options.bundleId && { bundleId: options.bundleId }),
+          data: {
+            errorTrace: JSON.stringify(error),
+            ...options.data
+          }
+        }
+      );
     }
   }
 

@@ -174,7 +174,7 @@ namespace DeepCode {
       extension: ExtensionInterface | any,
       error: errorType,
       options?: { [key: string]: any }
-    ): void;
+    ): Promise<void>;
   }
 
   export interface BaseDeepCodeModuleInterface {
