@@ -21,6 +21,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
 
   private issuesList: vscode.DiagnosticCollection | undefined;
   private findSuggestionId: Function;
+  private trackIgnoreSuggestion: Function;
 
   constructor(
     issuesList: vscode.DiagnosticCollection | undefined,
@@ -29,6 +30,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     this.issuesList = issuesList;
     this.registerIgnoreIssuesCommand();
     this.findSuggestionId = callbacks.findSuggestionId;
+    this.trackIgnoreSuggestion = callbacks.trackIgnoreSuggestion;
   }
 
   private registerIgnoreIssuesCommand() {
@@ -37,12 +39,23 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       ({
         currentEditor,
         issueText,
-        matchedIssue
+        matchedIssue,
+        issueId,
+        isFileIgnore,
       }: {
         currentEditor: vscode.TextEditor;
         matchedIssue: vscode.Diagnostic;
         issueText: string;
+        issueId: string;
+        isFileIgnore?: boolean;
       }): void => {
+        this.trackIgnoreSuggestion(matchedIssue.severity, {
+          message: matchedIssue.message,
+          data: {
+            issueId,
+            isFileIgnore: !!isFileIgnore,
+          }
+        });
         const editor: vscode.TextEditor | undefined =
           currentEditor || vscode.window.activeTextEditor;
         if (!editor || !issueText || !matchedIssue) {
@@ -135,11 +148,10 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       issueNameForComment,
       isFileIgnore
     );
-
     ignoreIssueAction.command = {
       command: DEEPCODE_IGNORE_ISSUES_COMMAND,
       title: DEEPCODE_IGNORE_ISSUES_COMMAND,
-      arguments: [{ issueText, matchedIssue }]
+      arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }]
     };
 
     return ignoreIssueAction;

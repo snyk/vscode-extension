@@ -86,24 +86,18 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
     error: DeepCode.errorType,
     options: { [key: string]: any }
   ): Promise<void> {
-    if (process.env.NODE_ENV === "production" || extension.baseURL !== extension.defaultBaseURL) {
-      // please disable request sending in dev mode to avoid unnecessary reports to server
-      await http.sendError(
-        extension.baseURL,
-        {
-          source: extension.source,
-          type: `${error.statusCode || ""} ${error.name || ""}`.trim(),
-          message: options.message || errorsLogs.undefinedError,
-          ...(extension.token && { sessionToken: extension.token }),
-          ...(options.endpoint && { path: options.endpoint }),
-          ...(options.bundleId && { bundleId: options.bundleId }),
-          data: {
-            errorTrace: JSON.stringify(error),
-            ...options.data
-          }
+    await extension.sendError(
+      {
+        type: `${error.statusCode || ""} ${error.name || ""}`.trim(),
+        message: options.message || errorsLogs.undefinedError,
+        ...(options.endpoint && { path: options.endpoint }),
+        ...(options.bundleId && { bundleId: options.bundleId }),
+        data: {
+          errorTrace: JSON.stringify(error),
+          ...options.data
         }
-      );
-    }
+      }
+    );
   }
 
   private async unauthorizedAccess(extension: DeepCode.ExtensionInterface): Promise<void> {

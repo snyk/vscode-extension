@@ -35,12 +35,19 @@ const http = {
     });
   },
 
-  async sendError(baseURL: string, options: object): Promise<any> {
+  async sendError(baseURL: string, options: {[key: string]: any}): Promise<any> {
     return AI.reportError({
       baseURL,
       ...options
     });
-  }
+  },
+
+  async sendEvent(baseURL: string, options: {[key: string]: any}): Promise<any> {
+    return AI.reportEvent({
+      baseURL,
+      ...options,
+    });
+  },
 };
 
 export default http;

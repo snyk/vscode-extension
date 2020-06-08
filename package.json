@@ -63,6 +63,18 @@
             "default": false,
             "markdownDescription": "User consent for code upload to `#deepcode.url#`",
             "scope": "window"
+          },
+          "deepcode.enableErrorReporter": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enable errors to be reported to `#deepcode.url#`",
+            "scope": "application"
+          },
+          "deepcode.enableTelemetry": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enable usage data to be sent to `#deepcode.url#`",
+            "scope": "application"
           }
         }
       }

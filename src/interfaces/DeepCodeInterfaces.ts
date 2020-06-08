@@ -144,6 +144,7 @@ namespace DeepCode {
   }
 
   export interface AnalyzerInterface {
+    activate(extension: ExtensionInterface | any): void;
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
     removeReviewResults(workspacePath: string): Promise<void>;
@@ -193,6 +194,8 @@ namespace DeepCode {
     token: string;
     setToken(token: string): Promise<void>;
     uploadApproved: boolean;
+    shouldReportErrors: boolean;
+    shouldReportEvents: boolean;
     approveUpload(isGlobal: boolean): Promise<void>;
     analyzer: DeepCode.AnalyzerInterface;
     statusBarItem: StatusBarItemInterface;
@@ -200,6 +203,11 @@ namespace DeepCode {
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
+  }
+
+  export interface ReportModuleInterface {
+    sendError(options: {[key: string]: any}): Promise<void> | void;
+    sendEvent(event: string, options: {[key: string]: any}): Promise<void> | void;
   }
 
   export interface LoginModuleInterface {
@@ -227,12 +235,13 @@ namespace DeepCode {
   }
 
   export interface DeepCodeLibInterface {
-    activateWatchers(): void;
+    activateAll(): void;
     activateExtensionAnalyzeActions(): Promise<void>;
   }
 
   export interface ExtensionInterface
     extends BaseDeepCodeModuleInterface,
+      ReportModuleInterface,
       LoginModuleInterface,
       BundlesModuleInterface,
       DeepCodeLibInterface {

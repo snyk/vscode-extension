@@ -5,11 +5,12 @@ import BundlesModule from "./BundlesModule";
 
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   
-  public activateWatchers(): void {
+  public activateAll(): void {
     this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
+    this.analyzer.activate(this);
   }
 
 
@@ -43,12 +44,12 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
 
     if (this.workspacesPaths.length) {
       this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
-      
+
       await this.updateHashesBundles();
 
       // Third, initiate analysis
       try {
-        // Main entry point to 
+        // Main entry point to
         for await (const path of this.workspacesPaths) {
           await this.performBundlesActions(path);
         }
