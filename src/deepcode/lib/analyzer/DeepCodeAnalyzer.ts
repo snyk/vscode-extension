@@ -6,9 +6,11 @@ import {
   createIssuesMarkersDecorationOptions,
   createIssueRelatedInformation,
   createDeepCodeSeveritiesMap,
+  getDeepCodeSeverity,
   extractSuggestionIdFromSuggestionsMap
 } from "../../utils/analysisUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -20,6 +22,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   private SEVERITIES: {
     [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
   };
+  private extension: DeepCode.ExtensionInterface | undefined;
   private analysisProgressValue: number = 1; // default value for progress to make it visible from start
   private progress = vscode.window.withProgress;
   private analysisInProgress: boolean = false;
@@ -41,18 +44,34 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       {
         findSuggestionId: extractSuggestionIdFromSuggestionsMap(
           this.analysisResultsCollection
-        )
+        ),
+        trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this)
       }
     );
     this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
 
+  public activate(extension: DeepCode.ExtensionInterface) {
+    this.extension = extension;
+  }
+
+  public trackIgnoreSuggestion(vscodeSeverity: number, options: {[key: string]: any}): void {
+    if (!this.extension) return;
+    options.data = {
+      severity: getDeepCodeSeverity(vscodeSeverity),
+      ...options.data
+    };
+    this.extension.sendEvent(
+      TELEMETRY_EVENTS.ignoreSuggestion,
+      options
+    );
+  }
 
   public updateAnalysisResultsCollection(results: DeepCode.AnalysisResultsCollectionInterface, rootPath: string): void {
     this.analysisResultsCollection[rootPath] = {...results} as unknown as DeepCode.AnalysisResultsInterface;
     this.createReviewResults();
   }
- 
+
   private createIssueDiagnosticInfo({
     issue,
     issuePositions,

@@ -11,20 +11,20 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     this.store.createStore(context);
     this.statusBarItem.show();
 
-    context.subscriptions.push( 
+    context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_START_COMMAND,
         this.activateExtensionAnalyzeActions.bind(this)
       )
     );
 
-    context.subscriptions.push( 
+    context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETTINGS_COMMAND,
         openDeepcodeSettingsCommand
       )
     );
-    
+
     context.subscriptions.push(
       { dispose: this.startExtension() },
     );
@@ -43,7 +43,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
   }
 
   public startExtension(): any {
-    this.activateWatchers();
+    this.activateAll();
     this.activateExtensionAnalyzeActions();
   }
 

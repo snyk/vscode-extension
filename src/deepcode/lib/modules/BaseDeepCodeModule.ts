@@ -67,7 +67,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   }
 
   public get source(): string {
-    return process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME; 
+    return process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
   }
 
   public get uploadApproved(): boolean {
@@ -77,5 +77,12 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public async approveUpload(isGlobal: boolean = false): Promise<void> {
     await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', true, isGlobal);
   }
-  
+
+  public get shouldReportErrors(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get('yesCrashReport');
+  }
+
+  public get shouldReportEvents(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get('yesTelemetry');
+  }
 }

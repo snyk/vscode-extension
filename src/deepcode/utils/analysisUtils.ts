@@ -22,6 +22,16 @@ export const createDeepCodeSeveritiesMap = () => {
   };
 };
 
+export const getDeepCodeSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) => {
+  const { information, error, warning } = DEEPCODE_SEVERITIES;
+  return {
+    [vscode.DiagnosticSeverity.Information]: information,
+    [vscode.DiagnosticSeverity.Warning]: warning,
+    [vscode.DiagnosticSeverity.Error]: error,
+    [vscode.DiagnosticSeverity.Hint]: -1,
+  }[vscodeSeverity];
+}
+
 export const createDeepCodeProgress = (progress: number): number => {
   const progressOffset = 100;
   return Math.round(progress * progressOffset);
