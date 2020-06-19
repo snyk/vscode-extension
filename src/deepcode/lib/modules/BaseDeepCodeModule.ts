@@ -79,10 +79,10 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   }
 
   public get shouldReportErrors(): boolean {
-    return !!vscode.workspace.getConfiguration('deepcode').get('enableErrorReporter');
+    return !!vscode.workspace.getConfiguration('deepcode').get('yesCrashReport');
   }
 
   public get shouldReportEvents(): boolean {
-    return !!vscode.workspace.getConfiguration('deepcode').get('enableTelemetry');
+    return !!vscode.workspace.getConfiguration('deepcode').get('yesTelemetry');
   }
 }

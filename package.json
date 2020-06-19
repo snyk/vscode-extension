@@ -64,16 +64,18 @@
             "markdownDescription": "User consent for code upload to `#deepcode.url#`",
             "scope": "window"
           },
-          "deepcode.enableErrorReporter": {
+          "deepcode.yesCrashReport": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enable errors to be reported to `#deepcode.url#`",
+            "markdownDescription": "Allow crash reports to be reported to `#deepcode.url#`",
             "scope": "application"
           },
-          "deepcode.enableTelemetry": {
+          "deepcode.yesTelemetry": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enable usage data to be sent to `#deepcode.url#`",
+            "markdownDescription": "Allow extension's telemetry to be sent to `#deepcode.url#`",
             "scope": "application"
           }
         }
