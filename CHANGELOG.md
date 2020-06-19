@@ -1,3 +1,6 @@
+## [2.2.0] - 2019-06-19
+- Added telemetry and crash reporting
+
 ## [2.1.0] - 2019-05-20
 - Major version. Big refactoring of confguration and authentication and error handling layers.
 - Windows support fixed
