@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
 import {
   FILE_CURRENT_STATUS,
-  GIT_FILENAME
+  GIT_FILENAME,
+  SUPPORTED_WATCH_FILES
 } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
@@ -18,7 +19,8 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   } = {};
 
   constructor() {
-    this.watcher = vscode.workspace.createFileSystemWatcher("**/*.*");
+    const globPattern: vscode.GlobPattern = `**/\{${SUPPORTED_WATCH_FILES.join(',')}\}`;
+    this.watcher = vscode.workspace.createFileSystemWatcher(globPattern);
   }
 
   private emptyChangedFilesLists(): void {
@@ -184,7 +186,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
 
   public activate(extension: DeepCode.ExtensionInterface): void {
     const { created, modified, deleted } = FILE_CURRENT_STATUS;
-
     this.watcher.onDidChange((documentUri: vscode.Uri) => {
       this.filesChangesHandler(documentUri.fsPath, extension, modified);
     });
