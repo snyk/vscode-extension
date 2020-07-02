@@ -209,9 +209,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       );
       // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
       const workspace = updatedFile.workspace || Object.keys(this.analysisResultsCollection)[0];
-      this.analysisResultsCollection[workspace].files[
-        updatedFile.filePathInWorkspace
-      ] = { ...fileIssuesList };
+      const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, "");
+      this.analysisResultsCollection[workspace].files[filepath] = { ...fileIssuesList };
       if (this.deepcodeReview) {
         const issues = this.createIssuesList({
           fileIssuesList,
