@@ -207,13 +207,15 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.analysisResultsCollection,
         updatedFile
       );
-      this.analysisResultsCollection[updatedFile.workspace].files[
+      // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
+      const workspace = updatedFile.workspace || Object.keys(this.analysisResultsCollection)[0];
+      this.analysisResultsCollection[workspace].files[
         updatedFile.filePathInWorkspace
       ] = { ...fileIssuesList };
       if (this.deepcodeReview) {
         const issues = this.createIssuesList({
           fileIssuesList,
-          suggestions: this.analysisResultsCollection[updatedFile.workspace].suggestions,
+          suggestions: this.analysisResultsCollection[workspace].suggestions,
           fileUri: vscode.Uri.file(updatedFile.fullPath)
         });
         this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
@@ -224,7 +226,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     } catch (err) {
       extension.errorHandler.processError(extension, err, {
         message: errorsLogs.updateReviewPositions,
-        bundleId: extension.remoteBundles[updatedFile.workspace].bundleId,
+        bundleId: (extension.remoteBundles[updatedFile.workspace] || {}).bundleId,
         data: {
           [updatedFile.filePathInWorkspace]: updatedFile.contentChanges
         }

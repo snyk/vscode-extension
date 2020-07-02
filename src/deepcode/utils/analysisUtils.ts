@@ -94,12 +94,12 @@ export const updateFileReviewResultsPositions = (
   const offsetedline = changesRange.start.line + 1;
   const charOffset = 1;
 
+  // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
+  const workspace = updatedFile.workspace || Object.keys(analysisResultsCollection)[0];
+  const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, "");
   const fileIssuesList = {
-    ...analysisResultsCollection[updatedFile.workspace].files[
-      updatedFile.filePathInWorkspace
-    ]
+    ...analysisResultsCollection[workspace].files[filepath]
   };
-
   for (const issue in fileIssuesList) {
     for (const [index, position] of fileIssuesList[issue].entries()) {
       const currentLineIsOnEdgeOfIssueRange =
