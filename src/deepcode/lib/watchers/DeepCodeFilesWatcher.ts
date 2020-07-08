@@ -2,26 +2,20 @@ import * as vscode from "vscode";
 import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
 import {
   FILE_CURRENT_STATUS,
-  GIT_FILENAME,
-  SUPPORTED_WATCH_FILES
+  GIT_FILENAME
 } from "../../constants/filesConstants";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
 class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   private changedFilesList: Array<string> = [];
-  private watcher: vscode.FileSystemWatcher;
+  private watcher: vscode.FileSystemWatcher | null = null;
   private FILES_TO_SAVE_LIST_FIRST_ELEMENT: number = 1;
   private filesForUpdatingServerBundle: {
     [key: string]: Array<{
       [key: string]: string;
     }>
   } = {};
-
-  constructor() {
-    const globPattern: vscode.GlobPattern = `**/\{${SUPPORTED_WATCH_FILES.join(',')}\}`;
-    this.watcher = vscode.workspace.createFileSystemWatcher(globPattern);
-  }
 
   private emptyChangedFilesLists(): void {
     // clear files lists
@@ -185,6 +179,19 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   public activate(extension: DeepCode.ExtensionInterface): void {
+    if (!Object.keys(extension.serverFilesFilterList).length) {
+      console.error('Empty watch list');
+      return;
+    }
+
+    const watchFiles = [
+      ...(extension.serverFilesFilterList.extensions || []).map(e => `*${e}`),
+      ...(extension.serverFilesFilterList.configFiles || [])
+    ];
+    
+    const globPattern: vscode.GlobPattern = `**/\{${watchFiles.join(',')}\}`;
+    this.watcher = vscode.workspace.createFileSystemWatcher(globPattern);
+
     const { created, modified, deleted } = FILE_CURRENT_STATUS;
     this.watcher.onDidChange((documentUri: vscode.Uri) => {
       this.filesChangesHandler(documentUri.fsPath, extension, modified);

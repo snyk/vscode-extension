@@ -17,5 +17,3 @@ export const FILE_CURRENT_STATUS = {
   same: "same",
   created: "created"
 };
-
-export const SUPPORTED_WATCH_FILES = ['*.jsx', '*.es6', '*.vue', '*.hpp', '*.html', '*.htm', '*.tsx', '*.cxx', '*.es', '*.ts', '*.c', '*.cc', '*.hxx', '*.py', '*.java', '*.h', '*.cpp', '*.js', '.pylintrc', 'tslint.json', '.eslintrc.yml', '.pmdrc.xml', '.ruleset.xml', '.eslintrc.js', '.eslintrc.json', 'ruleset.xml', 'pylintrc'];

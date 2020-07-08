@@ -125,19 +125,6 @@ export const compareFileChanges = async (
   return response;
 };
 
-export const processServerFilesFilterList = (
-  filterList: DeepCode.AllowedServerFilterListInterface
-): DeepCode.AllowedServerFilterListInterface => {
-  const { configFiles } = filterList;
-  if (configFiles) {
-    const processedConfigFiles = configFiles.map((item: string) =>
-      item.slice(1)
-    );
-    return { ...filterList, configFiles: processedConfigFiles };
-  }
-  return filterList;
-};
-
 export const processPayloadSize = (
   payload: Array<DeepCode.PayloadMissingFileInterface>
 ): {
