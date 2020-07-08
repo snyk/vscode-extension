@@ -8,7 +8,7 @@ class ReportModule extends BaseDeepCodeModule implements DeepCode.ReportModuleIn
     // return true;
 
     // disabling request sending in dev mode or to self-managed instances.
-    return process.env.NODE_ENV === "production" && this.baseURL === this.defaultBaseURL;
+    return this.baseURL === this.defaultBaseURL;
   }
 
   public async sendError(options: {[key: string]: any}): Promise<void> {
