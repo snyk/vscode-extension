@@ -6,8 +6,7 @@ import {
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_REASON_TIP,
-  ISSUE_ID_SPLITTER,
-  ISSUE_MARKER_HELPER_MSG
+  ISSUE_ID_SPLITTER
 } from "../constants/analysis";
 
 export const createDeepCodeSeveritiesMap = () => {
@@ -94,12 +93,12 @@ export const updateFileReviewResultsPositions = (
   const offsetedline = changesRange.start.line + 1;
   const charOffset = 1;
 
+  // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
+  const workspace = updatedFile.workspace || Object.keys(analysisResultsCollection)[0];
+  const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, "");
   const fileIssuesList = {
-    ...analysisResultsCollection[updatedFile.workspace].files[
-      updatedFile.filePathInWorkspace
-    ]
+    ...analysisResultsCollection[workspace].files[filepath]
   };
-
   for (const issue in fileIssuesList) {
     for (const [index, position] of fileIssuesList[issue].entries()) {
       const currentLineIsOnEdgeOfIssueRange =
@@ -227,10 +226,7 @@ export const createIssueRelatedInformation = ({
       for (const position of markerPositions) {
         const relatedInfo = new vscode.DiagnosticRelatedInformation(
           new vscode.Location(fileUri, createIssueCorrectRange(position)),
-          // temporary issue marker message
-          ISSUE_MARKER_HELPER_MSG
-          // to get marker msg from issue message use:
-          // createIssueMarkerMsg(message, markerMsgIdxs)
+          createIssueMarkerMsg(message, markerMsgIdxs)
         );
         relatedInfoList.push(relatedInfo);
       }
