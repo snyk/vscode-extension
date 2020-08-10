@@ -185,6 +185,10 @@ namespace DeepCode {
     hashesBundles: HashesBundlesInterface;
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
+    refreshViewEmitter: vscode.EventEmitter<any>;
+    refreshViews(content: any): void
+    analysisStatus: string;
+    analysisProgress: number;
     source: string;
     staticToken: string;
     defaultBaseURL: string;

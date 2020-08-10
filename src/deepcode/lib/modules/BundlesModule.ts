@@ -9,6 +9,8 @@ import { startFilesUpload } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
 
 class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
@@ -28,29 +30,44 @@ class BundlesModule extends LoginModule
     this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
     this.onError = this.onError.bind(this);
 
-    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);  }
+    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
+  }
+
+  updateStatus(status: string, progress?: number) {
+    this.analysisStatus = status;
+    if (progress) this.analysisProgress = progress;
+    this.refreshViews();
+  }
 
   onBuildBundleProgress(processed: number, total: number) {
     console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
   }
 
   onBuildBundleFinish() {
     console.log("BUILD BUNDLE FINISH");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, 1);
   }
 
   onUploadBundleProgress(processed: number, total: number) {
     console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
   }
 
   onUploadBundleFinish() {
     console.log("UPLOAD BUNDLE FINISH");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, 1);
   }
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
     console.log("on Analyse Progress");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 0.5);
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
+    setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+    setContext(DEEPCODE_CONTEXT.COMPLETED, true);
     type ResultFiles = {
       [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
     };
@@ -80,6 +97,8 @@ class BundlesModule extends LoginModule
   }
 
   onError(error: Error) {
+    setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     this.errorHandler.processError(this, error);
     throw error;
   }
@@ -125,6 +144,8 @@ class BundlesModule extends LoginModule
   }
 
   public async performBundlesActions(path: string): Promise<void> {
+    setContext(DEEPCODE_CONTEXT.ANALYZING, true);
+    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       this.filesWatcher.activate(this);
@@ -151,6 +172,8 @@ class BundlesModule extends LoginModule
       const currentProgress = (processed / total * 33) + lastPhaseProgress;
       return currentProgress;
     };
+
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, 0);
 
     window.withProgress(progressOptions, async progress => {
       this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {

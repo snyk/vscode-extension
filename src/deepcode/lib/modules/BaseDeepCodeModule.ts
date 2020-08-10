@@ -25,6 +25,11 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public settingsWatcher: DeepCode.DeepCodeWatcherInterface;
   public errorHandler: DeepCode.ErrorHandlerInterface;
 
+  // Views and analysis progress
+  public refreshViewEmitter: vscode.EventEmitter<any>;
+	public analysisStatus: string = '';
+  public analysisProgress: number = 0;
+
   // These attributes are used in tests
   public staticToken = '';
   public staticBaseURL = '';
@@ -45,6 +50,9 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
     this.errorHandler = new DeepCodeErrorhandler();
+    this.refreshViewEmitter = new vscode.EventEmitter<any>();
+    this.analysisStatus = '';
+    this.analysisProgress = 0;
   }
 
   public get baseURL(): string {
@@ -84,5 +92,9 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
 
   public get shouldReportEvents(): boolean {
     return !!vscode.workspace.getConfiguration('deepcode').get('yesTelemetry');
+  }
+
+  public refreshViews(content?: any): void {
+    this.refreshViewEmitter.fire(content || undefined);
   }
 }

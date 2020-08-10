@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
-import * as open from "open";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
+import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import ReportModule from "./ReportModule";
+import { DEEPCODE_CONTEXT } from "../../constants/views";
+
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -18,6 +20,7 @@ class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface 
     this.pendingLogin = true;
 
     try {
+      setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
       const { login } = deepCodeMessages;
       let pressedButton: string | undefined;
 
@@ -29,18 +32,21 @@ class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface 
         if (!sessionToken || !loginURL) {
           throw new Error();
         }
-        await open(loginURL);
+        await viewInBrowser(loginURL);
         await this.setToken(sessionToken);
         await this.waitLoginConfirmation();
+        setContext(DEEPCODE_CONTEXT.LOGGEDIN, true);
       }
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  public checkSession(): Promise<boolean> {
-    if (!this.token) return Promise.resolve(false);
-    return http.checkSession(this.baseURL, this.token);
+  public async checkSession(): Promise<boolean> {
+    if (!this.token) return false;
+    const validSession = await http.checkSession(this.baseURL, this.token);
+    setContext(DEEPCODE_CONTEXT.LOGGEDIN, !!validSession);
+    return validSession;
   }
 
   private async waitLoginConfirmation(): Promise<void> {
