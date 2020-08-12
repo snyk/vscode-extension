@@ -93,19 +93,29 @@
     "views": {
       "deepcode": [
         {
+          "id": "deepcode.views.error",
+          "name": "DeepCode Extension",
+          "when": "deepcode:error"
+        },
+        {
           "id": "deepcode.views.welcome",
           "name": "DeepCode Extension",
-          "when": "!deepcode:loggedIn"
+          "when": "!deepcode:error && !deepcode:loggedIn"
+        },
+        {
+          "id": "deepcode.views.tc",
+          "name": "DeepCode Extension",
+          "when": "!deepcode:error && deepcode:loggedIn && !deepcode:uploadApproved"
         },
         {
           "id": "deepcode.views.progress",
           "name": "DeepCode Analysis",
-          "when": "deepcode:loggedIn && deepcode:analyzing"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:analysisCompleted"
         },
         {
           "id": "deepcode.views.analysis",
           "name": "DeepCode Analysis",
-          "when": "deepcode:loggedIn && deepcode:completed"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:analysisCompleted"
         },
         {
           "id": "deepcode.views.support",
@@ -115,16 +125,30 @@
     },
     "viewsWelcome": [
       {
+        "view": "deepcode.views.error",
+        "contents": "DeepCode is temporarily unavailable, we are automatically retrying to connect...",
+        "when": "deepcode:error == 'transient'"
+      },
+      {
+        "view": "deepcode.views.error",
+        "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2)!",
+        "when": "deepcode:error != 'transient'"
+      },
+      {
         "view": "deepcode.views.welcome",
         "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n🚀 DeepCode's mission is to find bugs in your Javascript, TypeScript, Python, Java and C/C++ code, fast!\n💬 A VS Code user (Lucas) recently said:\"I'm really crazy about this super simple service that feels like it's from 5 years in the future\".\n👉 Connect with DeepCode and start your first analysis!"
       },
       {
+        "view": "deepcode.views.tc",
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗, let's confirm and start the remote analysis - feel free to check out our [terms and conditions](https://www.deepcode.ai/tc?utm_source=vsc) if you are into this.\n[Accept code upload](command:deepcode.approveUpload 'Upload code to DeepCode')\nYou can always change it later in the [settings](command:deepcode.settings)!"
+      },
+      {
         "view": "deepcode.views.progress",
-        "contents": "IN PROGRESS"
+        "contents": "Analysis in progress"
       },
       {
         "view": "deepcode.views.analysis",
-        "contents": "ANALYZED"
+        "contents": "DeepCode analyzed your code and found no issue!"
       }
     ],
     "menus": {
@@ -133,20 +157,38 @@
           "command": "deepcode.start",
           "when": "deepcode:loggedIn"
         }
+      ],
+      "view/title": [
+        {
+          "command": "deepcode.settings",
+          "when": "view == deepcode.views.support",
+          "group": "navigation"
+        },
+        {
+          "command": "deepcode.start",
+          "when": "view == deepcode.views.analysis",
+          "group": "navigation"
+        }
       ]
     },
     "commands": [
       {
         "command": "deepcode.start",
-        "title": "DeepCode re-scan"
+        "title": "DeepCode re-scan",
+        "icon": "images/icon-sidebar.svg"
       },
       {
         "command": "deepcode.settings",
-        "title": "DeepCode settings"
+        "title": "DeepCode settings",
+        "icon": "images/icon-sidebar.svg"
       },
       {
         "command": "deepcode.login",
         "title": "DeepCode login"
+      },
+      {
+        "command": "deepcode.approve",
+        "title": "DeepCode approve upload and remote analysis"
       }
     ]
   },

@@ -1,51 +1,44 @@
-import * as vscode from "vscode";
-
+import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
-import ReportModule from "./ReportModule";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
 
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
-class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
+abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
   private pendingLogin: boolean = false;
 
   public async initiateLogin(): Promise<void> {
     if (this.pendingLogin) {
-      return
+      return;
     }
-    this.pendingLogin = true;
 
+    this.pendingLogin = true;
     try {
       setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
-      const { login } = deepCodeMessages;
-      let pressedButton: string | undefined;
-
-      pressedButton = await vscode.window.showInformationMessage(login.msg, login.button);
-      if (pressedButton === login.button) {
-        const result = await http.login(this.baseURL, this.source);
-
-        let { sessionToken, loginURL } = result;
-        if (!sessionToken || !loginURL) {
-          throw new Error();
-        }
-        await viewInBrowser(loginURL);
-        await this.setToken(sessionToken);
-        await this.waitLoginConfirmation();
-        setContext(DEEPCODE_CONTEXT.LOGGEDIN, true);
+      const result = await http.login(this.baseURL, this.source);
+      let { sessionToken, loginURL } = result;
+      if (!sessionToken || !loginURL) {
+        throw new Error(`Failed to create a new session with response: ${JSON.stringify(result)}`);
       }
+      await this.setToken(sessionToken);
+      await viewInBrowser(loginURL);
+      await this.waitLoginConfirmation();
+    } catch (err) {
+      await this.processError(err);
     } finally {
       this.pendingLogin = false;
     }
   }
 
   public async checkSession(): Promise<boolean> {
-    if (!this.token) return false;
-    const validSession = await http.checkSession(this.baseURL, this.token);
-    setContext(DEEPCODE_CONTEXT.LOGGEDIN, !!validSession);
+    let validSession = false;
+    if (this.token) {
+      validSession = !!(await http.checkSession(this.baseURL, this.token));
+    }
+    setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
     return validSession;
   }
 
@@ -57,10 +50,21 @@ class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface 
 
       const confirmed = await this.checkSession();
       if (confirmed) {
-        return
+        return;
       }
     }
   }
+
+  public async checkApproval(): Promise<boolean> {
+    let approved = this.uploadApproved;
+    setContext(DEEPCODE_CONTEXT.APPROVED, approved);
+    return approved;
+  }
+
+  public async approveUpload(): Promise<void> {
+    this.setUploadApproved(true);
+    this.checkApproval();
+  } 
 
 }
 

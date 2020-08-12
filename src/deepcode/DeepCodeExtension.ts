@@ -8,6 +8,7 @@ import {
   DEEPCODE_START_COMMAND, 
   DEEPCODE_SETTINGS_COMMAND,
   DEEPCODE_LOGIN,
+  DEEPCODE_APPROVE,
   DEEPCODE_OPEN_BROWSER,
   DEEPCODE_OPEN_LOCAL,
 } from "./constants/commands";
@@ -24,7 +25,6 @@ import { IssueProvider } from "./view/IssueProvider";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
   public activate(context: vscode.ExtensionContext): void {
-    this.store.createStore(context);
     this.statusBarItem.show();
 
     context.subscriptions.push(
@@ -50,14 +50,21 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_LOGIN,
-        this.activateExtensionAnalyzeActions.bind(this)
+        this.initiateLogin.bind(this)
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_APPROVE,
+        this.approveUpload.bind(this)
       )
     );
     
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_START_COMMAND,
-        this.activateExtensionAnalyzeActions.bind(this)
+        this.startExtension.bind(this)
       )
     );
 
@@ -83,27 +90,18 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       new IssueProvider(this)
     );
 
-    context.subscriptions.push(
-      { dispose: this.startExtension() },
-    );
+    // context.subscriptions.push(
+    //   { dispose: this.startExtension() },
+    // );
 
-    this.runMigration();
-  }
-
-  private runMigration() {
-    // TODO: remove it after 01.06.2020
-    // Move 'deepcode.api.cloudBackend' to 'deepcode.url' configuration
-    const config = vscode.workspace.getConfiguration('deepcode');
-    const oldBaseURL = config.get('api.cloudBackend');
-    if (!config.get('url') && oldBaseURL) {
-      config.update('url', oldBaseURL, true);
-    }
-  }
-
-  public startExtension(): any {
     this.activateAll();
-    this.activateExtensionAnalyzeActions();
+    this.startExtension();
   }
+
+  // public startExtension(): any {
+  //   this.activateAll();
+  //   this.activateExtensionAnalyzeActions();
+  // }
 
 }
 

@@ -1,17 +1,15 @@
 import * as vscode from 'vscode';
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import DeepCodeStore from "../../../config/DeepCodeStore";
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
 import DeepCodeStatusBarItem from "../statusBarItem/DeepCodeStatusBarItem";
 import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
 import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher";
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
-import DeepCodeErrorhandler from "../errorHandler/DeepCodeErrorHandler";
+// import DeepCodeErrorhandler from "../errorHandler/DeepCodeErrorHandler";
 import { IDE_NAME } from "../../constants/general";
 
-export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
-  public store: DeepCode.ExtensionStoreInterface;
+export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   public currentWorkspacePath: string;
   public workspacesPaths: Array<string>;
   public hashesBundles: DeepCode.HashesBundlesInterface;
@@ -23,7 +21,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public workspacesWatcher: DeepCode.DeepCodeWatcherInterface;
   public editorsWatcher: DeepCode.DeepCodeWatcherInterface;
   public settingsWatcher: DeepCode.DeepCodeWatcherInterface;
-  public errorHandler: DeepCode.ErrorHandlerInterface;
+  // public errorHandler: DeepCode.ErrorHandlerInterface;
 
   // Views and analysis progress
   public refreshViewEmitter: vscode.EventEmitter<any>;
@@ -37,7 +35,6 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public staticUploadApproved = false;
 
   constructor() {
-    this.store = new DeepCodeStore();
     this.currentWorkspacePath = "";
     this.workspacesPaths = [];
     this.hashesBundles = {};
@@ -49,7 +46,7 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     this.workspacesWatcher = new DeepCodeWorkspaceFoldersWatcher();
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
-    this.errorHandler = new DeepCodeErrorhandler();
+    // this.errorHandler = new DeepCodeErrorhandler();
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.analysisStatus = '';
     this.analysisProgress = 0;
@@ -82,8 +79,8 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     return this.staticUploadApproved || this.source !== IDE_NAME || !!(vscode.workspace.getConfiguration('deepcode').get('uploadApproved'));
   }
 
-  public async approveUpload(isGlobal: boolean = false): Promise<void> {
-    await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', true, isGlobal);
+  public async setUploadApproved(value: boolean = true): Promise<void> {
+    await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', value, true);
   }
 
   public get shouldReportErrors(): boolean {
@@ -97,4 +94,11 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
   public refreshViews(content?: any): void {
     this.refreshViewEmitter.fire(content || undefined);
   }
+
+  abstract processError(
+    error: DeepCode.errorType,
+    options?: { [key: string]: any }
+  ): Promise<void>;
+
+  abstract startExtension(): Promise<void>;
 }

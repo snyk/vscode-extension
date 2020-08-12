@@ -5,6 +5,7 @@ export const VSCODE_ADD_COMMENT_COMMAND = "editor.action.addCommentLine";
 // custom depcode commands
 export const DEEPCODE_START_COMMAND = "deepcode.start";
 export const DEEPCODE_LOGIN = "deepcode.login";
+export const DEEPCODE_APPROVE = "deepcode.approve";
 export const DEEPCODE_SETTINGS_COMMAND = "deepcode.settings";
 export const DEEPCODE_IGNORE_ISSUES_COMMAND = "deepcode.ignoreissues";
 export const DEEPCODE_OPEN_BROWSER = "deepcode.open";

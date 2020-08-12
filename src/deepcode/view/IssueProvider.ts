@@ -31,9 +31,13 @@ export class IssueProvider extends NodeProvider {
             );
           }
           return new Node(params);
-        })
+        });
+        const filePath = uri.path.split('/');
+        const text = filePath.pop() || uri.path;
+        const dir = filePath.pop();
         const file = new Node({
-          text: uri.path.split('/').pop() || '',
+          text,
+          description: dir,
           issue: { uri },
           children: issues,
         });

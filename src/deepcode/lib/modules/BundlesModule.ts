@@ -2,19 +2,21 @@ import * as vscode from "vscode";
 import http from "../../http/requests";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
-import { window, ProgressLocation, Progress } from "vscode";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
+// import { window, ProgressLocation, Progress } from "vscode";
+// import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
-import { startFilesUpload } from "../../utils/packageUtils";
+import { createListOfDirFiles } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
+// import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
 import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
 
-class BundlesModule extends LoginModule
+abstract class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   private rootPath = "";
+
+  private throttledProgress = 0;
 
   files: string[] = [];
   serviceAI = http.getServiceAI();
@@ -37,6 +39,15 @@ class BundlesModule extends LoginModule
     this.analysisStatus = status;
     if (progress) this.analysisProgress = progress;
     this.refreshViews();
+  }
+
+  onCollectBundleProgress(value: number) {
+    // Avoid refreshing context/views too often:
+    // https://github.com/Microsoft/vscode/issues/68424
+    if (value < this.throttledProgress + 0.1) return;
+    this.throttledProgress = value;
+    console.log(`COLLECTING BUNDLE PROGRESS - ${value}`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
   }
 
   onBuildBundleProgress(processed: number, total: number) {
@@ -66,7 +77,6 @@ class BundlesModule extends LoginModule
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
-    setContext(DEEPCODE_CONTEXT.ANALYZING, false);
     setContext(DEEPCODE_CONTEXT.COMPLETED, true);
     type ResultFiles = {
       [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
@@ -97,21 +107,20 @@ class BundlesModule extends LoginModule
   }
 
   onError(error: Error) {
-    setContext(DEEPCODE_CONTEXT.ANALYZING, false);
     setContext(DEEPCODE_CONTEXT.COMPLETED, false);
-    this.errorHandler.processError(this, error);
-    throw error;
+    setContext(DEEPCODE_CONTEXT.ERROR, true);
+    this.processError(error);
   }
 
-  public async askUploadApproval(): Promise<void> {
-    const { uploadApproval } = deepCodeMessages;
-    let pressedButton: string | undefined;
+  // public async askUploadApproval(): Promise<void> {
+  //   const { uploadApproval } = deepCodeMessages;
+  //   let pressedButton: string | undefined;
     
-    pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
-    if (pressedButton) {
-      await this.approveUpload(pressedButton === uploadApproval.global);
-    }
-  }
+  //   pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
+  //   if (pressedButton) {
+  //     await this.approveUpload(pressedButton === uploadApproval.global);
+  //   }
+  // }
 
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
@@ -144,8 +153,8 @@ class BundlesModule extends LoginModule
   }
 
   public async performBundlesActions(path: string): Promise<void> {
-    setContext(DEEPCODE_CONTEXT.ANALYZING, true);
     setContext(DEEPCODE_CONTEXT.COMPLETED, false);
+    
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       this.filesWatcher.activate(this);
@@ -155,69 +164,104 @@ class BundlesModule extends LoginModule
       }
     }
 
-    if (!this.token) {
-      return
+    if (!this.token || !this.uploadApproved) {
+      this.startExtension();
+      return;
     }
 
-    this.files = await startFilesUpload(path, this.serverFilesFilterList);
-    
-    const progressOptions = {
-      location: ProgressLocation.Notification,
-      title: deepCodeMessages.analysisProgress.msg,
-      cancellable: false
-    };
-
-    const countStep = (processed: number, total: number): number => {
-      const lastPhaseProgress = 33;
-      const currentProgress = (processed / total * 33) + lastPhaseProgress;
-      return currentProgress;
-    };
-
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, 0);
+    this.files = await this.startCollectingFiles(path, this.serverFilesFilterList);
+    
+    // const progressOptions = {
+    //   location: ProgressLocation.Notification,
+    //   title: deepCodeMessages.analysisProgress.msg,
+    //   cancellable: false
+    // };
 
-    window.withProgress(progressOptions, async progress => {
-      this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
-        this.onBuildBundleProgress(processed, total);
-      });
+    // const countStep = (processed: number, total: number): number => {
+    //   const lastPhaseProgress = 33;
+    //   const currentProgress = (processed / total * 33) + lastPhaseProgress;
+    //   return currentProgress;
+    // };
 
-      this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
-        progress.report({ increment: 33 });
-        this.onBuildBundleFinish();
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
-        const currentProgress = countStep(processed, total);
-        this.onUploadBundleProgress(processed, total);
-        progress.report({ increment: currentProgress });
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
-        this.onUploadBundleFinish();
-        progress.report({ increment: 80 });
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
-        progress.report({ increment: 90 });
-        this.onAnalyseProgress(analysisResults);
-      });
-
-      this.serviceAI.on(
-        BUNDLE_EVENTS.analyseFinish,
-        (analysisResults: IQueueAnalysisCheckResult) => {
-          progress.report({ increment: 100 });
-          this.onAnalyseFinish(analysisResults);        
-          this.serviceAI.removeListeners();
-        }
-      );
-
-      this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-        progress.report({ increment: 100 });
-        this.onError(error);
-        this.serviceAI.removeListeners();
-      });
-
-      await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
+    // window.withProgress(progressOptions, async progress => {
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
+      this.onBuildBundleProgress(processed, total);
     });
+
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
+      // progress.report({ increment: 33 });
+      this.onBuildBundleFinish();
+    });
+
+    this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
+      // const currentProgress = countStep(processed, total);
+      this.onUploadBundleProgress(processed, total);
+      // progress.report({ increment: currentProgress });
+    });
+
+    this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+      this.onUploadBundleFinish();
+      // progress.report({ increment: 80 });
+    });
+
+    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
+      // progress.report({ increment: 90 });
+      this.onAnalyseProgress(analysisResults);
+    });
+
+    this.serviceAI.on(
+      BUNDLE_EVENTS.analyseFinish,
+      (analysisResults: IQueueAnalysisCheckResult) => {
+        // progress.report({ increment: 100 });
+        this.serviceAI.removeListeners();
+        this.onAnalyseFinish(analysisResults);
+      }
+    );
+
+    this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
+      // progress.report({ increment: 100 });
+      this.serviceAI.removeListeners();
+      this.onError(error);
+    });
+
+    await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
+    // });
+  }
+
+  private async startCollectingFiles(
+    folderPath: string,
+    serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
+  ): Promise<string[]> {
+    // const progressOptions = {
+    //   location: ProgressLocation.Notification,
+    //   title: deepCodeMessages.fileLoadingProgress.msg,
+    //   cancellable: false
+    // };
+  
+    // const {
+    //   bundle: finalBundle,
+    //   progress: finalProgress
+    // } = await window.withProgress(progressOptions, async (progress) => {
+    //   // Get a directory size overview for progress reporting
+    //   progress.report({ increment: 1 });
+  
+      // Filter, read and hash all files
+    const bundle = await createListOfDirFiles({
+      serverFilesFilterList,
+      path: folderPath,
+      progress: {
+        onProgress: this.onCollectBundleProgress.bind(this),
+      }
+    });
+      // progress.report({ increment: 100 });
+      // return res;
+    // });
+  
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
+    console.warn(`Processed ${bundle.length} files`);
+  
+    return bundle;
   }
 
   private async createSingleHashBundle(
@@ -274,6 +318,28 @@ class BundlesModule extends LoginModule
       return;
     }
     delete this.remoteBundles[workspacePath];
+  }
+
+  public async startAnalysis(): Promise<void> {
+    try {
+      const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || !workspaceFolders.length) {
+        return;
+      }
+
+      this.createWorkspacesList(workspaceFolders);
+
+      if (this.workspacesPaths.length) {
+        this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
+
+        await this.updateHashesBundles();
+        for await (const path of this.workspacesPaths) {
+          await this.performBundlesActions(path);
+        }
+      }
+    } catch(err) {
+      await this.processError(err);
+    }
   }
 }
 
