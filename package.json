@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode",
-  "version": "2.2.1",
+  "version": "3.0.0",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript.",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
@@ -126,7 +126,7 @@
     "viewsWelcome": [
       {
         "view": "deepcode.views.error",
-        "contents": "DeepCode is temporarily unavailable, we are automatically retrying to connect...",
+        "contents": "DeepCode is temporarily unavailable\nWe are automatically retrying to connect...",
         "when": "deepcode:error == 'transient'"
       },
       {
@@ -206,7 +206,7 @@
     "@types/vscode": "^1.46.0",
     "@types/nock": "^11.1.0",
     "glob": "^7.1.6",
-    "mocha": "^8.0.1",
+    "mocha": "^8.1.1",
     "typescript": "^3.9.5",
     "eslint": "^7.3.1",
     "eslint-plugin-import": "^2.21.2",

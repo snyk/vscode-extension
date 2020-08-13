@@ -225,7 +225,7 @@ abstract class BundlesModule extends LoginModule
       this.onError(error);
     });
 
-    await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
+    http.analyse(this.baseURL, this.token, path, this.files).catch((error) => this.onError(error));
     // });
   }
 
