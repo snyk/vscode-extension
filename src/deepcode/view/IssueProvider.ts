@@ -1,4 +1,3 @@
-import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { Uri, Range, Diagnostic } from 'vscode';
 import { NodeProvider } from './NodeProvider'
 import { Node } from './Node'
@@ -10,15 +9,44 @@ interface ISeverityCounts {
 }
 
 export class IssueProvider extends NodeProvider {
+  getSymbolTextSpacing(): string {
+    return "   ";
+  }
+  
+  getSuperscriptNumber(n: number): string {
+    let res: string = "";
+    const nDigits = Math.round(n).toString().split('');
+    const digitMap: { [digit: string]: string } = {
+      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+    }
+    for (let d of nDigits) res += digitMap[d] || "";
+    return res;
+  }
+
+  getSeveritySymbol(severity: number): string {
+    return {
+      [DEEPCODE_SEVERITIES.error]: "❌",
+      [DEEPCODE_SEVERITIES.warning]: "⚠️",
+      [DEEPCODE_SEVERITIES.information]: "ℹ️",
+    }[severity] || "💡";
+  }
+
   getIssueText(text: string, severity: number): string {
-    return "(" + severity + ") " + text;
+    return `${this.getSeveritySymbol(severity)}${this.getSymbolTextSpacing()}${text}`;
   }
 
   getFileText(text: string, counts: ISeverityCounts ): string {
-    return "[" + counts[DEEPCODE_SEVERITIES.error]
-      + "|" + counts[DEEPCODE_SEVERITIES.warning]
-      + "|" + counts[DEEPCODE_SEVERITIES.information]
-      + "] " + text;
+    let res :string = "";
+    for (let s of [
+      DEEPCODE_SEVERITIES.error,
+      DEEPCODE_SEVERITIES.warning,
+      DEEPCODE_SEVERITIES.information,
+    ]) {
+      if (counts[s]) res += `${this.getSeveritySymbol(s)}${this.getSuperscriptNumber(counts[s])} `;
+    }
+    res += `${this.getSymbolTextSpacing()}${text}`;
+    return res;
   }
 
   getRootChildren(): Node[] {

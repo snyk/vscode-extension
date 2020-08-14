@@ -163,14 +163,6 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
   }
 
-  // export interface ErrorHandlerInterface {
-  //   processError(
-  //     extension: ExtensionInterface | any,
-  //     error: errorType,
-  //     options?: { [key: string]: any }
-  //   ): Promise<void>;
-  // }
-
   export interface BaseDeepCodeModuleInterface {
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
@@ -222,7 +214,6 @@ namespace DeepCode {
 
   export interface BundlesModuleInterface {
     startAnalysis(): Promise<void>;
-    // askUploadApproval(): Promise<void>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
@@ -251,7 +242,6 @@ namespace DeepCode {
       BundlesModuleInterface,
       DeepCodeLibInterface {
     activate(context: ExtensionContext): void;
-    // startExtension(): any;
   }
 }
 

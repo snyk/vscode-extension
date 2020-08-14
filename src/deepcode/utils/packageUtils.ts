@@ -9,20 +9,12 @@ import {
 import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 
-// let filesProgress = { processed: 0, total: 0 };
-
-// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
-// TODO what exactly is transmitted eventually and what is a good exact limit?
-const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests0
+const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2;
 
 interface ProgressInterface {
   onProgress: (value: number) => void,
   percentDone?: number;
-  multiplier?: number,
-  // filesProcessed: number;
-  // totalFiles: number;
-  // percentDone: number;
-  // progressWindow: Progress<{ increment: number; message: string }>;
+  multiplier?: number;
 }
 
 interface CreateListOfFiles {

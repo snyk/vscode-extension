@@ -9,6 +9,7 @@ import { BUNDLE_EVENTS } from "../../constants/events";
 import LoginModule from "../../lib/modules/LoginModule";
 import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 abstract class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
@@ -141,16 +142,22 @@ abstract class BundlesModule extends LoginModule
   }
 
   public async performBundlesActions(path: string): Promise<void> {
+    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       this.filesWatcher.activate(this);
 
       if (!Object.keys(this.serverFilesFilterList).length) {
+        this.processError(new Error(errorsLogs.filtersFiles), {
+          message: errorsLogs.filtersFiles,
+          data: {
+            filters: this.serverFilesFilterList
+          }
+        });
         return;
       }
     }
 
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     if (!this.token || !this.uploadApproved) {
       await this.checkSession();
       await this.checkApproval();
@@ -158,8 +165,7 @@ abstract class BundlesModule extends LoginModule
     }
 
     this.files = await this.startCollectingFiles(path, this.serverFilesFilterList);
-    console.log("this.files",this.files);
-
+    
     this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
       this.onBuildBundleProgress(processed, total);
     });
@@ -268,13 +274,14 @@ abstract class BundlesModule extends LoginModule
     try {
       const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || !workspaceFolders.length) {
-        setContext(DEEPCODE_CONTEXT.COMPLETED, true);
+        setContext(DEEPCODE_CONTEXT.ANALYZING, false);
         return;
       }
 
       this.createWorkspacesList(workspaceFolders);
 
       if (this.workspacesPaths.length) {
+        setContext(DEEPCODE_CONTEXT.ANALYZING, true);
         this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
 
         await this.updateHashesBundles();
@@ -282,7 +289,7 @@ abstract class BundlesModule extends LoginModule
           await this.performBundlesActions(path);
         }
       } else {
-        setContext(DEEPCODE_CONTEXT.COMPLETED, true);
+        setContext(DEEPCODE_CONTEXT.ANALYZING, false);
       }
     } catch(err) {
       await this.processError(err);

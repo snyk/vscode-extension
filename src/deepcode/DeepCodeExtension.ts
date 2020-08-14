@@ -90,18 +90,9 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       new IssueProvider(this)
     );
 
-    // context.subscriptions.push(
-    //   { dispose: this.startExtension() },
-    // );
-
     this.activateAll();
     this.startExtension();
   }
-
-  // public startExtension(): any {
-  //   this.activateAll();
-  //   this.activateExtensionAnalyzeActions();
-  // }
 
 }
 

@@ -16,6 +16,7 @@ export const startDeepCodeCommand = (): void => {
 };
 
 export function setContext(key: string, value: unknown) {
+  console.log("DeepCode context",key, value);
   vscode.commands.executeCommand('setContext', `${DEEPCODE_CONTEXT_PREFIX}${key}`, value);
 };
 

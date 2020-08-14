@@ -28,7 +28,7 @@ export class Node extends TreeItem {
     if (!desc && options.issue) {
       desc = options.issue.uri.path.split('/').pop() || "";
       if (options.issue.range) {
-        desc += "[" + (options.issue.range.start.line + 1) + ",";
+        desc += "[" + (options.issue.range.start.line + 1) + ", ";
         desc += (options.issue.range.start.character + 1) + "]";
       }
     }
@@ -42,7 +42,10 @@ export class Node extends TreeItem {
       title: '',
       arguments: [options.issue.uri, options.issue.range],
     });
-    this.resourceUri = (options.link && Uri.parse(options.link)) || (options.issue && options.issue.uri);
+    // Not using `options.issue.uri` to avoid default file decorators (see Explorer tab)
+    // However, as of August 2020, there is still no way to manually decorate tree items
+    // https://github.com/microsoft/vscode/issues/47502
+    this.resourceUri = options.link ? Uri.parse(options.link) : undefined;
     this.parent = options.parent;
     this.children = options.children;
   }

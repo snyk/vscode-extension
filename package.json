@@ -108,14 +108,19 @@
           "when": "!deepcode:error && deepcode:loggedIn && !deepcode:uploadApproved"
         },
         {
+          "id": "deepcode.views.empty",
+          "name": "DeepCode Extension",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
+        },
+        {
           "id": "deepcode.views.progress",
           "name": "DeepCode Analysis",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:analysisCompleted"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound && !deepcode:analysisCompleted"
         },
         {
           "id": "deepcode.views.analysis",
           "name": "DeepCode Analysis",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:analysisCompleted"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound && deepcode:analysisCompleted"
         },
         {
           "id": "deepcode.views.support",
@@ -143,6 +148,10 @@
         "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode's proprietary AI model is analysing the code remotely on DeepCode's servers. Let's confirm you know this and start the remote analysis of this workspace - feel free to check out our [terms](https://www.deepcode.ai/tc?utm_source=vsc).\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change this later in the [configuration panel](command:deepcode.settings)."
       },
       {
+        "view": "deepcode.views.empty",
+        "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis."
+      },
+      {
         "view": "deepcode.views.progress",
         "contents": "Analysis in progress"
       },
@@ -166,10 +175,6 @@
       ],
       "commandPalette": [
         {
-          "command": "deepcode.approve",
-          "when": "false"
-        },
-        {
           "command": "deepcode.login",
           "when": "!deepcode:loggedIn"
         }
@@ -189,10 +194,6 @@
       {
         "command": "deepcode.login",
         "title": "DeepCode login"
-      },
-      {
-        "command": "deepcode.approve",
-        "title": "DeepCode approve upload and start analysis"
       }
     ]
   },
