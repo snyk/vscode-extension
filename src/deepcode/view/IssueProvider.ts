@@ -37,7 +37,7 @@ export class IssueProvider extends NodeProvider {
   }
 
   getFileText(text: string, counts: ISeverityCounts ): string {
-    let res :string = "";
+    let res = "";
     for (const s of [
       DEEPCODE_SEVERITIES.error,
       DEEPCODE_SEVERITIES.warning,
