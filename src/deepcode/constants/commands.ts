@@ -1,5 +1,6 @@
 // vscode commands used in extension work
-export const VSCODE_GO_TO_SETTINGS_COMMAND = "_extensions.manage";
+// old "_extensions.manage" is deprecated;
+export const VSCODE_GO_TO_SETTINGS_COMMAND = "workbench.action.openSettings"; 
 export const VSCODE_ADD_COMMENT_COMMAND = "editor.action.addCommentLine";
 
 // custom depcode commands

@@ -1,13 +1,11 @@
 import * as vscode from "vscode";
+import * as _ from "lodash";
 import http from "../../http/requests";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
-// import { window, ProgressLocation, Progress } from "vscode";
-// import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
 import { createListOfDirFiles } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
-// import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
 import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
@@ -41,18 +39,18 @@ abstract class BundlesModule extends LoginModule
     this.refreshViews();
   }
 
+  // Avoid refreshing context/views too often:
+  // https://github.com/Microsoft/vscode/issues/68424
+  throttledUpdateStatus = _.throttle(this.updateStatus.bind(this), 200);
+
+  
   onCollectBundleProgress(value: number) {
-    // Avoid refreshing context/views too often:
-    // https://github.com/Microsoft/vscode/issues/68424
-    if (value < this.throttledProgress + 0.1) return;
-    this.throttledProgress = value;
-    console.log(`COLLECTING BUNDLE PROGRESS - ${value}`);
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
+    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
   }
 
   onBuildBundleProgress(processed: number, total: number) {
     console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
+    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
   }
 
   onBuildBundleFinish() {
@@ -62,7 +60,7 @@ abstract class BundlesModule extends LoginModule
 
   onUploadBundleProgress(processed: number, total: number) {
     console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
+    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
   }
 
   onUploadBundleFinish() {
@@ -71,7 +69,7 @@ abstract class BundlesModule extends LoginModule
   }
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
-    console.log("on Analyse Progress");
+    console.log("ANALYSE PROGRESS");
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 0.5);
   }
 
@@ -112,16 +110,6 @@ abstract class BundlesModule extends LoginModule
     this.processError(error);
   }
 
-  // public async askUploadApproval(): Promise<void> {
-  //   const { uploadApproval } = deepCodeMessages;
-  //   let pressedButton: string | undefined;
-    
-  //   pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
-  //   if (pressedButton) {
-  //     await this.approveUpload(pressedButton === uploadApproval.global);
-  //   }
-  // }
-
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
     this.currentWorkspacePath = newWorkspacePath;
@@ -153,8 +141,6 @@ abstract class BundlesModule extends LoginModule
   }
 
   public async performBundlesActions(path: string): Promise<void> {
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
-    
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       this.filesWatcher.activate(this);
@@ -164,89 +150,52 @@ abstract class BundlesModule extends LoginModule
       }
     }
 
+    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     if (!this.token || !this.uploadApproved) {
-      this.startExtension();
+      await this.checkSession();
+      await this.checkApproval();
       return;
     }
 
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, 0);
     this.files = await this.startCollectingFiles(path, this.serverFilesFilterList);
-    
-    // const progressOptions = {
-    //   location: ProgressLocation.Notification,
-    //   title: deepCodeMessages.analysisProgress.msg,
-    //   cancellable: false
-    // };
+    console.log("this.files",this.files);
 
-    // const countStep = (processed: number, total: number): number => {
-    //   const lastPhaseProgress = 33;
-    //   const currentProgress = (processed / total * 33) + lastPhaseProgress;
-    //   return currentProgress;
-    // };
-
-    // window.withProgress(progressOptions, async progress => {
     this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
       this.onBuildBundleProgress(processed, total);
     });
-
     this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
-      // progress.report({ increment: 33 });
       this.onBuildBundleFinish();
     });
-
     this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
-      // const currentProgress = countStep(processed, total);
       this.onUploadBundleProgress(processed, total);
-      // progress.report({ increment: currentProgress });
     });
-
     this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
       this.onUploadBundleFinish();
-      // progress.report({ increment: 80 });
     });
-
     this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
-      // progress.report({ increment: 90 });
       this.onAnalyseProgress(analysisResults);
     });
-
     this.serviceAI.on(
       BUNDLE_EVENTS.analyseFinish,
       (analysisResults: IQueueAnalysisCheckResult) => {
-        // progress.report({ increment: 100 });
         this.serviceAI.removeListeners();
         this.onAnalyseFinish(analysisResults);
       }
     );
-
     this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-      // progress.report({ increment: 100 });
       this.serviceAI.removeListeners();
       this.onError(error);
     });
 
     http.analyse(this.baseURL, this.token, path, this.files).catch((error) => this.onError(error));
-    // });
   }
 
   private async startCollectingFiles(
     folderPath: string,
     serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
   ): Promise<string[]> {
-    // const progressOptions = {
-    //   location: ProgressLocation.Notification,
-    //   title: deepCodeMessages.fileLoadingProgress.msg,
-    //   cancellable: false
-    // };
-  
-    // const {
-    //   bundle: finalBundle,
-    //   progress: finalProgress
-    // } = await window.withProgress(progressOptions, async (progress) => {
-    //   // Get a directory size overview for progress reporting
-    //   progress.report({ increment: 1 });
-  
-      // Filter, read and hash all files
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 0);
+    console.log("COLLECTING");
     const bundle = await createListOfDirFiles({
       serverFilesFilterList,
       path: folderPath,
@@ -254,13 +203,8 @@ abstract class BundlesModule extends LoginModule
         onProgress: this.onCollectBundleProgress.bind(this),
       }
     });
-      // progress.report({ increment: 100 });
-      // return res;
-    // });
-  
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
     console.warn(`Processed ${bundle.length} files`);
-  
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
     return bundle;
   }
 
@@ -324,6 +268,7 @@ abstract class BundlesModule extends LoginModule
     try {
       const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || !workspaceFolders.length) {
+        setContext(DEEPCODE_CONTEXT.COMPLETED, true);
         return;
       }
 
@@ -336,6 +281,8 @@ abstract class BundlesModule extends LoginModule
         for await (const path of this.workspacesPaths) {
           await this.performBundlesActions(path);
         }
+      } else {
+        setContext(DEEPCODE_CONTEXT.COMPLETED, true);
       }
     } catch(err) {
       await this.processError(err);

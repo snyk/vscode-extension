@@ -61,7 +61,7 @@
           "deepcode.uploadApproved": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "User consent for code upload to `#deepcode.url#`",
+            "markdownDescription": "User consent for code upload to `#deepcode.url#` in agreement with our [terms and conditions](https://www.deepcode.ai/tc?utm_source=vsc)",
             "scope": "window"
           },
           "deepcode.yesCrashReport": {
@@ -131,7 +131,7 @@
       },
       {
         "view": "deepcode.views.error",
-        "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2)!",
+        "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2?utm_source=vsc)!",
         "when": "deepcode:error != 'transient'"
       },
       {
@@ -140,7 +140,7 @@
       },
       {
         "view": "deepcode.views.tc",
-        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗, let's confirm and start the remote analysis - feel free to check out our [terms and conditions](https://www.deepcode.ai/tc?utm_source=vsc) if you are into this.\n[Accept code upload](command:deepcode.approveUpload 'Upload code to DeepCode')\nYou can always change it later in the [settings](command:deepcode.settings)!"
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode's proprietary AI model is analysing the code remotely on DeepCode's servers. Let's confirm you know this and start the remote analysis of this workspace - feel free to check out our [terms](https://www.deepcode.ai/tc?utm_source=vsc).\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change this later in the [configuration panel](command:deepcode.settings)."
       },
       {
         "view": "deepcode.views.progress",
@@ -148,16 +148,10 @@
       },
       {
         "view": "deepcode.views.analysis",
-        "contents": "DeepCode analyzed your code and found no issue!"
+        "contents": "DeepCode analyzed your code and found no issue! 🎉"
       }
     ],
     "menus": {
-      "commandPalette": [
-        {
-          "command": "deepcode.start",
-          "when": "deepcode:loggedIn"
-        }
-      ],
       "view/title": [
         {
           "command": "deepcode.settings",
@@ -168,6 +162,16 @@
           "command": "deepcode.start",
           "when": "view == deepcode.views.analysis",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "deepcode.approve",
+          "when": "false"
+        },
+        {
+          "command": "deepcode.login",
+          "when": "!deepcode:loggedIn"
         }
       ]
     },
@@ -188,7 +192,7 @@
       },
       {
         "command": "deepcode.approve",
-        "title": "DeepCode approve upload and remote analysis"
+        "title": "DeepCode approve upload and start analysis"
       }
     ]
   },
@@ -218,10 +222,12 @@
     "nock": "^12.0.3"
   },
   "dependencies": {
+    "@deepcode/tsc": "^1.3.0",
+    "@types/lodash": "^4.14.159",
     "@types/mz": "^2.7.1",
     "ignore": "^5.1.8",
+    "lodash": "^4.17.19",
     "mz": "^2.7.0",
-    "open": "^7.0.4",
-    "@deepcode/tsc": "^1.3.0"
+    "open": "^7.0.4"
   }
 }

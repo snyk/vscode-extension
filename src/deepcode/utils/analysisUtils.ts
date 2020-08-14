@@ -27,7 +27,7 @@ export const getDeepCodeSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) =
     [vscode.DiagnosticSeverity.Information]: information,
     [vscode.DiagnosticSeverity.Warning]: warning,
     [vscode.DiagnosticSeverity.Error]: error,
-    [vscode.DiagnosticSeverity.Hint]: -1,
+    [vscode.DiagnosticSeverity.Hint]: information,
   }[vscodeSeverity];
 }
 

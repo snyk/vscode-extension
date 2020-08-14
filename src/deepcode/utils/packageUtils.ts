@@ -1,7 +1,5 @@
 import { fs } from "mz";
 import * as nodePath from "path";
-import { window, ProgressLocation, Progress } from "vscode";
-import { deepCodeMessages } from "../messages/deepCodeMessages";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 import {
@@ -136,48 +134,3 @@ export const getBaseExclusionFilter = (): ExclusionFilter => {
   exclusionFilter.addExclusionRule(rootExclusionRule);
   return exclusionFilter;
 }
-
-// export const startFilesUpload = async(
-//   folderPath: string,
-//   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
-// ): Promise<string[]> => {
-//   const exclusionFilter = new ExclusionFilter();
-//   const rootExclusionRule = new ExclusionRule();
-//   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
-//   exclusionFilter.addExclusionRule(rootExclusionRule);
-
-//   const progressOptions = {
-//     location: ProgressLocation.Notification,
-//     title: deepCodeMessages.fileLoadingProgress.msg,
-//     cancellable: false
-//   };
-
-//   const {
-//     bundle: finalBundle,
-//     progress: finalProgress
-//   } = await window.withProgress(progressOptions, async (progress) => {
-//     // Get a directory size overview for progress reporting
-//     progress.report({ increment: 1 });
-
-//     // Filter, read and hash all files
-//     const res = await createListOfDirFiles({
-//       serverFilesFilterList,
-//       folderPath: folderPath,
-//       path: folderPath,
-//       exclusionFilter: exclusionFilter,
-//       progress: {
-//         // progress data
-//         filesProcessed: 0,
-//         totalFiles: 100,
-//         percentDone: 0,
-//         progressWindow: progress
-//       }
-//     });
-//     progress.report({ increment: 100 });
-//     return res;
-//   });
-
-//   console.warn(`Processed ${Object.keys(finalBundle).length} files`);
-
-//   return finalBundle; // final window result
-// };

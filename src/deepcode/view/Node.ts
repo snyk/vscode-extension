@@ -24,7 +24,15 @@ export class Node extends TreeItem {
     const collapsed = options.collapsed || (options.children && TreeItemCollapsibleState.Collapsed) || TreeItemCollapsibleState.None;
     super(options.text, collapsed);
     this.tooltip = options.description || options.text;
-    this.description = options.description;
+    let desc = options.description;
+    if (!desc && options.issue) {
+      desc = options.issue.uri.path.split('/').pop() || "";
+      if (options.issue.range) {
+        desc += "[" + (options.issue.range.start.line + 1) + ",";
+        desc += (options.issue.range.start.character + 1) + "]";
+      }
+    }
+    this.description = desc;
     this.command = options.command || (options.link && {
       command: DEEPCODE_OPEN_BROWSER,
       title: '',
