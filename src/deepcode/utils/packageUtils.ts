@@ -12,7 +12,7 @@ import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2;
 
 interface ProgressInterface {
-  onProgress: (value: number) => void,
+  onProgress: (value: number) => void;
   percentDone?: number;
   multiplier?: number;
 }
@@ -125,4 +125,4 @@ export const getBaseExclusionFilter = (): ExclusionFilter => {
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
   return exclusionFilter;
-}
+};

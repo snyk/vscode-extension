@@ -3,14 +3,14 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
-
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
 abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
   private pendingLogin: boolean = false;
 
-  public async initiateLogin(): Promise<void> {
+  async initiateLogin(): Promise<void> {
     if (this.pendingLogin) {
       return;
     }
@@ -19,21 +19,21 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     try {
       setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
       const result = await http.login(this.baseURL, this.source);
-      let { sessionToken, loginURL } = result;
+      const { sessionToken, loginURL } = result;
       if (!sessionToken || !loginURL) {
-        throw new Error(`Failed to create a new session with response: ${JSON.stringify(result)}`);
+        throw new Error(errorsLogs.login);
       }
       await this.setToken(sessionToken);
       await viewInBrowser(loginURL);
       await this.waitLoginConfirmation();
     } catch (err) {
-      await this.processError(err);
+      await this.processError(err, { message: errorsLogs.login });
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  public async checkSession(): Promise<boolean> {
+  async checkSession(): Promise<boolean> {
     let validSession = false;
     if (this.token) {
       validSession = !!(await http.checkSession(this.baseURL, this.token));
@@ -55,13 +55,13 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     }
   }
 
-  public async checkApproval(): Promise<boolean> {
-    let approved = this.uploadApproved;
+  async checkApproval(): Promise<boolean> {
+    const approved = this.uploadApproved;
     setContext(DEEPCODE_CONTEXT.APPROVED, approved);
     return approved;
   }
 
-  public async approveUpload(): Promise<void> {
+  async approveUpload(): Promise<void> {
     this.setUploadApproved(true);
     this.checkApproval();
   } 

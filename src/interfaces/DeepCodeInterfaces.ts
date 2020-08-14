@@ -170,7 +170,7 @@ namespace DeepCode {
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
     refreshViewEmitter: vscode.EventEmitter<any>;
-    refreshViews(content: any): void
+    refreshViews(content: any): void;
     analysisStatus: string;
     analysisProgress: number;
     source: string;

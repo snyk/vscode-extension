@@ -18,11 +18,11 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     return this.baseURL === this.defaultBaseURL;
   }
 
-  public resetTransientErrors(): void {
+  resetTransientErrors(): void {
     this.transientErrors = 0;
   }
 
-  public async sendError(options: {[key: string]: any}): Promise<void> {
+  async sendError(options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
     await http.sendError(this.baseURL, {
       source: this.source,
@@ -31,7 +31,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     });
   }
 
-  public async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
+  async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     await http.sendEvent(this.baseURL, {
       type: event,
@@ -41,7 +41,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     });
   }
 
-  public async processError(
+  async processError(
     error: DeepCode.errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
@@ -117,7 +117,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     try {
       type = `${error.statusCode || ""} ${error.name || ""}`.trim();
     } catch (e) {
-      type = "unknown"
+      type = "unknown";
     }
     try {
       await this.sendError({

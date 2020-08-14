@@ -1,5 +1,5 @@
-import { NodeProvider } from './NodeProvider'
-import { Node } from './Node'
+import { NodeProvider } from './NodeProvider';
+import { Node } from './Node';
 
 export class ProgressProvider extends NodeProvider {
 

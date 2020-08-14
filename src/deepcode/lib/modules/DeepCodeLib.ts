@@ -18,9 +18,9 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     console.log("DeepCode: starting execution pipeline");
     setContext(DEEPCODE_CONTEXT.ERROR, false);
     
-    let loggedIn = await this.checkSession();
+    const loggedIn = await this.checkSession();
     if (!loggedIn) return;
-    let approved = await this.checkApproval();
+    const approved = await this.checkApproval();
     if (!approved) return;
     await this.startAnalysis();
     

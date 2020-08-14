@@ -1,6 +1,6 @@
 import { TreeItemCollapsibleState } from 'vscode';
-import { NodeProvider } from './NodeProvider'
-import { Node } from './Node'
+import { NodeProvider } from './NodeProvider';
+import { Node } from './Node';
 
 export class SupportProvider extends NodeProvider {
   getRootChildren(): Node[] {
@@ -37,6 +37,6 @@ export class SupportProvider extends NodeProvider {
           }),
         ]
       }),
-    ]
+    ];
   }
 }

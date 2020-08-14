@@ -2,17 +2,17 @@ import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState } from 'vscode'
 import { DEEPCODE_OPEN_BROWSER, DEEPCODE_OPEN_LOCAL } from "../constants/commands";
 
 export interface INodeOptions {
-  text: string,
-  description?: string,
+  text: string;
+  description?: string;
   issue?: {
     uri: Uri,
     range?: Range,
-  },
-  link?: string,
-  command?: Command,
-  collapsed?: TreeItemCollapsibleState,
-  parent?: Node,
-  children?: Node[],
+  };
+  link?: string;
+  command?: Command;
+  collapsed?: TreeItemCollapsibleState;
+  parent?: Node;
+  children?: Node[];
 }
 
 

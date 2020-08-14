@@ -1,11 +1,11 @@
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { TreeDataProvider, ProviderResult } from 'vscode';
-import { Node } from './Node'
+import { Node } from './Node';
 
 export abstract class NodeProvider implements TreeDataProvider<Node> {
   constructor(
     protected extension: DeepCode.ExtensionInterface
-  ) {};
+  ) {}
 
   abstract getRootChildren(): Node[];
   

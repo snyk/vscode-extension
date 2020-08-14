@@ -15,11 +15,11 @@ export const startDeepCodeCommand = (): void => {
   vscode.commands.executeCommand(DEEPCODE_START_COMMAND);
 };
 
-export function setContext(key: string, value: unknown) {
+export const setContext = (key: string, value: unknown): void => {
   console.log("DeepCode context",key, value);
   vscode.commands.executeCommand('setContext', `${DEEPCODE_CONTEXT_PREFIX}${key}`, value);
 };
 
-export function viewInBrowser(url: string) {
+export const viewInBrowser = (url: string): void => {
   vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER, url);
 };

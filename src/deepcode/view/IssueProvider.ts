@@ -1,11 +1,11 @@
 import { Uri, Range, Diagnostic } from 'vscode';
-import { NodeProvider } from './NodeProvider'
-import { Node } from './Node'
+import { NodeProvider } from './NodeProvider';
+import { Node } from './Node';
 import { getDeepCodeSeverity } from "../utils/analysisUtils";
 import { DEEPCODE_SEVERITIES } from "../constants/analysis";
 
 interface ISeverityCounts {
-  [severity: number]: number,
+  [severity: number]: number;
 }
 
 export class IssueProvider extends NodeProvider {
@@ -14,13 +14,13 @@ export class IssueProvider extends NodeProvider {
   }
   
   getSuperscriptNumber(n: number): string {
-    let res: string = "";
+    let res = "";
     const nDigits = Math.round(n).toString().split('');
     const digitMap: { [digit: string]: string } = {
       '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
       '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-    }
-    for (let d of nDigits) res += digitMap[d] || "";
+    };
+    for (const d of nDigits) res += digitMap[d] || "";
     return res;
   }
 
@@ -38,7 +38,7 @@ export class IssueProvider extends NodeProvider {
 
   getFileText(text: string, counts: ISeverityCounts ): string {
     let res :string = "";
-    for (let s of [
+    for (const s of [
       DEEPCODE_SEVERITIES.error,
       DEEPCODE_SEVERITIES.warning,
       DEEPCODE_SEVERITIES.information,
