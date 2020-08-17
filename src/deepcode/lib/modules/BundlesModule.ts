@@ -164,7 +164,9 @@ abstract class BundlesModule extends LoginModule
       return;
     }
 
-    this.files = await this.startCollectingFiles(path, this.serverFilesFilterList);
+    const bundle = await this.startCollectingFiles(path, this.serverFilesFilterList);
+    const removedFiles = (this.files || []).filter(f => !bundle.includes(f));
+    this.files = bundle;
     
     this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
       this.onBuildBundleProgress(processed, total);
@@ -193,7 +195,7 @@ abstract class BundlesModule extends LoginModule
       this.onError(error);
     });
 
-    http.analyse(this.baseURL, this.token, path, this.files).catch((error) => this.onError(error));
+    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch((error) => this.onError(error));
   }
 
   private async startCollectingFiles(
