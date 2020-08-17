@@ -123,6 +123,11 @@
           "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound && deepcode:analysisCompleted"
         },
         {
+          "id": "deepcode.views.actions",
+          "name": "Actions",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved"
+        },
+        {
           "id": "deepcode.views.support",
           "name": "Help & feedback"
         }
@@ -158,6 +163,21 @@
       {
         "view": "deepcode.views.analysis",
         "contents": "DeepCode analyzed your code and found no issue! 🎉"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in manual mode.\n[Re-scan](command:deepcode.login)\nWants to r?\n[Switch to manual re-scan mode](command:deepcode.login)\nOnce manual re-scan mode is activated, results will not be updated unless you manully trigger the analysis.",
+        "when": "deepcode:mode == 'manual'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "DeepCode analysis is currently paused.\n[Unpause](command:deepcode.mode?%5B%auto%22%5D)",
+        "when": "deepcode:mode == 'pause'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in a fully automated mode. Need to take control?\n[Switch to manual re-scan mode](command:deepcode.mode?%5B%manual%22%5D)\n[Pause DeepCode for 30 minutes](command:deepcode.mode?%5B%22pause%22%5D)",
+        "when": "deepcode:mode != 'manual' && deepcode:mode != 'pause'"
       }
     ],
     "menus": {
@@ -183,7 +203,7 @@
     "commands": [
       {
         "command": "deepcode.start",
-        "title": "DeepCode re-scan",
+        "title": "DeepCode scan",
         "icon": "images/icon-sidebar.svg"
       },
       {

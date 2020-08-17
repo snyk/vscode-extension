@@ -80,6 +80,10 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', value, true);
   }
 
+  get mode(): string {
+    return vscode.workspace.getConfiguration('deepcode').get('mode') || 'auto';
+  }
+
   get shouldReportErrors(): boolean {
     return !!vscode.workspace.getConfiguration('deepcode').get('yesCrashReport');
   }
