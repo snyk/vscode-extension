@@ -86,7 +86,7 @@
         {
           "id": "deepcode",
           "title": "DeepCode",
-          "icon": "images/icon-sidebar.svg"
+          "icon": "images/deepcode-logo.svg"
         }
       ]
     },
@@ -163,13 +163,13 @@
     "menus": {
       "view/title": [
         {
-          "command": "deepcode.settings",
-          "when": "view == deepcode.views.support",
+          "command": "deepcode.start",
+          "when": "view == deepcode.views.analysis",
           "group": "navigation"
         },
         {
-          "command": "deepcode.start",
-          "when": "view == deepcode.views.analysis",
+          "command": "deepcode.settings",
+          "when": "view != deepcode.views.support",
           "group": "navigation"
         }
       ],
@@ -184,12 +184,12 @@
       {
         "command": "deepcode.start",
         "title": "DeepCode re-scan",
-        "icon": "images/icon-sidebar.svg"
+        "icon": "$(refresh)"
       },
       {
         "command": "deepcode.settings",
         "title": "DeepCode settings",
-        "icon": "images/icon-sidebar.svg"
+        "icon": "$(gear)"
       },
       {
         "command": "deepcode.login",

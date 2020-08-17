@@ -1,14 +1,23 @@
-import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
 import { DEEPCODE_OPEN_BROWSER, DEEPCODE_OPEN_LOCAL } from "../constants/commands";
+import * as path from 'path';
+
+export const NODE_ICON = {
+  critical: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-critical.svg'),
+  warning: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-warning.svg'),
+  info: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-info.svg'),
+};
 
 export interface INodeOptions {
   text: string;
   description?: string;
+  descriptionTail?: string;
   issue?: {
     uri: Uri,
     range?: Range,
   };
   link?: string;
+  icon?: string | ThemeIcon;
   command?: Command;
   collapsed?: TreeItemCollapsibleState;
   parent?: Node;
@@ -23,6 +32,7 @@ export class Node extends TreeItem {
   constructor(options: INodeOptions) {
     const collapsed = options.collapsed || (options.children && TreeItemCollapsibleState.Collapsed) || TreeItemCollapsibleState.None;
     super(options.text, collapsed);
+    this.iconPath = options.icon;
     this.tooltip = options.description || options.text;
     let desc = options.description;
     if (!desc && options.issue) {
@@ -45,7 +55,7 @@ export class Node extends TreeItem {
     // Not using `options.issue.uri` to avoid default file decorators (see Explorer tab)
     // However, as of August 2020, there is still no way to manually decorate tree items
     // https://github.com/microsoft/vscode/issues/47502
-    this.resourceUri = options.link ? Uri.parse(options.link) : undefined;
+    // this.resourceUri = options.link ? Uri.parse(options.link) : undefined;
     this.parent = options.parent;
     this.children = options.children;
   }
