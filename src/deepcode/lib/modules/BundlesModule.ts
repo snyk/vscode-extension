@@ -76,7 +76,6 @@ abstract class BundlesModule extends LoginModule
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
-    setContext(DEEPCODE_CONTEXT.COMPLETED, true);
     type ResultFiles = {
       [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
     };
@@ -101,13 +100,11 @@ abstract class BundlesModule extends LoginModule
 
     result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
-
-    return Promise.resolve();
+    setContext(DEEPCODE_CONTEXT.COMPLETED, true);
   }
 
   onError(error: Error) {
     setContext(DEEPCODE_CONTEXT.COMPLETED, false);
-    setContext(DEEPCODE_CONTEXT.ERROR, true);
     this.processError(error);
   }
 
@@ -145,8 +142,6 @@ abstract class BundlesModule extends LoginModule
     setContext(DEEPCODE_CONTEXT.COMPLETED, false);
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
-      this.filesWatcher.activate(this);
-
       if (!Object.keys(this.serverFilesFilterList).length) {
         this.processError(new Error(errorsLogs.filtersFiles), {
           message: errorsLogs.filtersFiles,
@@ -156,6 +151,7 @@ abstract class BundlesModule extends LoginModule
         });
         return;
       }
+      this.filesWatcher.activate(this);
     }
 
     if (!this.token || !this.uploadApproved) {
