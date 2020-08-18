@@ -141,11 +141,11 @@
       },
       {
         "view": "deepcode.views.welcome",
-        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n🚀 DeepCode's mission is to find bugs in your Javascript, TypeScript, Python, Java and C/C++ code, fast!\n💬 A VS Code user (Lucas) recently said:\"I'm really crazy about this super simple service that feels like it's from 5 years in the future\".\n👉 Connect with DeepCode and start your first analysis!"
+        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n👉 DeepCode's mission is to finds bugs, fast. Connect with DeepCode to start your first analysis!"
       },
       {
         "view": "deepcode.views.tc",
-        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode's proprietary AI model is analysing the code remotely on DeepCode's servers. Let's confirm you know this and start the remote analysis of this workspace - feel free to check out our [terms](https://www.deepcode.ai/tc?utm_source=vsc).\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change this later in the [configuration panel](command:deepcode.settings)."
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers(our [terms](https://www.deepcode.ai/tc?utm_source=vsc). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
       },
       {
         "view": "deepcode.views.empty",
