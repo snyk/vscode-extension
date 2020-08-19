@@ -2,10 +2,24 @@ import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState, ThemeIcon } fr
 import { DEEPCODE_OPEN_BROWSER, DEEPCODE_OPEN_LOCAL } from "../constants/commands";
 import * as path from 'path';
 
-export const NODE_ICON = {
-  critical: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-critical.svg'),
-  warning: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-warning.svg'),
-  info: path.join(__filename, '..', '..', '..', '..', 'images', 'icon-info.svg'),
+export interface INodeIcon {
+  ['light']: string,
+  ['dark']: string
+}
+
+export const NODE_ICONS: {[key: string]: INodeIcon} = {
+  critical: {
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-critical.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-critical.svg'),
+  },
+  warning: {
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-warning.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-warning.svg'),
+  },
+  info: {
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-info.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-info.svg'),
+  },
 };
 
 export interface INodeOptions {
@@ -17,7 +31,7 @@ export interface INodeOptions {
     range?: Range,
   };
   link?: string;
-  icon?: string | ThemeIcon;
+  icon?: INodeIcon | ThemeIcon;
   command?: Command;
   collapsed?: TreeItemCollapsibleState;
   parent?: Node;
@@ -55,7 +69,7 @@ export class Node extends TreeItem {
     // Not using `options.issue.uri` to avoid default file decorators (see Explorer tab)
     // However, as of August 2020, there is still no way to manually decorate tree items
     // https://github.com/microsoft/vscode/issues/47502
-    // this.resourceUri = options.link ? Uri.parse(options.link) : undefined;
+    // this.resourceUri = options.link ? Uri.parse(options.link) : (options.issue && options.issue.uri);
     this.parent = options.parent;
     this.children = options.children;
   }

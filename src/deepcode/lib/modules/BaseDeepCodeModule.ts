@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as _ from "lodash";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
 import DeepCodeStatusBarItem from "../statusBarItem/DeepCodeStatusBarItem";
@@ -6,7 +7,7 @@ import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
 import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher";
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
-import { IDE_NAME } from "../../constants/general";
+import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   currentWorkspacePath: string;
@@ -88,9 +89,12 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     return !!vscode.workspace.getConfiguration('deepcode').get('yesTelemetry');
   }
 
-  refreshViews(content?: any): void {
-    this.refreshViewEmitter.fire(content || undefined);
-  }
+  // Avoid refreshing context/views too often:
+  // https://github.com/Microsoft/vscode/issues/68424
+  refreshViews = _.debounce(
+    (content?: any): void => this.refreshViewEmitter.fire(content || undefined),
+    REFRESH_VIEW_DEBOUNCE_INTERVAL
+  );
 
   abstract processError(
     error: DeepCode.errorType,

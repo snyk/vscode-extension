@@ -40,18 +40,14 @@ abstract class BundlesModule extends LoginModule
     this.refreshViews();
   }
 
-  // Avoid refreshing context/views too often:
-  // https://github.com/Microsoft/vscode/issues/68424
-  throttledUpdateStatus = _.throttle(this.updateStatus.bind(this), 200);
-
   
   onCollectBundleProgress(value: number) {
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
   }
 
   onBuildBundleProgress(processed: number, total: number) {
     console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
   }
 
   onBuildBundleFinish() {
@@ -61,7 +57,7 @@ abstract class BundlesModule extends LoginModule
 
   onUploadBundleProgress(processed: number, total: number) {
     console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
   }
 
   onUploadBundleFinish() {
@@ -101,6 +97,7 @@ abstract class BundlesModule extends LoginModule
     result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
     setContext(DEEPCODE_CONTEXT.COMPLETED, true);
+    this.refreshViews();
   }
 
   onError(error: Error) {

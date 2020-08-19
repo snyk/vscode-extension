@@ -1,6 +1,6 @@
 import { Uri, Range, Diagnostic } from 'vscode';
 import { NodeProvider } from './NodeProvider';
-import { Node, NODE_ICON } from './Node';
+import { Node, INodeIcon, NODE_ICONS } from './Node';
 import { getDeepCodeSeverity } from "../utils/analysisUtils";
 import { DEEPCODE_SEVERITIES } from "../constants/analysis";
 
@@ -20,15 +20,15 @@ export class IssueProvider extends NodeProvider {
   //   return res;
   // }
 
-  getSeverityIcon(severity: number): string {
+  getSeverityIcon(severity: number): INodeIcon {
     return {
-      [DEEPCODE_SEVERITIES.error]: NODE_ICON.critical,
-      [DEEPCODE_SEVERITIES.warning]: NODE_ICON.warning,
-      [DEEPCODE_SEVERITIES.information]: NODE_ICON.info,
-    }[severity] || NODE_ICON.info;
+      [DEEPCODE_SEVERITIES.error]: NODE_ICONS.critical,
+      [DEEPCODE_SEVERITIES.warning]: NODE_ICONS.warning,
+      [DEEPCODE_SEVERITIES.information]: NODE_ICONS.info,
+    }[severity] || NODE_ICONS.info;
   }
 
-  getFileSeverityIcon(counts: ISeverityCounts): string {
+  getFileSeverityIcon(counts: ISeverityCounts): INodeIcon {
     for (const s of [
       DEEPCODE_SEVERITIES.error,
       DEEPCODE_SEVERITIES.warning,
@@ -56,7 +56,7 @@ export class IssueProvider extends NodeProvider {
           const severity = getDeepCodeSeverity(d.severity);
           ++counts[severity];
           const params: {
-            text: string, icon: string, issue: { uri: Uri, range?: Range }, children?: Node[]
+            text: string, icon: INodeIcon, issue: { uri: Uri, range?: Range }, children?: Node[]
           } = {
             text: d.message,
             icon: this.getSeverityIcon(severity),
@@ -80,7 +80,7 @@ export class IssueProvider extends NodeProvider {
         });
         const file = new Node({
           text: filename,
-          description: dir,
+          description: `${dir} - ${diagnostics.length} issue${diagnostics.length > 1 ? 's' : ''}`,
           icon: this.getFileSeverityIcon(counts),
           issue: { uri },
           children: issues,
