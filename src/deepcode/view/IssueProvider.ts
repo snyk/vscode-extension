@@ -9,16 +9,9 @@ interface ISeverityCounts {
 }
 
 export class IssueProvider extends NodeProvider {
-  // getSuperscriptNumber(n: number): string {
-  //   let res = "";
-  //   const nDigits = Math.round(n).toString().split('');
-  //   const digitMap: { [digit: string]: string } = {
-  //     '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-  //     '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-  //   };
-  //   for (const d of nDigits) res += digitMap[d] || "";
-  //   return res;
-  // }
+  processProgress(progress: number) {
+    return `${Math.round(100*progress)}%`;
+  }
 
   getSeverityIcon(severity: number): INodeIcon {
     return {
@@ -41,6 +34,12 @@ export class IssueProvider extends NodeProvider {
 
   getRootChildren(): Node[] {
     const review: Node[] = [];
+    if (this.extension.runningAnalysis) return [
+      new Node({
+        text: this.extension.analysisStatus,
+        description: this.processProgress(this.extension.analysisProgress),
+      })
+    ];
     if (!this.extension.analyzer.deepcodeReview) return review;
     this.extension.analyzer.deepcodeReview.forEach(
       (uri: Uri, diagnostics: readonly Diagnostic[]): void => {

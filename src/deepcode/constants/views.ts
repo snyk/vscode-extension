@@ -1,5 +1,4 @@
 export const DEEPCODE_VIEW_SUPPORT = "deepcode.views.support";
-export const DEEPCODE_VIEW_PROGRESS = "deepcode.views.progress";
 export const DEEPCODE_VIEW_ANALYSIS = "deepcode.views.analysis";
 
 // Having multiple boolean contexts instead of a single context 
@@ -8,7 +7,6 @@ export const DEEPCODE_CONTEXT = {
   LOGGEDIN: "loggedIn",
   APPROVED: "uploadApproved",
   ANALYZING: "workspaceFound",
-  COMPLETED: "analysisCompleted",
   ERROR: "error",
 };
 

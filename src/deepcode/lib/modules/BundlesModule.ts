@@ -15,7 +15,7 @@ abstract class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   private rootPath = "";
 
-  private throttledProgress = 0;
+  runningAnalysis = false;
 
   files: string[] = [];
   serviceAI = http.getServiceAI();
@@ -96,12 +96,12 @@ abstract class BundlesModule extends LoginModule
 
     result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
-    setContext(DEEPCODE_CONTEXT.COMPLETED, true);
+    this.terminateAnalysis();
     this.refreshViews();
   }
 
   onError(error: Error) {
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
+    this.terminateAnalysis();
     this.processError(error);
   }
 
@@ -135,8 +135,15 @@ abstract class BundlesModule extends LoginModule
     this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
   }
 
+  private terminateAnalysis(): void {
+    this.serviceAI.removeListeners();
+    this.runningAnalysis = false;
+  }
+
   public async performBundlesActions(path: string): Promise<void> {
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
+    if (this.runningAnalysis) return;
+    this.runningAnalysis = true;
+
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       if (!Object.keys(this.serverFilesFilterList).length) {
@@ -179,12 +186,10 @@ abstract class BundlesModule extends LoginModule
     this.serviceAI.on(
       BUNDLE_EVENTS.analyseFinish,
       (analysisResults: IQueueAnalysisCheckResult) => {
-        this.serviceAI.removeListeners();
         this.onAnalyseFinish(analysisResults);
       }
     );
     this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-      this.serviceAI.removeListeners();
       this.onError(error);
     });
 

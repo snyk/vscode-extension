@@ -113,14 +113,9 @@
           "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
         },
         {
-          "id": "deepcode.views.progress",
-          "name": "DeepCode Analysis",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound && !deepcode:analysisCompleted"
-        },
-        {
           "id": "deepcode.views.analysis",
           "name": "DeepCode Analysis",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound && deepcode:analysisCompleted"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
         },
         {
           "id": "deepcode.views.support",
@@ -150,10 +145,6 @@
       {
         "view": "deepcode.views.empty",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis."
-      },
-      {
-        "view": "deepcode.views.progress",
-        "contents": "Analysis in progress"
       },
       {
         "view": "deepcode.views.analysis",
