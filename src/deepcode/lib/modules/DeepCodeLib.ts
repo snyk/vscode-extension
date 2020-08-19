@@ -39,6 +39,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
         this.processError(err);
       }
     },
-    EXECUTION_DEBOUNCE_INTERVAL
+    EXECUTION_DEBOUNCE_INTERVAL,
+    { 'leading': true }
   );
 }

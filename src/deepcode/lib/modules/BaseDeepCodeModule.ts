@@ -93,7 +93,8 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   // https://github.com/Microsoft/vscode/issues/68424
   refreshViews = _.debounce(
     (content?: any): void => this.refreshViewEmitter.fire(content || undefined),
-    REFRESH_VIEW_DEBOUNCE_INTERVAL
+    REFRESH_VIEW_DEBOUNCE_INTERVAL,
+    { 'leading': true }
   );
 
   abstract processError(
