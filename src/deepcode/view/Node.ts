@@ -5,7 +5,7 @@ import * as path from 'path';
 export interface INodeIcon {
   ['light']: string,
   ['dark']: string
-}
+};
 
 export const NODE_ICONS: {[key: string]: INodeIcon} = {
   critical: {
@@ -22,6 +22,8 @@ export const NODE_ICONS: {[key: string]: INodeIcon} = {
   },
 };
 
+export type InternalType = {[key: string]: any};
+
 export interface INodeOptions {
   text: string;
   description?: string;
@@ -36,10 +38,15 @@ export interface INodeOptions {
   collapsed?: TreeItemCollapsibleState;
   parent?: Node;
   children?: Node[];
-}
+  internal?: InternalType,
+};
 
+export type INode = TreeItem & {
+  readonly internal: InternalType;
+};
 
-export class Node extends TreeItem {
+export class Node extends TreeItem implements INode {
+  readonly internal: {[key: string]: any};
   private parent: Node | undefined;
   private children: Node[] | undefined;
 
@@ -72,6 +79,7 @@ export class Node extends TreeItem {
     // this.resourceUri = options.link ? Uri.parse(options.link) : (options.issue && options.issue.uri);
     this.parent = options.parent;
     this.children = options.children;
+    this.internal = options.internal || {};
   }
 
   getParent(): Node | undefined {

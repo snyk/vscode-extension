@@ -9,7 +9,21 @@ interface ISeverityCounts {
 }
 
 export class IssueProvider extends NodeProvider {
-  processProgress(progress: number) {
+  compareNodes(n1: Node, n2: Node): number {
+    if (n2.internal.severity - n1.internal.severity) return n2.internal.severity - n1.internal.severity;
+    if (n2.internal.nIssues - n1.internal.nIssues) return n2.internal.nIssues - n1.internal.nIssues;
+    if (n1.label && n2.label) {
+      if (n1.label < n2.label) return -1;
+      if (n1.label > n2.label) return 1;
+    }
+    if (n1.description && n2.description) {
+      if (n1.description < n2.description) return -1;
+      if (n1.description > n2.description) return 1;
+    }
+    return 0;
+  }
+  
+  processProgress(progress: number): string {
     return `${Math.round(100*progress)}%`;
   }
 
@@ -21,25 +35,20 @@ export class IssueProvider extends NodeProvider {
     }[severity] || NODE_ICONS.info;
   }
 
-  getFileSeverityIcon(counts: ISeverityCounts): INodeIcon {
+  getFileSeverity(counts: ISeverityCounts): number {
     for (const s of [
       DEEPCODE_SEVERITIES.error,
       DEEPCODE_SEVERITIES.warning,
       DEEPCODE_SEVERITIES.information,
     ]) {
-      if (counts[s]) return this.getSeverityIcon(s);
+      if (counts[s]) return s;
     }
-    return this.getSeverityIcon(DEEPCODE_SEVERITIES.information);
+    return DEEPCODE_SEVERITIES.information;
   }
 
   getRootChildren(): Node[] {
     const review: Node[] = [];
-    if (this.extension.runningAnalysis) return [
-      new Node({
-        text: this.extension.analysisStatus,
-        description: this.processProgress(this.extension.analysisProgress),
-      })
-    ];
+    let nIssues = 0;
     if (!this.extension.analyzer.deepcodeReview) return review;
     this.extension.analyzer.deepcodeReview.forEach(
       (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
@@ -54,6 +63,7 @@ export class IssueProvider extends NodeProvider {
         const issues: Node[] = diagnostics.map((d) => {
           const severity = getDeepCodeSeverity(d.severity);
           ++counts[severity];
+          ++nIssues;
           const params: {
             text: string, icon: INodeIcon, issue: { uri: Uri, range?: Range }, children?: Node[]
           } = {
@@ -77,16 +87,32 @@ export class IssueProvider extends NodeProvider {
           }
           return new Node(params);
         });
+        const fileSeverity = this.getFileSeverity(counts);
         const file = new Node({
           text: filename,
-          description: `${dir} - ${diagnostics.length} issue${diagnostics.length > 1 ? 's' : ''}`,
-          icon: this.getFileSeverityIcon(counts),
+          description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
+          icon: this.getSeverityIcon(fileSeverity),
           issue: { uri },
           children: issues,
+          internal: {
+            nIssues: diagnostics.length,
+            severity: fileSeverity,
+          }
         });
         review.push(file);
       }
     );
+    review.sort(this.compareNodes);
+    if (this.extension.runningAnalysis) {
+      review.unshift(new Node({
+        text: this.extension.analysisStatus,
+        description: this.processProgress(this.extension.analysisProgress),
+      }));
+    } else {
+      review.unshift(new Node({
+        text: `DeepCode found ${nIssues} issue${nIssues === 1 ? '' : 's'}`,
+      }));
+    }
     return review;
   }
 }
