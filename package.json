@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode",
-  "version": "2.2.1",
+  "version": "3.0.0",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript.",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
@@ -61,7 +61,7 @@
           "deepcode.uploadApproved": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "User consent for code upload to `#deepcode.url#`",
+            "markdownDescription": "User consent for code upload to `#deepcode.url#` in agreement with our [terms and conditions](https://www.deepcode.ai/tc?utm_source=vsc)",
             "scope": "window"
           },
           "deepcode.yesCrashReport": {
@@ -81,14 +81,110 @@
         }
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "deepcode",
+          "title": "DeepCode",
+          "icon": "images/deepcode-logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "deepcode": [
+        {
+          "id": "deepcode.views.error",
+          "name": "DeepCode Extension",
+          "when": "deepcode:error"
+        },
+        {
+          "id": "deepcode.views.welcome",
+          "name": "DeepCode Extension",
+          "when": "!deepcode:error && !deepcode:loggedIn"
+        },
+        {
+          "id": "deepcode.views.tc",
+          "name": "DeepCode Extension",
+          "when": "!deepcode:error && deepcode:loggedIn && !deepcode:uploadApproved"
+        },
+        {
+          "id": "deepcode.views.empty",
+          "name": "DeepCode Extension",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
+        },
+        {
+          "id": "deepcode.views.analysis",
+          "name": "DeepCode Analysis",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
+        },
+        {
+          "id": "deepcode.views.support",
+          "name": "Help & feedback"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "deepcode.views.error",
+        "contents": "DeepCode is temporarily unavailable\nWe are automatically retrying to connect...",
+        "when": "deepcode:error == 'transient'"
+      },
+      {
+        "view": "deepcode.views.error",
+        "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2?utm_source=vsc)!",
+        "when": "deepcode:error != 'transient'"
+      },
+      {
+        "view": "deepcode.views.welcome",
+        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n👉 DeepCode's mission is to finds bugs, fast. Connect with DeepCode to start your first analysis!"
+      },
+      {
+        "view": "deepcode.views.tc",
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers(our [terms](https://www.deepcode.ai/tc?utm_source=vsc). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
+      },
+      {
+        "view": "deepcode.views.empty",
+        "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis."
+      },
+      {
+        "view": "deepcode.views.analysis",
+        "contents": "DeepCode analyzed your code and found no issue! 🎉"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "deepcode.start",
+          "when": "view == deepcode.views.analysis",
+          "group": "navigation"
+        },
+        {
+          "command": "deepcode.settings",
+          "when": "view != deepcode.views.support",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "deepcode.login",
+          "when": "!deepcode:loggedIn"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "deepcode.start",
-        "title": "DeepCode re-scan"
+        "title": "DeepCode re-scan",
+        "icon": "$(refresh)"
       },
       {
         "command": "deepcode.settings",
-        "title": "DeepCode settings"
+        "title": "DeepCode settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "deepcode.login",
+        "title": "DeepCode login"
       }
     ]
   },
@@ -106,7 +202,7 @@
     "@types/vscode": "^1.46.0",
     "@types/nock": "^11.1.0",
     "glob": "^7.1.6",
-    "mocha": "^8.0.1",
+    "mocha": "^8.1.1",
     "typescript": "^3.9.5",
     "eslint": "^7.3.1",
     "eslint-plugin-import": "^2.21.2",
@@ -118,10 +214,12 @@
     "nock": "^12.0.3"
   },
   "dependencies": {
+    "@deepcode/tsc": "^1.3.0",
+    "@types/lodash": "^4.14.159",
     "@types/mz": "^2.7.1",
     "ignore": "^5.1.8",
+    "lodash": "^4.17.19",
     "mz": "^2.7.0",
-    "open": "^7.0.4",
-    "@deepcode/tsc": "^1.3.0"
+    "open": "^7.0.4"
   }
 }

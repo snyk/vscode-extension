@@ -1,11 +1,14 @@
-import * as vscode from "vscode";
-
+import * as _ from "lodash";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { EXECUTION_DEBOUNCE_INTERVAL } from "../../constants/general";
 
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
+  private executing = false;
   
-  public activateAll(): void {
+  activateAll(): void {
     // this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
@@ -13,53 +16,30 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     this.analyzer.activate(this);
   }
 
+  private async executeExtensionPipeline(): Promise<void> {
+    console.log("DeepCode: starting execution pipeline");
+    setContext(DEEPCODE_CONTEXT.ERROR, false);
+    
+    const loggedIn = await this.checkSession();
+    if (!loggedIn) return;
+    const approved = await this.checkApproval();
+    if (!approved) return;
+    await this.startAnalysis();
+    
+    this.resetTransientErrors();
+  }
 
-  public async activateExtensionAnalyzeActions(): Promise<void> {
-
-    try{
-    // First, check logged in or not
-    let loggedIn = await this.checkSession();
-    if (!loggedIn) {
-      await this.initiateLogin();
-      loggedIn = await this.checkSession();
-      if (!loggedIn) {
-        return;
-      }
-    }
-
-    // Second, check user consent on sending files to server
-    if (!this.uploadApproved) {
-      await this.askUploadApproval();
-      if (!this.uploadApproved) {
-        return;
-      }
-    }
-
-    const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
-
-    if (!workspaceFolders || !workspaceFolders.length) {
-      return;
-    }
-
-    this.createWorkspacesList(workspaceFolders);
-
-    if (this.workspacesPaths.length) {
-      this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
-
-      await this.updateHashesBundles();
-
-      // Third, initiate analysis
+  startExtension = _.debounce(
+    async (): Promise<void> => {
+      // This function is called by commands, error handlers, etc.
+      // We should avoid having duplicate parallel executions.
       try {
-        // Main entry point to
-        for await (const path of this.workspacesPaths) {
-          await this.performBundlesActions(path);
-        }
-      } catch(err) {
-        await this.errorHandler.processError(this, err);
+        await this.executeExtensionPipeline();
+      } catch (err) {
+        this.processError(err);
       }
-    }
-  }catch(err) {
-    await this.errorHandler.processError(this, err);
-  }
-  }
+    },
+    EXECUTION_DEBOUNCE_INTERVAL,
+    { 'leading': true }
+  );
 }
