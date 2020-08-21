@@ -73,7 +73,6 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
         break;
       case DEEPCODE_MODE_CODES.AUTO:
       case DEEPCODE_MODE_CODES.MANUAL:
-      case DEEPCODE_MODE_CODES.PAUSED:
         if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
         this.startExtension = this.getDebouncedExecution(EXECUTION_DEBOUNCE_INTERVAL);
         break;
