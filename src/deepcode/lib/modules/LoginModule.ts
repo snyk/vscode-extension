@@ -17,7 +17,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
     this.pendingLogin = true;
     try {
-      setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+      await setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
       const result = await http.login(this.baseURL, this.source);
       const { sessionToken, loginURL } = result;
       if (!sessionToken || !loginURL) {
@@ -27,7 +27,9 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
       await viewInBrowser(loginURL);
       await this.waitLoginConfirmation();
     } catch (err) {
-      await this.processError(err, { message: errorsLogs.login });
+      await this.processError(err, {
+        message: errorsLogs.login
+      });
     } finally {
       this.pendingLogin = false;
     }
@@ -38,7 +40,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     if (this.token) {
       validSession = !!(await http.checkSession(this.baseURL, this.token));
     }
-    setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
+    await setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
     return validSession;
   }
 
@@ -57,13 +59,13 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
   async checkApproval(): Promise<boolean> {
     const approved = this.uploadApproved;
-    setContext(DEEPCODE_CONTEXT.APPROVED, approved);
+    await setContext(DEEPCODE_CONTEXT.APPROVED, approved);
     return approved;
   }
 
   async approveUpload(): Promise<void> {
-    this.setUploadApproved(true);
-    this.checkApproval();
+    await this.setUploadApproved(true);
+    await this.checkApproval();
   } 
 
 }
