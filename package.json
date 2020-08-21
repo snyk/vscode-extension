@@ -120,7 +120,7 @@
         {
           "id": "deepcode.views.actions",
           "name": "Actions",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved"
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
         },
         {
           "id": "deepcode.views.support",
@@ -157,18 +157,23 @@
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in manual mode.\n[Re-scan](command:deepcode.login)\nWants to r?\n[Switch to manual re-scan mode](command:deepcode.login)\nOnce manual re-scan mode is activated, results will not be updated unless you manully trigger the analysis.",
+        "contents": "You are currently running DeepCode in manual mode.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
         "when": "deepcode:mode == 'manual'"
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "DeepCode analysis is currently paused.\n[Unpause](command:deepcode.mode?%5B%auto%22%5D)",
-        "when": "deepcode:mode == 'pause'"
+        "contents": "DeepCode analysis is currently paused.\n[Unpause](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "when": "deepcode:mode == 'paused'"
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in a fully automated mode. Need to take control?\n[Switch to manual re-scan mode](command:deepcode.mode?%5B%manual%22%5D)\n[Pause DeepCode for 30 minutes](command:deepcode.mode?%5B%22pause%22%5D)",
-        "when": "deepcode:mode != 'manual' && deepcode:mode != 'pause'"
+        "contents": "You are currently running DeepCode in throttled mode. It scans your code every 30 minutes if it detects changes in your files.\n[Auto](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "when": "deepcode:mode == 'throttled'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause DeepCode for 30 minutes](command:deepcode.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:deepcode.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:deepcode.setmode?%5B%22throttled%22%5D)",
+        "when": "deepcode:mode != 'manual' && deepcode:mode != 'paused' && deepcode:mode != 'throttled'"
       }
     ],
     "menus": {

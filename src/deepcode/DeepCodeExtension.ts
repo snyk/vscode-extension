@@ -5,7 +5,8 @@ import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
 
 import {
-  DEEPCODE_START_COMMAND, 
+  DEEPCODE_START_COMMAND,
+  DEEPCODE_SETMODE_COMMAND,
   DEEPCODE_SETTINGS_COMMAND,
   DEEPCODE_LOGIN,
   DEEPCODE_APPROVE,
@@ -62,10 +63,17 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_START_COMMAND,
-        this.startExtension.bind(this)
+        this.startExtension.bind(this, true)
       )
     );
-
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_SETMODE_COMMAND,
+        this.setMode.bind(this)
+      )
+    );
+    
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETTINGS_COMMAND,
