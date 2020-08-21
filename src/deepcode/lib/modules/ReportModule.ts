@@ -45,19 +45,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     error: DeepCode.errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
-    const {
-      unauthorizedUser,
-      unauthorizedContent,
-      unauthorizedBundleAccess,
-      notFound,
-      serverError,
-      badGateway,
-      serviceUnavailable,
-      timeout
-    } = statusCodes;
-
     console.error("DeepCode error handler:", error);
-
+    
     if (error.error) {
       const { code, message } = error.error;
       // TODO: move it to 'tsc'
@@ -71,7 +60,18 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
       await this.sendErrorToServer(error, options);
       return this.generalErrorHandler();
     }
-
+    
+    const {
+      unauthorizedUser,
+      unauthorizedContent,
+      unauthorizedBundleAccess,
+      notFound,
+      serverError,
+      badGateway,
+      serviceUnavailable,
+      timeout
+    } = statusCodes;
+    
     switch (error.statusCode) {
       case unauthorizedContent:
       case unauthorizedBundleAccess:

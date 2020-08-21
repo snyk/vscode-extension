@@ -1,12 +1,14 @@
+import * as _ from "lodash";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
 import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { EXECUTION_DEBOUNCE_INTERVAL } from "../../constants/general";
 
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   private executing = false;
   
-  public activateAll(): void {
+  activateAll(): void {
     // this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
@@ -27,17 +29,17 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     this.resetTransientErrors();
   }
 
-  public async startExtension(): Promise<void> {
-    // This function is called by commands, error handlers, etc.
-    // We should avoid having duplicate parallel executions.
-    if (this.executing) return;
-    this.executing = true;
-    try {
-      await this.executeExtensionPipeline();
-      this.executing = false;
-    } catch (err) {
-      this.executing = false;
-      this.processError(err);
-    }
-  }
+  startExtension = _.debounce(
+    async (): Promise<void> => {
+      // This function is called by commands, error handlers, etc.
+      // We should avoid having duplicate parallel executions.
+      try {
+        await this.executeExtensionPipeline();
+      } catch (err) {
+        this.processError(err);
+      }
+    },
+    EXECUTION_DEBOUNCE_INTERVAL,
+    { 'leading': true }
+  );
 }

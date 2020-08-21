@@ -213,6 +213,7 @@ namespace DeepCode {
   }
 
   export interface BundlesModuleInterface {
+    readonly runningAnalysis: boolean;
     startAnalysis(): Promise<void>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;

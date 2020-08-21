@@ -16,11 +16,9 @@ import { openDeepcodeSettingsCommand } from "./utils/vscodeCommandsUtils";
 
 import {
   DEEPCODE_VIEW_SUPPORT,
-  DEEPCODE_VIEW_PROGRESS,
   DEEPCODE_VIEW_ANALYSIS,
 } from "./constants/views";
 import { SupportProvider } from "./view/SupportProvider";
-import { ProgressProvider } from "./view/ProgressProvider";
 import { IssueProvider } from "./view/IssueProvider";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
@@ -78,11 +76,6 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     vscode.window.registerTreeDataProvider(
       DEEPCODE_VIEW_SUPPORT, 
       new SupportProvider(this)
-    );
-
-    vscode.window.registerTreeDataProvider(
-      DEEPCODE_VIEW_PROGRESS, 
-      new ProgressProvider(this)
     );
 
     vscode.window.registerTreeDataProvider(

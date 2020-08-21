@@ -1,6 +1,6 @@
 import { Uri, Range, Diagnostic } from 'vscode';
 import { NodeProvider } from './NodeProvider';
-import { Node } from './Node';
+import { Node, INodeIcon, NODE_ICONS } from './Node';
 import { getDeepCodeSeverity } from "../utils/analysisUtils";
 import { DEEPCODE_SEVERITIES } from "../constants/analysis";
 
@@ -9,48 +9,46 @@ interface ISeverityCounts {
 }
 
 export class IssueProvider extends NodeProvider {
-  getSymbolTextSpacing(): string {
-    return "   ";
+  compareNodes(n1: Node, n2: Node): number {
+    if (n2.internal.severity - n1.internal.severity) return n2.internal.severity - n1.internal.severity;
+    if (n2.internal.nIssues - n1.internal.nIssues) return n2.internal.nIssues - n1.internal.nIssues;
+    if (n1.label && n2.label) {
+      if (n1.label < n2.label) return -1;
+      if (n1.label > n2.label) return 1;
+    }
+    if (n1.description && n2.description) {
+      if (n1.description < n2.description) return -1;
+      if (n1.description > n2.description) return 1;
+    }
+    return 0;
   }
   
-  getSuperscriptNumber(n: number): string {
-    let res = "";
-    const nDigits = Math.round(n).toString().split('');
-    const digitMap: { [digit: string]: string } = {
-      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-    };
-    for (const d of nDigits) res += digitMap[d] || "";
-    return res;
+  processProgress(progress: number): string {
+    return `${Math.round(100*progress)}%`;
   }
 
-  getSeveritySymbol(severity: number): string {
+  getSeverityIcon(severity: number): INodeIcon {
     return {
-      [DEEPCODE_SEVERITIES.error]: "❌",
-      [DEEPCODE_SEVERITIES.warning]: "⚠️",
-      [DEEPCODE_SEVERITIES.information]: "ℹ️",
-    }[severity] || "💡";
+      [DEEPCODE_SEVERITIES.error]: NODE_ICONS.critical,
+      [DEEPCODE_SEVERITIES.warning]: NODE_ICONS.warning,
+      [DEEPCODE_SEVERITIES.information]: NODE_ICONS.info,
+    }[severity] || NODE_ICONS.info;
   }
 
-  getIssueText(text: string, severity: number): string {
-    return `${this.getSeveritySymbol(severity)}${this.getSymbolTextSpacing()}${text}`;
-  }
-
-  getFileText(text: string, counts: ISeverityCounts ): string {
-    let res = "";
+  getFileSeverity(counts: ISeverityCounts): number {
     for (const s of [
       DEEPCODE_SEVERITIES.error,
       DEEPCODE_SEVERITIES.warning,
       DEEPCODE_SEVERITIES.information,
     ]) {
-      if (counts[s]) res += `${this.getSeveritySymbol(s)}${this.getSuperscriptNumber(counts[s])} `;
+      if (counts[s]) return s;
     }
-    res += `${this.getSymbolTextSpacing()}${text}`;
-    return res;
+    return DEEPCODE_SEVERITIES.information;
   }
 
   getRootChildren(): Node[] {
     const review: Node[] = [];
+    let nIssues = 0;
     if (!this.extension.analyzer.deepcodeReview) return review;
     this.extension.analyzer.deepcodeReview.forEach(
       (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
@@ -65,10 +63,12 @@ export class IssueProvider extends NodeProvider {
         const issues: Node[] = diagnostics.map((d) => {
           const severity = getDeepCodeSeverity(d.severity);
           ++counts[severity];
+          ++nIssues;
           const params: {
-            text: string, issue: { uri: Uri, range?: Range }, children?: Node[]
+            text: string, icon: INodeIcon, issue: { uri: Uri, range?: Range }, children?: Node[]
           } = {
-            text: this.getIssueText(d.message, severity),
+            text: d.message,
+            icon: this.getSeverityIcon(severity),
             issue: {
               uri,
               range: d.range
@@ -87,15 +87,32 @@ export class IssueProvider extends NodeProvider {
           }
           return new Node(params);
         });
+        const fileSeverity = this.getFileSeverity(counts);
         const file = new Node({
-          text: this.getFileText(filename, counts),
-          description: dir,
+          text: filename,
+          description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
+          icon: this.getSeverityIcon(fileSeverity),
           issue: { uri },
           children: issues,
+          internal: {
+            nIssues: diagnostics.length,
+            severity: fileSeverity,
+          }
         });
         review.push(file);
       }
     );
+    review.sort(this.compareNodes);
+    if (this.extension.runningAnalysis) {
+      review.unshift(new Node({
+        text: this.extension.analysisStatus,
+        description: this.processProgress(this.extension.analysisProgress),
+      }));
+    } else {
+      review.unshift(new Node({
+        text: `DeepCode found ${nIssues} issue${nIssues === 1 ? '' : 's'}`,
+      }));
+    }
     return review;
   }
 }

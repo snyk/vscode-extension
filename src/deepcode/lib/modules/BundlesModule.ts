@@ -15,7 +15,7 @@ abstract class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   private rootPath = "";
 
-  private throttledProgress = 0;
+  runningAnalysis = false;
 
   files: string[] = [];
   serviceAI = http.getServiceAI();
@@ -40,18 +40,14 @@ abstract class BundlesModule extends LoginModule
     this.refreshViews();
   }
 
-  // Avoid refreshing context/views too often:
-  // https://github.com/Microsoft/vscode/issues/68424
-  throttledUpdateStatus = _.throttle(this.updateStatus.bind(this), 200);
-
   
   onCollectBundleProgress(value: number) {
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
   }
 
   onBuildBundleProgress(processed: number, total: number) {
     console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
   }
 
   onBuildBundleFinish() {
@@ -61,7 +57,7 @@ abstract class BundlesModule extends LoginModule
 
   onUploadBundleProgress(processed: number, total: number) {
     console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
-    this.throttledUpdateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
   }
 
   onUploadBundleFinish() {
@@ -76,7 +72,6 @@ abstract class BundlesModule extends LoginModule
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
-    setContext(DEEPCODE_CONTEXT.COMPLETED, true);
     type ResultFiles = {
       [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
     };
@@ -101,13 +96,12 @@ abstract class BundlesModule extends LoginModule
 
     result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
-
-    return Promise.resolve();
+    this.terminateAnalysis();
+    this.refreshViews();
   }
 
   onError(error: Error) {
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
-    setContext(DEEPCODE_CONTEXT.ERROR, true);
+    this.terminateAnalysis();
     this.processError(error);
   }
 
@@ -141,12 +135,17 @@ abstract class BundlesModule extends LoginModule
     this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
   }
 
+  private terminateAnalysis(): void {
+    this.serviceAI.removeListeners();
+    this.runningAnalysis = false;
+  }
+
   public async performBundlesActions(path: string): Promise<void> {
-    setContext(DEEPCODE_CONTEXT.COMPLETED, false);
+    if (this.runningAnalysis) return;
+    this.runningAnalysis = true;
+
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
-      this.filesWatcher.activate(this);
-
       if (!Object.keys(this.serverFilesFilterList).length) {
         this.processError(new Error(errorsLogs.filtersFiles), {
           message: errorsLogs.filtersFiles,
@@ -156,6 +155,7 @@ abstract class BundlesModule extends LoginModule
         });
         return;
       }
+      this.filesWatcher.activate(this);
     }
 
     if (!this.token || !this.uploadApproved) {
@@ -186,12 +186,10 @@ abstract class BundlesModule extends LoginModule
     this.serviceAI.on(
       BUNDLE_EVENTS.analyseFinish,
       (analysisResults: IQueueAnalysisCheckResult) => {
-        this.serviceAI.removeListeners();
         this.onAnalyseFinish(analysisResults);
       }
     );
     this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-      this.serviceAI.removeListeners();
       this.onError(error);
     });
 
