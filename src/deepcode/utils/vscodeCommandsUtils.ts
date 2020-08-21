@@ -6,6 +6,7 @@ import {
   DEEPCODE_CONTEXT_PREFIX,
   DEEPCODE_OPEN_BROWSER,
 } from "../constants/commands";
+import { createDCIgnore } from "./filesUtils"
 
 export const openDeepcodeSettingsCommand = (): void => {
   vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, DEEPCODE_EXTENSION_NAME);
@@ -22,4 +23,10 @@ export const setContext = (key: string, value: unknown): void => {
 
 export const viewInBrowser = (url: string): void => {
   vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER, url);
+};
+
+export const createDCIgnoreCommand = (custom = false, path?: string): void => {
+  path = path || vscode.workspace.rootPath;
+  if (!path) return;
+  createDCIgnore(path, custom).catch(console.error);
 };
