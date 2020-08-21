@@ -38,7 +38,13 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
   async checkSession(): Promise<boolean> {
     let validSession = false;
     if (this.token) {
-      validSession = !!(await http.checkSession(this.baseURL, this.token));
+      try {
+        validSession = !!(await http.checkSession(this.baseURL, this.token));
+      } catch (err) {
+        this.processError(err, {
+          message: errorsLogs.loginStatus
+        });
+      }
     }
     await setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
     return validSession;

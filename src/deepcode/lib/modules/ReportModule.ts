@@ -24,21 +24,37 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
 
   async sendError(options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
-    await http.sendError(this.baseURL, {
-      source: this.source,
-      ...(this.token && { sessionToken: this.token }),
-      ...options
-    });
+    try {
+      await http.sendError(this.baseURL, {
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      console.error(error);
+    }
   }
 
   async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
-    await http.sendEvent(this.baseURL, {
-      type: event,
-      source: this.source,
-      ...(this.token && { sessionToken: this.token }),
-      ...options
-    });
+    try {
+      await http.sendEvent(this.baseURL, {
+        type: event,
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      this.processError(error, {
+        message: errorsLogs.sendEvent,
+        data: {
+          event,
+          source: this.source,
+          ...(this.token && { sessionToken: this.token }),
+          ...options
+        },
+      });
+    }
   }
 
   async processError(

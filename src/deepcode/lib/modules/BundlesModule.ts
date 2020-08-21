@@ -134,7 +134,13 @@ abstract class BundlesModule extends LoginModule
 
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
-    this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    try {
+      this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    } catch (err) {
+      this.processError(err, {
+        message: errorsLogs.filtersFiles
+      })
+    }
   }
 
   private terminateAnalysis(): void {
@@ -195,7 +201,11 @@ abstract class BundlesModule extends LoginModule
       this.onError(error);
     });
 
-    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch((error) => this.onError(error));
+    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(
+      (error) => this.processError(error, {
+        message: errorsLogs.analyse
+      })
+    );
   }
 
   private async startCollectingFiles(
