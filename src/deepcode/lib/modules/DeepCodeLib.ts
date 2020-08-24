@@ -3,6 +3,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
 import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from "../../constants/views";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { 
   EXECUTION_DEBOUNCE_INTERVAL,
   EXECUTION_THROTTLING_INTERVAL,
@@ -42,7 +43,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
 
   private async executeExtensionPipeline(): Promise<void> {
     console.log("DeepCode: starting execution pipeline");
-    setContext(DEEPCODE_CONTEXT.ERROR, false);
+    await setContext(DEEPCODE_CONTEXT.ERROR, false);
     
     const loggedIn = await this.checkSession();
     if (!loggedIn) return;
@@ -69,7 +70,9 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
       try {
         await this.executeExtensionPipeline();
       } catch (err) {
-        this.processError(err);
+        this.processError(err, {
+          message: errorsLogs.failedExecutionDebounce,
+        });
       }
     },
     EXECUTION_DEBOUNCE_INTERVAL,

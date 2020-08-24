@@ -67,7 +67,7 @@ abstract class BundlesModule extends LoginModule
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
     console.log("ANALYSE PROGRESS");
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 0.5);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, analysisResults.progress);
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
@@ -102,7 +102,9 @@ abstract class BundlesModule extends LoginModule
 
   onError(error: Error) {
     this.terminateAnalysis();
-    this.processError(error);
+    this.processError(error, {
+      message: errorsLogs.failedServiceAI,
+    });
   }
 
   // processing workspaces
@@ -132,7 +134,13 @@ abstract class BundlesModule extends LoginModule
 
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
-    this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    try {
+      this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    } catch (err) {
+      this.processError(err, {
+        message: errorsLogs.filtersFiles
+      })
+    }
   }
 
   private terminateAnalysis(): void {
@@ -193,7 +201,11 @@ abstract class BundlesModule extends LoginModule
       this.onError(error);
     });
 
-    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch((error) => this.onError(error));
+    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(
+      (error) => this.processError(error, {
+        message: errorsLogs.analyse
+      })
+    );
   }
 
   private async startCollectingFiles(
@@ -274,14 +286,14 @@ abstract class BundlesModule extends LoginModule
     try {
       const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || !workspaceFolders.length) {
-        setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
         return;
       }
 
       this.createWorkspacesList(workspaceFolders);
 
       if (this.workspacesPaths.length) {
-        setContext(DEEPCODE_CONTEXT.ANALYZING, true);
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, true);
         this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
 
         await this.updateHashesBundles();
@@ -289,10 +301,12 @@ abstract class BundlesModule extends LoginModule
           await this.performBundlesActions(path);
         }
       } else {
-        setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
       }
     } catch(err) {
-      await this.processError(err);
+      await this.processError(err, {
+        message: errorsLogs.failedAnalysis,
+      });
     }
   }
 }

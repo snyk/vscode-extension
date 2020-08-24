@@ -74,7 +74,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   get uploadApproved(): boolean {
-    return this.staticUploadApproved || this.source !== IDE_NAME || !!(vscode.workspace.getConfiguration('deepcode').get('uploadApproved'));
+    return this.staticUploadApproved || this.source !== IDE_NAME || !!(vscode.workspace.getConfiguration('deepcode').get<boolean>('uploadApproved'));
   }
 
   async setUploadApproved(value = true): Promise<void> {
@@ -82,11 +82,11 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   get shouldReportErrors(): boolean {
-    return !!vscode.workspace.getConfiguration('deepcode').get('yesCrashReport');
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesCrashReport');
   }
 
   get shouldReportEvents(): boolean {
-    return !!vscode.workspace.getConfiguration('deepcode').get('yesTelemetry');
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesTelemetry');
   }
 
   // Avoid refreshing context/views too often:
