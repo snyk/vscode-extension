@@ -14,6 +14,7 @@ import {
   DEEPCODE_OPEN_LOCAL,
 } from "./constants/commands";
 import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from "./utils/vscodeCommandsUtils";
+import { errorsLogs } from "./messages/errorsServerLogMessages";
 
 import {
   DEEPCODE_VIEW_SUPPORT,
@@ -23,13 +24,31 @@ import { SupportProvider } from "./view/SupportProvider";
 import { IssueProvider } from "./view/IssueProvider";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
+  private async executeCommand(
+    name: string,
+    fn: (...args: any[]) => Promise<any>,
+    ...args: any[]
+  ): Promise<any> {
+    try {
+      await fn(...args);
+    } catch (error) {
+      this.processError(error, {
+        message: errorsLogs.command(name),
+      });
+    }
+  }
+  
   public activate(context: vscode.ExtensionContext): void {
     this.statusBarItem.show();
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_OPEN_BROWSER,
-        (url: string) => open(url)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_OPEN_BROWSER,
+          (url: string) => open(url)
+        )
       )
     );
 
@@ -37,10 +56,10 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       vscode.commands.registerCommand(
         DEEPCODE_OPEN_LOCAL,
         (path: vscode.Uri, range?: vscode.Range) => {
-          console.log("DEEPCODE_OPEN_LOCAL",path.toString());
           vscode.window.showTextDocument(path, { selection: range }).then(
-            (f) => console.log(f), 
-            (err) => console.error(err)
+            () => {}, (err) => this.processError(err, {
+              message: errorsLogs.command(DEEPCODE_OPEN_LOCAL),
+            })
           );
         }
       )
@@ -49,28 +68,44 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_LOGIN,
-        this.initiateLogin.bind(this)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_LOGIN,
+          this.initiateLogin.bind(this)
+        )
       )
     );
     
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_APPROVE,
-        this.approveUpload.bind(this)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_APPROVE,
+          this.approveUpload.bind(this)
+        )
       )
     );
     
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_START_COMMAND,
-        this.startExtension.bind(this)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_START_COMMAND,
+          this.startExtension.bind(this)
+        )
       )
     );
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETTINGS_COMMAND,
-        openDeepcodeSettingsCommand
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_SETTINGS_COMMAND,
+          openDeepcodeSettingsCommand
+        )
       )
     );
 
@@ -92,7 +127,9 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     );
 
     this.activateAll();
-    this.startExtension();
+    this.startExtension().catch((err) => this.processError(err, {
+      message: errorsLogs.failedExecution,
+    }));
   }
 
 }
