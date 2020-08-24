@@ -157,7 +157,7 @@
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in manual mode.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running DeepCode in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
         "when": "deepcode:mode == 'manual'"
       },
       {
@@ -167,7 +167,7 @@
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in throttled mode. It scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running DeepCode in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
         "when": "deepcode:mode == 'throttled'"
       },
       {

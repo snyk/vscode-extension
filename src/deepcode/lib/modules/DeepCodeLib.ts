@@ -5,7 +5,7 @@ import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from "../../constants/views";
 import { 
   EXECUTION_DEBOUNCE_INTERVAL,
-  EXECUTION_DEBOUNCE_EXTENDED_INTERVAL,
+  EXECUTION_THROTTLING_INTERVAL,
   EXECUTION_PAUSE_INTERVAL, 
 } from "../../constants/general";
 
@@ -13,16 +13,16 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
   private _mode = DEEPCODE_MODE_CODES.AUTO;
   // Platform-independant type definition.
   private _unpauseTimeout: ReturnType<typeof setTimeout> | undefined;
-  private _lastExecution: number | undefined;
+  private _lastThrottledExecution: number | undefined;
 
   private shouldBeThrottled(): boolean {
     if (this._mode !== DEEPCODE_MODE_CODES.THROTTLED) return false;
     const now = Date.now();
     if (
-      this._lastExecution === undefined || 
-      (now - this._lastExecution) >= EXECUTION_DEBOUNCE_EXTENDED_INTERVAL
+      this._lastThrottledExecution === undefined || 
+      (now - this._lastThrottledExecution) >= EXECUTION_THROTTLING_INTERVAL
     ) {
-      this._lastExecution = now;
+      this._lastThrottledExecution = now;
       return false;
     }
     return true;
