@@ -167,7 +167,7 @@
       },
       {
         "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in throttled mode. It scans your code every 30 minutes if it detects changes in your files.\n[Auto](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running DeepCode in throttled mode. It scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
         "when": "deepcode:mode == 'throttled'"
       },
       {

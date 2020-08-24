@@ -13,8 +13,22 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
   private _mode = DEEPCODE_MODE_CODES.AUTO;
   // Platform-independant type definition.
   private _unpauseTimeout: ReturnType<typeof setTimeout> | undefined;
+  private _lastExecution: number | undefined;
 
-  private unpause() {
+  private shouldBeThrottled(): boolean {
+    if (this._mode !== DEEPCODE_MODE_CODES.THROTTLED) return false;
+    const now = Date.now();
+    if (
+      this._lastExecution === undefined || 
+      (now - this._lastExecution) >= EXECUTION_DEBOUNCE_EXTENDED_INTERVAL
+    ) {
+      this._lastExecution = now;
+      return false;
+    }
+    return true;
+  }
+  
+  private unpause(): void {
     if (this._mode === DEEPCODE_MODE_CODES.PAUSED) this.setMode(DEEPCODE_MODE_CODES.AUTO);
   }
   
@@ -39,28 +53,28 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     this.resetTransientErrors();
   }
 
-  private getDebouncedExecution(wait: number) {
-    return _.debounce(
-      async (manual = false): Promise<void> => {
-        // If the execution is suspended, we only allow user-triggered analyses.
-        if (!manual && [
-          DEEPCODE_MODE_CODES.MANUAL,
-          DEEPCODE_MODE_CODES.PAUSED
-        ].includes(this._mode)) return;
-        // This function is called by commands, error handlers, etc.
-        // We should avoid having duplicate parallel executions.
-        try {
-          await this.executeExtensionPipeline();
-        } catch (err) {
-          this.processError(err);
-        }
-      },
-      wait,
-      { 'leading': true }
-    );
-  }
-
-  startExtension = this.getDebouncedExecution(EXECUTION_DEBOUNCE_INTERVAL);
+  // This function is called by commands, error handlers, etc.
+  // We should avoid having duplicate parallel executions.
+  startExtension = _.debounce(
+    async (manual = false): Promise<void> => {
+      // If the execution is suspended, we only allow user-triggered analyses.
+      if (!manual) {
+        if ([
+            DEEPCODE_MODE_CODES.MANUAL,
+            DEEPCODE_MODE_CODES.PAUSED
+          ].includes(this._mode) || 
+          this.shouldBeThrottled()
+        ) return;
+      }
+      try {
+        await this.executeExtensionPipeline();
+      } catch (err) {
+        this.processError(err);
+      }
+    },
+    EXECUTION_DEBOUNCE_INTERVAL,
+    { 'leading': true }
+  );
 
   setMode(mode: string): void {
     if (!Object.values(DEEPCODE_MODE_CODES).includes(mode)) return;
@@ -69,16 +83,11 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     switch(mode) {
       case DEEPCODE_MODE_CODES.PAUSED:
         this._unpauseTimeout = setTimeout(this.unpause.bind(this), EXECUTION_PAUSE_INTERVAL);
-        this.startExtension = this.getDebouncedExecution(EXECUTION_DEBOUNCE_INTERVAL);
         break;
       case DEEPCODE_MODE_CODES.AUTO:
       case DEEPCODE_MODE_CODES.MANUAL:
-        if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
-        this.startExtension = this.getDebouncedExecution(EXECUTION_DEBOUNCE_INTERVAL);
-        break;
       case DEEPCODE_MODE_CODES.THROTTLED:
         if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
-        this.startExtension = this.getDebouncedExecution(EXECUTION_DEBOUNCE_EXTENDED_INTERVAL);
         break;
     }
   }
