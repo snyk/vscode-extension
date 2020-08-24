@@ -24,21 +24,37 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
 
   async sendError(options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
-    await http.sendError(this.baseURL, {
-      source: this.source,
-      ...(this.token && { sessionToken: this.token }),
-      ...options
-    });
+    try {
+      await http.sendError(this.baseURL, {
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      console.error(error);
+    }
   }
 
   async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
-    await http.sendEvent(this.baseURL, {
-      type: event,
-      source: this.source,
-      ...(this.token && { sessionToken: this.token }),
-      ...options
-    });
+    try {
+      await http.sendEvent(this.baseURL, {
+        type: event,
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      this.processError(error, {
+        message: errorsLogs.sendEvent,
+        data: {
+          event,
+          source: this.source,
+          ...(this.token && { sessionToken: this.token }),
+          ...options
+        },
+      });
+    }
   }
 
   async processError(
@@ -79,27 +95,29 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
       case badGateway:
       case serviceUnavailable:
       case timeout:
-        return this.connectionErrorHandler();
+        await this.connectionErrorHandler();
       case unauthorizedUser:
       case notFound:
       default:
         await this.sendErrorToServer(error, options);
-        return this.generalErrorHandler();
+        await this.generalErrorHandler();
     }
   }
 
-  private generalErrorHandler(): void {
+  private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
-    setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.BLOCKING);
+    await setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.BLOCKING);
   }
 
-  private connectionErrorHandler(): void {
+  private async connectionErrorHandler(): Promise<void> {
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
     
     ++this.transientErrors;
-    setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
-    setTimeout(async () => {
-      this.startExtension();
+    await setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
+    setTimeout(() => {
+      this.startExtension().catch((err) => this.processError(err, {
+        message: errorsLogs.failedExecutionTransient,
+      }));
     }, 5000);
   }
 
@@ -131,6 +149,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
         }
       });
     } catch (e) {
+      console.error(errorsLogs.errorReportFail);
       console.error(e);
     }
   }
