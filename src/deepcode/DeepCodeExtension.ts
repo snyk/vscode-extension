@@ -7,12 +7,13 @@ import DeepCodeLib from "./lib/modules/DeepCodeLib";
 import {
   DEEPCODE_START_COMMAND, 
   DEEPCODE_SETTINGS_COMMAND,
+  DEEPCODE_DCIGNORE_COMMAND,
   DEEPCODE_LOGIN,
   DEEPCODE_APPROVE,
   DEEPCODE_OPEN_BROWSER,
   DEEPCODE_OPEN_LOCAL,
 } from "./constants/commands";
-import { openDeepcodeSettingsCommand } from "./utils/vscodeCommandsUtils";
+import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from "./utils/vscodeCommandsUtils";
 import { errorsLogs } from "./messages/errorsServerLogMessages";
 
 import {
@@ -105,6 +106,13 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
           DEEPCODE_SETTINGS_COMMAND,
           openDeepcodeSettingsCommand
         )
+      )
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_DCIGNORE_COMMAND,
+        createDCIgnoreCommand
       )
     );
 
