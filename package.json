@@ -145,7 +145,7 @@
       },
       {
         "view": "deepcode.views.tc",
-        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers(our [terms](https://www.deepcode.ai/tc?utm_source=vsc). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers (our [terms](https://www.deepcode.ai/tc?utm_source=vsc)). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
       },
       {
         "view": "deepcode.views.empty",
