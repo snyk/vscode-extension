@@ -4,8 +4,8 @@ import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { setContext } from "../../utils/vscodeCommandsUtils";
-import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
-import { MAX_CONNECTION_RETRIES } from "../../constants/general";
+import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES, DEEPCODE_VIEW_ERROR } from "../../constants/views";
+import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
 abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.ReportModuleInterface {
   private transientErrors = 0;
@@ -45,7 +45,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
         ...options
       });
     } catch(error) {
-      this.processError(error, {
+      await this.processError(error, {
         message: errorsLogs.sendEvent,
         data: {
           event,
@@ -58,6 +58,17 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   }
 
   async processError(
+    error: DeepCode.errorType,
+    options: { [key: string]: any } = {}
+  ): Promise<void> {
+    // We don't want to have unhandled rejections around, so if it
+    // happens in the error handler we just log it to console.error
+    return this.processErrorInternal(error, options).catch((error) =>
+      console.error("DeepCode error handler failed with error:", error)
+    );
+  }
+
+  private async processErrorInternal(
     error: DeepCode.errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
@@ -89,24 +100,25 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     } = statusCodes;
     
     switch (error.statusCode) {
-      case unauthorizedContent:
-      case unauthorizedBundleAccess:
       case serverError:
       case badGateway:
       case serviceUnavailable:
       case timeout:
-        await this.connectionErrorHandler();
+        return this.connectionErrorHandler();
+      case unauthorizedContent:
+      case unauthorizedBundleAccess:
       case unauthorizedUser:
       case notFound:
       default:
         await this.sendErrorToServer(error, options);
-        await this.generalErrorHandler();
+        return this.generalErrorHandler();
     }
   }
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
     await setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.BLOCKING);
+    await this.setLoadingBadge(DEEPCODE_VIEW_ERROR);
   }
 
   private async connectionErrorHandler(): Promise<void> {
@@ -118,7 +130,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
       this.startExtension().catch((err) => this.processError(err, {
         message: errorsLogs.failedExecutionTransient,
       }));
-    }, 5000);
+    }, CONNECTION_ERROR_RETRY_INTERVAL);
   }
 
   private async sendErrorToServer(

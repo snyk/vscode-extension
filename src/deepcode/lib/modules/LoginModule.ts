@@ -2,7 +2,11 @@ import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
-import { DEEPCODE_CONTEXT } from "../../constants/views";
+import {
+  DEEPCODE_VIEW_WELCOME,
+  DEEPCODE_VIEW_TC,
+  DEEPCODE_CONTEXT
+} from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
@@ -17,7 +21,8 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
     this.pendingLogin = true;
     try {
-      await setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+      const checkCurrentToken = await this.checkSession();
+      if (checkCurrentToken) return;
       const result = await http.login(this.baseURL, this.source);
       const { sessionToken, loginURL } = result;
       if (!sessionToken || !loginURL) {
@@ -40,8 +45,9 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     if (this.token) {
       try {
         validSession = !!(await http.checkSession(this.baseURL, this.token));
+        if (!validSession) await this.setLoadingBadge(DEEPCODE_VIEW_WELCOME);
       } catch (err) {
-        this.processError(err, {
+        await this.processError(err, {
           message: errorsLogs.loginStatus
         });
       }
@@ -66,11 +72,13 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
   async checkApproval(): Promise<boolean> {
     const approved = this.uploadApproved;
     await setContext(DEEPCODE_CONTEXT.APPROVED, approved);
+    if (!approved) await this.setLoadingBadge(DEEPCODE_VIEW_TC);
     return approved;
   }
 
   async approveUpload(): Promise<void> {
     await this.setUploadApproved(true);
+    await this.setLoadingBadge();
     await this.checkApproval();
   } 
 

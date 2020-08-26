@@ -8,6 +8,7 @@ import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   currentWorkspacePath: string;
@@ -26,6 +27,8 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   refreshViewEmitter: vscode.EventEmitter<any>;
 	analysisStatus = '';
   analysisProgress = 0;
+  private progressBadgePromise: Promise<void> | undefined;
+  private progressBadgeResolveFn: (() => void) | undefined;
 
   // These attributes are used in tests
   staticToken = '';
@@ -87,6 +90,34 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   get shouldReportEvents(): boolean {
     return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesTelemetry');
+  }
+
+  private getProgressBadgePromise(): Promise<void> {
+    if (this.progressBadgePromise === undefined) {
+      // This should not be needed, but we resolve pending Promises 
+      // before overwriting the progressBadgeResolveFn reference.
+      if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
+      this.progressBadgePromise = new Promise(
+        (resolve) => {
+          this.progressBadgeResolveFn = resolve;
+        }
+      );
+    }
+    return this.progressBadgePromise;
+  }
+
+  // Leave viewId undefined to remove the badge from all views
+  async setLoadingBadge(viewId?: string): Promise<void> {
+    if (viewId) {
+      await vscode.window.withProgress(
+        { location: { viewId } },
+        this.getProgressBadgePromise.bind(this)
+      );
+    } else {
+      if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
+      this.progressBadgePromise = undefined;
+      this.progressBadgeResolveFn = undefined;
+    }
   }
 
   // Avoid refreshing context/views too often:
