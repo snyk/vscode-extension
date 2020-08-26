@@ -84,7 +84,6 @@ abstract class BundlesModule extends LoginModule
         .suggestions as DeepCode.AnalysisSuggestionsInterface,
       success: true
     } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
-    console.log("Analysis Result is ready with results --> ", analysisResults);
 
     const analysedFiles: ResultFiles = {};
 
@@ -223,7 +222,7 @@ abstract class BundlesModule extends LoginModule
         onProgress: this.onCollectBundleProgress.bind(this),
       }
     });
-    console.warn(`Processed ${bundle.length} files`);
+    console.warn(`Found ${bundle.length} files`);
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
     return bundle;
   }

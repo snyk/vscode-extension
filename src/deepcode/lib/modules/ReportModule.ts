@@ -63,8 +63,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   ): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it to console.error
-    return this.processErrorInternal(error, options).catch((error) =>
-      console.error("DeepCode error handler failed with error:", error)
+    return this.processErrorInternal(error, options).catch(error =>
+      console.error(`DeepCode error handler failed with error: ${error}`)
     );
   }
 
@@ -72,7 +72,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     error: DeepCode.errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
-    console.error("DeepCode error handler:", error);
+    console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
     
     if (error.error) {
       const { code, message } = error.error;

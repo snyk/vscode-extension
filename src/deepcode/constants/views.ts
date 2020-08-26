@@ -30,7 +30,7 @@ export const DEEPCODE_MODE_CODES = {
 
 export const DEEPCODE_ANALYSIS_STATUS = {
   COLLECTING: "Collecting files",
-  HASHING: "Hashing files",
+  HASHING: "Indexing files",
   UPLOADING: "Uploading files",
   ANALYZING: "Analyzing files",
 };
