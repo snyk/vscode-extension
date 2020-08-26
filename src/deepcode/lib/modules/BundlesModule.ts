@@ -102,6 +102,7 @@ abstract class BundlesModule extends LoginModule
 
   onError(error: Error) {
     this.terminateAnalysis();
+    // no need to wait for processError since onError is called asynchronously as well
     this.processError(error, {
       message: errorsLogs.failedServiceAI,
     });
@@ -137,7 +138,7 @@ abstract class BundlesModule extends LoginModule
     try {
       this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
     } catch (err) {
-      this.processError(err, {
+      await this.processError(err, {
         message: errorsLogs.filtersFiles
       })
     }
@@ -155,7 +156,7 @@ abstract class BundlesModule extends LoginModule
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
       if (!Object.keys(this.serverFilesFilterList).length) {
-        this.processError(new Error(errorsLogs.filtersFiles), {
+        await this.processError(new Error(errorsLogs.filtersFiles), {
           message: errorsLogs.filtersFiles,
           data: {
             filters: this.serverFilesFilterList
@@ -202,6 +203,7 @@ abstract class BundlesModule extends LoginModule
     });
 
     http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(
+      // no need to wait for processError since catch is called asynchronously as well
       (error) => this.processError(error, {
         message: errorsLogs.analyse
       })

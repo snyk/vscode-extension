@@ -219,7 +219,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.setIssuesMarkersDecoration();
       }
     } catch (err) {
-      extension.processError(err, {
+      await extension.processError(err, {
         message: errorsLogs.updateReviewPositions,
         bundleId: (extension.remoteBundles[updatedFile.workspace] || {}).bundleId,
         data: {

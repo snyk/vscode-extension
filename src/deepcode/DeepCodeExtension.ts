@@ -33,7 +33,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     try {
       await fn(...args);
     } catch (error) {
-      this.processError(error, {
+      await this.processError(error, {
         message: errorsLogs.command(name),
       });
     }
@@ -58,6 +58,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         DEEPCODE_OPEN_LOCAL,
         (path: vscode.Uri, range?: vscode.Range) => {
           vscode.window.showTextDocument(path, { selection: range }).then(
+            // no need to wait for processError since then is called asynchronously as well
             () => {}, (err) => this.processError(err, {
               message: errorsLogs.command(DEEPCODE_OPEN_LOCAL),
             })
@@ -102,7 +103,11 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETMODE_COMMAND,
-        this.setMode.bind(this)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_SETMODE_COMMAND,
+          this.setMode.bind(this)
+        )
       )
     );
     
@@ -120,7 +125,11 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_DCIGNORE_COMMAND,
-        createDCIgnoreCommand
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_DCIGNORE_COMMAND,
+          createDCIgnoreCommand
+        )
       )
     );
 
