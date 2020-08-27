@@ -5,6 +5,9 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
   
   private async onChangeConfiguration(extension: DeepCode.ExtensionInterface, key: string): Promise<void> {
+    if (key === 'deepcode.advancedMode') {
+      return extension.checkAdvancedMode();
+    }
     const extensionConfig = vscode.workspace.getConfiguration('deepcode');
     // @ts-ignore */}
     const url: string = extensionConfig.get('url');
@@ -21,7 +24,7 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
         const change = [
-          'deepcode.url', 'deepcode.token', 'deepcode.uploadApproved'
+          'deepcode.url', 'deepcode.token', 'deepcode.uploadApproved', 'deepcode.advancedMode'
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {

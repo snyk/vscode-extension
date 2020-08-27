@@ -211,6 +211,8 @@ namespace DeepCode {
     checkSession(): Promise<boolean>;
     approveUpload(): Promise<void>;
     checkApproval(): Promise<boolean>;
+    checkWelcomeNotification(): Promise<void>;
+    checkAdvancedMode(): Promise<void>;
   }
 
   export interface BundlesModuleInterface {
