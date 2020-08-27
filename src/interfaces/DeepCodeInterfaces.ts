@@ -190,8 +190,10 @@ namespace DeepCode {
     filesWatcher: DeepCodeWatcherInterface;
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
-    setLoadingBadge(viewId?: string): Promise<void>
-    
+    setLoadingBadge(value: boolean): Promise<void>
+    setContext(key: string, value: unknown): Promise<void>;
+    shouldShowAnalysis: boolean;
+
     // Abstract methods
     processError(
       error: errorType,

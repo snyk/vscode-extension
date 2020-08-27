@@ -49,7 +49,10 @@ export class IssueProvider extends NodeProvider {
   getRootChildren(): Node[] {
     const review: Node[] = [];
     let nIssues = 0;
-    if (!this.extension.analyzer.deepcodeReview) return review;
+    if (
+      !this.extension.shouldShowAnalysis ||
+      !this.extension.analyzer.deepcodeReview
+    ) return review;
     this.extension.analyzer.deepcodeReview.forEach(
       (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
         const counts: ISeverityCounts = {

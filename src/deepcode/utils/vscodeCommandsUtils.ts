@@ -17,7 +17,6 @@ export const openDeepcodeViewContainer = async (): Promise<void> => {
 };
 
 export const setContext = async (key: string, value: unknown): Promise<void> => {
-  console.log("DeepCode context", key, value);
   await vscode.commands.executeCommand('setContext', `${DEEPCODE_CONTEXT_PREFIX}${key}`, value);
 };
 

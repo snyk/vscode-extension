@@ -9,7 +9,7 @@ import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { setContext } from "../../utils/vscodeCommandsUtils";
-import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
@@ -31,6 +31,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   analysisProgress = 0;
   private progressBadgePromise: Promise<void> | undefined;
   private progressBadgeResolveFn: (() => void) | undefined;
+  private viewContext: {[key: string]: unknown};
 
   // These attributes are used in tests
   staticToken = '';
@@ -53,6 +54,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.analysisStatus = '';
     this.analysisProgress = 0;
+    this.viewContext = {};
   }
 
   get baseURL(): string {
@@ -106,6 +108,20 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('advancedMode');
   }
 
+  async setContext(key: string, value: unknown): Promise<void> {
+    console.log("DeepCode context", key, value);
+    this.viewContext[key] = value;
+    await setContext(key, value);
+    this.refreshViews();
+  }
+
+  get shouldShowAnalysis(): boolean {
+    return !this.viewContext['error'] && 
+      ['loggedIn', 'uploadApproved', 'workspaceFound'].every(
+        (c) => !!this.viewContext[c]
+      );
+  }
+
   private getProgressBadgePromise(): Promise<void> {
     if (this.progressBadgePromise === undefined) {
       // This should not be needed, but we resolve pending Promises 
@@ -121,12 +137,12 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   // Leave viewId undefined to remove the badge from all views
-  async setLoadingBadge(viewId?: string): Promise<void> {
-    if (viewId) {
+  async setLoadingBadge(value: boolean): Promise<void> {
+    if (value) {
       // Using closure on this to allow partial binding in arbitrary positions
       const self = this;
       vscode.window.withProgress(
-        { location: { viewId } },
+        { location: { viewId: DEEPCODE_VIEW_ANALYSIS } },
         () => self.getProgressBadgePromise()
       ).then(
         () => {},
