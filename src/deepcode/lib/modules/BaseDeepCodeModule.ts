@@ -8,7 +8,9 @@ import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   currentWorkspacePath: string;
@@ -92,6 +94,18 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesTelemetry');
   }
 
+  get shouldShowWelcomeNotification(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesWelcomeNotification');
+  }
+
+  async hideWelcomeNotification(): Promise<void> {
+    await vscode.workspace.getConfiguration('deepcode').update('yesWelcomeNotification', false, true);
+  }
+
+  get shouldShowAdvancedView(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('advancedMode');
+  }
+
   private getProgressBadgePromise(): Promise<void> {
     if (this.progressBadgePromise === undefined) {
       // This should not be needed, but we resolve pending Promises 
@@ -109,9 +123,16 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   // Leave viewId undefined to remove the badge from all views
   async setLoadingBadge(viewId?: string): Promise<void> {
     if (viewId) {
-      await vscode.window.withProgress(
+      // Using closure on this to allow partial binding in arbitrary positions
+      const self = this;
+      vscode.window.withProgress(
         { location: { viewId } },
-        this.getProgressBadgePromise.bind(this)
+        () => self.getProgressBadgePromise()
+      ).then(
+        () => {},
+        (error) => self.processError(error, {
+          message: errorsLogs.loadingBadge,
+        })
       );
     } else {
       if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();

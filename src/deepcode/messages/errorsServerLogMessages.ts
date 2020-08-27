@@ -26,5 +26,6 @@ export const errorsLogs = {
   command: (type: string) => `Failed to execute ${type} command`,
   sendEvent: "Failed to send event to server",
   configWatcher: "Failed to handle configuration update",
-  loadingBadge: "Failed to set loading badge icon on analysis view",
+  loadingBadge: "Failed to set loading badge icon",
+  welcomeNotification: "Failed to handle welcome notification",
 };

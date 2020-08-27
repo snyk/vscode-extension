@@ -14,6 +14,7 @@ export const DEEPCODE_CONTEXT = {
   ANALYZING: "workspaceFound",
   ERROR: "error",
   MODE: "mode",
+  ADVANCED: "advanced",
 };
 
 export const DEEPCODE_ERROR_CODES = {

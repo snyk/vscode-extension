@@ -14,7 +14,10 @@ import {
   DEEPCODE_OPEN_BROWSER,
   DEEPCODE_OPEN_LOCAL,
 } from "./constants/commands";
-import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from "./utils/vscodeCommandsUtils";
+import {
+  openDeepcodeSettingsCommand,
+  createDCIgnoreCommand,
+} from "./utils/vscodeCommandsUtils";
 import { errorsLogs } from "./messages/errorsServerLogMessages";
 
 import {
@@ -146,6 +149,9 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     this.activateAll();
     this.startExtension().catch((err) => this.processError(err, {
       message: errorsLogs.failedExecution,
+    }));
+    this.checkWelcomeNotification().catch((err) => this.processError(err, {
+      message: errorsLogs.welcomeNotification,
     }));
   }
 

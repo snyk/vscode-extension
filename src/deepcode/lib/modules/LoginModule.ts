@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
@@ -7,7 +8,9 @@ import {
   DEEPCODE_VIEW_TC,
   DEEPCODE_CONTEXT
 } from "../../constants/views";
+import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { deepCodeMessages } from "../../messages/deepCodeMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -80,8 +83,24 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     await this.setUploadApproved(true);
     await this.setLoadingBadge();
     await this.checkApproval();
-  } 
+  }
 
+  async checkWelcomeNotification(): Promise<void> {
+    if (this.shouldShowWelcomeNotification) {
+      let pressedButton = await vscode.window.showInformationMessage(
+        deepCodeMessages.welcome.msg,
+        deepCodeMessages.welcome.button
+      );
+      if (pressedButton === deepCodeMessages.welcome.button) {
+        await openDeepcodeViewContainer();
+      }
+      await this.hideWelcomeNotification();
+    }
+  }
+
+  async checkAdvancedMode(): Promise<void> {
+    await setContext(DEEPCODE_CONTEXT.ADVANCED, this.shouldShowAdvancedView);
+  }
 }
 
 export default LoginModule;

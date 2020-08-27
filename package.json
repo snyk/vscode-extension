@@ -46,6 +46,12 @@
       {
         "title": "DeepCode",
         "properties": {
+          "deepcode.advancedMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Toggle advanced tools for expert users",
+            "scope": "application"
+          },
           "deepcode.url": {
             "type": "string",
             "default": "",
@@ -77,6 +83,13 @@
             "default": true,
             "markdownDescription": "Allow extension's telemetry to be sent to `#deepcode.url#`",
             "scope": "application"
+          },
+          "deepcode.yesWelcomeNotification": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show welcome notification after installation and restart",
+            "scope": "application"
           }
         }
       }
@@ -86,7 +99,7 @@
         {
           "id": "deepcode",
           "title": "DeepCode",
-          "icon": "images/deepcode-logo.svg"
+          "icon": "images/deepcode-vscode-icon.svg"
         }
       ]
     },
@@ -120,7 +133,7 @@
         {
           "id": "deepcode.views.actions",
           "name": "Actions",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
+          "when": "deepcode:advanced && !deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
         },
         {
           "id": "deepcode.views.support",
