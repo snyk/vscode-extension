@@ -44,7 +44,6 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     if (this.token) {
       try {
         validSession = !!(await http.checkSession(this.baseURL, this.token));
-        if (!validSession) await this.setLoadingBadge(true);
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus
@@ -52,6 +51,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
       }
     }
     await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
+    if (!validSession) await this.setLoadingBadge(true);
     return validSession;
   }
 

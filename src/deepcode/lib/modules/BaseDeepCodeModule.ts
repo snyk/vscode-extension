@@ -138,6 +138,8 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   // Leave viewId undefined to remove the badge from all views
   async setLoadingBadge(value: boolean): Promise<void> {
+    console.error("setLoadingBadge", value);
+    if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
     if (value) {
       // Using closure on this to allow partial binding in arbitrary positions
       const self = this;
@@ -151,7 +153,6 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
         })
       );
     } else {
-      if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
       this.progressBadgePromise = undefined;
       this.progressBadgeResolveFn = undefined;
     }
