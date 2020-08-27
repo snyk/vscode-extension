@@ -47,6 +47,7 @@ export class IssueProvider extends NodeProvider {
   }
 
   getRootChildren(): Node[] {
+    this.extension.emitViewInitialized();
     const review: Node[] = [];
     let nIssues = 0;
     if (

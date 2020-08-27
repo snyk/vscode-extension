@@ -193,6 +193,7 @@ namespace DeepCode {
     setLoadingBadge(value: boolean): Promise<void>
     setContext(key: string, value: unknown): Promise<void>;
     shouldShowAnalysis: boolean;
+    emitViewInitialized(): void;
 
     // Abstract methods
     processError(
