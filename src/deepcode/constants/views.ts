@@ -1,7 +1,3 @@
-export const DEEPCODE_VIEW_ERROR = "deepcode.views.error";
-export const DEEPCODE_VIEW_WELCOME = "deepcode.views.welcome";
-export const DEEPCODE_VIEW_TC = "deepcode.views.tc";
-export const DEEPCODE_VIEW_EMPTY = "deepcode.views.empty";
 export const DEEPCODE_VIEW_ANALYSIS = "deepcode.views.analysis";
 export const DEEPCODE_VIEW_SUPPORT = "deepcode.views.support";
 export const DEEPCODE_VIEW_ACTIONS = "deepcode.views.actions";
@@ -14,6 +10,7 @@ export const DEEPCODE_CONTEXT = {
   ANALYZING: "workspaceFound",
   ERROR: "error",
   MODE: "mode",
+  ADVANCED: "advanced",
 };
 
 export const DEEPCODE_ERROR_CODES = {

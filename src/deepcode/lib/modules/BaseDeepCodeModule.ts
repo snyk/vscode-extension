@@ -7,8 +7,12 @@ import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
 import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher";
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
+import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import { pendingMocks } from 'nock/types';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   currentWorkspacePath: string;
@@ -27,8 +31,9 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   refreshViewEmitter: vscode.EventEmitter<any>;
 	analysisStatus = '';
   analysisProgress = 0;
-  private progressBadgePromise: Promise<void> | undefined;
-  private progressBadgeResolveFn: (() => void) | undefined;
+  private initializedView: PendingTaskInterface;
+  private progressBadge: PendingTaskInterface | undefined;
+  private viewContext: {[key: string]: unknown};
 
   // These attributes are used in tests
   staticToken = '';
@@ -51,6 +56,8 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.analysisStatus = '';
     this.analysisProgress = 0;
+    this.viewContext = {};
+    this.initializedView = new PendingTask();
   }
 
   get baseURL(): string {
@@ -92,32 +99,64 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesTelemetry');
   }
 
-  private getProgressBadgePromise(): Promise<void> {
-    if (this.progressBadgePromise === undefined) {
-      // This should not be needed, but we resolve pending Promises 
-      // before overwriting the progressBadgeResolveFn reference.
-      if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
-      this.progressBadgePromise = new Promise(
-        (resolve) => {
-          this.progressBadgeResolveFn = resolve;
-        }
+  get shouldShowWelcomeNotification(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('yesWelcomeNotification');
+  }
+
+  async hideWelcomeNotification(): Promise<void> {
+    await vscode.workspace.getConfiguration('deepcode').update('yesWelcomeNotification', false, true);
+  }
+
+  get shouldShowAdvancedView(): boolean {
+    return !!vscode.workspace.getConfiguration('deepcode').get<boolean>('advancedMode');
+  }
+
+  async setContext(key: string, value: unknown): Promise<void> {
+    console.log("DeepCode context", key, value);
+    this.viewContext[key] = value;
+    await setContext(key, value);
+    this.refreshViews();
+  }
+
+  get shouldShowAnalysis(): boolean {
+    return !this.viewContext['error'] && 
+      ['loggedIn', 'uploadApproved', 'workspaceFound'].every(
+        (c) => !!this.viewContext[c]
       );
+  }
+
+  private getProgressBadgePromise(): Promise<void> {
+    if (!this.progressBadge || this.progressBadge.isCompleted) {
+      this.progressBadge = new PendingTask();
     }
-    return this.progressBadgePromise;
+    return this.progressBadge.waiter;
   }
 
   // Leave viewId undefined to remove the badge from all views
-  async setLoadingBadge(viewId?: string): Promise<void> {
-    if (viewId) {
-      await vscode.window.withProgress(
-        { location: { viewId } },
-        this.getProgressBadgePromise.bind(this)
+  async setLoadingBadge(value: boolean): Promise<void> {
+    if (value) {
+      // Using closure on this to allow partial binding in arbitrary positions
+      const self = this;
+      this.initializedView.waiter.then(
+        () => vscode.window.withProgress(
+          { location: { viewId: DEEPCODE_VIEW_ANALYSIS } },
+          () => self.getProgressBadgePromise()
+        )
+      ).then(
+        () => {},
+        (error) => self.processError(error, {
+          message: errorsLogs.loadingBadge,
+        })
       );
     } else {
-      if (this.progressBadgeResolveFn) this.progressBadgeResolveFn();
-      this.progressBadgePromise = undefined;
-      this.progressBadgeResolveFn = undefined;
+      if (this.progressBadge && !this.progressBadge.isCompleted) {
+        this.progressBadge.complete();
+      }
     }
+  }
+
+  emitViewInitialized(): void {
+    if (!this.initializedView.isCompleted) this.initializedView.complete();
   }
 
   // Avoid refreshing context/views too often:

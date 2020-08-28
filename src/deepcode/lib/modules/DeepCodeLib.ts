@@ -1,7 +1,6 @@
 import * as _ from "lodash";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
-import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { 
@@ -43,8 +42,8 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
 
   private async executeExtensionPipeline(): Promise<void> {
     console.log("DeepCode: starting execution pipeline");
-    await setContext(DEEPCODE_CONTEXT.ERROR, false);
-    await this.setLoadingBadge();
+    await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
+    await this.setLoadingBadge(false);
     
     const loggedIn = await this.checkSession();
     if (!loggedIn) return;
@@ -83,7 +82,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
   async setMode(mode: string): Promise<void> {
     if (!Object.values(DEEPCODE_MODE_CODES).includes(mode)) return;
     this._mode = mode;
-    await setContext(DEEPCODE_CONTEXT.MODE, mode);
+    await this.setContext(DEEPCODE_CONTEXT.MODE, mode);
     switch(mode) {
       case DEEPCODE_MODE_CODES.PAUSED:
         this._unpauseTimeout = setTimeout(this.unpause.bind(this), EXECUTION_PAUSE_INTERVAL);

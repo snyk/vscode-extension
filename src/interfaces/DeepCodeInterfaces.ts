@@ -190,8 +190,11 @@ namespace DeepCode {
     filesWatcher: DeepCodeWatcherInterface;
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
-    setLoadingBadge(viewId?: string): Promise<void>
-    
+    setLoadingBadge(value: boolean): Promise<void>
+    setContext(key: string, value: unknown): Promise<void>;
+    shouldShowAnalysis: boolean;
+    emitViewInitialized(): void;
+
     // Abstract methods
     processError(
       error: errorType,
@@ -211,6 +214,8 @@ namespace DeepCode {
     checkSession(): Promise<boolean>;
     approveUpload(): Promise<void>;
     checkApproval(): Promise<boolean>;
+    checkWelcomeNotification(): Promise<void>;
+    checkAdvancedMode(): Promise<void>;
   }
 
   export interface BundlesModuleInterface {

@@ -3,8 +3,7 @@ import http from "../../http/requests";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { setContext } from "../../utils/vscodeCommandsUtils";
-import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES, DEEPCODE_VIEW_ERROR } from "../../constants/views";
+import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
 abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.ReportModuleInterface {
@@ -117,15 +116,15 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
-    await setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.BLOCKING);
-    await this.setLoadingBadge(DEEPCODE_VIEW_ERROR);
+    await this.setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.BLOCKING);
+    await this.setLoadingBadge(true);
   }
 
   private async connectionErrorHandler(): Promise<void> {
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
     
     ++this.transientErrors;
-    await setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
+    await this.setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
       this.startExtension().catch((err) => this.processError(err, {
         message: errorsLogs.failedExecutionTransient,

@@ -1,13 +1,12 @@
+import * as vscode from "vscode";
 import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
-import {
-  DEEPCODE_VIEW_WELCOME,
-  DEEPCODE_VIEW_TC,
-  DEEPCODE_CONTEXT
-} from "../../constants/views";
+import { viewInBrowser } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { deepCodeMessages } from "../../messages/deepCodeMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -45,14 +44,14 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     if (this.token) {
       try {
         validSession = !!(await http.checkSession(this.baseURL, this.token));
-        if (!validSession) await this.setLoadingBadge(DEEPCODE_VIEW_WELCOME);
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus
         });
       }
     }
-    await setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
+    if (!validSession) await this.setLoadingBadge(true);
     return validSession;
   }
 
@@ -71,17 +70,33 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
   async checkApproval(): Promise<boolean> {
     const approved = this.uploadApproved;
-    await setContext(DEEPCODE_CONTEXT.APPROVED, approved);
-    if (!approved) await this.setLoadingBadge(DEEPCODE_VIEW_TC);
+    await this.setContext(DEEPCODE_CONTEXT.APPROVED, approved);
+    if (!approved) await this.setLoadingBadge(true);
     return approved;
   }
 
   async approveUpload(): Promise<void> {
     await this.setUploadApproved(true);
-    await this.setLoadingBadge();
+    await this.setLoadingBadge(false);
     await this.checkApproval();
-  } 
+  }
 
+  async checkWelcomeNotification(): Promise<void> {
+    if (this.shouldShowWelcomeNotification) {
+      let pressedButton = await vscode.window.showInformationMessage(
+        deepCodeMessages.welcome.msg,
+        deepCodeMessages.welcome.button
+      );
+      if (pressedButton === deepCodeMessages.welcome.button) {
+        await openDeepcodeViewContainer();
+      }
+      await this.hideWelcomeNotification();
+    }
+  }
+
+  async checkAdvancedMode(): Promise<void> {
+    await this.setContext(DEEPCODE_CONTEXT.ADVANCED, this.shouldShowAdvancedView);
+  }
 }
 
 export default LoginModule;

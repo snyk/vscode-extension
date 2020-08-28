@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { DEEPCODE_EXTENSION_NAME } from "../constants/general";
 import {
+  VSCODE_VIEW_CONTAINER_PREFIX,
   VSCODE_GO_TO_SETTINGS_COMMAND,
   DEEPCODE_CONTEXT_PREFIX,
   DEEPCODE_OPEN_BROWSER,
@@ -11,8 +12,11 @@ export const openDeepcodeSettingsCommand = async (): Promise<void> => {
   await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, DEEPCODE_EXTENSION_NAME);
 };
 
+export const openDeepcodeViewContainer = async (): Promise<void> => {
+  await vscode.commands.executeCommand(`${VSCODE_VIEW_CONTAINER_PREFIX}${DEEPCODE_EXTENSION_NAME}`);
+};
+
 export const setContext = async (key: string, value: unknown): Promise<void> => {
-  console.log("DeepCode context", key, value);
   await vscode.commands.executeCommand('setContext', `${DEEPCODE_CONTEXT_PREFIX}${key}`, value);
 };
 

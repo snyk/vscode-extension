@@ -7,7 +7,6 @@ import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
 import { createListOfDirFiles } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
 import LoginModule from "../../lib/modules/LoginModule";
-import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
@@ -287,14 +286,14 @@ abstract class BundlesModule extends LoginModule
     try {
       const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || !workspaceFolders.length) {
-        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+        await this.setContext(DEEPCODE_CONTEXT.ANALYZING, false);
         return;
       }
 
       this.createWorkspacesList(workspaceFolders);
 
       if (this.workspacesPaths.length) {
-        await setContext(DEEPCODE_CONTEXT.ANALYZING, true);
+        await this.setContext(DEEPCODE_CONTEXT.ANALYZING, true);
         this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
 
         await this.updateHashesBundles();
@@ -302,7 +301,7 @@ abstract class BundlesModule extends LoginModule
           await this.performBundlesActions(path);
         }
       } else {
-        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+        await this.setContext(DEEPCODE_CONTEXT.ANALYZING, false);
       }
     } catch(err) {
       await this.processError(err, {
