@@ -1,8 +1,9 @@
-import { Uri, Range, Diagnostic } from 'vscode';
+import { Uri, Range, Diagnostic, Command } from 'vscode';
 import { NodeProvider } from './NodeProvider';
 import { Node, INodeIcon, NODE_ICONS } from './Node';
 import { getDeepCodeSeverity } from "../utils/analysisUtils";
 import { DEEPCODE_SEVERITIES } from "../constants/analysis";
+import { DEEPCODE_OPEN_ISSUE_COMMAND } from "../constants/commands";
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -68,14 +69,27 @@ export class IssueProvider extends NodeProvider {
           const severity = getDeepCodeSeverity(d.severity);
           ++counts[severity];
           ++nIssues;
+          const issueId = this.extension.analyzer.findSuggestionId(
+            d.message,
+            uri.fsPath
+          );
           const params: {
-            text: string, icon: INodeIcon, issue: { uri: Uri, range?: Range }, children?: Node[]
+            text: string,
+            icon: INodeIcon,
+            issue: { uri: Uri, range?: Range },
+            command: Command,
+            children?: Node[]
           } = {
             text: d.message,
             icon: this.getSeverityIcon(severity),
             issue: {
               uri,
               range: d.range
+            },
+            command: {
+              command: DEEPCODE_OPEN_ISSUE_COMMAND,
+              title: '',
+              arguments: [issueId, severity, uri, d.range],
             }
           };
           if (d.relatedInformation && d.relatedInformation.length) {

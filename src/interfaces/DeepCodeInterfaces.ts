@@ -140,6 +140,7 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
+    findSuggestionId(suggestionName: string, filePath: string): string;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
@@ -203,6 +204,7 @@ namespace DeepCode {
 
   export interface ReportModuleInterface {
     resetTransientErrors(): void;
+    trackViewSuggestion(issueId: string, severity: number): Promise<void>;
   }
 
   export interface LoginModuleInterface {

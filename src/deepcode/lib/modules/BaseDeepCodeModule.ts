@@ -124,7 +124,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   private trackContextChange(key: string, value: unknown, oldValue: unknown) {
     let event = "";
     let shouldWaitForView = true;
-    let data: Record<string,any> | undefined;
+    let options: Record<string,any> | undefined;
     switch(key) {
       case DEEPCODE_CONTEXT.LOGGEDIN: {
         if (oldValue !== undefined) {
@@ -146,25 +146,24 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
       case DEEPCODE_CONTEXT.ADVANCED: {
         if (oldValue !== undefined) {
           event = TELEMETRY_EVENTS.toggleAdvancedMode;
-          data = { value };
+          options = { data: { value } };
           shouldWaitForView = false;
         }
         break;
       }
       case DEEPCODE_CONTEXT.MODE: {
         event = TELEMETRY_EVENTS.changeExecutionMode;
-        data = { value };
+        options = { data: { value } };
         shouldWaitForView = false;
         break;
       }
     }
-    if (event) console.error(event, data);
     // We want to fire the event only when the user actually sees the View
     if (event) {
       if (shouldWaitForView) this.initializedView.waiter.then(
-        () => this.processEvent(event, data)
+        () => this.processEvent(event, options)
       );
-      else this.processEvent(event, data);
+      else this.processEvent(event, options);
     }
   }
 

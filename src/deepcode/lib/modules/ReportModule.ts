@@ -3,6 +3,7 @@ import http from "../../http/requests";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
@@ -51,6 +52,14 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     return this.sendEvent(event, options).catch((err) =>
       console.error("DeepCode event handler failed with error:", err)
     );
+  }
+
+  async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
+    issueId = decodeURIComponent(issueId);
+    const [ language, model ] = issueId.split('/');
+    return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
+      data: { issueId, severity, language, model }
+    });
   }
 
   private async sendError(options: {[key: string]: any}): Promise<void> {

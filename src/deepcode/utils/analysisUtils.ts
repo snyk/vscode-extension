@@ -238,8 +238,10 @@ export const createIssueRelatedInformation = ({
 };
 
 export const extractSuggestionIdFromSuggestionsMap = (
-  analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface
-): Function => (suggestionName: string, filePath: string): string => {
+  analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
+  suggestionName: string,
+  filePath: string
+): string => {
   const workspaceAnalysisPath: string | undefined = Object.keys(
     analysisResultsCollection
   ).find((path: string): boolean => filePath.includes(path));
