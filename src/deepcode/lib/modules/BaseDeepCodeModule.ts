@@ -10,9 +10,9 @@ import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { setContext } from "../../utils/vscodeCommandsUtils";
-import { DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
+import { DEEPCODE_CONTEXT, DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { pendingMocks } from 'nock/types';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   currentWorkspacePath: string;
@@ -33,6 +33,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   analysisProgress = 0;
   private initializedView: PendingTaskInterface;
   private progressBadge: PendingTaskInterface | undefined;
+  private shouldShowProgressBadge = false;
   private viewContext: {[key: string]: unknown};
 
   // These attributes are used in tests
@@ -113,19 +114,74 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   async setContext(key: string, value: unknown): Promise<void> {
     console.log("DeepCode context", key, value);
+    const oldValue = this.viewContext[key];
     this.viewContext[key] = value;
     await setContext(key, value);
     this.refreshViews();
+    this.trackContextChange(key, value, oldValue);
+  }
+
+  private trackContextChange(key: string, value: unknown, oldValue: unknown) {
+    let event = "";
+    let shouldWaitForView = true;
+    let data: Record<string,any> | undefined;
+    switch(key) {
+      case DEEPCODE_CONTEXT.LOGGEDIN: {
+        if (oldValue !== undefined) {
+          if (!value && oldValue) event = TELEMETRY_EVENTS.viewLoginView;
+          if (value && !oldValue) event = TELEMETRY_EVENTS.viewConsentView;
+        } else {
+          // If key was un-initialized (i.e. at start), we still report it if new value is false
+          if (!value) event = TELEMETRY_EVENTS.viewLoginView;
+        }
+        break;
+      }
+      case DEEPCODE_CONTEXT.APPROVED: {
+        if (oldValue !== undefined) {
+          if (!value && oldValue) event = TELEMETRY_EVENTS.viewConsentView;
+          if (value && !oldValue) event = TELEMETRY_EVENTS.viewSuggestionView;
+        }
+        break;
+      }
+      case DEEPCODE_CONTEXT.ADVANCED: {
+        if (oldValue !== undefined) {
+          event = TELEMETRY_EVENTS.toggleAdvancedMode;
+          data = { value };
+          shouldWaitForView = false;
+        }
+        break;
+      }
+      case DEEPCODE_CONTEXT.MODE: {
+        event = TELEMETRY_EVENTS.changeExecutionMode;
+        data = { value };
+        shouldWaitForView = false;
+        break;
+      }
+    }
+    if (event) console.error(event, data);
+    // We want to fire the event only when the user actually sees the View
+    if (event) {
+      if (shouldWaitForView) this.initializedView.waiter.then(
+        () => this.processEvent(event, data)
+      );
+      else this.processEvent(event, data);
+    }
   }
 
   get shouldShowAnalysis(): boolean {
-    return !this.viewContext['error'] && 
-      ['loggedIn', 'uploadApproved', 'workspaceFound'].every(
-        (c) => !!this.viewContext[c]
-      );
+    return !this.viewContext[
+      DEEPCODE_CONTEXT.ERROR
+    ] && [
+      DEEPCODE_CONTEXT.LOGGEDIN,
+      DEEPCODE_CONTEXT.APPROVED,
+      DEEPCODE_CONTEXT.ANALYZING,
+    ].every(
+      (c) => !!this.viewContext[c]
+    );
   }
 
   private getProgressBadgePromise(): Promise<void> {
+    if (!this.shouldShowProgressBadge) return Promise.resolve();
     if (!this.progressBadge || this.progressBadge.isCompleted) {
       this.progressBadge = new PendingTask();
     }
@@ -134,6 +190,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   // Leave viewId undefined to remove the badge from all views
   async setLoadingBadge(value: boolean): Promise<void> {
+    this.shouldShowProgressBadge = value;
     if (value) {
       // Using closure on this to allow partial binding in arbitrary positions
       const self = this;
@@ -169,6 +226,11 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   abstract processError(
     error: DeepCode.errorType,
+    options?: { [key: string]: any }
+  ): Promise<void>;
+
+  abstract processEvent(
+    event: string,
     options?: { [key: string]: any }
   ): Promise<void>;
 

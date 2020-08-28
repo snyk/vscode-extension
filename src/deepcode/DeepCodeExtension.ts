@@ -153,6 +153,9 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     this.checkWelcomeNotification().catch((err) => this.processError(err, {
       message: errorsLogs.welcomeNotification,
     }));
+    this.checkAdvancedMode().catch((err) => this.processError(err, {
+      message: errorsLogs.checkAdvancedMode,
+    }));
   }
 
 }

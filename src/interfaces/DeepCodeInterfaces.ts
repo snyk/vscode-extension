@@ -196,16 +196,12 @@ namespace DeepCode {
     emitViewInitialized(): void;
 
     // Abstract methods
-    processError(
-      error: errorType,
-      options?: { [key: string]: any }
-    ): Promise<void>;
+    processError(error: errorType, options?: { [key: string]: any } ): Promise<void>;
+    processEvent(event: string, options: { [key: string]: any} ): Promise<void>;
     startExtension(): Promise<void>;
   }
 
   export interface ReportModuleInterface {
-    sendError(options: {[key: string]: any}): Promise<void> | void;
-    sendEvent(event: string, options: {[key: string]: any}): Promise<void> | void;
     resetTransientErrors(): void;
   }
 

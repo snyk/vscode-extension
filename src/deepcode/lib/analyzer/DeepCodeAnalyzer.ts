@@ -57,7 +57,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       severity: getDeepCodeSeverity(vscodeSeverity),
       ...options.data
     };
-    this.extension.sendEvent(
+    this.extension.processEvent(
       TELEMETRY_EVENTS.ignoreSuggestion,
       options
     );
