@@ -137,6 +137,7 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
+    findSuggestionId(suggestionName: string, filePath: string): string;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
@@ -193,17 +194,14 @@ namespace DeepCode {
     emitViewInitialized(): void;
 
     // Abstract methods
-    processError(
-      error: errorType,
-      options?: { [key: string]: any }
-    ): Promise<void>;
+    processError(error: errorType, options?: { [key: string]: any } ): Promise<void>;
+    processEvent(event: string, options: { [key: string]: any} ): Promise<void>;
     startExtension(): Promise<void>;
   }
 
   export interface ReportModuleInterface {
-    sendError(options: {[key: string]: any}): Promise<void> | void;
-    sendEvent(event: string, options: {[key: string]: any}): Promise<void> | void;
     resetTransientErrors(): void;
+    trackViewSuggestion(issueId: string, severity: number): Promise<void>;
   }
 
   export interface LoginModuleInterface {

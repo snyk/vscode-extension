@@ -38,9 +38,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     this.ignoreActionsProvider = new DisposableCodeActionsProvider(
       this.deepcodeReview,
       {
-        findSuggestionId: extractSuggestionIdFromSuggestionsMap(
-          this.analysisResultsCollection
-        ),
+        findSuggestionId: this.findSuggestionId.bind(this),
         trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this)
       }
     );
@@ -51,13 +49,21 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     this.extension = extension;
   }
 
+  public findSuggestionId(suggestionName: string, fileSystemPath: string): string {
+    return extractSuggestionIdFromSuggestionsMap(
+      this.analysisResultsCollection,
+      suggestionName,
+      fileSystemPath
+    );
+  }
+
   public trackIgnoreSuggestion(vscodeSeverity: number, options: {[key: string]: any}): void {
     if (!this.extension) return;
     options.data = {
       severity: getDeepCodeSeverity(vscodeSeverity),
       ...options.data
     };
-    this.extension.sendEvent(
+    this.extension.processEvent(
       TELEMETRY_EVENTS.ignoreSuggestion,
       options
     );

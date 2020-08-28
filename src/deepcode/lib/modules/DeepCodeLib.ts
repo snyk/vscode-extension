@@ -43,14 +43,14 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
   private async executeExtensionPipeline(): Promise<void> {
     console.log("DeepCode: starting execution pipeline");
     await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
+    this.resetTransientErrors();
     await this.setLoadingBadge(false);
     
     if (!this.token) return;
     const approved = await this.checkApproval();
     if (!approved) return;
-    await this.startAnalysis();
     
-    this.resetTransientErrors();
+    await this.startAnalysis();
   }
 
   // This function is called by commands, error handlers, etc.

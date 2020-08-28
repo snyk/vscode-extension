@@ -4,7 +4,7 @@ import {
   VSCODE_VIEW_CONTAINER_PREFIX,
   VSCODE_GO_TO_SETTINGS_COMMAND,
   DEEPCODE_CONTEXT_PREFIX,
-  DEEPCODE_OPEN_BROWSER,
+  DEEPCODE_OPEN_BROWSER_COMMAND,
 } from "../constants/commands";
 import { createDCIgnore } from "./filesUtils"
 
@@ -21,7 +21,7 @@ export const setContext = async (key: string, value: unknown): Promise<void> => 
 };
 
 export const viewInBrowser = async (url: string): Promise<void> => {
-  await vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER, url);
+  await vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER_COMMAND, url);
 };
 
 export const createDCIgnoreCommand = async (custom = false, path?: string): Promise<void> => {

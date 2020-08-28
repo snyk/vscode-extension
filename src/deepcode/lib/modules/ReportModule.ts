@@ -2,6 +2,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
@@ -20,21 +21,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     this.transientErrors = 0;
   }
 
-  async sendError(options: {[key: string]: any}): Promise<void> {
-    if (!this.shouldReport || !this.shouldReportErrors) return;
-    try {
-      await this.serviceAI.reportError({ 
-        baseURL: this.baseURL,
-        source: this.source,
-        ...(this.token && { sessionToken: this.token }),
-        ...options
-      });
-    } catch(error) {
-      console.error(error);
-    }
-  }
-
-  async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
+  private async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
       await this.serviceAI.reportEvent({ 
@@ -54,6 +41,38 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
           ...options
         },
       });
+    }
+  }
+
+  async processEvent(
+    event: string,
+    options: { [key: string]: any } = {}
+  ): Promise<void> {
+    // processEvent must be safely callable without waiting its completition.
+    return this.sendEvent(event, options).catch((err) =>
+      console.error("DeepCode event handler failed with error:", err)
+    );
+  }
+
+  async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
+    issueId = decodeURIComponent(issueId);
+    const [ language, model ] = issueId.split('/');
+    return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
+      data: { issueId, severity, language, model }
+    });
+  }
+
+  private async sendError(options: {[key: string]: any}): Promise<void> {
+    if (!this.shouldReport || !this.shouldReportErrors) return;
+    try {
+      await this.serviceAI.reportError({
+        baseURL: this.baseURL, 
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      console.error(error);
     }
   }
 

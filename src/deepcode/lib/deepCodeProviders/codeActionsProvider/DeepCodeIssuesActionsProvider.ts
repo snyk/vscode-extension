@@ -10,7 +10,7 @@ import {
   IGNORE_ISSUE_BASE_COMMENT_TEXT
 } from "../../../constants/analysis";
 import {
-  DEEPCODE_IGNORE_ISSUES_COMMAND,
+  DEEPCODE_IGNORE_ISSUE_COMMAND,
   VSCODE_ADD_COMMENT_COMMAND
 } from "../../../constants/commands";
 
@@ -35,7 +35,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
 
   private registerIgnoreIssuesCommand() {
     vscode.commands.registerCommand(
-      DEEPCODE_IGNORE_ISSUES_COMMAND,
+      DEEPCODE_IGNORE_ISSUE_COMMAND,
       ({
         currentEditor,
         issueText,
@@ -149,8 +149,8 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       isFileIgnore
     );
     ignoreIssueAction.command = {
-      command: DEEPCODE_IGNORE_ISSUES_COMMAND,
-      title: DEEPCODE_IGNORE_ISSUES_COMMAND,
+      command: DEEPCODE_IGNORE_ISSUE_COMMAND,
+      title: DEEPCODE_IGNORE_ISSUE_COMMAND,
       arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }]
     };
 

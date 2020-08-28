@@ -7,6 +7,7 @@ import { DEEPCODE_CONTEXT } from "../../constants/views";
 import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -86,6 +87,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
   async checkWelcomeNotification(): Promise<void> {
     if (this.shouldShowWelcomeNotification) {
+      this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
       let pressedButton = await vscode.window.showInformationMessage(
         deepCodeMessages.welcome.msg,
         deepCodeMessages.welcome.button
