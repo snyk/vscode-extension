@@ -1,5 +1,4 @@
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import http from "../../http/requests";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -24,7 +23,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   async sendError(options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
     try {
-      await http.sendError(this.baseURL, {
+      await this.serviceAI.reportError({ 
+        baseURL: this.baseURL,
         source: this.source,
         ...(this.token && { sessionToken: this.token }),
         ...options
@@ -37,7 +37,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
-      await http.sendEvent(this.baseURL, {
+      await this.serviceAI.reportEvent({ 
+        baseURL: this.baseURL, 
         type: event,
         source: this.source,
         ...(this.token && { sessionToken: this.token }),

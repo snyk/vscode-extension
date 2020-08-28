@@ -13,12 +13,13 @@ import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { pendingMocks } from 'nock/types';
+import { IServiceAI, ServiceAI } from '@deepcode/tsc';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
+  serviceAI: IServiceAI;
   currentWorkspacePath: string;
   workspacesPaths: Array<string>;
   hashesBundles: DeepCode.HashesBundlesInterface;
-  serverFilesFilterList: DeepCode.AllowedServerFilterListInterface;
   remoteBundles: DeepCode.RemoteBundlesCollectionInterface;
   analyzer: DeepCode.AnalyzerInterface;
   statusBarItem: DeepCode.StatusBarItemInterface;
@@ -42,10 +43,10 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   staticUploadApproved = false;
 
   constructor() {
+    this.serviceAI = new ServiceAI();
     this.currentWorkspacePath = "";
     this.workspacesPaths = [];
     this.hashesBundles = {};
-    this.serverFilesFilterList = {};
     this.remoteBundles = {};
     this.analyzer = new DeepCodeAnalyzer();
     this.statusBarItem = new DeepCodeStatusBarItem();

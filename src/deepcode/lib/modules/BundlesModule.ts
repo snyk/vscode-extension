@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as _ from "lodash";
-import http from "../../http/requests";
+
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
@@ -17,8 +17,7 @@ abstract class BundlesModule extends LoginModule
   runningAnalysis = false;
 
   files: string[] = [];
-  serviceAI = http.getServiceAI();
-
+  
   constructor() {
     super();
 
@@ -30,7 +29,30 @@ abstract class BundlesModule extends LoginModule
     this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
     this.onError = this.onError.bind(this);
 
-    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
+      this.onBuildBundleProgress(processed, total);
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
+      this.onBuildBundleFinish();
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
+      this.onUploadBundleProgress(processed, total);
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+      this.onUploadBundleFinish();
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
+      this.onAnalyseProgress(analysisResults);
+    });
+    this.serviceAI.on(
+      BUNDLE_EVENTS.analyseFinish,
+      (analysisResults: IQueueAnalysisCheckResult) => {
+        this.onAnalyseFinish(analysisResults);
+      }
+    );
+    this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
+      this.onError(error);
+    });
   }
 
   updateStatus(status: string, progress?: number) {
@@ -134,7 +156,10 @@ abstract class BundlesModule extends LoginModule
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
     try {
-      this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+      this.serverFilesFilterList = await this.serviceAI.getFilters({ 
+        baseURL: this.baseURL,
+        sessionToken: this.token
+      });
     } catch (err) {
       await this.processError(err, {
         message: errorsLogs.filtersFiles
@@ -165,42 +190,27 @@ abstract class BundlesModule extends LoginModule
       this.filesWatcher.activate(this);
     }
 
-    if (!this.token || !this.uploadApproved) {
+    if (!this.token) {
       await this.checkSession();
+      return;
+    }
+    
+    if (!this.uploadApproved) {
       await this.checkApproval();
       return;
     }
 
-    const bundle = await this.startCollectingFiles(path, this.serverFilesFilterList);
+    const bundle = await this.startCollectingFiles(path);
     const removedFiles = (this.files || []).filter(f => !bundle.includes(f));
     this.files = bundle;
     
-    this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
-      this.onBuildBundleProgress(processed, total);
-    });
-    this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
-      this.onBuildBundleFinish();
-    });
-    this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
-      this.onUploadBundleProgress(processed, total);
-    });
-    this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
-      this.onUploadBundleFinish();
-    });
-    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
-      this.onAnalyseProgress(analysisResults);
-    });
-    this.serviceAI.on(
-      BUNDLE_EVENTS.analyseFinish,
-      (analysisResults: IQueueAnalysisCheckResult) => {
-        this.onAnalyseFinish(analysisResults);
-      }
-    );
-    this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-      this.onError(error);
-    });
-
-    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(
+    this.serviceAI.analyse({
+      baseURL: this.baseURL, 
+      sessionToken: this.token, 
+      baseDir: path, 
+      files: this.files, 
+      removedFiles: removedFiles
+    }).catch(
       // no need to wait for processError since catch is called asynchronously as well
       (error) => this.processError(error, {
         message: errorsLogs.analyse
@@ -208,10 +218,7 @@ abstract class BundlesModule extends LoginModule
     );
   }
 
-  private async startCollectingFiles(
-    folderPath: string,
-    serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
-  ): Promise<string[]> {
+  private async startCollectingFiles(folderPath: string): Promise<string[]> {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 0);
     console.log("COLLECTING");
     const bundle = await createListOfDirFiles({

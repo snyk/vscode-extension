@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import http from "../../http/requests";
+
 import { viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
 import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
@@ -22,7 +22,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
-      const result = await http.login(this.baseURL, this.source);
+      const result = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
       const { sessionToken, loginURL } = result;
       if (!sessionToken || !loginURL) {
         throw new Error(errorsLogs.login);
@@ -43,7 +43,10 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     let validSession = false;
     if (this.token) {
       try {
-        validSession = !!(await http.checkSession(this.baseURL, this.token));
+        validSession = !!(await this.serviceAI.checkSession({ 
+          baseURL: this.baseURL, 
+          sessionToken: this.token 
+        }));
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus

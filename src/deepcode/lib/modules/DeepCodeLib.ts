@@ -45,8 +45,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
     await this.setLoadingBadge(false);
     
-    const loggedIn = await this.checkSession();
-    if (!loggedIn) return;
+    if (!this.token) return;
     const approved = await this.checkApproval();
     if (!approved) return;
     await this.startAnalysis();

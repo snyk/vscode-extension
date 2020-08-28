@@ -10,8 +10,6 @@ import * as nock from "nock";
 import * as extension from "../../extension";
 import Deepcode from "../../interfaces/DeepCodeInterfaces";
 
-import http from "../../deepcode/http/requests";
-
 // mocked data for tests
 const testHost = "http://localhost:3000";
 const testHostPrefix = "/publicapi";
@@ -124,7 +122,13 @@ suite("Deepcode Extension Tests", () => {
 
   test('Send files list to analyse', async () => {
     try {
-      await http.analyse(testHost, testToken, mockedTestFilesDirPath, testFilesList);
+      await testExtension.serviceAI.analyse({ 
+        baseURL: testHost, 
+        sessionToken: testToken, 
+        baseDir: mockedTestFilesDirPath, 
+        files: testFilesList,
+        removedFiles: []
+      });
       assert.equal(true, true);
     } catch(error) {
       console.log(error);

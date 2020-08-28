@@ -8,6 +8,8 @@ import {
 } from "vscode";
 import * as vscode from "vscode";
 
+import { IServiceAI } from '@deepcode/tsc';
+
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
 
@@ -70,11 +72,6 @@ namespace DeepCode {
 
   export interface RemoteBundlesCollectionInterface {
     [key: string]: RemoteBundleInterface;
-  }
-
-  export interface AllowedServerFilterListInterface {
-    extensions?: Array<string>;
-    configFiles?: Array<string>;
   }
 
   export interface SingleIssuePositionInterface {
@@ -164,10 +161,10 @@ namespace DeepCode {
   }
 
   export interface BaseDeepCodeModuleInterface {
+    serviceAI: IServiceAI;
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
     hashesBundles: HashesBundlesInterface;
-    serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
     refreshViewEmitter: vscode.EventEmitter<any>;
     refreshViews(content: any): void;

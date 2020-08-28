@@ -123,7 +123,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     type: string
   ): Promise<void> {
     if (
-      !acceptFileToBundle(filePath, extension.serverFilesFilterList) &&
+      !acceptFileToBundle(filePath, extension.serviceAI.serverFilesFilterList) &&
       !isFileChangingBundle(filePath)
     ) {
       return;
