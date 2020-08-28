@@ -1,5 +1,5 @@
 import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
-import { DEEPCODE_OPEN_BROWSER, DEEPCODE_OPEN_LOCAL } from "../constants/commands";
+import { DEEPCODE_OPEN_BROWSER_COMMAND, DEEPCODE_OPEN_LOCAL_COMMAND } from "../constants/commands";
 import * as path from 'path';
 
 export interface INodeIcon {
@@ -65,11 +65,11 @@ export class Node extends TreeItem implements INode {
     }
     this.description = desc;
     this.command = options.command || (options.link && {
-      command: DEEPCODE_OPEN_BROWSER,
+      command: DEEPCODE_OPEN_BROWSER_COMMAND,
       title: '',
       arguments: [options.link],
     }) || (options.issue && {
-      command: DEEPCODE_OPEN_LOCAL,
+      command: DEEPCODE_OPEN_LOCAL_COMMAND,
       title: '',
       arguments: [options.issue.uri, options.issue.range],
     });

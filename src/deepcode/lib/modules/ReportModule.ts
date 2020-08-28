@@ -3,6 +3,7 @@ import http from "../../http/requests";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
@@ -21,20 +22,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     this.transientErrors = 0;
   }
 
-  async sendError(options: {[key: string]: any}): Promise<void> {
-    if (!this.shouldReport || !this.shouldReportErrors) return;
-    try {
-      await http.sendError(this.baseURL, {
-        source: this.source,
-        ...(this.token && { sessionToken: this.token }),
-        ...options
-      });
-    } catch(error) {
-      console.error(error);
-    }
-  }
-
-  async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
+  private async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
       await http.sendEvent(this.baseURL, {
@@ -56,14 +44,45 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     }
   }
 
+  async processEvent(
+    event: string,
+    options: { [key: string]: any } = {}
+  ): Promise<void> {
+    // processEvent must be safely callable without waiting its completition.
+    return this.sendEvent(event, options).catch((err) =>
+      console.error("DeepCode event handler failed with error:", err)
+    );
+  }
+
+  async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
+    issueId = decodeURIComponent(issueId);
+    const [ language, model ] = issueId.split('/');
+    return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
+      data: { issueId, severity, language, model }
+    });
+  }
+
+  private async sendError(options: {[key: string]: any}): Promise<void> {
+    if (!this.shouldReport || !this.shouldReportErrors) return;
+    try {
+      await http.sendError(this.baseURL, {
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options
+      });
+    } catch(error) {
+      console.error(error);
+    }
+  }
+
   async processError(
     error: DeepCode.errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it to console.error
-    return this.processErrorInternal(error, options).catch((error) =>
-      console.error("DeepCode error handler failed with error:", error)
+    return this.processErrorInternal(error, options).catch((err) =>
+      console.error("DeepCode error handler failed with error:", err)
     );
   }
 

@@ -28,4 +28,5 @@ export const errorsLogs = {
   configWatcher: "Failed to handle configuration update",
   loadingBadge: "Failed to set loading badge icon",
   welcomeNotification: "Failed to handle welcome notification",
+  checkAdvancedMode: "Failed to check advanced mode",
 };
