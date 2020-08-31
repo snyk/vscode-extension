@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
-import { createListOfDirFiles } from "../../utils/packageUtils";
+import { createListOfDirFiles } from "@deepcode/tsc/src/utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
 import LoginModule from "../../lib/modules/LoginModule";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";

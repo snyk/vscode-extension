@@ -23,8 +23,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
-      const result = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
-      const { sessionToken, loginURL } = result;
+      const { sessionToken, loginURL } = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
       if (!sessionToken || !loginURL) {
         throw new Error(errorsLogs.login);
       }

@@ -8,11 +8,11 @@ module.exports = {
     'Atomics': 'readonly',
     'SharedArrayBuffer': 'readonly'
   },
-  // 'parserOptions': {
-  //   'ecmaVersion': 2018,
-  //   'sourceType': 'module',
-  //   'parser': 'babel-eslint'
-  // },
+  'parserOptions': {
+    'ecmaVersion': 2018,
+    'sourceType': 'module',
+    'parser': 'babel-eslint'
+  },
   'rules': {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
@@ -28,6 +28,10 @@ module.exports = {
     'padded-blocks': 'off',
     'camelcase': 'warn',
     'object-property-newline': 'off',
-    'indent': 'warn'
+    'prefer-const': 'off',
+    'import/no-absolute-path': 'off',
+    'no-prototype-builtins': 'off',
+    'indent': 'warn',
+    'quote-props': 'off'
   }
 }

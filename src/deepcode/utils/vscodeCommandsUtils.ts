@@ -6,7 +6,7 @@ import {
   DEEPCODE_CONTEXT_PREFIX,
   DEEPCODE_OPEN_BROWSER_COMMAND,
 } from "../constants/commands";
-import { createDCIgnore } from "./filesUtils"
+import { createDCIgnore } from "./ignoreFileUtils"
 
 export const openDeepcodeSettingsCommand = async (): Promise<void> => {
   await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, DEEPCODE_EXTENSION_NAME);

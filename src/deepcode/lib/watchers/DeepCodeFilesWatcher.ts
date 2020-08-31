@@ -1,9 +1,6 @@
 import * as vscode from "vscode";
-import { compareFileChanges, acceptFileToBundle, isFileChangingBundle } from "../../utils/filesUtils";
-import {
-  FILE_CURRENT_STATUS,
-  GIT_FILENAME
-} from "../../constants/filesConstants";
+import { compareFileChanges, isFileChangingBundle } from "@deepcode/tsc/src/utils/filesUtils";
+import { FILE_CURRENT_STATUS, GIT_FILENAME } from "@deepcode/tsc/src/constants/files";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
@@ -102,7 +99,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
           }
         } catch (err) {
           const filePathInBundle = filePath.split(fileWorkspacePath)[1];
-          
+
           await extension.processError(err, {
             message: errorsLogs.watchFileBeforeExtendBundle,
             bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
@@ -123,7 +120,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     type: string
   ): Promise<void> {
     if (
-      !acceptFileToBundle(filePath, extension.serviceAI.serverFilesFilterList) &&
+      !extension.serviceAI.acceptFileToBundle(filePath) &&
       !isFileChangingBundle(filePath)
     ) {
       return;
@@ -189,7 +186,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
       ...(extension.serverFilesFilterList.extensions || []).map(e => `*${e}`),
       ...(extension.serverFilesFilterList.configFiles || [])
     ];
-    
+
     const globPattern: vscode.GlobPattern = `**/\{${watchFiles.join(',')}\}`;
     this.watcher = vscode.workspace.createFileSystemWatcher(globPattern);
 
