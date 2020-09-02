@@ -1,17 +1,32 @@
 module.exports = {
-  'env': {
-    'es6': true,
-    'node': true
-  },
-  'extends': 'standard',
+  'plugins': [
+    '@typescript-eslint',
+    'prettier',
+    'import'
+  ],
+  'extends': [
+    'eslint:recommended',
+    'airbnb-base',
+    'plugin:@typescript-eslint/recommended',
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    'plugin:prettier/recommended',
+    'prettier',
+    'prettier/@typescript-eslint'
+  ],
   'globals': {
     'Atomics': 'readonly',
     'SharedArrayBuffer': 'readonly'
   },
+  'parser': "@typescript-eslint/parser",
   'parserOptions': {
-    'ecmaVersion': 2018,
+    'ecmaVersion': 2020,
     'sourceType': 'module',
-    'parser': 'babel-eslint'
+    'project': './tsconfig.json'
+  },
+  'env': {
+    'es6': true,
+    // 'browser': true,
+    'node': true
   },
   'rules': {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
@@ -22,16 +37,39 @@ module.exports = {
     ],
     'require-jsdoc': 'off',
     'space-before-function-paren': 'off',
-    'semi': 'off',
     'comma-dangle': 'off',
     'object-curly-spacing': 'warn',
     'padded-blocks': 'off',
     'camelcase': 'warn',
     'object-property-newline': 'off',
-    'prefer-const': 'off',
+    'prefer-const': 'warn',
     'import/no-absolute-path': 'off',
     'no-prototype-builtins': 'off',
     'indent': 'warn',
-    'quote-props': 'off'
-  }
+    'quote-props': [
+      'warn',
+      'as-needed'
+    ],
+    'lines-between-class-members': 'off',
+    'import/extensions': ['error', 'ignorePackages', {
+      js: 'never',
+      mjs: 'never',
+      jsx: 'never',
+      ts: 'never',
+      tsx: 'never',
+    }],
+    'no-restricted-syntax': 'off',
+    'no-await-in-loop': 'warn',
+    'no-underscore-dangle': 'off',
+    'max-classes-per-file': 'off',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+  },
+  'settings': {
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.vue'],
+      },
+    },
+  },
 }

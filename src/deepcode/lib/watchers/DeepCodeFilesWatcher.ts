@@ -85,7 +85,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
         }
         const fileWorkspacePath = await this.getFileWorkspacePath(filePath);
         try {
-          const updatedFile = await compareFileChanges(
+          const updatedFile = compareFileChanges(
             filePath,
             fileWorkspacePath,
             extension.hashesBundles[fileWorkspacePath]
