@@ -19,7 +19,7 @@ import {
   openDeepcodeSettingsCommand,
   createDCIgnoreCommand,
 } from "./utils/vscodeCommandsUtils";
-import { errorsLogs } from "./messages/errorsServerLogMessages";
+import { errorsLogs } from './messages/errorsServerLogMessages';
 import {
   DEEPCODE_VIEW_SUPPORT,
   DEEPCODE_VIEW_ANALYSIS,
@@ -41,7 +41,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       });
     }
   }
-  
+
   public activate(context: vscode.ExtensionContext): void {
     this.statusBarItem.show();
 
@@ -69,7 +69,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         }
       )
     );
-    
+
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_LOGIN_COMMAND,
@@ -80,7 +80,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         )
       )
     );
-    
+
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_APPROVE_COMMAND,
@@ -91,7 +91,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         )
       )
     );
-    
+
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_START_COMMAND,
@@ -102,7 +102,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         )
       )
     );
-    
+
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETMODE_COMMAND,
@@ -113,7 +113,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
         )
       )
     );
-    
+
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETTINGS_COMMAND,
@@ -158,12 +158,12 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     );
 
     vscode.window.registerTreeDataProvider(
-      DEEPCODE_VIEW_SUPPORT, 
+      DEEPCODE_VIEW_SUPPORT,
       new SupportProvider(this)
     );
 
     vscode.window.registerTreeDataProvider(
-      DEEPCODE_VIEW_ANALYSIS, 
+      DEEPCODE_VIEW_ANALYSIS,
       new IssueProvider(this)
     );
 

@@ -29,7 +29,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
-  
+
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);

@@ -13,14 +13,14 @@ import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT, DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { IServiceAI, ServiceAI } from '@deepcode/tsc';
+import { IServiceAI, ServiceAI, IHashesBundles, IRemoteBundlesCollection } from '@deepcode/tsc';
 
 export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   serviceAI: IServiceAI;
   currentWorkspacePath: string;
   workspacesPaths: Array<string>;
-  hashesBundles: DeepCode.HashesBundlesInterface;
-  remoteBundles: DeepCode.RemoteBundlesCollectionInterface;
+  hashesBundles: IHashesBundles;
+  remoteBundles: IRemoteBundlesCollection;
   analyzer: DeepCode.AnalyzerInterface;
   statusBarItem: DeepCode.StatusBarItemInterface;
   filesWatcher: DeepCode.DeepCodeWatcherInterface;

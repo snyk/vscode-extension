@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import { compareFileChanges, isFileChangingBundle } from "@deepcode/tsc/src/utils/filesUtils";
-import { FILE_CURRENT_STATUS, GIT_FILENAME } from "@deepcode/tsc/src/constants/files";
+import { FILE_CURRENT_STATUS, GIT_FILENAME, compareFileChanges, isFileChangingBundle } from '@deepcode/tsc';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
@@ -119,8 +118,8 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     extension: DeepCode.ExtensionInterface,
     type: string
   ): Promise<void> {
+    // !extension.serviceAI.acceptFileToBundle(filePath) &&
     if (
-      !extension.serviceAI.acceptFileToBundle(filePath) &&
       !isFileChangingBundle(filePath)
     ) {
       return;
@@ -177,14 +176,11 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   public activate(extension: DeepCode.ExtensionInterface): void {
-    if (!Object.keys(extension.serverFilesFilterList).length) {
-      console.error('Empty watch list');
-      return;
-    }
+    const { extensions = [], configFiles = [] } = {};
 
     const watchFiles = [
-      ...(extension.serverFilesFilterList.extensions || []).map(e => `*${e}`),
-      ...(extension.serverFilesFilterList.configFiles || [])
+      ...extensions.map(e => `*${e}`),
+      ...configFiles
     ];
 
     const globPattern: vscode.GlobPattern = `**/\{${watchFiles.join(',')}\}`;

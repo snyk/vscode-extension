@@ -69,10 +69,10 @@ const preTestConfigureExtension = () => {
   testExtension.staticUploadApproved = true;
   testExtension.staticToken = testToken;
   testExtension.staticBaseURL = testHost;
-  
+
   // set workspace path for tests
   testExtension.workspacesPaths = [mockedFolderPath];
-  
+
   return testExtension;
 };
 
@@ -100,14 +100,6 @@ suite("Deepcode Extension Tests", () => {
     );
   });
 
-  test("Fetching files filters list", async () => {
-    await testExtension.createFilesFilterList();
-    assert.deepEqual(
-      testExtension.serverFilesFilterList,
-      mockedFilesFiltersResponse
-    );
-  });
-
   test('Insert ignore comment line', async () => {
     const document = await vscode.workspace.openTextDocument(uri);
     const editor = await vscode.window.showTextDocument(document, 1, false);
@@ -122,10 +114,10 @@ suite("Deepcode Extension Tests", () => {
 
   test('Send files list to analyse', async () => {
     try {
-      await testExtension.serviceAI.analyse({ 
-        baseURL: testHost, 
-        sessionToken: testToken, 
-        baseDir: mockedTestFilesDirPath, 
+      await testExtension.serviceAI.analyse({
+        baseURL: testHost,
+        sessionToken: testToken,
+        baseDir: mockedTestFilesDirPath,
         files: testFilesList,
         removedFiles: []
       });

@@ -8,7 +8,12 @@ import {
 } from "vscode";
 import * as vscode from "vscode";
 
-import { IServiceAI } from '@deepcode/tsc';
+import {
+  IServiceAI,
+  IHashesBundles,
+  IRemoteBundlesCollection,
+  IRemoteBundle,
+} from '@deepcode/tsc';
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
@@ -41,31 +46,8 @@ namespace DeepCode {
     [key: string]: string;
   }
 
-  export interface BundlesInterface {
-    [key: string]: string;
-  }
-
-  export interface HashesBundlesInterface {
-    [key: string]: BundlesInterface;
-  }
-
   export interface StateSelectorsInterface {
     [key: string]: Function;
-  }
-
-  export interface RemoteBundleInterface {
-    bundleId?: string;
-    missingFiles?: Array<string>;
-    uploadURL?: string;
-  }
-
-  export interface RemoteExtendBundleInterface {
-    files?: { [key: string]: string };
-    removedFiles?: Array<string>;
-  }
-
-  export interface RemoteBundlesCollectionInterface {
-    [key: string]: RemoteBundleInterface;
   }
 
   export interface SingleIssuePositionInterface {
@@ -159,8 +141,8 @@ namespace DeepCode {
     serviceAI: IServiceAI;
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
-    hashesBundles: HashesBundlesInterface;
-    remoteBundles: RemoteBundlesCollectionInterface;
+    hashesBundles: IHashesBundles;
+    remoteBundles: IRemoteBundlesCollection;
     refreshViewEmitter: vscode.EventEmitter<any>;
     refreshViews(content: any): void;
     analysisStatus: string;
@@ -210,7 +192,6 @@ namespace DeepCode {
   export interface BundlesModuleInterface {
     readonly runningAnalysis: boolean;
     startAnalysis(): Promise<void>;
-    createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
     updateCurrentWorkspacePath(newWorkspacePath: string): void;
@@ -221,7 +202,7 @@ namespace DeepCode {
     performBundlesActions(path: string): Promise<void>;
     updateExtensionRemoteBundles(
       workspacePath: string,
-      bundle?: DeepCode.RemoteBundleInterface
+      bundle?: IRemoteBundle
     ): Promise<void>;
     checkIfHashesBundlesIsEmpty(bundlePath?: string): boolean;
     checkIfRemoteBundlesIsEmpty(bundlePath?: string): boolean;

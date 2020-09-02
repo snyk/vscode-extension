@@ -2,9 +2,15 @@ import * as vscode from "vscode";
 import * as _ from "lodash";
 
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
-import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
-import { createListOfDirFiles } from "@deepcode/tsc/src/utils/packageUtils";
+import {
+  IQueueAnalysisCheckResult,
+  IBundles,
+  IRemoteBundle,
+
+  checkIfBundleIsEmpty,
+  createListOfDirFiles,
+} from '@deepcode/tsc';
+
 import { BUNDLE_EVENTS } from "../../constants/events";
 import LoginModule from "../../lib/modules/LoginModule";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
@@ -17,7 +23,7 @@ abstract class BundlesModule extends LoginModule
   runningAnalysis = false;
 
   files: string[] = [];
-  
+
   constructor() {
     super();
 
@@ -61,7 +67,7 @@ abstract class BundlesModule extends LoginModule
     this.refreshViews();
   }
 
-  
+
   onCollectBundleProgress(value: number) {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
   }
@@ -153,20 +159,6 @@ abstract class BundlesModule extends LoginModule
     this.workspacesPaths.push(workspacePath);
   }
 
-  // procesing filter list of files, acceptable for server
-  public async createFilesFilterList(): Promise<void> {
-    try {
-      this.serverFilesFilterList = await this.serviceAI.getFilters({ 
-        baseURL: this.baseURL,
-        sessionToken: this.token
-      });
-    } catch (err) {
-      await this.processError(err, {
-        message: errorsLogs.filtersFiles
-      })
-    }
-  }
-
   private terminateAnalysis(): void {
     this.serviceAI.removeListeners();
     this.runningAnalysis = false;
@@ -176,25 +168,13 @@ abstract class BundlesModule extends LoginModule
     if (this.runningAnalysis) return;
     this.runningAnalysis = true;
 
-    if (!Object.keys(this.serverFilesFilterList).length) {
-      await this.createFilesFilterList();
-      if (!Object.keys(this.serverFilesFilterList).length) {
-        await this.processError(new Error(errorsLogs.filtersFiles), {
-          message: errorsLogs.filtersFiles,
-          data: {
-            filters: this.serverFilesFilterList
-          }
-        });
-        return;
-      }
-      this.filesWatcher.activate(this);
-    }
+    // this.filesWatcher.activate(this);
 
     if (!this.token) {
       await this.checkSession();
       return;
     }
-    
+
     if (!this.uploadApproved) {
       await this.checkApproval();
       return;
@@ -203,12 +183,12 @@ abstract class BundlesModule extends LoginModule
     const bundle = await this.startCollectingFiles(path);
     const removedFiles = (this.files || []).filter(f => !bundle.includes(f));
     this.files = bundle;
-    
+
     this.serviceAI.analyse({
-      baseURL: this.baseURL, 
-      sessionToken: this.token, 
-      baseDir: path, 
-      files: this.files, 
+      baseURL: this.baseURL,
+      sessionToken: this.token,
+      baseDir: path,
+      files: this.files,
       removedFiles: removedFiles
     }).catch(
       // no need to wait for processError since catch is called asynchronously as well
@@ -222,7 +202,6 @@ abstract class BundlesModule extends LoginModule
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 0);
     console.log("COLLECTING");
     const bundle = await createListOfDirFiles({
-      serverFilesFilterList,
       path: folderPath,
       progress: {
         onProgress: this.onCollectBundleProgress.bind(this),
@@ -235,7 +214,7 @@ abstract class BundlesModule extends LoginModule
 
   private async createSingleHashBundle(
     path: string
-  ): Promise<DeepCode.BundlesInterface> {
+  ): Promise<IBundles> {
     this.rootPath = path;
 
     // convert string[] to BundleInterface
@@ -280,7 +259,7 @@ abstract class BundlesModule extends LoginModule
   // processing remote server bundles
   public async updateExtensionRemoteBundles(
     workspacePath: string,
-    bundle: DeepCode.RemoteBundleInterface | null = null
+    bundle: IRemoteBundle | null = null
   ): Promise<void> {
     if (bundle) {
       this.remoteBundles[workspacePath] = { ...bundle };

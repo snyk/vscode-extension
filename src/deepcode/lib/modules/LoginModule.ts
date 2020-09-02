@@ -23,10 +23,13 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
-      const { sessionToken, loginURL } = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
-      if (!sessionToken || !loginURL) {
+      const response = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
+      if (response.type == 'error') {
         throw new Error(errorsLogs.login);
       }
+
+      const { sessionToken, loginURL } = response.value;
+
       await this.setToken(sessionToken);
       await viewInBrowser(loginURL);
       await this.waitLoginConfirmation();
@@ -43,9 +46,9 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     let validSession = false;
     if (this.token) {
       try {
-        validSession = !!(await this.serviceAI.checkSession({ 
-          baseURL: this.baseURL, 
-          sessionToken: this.token 
+        validSession = !!(await this.serviceAI.checkSession({
+          baseURL: this.baseURL,
+          sessionToken: this.token
         }));
       } catch (err) {
         await this.processError(err, {
