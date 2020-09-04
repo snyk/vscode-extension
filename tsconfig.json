@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "build",
-    "module": "esnext",
+    "outDir": "out",
+    "module": "es2020",
     "target": "es6",
     "lib": ["es6", "dom", "es7", "es2017", "es2018", "es2019"],
     "sourceMap": true,
