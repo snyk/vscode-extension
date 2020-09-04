@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { FILE_CURRENT_STATUS, GIT_FILENAME, compareFileChanges, isFileChangingBundle } from '@deepcode/tsc';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { DeepCodeWatcherInterface, ExtensionInterface } from "../../../interfaces/DeepCodeInterfaces";
 
-class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
+class DeepCodeFilesWatcher implements DeepCodeWatcherInterface {
   private changedFilesList: Array<string> = [];
   private watcher: vscode.FileSystemWatcher | null = null;
   private FILES_TO_SAVE_LIST_FIRST_ELEMENT: number = 1;
@@ -31,7 +31,6 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
 
   private updateCorrespondingFilesList(
     fileWorkspacePath: string,
-    filePath: string,
     payload: { [key: string]: string }
   ): void {
     this.filesForUpdatingServerBundle[fileWorkspacePath] = this
@@ -41,7 +40,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   private async performBundlesAndReviewActions(
-    extension: DeepCode.ExtensionInterface
+    extension: ExtensionInterface
   ): Promise<void> {
     if (Object.keys(this.filesForUpdatingServerBundle).length) {
       for (const workspacePath in this.filesForUpdatingServerBundle) {
@@ -64,13 +63,13 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   private async updateFilesActions(
-    extension: DeepCode.ExtensionInterface,
+    extension: ExtensionInterface,
     type: string
   ): Promise<void> {
     if (type === FILE_CURRENT_STATUS.deleted) {
       for await (const filePath of this.changedFilesList) {
         const fileWorkspacePath = await this.getFileWorkspacePath(filePath);
-        this.updateCorrespondingFilesList(fileWorkspacePath, filePath, {
+        this.updateCorrespondingFilesList(fileWorkspacePath, {
           status: FILE_CURRENT_STATUS.deleted,
           filePath: filePath.split(fileWorkspacePath)[1]
         });
@@ -92,9 +91,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
           );
           const { modified, created, deleted } = FILE_CURRENT_STATUS;
           if ( [modified, created, deleted].includes(updatedFile.status)) {
-            this.updateCorrespondingFilesList(fileWorkspacePath, filePath, {
-              ...updatedFile
-            });
+            this.updateCorrespondingFilesList(fileWorkspacePath, updatedFile);
           }
         } catch (err) {
           const filePathInBundle = filePath.split(fileWorkspacePath)[1];
@@ -115,7 +112,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
 
   private async updateFiles(
     filePath: string,
-    extension: DeepCode.ExtensionInterface,
+    extension: ExtensionInterface,
     type: string
   ): Promise<void> {
     // !extension.serviceAI.acceptFileToBundle(filePath) &&
@@ -138,7 +135,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
 
   private async ignoreFilesCaches(
     filePath: string,
-    extension: DeepCode.ExtensionInterface
+    extension: ExtensionInterface
   ): Promise<string> {
     const fileWorkspacePath = extension.workspacesPaths.find(path =>
       filePath.includes(path)
@@ -162,7 +159,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
 
   private async filesChangesHandler(
     filePath: string,
-    extension: DeepCode.ExtensionInterface,
+    extension: ExtensionInterface,
     type: string
   ): Promise<void> {
     // Exclude changes to the .git directory.
@@ -175,7 +172,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
     }
   }
 
-  public activate(extension: DeepCode.ExtensionInterface): void {
+  public activate(extension: ExtensionInterface): void {
     const { extensions = [], configFiles = [] } = {};
 
     const watchFiles = [

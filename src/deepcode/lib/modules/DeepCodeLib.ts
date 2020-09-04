@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { DeepCodeLibInterface } from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
 import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -9,7 +9,7 @@ import {
   EXECUTION_PAUSE_INTERVAL,
 } from "../../constants/general";
 
-export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
+export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInterface {
   private _mode = DEEPCODE_MODE_CODES.AUTO;
   // Platform-independant type definition.
   private _unpauseTimeout: ReturnType<typeof setTimeout> | undefined;

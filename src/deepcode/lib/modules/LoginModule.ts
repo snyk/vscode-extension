@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import ReportModule from "./ReportModule";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-
+import { LoginModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 import { viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
 import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
@@ -11,7 +10,7 @@ import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
-abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
+abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
 
   async initiateLogin(): Promise<void> {

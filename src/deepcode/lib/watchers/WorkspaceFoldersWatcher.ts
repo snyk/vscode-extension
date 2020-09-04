@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { DeepCodeWatcherInterface, ExtensionInterface } from "../../../interfaces/DeepCodeInterfaces";
 
 class DeepCodeWorkspaceFoldersWatcher
-  implements DeepCode.DeepCodeWatcherInterface {
-  public activate(extension: DeepCode.ExtensionInterface): void {
+  implements DeepCodeWatcherInterface {
+  public activate(extension: ExtensionInterface): void {
     this.watchCurrentTextEditorWorkspace(extension);
     this.watchWorkspacesChanges(extension);
   }
 
   private watchCurrentTextEditorWorkspace(
-    extension: DeepCode.ExtensionInterface
+    extension: ExtensionInterface
   ): void {
     vscode.window.onDidChangeActiveTextEditor(
       (textEditor: vscode.TextEditor | undefined) => {
@@ -31,9 +31,10 @@ class DeepCodeWorkspaceFoldersWatcher
     );
   }
 
-  private watchWorkspacesChanges(extension: DeepCode.ExtensionInterface): void {
+  private watchWorkspacesChanges(extension: ExtensionInterface): void {
     const proceedWithBundlesActions = async (p: string) => {
       // await extension.performBundlesActions(p);
+      console.log(`added new folder --> ${p}`);
       await extension.startExtension();
     };
 

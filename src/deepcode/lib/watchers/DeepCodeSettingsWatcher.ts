@@ -1,17 +1,17 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { DeepCodeWatcherInterface, ExtensionInterface } from "../../../interfaces/DeepCodeInterfaces";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
-class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
-  
-  private async onChangeConfiguration(extension: DeepCode.ExtensionInterface, key: string): Promise<void> {
+class DeepCodeSettingsWatcher implements DeepCodeWatcherInterface {
+
+  private async onChangeConfiguration(extension: ExtensionInterface, key: string): Promise<void> {
     if (key === 'deepcode.advancedMode') {
       return extension.checkAdvancedMode();
     }
     const extensionConfig = vscode.workspace.getConfiguration('deepcode');
     // @ts-ignore */}
     const url: string = extensionConfig.get('url');
-    
+
     const cleaned = url.replace(/\/$/, '');
     if (cleaned !== url) {
       extensionConfig.update('url', cleaned, true);
@@ -20,7 +20,7 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     }
   }
 
-  public activate(extension: DeepCode.ExtensionInterface): void {
+  public activate(extension: ExtensionInterface): void {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
         const change = [

@@ -1,4 +1,4 @@
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { ReportModuleInterface, errorType } from "../../../interfaces/DeepCodeInterfaces";
 import BaseDeepCodeModule from "./BaseDeepCodeModule";
 import { statusCodes } from "../../constants/statusCodes";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -6,9 +6,9 @@ import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
-abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.ReportModuleInterface {
+abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleInterface {
   private transientErrors = 0;
-  
+
   private get shouldReport(): boolean {
     // DEV: uncomment the following line to test this module in development
     // return true;
@@ -24,8 +24,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   private async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
-      await this.serviceAI.reportEvent({ 
-        baseURL: this.baseURL, 
+      await this.serviceAI.reportEvent({
+        baseURL: this.baseURL,
         type: event,
         source: this.source,
         ...(this.token && { sessionToken: this.token }),
@@ -66,7 +66,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
     if (!this.shouldReport || !this.shouldReportErrors) return;
     try {
       await this.serviceAI.reportError({
-        baseURL: this.baseURL, 
+        baseURL: this.baseURL,
         source: this.source,
         ...(this.token && { sessionToken: this.token }),
         ...options
@@ -77,7 +77,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   }
 
   async processError(
-    error: DeepCode.errorType,
+    error: errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
@@ -88,11 +88,11 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   }
 
   private async processErrorInternal(
-    error: DeepCode.errorType,
+    error: errorType,
     options: { [key: string]: any } = {}
   ): Promise<void> {
     console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
-    
+
     if (error.error) {
       const { code, message } = error.error;
       // TODO: move it to 'tsc'
@@ -106,7 +106,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
       await this.sendErrorToServer(error, options);
       return this.generalErrorHandler();
     }
-    
+
     const {
       unauthorizedUser,
       unauthorizedContent,
@@ -117,7 +117,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
       serviceUnavailable,
       timeout
     } = statusCodes;
-    
+
     switch (error.statusCode) {
       case serverError:
       case badGateway:
@@ -142,7 +142,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
 
   private async connectionErrorHandler(): Promise<void> {
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
-    
+
     ++this.transientErrors;
     await this.setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
@@ -153,7 +153,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements DeepCode.Repor
   }
 
   private async sendErrorToServer(
-    error: DeepCode.errorType,
+    error: errorType,
     options: { [key: string]: any }
   ): Promise<void> {
     let errorTrace;

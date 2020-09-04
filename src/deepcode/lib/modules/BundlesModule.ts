@@ -1,7 +1,13 @@
 import * as vscode from "vscode";
 import * as _ from "lodash";
 
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import {
+  BundlesModuleInterface,
+  AnalysisResultsFileResultsInterface,
+  AnalysisResultsCollectionInterface,
+  AnalysisResultsInterface,
+  AnalysisSuggestionsInterface,
+} from "../../../interfaces/DeepCodeInterfaces";
 import {
   IQueueAnalysisCheckResult,
   IBundles,
@@ -17,7 +23,7 @@ import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/view
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 abstract class BundlesModule extends LoginModule
-  implements DeepCode.BundlesModuleInterface {
+  implements BundlesModuleInterface {
   private rootPath = "";
 
   runningAnalysis = false;
@@ -100,7 +106,7 @@ abstract class BundlesModule extends LoginModule
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
     type ResultFiles = {
-      [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
+      [filePath: string]: AnalysisResultsFileResultsInterface;
     };
     const resultFiles = (
       analysisResults.analysisResults.files as unknown as ResultFiles
@@ -108,9 +114,9 @@ abstract class BundlesModule extends LoginModule
     const result = ({
       files: { ...resultFiles },
       suggestions: analysisResults.analysisResults
-        .suggestions as DeepCode.AnalysisSuggestionsInterface,
+        .suggestions as AnalysisSuggestionsInterface,
       success: true
-    } as unknown) as DeepCode.AnalysisResultsCollectionInterface;
+    } as unknown) as AnalysisResultsCollectionInterface;
 
     const analysedFiles: ResultFiles = {};
 
@@ -120,7 +126,7 @@ abstract class BundlesModule extends LoginModule
       analysedFiles[path] = result.files[filePath];
     }
 
-    result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
+    result.files = analysedFiles as unknown as AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
     this.terminateAnalysis();
     this.refreshViews();

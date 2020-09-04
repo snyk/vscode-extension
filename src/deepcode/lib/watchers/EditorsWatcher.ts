@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { ExtensionInterface, DeepCodeWatcherInterface, openedTextEditorType } from "../../../interfaces/DeepCodeInterfaces";
 
-class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
+class DeepCodeEditorsWatcher implements DeepCodeWatcherInterface {
   private currentTextEditors: {
-    [key: string]: DeepCode.openedTextEditorType;
+    [key: string]: openedTextEditorType;
   } = {};
 
   private createEditorInfo(
-    extension: DeepCode.ExtensionInterface,
+    extension: ExtensionInterface,
     editor: vscode.TextEditor
   ): void {
     const path = editor.document.fileName;
@@ -29,7 +29,7 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
     };
   }
 
-  private watchEditorsNavChange(extension: DeepCode.ExtensionInterface) {
+  private watchEditorsNavChange(extension: ExtensionInterface) {
     vscode.window.onDidChangeActiveTextEditor(
       (editor: vscode.TextEditor | undefined) => {
         if (editor && !this.currentTextEditors[editor.document.fileName]) {
@@ -47,7 +47,7 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
     });
   }
 
-  private watchEditorCodeChanges(extension: DeepCode.ExtensionInterface) {
+  private watchEditorCodeChanges(extension: ExtensionInterface) {
     vscode.workspace.onDidChangeTextDocument(
       (event: vscode.TextDocumentChangeEvent) => {
         const currentEditorFileName = event.document.fileName;
@@ -78,7 +78,7 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   private async prepareWatchers(
-    extension: DeepCode.ExtensionInterface
+    extension: ExtensionInterface
   ): Promise<void> {
     for await (const editor of vscode.window.visibleTextEditors) {
       this.createEditorInfo(extension, editor);
@@ -88,7 +88,7 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
     await this.watchEditorCodeChanges(extension);
   }
 
-  public activate(extension: DeepCode.ExtensionInterface): void {
+  public activate(extension: ExtensionInterface): void {
     this.prepareWatchers(extension);
   }
 }

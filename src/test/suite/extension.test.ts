@@ -5,10 +5,10 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import * as path from "path";
-import * as nock from "nock";
+import nock from "nock";
 //
 import * as extension from "../../extension";
-import Deepcode from "../../interfaces/DeepCodeInterfaces";
+import { ExtensionInterface } from "../../interfaces/DeepCodeInterfaces";
 
 // mocked data for tests
 const testHost = "http://localhost:3000";
@@ -89,7 +89,7 @@ const testFilesList = [
 ];
 
 suite("Deepcode Extension Tests", () => {
-  let testExtension: Deepcode.ExtensionInterface;
+  let testExtension: ExtensionInterface;
   test("Pre-test configuring", () => {
     testExtension = preTestConfigureExtension();
     assert.equal(testExtension.token, testToken);
@@ -107,6 +107,7 @@ suite("Deepcode Extension Tests", () => {
       textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
     }).then(inserted => {
       assert.equal(`${document.lineAt(18).text}\n`, testIgnoreComment);
+      assert.equal(inserted, testIgnoreComment);
       // TODO: find a way to undo this change
       // TODO: check actual analysis results with ignored line
     });

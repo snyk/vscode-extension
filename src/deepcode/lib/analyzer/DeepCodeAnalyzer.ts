@@ -1,5 +1,15 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import {
+  AnalyzerInterface,
+  ExtensionInterface,
+  AnalysisResultsCollectionInterface,
+  AnalysisResultsInterface,
+  IssuePositionsInterface,
+  AnalysisSuggestionsInterface,
+  AnalysisResultsFileResultsInterface,
+  IssuesListOptionsInterface,
+  openedTextEditorType,
+} from "../../../interfaces/DeepCodeInterfaces";
 import {
   updateFileReviewResultsPositions,
   createIssueCorrectRange,
@@ -17,35 +27,34 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { DisposableCodeActionsProvider } from "../deepCodeProviders/codeActionsProvider/DeepCodeIssuesActionsProvider";
 import { DisposableHoverProvider } from "../deepCodeProviders/hoverProvider/DeepCodeHoverProvider";
 
-class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
+class DeepCodeAnalyzer implements AnalyzerInterface {
   private SEVERITIES: {
     [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
   };
-  private extension: DeepCode.ExtensionInterface | undefined;
-  private issueHoverProvider: vscode.Disposable | undefined;
-  private ignoreActionsProvider: vscode.Disposable | undefined;
+  private extension: ExtensionInterface | undefined;
   private issuesMarkersdecorationType:
     | vscode.TextEditorDecorationType
     | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
-  public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
+  public analysisResultsCollection: AnalysisResultsCollectionInterface;
 
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
 
     this.analysisResultsCollection = {};
-    this.ignoreActionsProvider = new DisposableCodeActionsProvider(
+
+    new DisposableCodeActionsProvider(
       this.deepcodeReview,
       {
         findSuggestionId: this.findSuggestionId.bind(this),
         trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this)
       }
     );
-    this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
+    new DisposableHoverProvider(this.deepcodeReview);
   }
 
-  public activate(extension: DeepCode.ExtensionInterface) {
+  public activate(extension: ExtensionInterface) {
     this.extension = extension;
   }
 
@@ -69,8 +78,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     );
   }
 
-  public updateAnalysisResultsCollection(results: DeepCode.AnalysisResultsCollectionInterface, rootPath: string): void {
-    this.analysisResultsCollection[rootPath] = {...results} as unknown as DeepCode.AnalysisResultsInterface;
+  public updateAnalysisResultsCollection(results: AnalysisResultsCollectionInterface, rootPath: string): void {
+    this.analysisResultsCollection[rootPath] = {...results} as unknown as AnalysisResultsInterface;
     this.createReviewResults();
   }
 
@@ -81,8 +90,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     fileUri
   }: {
     issue: number;
-    issuePositions: DeepCode.IssuePositionsInterface;
-    suggestions: DeepCode.AnalysisSuggestionsInterface;
+    issuePositions: IssuePositionsInterface;
+    suggestions: AnalysisSuggestionsInterface;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
     const message: string = suggestions[issue].message;
@@ -104,7 +113,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   }
 
   private createIssuesList(
-    options: DeepCode.IssuesListOptionsInterface
+    options: IssuesListOptionsInterface
   ): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
     const { fileIssuesList, suggestions, fileUri } = options;
@@ -193,8 +202,8 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
   }
 
   public async updateReviewResultsPositions(
-    extension: DeepCode.ExtensionInterface,
-    updatedFile: DeepCode.openedTextEditorType
+    extension: ExtensionInterface,
+    updatedFile: openedTextEditorType
   ): Promise<void> {
     try {
       if (
@@ -205,7 +214,7 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       ) {
         return;
       }
-      const fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface = await updateFileReviewResultsPositions(
+      const fileIssuesList: AnalysisResultsFileResultsInterface = await updateFileReviewResultsPositions(
         this.analysisResultsCollection,
         updatedFile
       );

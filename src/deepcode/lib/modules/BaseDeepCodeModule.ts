@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
 import * as _ from "lodash";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import {
+  BaseDeepCodeModuleInterface,
+  AnalyzerInterface,
+  StatusBarItemInterface,
+  DeepCodeWatcherInterface,
+  errorType,
+} from "../../../interfaces/DeepCodeInterfaces";
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
 import DeepCodeStatusBarItem from "../statusBarItem/DeepCodeStatusBarItem";
 import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
@@ -15,18 +21,18 @@ import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { IServiceAI, ServiceAI, IHashesBundles, IRemoteBundlesCollection } from '@deepcode/tsc';
 
-export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
+export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleInterface {
   serviceAI: IServiceAI;
   currentWorkspacePath: string;
   workspacesPaths: Array<string>;
   hashesBundles: IHashesBundles;
   remoteBundles: IRemoteBundlesCollection;
-  analyzer: DeepCode.AnalyzerInterface;
-  statusBarItem: DeepCode.StatusBarItemInterface;
-  filesWatcher: DeepCode.DeepCodeWatcherInterface;
-  workspacesWatcher: DeepCode.DeepCodeWatcherInterface;
-  editorsWatcher: DeepCode.DeepCodeWatcherInterface;
-  settingsWatcher: DeepCode.DeepCodeWatcherInterface;
+  analyzer: AnalyzerInterface;
+  statusBarItem: StatusBarItemInterface;
+  filesWatcher: DeepCodeWatcherInterface;
+  workspacesWatcher: DeepCodeWatcherInterface;
+  editorsWatcher: DeepCodeWatcherInterface;
+  settingsWatcher: DeepCodeWatcherInterface;
 
   // Views and analysis progress
   refreshViewEmitter: vscode.EventEmitter<any>;
@@ -225,7 +231,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   );
 
   abstract processError(
-    error: DeepCode.errorType,
+    error: errorType,
     options?: { [key: string]: any }
   ): Promise<void>;
 
