@@ -4,6 +4,7 @@ export const TELEMETRY_EVENTS = {
   viewConsentView: 'viewConsent',
   viewSuggestionView: 'viewSuggestionView',
   viewSuggestion: 'viewSuggestion',
+  suggestionFeedback: 'suggestionFeedback',
   ignoreSuggestion: 'ignoreSuggestion',
   toggleAdvancedMode: 'toggleAdvancedMode',
   changeExecutionMode: 'changeExecutionMode',

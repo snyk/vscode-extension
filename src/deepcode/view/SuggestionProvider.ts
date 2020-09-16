@@ -8,6 +8,7 @@ import {
   DEEPCODE_OPEN_BROWSER_COMMAND,
   DEEPCODE_OPEN_LOCAL_COMMAND,
 } from "../constants/commands";
+import { TELEMETRY_EVENTS } from "../constants/telemetry";
 import { errorsLogs } from "../messages/errorsServerLogMessages";
 
 // This is outside of the class just for a stylistic choice, to have clear indentation structure.
@@ -633,7 +634,10 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
           break;
         }
         case 'sendFeedback' : {
-          const { url } = args;
+          await this.extension.processEvent(
+            TELEMETRY_EVENTS.suggestionFeedback,
+            { data: args }
+          )
           break;
         }
         default: {
