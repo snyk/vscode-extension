@@ -8,6 +8,7 @@ import {
   DEEPCODE_OPEN_BROWSER_COMMAND,
   DEEPCODE_OPEN_LOCAL_COMMAND,
 } from "../constants/commands";
+import { errorsLogs } from "../messages/errorsServerLogMessages";
 
 // This is outside of the class just for a stylistic choice, to have clear indentation structure.
 // NOTES: tags must be closed by matching pairs (<tag/> is not valid)
@@ -487,7 +488,6 @@ function getWebviewContent(images: Record<string,string>) { return `
 
         const moreInfo = document.getElementById('lead-url');
         moreInfo.className = suggestion.leadURL ? "clickable" : "clickable hidden";
-        sendMessage({lead_url: suggestion.lead_url, leadURL: suggestion.leadURL});
 
         const suggestionPosition = document.getElementById('line-position');
         suggestionPosition.innerHTML = suggestion.rows[0];
@@ -638,13 +638,14 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
           break;
         }
         default: {
-          console.error("DeepCode: Failed to parse suggestion view message",message);
+          throw new Error("Unknown message type");
         }
       }
     } catch (e) {
       this.extension.processError(e, {
-        //TODO
-      })
+        message: errorsLogs.suggestionViewMessage,
+        data: { message },
+      });
     }
   }
 }
