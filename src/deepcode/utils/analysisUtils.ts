@@ -260,8 +260,9 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
   const workspaceAnalysisPath: string | undefined = Object.keys(
     analysisResultsCollection
   ).find((path: string): boolean => filePath.includes(path));
-  filePath = filePath.split(workspaceAnalysisPath || "").pop() || "";
+  filePath = (filePath.split(workspaceAnalysisPath || "").pop() || "").replace(/\\/g,"/");
   console.error("DC util fp, workspace:",filePath,workspaceAnalysisPath);
+  console.error("DC util files[filePath]:",workspaceAnalysisPath && analysisResultsCollection[workspaceAnalysisPath].files[filePath]);
   if (
     !filePath ||
     !workspaceAnalysisPath ||
