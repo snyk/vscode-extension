@@ -7,7 +7,8 @@ import {
   createIssueRelatedInformation,
   createDeepCodeSeveritiesMap,
   getDeepCodeSeverity,
-  extractSuggestionIdFromSuggestionsMap
+  extractCompleteSuggestionFromSuggestionsMap,
+  extractSuggestionIdFromSuggestionsMap,
 } from "../../utils/analysisUtils";
 import { DEEPCODE_NAME } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
@@ -47,6 +48,17 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
 
   public activate(extension: DeepCode.ExtensionInterface) {
     this.extension = extension;
+  }
+
+  public getFullSuggestion(suggestionId: string, fileSystemPath: string, position: vscode.Range): 
+    DeepCode.completeAnalysisSuggestionsType | undefined 
+  {
+    return extractCompleteSuggestionFromSuggestionsMap(
+      this.analysisResultsCollection,
+      suggestionId,
+      fileSystemPath,
+      position,
+    );
   }
 
   public findSuggestionId(suggestionName: string, fileSystemPath: string): string {

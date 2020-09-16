@@ -38,6 +38,7 @@
     "Code Quality"
   ],
   "activationEvents": [
+    "onWebviewPanel:deepcode.views.suggestion",
     "*"
   ],
   "main": "./out/extension.js",
@@ -198,6 +199,11 @@
     },
     "commands": [
       {
+        "command": "deepcode.test",
+        "title": "DeepCode test",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "deepcode.start",
         "title": "DeepCode re-scan",
         "icon": "$(refresh)"
@@ -252,6 +258,7 @@
     "ignore": "^5.1.8",
     "lodash": "^4.17.19",
     "mz": "^2.7.0",
-    "open": "^7.0.4"
+    "open": "^7.0.4",
+    "axios": "0.18.1"
   }
 }

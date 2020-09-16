@@ -29,6 +29,23 @@ namespace DeepCode {
     document: TextDocument;
   };
 
+  export type completeAnalysisSuggestionsType = analysisSuggestionsType & IssuePositionsInterface & {
+    uri: string;
+    filePath: string;
+    leadURL?: string;
+    tags: Array<string>;
+    categories: Array<string>;
+    repoDatasetSize: number;
+    exampleCommitDescriptions: Array<string>;
+    exampleCommitFixes: Array<{
+      commitURL: string;
+      lines: Array<{
+        line: string;
+        lineChange: string;
+      }>
+    }>
+  };
+
   export type analysisSuggestionsType = {
     id: string;
     message: string;
@@ -141,6 +158,7 @@ namespace DeepCode {
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
     findSuggestionId(suggestionName: string, filePath: string): string;
+    getFullSuggestion(suggestionId: string, filePath: string, position: vscode.Range): DeepCode.completeAnalysisSuggestionsType | undefined;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
@@ -164,6 +182,11 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
   }
 
+  export interface SuggestionProviderInterface {
+    activate(extension: ExtensionInterface | any): void;
+    show(suggestionId: string, filePath: string, position: vscode.Range): void;
+  }
+
   export interface BaseDeepCodeModuleInterface {
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
@@ -171,6 +194,7 @@ namespace DeepCode {
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
     refreshViewEmitter: vscode.EventEmitter<any>;
+    suggestionProvider: SuggestionProviderInterface;
     refreshViews(content: any): void;
     analysisStatus: string;
     analysisProgress: number;
@@ -247,6 +271,7 @@ namespace DeepCode {
       LoginModuleInterface,
       BundlesModuleInterface,
       DeepCodeLibInterface {
+    context: vscode.ExtensionContext | undefined;
     activate(context: ExtensionContext): void;
   }
 }

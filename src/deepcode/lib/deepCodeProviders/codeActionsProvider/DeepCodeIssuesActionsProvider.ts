@@ -7,7 +7,8 @@ import {
 import {
   IGNORE_ISSUE_ACTION_NAME,
   FILE_IGNORE_ACTION_NAME,
-  IGNORE_ISSUE_BASE_COMMENT_TEXT
+  IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
 } from "../../../constants/analysis";
 import {
   DEEPCODE_IGNORE_ISSUE_COMMAND,
@@ -36,19 +37,22 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   private registerIgnoreIssuesCommand() {
     vscode.commands.registerCommand(
       DEEPCODE_IGNORE_ISSUE_COMMAND,
-      ({
-        currentEditor,
-        issueText,
+      async ({
+        uri,
         matchedIssue,
         issueId,
         isFileIgnore,
       }: {
-        currentEditor: vscode.TextEditor;
-        matchedIssue: vscode.Diagnostic;
-        issueText: string;
+        uri?: vscode.Uri;
+        matchedIssue: {
+          severity: number;
+          message: string;
+          range: vscode.Range
+        };
         issueId: string;
         isFileIgnore?: boolean;
-      }): void => {
+      }): Promise<void> => {
+        console.error(DEEPCODE_IGNORE_ISSUE_COMMAND);
         this.trackIgnoreSuggestion(matchedIssue.severity, {
           message: matchedIssue.message,
           data: {
@@ -56,43 +60,87 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
             isFileIgnore: !!isFileIgnore,
           }
         });
+        console.error("0");
+        const issueNameForComment: string = extractIssueNameOutOfId(issueId);
+        console.error("1",issueNameForComment);
+        const issueText: string = ignoreIssueCommentText(
+          issueNameForComment,
+          isFileIgnore
+        );
+        console.error("2",issueText);
         const editor: vscode.TextEditor | undefined =
-          currentEditor || vscode.window.activeTextEditor;
+          (uri && await vscode.window.showTextDocument(uri, {
+            viewColumn: vscode.ViewColumn.One,
+            selection: matchedIssue.range,
+          })) || vscode.window.activeTextEditor; 
+        console.error("3",!editor,!issueText,!matchedIssue);
         if (!editor || !issueText || !matchedIssue) {
           return;
         }
-        const lineOffset = 1;
         const symbolIndexToInsert = editor.document.lineAt(
           matchedIssue.range.start.line
         ).firstNonWhitespaceCharacterIndex;
-        const issuePosition = new vscode.Position(
+        let issuePosition = new vscode.Position(
           matchedIssue.range.start.line,
           symbolIndexToInsert
         );
-        const prevLinePosition = new vscode.Position(
-          issuePosition.line - lineOffset,
-          issuePosition.character
-        );
 
-        const {
-          text: prevLineText,
-          range: prevLineTextRange
-        }: {
-          text: string;
-          range: vscode.Range;
-        } = editor.document.lineAt(prevLinePosition);
-        const deepCodeCommentAlreadyExists = prevLineText.includes(
-          IGNORE_ISSUE_BASE_COMMENT_TEXT
-        );
+        let deepCodeCommentPostition: vscode.Position | undefined;
+        if (issuePosition.line > 0) {
+          // const prevLinePosition = new vscode.Position(
+          //   issuePosition.line - 1,
+          //   issuePosition.character
+          // );
 
-        if (deepCodeCommentAlreadyExists) {
+          // console.error("4",issuePosition,prevLinePosition);
+          // const {
+          //   text: prevLineText,
+          //   range: prevLineTextRange
+          // }: {
+          //   text: string;
+          //   range: vscode.Range;
+          // } = editor.document.lineAt(prevLinePosition);
+          // const deepCodeCommentAlreadyExists = prevLineText.includes(
+          //   IGNORE_ISSUE_BASE_COMMENT_TEXT
+          // );
+          const prevLineRange = new vscode.Range(
+            new vscode.Position(issuePosition.line - 1, 0),
+            new vscode.Position(issuePosition.line, 0),
+          );
+          const prevLine = editor.document.getText(prevLineRange).split("\n").shift() || "";
+          // We have 3 cases:
+          // 1) prevLine doesn't include any dcignore line
+          // 2) prevLine is a dcignore comment
+          // 3) prevLine is a file dcignore comment
+          if (prevLine.includes(IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
+            if (prevLine.includes(FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
+              // case number 3
+              if (isFileIgnore) deepCodeCommentPostition = new vscode.Position(
+                prevLineRange.start.line,
+                prevLine.length
+              );
+              // if !isFileIgnore we want to write a new comment instead of adding to the previous one
+            } else {
+              // case number 2
+              if (!isFileIgnore) {
+                deepCodeCommentPostition = new vscode.Position(
+                  prevLineRange.start.line,
+                  prevLine.length
+                );
+              } else {
+                // we want to write a new comment 2 lines above the issue
+                issuePosition = issuePosition.with(issuePosition.line - 1);
+              } 
+            }
+          }
+        }
+        console.error("5",deepCodeCommentPostition);
+        if (deepCodeCommentPostition) {
+          const position = deepCodeCommentPostition;
           // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
           editor.edit((e: vscode.TextEditorEdit) =>
             e.insert(
-              new vscode.Position(
-                prevLinePosition.line,
-                prevLineTextRange.end.character
-              ),
+              position,
               `, ${issueText}`
             )
           );
@@ -107,9 +155,10 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
         editor.selections = [
           new vscode.Selection(issuePosition, issuePosition)
         ];
-        if (!deepCodeCommentAlreadyExists) {
-          vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
+        if (!deepCodeCommentPostition) {
+          await vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
         }
+        await editor.document.save();
       }
     );
   }
@@ -143,15 +192,10 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       matchedIssue.message,
       document.uri.fsPath
     );
-    const issueNameForComment: string = extractIssueNameOutOfId(issueFullId);
-    const issueText: string = ignoreIssueCommentText(
-      issueNameForComment,
-      isFileIgnore
-    );
     ignoreIssueAction.command = {
       command: DEEPCODE_IGNORE_ISSUE_COMMAND,
       title: DEEPCODE_IGNORE_ISSUE_COMMAND,
-      arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }]
+      arguments: [{ uri: document.uri, matchedIssue, issueId: issueFullId, isFileIgnore }]
     };
 
     return ignoreIssueAction;

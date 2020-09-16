@@ -38,6 +38,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
     this.analyzer.activate(this);
+    this.suggestionProvider.activate(this);
   }
 
   private async executeExtensionPipeline(): Promise<void> {

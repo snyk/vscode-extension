@@ -28,6 +28,8 @@ import { SupportProvider } from "./view/SupportProvider";
 import { IssueProvider } from "./view/IssueProvider";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
+  context: vscode.ExtensionContext | undefined;
+
   private async executeCommand(
     name: string,
     fn: (...args: any[]) => Promise<any>,
@@ -43,7 +45,18 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
   }
   
   public activate(context: vscode.ExtensionContext): void {
+    this.context = context;
+    this.activateAll();
     this.statusBarItem.show();
+
+    // context.subscriptions.push(
+    //   vscode.commands.registerCommand(
+    //     'deepcode.test',
+    //     () => {
+    //       this.suggestionProvider.show({test: 'test'});
+    //     }
+    //   )
+    // );
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
@@ -60,7 +73,10 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       vscode.commands.registerCommand(
         DEEPCODE_OPEN_LOCAL_COMMAND,
         (path: vscode.Uri, range?: vscode.Range) => {
-          vscode.window.showTextDocument(path, { selection: range }).then(
+          vscode.window.showTextDocument(path, {
+            viewColumn: vscode.ViewColumn.One,
+            selection: range
+          }).then(
             // no need to wait for processError since then is called asynchronously as well
             () => {}, (err) => this.processError(err, {
               message: errorsLogs.command(DEEPCODE_OPEN_LOCAL_COMMAND),
@@ -140,6 +156,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
             await vscode.commands.executeCommand(
               DEEPCODE_OPEN_LOCAL_COMMAND, uri, range
             );
+            this.suggestionProvider.show(issueId, uri.toString(), range);
             await this.trackViewSuggestion(issueId, severity);
           }
         )
@@ -167,7 +184,6 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       new IssueProvider(this)
     );
 
-    this.activateAll();
     this.startExtension().catch((err) => this.processError(err, {
       message: errorsLogs.failedExecution,
     }));

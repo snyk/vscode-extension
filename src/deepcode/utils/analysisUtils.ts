@@ -21,6 +21,15 @@ export const createDeepCodeSeveritiesMap = () => {
   };
 };
 
+export const getVSCodeSeverity = (deepCodeSeverity: number) => {
+  const { information, error, warning } = DEEPCODE_SEVERITIES;
+  return {
+    [information]: vscode.DiagnosticSeverity.Information,
+    [warning]: vscode.DiagnosticSeverity.Warning,
+    [error]: vscode.DiagnosticSeverity.Error,
+  }[deepCodeSeverity] || vscode.DiagnosticSeverity.Information;
+}
+
 export const getDeepCodeSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) => {
   const { information, error, warning } = DEEPCODE_SEVERITIES;
   return {
@@ -38,7 +47,10 @@ export const createDeepCodeProgress = (progress: number): number => {
 
 export const createCorrectIssuePlacement = (
   item: DeepCode.IssuePositionsInterface
-): { [key: string]: { [key: string]: number } } => {
+): {
+  cols: {start: number, end: number},
+  rows: {start: number, end: number},
+} => {
   const rowOffset = 1;
   const createPosition = (i: number): number =>
     i - rowOffset < 0 ? 0 : i - rowOffset;
@@ -235,6 +247,98 @@ export const createIssueRelatedInformation = ({
     Array()
   );
   return relatedInformation;
+};
+
+export const extractCompleteSuggestionFromSuggestionsMap = (
+  analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
+  suggestionId: string,
+  filePath: string,
+  position: vscode.Range,
+): DeepCode.completeAnalysisSuggestionsType | undefined => {
+  const uri = filePath;
+  const workspaceAnalysisPath: string | undefined = Object.keys(
+    analysisResultsCollection
+  ).find((path: string): boolean => filePath.includes(path));
+  filePath = filePath.split(workspaceAnalysisPath || "").pop() || "";
+  if (
+    !filePath ||
+    !workspaceAnalysisPath ||
+    !analysisResultsCollection[workspaceAnalysisPath] ||
+    !analysisResultsCollection[workspaceAnalysisPath].suggestions ||
+    !analysisResultsCollection[workspaceAnalysisPath].files[filePath]
+  ) return;
+  const suggestionIndex: number | undefined = Object.keys(
+    analysisResultsCollection[workspaceAnalysisPath].suggestions
+  ).map(
+    (i: string) => parseInt(i, 10)
+  ).find(
+    (i: number) => analysisResultsCollection[workspaceAnalysisPath].suggestions[i].id === suggestionId
+  );
+  if (
+    // suggestionIndex = 0 is a valid index
+    suggestionIndex === undefined ||
+    !analysisResultsCollection[workspaceAnalysisPath].files[filePath][suggestionIndex]
+  ) return;
+  // reversing createCorrectIssuePlacement for proper matching
+  const cols = [ position.start.character, position.end.character ];
+  const rows = [ position.start.line, position.end.line ];
+  const suggestion = analysisResultsCollection[workspaceAnalysisPath].suggestions[suggestionIndex];
+  const fileSuggestion = analysisResultsCollection[workspaceAnalysisPath].files[filePath][suggestionIndex].find(
+    (value) => {
+      const p = createCorrectIssuePlacement(value);
+      return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
+    }
+  );
+  if (!suggestion || !fileSuggestion) return;
+  return {
+    uri,
+    filePath,
+    ...fileSuggestion,
+    ...suggestion,
+    // FIXME get the complete results and proper suggestion type from server
+    leadURL: "https://www.owasp.org/index.php/SQL_Injection",
+    tags: ["maintenance", "bug", "escape", "space", "global" ],
+    categories: ["Defect"],
+    repoDatasetSize: 1500,
+    exampleCommitDescriptions: ["Fix errors and escaping", "added link to detailed test results and fixed replace to be global "],
+    exampleCommitFixes: [{
+      commitURL: "https://github.com/stackvana/microcule/commit/4a6836b0e70cd42bbfc779c8e6afd05956841034?diff=split#diff-1ed683b1aa559ebf235afc7e3cd61af6L7",
+      lines: [{
+        line: "  }",
+        lineChange: "none",
+      }, {
+        line: "  var str = arg.toString();",
+        lineChange: "none",
+      }, {
+        line: "  str = str.replace('\"', '\\\\\"')",
+        lineChange: "removed",
+      }, {
+        line: "  str = str.replace(/\"/g, '\\\\\"')",
+        lineChange: "added",
+      }, {
+        line: "  return str;",
+        lineChange: "none",
+      }, {
+        line: "}",
+        lineChange: "none",
+      }]
+    },{
+      commitURL: "https://github.com/quasarframework/quasar-framework.org/commit/56e92ac285c3f6bdbe86d2f3ba60655977124a6f?diff=split#diff-55a33363cf831e87575712ed15264c83L7",
+      lines: [{
+        line: "function formatNavigationLinks(text) {",
+        lineChange: "none",
+      }, {
+        line: "  return text.replace('_', ' ');",
+        lineChange: "removed",
+      }, {
+        line: "  return text.replace(/_/g, ' ');",
+        lineChange: "added",
+      }, {
+        line: "}",
+        lineChange: "none",
+      }]
+    }]
+  };
 };
 
 export const extractSuggestionIdFromSuggestionsMap = (
