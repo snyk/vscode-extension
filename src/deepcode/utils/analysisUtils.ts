@@ -252,17 +252,14 @@ export const createIssueRelatedInformation = ({
 export const extractCompleteSuggestionFromSuggestionsMap = (
   analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
   suggestionId: string,
-  filePath: string,
+  uri: vscode.Uri,
   position: vscode.Range,
 ): DeepCode.completeAnalysisSuggestionsType | undefined => {
-  const uri = filePath;
-  console.error("DC util fp, collection:",filePath,Object.keys(analysisResultsCollection));
+  let filePath = uri.fsPath;
   const workspaceAnalysisPath: string | undefined = Object.keys(
     analysisResultsCollection
   ).find((path: string): boolean => filePath.includes(path));
   filePath = (filePath.split(workspaceAnalysisPath || "").pop() || "").replace(/\\/g,"/");
-  console.error("DC util fp, workspace:",filePath,workspaceAnalysisPath);
-  console.error("DC util files[filePath]:",workspaceAnalysisPath && analysisResultsCollection[workspaceAnalysisPath].files[filePath]);
   if (
     !filePath ||
     !workspaceAnalysisPath ||
@@ -277,7 +274,6 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
   ).find(
     (i: number) => analysisResultsCollection[workspaceAnalysisPath].suggestions[i].id === suggestionId
   );
-  console.error("DC util suggestionIndex:",suggestionIndex);
   if (
     // suggestionIndex = 0 is a valid index
     suggestionIndex === undefined ||
@@ -293,10 +289,9 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
       return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
     }
   );
-  console.error("DC util suggestion, fileSuggestion:",!suggestion, !fileSuggestion);
   if (!suggestion || !fileSuggestion) return;
   return {
-    uri,
+    uri: uri.toString(),
     filePath,
     ...fileSuggestion,
     ...suggestion,
@@ -349,8 +344,9 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
 export const extractSuggestionIdFromSuggestionsMap = (
   analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
   suggestionName: string,
-  filePath: string
+  uri: vscode.Uri
 ): string => {
+  const filePath = uri.fsPath;
   const workspaceAnalysisPath: string | undefined = Object.keys(
     analysisResultsCollection
   ).find((path: string): boolean => filePath.includes(path));

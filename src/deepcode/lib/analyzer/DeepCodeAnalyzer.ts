@@ -50,22 +50,22 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     this.extension = extension;
   }
 
-  public getFullSuggestion(suggestionId: string, fileSystemPath: string, position: vscode.Range): 
+  public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): 
     DeepCode.completeAnalysisSuggestionsType | undefined 
   {
     return extractCompleteSuggestionFromSuggestionsMap(
       this.analysisResultsCollection,
       suggestionId,
-      fileSystemPath,
+      uri,
       position,
     );
   }
 
-  public findSuggestionId(suggestionName: string, fileSystemPath: string): string {
+  public findSuggestionId(suggestionName: string, uri: vscode.Uri): string {
     return extractSuggestionIdFromSuggestionsMap(
       this.analysisResultsCollection,
       suggestionName,
-      fileSystemPath
+      uri
     );
   }
 

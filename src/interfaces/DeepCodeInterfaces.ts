@@ -157,8 +157,8 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
     deepcodeReview: DiagnosticCollection | undefined;
     analysisResultsCollection: AnalysisResultsCollectionInterface;
-    findSuggestionId(suggestionName: string, filePath: string): string;
-    getFullSuggestion(suggestionId: string, filePath: string, position: vscode.Range): DeepCode.completeAnalysisSuggestionsType | undefined;
+    findSuggestionId(suggestionName: string, uri: vscode.Uri): string;
+    getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): DeepCode.completeAnalysisSuggestionsType | undefined;
     removeReviewResults(workspacePath: string): Promise<void>;
     createReviewResults(): Promise<void>;
     updateReviewResultsPositions(
@@ -184,7 +184,7 @@ namespace DeepCode {
 
   export interface SuggestionProviderInterface {
     activate(extension: ExtensionInterface | any): void;
-    show(suggestionId: string, filePath: string, position: vscode.Range): void;
+    show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void;
   }
 
   export interface BaseDeepCodeModuleInterface {

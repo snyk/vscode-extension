@@ -168,7 +168,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
 
     const issueFullId: string = this.findSuggestionId(
       matchedIssue.message,
-      document.uri.fsPath
+      document.uri
     );
     ignoreIssueAction.command = {
       command: DEEPCODE_IGNORE_ISSUE_COMMAND,

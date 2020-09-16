@@ -71,7 +71,7 @@ export class IssueProvider extends NodeProvider {
           ++nIssues;
           const issueId = this.extension.analyzer.findSuggestionId(
             d.message,
-            uri.fsPath
+            uri
           );
           const params: {
             text: string,

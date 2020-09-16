@@ -156,7 +156,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
             await vscode.commands.executeCommand(
               DEEPCODE_OPEN_LOCAL_COMMAND, uri, range
             );
-            this.suggestionProvider.show(issueId, uri.fsPath, range);
+            this.suggestionProvider.show(issueId, uri, range);
             await this.trackViewSuggestion(issueId, severity);
           }
         )
