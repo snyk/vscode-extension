@@ -543,9 +543,10 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   }
 
   show(suggestionId: string, filePath: string, position: vscode.Range): void {
-    console.error("DC Suggestion: show");
+    console.error("DC Suggestion: show", !!this.extension, suggestionId, filePath, position);
     if (!this.extension) return;
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, filePath, position);
+    console.error("DC Suggestion: show", !!suggestion);
     if (!suggestion) return;
     this.showPanel(suggestion);
   }
