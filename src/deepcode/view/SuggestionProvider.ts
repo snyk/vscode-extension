@@ -535,6 +535,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   public panel: vscode.WebviewPanel | undefined;
 
   activate(extension: DeepCode.ExtensionInterface) {
+    console.error("DC Suggestion: activate");
     this.extension = extension;
     vscode.window.registerWebviewPanelSerializer(
       DEEPCODE_VIEW_SUGGESTION, new SuggestionSerializer(this)
@@ -542,6 +543,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   }
 
   show(suggestionId: string, filePath: string, position: vscode.Range): void {
+    console.error("DC Suggestion: show");
     if (!this.extension) return;
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, filePath, position);
     if (!suggestion) return;
@@ -549,15 +551,18 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   }
 
   private disposePanel() {
+    console.error("DC Suggestion: dispose");
     this.panel = undefined;
   }
 
   restorePanel(panel: vscode.WebviewPanel) {
+    console.error("DC Suggestion: restore");
     if(this.panel) this.panel.dispose();
     this.panel = panel;
   }
 
   showPanel(suggestion: DeepCode.completeAnalysisSuggestionsType) {
+    console.error("DC Suggestion: showPanel", !!this.panel);
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
     } else {
@@ -602,6 +607,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   }
 
   async handleMessage(message: any) {
+    console.error("DC Suggestion: message");
     if (!this.extension) return;
     try {
       const { type, args } = message;
