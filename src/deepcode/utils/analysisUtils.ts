@@ -256,10 +256,12 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
   position: vscode.Range,
 ): DeepCode.completeAnalysisSuggestionsType | undefined => {
   const uri = filePath;
+  console.error("DC util fp, collection:",filePath,Object.keys(analysisResultsCollection));
   const workspaceAnalysisPath: string | undefined = Object.keys(
     analysisResultsCollection
   ).find((path: string): boolean => filePath.includes(path));
   filePath = filePath.split(workspaceAnalysisPath || "").pop() || "";
+  console.error("DC util fp, workspace:",filePath,workspaceAnalysisPath);
   if (
     !filePath ||
     !workspaceAnalysisPath ||
@@ -274,6 +276,7 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
   ).find(
     (i: number) => analysisResultsCollection[workspaceAnalysisPath].suggestions[i].id === suggestionId
   );
+  console.error("DC util suggestionIndex:",suggestionIndex);
   if (
     // suggestionIndex = 0 is a valid index
     suggestionIndex === undefined ||
@@ -289,6 +292,7 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
       return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
     }
   );
+  console.error("DC util suggestion, fileSuggestion:",!suggestion, !fileSuggestion);
   if (!suggestion || !fileSuggestion) return;
   return {
     uri,
