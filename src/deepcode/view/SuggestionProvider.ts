@@ -634,7 +634,6 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
         }
         case 'sendFeedback' : {
           const { url } = args;
-          await vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER_COMMAND, url);
           break;
         }
         default: {
