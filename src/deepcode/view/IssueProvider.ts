@@ -110,7 +110,6 @@ export class IssueProvider extends NodeProvider {
           text: filename,
           description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
           icon: this.getSeverityIcon(fileSeverity),
-          issue: { uri },
           children: issues,
           internal: {
             nIssues: diagnostics.length,
