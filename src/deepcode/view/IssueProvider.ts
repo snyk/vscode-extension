@@ -92,6 +92,8 @@ export class IssueProvider extends NodeProvider {
               arguments: [issueId, severity, uri, d.range],
             }
           };
+          
+          // TODO: Andy: comment the following if statement to test without markers in the tree
           if (d.relatedInformation && d.relatedInformation.length) {
             params.children = d.relatedInformation.map((h) =>
               new Node({
@@ -99,10 +101,16 @@ export class IssueProvider extends NodeProvider {
                 issue: {
                   uri: h.location.uri,
                   range: h.location.range,
+                },
+                command: {
+                  command: DEEPCODE_OPEN_ISSUE_COMMAND,
+                  title: '',
+                  arguments: [issueId, severity, uri, d.range, h.location.uri, h.location.range],
                 }
               })
             );
           }
+
           return new Node(params);
         });
         const fileSeverity = this.getFileSeverity(counts);
