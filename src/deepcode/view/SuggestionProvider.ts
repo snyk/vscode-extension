@@ -21,187 +21,83 @@ function getWebviewContent(images: Record<string,string>) { return `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepCode Suggestion</title>
     <style>
-      body {
-        background-color: #fff;
-        color: #231F20;
-      }
-      section {
-        padding: 20px
-      }
-      .suggestion {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-      }
-      .font-light {
-        color: #676C6F;
-      }
-      .font-blue {
-        color: #01b9f7;
-      }
-      .font-red {
-        color: #FC3838;
-      }
-      .mark-message {
-        font-weight: bold;
-      }
-      .mark-message:hover {
-        color: #FC3838;
-      }
-      .hidden {
-        display: none;
-      }
-      .clickable:hover {
-        cursor: pointer;
-      }
-      .delimiter-top {
-        border-top: 1px solid #e6f1f6;
-      }
-      .row {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-      }
-      .row.between {
-        justify-content: space-between;
-      }
-      .row.around {
-        justify-content: space-around;
-      }
-      .row.center {
-        justify-content: center;
-      }
-      .icon {
-        display: inline-flex;
-        vertical-align: middle;
-        width: 16px;
-        height: 16px;
-      }
-      .chip {
-        display: inline-flex;
-        padding: 2px 6px;
-        margin: 3px;
-        background: rgba(80, 200, 239, 0.1);
-        color: #01b9f7;
-        border-radius: 10px;
-        text-transform: capitalize;
-        transition: color 0.15s, background 0.15s;
-      }
-      #info-top {
-        margin-bottom: 8px;
-      }
-      #example-top {
-        margin-bottom: 16px;
-      }
-      .arrow {
-        display: inline-flex;
-        vertical-align: middle;
-        cursor: pointer;
-      }
-      .arrow.enabled {
-        fill: #01b9f7;
-        color: #01b9f7;
-      }
-      .arrow:hover {
-        fill: #01b9f7;
-        color: #01b9f7;
-      }
-      .arrow.left {
-        transform: rotate(90deg);
-      }
-      .arrow.right {
-        transform: rotate(-90deg);
-      }
-      .arrow.down {
-        transform: rotate(-180deg);
-      }
-      #example {
-        border: 1px solid #c1dce9;
-        border-radius: 3px;
-        line-height: 1.5;
-        width: 100%;
-      }
-      .example-line.removed {
-        background: #ffeef0;
-      }
-      .example-line.added {
-        background: #e6ffed;
-      }
-      .example-line>code {
-        padding-left: 30px;
-        white-space: pre-wrap;
-        color: #231F20;
-      }
-      #explanations-top {
-        margin-top: 16px;
-        margin-bottom: 8px;
-      }
-      #ignore-top {
-        margin-bottom: 8px;
-        width: 100%;
-        text-align: center;
-      }
-      .button {
-        text-align: center;
-        vertical-align: middle;
-        padding: 1rem 1.5rem .9rem;
-        border-radius: 30px;
-        border: 1px #01b9f7 solid;
-        background: none;
-        color: #01b9f7;
-        font-weight: 700;
-        font-family: inherit;
-        transition: all 0.25s;
-        cursor: pointer;
-      }
-      .button.disabled {
-        border: 1px #676C6F solid;
-        color: #676C6F;
-      }
-      .button:hover {
-        background: #01b9f7;
-        color: #FFFFFF;
-      }
-      .button.disabled:hover {
-        background: #676C6F;
-      }
-      #feedback-close {
-        padding: 15px;
-        border-radius: 5px;
-        border: 1px solid #cce4f6;
-        color: #676C6F;
-      }
-      #feedback-close:hover {
-        color: #231F20;
-        background: #e6f1f6;
-      }
-      #feedback-open {
-        width: 100%;
-      }
-      #feedback-open {
-        width: 100%;
-      }
-      #feedback-textarea {
-        width: 100%;
-      }
-      #feedback-sent-message {
-        width: 100%;
-      }
+      html { height: 100%; font-size: 62.5% }
+      body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
+      body * { box-sizing: border-box }
+      
+      .button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #01b9f7 solid; border-radius: 30px; line-height: 1; background: none; color: #01b9f7; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
+      .button.disabled { border: 1px #676C6F solid; color: #676C6F; }
+      .button:hover { background-color: #01b9f7; color: #fff; }
+      .button.disabled:hover { background-color: #676C6F; }
+      
+      .font-light { opacity: .65 }
+      .font-blue { color: #01b9f7; }
+      .font-red { color: #FC3838; }
+
+      .row { display: flex; flex-direction: row; width: 100%; }
+      .row.between { justify-content: space-between; }
+      .row.around { justify-content: space-around; }
+      .row.center { justify-content: center; }
+
+      .vscode-light { background-color: rgba(0,0,0,.05); border-right: 1px solid rgba(0,0,0,.05); }
+      .vscode-dark { background-color: rgba(255,255,255,.075); border-right: 1px solid rgba(255,255,255,.075); }
+      .vscode-light .delimiter-top { border-top: 1px solid rgba(0,0,0,.05); }
+      .vscode-dark .delimiter-top { border-top: 1px solid rgba(255,255,255,.075); }
+
+      .icon { display: inline-flex; vertical-align: middle; width: 16px; height: 16px; }
+
+      section { padding: 20px }
+      .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
+      .suggestion-text { font-size:1.6rem; line-height: 1.6; margin-bottom: 2rem }
+      
+      .mark-message { font-weight: bold; }
+      .mark-message:hover { color: #FC3838; }
+      
+      .hidden { display: none; }
+      .clickable:hover { cursor: pointer; }
+      
+      .chip { display: inline-flex; padding: 2px 6px; border-radius: 10px; margin: 3px; background-color: rgba(80, 200, 239, 0.1); color: #01b9f7; text-transform: capitalize; transition: color 0.15s, background 0.15s; }
+
+      #info-top { margin-bottom: 8px; }
+      #example-top { margin-bottom: 16px; }
+      
+      .arrow { display: inline-flex; vertical-align: middle; cursor: pointer; }
+      .arrow.enabled { fill: #01b9f7; color: #01b9f7; }
+      .arrow:hover { fill: #01b9f7; color: #01b9f7; }
+      .arrow.left { transform: rotate(90deg); }
+      .arrow.right { transform: rotate(-90deg); }
+      .arrow.down { transform: rotate(-180deg); I }
+
+      #example { width: 100%; border: 1px solid; border-radius: 3px; line-height: 1.5; background-color: #fff; font-weight: 600 }
+      .vscode-light #example { border-color: rgba(0,0,0,.15) }
+      .vscode-dark #example { border-color: rgba(255,255,255,.075);  }
+      .example-line.removed { background-color: #ffeef0; }
+      .example-line.added { background-color: #e6ffed; }
+      .example-line>code { padding-left: 30px; white-space: pre-wrap; color: #231F20; }
+      #explanations-top { margin-top: 16px; margin-bottom: 8px; }
+
+      .explanation { opacity: .75 }
+      #ignore-top { width: 100%; margin-bottom: 8px; text-align: center; }
+
+      #feedback-close { padding: 15px; border-radius: 5px; border: 1px solid #cce4f6; color: #676C6F; }
+      #feedback-close:hover { color: #231F20; background-color: rgba(80, 200, 239, 0.1); }
+      #feedback-open { width: 100%; }
+      #feedback-textarea { width: 100%; }
+      #feedback-sent-message { width: 100%; }
+
+      #lead-url { float:right }
+
     </style>
 </head>
 <body>
     <div class="suggestion">
       <section>
-        <div id="title"></div>
+        <div id="title" class="suggestion-text"></div>
         <div id="lead-url" class="clickable hidden" onclick="navigateToLeadURL()">
-          <img class="icon" src="${images['icon-newwindow']}"></img>
-          More info
+          <img class="icon" src="${images['icon-newwindow']}" /> More info
         </div>
         <div class="clickable font-light" onclick="navigateToIssue()">
-          <img class="icon" src="${images['icon-code']}"></img>
-          Line <span id="line-position"></span>
+          <img class="icon" src="${images['icon-code']}" /> This issue happens on line <span id="line-position"></span>
         </div>
       </section>
       <section class="delimiter-top" id="labels"></section>
@@ -224,23 +120,15 @@ function getWebviewContent(images: Record<string,string>) { return `
         </div>
         <div id="example"></div>
         <div>
-          <div id="explanations-top">
-            Explanations from other repositories
-          </div>
+          <div id="explanations-top">Explanations from other repositories</div>
           <div id="explanations"></div>
         </div>
       </section>
       <section class="delimiter-top">
-        <div id="ignore-top">
-          Do you want to hide this suggestion from the results?
-        </div>
+        <div id="ignore-top">Do you want to hide this suggestion from the results?</div>
         <div class="row around">
-          <div class="button" onclick="ignoreIssue(true)">
-            Ignore on line <span id="line-position2"></span>
-          </div>
-          <div class="button" onclick="ignoreIssue(false)">
-            Ignore in this file
-          </div>
+          <div class="button" onclick="ignoreIssue(true)">Ignore on line <span id="line-position2"></span></div>
+          <div class="button" onclick="ignoreIssue(false)">Ignore in this file</div>
         </div>
       </section>
       <section>
@@ -260,13 +148,9 @@ function getWebviewContent(images: Record<string,string>) { return `
             <img class="icon" src="${images['light-icon-info']}" onclick="navigateToFP()"></img>
           </div>
           <div>
-            <textarea id="feedback-textarea" rows="8" onInput="enableFeedback(this.value)"
-              placeholder="Send us your feedback and comments for this suggestion - we love feedback!"
-            ></textarea>
+            <textarea id="feedback-textarea" rows="8" onInput="enableFeedback(this.value)" placeholder="Send us your feedback and comments for this suggestion - we love feedback!"></textarea>
           </div>
-          <div id="feedback-disclaimer">
-            * This form will not send any of your code
-          </div>
+          <div id="feedback-disclaimer">* This form will not send any of your code</div>
           <div class="row center">
             <img id="feedback-dislike" class="icon arrow down" src="${images['icon-like']}" onclick="likeFeedback(false)"></img>
             <img id="feedback-like enabled" class="icon arrow" src="${images['icon-like']}" onclick="likeFeedback(true)"></img>
