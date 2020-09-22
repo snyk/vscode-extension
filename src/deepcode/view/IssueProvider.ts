@@ -77,6 +77,7 @@ export class IssueProvider extends NodeProvider {
             text: string,
             icon: INodeIcon,
             issue: { uri: Uri, range?: Range },
+            internal: { severity: number },
             command: Command,
             children?: Node[]
           } = {
@@ -85,6 +86,9 @@ export class IssueProvider extends NodeProvider {
             issue: {
               uri,
               range: d.range
+            },
+            internal: {
+              severity,
             },
             command: {
               command: DEEPCODE_OPEN_ISSUE_COMMAND,
@@ -110,9 +114,9 @@ export class IssueProvider extends NodeProvider {
               })
             );
           }
-
           return new Node(params);
         });
+        issues.sort(this.compareNodes);
         const fileSeverity = this.getFileSeverity(counts);
         const file = new Node({
           text: filename,
