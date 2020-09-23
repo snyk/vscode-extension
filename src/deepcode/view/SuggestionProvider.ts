@@ -79,6 +79,9 @@ function getWebviewContent(images: Record<string,string>) { return `
         width: 16px;
         height: 16px;
       }
+      .icon.hidden {
+        display: none;
+      }
       .chip {
         display: inline-flex;
         padding: 2px 6px;
@@ -194,6 +197,15 @@ function getWebviewContent(images: Record<string,string>) { return `
 <body>
     <div class="suggestion">
       <section>
+        <div id="severity">
+          <img id="sev1l" class="icon hidden" src="${images['light-icon-info']}"></img>
+          <img id="sev1d" class="icon hidden" src="${images['dark-icon-info']}"></img>
+          <img id="sev2l" class="icon hidden" src="${images['light-icon-warning']}"></img>
+          <img id="sev2d" class="icon hidden" src="${images['dark-icon-warning']}"></img>
+          <img id="sev3l" class="icon hidden" src="${images['light-icon-critical']}"></img>
+          <img id="sev3d" class="icon hidden" src="${images['dark-icon-critical']}"></img>
+          <span id="severity-text"></span>
+        </div>
         <div id="title"></div>
         <div id="lead-url" class="clickable hidden" onclick="navigateToLeadURL()">
           <img class="icon" src="${images['icon-newwindow']}"></img>
@@ -442,12 +454,38 @@ function getWebviewContent(images: Record<string,string>) { return `
           line.appendChild(code);
         }
       }
+      function getCurrentSeverity() {
+        const stringMap = {
+          1: "Info",
+          2: "Warning",
+          3: "Critical"
+        };
+        return suggestion ? {
+         value: suggestion.severity,
+         text: stringMap[suggestion.severity], 
+        }: undefined;
+      }
       function sendMessage(message) {
         vscode.postMessage(message);
       }
       window.addEventListener('message', event => {
         suggestion = event.data;
         vscode.setState(suggestion);
+
+        const currentSeverity = getCurrentSeverity();
+        const severity = document.getElementById('severity');
+        if (currentSeverity && currentSeverity.text) {
+          const iconId = "sev" + currentSeverity.value + "l";
+          severity.querySelectorAll('img').forEach(n => {
+            if (n.id === iconId) n.className = 'icon';
+            else n.className = 'icon hidden';
+          });
+          const sevText = document.getElementById('severity-text');
+          sevText.innerHTML = currentSeverity.text;
+        } else {
+          severity.querySelectorAll('img').forEach(n => n.className = 'icon hidden');
+          sevText.innerHTML = "";
+        }
 
         const title = document.getElementById('title');
         title.querySelectorAll('*').forEach(n => n.remove());
@@ -580,6 +618,11 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
       [ "icon-github", "svg" ],
       [ "icon-like", "svg" ],
       [ "light-icon-info", "svg" ],
+      [ "dark-icon-info", "svg" ],
+      [ "light-icon-warning", "svg" ],
+      [ "dark-icon-warning", "svg" ],
+      [ "light-icon-critical", "svg" ],
+      [ "dark-icon-critical", "svg" ],
     ].reduce<Record<string,string>>((accumulator: Record<string,string>, [name, ext]) => {
       accumulator[name] = this.panel!.webview.asWebviewUri(vscode.Uri.file(
         path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`))
