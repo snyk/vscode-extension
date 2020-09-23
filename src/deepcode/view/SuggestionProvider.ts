@@ -56,7 +56,7 @@ function getWebviewContent(images: Record<string,string>) { return `
       .hidden { display: none; }
       .clickable:hover { cursor: pointer; }
       
-      .chip { display: inline-flex; padding: 2px 6px; border-radius: 10px; margin: 3px; background-color: rgba(80, 200, 239, 0.1); color: #01b9f7; text-transform: capitalize; transition: color 0.15s, background 0.15s; }
+      .chip { display: inline-flex; padding: 2px 6px; border-radius: 15px; margin: 3px; background-color: rgba(80, 200, 239, 0.1); color: #01b9f7; text-transform: capitalize; }
 
       #info-top { margin-bottom: 8px; }
       #example-top { margin-bottom: 16px; }
@@ -82,7 +82,9 @@ function getWebviewContent(images: Record<string,string>) { return `
       #feedback-close { padding: 15px; border-radius: 5px; border: 1px solid #cce4f6; color: #676C6F; }
       #feedback-close:hover { color: #231F20; background-color: rgba(80, 200, 239, 0.1); }
       #feedback-open { width: 100%; }
-      #feedback-textarea { width: 100%; }
+      .vscode-light #feedback-textarea { border-color: rgba(0,0,0,.15) }
+      .vscode-dark #feedback-textarea { border-color: rgba(255,255,255,.075);  }
+      #feedback-textarea { width: 100%; padding:5px; line-height: 1.5 }
       #feedback-sent-message { width: 100%; }
 
       #lead-url { float:right }
@@ -96,7 +98,7 @@ function getWebviewContent(images: Record<string,string>) { return `
         <div id="lead-url" class="clickable hidden" onclick="navigateToLeadURL()">
           <img class="icon" src="${images['icon-newwindow']}" /> More info
         </div>
-        <div class="clickable font-light" onclick="navigateToIssue()">
+        <div class="clickable" onclick="navigateToIssue()">
           <img class="icon" src="${images['icon-code']}" /> This issue happens on line <span id="line-position"></span>
         </div>
       </section>
@@ -133,8 +135,8 @@ function getWebviewContent(images: Record<string,string>) { return `
       </section>
       <section>
         <div id="feedback-close" onclick="toggleFeedbackVisibility()">
-          <div class="row between">
-            <div>A false positive? Helpful? Let us know here</div>
+          <div class="row between clickable">
+            <span>A false positive? Helpful? Let us know here</span>
             <div class="arrow">»</div>
           </div>
         </div>
