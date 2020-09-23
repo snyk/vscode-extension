@@ -349,13 +349,7 @@ function getWebviewContent(images: Record<string,string>) { return `
          text: stringMap[suggestion.severity], 
         }: undefined;
       }
-      function sendMessage(message) {
-        vscode.postMessage(message);
-      }
-      window.addEventListener('message', event => {
-        suggestion = event.data;
-        vscode.setState(suggestion);
-
+      function showCurrentSuggestion() {
         const currentSeverity = getCurrentSeverity();
         const severity = document.getElementById('severity');
         if (currentSeverity && currentSeverity.text) {
@@ -447,6 +441,24 @@ function getWebviewContent(images: Record<string,string>) { return `
 
         feedbackVisibility = 'close';
         showCurrentFeedback();
+      }
+      function sendMessage(message) {
+        vscode.postMessage(message);
+      }
+      window.addEventListener('message', event => {
+        const { type, args } = event.data
+        switch (type) {
+          case 'set': {
+            suggestion = args;
+            vscode.setState(suggestion);
+            break;
+          }
+          case 'get': {
+            suggestion = vscode.getState();
+            break;
+          } 
+        }
+        showCurrentSuggestion();
       });
     </script>
 </body>
@@ -455,8 +467,8 @@ function getWebviewContent(images: Record<string,string>) { return `
 
 export class SuggestionProvider implements DeepCode.SuggestionProviderInterface {
   private extension: DeepCode.ExtensionInterface | undefined;
-  public panel: vscode.WebviewPanel | undefined;
-
+  private panel: vscode.WebviewPanel | undefined;
+  
   activate(extension: DeepCode.ExtensionInterface) {
     this.extension = extension;
     vscode.window.registerWebviewPanelSerializer(
@@ -473,6 +485,12 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
 
   private disposePanel() {
     this.panel = undefined;
+  }
+
+  private checkVisibility(e: vscode.WebviewPanelOnDidChangeViewStateEvent) {
+    if (this.panel && this.panel.visible) {
+      this.panel.webview.postMessage({ type: 'get' });
+    }
   }
 
   restorePanel(panel: vscode.WebviewPanel) {
@@ -514,13 +532,17 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
       return accumulator;
     },{});
     this.panel.webview.html = getWebviewContent(images);
-    // This is just for persistence and serialization
-    this.panel.webview.postMessage(suggestion);
+    this.panel.webview.postMessage({ type: 'set', args: suggestion });
     this.panel.onDidDispose(
       this.disposePanel.bind(this),
       null,
       this.extension?.context?.subscriptions
     );
+    this.panel.onDidChangeViewState(
+      this.checkVisibility.bind(this),
+      undefined,
+      this.extension?.context?.subscriptions
+    )
     // Handle messages from the webview
     this.panel.webview.onDidReceiveMessage(
       this.handleMessage.bind(this),
