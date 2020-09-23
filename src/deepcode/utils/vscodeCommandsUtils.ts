@@ -25,7 +25,12 @@ export const viewInBrowser = async (url: string): Promise<void> => {
 };
 
 export const createDCIgnoreCommand = async (custom = false, path?: string): Promise<void> => {
-  path = path || vscode.workspace.rootPath;
-  if (!path) return;
-  await createDCIgnore(path, custom);
+  if (!path) {
+    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+    for (const p of paths) {
+      await createDCIgnore(p, custom);
+    }
+  } else {
+    await createDCIgnore(path, custom);
+  }
 };

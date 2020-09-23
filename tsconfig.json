@@ -2,26 +2,30 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "out",
-    "module": "es2020",
-    "target": "es6",
-    "lib": ["es6", "dom", "es7", "es2017", "es2018", "es2019"],
+    "target": "es2019",
+    "lib": [
+      "esnext"
+    ],
+    "module": "commonjs",
     "sourceMap": true,
     "allowJs": false,
     "declaration": true,
+    "declarationDir": "./out",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true,
     "noUnusedParameters": true,
     "esModuleInterop": true
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "exclude": [
+    "out",
     "node_modules",
-    "build",
     ".vscode-test"
   ]
 }

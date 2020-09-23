@@ -18,6 +18,7 @@ if (agt.indexOf("opera") != -1) {
   browserType = "Opera";
   // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
   // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
+  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
 
   if (agt.indexOf("opera 7") != -1 || agt.indexOf("opera/7") != -1) {
     browserVer = "Opera7";

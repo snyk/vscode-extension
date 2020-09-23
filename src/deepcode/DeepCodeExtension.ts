@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import open from 'open';
+import { emitter } from '@deepcode/tsc';
 
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
@@ -33,6 +34,12 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   }
 
   public activate(context: vscode.ExtensionContext): void {
+    emitter.on(emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
+    emitter.on(emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
+    emitter.on(emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
+    emitter.on(emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
+    emitter.on(emitter.events.error, this.onError.bind(this));
+
     this.statusBarItem.show();
 
     context.subscriptions.push(
@@ -115,12 +122,12 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
 
     vscode.window.registerTreeDataProvider(DEEPCODE_VIEW_ANALYSIS, new IssueProvider(this));
 
-    this.activateAll();
-    this.startExtension().catch(err =>
-      this.processError(err, {
-        message: errorsLogs.failedExecution,
-      }),
-    );
+    vscode.workspace.onDidChangeWorkspaceFolders(() => this.startExtension());
+
+    this.editorsWatcher.activate(this);
+    this.settingsWatcher.activate(this);
+    this.analyzer.activate(this);
+
     this.checkWelcomeNotification().catch(err =>
       this.processError(err, {
         message: errorsLogs.welcomeNotification,
@@ -131,6 +138,13 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
         message: errorsLogs.checkAdvancedMode,
       }),
     );
+
+    // Actually start analysis
+    this.startExtension();
+  }
+
+  public deactivate(): void {
+    emitter.removeAllListeners();
   }
 }
 

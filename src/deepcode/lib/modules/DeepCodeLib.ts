@@ -20,7 +20,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
     const now = Date.now();
     if (
       this._lastThrottledExecution === undefined ||
-      (now - this._lastThrottledExecution) >= EXECUTION_THROTTLING_INTERVAL
+      now - this._lastThrottledExecution >= EXECUTION_THROTTLING_INTERVAL
     ) {
       this._lastThrottledExecution = now;
       return false;
@@ -32,60 +32,55 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
     if (this._mode === DEEPCODE_MODE_CODES.PAUSED) this.setMode(DEEPCODE_MODE_CODES.AUTO);
   }
 
-  activateAll(): void {
-    // this.filesWatcher.activate(this);
-    this.workspacesWatcher.activate(this);
-    this.editorsWatcher.activate(this);
-    this.settingsWatcher.activate(this);
-    this.analyzer.activate(this);
-  }
-
-  private async executeExtensionPipeline(): Promise<void> {
-    console.log("DeepCode: starting execution pipeline");
-    await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
-    this.resetTransientErrors();
-    await this.setLoadingBadge(false);
-
-    if (!this.token) return;
-    const approved = await this.checkApproval();
-    if (!approved) return;
-
-    await this.startAnalysis();
-  }
-
-  public async startExtension(manual: Boolean = false): Promise<void> {
+  private async startExtension_(manual: Boolean = false): Promise<void> {
+    console.log('STARTING EXTENSION');
     // If the execution is suspended, we only allow user-triggered analyses.
     if (!manual) {
-      if ([
-          DEEPCODE_MODE_CODES.MANUAL,
-          DEEPCODE_MODE_CODES.PAUSED
-        ].includes(this._mode) ||
-        this.shouldBeThrottled()
-      ) return;
+      if ([DEEPCODE_MODE_CODES.MANUAL, DEEPCODE_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled())
+        return;
     }
 
-    // This function is called by commands, error handlers, etc.
-    // We should avoid having duplicate parallel executions.
-    _.debounce(
-      async () => {
-        try {
-          await this.executeExtensionPipeline();
-        } catch (err) {
-          await this.processError(err, {
-            message: errorsLogs.failedExecutionDebounce,
-          });
-        }
-      },
-      EXECUTION_DEBOUNCE_INTERVAL,
-      { 'leading': true }
+    if (!this.token) {
+      await this.checkSession();
+      return;
+    }
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, true);
+
+
+    const uploadApproved = await this.checkApproval();
+    if (!uploadApproved) {
+      return;
+    }
+
+    // TODO: handle wrong/expired API Key issue
+    try {
+      console.log('DeepCode: starting execution pipeline');
+      await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
+      this.resetTransientErrors();
+      await this.setLoadingBadge(false);
+      await this.startAnalysis();
+
+    } catch (err) {
+      console.log('failed debounced function')
+      await this.processError(err, {
+        message: errorsLogs.failedExecutionDebounce,
+      });
+    }
+  }
+
+  // This function is called by commands, error handlers, etc.
+  // We should avoid having duplicate parallel executions.
+  public startExtension = _.debounce(
+    this.startExtension_.bind(this),
+    EXECUTION_DEBOUNCE_INTERVAL,
+    { leading: true },
     );
-  };
 
   async setMode(mode: string): Promise<void> {
     if (!Object.values(DEEPCODE_MODE_CODES).includes(mode)) return;
     this._mode = mode;
     await this.setContext(DEEPCODE_CONTEXT.MODE, mode);
-    switch(mode) {
+    switch (mode) {
       case DEEPCODE_MODE_CODES.PAUSED:
         this._unpauseTimeout = setTimeout(this.unpause.bind(this), EXECUTION_PAUSE_INTERVAL);
         break;

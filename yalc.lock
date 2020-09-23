@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "@deepcode/tsc": {
+      "signature": "2d7ffe28699965232d6e62d989e49140",
+      "file": true,
+      "replaced": "^2.0.0"
+    }
+  }
+}

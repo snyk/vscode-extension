@@ -1,13 +1,8 @@
 import * as vscode from 'vscode';
 import {
-  IssuePositionsInterface,
-  AnalysisResultsCollectionInterface,
   openedTextEditorType,
-  AnalysisResultsFileResultsInterface,
-  IssueMarkersInterface,
-  analysisSuggestionsType,
 } from '../../interfaces/DeepCodeInterfaces';
-import { getSubstring } from './tsUtils';
+
 import {
   DEEPCODE_SEVERITIES,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
@@ -15,6 +10,8 @@ import {
   IGNORE_ISSUE_REASON_TIP,
   ISSUE_ID_SPLITTER,
 } from '../constants/analysis';
+
+import { IFileSuggestion, ISuggestion, IFilePath, IMarker, IAnalysisResult } from '@deepcode/tsc';
 
 export const createDeepCodeSeveritiesMap = () => {
   const { information, error, warning } = DEEPCODE_SEVERITIES;
@@ -43,9 +40,7 @@ export const createDeepCodeProgress = (progress: number): number => {
   return Math.round(progress * progressOffset);
 };
 
-export const createCorrectIssuePlacement = (
-  item: IssuePositionsInterface,
-): { [key: string]: { [key: string]: number } } => {
+export const createCorrectIssuePlacement = (item: IFileSuggestion): { [key: string]: { [key: string]: number } } => {
   const rowOffset = 1;
   const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
   return {
@@ -67,7 +62,7 @@ export const createIssueRange = (position: { [key: string]: { [key: string]: num
   );
 };
 
-export const createIssueCorrectRange = (issuePosition: IssuePositionsInterface): vscode.Range => {
+export const createIssueCorrectRange = (issuePosition: IFileSuggestion): vscode.Range => {
   return createIssueRange({
     ...createCorrectIssuePlacement(issuePosition),
   });
@@ -86,20 +81,19 @@ export const findIssueWithRange = (
 };
 
 export const updateFileReviewResultsPositions = (
-  analysisResultsCollection: AnalysisResultsCollectionInterface,
+  analysisResults: IAnalysisResult,
   updatedFile: openedTextEditorType,
-): AnalysisResultsFileResultsInterface => {
+): IFilePath => {
   const changesRange = updatedFile.contentChanges[0].range;
   const changesText = updatedFile.contentChanges[0].text;
   const goToNewLine = '\n';
   const offsetedline = changesRange.start.line + 1;
   const charOffset = 1;
 
-  // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
-  const workspace = updatedFile.workspace || Object.keys(analysisResultsCollection)[0];
+  const workspace = updatedFile.workspace;
   const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');
   const fileIssuesList = {
-    ...analysisResultsCollection[workspace].files[filepath],
+    ...analysisResults.files[filepath],
   };
   for (const issue in fileIssuesList) {
     for (const [index, position] of fileIssuesList[issue].entries()) {
@@ -156,8 +150,10 @@ export const updateFileReviewResultsPositions = (
   return fileIssuesList;
 };
 
-export const createIssueMarkerMsg = (originalMsg: string, [markerStartIdx, markerEndIdx]: number[]): string =>
-  getSubstring(originalMsg, [markerStartIdx, markerEndIdx + 1]);
+export const createIssueMarkerMsg = (originalMsg: string, [markerStartIdx, markerEndIdx]: number[]): string => {
+  return originalMsg.substring(markerStartIdx, markerEndIdx + 1);
+};
+
 
 export const createIssuesMarkersDecorationOptions = (
   currentFileReviewIssues: readonly vscode.Diagnostic[] | undefined,
@@ -179,47 +175,33 @@ export const createIssuesMarkersDecorationOptions = (
   return issueMarkersDecorationOptions;
 };
 
-export const createIssueRelatedInformation = ({
-  markersList,
-  fileUri,
-  message,
-}: {
-  markersList: Array<IssueMarkersInterface>;
+export const createIssueRelatedInformation = ({ markersList, fileUri, message }: {
+  markersList: IMarker[];
   fileUri: vscode.Uri;
   message: string;
 }) => {
   const relatedInformation: vscode.DiagnosticRelatedInformation[] = markersList.reduce((relatedInfoList, marker) => {
-    const { msg: markerMsgIdxs, pos: markerPositions } = marker;
-    for (const position of markerPositions) {
+    const { msg: markerMsgIdxs, pos: positions } = marker;
+
+    positions.forEach(position => {
       const relatedInfo = new vscode.DiagnosticRelatedInformation(
         new vscode.Location(fileUri, createIssueCorrectRange(position)),
         createIssueMarkerMsg(message, markerMsgIdxs),
-      );
+      )
       relatedInfoList.push(relatedInfo);
-    }
+    });
+
     return relatedInfoList;
   }, Array());
   return relatedInformation;
 };
 
 export const extractSuggestionIdFromSuggestionsMap = (
-  analysisResultsCollection: AnalysisResultsCollectionInterface,
-  suggestionName: string,
-  filePath: string,
+  analysisResults: IAnalysisResult,
+  suggestionName: string
 ): string => {
-  const workspaceAnalysisPath: string | undefined = Object.keys(
-    analysisResultsCollection,
-  ).find((path: string): boolean => filePath.includes(path));
-
-  if (
-    !workspaceAnalysisPath ||
-    !analysisResultsCollection[workspaceAnalysisPath] ||
-    !analysisResultsCollection[workspaceAnalysisPath].suggestions
-  ) {
-    return '';
-  }
-  const suggestion = Object.values(analysisResultsCollection[workspaceAnalysisPath].suggestions).find(
-    (suggestion: analysisSuggestionsType) => suggestion.message === suggestionName,
+  const suggestion = Object.values(analysisResults.suggestions).find(
+    (suggestion: ISuggestion) => suggestion.message === suggestionName,
   );
   return suggestion ? suggestion.id : '';
 };

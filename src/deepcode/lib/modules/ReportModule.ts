@@ -6,6 +6,8 @@ import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
+import { reportEvent, reportError } from '@deepcode/tsc';
+
 abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleInterface {
   private transientErrors = 0;
 
@@ -24,12 +26,12 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
   private async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
-      await this.serviceAI.reportEvent({
+      await reportEvent({
         baseURL: this.baseURL,
         type: event,
         source: this.source,
         ...(this.token && { sessionToken: this.token }),
-        ...options
+        ...options,
       });
     } catch(error) {
       await this.processError(error, {
@@ -64,15 +66,15 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
 
   private async sendError(options: {[key: string]: any}): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
-    try {
-      await this.serviceAI.reportError({
-        baseURL: this.baseURL,
-        source: this.source,
-        ...(this.token && { sessionToken: this.token }),
-        ...options
-      });
-    } catch(error) {
-      console.error(error);
+    const resp = await reportError({
+      baseURL: this.baseURL,
+      source: this.source,
+      ...(this.token && { sessionToken: this.token }),
+      ...options,
+    });
+
+    if (resp.type === 'error') {
+      console.error(resp.error);
     }
   }
 

@@ -1,6 +1,7 @@
 out
 build
 node_modules
+.yalc
 .vscode-test
 *.vsix
 yarn-error.log

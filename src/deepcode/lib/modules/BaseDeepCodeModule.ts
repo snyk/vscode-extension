@@ -10,7 +10,6 @@ import {
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
 import DeepCodeStatusBarItem from "../statusBarItem/DeepCodeStatusBarItem";
 import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
-import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher";
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
@@ -19,29 +18,26 @@ import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT, DEEPCODE_VIEW_ANALYSIS } from "../../constants/views";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { IServiceAI, ServiceAI, IHashesBundles, IRemoteBundlesCollection } from '@deepcode/tsc';
+
+import { IFileBundle } from '@deepcode/tsc';
 
 export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleInterface {
-  serviceAI: IServiceAI;
-  currentWorkspacePath: string;
-  workspacesPaths: Array<string>;
-  hashesBundles: IHashesBundles;
-  remoteBundles: IRemoteBundlesCollection;
   analyzer: AnalyzerInterface;
   statusBarItem: StatusBarItemInterface;
   filesWatcher: DeepCodeWatcherInterface;
-  workspacesWatcher: DeepCodeWatcherInterface;
   editorsWatcher: DeepCodeWatcherInterface;
   settingsWatcher: DeepCodeWatcherInterface;
 
   // Views and analysis progress
   refreshViewEmitter: vscode.EventEmitter<any>;
 	analysisStatus = '';
-  analysisProgress = 0;
+  analysisProgress = '';
   private initializedView: PendingTaskInterface;
   private progressBadge: PendingTaskInterface | undefined;
   private shouldShowProgressBadge = false;
   private viewContext: {[key: string]: unknown};
+
+  remoteBundle: IFileBundle;
 
   // These attributes are used in tests
   staticToken = '';
@@ -50,20 +46,14 @@ export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleIn
   staticUploadApproved = false;
 
   constructor() {
-    this.serviceAI = new ServiceAI();
-    this.currentWorkspacePath = "";
-    this.workspacesPaths = [];
-    this.hashesBundles = {};
-    this.remoteBundles = {};
     this.analyzer = new DeepCodeAnalyzer();
     this.statusBarItem = new DeepCodeStatusBarItem();
     this.filesWatcher = new DeepCodeFilesWatcher();
-    this.workspacesWatcher = new DeepCodeWorkspaceFoldersWatcher();
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.analysisStatus = '';
-    this.analysisProgress = 0;
+    this.analysisProgress = '';
     this.viewContext = {};
     this.initializedView = new PendingTask();
   }
@@ -180,7 +170,6 @@ export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleIn
     ] && [
       DEEPCODE_CONTEXT.LOGGEDIN,
       DEEPCODE_CONTEXT.APPROVED,
-      DEEPCODE_CONTEXT.ANALYZING,
     ].every(
       (c) => !!this.viewContext[c]
     );
@@ -224,7 +213,7 @@ export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleIn
 
   // Avoid refreshing context/views too often:
   // https://github.com/Microsoft/vscode/issues/68424
-  refreshViews = _.debounce(
+  refreshViews = _.throttle(
     (content?: any): void => this.refreshViewEmitter.fire(content || undefined),
     REFRESH_VIEW_DEBOUNCE_INTERVAL,
     { 'leading': true }

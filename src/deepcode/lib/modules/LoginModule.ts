@@ -8,12 +8,17 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 
+import { startSession, checkSession } from '@deepcode/tsc';
+
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
 
   async initiateLogin(): Promise<void> {
+
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+
     if (this.pendingLogin) {
       return;
     }
@@ -22,7 +27,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
-      const response = await this.serviceAI.startSession({ baseURL: this.baseURL, source: this.source });
+      const response = await startSession({ baseURL: this.baseURL, source: this.source });
       if (response.type == 'error') {
         throw new Error(errorsLogs.login);
       }
@@ -45,9 +50,9 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     let validSession = false;
     if (this.token) {
       try {
-        validSession = !!(await this.serviceAI.checkSession({
+        validSession = !!(await checkSession({
           baseURL: this.baseURL,
-          sessionToken: this.token
+          sessionToken: this.token,
         }));
       } catch (err) {
         await this.processError(err, {
