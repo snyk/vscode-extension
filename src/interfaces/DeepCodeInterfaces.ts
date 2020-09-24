@@ -15,7 +15,6 @@ export interface BaseDeepCodeModuleInterface {
   source: string;
   staticToken: string;
   defaultBaseURL: string;
-  staticBaseURL: string;
   baseURL: string;
   termsConditionsUrl: string;
   token: string;
@@ -25,9 +24,10 @@ export interface BaseDeepCodeModuleInterface {
   shouldReportEvents: boolean;
   setUploadApproved(value: boolean): Promise<void>;
   remoteBundle: IFileBundle;
+  changedFiles: Set<string>;
   analyzer: AnalyzerInterface;
   statusBarItem: StatusBarItemInterface;
-  filesWatcher: DeepCodeWatcherInterface;
+  filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: DeepCodeWatcherInterface;
   setLoadingBadge(value: boolean): Promise<void>;
   setContext(key: string, value: unknown): Promise<void>;

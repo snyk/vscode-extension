@@ -9,9 +9,7 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 import { analyzeFolders } from '@deepcode/tsc';
 
-abstract class BundlesModule extends LoginModule
-  implements BundlesModuleInterface {
-
+abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
 
   files: string[] = [];
@@ -37,9 +35,9 @@ abstract class BundlesModule extends LoginModule
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, `${processed}/${total}`);
   }
 
-  onAnalyseProgress(data: { status: string, progress: number }) {
+  onAnalyseProgress(data: { status: string; progress: number }) {
     // console.log(`ANALYSE PROGRESS - ${data.progress}`);
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, `${Math.round(100*data.progress)}%`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, `${Math.round(100 * data.progress)}%`);
   }
 
   onError(error: Error) {
@@ -60,16 +58,7 @@ abstract class BundlesModule extends LoginModule
         if (this.runningAnalysis) return;
         this.runningAnalysis = true;
 
-        // this.filesWatcher.activate(this);
-
-        // const removedFiles = (this.files || []).filter(f => !bundle.includes(f));
-
-        const result = await analyzeFolders(this.baseURL, this.token, false, 1, paths).catch(
-          // no need to wait for processError since catch is called asynchronously as well
-          (error) => this.processError(error, {
-            message: errorsLogs.analyse
-          })
-        );
+        const result = await analyzeFolders(this.baseURL, this.token, false, 1, paths);
 
         if (result) {
           this.remoteBundle = result;
@@ -83,7 +72,7 @@ abstract class BundlesModule extends LoginModule
       } else {
         await this.setContext(DEEPCODE_CONTEXT.WORKSPACE_FOUND, false);
       }
-    } catch(err) {
+    } catch (err) {
       await this.processError(err, {
         message: errorsLogs.failedAnalysis,
       });

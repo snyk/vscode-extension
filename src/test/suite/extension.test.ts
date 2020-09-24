@@ -9,6 +9,7 @@ import * as nodePath from 'path';
 import * as extension from "../../extension";
 import { ExtensionInterface } from "../../interfaces/DeepCodeInterfaces";
 
+const testToken = '23';
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
 const mockedFolderPath = vscode.Uri.parse('scheme:' + nodePath.join(mockedTestFilesDirPath, '/../mocked_data'), true)
   .fsPath;
@@ -21,7 +22,6 @@ const preTestConfigureExtension = () => {
   // set test token and backend host
   testExtension.staticUploadApproved = true;
   testExtension.staticToken = testToken;
-  testExtension.staticBaseURL = testHost;
 
   // // set workspace path for tests
   // testExtension.workspacesPaths = [mockedFolderPath];
@@ -38,7 +38,7 @@ suite("Deepcode Extension Tests", () => {
   test('Pre-test configuring', () => {
     testExtension = preTestConfigureExtension();
     assert.equal(testExtension.token, testToken);
-    assert.equal(testExtension.baseURL, testHost);
+    assert.equal(testExtension.baseURL, 'sdfs');
     // assert.equal(
     //   testExtension.workspacesPaths[0],
     //   path.join(mockedTestFilesDirPath, "../mocked_data")

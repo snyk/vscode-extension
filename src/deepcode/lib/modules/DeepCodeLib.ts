@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { DeepCodeLibInterface } from "../../../interfaces/DeepCodeInterfaces";
 import BundlesModule from "./BundlesModule";
-import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from "../../constants/views";
+import { DEEPCODE_CONTEXT, DEEPCODE_MODE_CODES } from '../../constants/views';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import {
   EXECUTION_DEBOUNCE_INTERVAL,
@@ -46,7 +46,6 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
     }
     await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, true);
 
-
     const uploadApproved = await this.checkApproval();
     if (!uploadApproved) {
       return;
@@ -59,9 +58,8 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
       this.resetTransientErrors();
       await this.setLoadingBadge(false);
       await this.startAnalysis();
-
     } catch (err) {
-      console.log('failed debounced function')
+      console.log('failed debounced function');
       await this.processError(err, {
         message: errorsLogs.failedExecutionDebounce,
       });
@@ -70,11 +68,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
 
   // This function is called by commands, error handlers, etc.
   // We should avoid having duplicate parallel executions.
-  public startExtension = _.debounce(
-    this.startExtension_.bind(this),
-    EXECUTION_DEBOUNCE_INTERVAL,
-    { leading: true },
-    );
+  public startExtension = _.debounce(this.startExtension_.bind(this), EXECUTION_DEBOUNCE_INTERVAL, { leading: true });
 
   async setMode(mode: string): Promise<void> {
     if (!Object.values(DEEPCODE_MODE_CODES).includes(mode)) return;

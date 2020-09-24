@@ -26,6 +26,7 @@ export const DEEPCODE_MODE_CODES = {
 };
 
 export const DEEPCODE_ANALYSIS_STATUS = {
+  FILTERS: 'LOADING SUPPORTED extentions',
   COLLECTING: 'Collecting files',
   BUNDLING: 'Creating file bundles',
   UPLOADING: 'Uploading files',

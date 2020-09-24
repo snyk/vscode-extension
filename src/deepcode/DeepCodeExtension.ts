@@ -4,6 +4,8 @@ import { emitter } from '@deepcode/tsc';
 
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
+import createFileWatcher from './lib/watchers/FilesWatcher';
+import { ISupportedFiles } from '@deepcode/tsc';
 
 import {
   DEEPCODE_START_COMMAND,
@@ -18,7 +20,7 @@ import {
 } from './constants/commands';
 import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from './utils/vscodeCommandsUtils';
 import { errorsLogs } from './messages/errorsServerLogMessages';
-import { DEEPCODE_VIEW_SUPPORT, DEEPCODE_VIEW_ANALYSIS } from './constants/views';
+import { DEEPCODE_VIEW_SUPPORT, DEEPCODE_VIEW_ANALYSIS, DEEPCODE_ANALYSIS_STATUS } from './constants/views';
 import { SupportProvider } from './view/SupportProvider';
 import { IssueProvider } from './view/IssueProvider';
 
@@ -34,6 +36,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   }
 
   public activate(context: vscode.ExtensionContext): void {
+    emitter.on(emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
     emitter.on(emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
     emitter.on(emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
     emitter.on(emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
@@ -145,6 +148,15 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
 
   public deactivate(): void {
     emitter.removeAllListeners();
+  }
+
+  onSupportedFilesLoaded(data: ISupportedFiles | null) {
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.FILTERS, !!data ? 'Loaded extentions' : 'Loading supported extensions');
+
+    // Setup file watcher
+    if (!this.filesWatcher && data) {
+      this.filesWatcher = createFileWatcher(this, data);
+    }
   }
 }
 
