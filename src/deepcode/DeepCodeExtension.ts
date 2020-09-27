@@ -151,7 +151,9 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   }
 
   onSupportedFilesLoaded(data: ISupportedFiles | null) {
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.FILTERS, !!data ? 'Loaded extentions' : 'Loading supported extensions');
+    const msg = !!data ? 'Ignore rules loading' : 'Loading';
+
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.FILTERS, msg);
 
     // Setup file watcher
     if (!this.filesWatcher && data) {
