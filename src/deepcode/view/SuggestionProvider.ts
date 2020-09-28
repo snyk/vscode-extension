@@ -48,7 +48,7 @@ function getWebviewContent(images: Record<string,string>) { return `
 
       section { padding: 20px }
       .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
-      .suggestion-text { font-size:1.6rem; line-height: 1.6; margin-bottom: 2rem }
+      .suggestion-text { padding-left: 7rem; font-size:1.6rem; line-height: 1.6; margin-bottom: 2rem }
       
       .mark-message { font-weight: bold; }
       .mark-message:hover { color: #FC3838; }
@@ -89,22 +89,25 @@ function getWebviewContent(images: Record<string,string>) { return `
 
       #lead-url { float:right }
 
+      #severity { display:flex; flex-direction: column; flex-grow: 0; width:80px; text-align: center }
+      #severity .icon { width: 32px; height: 32px  }
+      #severity-text {  }
+
     </style>
 </head>
 <body>
     <div class="suggestion">
       <section>
-        <div id="title" class="suggestion-text"></div>
         <div id="severity">
-          <img id="sev1l" class="icon hidden" src="${images['light-icon-info']}"></img>
-          <img id="sev1d" class="icon hidden" src="${images['dark-icon-info']}"></img>
-          <img id="sev2l" class="icon hidden" src="${images['light-icon-warning']}"></img>
-          <img id="sev2d" class="icon hidden" src="${images['dark-icon-warning']}"></img>
-          <img id="sev3l" class="icon hidden" src="${images['light-icon-critical']}"></img>
-          <img id="sev3d" class="icon hidden" src="${images['dark-icon-critical']}"></img>
+          <img id="sev1l" class="icon hidden" src="${images['light-icon-info']}" />
+          <img id="sev1d" class="icon hidden" src="${images['dark-icon-info']}" />
+          <img id="sev2l" class="icon hidden" src="${images['light-icon-warning']}" />
+          <img id="sev2d" class="icon hidden" src="${images['dark-icon-warning']}" />
+          <img id="sev3l" class="icon hidden" src="${images['light-icon-critical']}" />
+          <img id="sev3d" class="icon hidden" src="${images['dark-icon-critical']}" />
           <span id="severity-text"></span>
         </div>
-        <div id="title"></div>
+        <div id="title" class="suggestion-text"></div>
         <div id="lead-url" class="clickable hidden" onclick="navigateToLeadURL()">
           <img class="icon" src="${images['icon-newwindow']}" /> More info
         </div>
