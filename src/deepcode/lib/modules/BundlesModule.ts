@@ -16,6 +16,10 @@ abstract class BundlesModule extends LoginModule
 
   runningAnalysis = false;
 
+  private lastAnalysisStartingTimestamp: number;
+  lastAnalysisDuration: number;
+  lastAnalysisTimestamp: number;
+
   files: string[] = [];
   serviceAI = http.getServiceAI();
 
@@ -31,6 +35,9 @@ abstract class BundlesModule extends LoginModule
     this.onError = this.onError.bind(this);
 
     this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
+    this.lastAnalysisDuration = 0;
+    this.lastAnalysisStartingTimestamp = _.now();
+    this.lastAnalysisTimestamp = _.now();
   }
 
   updateStatus(status: string, progress?: number) {
@@ -146,6 +153,8 @@ abstract class BundlesModule extends LoginModule
   private terminateAnalysis(): void {
     this.serviceAI.removeListeners();
     this.runningAnalysis = false;
+    this.lastAnalysisTimestamp = _.now();
+    this.lastAnalysisDuration = this.lastAnalysisTimestamp - this.lastAnalysisStartingTimestamp;
   }
 
   public async performBundlesActions(path: string): Promise<void> {
@@ -290,6 +299,8 @@ abstract class BundlesModule extends LoginModule
         await this.setContext(DEEPCODE_CONTEXT.ANALYZING, false);
         return;
       }
+
+      this.lastAnalysisStartingTimestamp = _.now();
 
       this.createWorkspacesList(workspaceFolders);
 

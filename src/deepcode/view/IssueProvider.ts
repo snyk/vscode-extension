@@ -129,6 +129,13 @@ export class IssueProvider extends NodeProvider {
       review.unshift(new Node({
         text: `DeepCode found ${!nIssues ? 'no issue! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
       }));
+      const sDuration = Math.round((this.extension.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
+      const ts = new Date(this.extension.lastAnalysisTimestamp);
+      const time = ts.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      const day = ts.toLocaleDateString(undefined, { year: "2-digit", month: "2-digit", day: "2-digit" });
+      review.unshift(new Node({
+        text: `Analysis took ${sDuration}s, finished at ${time}, ${day}`,
+      }));
     }
     return review;
   }
