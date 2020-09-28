@@ -21,7 +21,6 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
   }
 
   onScanFilesProgress(value: number) {
-    // console.log(`SCANNING FILES PROGRESS - ${value}`);
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, `${value}`);
   }
 

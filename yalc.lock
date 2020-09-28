@@ -2,9 +2,8 @@
   "version": "v1",
   "packages": {
     "@deepcode/tsc": {
-      "signature": "59c01ba9310ca95759da182beb43a94e",
-      "file": true,
-      "replaced": "^2.0.0"
+      "signature": "8ed26651a7fe08d7f7130ee1136e540b",
+      "file": true
     }
   }
 }
