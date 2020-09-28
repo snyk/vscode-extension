@@ -59,7 +59,7 @@ export class IssueProvider extends NodeProvider {
         const severity = getDeepCodeSeverity(d.severity);
         ++counts[severity];
         ++nIssues;
-        const issueId = this.extension.analyzer.findSuggestionId(d.message);
+        const issueId = this.extension.analyzer.findSuggestion(d.message)?.id;
         const params: {
           text: string;
           icon: INodeIcon;

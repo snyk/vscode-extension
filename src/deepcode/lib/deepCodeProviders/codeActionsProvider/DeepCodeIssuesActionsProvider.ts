@@ -1,9 +1,5 @@
 import * as vscode from "vscode";
-import {
-  findIssueWithRange,
-  ignoreIssueCommentText,
-  extractIssueNameOutOfId
-} from "../../../utils/analysisUtils";
+import { findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
 import {
   IGNORE_ISSUE_ACTION_NAME,
   FILE_IGNORE_ACTION_NAME,
@@ -18,13 +14,13 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
 
   private issuesList: vscode.DiagnosticCollection | undefined;
-  private findSuggestionId: Function;
+  private findSuggestion: Function;
   private trackIgnoreSuggestion: Function;
 
   constructor(issuesList: vscode.DiagnosticCollection | undefined, callbacks: { [key: string]: Function }) {
     this.issuesList = issuesList;
     this.registerIgnoreIssuesCommand();
-    this.findSuggestionId = callbacks.findSuggestionId;
+    this.findSuggestion = callbacks.findSuggestion;
     this.trackIgnoreSuggestion = callbacks.trackIgnoreSuggestion;
   }
 
@@ -111,8 +107,10 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       DeepCodeIssuesActionProvider.providedCodeActionKinds[0],
     );
 
-    const issueFullId: string = this.findSuggestionId(matchedIssue.message);
-    const issueNameForComment: string = extractIssueNameOutOfId(issueFullId);
+    const suggestion = this.findSuggestion(matchedIssue.message);
+
+    const issueFullId: string = suggestion?.id;
+    const issueNameForComment: string = suggestion?.rule;
     const issueText: string = ignoreIssueCommentText(issueNameForComment, isFileIgnore);
     ignoreIssueAction.command = {
       command: DEEPCODE_IGNORE_ISSUE_COMMAND,

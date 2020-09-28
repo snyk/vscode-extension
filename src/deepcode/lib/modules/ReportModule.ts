@@ -23,7 +23,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
     this.transientErrors = 0;
   }
 
-  private async sendEvent(event: string, options: {[key: string]: any}): Promise<void> {
+  private async sendEvent(event: string, options: { [key: string]: any }): Promise<void> {
     if (!this.shouldReport || !this.shouldReportEvents) return;
     try {
       await reportEvent({
@@ -33,38 +33,33 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
         ...(this.token && { sessionToken: this.token }),
         ...options,
       });
-    } catch(error) {
+    } catch (error) {
       await this.processError(error, {
         message: errorsLogs.sendEvent,
         data: {
           event,
           source: this.source,
           ...(this.token && { sessionToken: this.token }),
-          ...options
+          ...options,
         },
       });
     }
   }
 
-  async processEvent(
-    event: string,
-    options: { [key: string]: any } = {}
-  ): Promise<void> {
+  async processEvent(event: string, options: { [key: string]: any } = {}): Promise<void> {
     // processEvent must be safely callable without waiting its completition.
-    return this.sendEvent(event, options).catch((err) =>
-      console.error("DeepCode event handler failed with error:", err)
-    );
+    return this.sendEvent(event, options).catch(err => console.error('DeepCode event handler failed with error:', err));
   }
 
   async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
     issueId = decodeURIComponent(issueId);
-    const [ language, model ] = issueId.split('/');
+    const [language, model] = issueId.split('/');
     return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
-      data: { issueId, severity, language, model }
+      data: { issueId, severity, language, model },
     });
   }
 
-  private async sendError(options: {[key: string]: any}): Promise<void> {
+  private async sendError(options: { [key: string]: any }): Promise<void> {
     if (!this.shouldReport || !this.shouldReportErrors) return;
     const resp = await reportError({
       baseURL: this.baseURL,
@@ -78,33 +73,27 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
     }
   }
 
-  async processError(
-    error: errorType,
-    options: { [key: string]: any } = {}
-  ): Promise<void> {
+  async processError(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it to console.error
     return this.processErrorInternal(error, options).catch(error =>
-      console.error(`DeepCode error handler failed with error: ${error}`)
+      console.error(`DeepCode error handler failed with error: ${error}`),
     );
   }
 
-  private async processErrorInternal(
-    error: errorType,
-    options: { [key: string]: any } = {}
-  ): Promise<void> {
-    console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
+  private async processErrorInternal(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
+    // console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
 
     if (error.error) {
       const { code, message } = error.error;
       // TODO: move it to 'tsc'
-      if (code === "ENOTFOUND" && message === 'getaddrinfo ENOTFOUND www.deepcode.ai') {
+      if (code === 'ENOTFOUND' && message === 'getaddrinfo ENOTFOUND www.deepcode.ai') {
         return this.connectionErrorHandler();
       }
     }
 
     if (error.errno) {
-      if (error.errno === "ECONNREFUSED") return this.connectionErrorHandler();
+      if (error.errno === 'ECONNREFUSED') return this.connectionErrorHandler();
       await this.sendErrorToServer(error, options);
       return this.generalErrorHandler();
     }
@@ -117,7 +106,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
       serverError,
       badGateway,
       serviceUnavailable,
-      timeout
+      timeout,
     } = statusCodes;
 
     switch (error.statusCode) {
@@ -129,11 +118,18 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
       case unauthorizedContent:
       case unauthorizedBundleAccess:
       case unauthorizedUser:
+        return this.authenticationErrorHandler();
       case notFound:
       default:
         await this.sendErrorToServer(error, options);
         return this.generalErrorHandler();
     }
+  }
+
+  private async authenticationErrorHandler(): Promise<void> {
+    await this.setToken('');
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+    await this.setLoadingBadge(true);
   }
 
   private async generalErrorHandler(): Promise<void> {
@@ -143,21 +139,21 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
   }
 
   private async connectionErrorHandler(): Promise<void> {
+    console.error('Connect error to Deepcode service');
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
 
     ++this.transientErrors;
     await this.setContext(DEEPCODE_CONTEXT.ERROR, DEEPCODE_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
-      this.startExtension().catch((err) => this.processError(err, {
-        message: errorsLogs.failedExecutionTransient,
-      }));
+      this.startExtension().catch(err =>
+        this.processError(err, {
+          message: errorsLogs.failedExecutionTransient,
+        }),
+      );
     }, CONNECTION_ERROR_RETRY_INTERVAL);
   }
 
-  private async sendErrorToServer(
-    error: errorType,
-    options: { [key: string]: any }
-  ): Promise<void> {
+  private async sendErrorToServer(error: errorType, options: { [key: string]: any }): Promise<void> {
     let errorTrace;
     let type;
     try {
@@ -166,9 +162,9 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
       errorTrace = error;
     }
     try {
-      type = `${error.statusCode || ""} ${error.name || ""}`.trim();
+      type = `${error.statusCode || ''} ${error.name || ''}`.trim();
     } catch (e) {
-      type = "unknown";
+      type = 'unknown';
     }
     try {
       await this.sendError({
@@ -178,8 +174,8 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
         ...(options.bundleId && { bundleId: options.bundleId }),
         data: {
           errorTrace,
-          ...options.data
-        }
+          ...options.data,
+        },
       });
     } catch (e) {
       console.error(errorsLogs.errorReportFail);

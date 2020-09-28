@@ -8,7 +8,6 @@ import {
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_REASON_TIP,
-  ISSUE_ID_SPLITTER,
 } from '../constants/analysis';
 
 import { IFileSuggestion, ISuggestion, IFilePath, IMarker, IAnalysisResult } from '@deepcode/tsc';
@@ -196,19 +195,13 @@ export const createIssueRelatedInformation = ({ markersList, fileUri, message }:
   return relatedInformation;
 };
 
-export const extractSuggestionIdFromSuggestionsMap = (
+export const findSuggestionByMessage = (
   analysisResults: IAnalysisResult,
-  suggestionName: string
-): string => {
-  const suggestion = Object.values(analysisResults.suggestions).find(
+  suggestionName: string,
+): ISuggestion | undefined => {
+  return Object.values(analysisResults.suggestions).find(
     (suggestion: ISuggestion) => suggestion.message === suggestionName,
   );
-  return suggestion ? suggestion.id : '';
-};
-
-export const extractIssueNameOutOfId = (issueId: string): string => {
-  const strippedIssueIdList = issueId.split(ISSUE_ID_SPLITTER);
-  return strippedIssueIdList[strippedIssueIdList.length - 1];
 };
 
 export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean): string => {

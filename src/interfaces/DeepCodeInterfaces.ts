@@ -1,6 +1,6 @@
 import { ExtensionContext, DiagnosticCollection, StatusBarItem, TextDocument, TextEditor } from 'vscode';
 import * as vscode from 'vscode';
-import { IFilePath, IFileBundle, ISuggestions, IAnalysisResult } from '@deepcode/tsc';
+import { IFilePath, IFileBundle, ISuggestions, IAnalysisResult, ISuggestion } from '@deepcode/tsc';
 
 export interface StatusBarItemInterface {
   deepcodeStatusBarItem: StatusBarItem;
@@ -119,7 +119,7 @@ export interface AnalyzerInterface {
   activate(extension: ExtensionInterface | any): void;
   deepcodeReview: DiagnosticCollection | undefined;
   analysisResults: IAnalysisResult;
-  findSuggestionId(suggestionName: string): string;
+  findSuggestion(suggestionName: string): ISuggestion | undefined;
   createReviewResults(): Promise<void>;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
   configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void>;

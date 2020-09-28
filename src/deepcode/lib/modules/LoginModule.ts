@@ -16,7 +16,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   private pendingLogin: boolean = false;
 
   async initiateLogin(): Promise<void> {
-
     await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
 
     if (this.pendingLogin) {
@@ -34,29 +33,31 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
       const { sessionToken, loginURL } = response.value;
 
-      await this.setToken(sessionToken);
       await viewInBrowser(loginURL);
-      await this.waitLoginConfirmation();
+      const confirmed = await this.waitLoginConfirmation(sessionToken);
+      if (confirmed) {
+        await this.setToken(sessionToken);
+      }
     } catch (err) {
       await this.processError(err, {
-        message: errorsLogs.login
+        message: errorsLogs.login,
       });
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  async checkSession(): Promise<boolean> {
+  async checkSession(token = ''): Promise<boolean> {
     let validSession = false;
-    if (this.token) {
+    if (token || this.token) {
       try {
         validSession = !!(await checkSession({
           baseURL: this.baseURL,
-          sessionToken: this.token,
+          sessionToken: token || this.token,
         }));
       } catch (err) {
         await this.processError(err, {
-          message: errorsLogs.loginStatus
+          message: errorsLogs.loginStatus,
         });
       }
     }
@@ -65,17 +66,17 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     return validSession;
   }
 
-  private async waitLoginConfirmation(): Promise<void> {
-    if (!this.token) return;
+  private async waitLoginConfirmation(token: string): Promise<boolean> {
     // 20 attempts to wait for user's login & consent
     for (let i = 0; i < 20; i++) {
       await sleep(1000);
 
-      const confirmed = await this.checkSession();
+      const confirmed = await this.checkSession(token);
       if (confirmed) {
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   async checkApproval(): Promise<boolean> {
@@ -96,7 +97,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
       let pressedButton = await vscode.window.showInformationMessage(
         deepCodeMessages.welcome.msg,
-        deepCodeMessages.welcome.button
+        deepCodeMessages.welcome.button,
       );
       if (pressedButton === deepCodeMessages.welcome.button) {
         await openDeepcodeViewContainer();

@@ -12,8 +12,8 @@ import {
   createIssueRelatedInformation,
   createDeepCodeSeveritiesMap,
   getDeepCodeSeverity,
-  extractSuggestionIdFromSuggestionsMap
-} from "../../utils/analysisUtils";
+  findSuggestionByMessage,
+} from '../../utils/analysisUtils';
 import { DEEPCODE_NAME } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
@@ -38,7 +38,7 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
 
     new DisposableCodeActionsProvider(this.deepcodeReview, {
-      findSuggestionId: this.findSuggestionId.bind(this),
+      findSuggestion: this.findSuggestion.bind(this),
       trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this),
     });
     new DisposableHoverProvider(this.deepcodeReview);
@@ -48,8 +48,8 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     this.extension = extension;
   }
 
-  public findSuggestionId(suggestionName: string): string {
-    return extractSuggestionIdFromSuggestionsMap(this.analysisResults, suggestionName);
+  public findSuggestion(suggestionName: string): ISuggestion | undefined {
+    return findSuggestionByMessage(this.analysisResults, suggestionName);
   }
 
   public trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
@@ -61,7 +61,11 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     this.extension.processEvent(TELEMETRY_EVENTS.ignoreSuggestion, options);
   }
 
-  private createIssueDiagnosticInfo({ issuePositions, suggestion, fileUri }: {
+  private createIssueDiagnosticInfo({
+    issuePositions,
+    suggestion,
+    fileUri,
+  }: {
     issuePositions: IFileSuggestion;
     suggestion: ISuggestion;
     fileUri: vscode.Uri;
@@ -166,10 +170,7 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
       ) {
         return;
       }
-      const fileIssuesList: IFilePath = await updateFileReviewResultsPositions(
-        this.analysisResults,
-        updatedFile,
-      );
+      const fileIssuesList: IFilePath = await updateFileReviewResultsPositions(this.analysisResults, updatedFile);
       // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
       const workspace = updatedFile.workspace;
       const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');

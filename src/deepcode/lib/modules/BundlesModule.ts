@@ -6,8 +6,9 @@ import { BundlesModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 import LoginModule from "../../lib/modules/LoginModule";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { statusCodes } from '../../constants/statusCodes';
 
-import { analyzeFolders } from '@deepcode/tsc';
+import { analyzeFolders, extendAnalysis } from '@deepcode/tsc';
 
 abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
@@ -54,10 +55,19 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
       if (paths.length) {
         await this.setContext(DEEPCODE_CONTEXT.WORKSPACE_FOUND, true);
 
-        if (this.runningAnalysis) return;
+        if (this.runningAnalysis) {
+          return;
+        }
         this.runningAnalysis = true;
 
-        const result = await analyzeFolders(this.baseURL, this.token, false, 1, paths);
+        let result;
+        if (this.changedFiles.size && this.remoteBundle) {
+          const changedFiles = [...this.changedFiles];
+          this.changedFiles.clear();
+          result = await extendAnalysis(this.remoteBundle, changedFiles);
+        } else {
+          result = await analyzeFolders(this.baseURL, this.token, false, 1, paths);
+        }
 
         if (result) {
           this.remoteBundle = result;
@@ -65,7 +75,6 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           this.analyzer.analysisResults = result.analysisResults;
           this.analyzer.createReviewResults();
 
-          this.runningAnalysis = false;
           this.refreshViews();
         }
       } else {
@@ -75,6 +84,8 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
       await this.processError(err, {
         message: errorsLogs.failedAnalysis,
       });
+    } finally {
+      this.runningAnalysis = false;
     }
   }
 }
