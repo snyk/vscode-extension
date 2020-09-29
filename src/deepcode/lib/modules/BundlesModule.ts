@@ -214,7 +214,6 @@ abstract class BundlesModule extends LoginModule
     serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
   ): Promise<string[]> {
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 0);
-    console.log("COLLECTING");
     const bundle = await createListOfDirFiles({
       serverFilesFilterList,
       path: folderPath,
@@ -222,7 +221,7 @@ abstract class BundlesModule extends LoginModule
         onProgress: this.onCollectBundleProgress.bind(this),
       }
     });
-    console.warn(`Processed ${bundle.length} files`);
+    console.log(`DeepCode: Processed ${bundle.length} files`);
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
     return bundle;
   }
