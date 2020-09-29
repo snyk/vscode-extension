@@ -40,6 +40,10 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
         return;
     }
 
+    await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
+    this.resetTransientErrors();
+    await this.setLoadingBadge(false);
+
     if (!this.token) {
       await this.checkSession();
       return;
@@ -51,15 +55,9 @@ export default class DeepCodeLib extends BundlesModule implements DeepCodeLibInt
       return;
     }
 
-    // TODO: handle wrong/expired API Key issue
     try {
-      console.log('DeepCode: starting execution pipeline');
-      await this.setContext(DEEPCODE_CONTEXT.ERROR, false);
-      this.resetTransientErrors();
-      await this.setLoadingBadge(false);
       await this.startAnalysis();
     } catch (err) {
-      console.log('failed debounced function');
       await this.processError(err, {
         message: errorsLogs.failedExecutionDebounce,
       });

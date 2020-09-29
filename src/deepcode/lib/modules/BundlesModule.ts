@@ -5,8 +5,7 @@ import { BundlesModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 
 import LoginModule from "../../lib/modules/LoginModule";
 import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { statusCodes } from '../../constants/statusCodes';
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 import { analyzeFolders, extendAnalysis } from '@deepcode/tsc';
 

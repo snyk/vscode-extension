@@ -1,12 +1,11 @@
 import { ReportModuleInterface, errorType } from "../../../interfaces/DeepCodeInterfaces";
-import BaseDeepCodeModule from "./BaseDeepCodeModule";
-import { statusCodes } from "../../constants/statusCodes";
+import BaseDeepCodeModule from './BaseDeepCodeModule';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { DEEPCODE_CONTEXT, DEEPCODE_ERROR_CODES } from "../../constants/views";
 import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
 
-import { reportEvent, reportError } from '@deepcode/tsc';
+import { reportEvent, reportError, constants } from '@deepcode/tsc';
 
 abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleInterface {
   private transientErrors = 0;
@@ -84,45 +83,43 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
   private async processErrorInternal(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
 
-    if (error.error) {
-      const { code, message } = error.error;
-      // TODO: move it to 'tsc'
-      if (code === 'ENOTFOUND' && message === 'getaddrinfo ENOTFOUND www.deepcode.ai') {
-        return this.connectionErrorHandler();
-      }
-    }
-
-    if (error.errno) {
-      if (error.errno === 'ECONNREFUSED') return this.connectionErrorHandler();
+    const defaultErrorHandler = async () => {
       await this.sendErrorToServer(error, options);
-      return this.generalErrorHandler();
-    }
+      await this.generalErrorHandler();
+    };
 
-    const {
-      unauthorizedUser,
-      unauthorizedContent,
-      unauthorizedBundleAccess,
-      notFound,
-      serverError,
-      badGateway,
-      serviceUnavailable,
-      timeout,
-    } = statusCodes;
-
-    switch (error.statusCode) {
-      case serverError:
-      case badGateway:
-      case serviceUnavailable:
-      case timeout:
+    const errorHandlers: { [P in constants.ErrorCodes]: () => Promise<void> } = {
+      [constants.ErrorCodes.serverError]: defaultErrorHandler,
+      [constants.ErrorCodes.badGateway]: async () => {
         return this.connectionErrorHandler();
-      case unauthorizedContent:
-      case unauthorizedBundleAccess:
-      case unauthorizedUser:
+      },
+      [constants.ErrorCodes.serviceUnavailable]: async () => {
+        return this.connectionErrorHandler();
+      },
+      [constants.ErrorCodes.timeout]: async () => {
+        return this.connectionErrorHandler();
+      },
+      [constants.ErrorCodes.dnsNotFound]: async () => {
+        return this.connectionErrorHandler();
+      },
+      [constants.ErrorCodes.connectionRefused]: async () => {
+        return this.connectionErrorHandler();
+      },
+      [constants.ErrorCodes.loginInProgress]: async () => {},
+      [constants.ErrorCodes.unauthorizedContent]: async () => {},
+      [constants.ErrorCodes.unauthorizedUser]: async () => {
         return this.authenticationErrorHandler();
-      case notFound:
-      default:
-        await this.sendErrorToServer(error, options);
-        return this.generalErrorHandler();
+      },
+      [constants.ErrorCodes.unauthorizedBundleAccess]: async () => {},
+      [constants.ErrorCodes.notFound]: async () => {},
+      [constants.ErrorCodes.bigPayload]: async () => {},
+    };
+
+    const errorHandler = errorHandlers[error.statusCode];
+    if (errorHandler) {
+      await errorHandler();
+    } else {
+      await defaultErrorHandler();
     }
   }
 
