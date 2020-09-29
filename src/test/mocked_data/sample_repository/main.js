@@ -15,7 +15,7 @@ var browserType;
 var browserVer;
 
 if (agt.indexOf("opera") != -1) {
-  browserType = "Opera";
+  browserType = 'Opera';
   // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
   // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
   // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>
