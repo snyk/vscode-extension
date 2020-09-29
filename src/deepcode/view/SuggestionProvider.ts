@@ -154,10 +154,12 @@ function getWebviewContent(images: Record<string,string>) { return `
         </div>
       </section>
       <section class="feedback-section delimiter-top" style="margin-top: auto">
-        <div id="ignore-top">Do you want to hide this suggestion from the results?</div>
-        <div class="ignore-actions row">
-          <div class="button" onclick="ignoreIssue(true)">Ignore on line <span id="line-position2"></span></div>
-          <div class="button" onclick="ignoreIssue(false)">Ignore in this file</div>
+        <div id="ignore-section">
+          <div id="ignore-top">Do you want to hide this suggestion from the results?</div>
+          <div class="ignore-actions row">
+            <div class="button" onclick="ignoreIssue(true)">Ignore on line <span id="line-position2"></span></div>
+            <div class="button" onclick="ignoreIssue(false)">Ignore in this file</div>
+          </div>
         </div>
         <div id="feedback-close" onclick="openFeebackSection()">
           <div class="row between clickable">
@@ -281,6 +283,9 @@ function getWebviewContent(images: Record<string,string>) { return `
         fbOpen.className = feedbackVisibility === 'open' ? "" : "hidden";
         const fbSent = document.getElementById('feedback-sent');
         fbSent.className = feedbackVisibility === 'sent' ? "" : "hidden";
+
+        const ignore = document.getElementById('ignore-section');
+        ignore.className = feedbackVisibility === 'open' ? "hidden" : "";
       }
       function likeFeedback(like) {
         feedbackLike = like ? 5 : 1;
@@ -374,8 +379,9 @@ function getWebviewContent(images: Record<string,string>) { return `
       function showCurrentSuggestion() {
         const currentSeverity = getCurrentSeverity();
         const severity = document.getElementById('severity');
+        const title = document.getElementById('title');
+        
         if (currentSeverity && currentSeverity.text) {
-          // const iconId = "sev" + currentSeverity.value;
           severity.querySelectorAll('img').forEach(n => {
             if (n.id.slice(-1) === 'l') {
               if (n.id.includes(currentSeverity.value)) n.className = 'icon light-only';
@@ -384,17 +390,15 @@ function getWebviewContent(images: Record<string,string>) { return `
               if (n.id.includes(currentSeverity.value)) n.className = 'icon dark-only';
               else  n.className = 'icon dark-only hidden';
             }
-            // if (n.id === iconId) n.className = 'icon';
-            // else n.className = 'icon hidden';
           });
           const sevText = document.getElementById('severity-text');
           sevText.innerHTML = currentSeverity.text;
+          title.className = "suggestion-text "+currentSeverity.text.toLowerCase();
         } else {
           severity.querySelectorAll('img').forEach(n => n.className = 'icon hidden');
           sevText.innerHTML = "";
         }
 
-        const title = document.getElementById('title');
         title.querySelectorAll('*').forEach(n => n.remove());
         title.innerHTML = "";
         if (suggestion.markers && suggestion.markers.length) {
@@ -421,7 +425,7 @@ function getWebviewContent(images: Record<string,string>) { return `
             markLineText += "]";
             const markLine = document.createElement("span");
             markLine.innerHTML = markLineText;
-            markLine.className = "font-red";
+            markLine.className = "mark-position";
             mark.appendChild(markLine);
             i = m.msg[1] + 1;
           }
