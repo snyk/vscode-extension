@@ -1,9 +1,9 @@
 import { Uri, Range, Diagnostic, Command } from 'vscode';
 import { NodeProvider } from './NodeProvider';
 import { Node, INodeIcon, NODE_ICONS } from './Node';
-import { getDeepCodeSeverity } from "../utils/analysisUtils";
-import { DEEPCODE_SEVERITIES } from "../constants/analysis";
-import { DEEPCODE_OPEN_ISSUE_COMMAND } from "../constants/commands";
+import { getDeepCodeSeverity } from '../utils/analysisUtils';
+import { DEEPCODE_SEVERITIES } from '../constants/analysis';
+import { DEEPCODE_OPEN_ISSUE_COMMAND } from '../constants/commands';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -98,7 +98,6 @@ export class IssueProvider extends NodeProvider {
         text: filename,
         description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
         icon: this.getSeverityIcon(fileSeverity),
-        issue: { uri },
         children: issues,
         internal: {
           nIssues: diagnostics.length,
@@ -110,16 +109,15 @@ export class IssueProvider extends NodeProvider {
     review.sort(this.compareNodes);
     if (this.extension.runningAnalysis) {
       review.unshift(
-
         new Node({
-            text: this.extension.analysisStatus,
-            description: this.extension.analysisProgress,
-          }),
+          text: this.extension.analysisStatus,
+          description: this.extension.analysisProgress,
+        }),
       );
     } else {
       review.unshift(
         new Node({
-          text: `DeepCode found ${nIssues} issue${nIssues === 1 ? '' : 's'}`,
+          text: `DeepCode found ${!nIssues ? 'no issue! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
         }),
       );
     }
