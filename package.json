@@ -148,11 +148,6 @@
         "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
       },
       {
-        "view": "deepcode.views.analysis",
-        "contents": "DeepCode analyzed your code and found no issue! 🎉",
-        "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
-      },
-      {
         "view": "deepcode.views.actions",
         "contents": "You are currently running DeepCode in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
         "when": "deepcode:mode == 'manual'"
