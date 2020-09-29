@@ -267,28 +267,29 @@ export const extractCompleteSuggestionFromSuggestionsMap = (
     !analysisResultsCollection[workspaceAnalysisPath].suggestions ||
     !analysisResultsCollection[workspaceAnalysisPath].files[filePath]
   ) return;
-  const suggestionIndex: number | undefined = Object.keys(
+  const suggestionIndexes: Array<number> | undefined = Object.keys(
     analysisResultsCollection[workspaceAnalysisPath].suggestions
   ).map(
     (i: string) => parseInt(i, 10)
-  ).find(
+  ).filter(
     (i: number) => analysisResultsCollection[workspaceAnalysisPath].suggestions[i].id === suggestionId
   );
-  if (
-    // suggestionIndex = 0 is a valid index
-    suggestionIndex === undefined ||
-    !analysisResultsCollection[workspaceAnalysisPath].files[filePath][suggestionIndex]
-  ) return;
+  if (!suggestionIndexes || !suggestionIndexes.length) return;
   // reversing createCorrectIssuePlacement for proper matching
   const cols = [ position.start.character, position.end.character ];
   const rows = [ position.start.line, position.end.line ];
-  const suggestion = analysisResultsCollection[workspaceAnalysisPath].suggestions[suggestionIndex];
-  const fileSuggestion = analysisResultsCollection[workspaceAnalysisPath].files[filePath][suggestionIndex].find(
-    (value) => {
-      const p = createCorrectIssuePlacement(value);
-      return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
+  const filePosition = Object.entries(analysisResultsCollection[workspaceAnalysisPath].files[filePath]).map(([si, pos]) => {
+    return {
+      suggestionIndex: parseInt(si, 10),
+      fileSuggestion: pos.find((value) => {
+        const p = createCorrectIssuePlacement(value);
+        return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
+      })
     }
-  );
+  }).find(e => e.fileSuggestion);
+  if (!filePosition) return;
+  const { suggestionIndex, fileSuggestion } = filePosition;
+  const suggestion = analysisResultsCollection[workspaceAnalysisPath].suggestions[suggestionIndex];
   if (!suggestion || !fileSuggestion) return;
   return {
     uri: uri.toString(),

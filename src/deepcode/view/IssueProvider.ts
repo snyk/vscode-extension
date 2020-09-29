@@ -97,7 +97,7 @@ export class IssueProvider extends NodeProvider {
             }
           };
           
-          // TODO: Andy: comment the following if statement to test without markers in the tree
+          // // No need for markers in the node tree while having the suggestion view
           // if (d.relatedInformation && d.relatedInformation.length) {
           //   params.children = d.relatedInformation.map((h) =>
           //     new Node({

@@ -56,6 +56,8 @@ function getWebviewContent(images: Record<string,string>) { return `
       #severity .icon { width: 32px; height: 32px; margin: 0 auto 10px;  }
       #severity-text {  }
       
+      .vscode-dark .light-only { display: none; }
+      .vscode-light .dark-only { display: none; }
       .hidden { display: none; }
       .clickable:hover { cursor: pointer; }
       
@@ -109,12 +111,12 @@ function getWebviewContent(images: Record<string,string>) { return `
     <div class="suggestion">
       <section id="suggestion-info">
         <div id="severity">
-          <img id="sev1l" class="icon hidden" src="${images['light-icon-info']}" />
-          <img id="sev1d" class="icon hidden" src="${images['dark-icon-info']}" />
-          <img id="sev2l" class="icon hidden" src="${images['light-icon-warning']}" />
-          <img id="sev2d" class="icon hidden" src="${images['dark-icon-warning']}" />
-          <img id="sev3l" class="icon hidden" src="${images['light-icon-critical']}" />
-          <img id="sev3d" class="icon hidden" src="${images['dark-icon-critical']}" />
+          <img id="sev1l" class="icon light-only hidden" src="${images['light-icon-info']}" />
+          <img id="sev1d" class="icon dark-only hidden" src="${images['dark-icon-info']}" />
+          <img id="sev2l" class="icon light-only hidden" src="${images['light-icon-warning']}" />
+          <img id="sev2d" class="icon dark-only hidden" src="${images['dark-icon-warning']}" />
+          <img id="sev3l" class="icon light-only hidden" src="${images['light-icon-critical']}" />
+          <img id="sev3d" class="icon dark-only hidden" src="${images['dark-icon-critical']}" />
           <span id="severity-text"></span>
         </div>
         <div id="title" class="suggestion-text"></div>
@@ -157,7 +159,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           <div class="button" onclick="ignoreIssue(true)">Ignore on line <span id="line-position2"></span></div>
           <div class="button" onclick="ignoreIssue(false)">Ignore in this file</div>
         </div>
-        <div id="feedback-close" onclick="toggleFeedbackVisibility()">
+        <div id="feedback-close" onclick="openFeebackSection()">
           <div class="row between clickable">
             <span>A false positive? Helpful? Let us know here</span>
             <div class="arrow">»</div>
@@ -201,7 +203,7 @@ function getWebviewContent(images: Record<string,string>) { return `
       function navigateToLeadURL() {
         if (!suggestion.leadURL) return;
         sendMessage({
-          type: 'openLocal',
+          type: 'openBrowser',
           args: {
             url: suggestion.leadURL
           },
@@ -264,7 +266,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           cols: range ? range.cols : suggestion.cols,
         }
       }
-      function toggleFeedbackVisibility() {
+      function openFeebackSection() {
         feedbackVisibility = 'open';
         showCurrentFeedback();
       }
@@ -373,10 +375,17 @@ function getWebviewContent(images: Record<string,string>) { return `
         const currentSeverity = getCurrentSeverity();
         const severity = document.getElementById('severity');
         if (currentSeverity && currentSeverity.text) {
-          const iconId = "sev" + currentSeverity.value + "l";
+          // const iconId = "sev" + currentSeverity.value;
           severity.querySelectorAll('img').forEach(n => {
-            if (n.id === iconId) n.className = 'icon';
-            else n.className = 'icon hidden';
+            if (n.id.slice(-1) === 'l') {
+              if (n.id.includes(currentSeverity.value)) n.className = 'icon light-only';
+              else  n.className = 'icon light-only hidden';
+            } else {
+              if (n.id.includes(currentSeverity.value)) n.className = 'icon dark-only';
+              else  n.className = 'icon dark-only hidden';
+            }
+            // if (n.id === iconId) n.className = 'icon';
+            // else n.className = 'icon hidden';
           });
           const sevText = document.getElementById('severity-text');
           sevText.innerHTML = currentSeverity.text;
