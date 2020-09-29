@@ -51,11 +51,8 @@ export class IssueProvider extends NodeProvider {
     this.extension.emitViewInitialized();
     const review: Node[] = [];
     let nIssues = 0;
-    if (
-      !this.extension.shouldShowAnalysis ||
-      !this.extension.analyzer.deepcodeReview
-    ) return review;
-    this.extension.analyzer.deepcodeReview.forEach(
+    if (!this.extension.shouldShowAnalysis) return review;
+    if (this.extension.analyzer.deepcodeReview) this.extension.analyzer.deepcodeReview.forEach(
       (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
         const counts: ISeverityCounts = {
           [DEEPCODE_SEVERITIES.information]: 0,
