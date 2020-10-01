@@ -127,7 +127,7 @@ export class IssueProvider extends NodeProvider {
       }));
     } else {
       review.unshift(new Node({
-        text: `DeepCode found ${!nIssues ? 'no issue! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
+        text: `DeepCode found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
       }));
     }
     return review;
