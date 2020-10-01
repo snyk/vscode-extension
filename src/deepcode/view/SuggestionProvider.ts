@@ -49,8 +49,11 @@ function getWebviewContent(images: Record<string,string>) { return `
       .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
       #suggestion-info { padding-left: 12rem }
       .suggestion-text { float:left; margin-bottom: 2rem; font-size:1.6rem; line-height: 1.6; }
+      .suggestion-text.critical .mark-message { color: #FC3838 }
+      .suggestion-text.warning .mark-message { color: #FF9800 }
+      .suggestion-text.info .mark-message { color: #01b9f7 }
       .mark-message { font-weight: bold; }
-      .mark-message:hover { color: #FC3838; }
+      .mark-message:hover { color: inherit; }
       
       #severity { display:flex; flex-direction: column; flex-grow: 0; float:left; width:80px; margin:1rem 0 0 -10rem; text-align: center }
       #severity .icon { width: 32px; height: 32px; margin: 0 auto 10px;  }
