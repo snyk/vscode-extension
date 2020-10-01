@@ -4,6 +4,7 @@ import {
   ExtensionInterface,
   IssuesListOptionsInterface,
   openedTextEditorType,
+  completeFileSuggestionType
 } from '../../../interfaces/DeepCodeInterfaces';
 import {
   updateFileReviewResultsPositions,
@@ -12,7 +13,7 @@ import {
   createIssueRelatedInformation,
   createDeepCodeSeveritiesMap,
   getDeepCodeSeverity,
-  extractCompleteSuggestionFromSuggestionsMap,
+  findCompleteSuggestion,
   findSuggestionByMessage,
 } from '../../utils/analysisUtils';
 import { DEEPCODE_NAME } from "../../constants/general";
@@ -49,15 +50,8 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     this.extension = extension;
   }
 
-  public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): 
-    DeepCode.completeFileSuggestion | undefined 
-  {
-    return extractCompleteSuggestionFromSuggestionsMap(
-      this.analysisResultsCollection,
-      suggestionId,
-      uri,
-      position,
-    );
+  public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined {
+    return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position);
   }
 
   public findSuggestion(suggestionName: string): ISuggestion | undefined {

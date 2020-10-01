@@ -32,6 +32,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
         uri,
         matchedIssue,
         issueId,
+        ruleId,
         isFileIgnore,
       }: {
         uri?: vscode.Uri;
@@ -41,6 +42,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
           range: vscode.Range
         };
         issueId: string;
+        ruleId: string;
         isFileIgnore?: boolean;
       }): Promise<void> => {
         this.trackIgnoreSuggestion(matchedIssue.severity, {
@@ -50,12 +52,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
             isFileIgnore: !!isFileIgnore,
           },
         });
-<<<<<<< HEAD
-        const issueNameForComment: string = extractIssueNameOutOfId(issueId);
-        const issueText: string = ignoreIssueCommentText(
-          issueNameForComment,
-          isFileIgnore
-        );
+        const issueText: string = ignoreIssueCommentText(ruleId, isFileIgnore);
         const editor: vscode.TextEditor | undefined =
           (uri && await vscode.window.showTextDocument(uri, {
             viewColumn: vscode.ViewColumn.One,
@@ -71,26 +68,6 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
           matchedIssue.range.start.line,
           symbolIndexToInsert
         );
-=======
-        const editor: vscode.TextEditor | undefined = currentEditor || vscode.window.activeTextEditor;
-        if (!editor || !issueText || !matchedIssue) {
-          return;
-        }
-        const lineOffset = 1;
-        const symbolIndexToInsert = editor.document.lineAt(matchedIssue.range.start.line)
-          .firstNonWhitespaceCharacterIndex;
-        const issuePosition = new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert);
-        const prevLinePosition = new vscode.Position(issuePosition.line - lineOffset, issuePosition.character);
-
-        const {
-          text: prevLineText,
-          range: prevLineTextRange,
-        }: {
-          text: string;
-          range: vscode.Range;
-        } = editor.document.lineAt(prevLinePosition);
-        const deepCodeCommentAlreadyExists = prevLineText.includes(IGNORE_ISSUE_BASE_COMMENT_TEXT);
->>>>>>> big-refactoring-tsc
 
         let deepCodeCommentPostition: vscode.Position | undefined;
         if (issuePosition.line > 0) {
@@ -128,22 +105,14 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
         if (deepCodeCommentPostition) {
           const position = deepCodeCommentPostition;
           // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
-          editor.edit((e: vscode.TextEditorEdit) =>
-<<<<<<< HEAD
-            e.insert(
-              position,
-              `, ${issueText}`
-            )
-=======
-            e.insert(new vscode.Position(prevLinePosition.line, prevLineTextRange.end.character), `, ${issueText}`),
->>>>>>> big-refactoring-tsc
+          editor.edit((e: vscode.TextEditorEdit) => 
+            e.insert(position, `, ${issueText}`)
           );
         } else {
           editor.edit((e: vscode.TextEditorEdit) =>
             e.insert(issuePosition, this.addSpacesToText(`${issueText}\n`, symbolIndexToInsert)),
           );
         }
-<<<<<<< HEAD
         editor.selections = [
           new vscode.Selection(issuePosition, issuePosition)
         ];
@@ -152,13 +121,6 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
         }
         await editor.document.save();
       }
-=======
-        editor.selections = [new vscode.Selection(issuePosition, issuePosition)];
-        if (!deepCodeCommentAlreadyExists) {
-          vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
-        }
-      },
->>>>>>> big-refactoring-tsc
     );
   }
 
@@ -174,9 +136,11 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   }
 
   private createIgnoreIssueAction({
+    document,
     matchedIssue,
     isFileIgnore,
   }: {
+    document: vscode.TextDocument;
     matchedIssue: vscode.Diagnostic;
     isFileIgnore?: boolean;
   }): vscode.CodeAction {
@@ -185,29 +149,27 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
       DeepCodeIssuesActionProvider.providedCodeActionKinds[0],
     );
 
-<<<<<<< HEAD
-    const issueFullId: string = this.findSuggestionId(
-      matchedIssue.message,
-      document.uri
-    );
-    ignoreIssueAction.command = {
-      command: DEEPCODE_IGNORE_ISSUE_COMMAND,
-      title: DEEPCODE_IGNORE_ISSUE_COMMAND,
-      arguments: [{ uri: document.uri, matchedIssue, issueId: issueFullId, isFileIgnore }]
-=======
     const suggestion = this.findSuggestion(matchedIssue.message);
-
-    const issueFullId: string = suggestion?.id;
-    const issueNameForComment: string = suggestion?.rule;
-    const issueText: string = ignoreIssueCommentText(issueNameForComment, isFileIgnore);
-    ignoreIssueAction.command = {
+    if (suggestion) ignoreIssueAction.command = {
       command: DEEPCODE_IGNORE_ISSUE_COMMAND,
       title: DEEPCODE_IGNORE_ISSUE_COMMAND,
-      arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }],
->>>>>>> big-refactoring-tsc
+      arguments: [{ uri: document.uri, matchedIssue, issueId: suggestion.id, ruleId: suggestion.rule, isFileIgnore }]
     };
 
     return ignoreIssueAction;
+
+    // const suggestion = this.findSuggestion(matchedIssue.message);
+
+    // const issueFullId: string = suggestion?.id;
+    // const issueNameForComment: string = suggestion?.rule;
+    // const issueText: string = ignoreIssueCommentText(issueNameForComment, isFileIgnore);
+    // ignoreIssueAction.command = {
+    //   command: DEEPCODE_IGNORE_ISSUE_COMMAND,
+    //   title: DEEPCODE_IGNORE_ISSUE_COMMAND,
+    //   arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }],
+    // };
+
+    // return ignoreIssueAction;
   }
 
   public provideCodeActions(
@@ -220,7 +182,7 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     const fileIssues = this.issuesList && this.issuesList.get(document.uri);
     const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
-      const codeActionParams = { matchedIssue };
+      const codeActionParams = { document, matchedIssue };
       const ignoreIssueAction = this.createIgnoreIssueAction(codeActionParams);
       const fileIgnoreIssueAction = this.createIgnoreIssueAction({
         ...codeActionParams,

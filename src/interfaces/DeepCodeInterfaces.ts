@@ -69,11 +69,17 @@ export interface ExtensionInterface
     LoginModuleInterface,
     BundlesModuleInterface,
     DeepCodeLibInterface {
+  context: vscode.ExtensionContext | undefined;
   activate(context: ExtensionContext): void;
 }
 
 export interface DeepCodeWatcherInterface {
   activate(extension: ExtensionInterface | any): void;
+}
+
+export interface SuggestionProviderInterface {
+  activate(extension: ExtensionInterface): void;
+  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void;
 }
 
 export type userStateItemType = string | number | boolean | undefined;
@@ -84,23 +90,19 @@ export type errorType = Error | any;
 
 export type filesForSaveListType = string[];
 
-export type completeFileSuggestion = ISuggestion & IFileSuggestion;
-
-// analysisSuggestionsType & IssuePositionsInterface & {
-//   uri: string;
-//   filePath: string;
-//   leadURL?: string;
-//   tags: Array<string>;
-//   categories: Array<string>;
-//   repoDatasetSize: number;
-//   exampleCommitDescriptions: Array<string>;
-//   exampleCommitFixes: Array<{
-//     commitURL: string;
-//     lines: Array<{
-//       line: string;
-//       lineChange: string;
-//     }>
-//   }>
+export type completeFileSuggestionType = ISuggestion & IFileSuggestion & {
+  uri: string;
+  // FIXME: add new fields in tsc
+  categories: Array<string>;
+  repoDatasetSize: number;
+  exampleCommitDescriptions: Array<string>;
+  exampleCommitFixes: Array<{
+    commitURL: string;
+    lines: Array<{
+      line: string;
+      lineChange: string;
+    }>
+  }>
 };
 
 export type openedTextEditorType = {
@@ -139,6 +141,7 @@ export interface AnalyzerInterface {
   deepcodeReview: DiagnosticCollection | undefined;
   analysisResults: IAnalysisResult;
   findSuggestion(suggestionName: string): ISuggestion | undefined;
+  getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined;
   createReviewResults(): Promise<void>;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
   configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void>;

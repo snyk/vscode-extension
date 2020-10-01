@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import {
+  ExtensionInterface,
+  SuggestionProviderInterface,
+  completeFileSuggestionType,
+} from "../../interfaces/DeepCodeInterfaces";
 import { createIssueCorrectRange, getVSCodeSeverity } from "../utils/analysisUtils";
 import { DEEPCODE_VIEW_SUGGESTION } from "../constants/views";
 import {
@@ -49,11 +53,13 @@ function getWebviewContent(images: Record<string,string>) { return `
       .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
       #suggestion-info { padding-left: 12rem }
       .suggestion-text { float:left; margin-bottom: 2rem; font-size:1.6rem; line-height: 1.6; }
-      .suggestion-text.critical .mark-message { color: #FC3838 }
-      .suggestion-text.warning .mark-message { color: #FF9800 }
-      .suggestion-text.info .mark-message { color: #01b9f7 }
+      .suggestion-text.critical .mark-position { color: #FC3838 }
+      .suggestion-text.warning .mark-position { color: #FF9800 }
+      .suggestion-text.info .mark-position { color: #01b9f7 }
+      .suggestion-text.critical .mark-message:hover { color: #FC3838 }
+      .suggestion-text.warning .mark-message:hover { color: #FF9800 }
+      .suggestion-text.info .mark-message:hover { color: #01b9f7 }
       .mark-message { font-weight: bold; }
-      .mark-message:hover { color: inherit; }
       
       #severity { display:flex; flex-direction: column; flex-grow: 0; float:left; width:80px; margin:1rem 0 0 -10rem; text-align: center }
       #severity .icon { width: 32px; height: 32px; margin: 0 auto 10px;  }
@@ -240,6 +246,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           args: {
             ...getSuggestionPosition(),
             message: suggestion.message,
+            rule: suggestion.rule,
             id: suggestion.id,
             severity: suggestion.severity,
             lineOnly: !!lineOnly
@@ -466,6 +473,9 @@ function getWebviewContent(images: Record<string,string>) { return `
           showCurrentExample();
         }
 
+        const explanationTop = document.getElementById('explanations-top');
+        explanationTop.className = suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
+
         const explanations = document.getElementById('explanations');
         explanations.querySelectorAll('*').forEach(n => n.remove());
         for (let e of suggestion.exampleCommitDescriptions) {
@@ -501,11 +511,11 @@ function getWebviewContent(images: Record<string,string>) { return `
 </html>
 `;}
 
-export class SuggestionProvider implements DeepCode.SuggestionProviderInterface {
-  private extension: DeepCode.ExtensionInterface | undefined;
+export class SuggestionProvider implements SuggestionProviderInterface {
+  private extension: ExtensionInterface | undefined;
   private panel: vscode.WebviewPanel | undefined;
   
-  activate(extension: DeepCode.ExtensionInterface) {
+  activate(extension: ExtensionInterface) {
     this.extension = extension;
     vscode.window.registerWebviewPanelSerializer(
       DEEPCODE_VIEW_SUGGESTION, new SuggestionSerializer(this)
@@ -513,8 +523,11 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
   }
 
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
+    console.warn("3", suggestionId);
     if (!this.extension) return;
+    console.warn("4");
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, uri, position);
+    console.warn("5", suggestion);
     if (!suggestion) return;
     this.showPanel(suggestion);
   }
@@ -534,7 +547,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
     this.panel = panel;
   }
 
-  showPanel(suggestion: DeepCode.completeAnalysisSuggestionsType) {
+  showPanel(suggestion: completeFileSuggestionType) {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
     } else {
@@ -588,7 +601,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
     );
   }
 
-  async handleMessage(message: any) {
+  private async handleMessage(message: any) {
     if (!this.extension) return;
     try {
       const { type, args } = message;
@@ -606,7 +619,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
           break;
         }
         case 'ignoreIssue' : {
-          let { lineOnly, message, id, severity, uri, cols, rows } = args;
+          let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
           severity = getVSCodeSeverity(severity);
           const range = createIssueCorrectRange({ cols , rows });
@@ -614,6 +627,7 @@ export class SuggestionProvider implements DeepCode.SuggestionProviderInterface 
             uri,
             matchedIssue: { message, severity, range },
             issueId: id,
+            ruleId: rule,
             isFileIgnore: !lineOnly,
           });
           this.panel?.dispose();

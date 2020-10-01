@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {
   openedTextEditorType,
+  completeFileSuggestionType,
 } from '../../interfaces/DeepCodeInterfaces';
 
 import {
@@ -204,60 +205,44 @@ export const createIssueRelatedInformation = ({ markersList, fileUri, message }:
   return relatedInformation;
 };
 
-export const extractCompleteSuggestionFromSuggestionsMap = (
-  analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface,
+export const findCompleteSuggestion = (
+  analysisResults: IAnalysisResult,
   suggestionId: string,
   uri: vscode.Uri,
   position: vscode.Range,
-): DeepCode.completeFileSuggestion | undefined => {
-  let filePath = uri.fsPath;
-  const workspaceAnalysisPath: string | undefined = Object.keys(
-    analysisResultsCollection
-  ).find((path: string): boolean => filePath.includes(path));
-  filePath = (filePath.split(workspaceAnalysisPath || "").pop() || "").replace(/\\/g,"/");
-  if (
-    !filePath ||
-    !workspaceAnalysisPath ||
-    !analysisResultsCollection[workspaceAnalysisPath] ||
-    !analysisResultsCollection[workspaceAnalysisPath].suggestions ||
-    !analysisResultsCollection[workspaceAnalysisPath].files[filePath]
-  ) return;
-  const suggestionIndexes: Array<number> | undefined = Object.keys(
-    analysisResultsCollection[workspaceAnalysisPath].suggestions
-  ).map(
-    (i: string) => parseInt(i, 10)
-  ).filter(
-    (i: number) => analysisResultsCollection[workspaceAnalysisPath].suggestions[i].id === suggestionId
-  );
-  if (!suggestionIndexes || !suggestionIndexes.length) return;
-  // reversing createCorrectIssuePlacement for proper matching
-  const cols = [ position.start.character, position.end.character ];
-  const rows = [ position.start.line, position.end.line ];
-  const filePosition = Object.entries(analysisResultsCollection[workspaceAnalysisPath].files[filePath]).map(([si, pos]) => {
-    return {
-      suggestionIndex: parseInt(si, 10),
-      fileSuggestion: pos.find((value) => {
-        const p = createCorrectIssuePlacement(value);
-        return p.cols.start === cols[0] && p.cols.end === cols[1] && p.rows.start === rows[0] && p.rows.end === rows[1];
-      })
+): completeFileSuggestionType | undefined => {
+  let filePath = uri.path;
+  if (!analysisResults.files[filePath]) return;
+  const file: IFilePath = analysisResults.files[filePath];
+  let fileSuggestion: IFileSuggestion | undefined;
+  let suggestionIndex: string | number | undefined = Object.keys(file).find((i) => {
+    const index = parseInt(i, 10);
+    if (analysisResults.suggestions[index].id !== suggestionId) return false;
+    const pos = file[index].find((fs) => {
+      const r = createIssueCorrectRange(fs);
+      return r.start.character === position.start.character && r.start.line === position.start.line
+        && r.end.character === position.end.character && r.end.line === position.end.line;
+    });
+    if(pos) {
+      fileSuggestion = pos;
+      return true;
     }
-  }).find(e => e.fileSuggestion);
-  if (!filePosition) return;
-  const { suggestionIndex, fileSuggestion } = filePosition;
-  const suggestion = analysisResultsCollection[workspaceAnalysisPath].suggestions[suggestionIndex];
-  if (!suggestion || !fileSuggestion) return;
+    return false;
+  });
+  if (!fileSuggestion || !suggestionIndex) return;
+  suggestionIndex = parseInt(suggestionIndex, 10);
+  const suggestion = analysisResults.suggestions[suggestionIndex];
+  if (!suggestion) return;
   return {
     uri: uri.toString(),
-    filePath,
-    ...fileSuggestion,
     ...suggestion,
+    ...fileSuggestion,
     // FIXME get the complete results and proper suggestion type from server
-    leadURL: "https://www.owasp.org/index.php/SQL_Injection",
-    tags: ["maintenance", "bug", "escape", "space", "global" ],
+    tags: suggestion['tags'] || ["maintenance", "bug", "escape", "space", "global" ],
     categories: ["Defect"],
-    repoDatasetSize: 1500,
-    exampleCommitDescriptions: ["Fix errors and escaping", "added link to detailed test results and fixed replace to be global "],
-    exampleCommitFixes: [{
+    repoDatasetSize: suggestion['repoDatasetSize'] || 1500,
+    exampleCommitDescriptions: suggestion['exampleCommitDescriptions'] || ["Fix errors and escaping", "added link to detailed test results and fixed replace to be global "],
+    exampleCommitFixes: suggestion['exampleCommitFixes'] || [{
       commitURL: "https://github.com/stackvana/microcule/commit/4a6836b0e70cd42bbfc779c8e6afd05956841034?diff=split#diff-1ed683b1aa559ebf235afc7e3cd61af6L7",
       lines: [{
         line: "  }",

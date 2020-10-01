@@ -60,10 +60,6 @@ export class IssueProvider extends NodeProvider {
           const severity = getDeepCodeSeverity(d.severity);
           ++counts[severity];
           ++nIssues;
-          const issueId = this.extension.analyzer.findSuggestionId(
-            d.message,
-            uri
-          );
           const params: {
             text: string,
             icon: INodeIcon,
@@ -84,8 +80,8 @@ export class IssueProvider extends NodeProvider {
             command: {
               command: DEEPCODE_OPEN_ISSUE_COMMAND,
               title: '',
-              arguments: [issueId, severity, uri, d.range],
-            }
+              arguments: [d.message, severity, uri, d.range],
+            },
           };
           
           // // No need for markers in the node tree while having the suggestion view
@@ -100,7 +96,7 @@ export class IssueProvider extends NodeProvider {
           //       command: {
           //         command: DEEPCODE_OPEN_ISSUE_COMMAND,
           //         title: '',
-          //         arguments: [issueId, severity, uri, d.range, h.location.uri, h.location.range],
+          //         arguments: [d.message, severity, uri, d.range, h.location.uri, h.location.range],
           //       }
           //     })
           //   );

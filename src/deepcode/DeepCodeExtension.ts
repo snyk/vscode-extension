@@ -25,6 +25,8 @@ import { SupportProvider } from './view/SupportProvider';
 import { IssueProvider } from './view/IssueProvider';
 
 class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
+  context: vscode.ExtensionContext | undefined;
+
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
     try {
       await fn(...args);
@@ -36,6 +38,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   }
 
   public activate(context: vscode.ExtensionContext): void {
+    this.context = context;
     emitter.on(emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
     emitter.on(emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
     emitter.on(emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
@@ -44,15 +47,6 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
     emitter.on(emitter.events.error, this.onError.bind(this));
 
     this.statusBarItem.show();
-
-    // context.subscriptions.push(
-    //   vscode.commands.registerCommand(
-    //     'deepcode.test',
-    //     () => {
-    //       this.suggestionProvider.show({test: 'test'});
-    //     }
-    //   )
-    // );
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
@@ -115,10 +109,14 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
         this.executeCommand.bind(
           this,
           DEEPCODE_OPEN_ISSUE_COMMAND,
-          async (issueId: string, severity: number, uri: vscode.Uri, range: vscode.Range, openUri?: vscode.Uri, openRange?: vscode.Range) => {
+          async (message: string, severity: number, uri: vscode.Uri, range: vscode.Range, openUri?: vscode.Uri, openRange?: vscode.Range) => {
+            console.warn("1", message, severity, uri, range, openUri, openRange);
+            const suggestion = this.analyzer.findSuggestion(message);
+            console.warn("2", suggestion);
+            if (!suggestion) return;
             await vscode.commands.executeCommand(DEEPCODE_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
-            this.suggestionProvider.show(issueId, uri, range);
-            await this.trackViewSuggestion(issueId, severity);
+            this.suggestionProvider.show(suggestion.id, uri, range);
+            await this.trackViewSuggestion(suggestion.id, severity);
           },
         ),
       ),
@@ -140,6 +138,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
     this.analyzer.activate(this);
+    this.suggestionProvider.activate(this);
 
     this.checkWelcomeNotification().catch(err =>
       this.processError(err, {
