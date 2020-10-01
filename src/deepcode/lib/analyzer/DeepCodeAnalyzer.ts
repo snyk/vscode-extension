@@ -1,5 +1,10 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import {
+  AnalyzerInterface,
+  ExtensionInterface,
+  IssuesListOptionsInterface,
+  openedTextEditorType,
+} from '../../../interfaces/DeepCodeInterfaces';
 import {
   updateFileReviewResultsPositions,
   createIssueCorrectRange,
@@ -8,50 +13,44 @@ import {
   createDeepCodeSeveritiesMap,
   getDeepCodeSeverity,
   extractCompleteSuggestionFromSuggestionsMap,
-  extractSuggestionIdFromSuggestionsMap,
-} from "../../utils/analysisUtils";
+  findSuggestionByMessage,
+} from '../../utils/analysisUtils';
 import { DEEPCODE_NAME } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
+import { IFileSuggestion, IFilePath, ISuggestion, IAnalysisResult } from '@deepcode/tsc';
+
 import { DisposableCodeActionsProvider } from "../deepCodeProviders/codeActionsProvider/DeepCodeIssuesActionsProvider";
 import { DisposableHoverProvider } from "../deepCodeProviders/hoverProvider/DeepCodeHoverProvider";
 
-class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
+class DeepCodeAnalyzer implements AnalyzerInterface {
   private SEVERITIES: {
     [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
   };
-  private extension: DeepCode.ExtensionInterface | undefined;
-  private issueHoverProvider: vscode.Disposable | undefined;
-  private ignoreActionsProvider: vscode.Disposable | undefined;
-  private issuesMarkersdecorationType:
-    | vscode.TextEditorDecorationType
-    | undefined;
+  private extension: ExtensionInterface | undefined;
+  private issuesMarkersdecorationType: vscode.TextEditorDecorationType | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
-  public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
-  
+  public analysisResults: IAnalysisResult;
+
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
 
-    this.analysisResultsCollection = {};
-    this.ignoreActionsProvider = new DisposableCodeActionsProvider(
-      this.deepcodeReview,
-      {
-        findSuggestionId: this.findSuggestionId.bind(this),
-        trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this)
-      }
-    );
-    this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
+    new DisposableCodeActionsProvider(this.deepcodeReview, {
+      findSuggestion: this.findSuggestion.bind(this),
+      trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this),
+    });
+    new DisposableHoverProvider(this.deepcodeReview);
   }
 
-  public activate(extension: DeepCode.ExtensionInterface) {
+  public activate(extension: ExtensionInterface) {
     this.extension = extension;
   }
 
   public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): 
-    DeepCode.completeAnalysisSuggestionsType | undefined 
+    DeepCode.completeFileSuggestion | undefined 
   {
     return extractCompleteSuggestionFromSuggestionsMap(
       this.analysisResultsCollection,
@@ -61,63 +60,47 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     );
   }
 
-  public findSuggestionId(suggestionName: string, uri: vscode.Uri): string {
-    return extractSuggestionIdFromSuggestionsMap(
-      this.analysisResultsCollection,
-      suggestionName,
-      uri
-    );
+  public findSuggestion(suggestionName: string): ISuggestion | undefined {
+    return findSuggestionByMessage(this.analysisResults, suggestionName);
   }
 
-  public trackIgnoreSuggestion(vscodeSeverity: number, options: {[key: string]: any}): void {
+  public trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
     if (!this.extension) return;
     options.data = {
       severity: getDeepCodeSeverity(vscodeSeverity),
-      ...options.data
+      ...options.data,
     };
-    this.extension.processEvent(
-      TELEMETRY_EVENTS.ignoreSuggestion,
-      options
-    );
-  }
-
-  public updateAnalysisResultsCollection(results: DeepCode.AnalysisResultsCollectionInterface, rootPath: string): void {
-    this.analysisResultsCollection[rootPath] = {...results} as unknown as DeepCode.AnalysisResultsInterface;
-    this.createReviewResults();
+    this.extension.processEvent(TELEMETRY_EVENTS.ignoreSuggestion, options);
   }
 
   private createIssueDiagnosticInfo({
-    issue,
     issuePositions,
-    suggestions,
-    fileUri
+    suggestion,
+    fileUri,
   }: {
-    issue: number;
-    issuePositions: DeepCode.IssuePositionsInterface;
-    suggestions: DeepCode.AnalysisSuggestionsInterface;
+    issuePositions: IFileSuggestion;
+    suggestion: ISuggestion;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
-    const message: string = suggestions[issue].message;
+    const message: string = suggestion.message;
     return {
-      code: "",
+      code: '',
       message,
       range: createIssueCorrectRange(issuePositions),
-      severity: this.SEVERITIES[suggestions[issue].severity].name,
+      severity: this.SEVERITIES[suggestion.severity].name,
       source: DEEPCODE_NAME,
       //issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation({
           markersList: issuePositions.markers,
           fileUri,
-          message
-        })
-      })
+          message,
+        }),
+      }),
     };
   }
 
-  private createIssuesList(
-    options: DeepCode.IssuesListOptionsInterface
-  ): vscode.Diagnostic[] {
+  private createIssuesList(options: IssuesListOptionsInterface): vscode.Diagnostic[] {
     const issuesList: vscode.Diagnostic[] = [];
     const { fileIssuesList, suggestions, fileUri } = options;
 
@@ -128,11 +111,10 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       for (const issuePositions of fileIssuesList[issue]) {
         issuesList.push(
           this.createIssueDiagnosticInfo({
-            issue: +issue,
             issuePositions,
-            suggestions,
-            fileUri
-          })
+            suggestion: suggestions[issue],
+            fileUri,
+          }),
         );
       }
     }
@@ -145,25 +127,14 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
   }
 
-  public setIssuesMarkersDecoration(
-    editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
-  ): void {
-    if (
-      editor &&
-      this.deepcodeReview &&
-      this.deepcodeReview.has(editor.document.uri)
-    ) {
+  public setIssuesMarkersDecoration(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor): void {
+    if (editor && this.deepcodeReview && this.deepcodeReview.has(editor.document.uri)) {
       this.clearPrevIssuesMarkersDecoration();
-      this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(
-        ISSUES_MARKERS_DECORATION_TYPE
-      );
+      this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(ISSUES_MARKERS_DECORATION_TYPE);
       const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
-        this.deepcodeReview.get(editor.document.uri)
+        this.deepcodeReview.get(editor.document.uri),
       );
-      editor.setDecorations(
-        this.issuesMarkersdecorationType,
-        issuesMarkersDecorationsOptions
-      );
+      editor.setDecorations(this.issuesMarkersdecorationType, issuesMarkersDecorationsOptions);
     }
   }
 
@@ -173,40 +144,34 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     }
     this.deepcodeReview.clear();
 
-    for (const analysisResultPath in this.analysisResultsCollection) {
-      const { files, suggestions } = this.analysisResultsCollection[
-        analysisResultPath
-      ];
-      for (const filePath in files) {
-        const fileUri = vscode.Uri.file(`${analysisResultPath}${filePath}`);
-        if (!fileUri) {
-          return;
-        }
-        const fileIssuesList = files[filePath];
-        const issues = this.createIssuesList({
-          fileIssuesList,
-          suggestions,
-          fileUri
-        });
-        this.deepcodeReview.set(fileUri, [...issues]);
+    const { files, suggestions } = this.analysisResults;
+    for (const filePath in files) {
+      const fileUri = vscode.Uri.file(filePath);
+      if (!fileUri) {
+        return;
       }
+      const fileIssuesList = files[filePath];
+      const issues = this.createIssuesList({
+        fileIssuesList,
+        suggestions,
+        fileUri,
+      });
+      this.deepcodeReview.set(fileUri, [...issues]);
     }
+
     this.setIssuesMarkersDecoration();
   }
 
-  public async configureIssuesDisplayBySeverity(
-    severity: number,
-    hide: boolean
-  ): Promise<void> {
+  public async configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void> {
     this.SEVERITIES[severity].show = !hide;
-    if (Object.keys(this.analysisResultsCollection).length) {
+    if (Object.keys(this.analysisResults.suggestions).length) {
       await this.createReviewResults();
     }
   }
 
   public async updateReviewResultsPositions(
-    extension: DeepCode.ExtensionInterface,
-    updatedFile: DeepCode.openedTextEditorType
+    extension: ExtensionInterface,
+    updatedFile: openedTextEditorType,
   ): Promise<void> {
     try {
       if (
@@ -217,39 +182,29 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
       ) {
         return;
       }
-      const fileIssuesList: DeepCode.AnalysisResultsFileResultsInterface = await updateFileReviewResultsPositions(
-        this.analysisResultsCollection,
-        updatedFile
-      );
+      const fileIssuesList: IFilePath = await updateFileReviewResultsPositions(this.analysisResults, updatedFile);
       // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
-      const workspace = updatedFile.workspace || Object.keys(this.analysisResultsCollection)[0];
-      const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, "");
-      this.analysisResultsCollection[workspace].files[filepath] = { ...fileIssuesList };
+      const workspace = updatedFile.workspace;
+      const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');
+      this.analysisResults.files[filepath] = { ...fileIssuesList };
       if (this.deepcodeReview) {
         const issues = this.createIssuesList({
           fileIssuesList,
-          suggestions: this.analysisResultsCollection[workspace].suggestions,
-          fileUri: vscode.Uri.file(updatedFile.fullPath)
+          suggestions: this.analysisResults.suggestions,
+          fileUri: vscode.Uri.file(updatedFile.fullPath),
         });
-        this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [
-          ...issues
-        ]);
+        this.deepcodeReview.set(vscode.Uri.file(updatedFile.fullPath), [...issues]);
         this.setIssuesMarkersDecoration();
       }
     } catch (err) {
       await extension.processError(err, {
         message: errorsLogs.updateReviewPositions,
-        bundleId: (extension.remoteBundles[updatedFile.workspace] || {}).bundleId,
+        bundleId: extension.remoteBundle.bundleId,
         data: {
-          [updatedFile.filePathInWorkspace]: updatedFile.contentChanges
-        }
+          [updatedFile.filePathInWorkspace]: updatedFile.contentChanges,
+        },
       });
     }
-  }
-
-  public async removeReviewResults(workspacePath: string): Promise<void> {
-    await delete this.analysisResultsCollection[workspacePath];
-    await this.createReviewResults();
   }
 }
 

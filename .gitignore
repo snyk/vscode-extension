@@ -1,5 +1,8 @@
 out
+build
 node_modules
+.yalc
+yalc.lock
 .vscode-test
 *.vsix
 yarn-error.log

@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
 import * as _ from "lodash";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import {
+  BaseDeepCodeModuleInterface,
+  AnalyzerInterface,
+  StatusBarItemInterface,
+  DeepCodeWatcherInterface,
+  SuggestionProviderInterface,
+  errorType,
+} from "../../../interfaces/DeepCodeInterfaces";
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
-import DeepCodeStatusBarItem from "../statusBarItem/DeepCodeStatusBarItem";
-import DeepCodeFilesWatcher from "../watchers/DeepCodeFilesWatcher";
-import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher";
+import DeepCodeStatusBarItem from '../statusBarItem/DeepCodeStatusBarItem';
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import { SuggestionProvider } from "../../view/SuggestionProvider";
@@ -15,58 +20,49 @@ import { DEEPCODE_CONTEXT, DEEPCODE_VIEW_ANALYSIS } from "../../constants/views"
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
-export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
-  currentWorkspacePath: string;
-  workspacesPaths: Array<string>;
-  hashesBundles: DeepCode.HashesBundlesInterface;
-  serverFilesFilterList: DeepCode.AllowedServerFilterListInterface;
-  remoteBundles: DeepCode.RemoteBundlesCollectionInterface;
-  analyzer: DeepCode.AnalyzerInterface;
-  statusBarItem: DeepCode.StatusBarItemInterface;
-  filesWatcher: DeepCode.DeepCodeWatcherInterface;
-  workspacesWatcher: DeepCode.DeepCodeWatcherInterface;
-  editorsWatcher: DeepCode.DeepCodeWatcherInterface;
-  settingsWatcher: DeepCode.DeepCodeWatcherInterface;
-  suggestionProvider: DeepCode.SuggestionProviderInterface;
+import { IFileBundle } from '@deepcode/tsc';
+
+export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleInterface {
+  analyzer: AnalyzerInterface;
+  statusBarItem: StatusBarItemInterface;
+  filesWatcher: vscode.FileSystemWatcher;
+  editorsWatcher: DeepCodeWatcherInterface;
+  settingsWatcher: DeepCodeWatcherInterface;
+  suggestionProvider: SuggestionProviderInterface;
 
   // Views and analysis progress
   refreshViewEmitter: vscode.EventEmitter<any>;
-	analysisStatus = '';
-  analysisProgress = 0;
+  analysisStatus = '';
+  analysisProgress = '';
   private initializedView: PendingTaskInterface;
   private progressBadge: PendingTaskInterface | undefined;
   private shouldShowProgressBadge = false;
-  private viewContext: {[key: string]: unknown};
+  private viewContext: { [key: string]: unknown };
+
+  remoteBundle: IFileBundle;
+  changedFiles: Set<string> = new Set();
 
   // These attributes are used in tests
   staticToken = '';
-  staticBaseURL = '';
   defaultBaseURL = 'https://www.deepcode.ai';
   staticUploadApproved = false;
 
   constructor() {
-    this.currentWorkspacePath = "";
-    this.workspacesPaths = [];
-    this.hashesBundles = {};
-    this.serverFilesFilterList = {};
-    this.remoteBundles = {};
     this.analyzer = new DeepCodeAnalyzer();
     this.statusBarItem = new DeepCodeStatusBarItem();
-    this.filesWatcher = new DeepCodeFilesWatcher();
-    this.workspacesWatcher = new DeepCodeWorkspaceFoldersWatcher();
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.suggestionProvider = new SuggestionProvider();
     this.analysisStatus = '';
-    this.analysisProgress = 0;
+    this.analysisProgress = '';
     this.viewContext = {};
     this.initializedView = new PendingTask();
   }
 
   get baseURL(): string {
     // @ts-ignore */}
-    return this.staticBaseURL || vscode.workspace.getConfiguration('deepcode').get('url') || this.defaultBaseURL;
+    return vscode.workspace.getConfiguration('deepcode').get('url') || this.defaultBaseURL;
   }
 
   get termsConditionsUrl(): string {
@@ -78,7 +74,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     return this.staticToken || vscode.workspace.getConfiguration('deepcode').get('token');
   }
 
-  async setToken(token: string): Promise<void>  {
+  async setToken(token: string): Promise<void> {
     this.staticToken = '';
     await vscode.workspace.getConfiguration('deepcode').update('token', token, true);
   }
@@ -88,7 +84,11 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   get uploadApproved(): boolean {
-    return this.staticUploadApproved || this.source !== IDE_NAME || !!(vscode.workspace.getConfiguration('deepcode').get<boolean>('uploadApproved'));
+    return (
+      this.staticUploadApproved ||
+      this.source !== IDE_NAME ||
+      !!vscode.workspace.getConfiguration('deepcode').get<boolean>('uploadApproved')
+    );
   }
 
   async setUploadApproved(value = true): Promise<void> {
@@ -116,7 +116,7 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   async setContext(key: string, value: unknown): Promise<void> {
-    console.log("DeepCode context", key, value);
+    console.log('DeepCode context', key, value);
     const oldValue = this.viewContext[key];
     this.viewContext[key] = value;
     await setContext(key, value);
@@ -125,10 +125,10 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
   }
 
   private trackContextChange(key: string, value: unknown, oldValue: unknown) {
-    let event = "";
+    let event = '';
     let shouldWaitForView = true;
-    let options: Record<string,any> | undefined;
-    switch(key) {
+    let options: Record<string, any> | undefined;
+    switch (key) {
       case DEEPCODE_CONTEXT.LOGGEDIN: {
         if (oldValue !== undefined) {
           if (!value && oldValue) event = TELEMETRY_EVENTS.viewLoginView;
@@ -163,22 +163,15 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     }
     // We want to fire the event only when the user actually sees the View
     if (event) {
-      if (shouldWaitForView) this.initializedView.waiter.then(
-        () => this.processEvent(event, options)
-      );
+      if (shouldWaitForView) this.initializedView.waiter.then(() => this.processEvent(event, options));
       else this.processEvent(event, options);
     }
   }
 
   get shouldShowAnalysis(): boolean {
-    return !this.viewContext[
-      DEEPCODE_CONTEXT.ERROR
-    ] && [
-      DEEPCODE_CONTEXT.LOGGEDIN,
-      DEEPCODE_CONTEXT.APPROVED,
-      DEEPCODE_CONTEXT.ANALYZING,
-    ].every(
-      (c) => !!this.viewContext[c]
+    return (
+      !this.viewContext[DEEPCODE_CONTEXT.ERROR] &&
+      [DEEPCODE_CONTEXT.LOGGEDIN, DEEPCODE_CONTEXT.APPROVED].every(c => !!this.viewContext[c])
     );
   }
 
@@ -196,17 +189,19 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
     if (value) {
       // Using closure on this to allow partial binding in arbitrary positions
       const self = this;
-      this.initializedView.waiter.then(
-        () => vscode.window.withProgress(
-          { location: { viewId: DEEPCODE_VIEW_ANALYSIS } },
-          () => self.getProgressBadgePromise()
+      this.initializedView.waiter
+        .then(() =>
+          vscode.window.withProgress({ location: { viewId: DEEPCODE_VIEW_ANALYSIS } }, () =>
+            self.getProgressBadgePromise(),
+          ),
         )
-      ).then(
-        () => {},
-        (error) => self.processError(error, {
-          message: errorsLogs.loadingBadge,
-        })
-      );
+        .then(
+          () => {},
+          error =>
+            self.processError(error, {
+              message: errorsLogs.loadingBadge,
+            }),
+        );
     } else {
       if (this.progressBadge && !this.progressBadge.isCompleted) {
         this.progressBadge.complete();
@@ -220,21 +215,15 @@ export default abstract class BaseDeepCodeModule implements DeepCode.BaseDeepCod
 
   // Avoid refreshing context/views too often:
   // https://github.com/Microsoft/vscode/issues/68424
-  refreshViews = _.debounce(
+  refreshViews = _.throttle(
     (content?: any): void => this.refreshViewEmitter.fire(content || undefined),
     REFRESH_VIEW_DEBOUNCE_INTERVAL,
-    { 'leading': true }
+    { leading: true },
   );
 
-  abstract processError(
-    error: DeepCode.errorType,
-    options?: { [key: string]: any }
-  ): Promise<void>;
+  abstract processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
 
-  abstract processEvent(
-    event: string,
-    options?: { [key: string]: any }
-  ): Promise<void>;
+  abstract processEvent(event: string, options?: { [key: string]: any }): Promise<void>;
 
   abstract startExtension(): Promise<void>;
 }

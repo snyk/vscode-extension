@@ -1,9 +1,9 @@
 import { Uri, Range, Diagnostic, Command } from 'vscode';
 import { NodeProvider } from './NodeProvider';
 import { Node, INodeIcon, NODE_ICONS } from './Node';
-import { getDeepCodeSeverity } from "../utils/analysisUtils";
-import { DEEPCODE_SEVERITIES } from "../constants/analysis";
-import { DEEPCODE_OPEN_ISSUE_COMMAND } from "../constants/commands";
+import { getDeepCodeSeverity } from '../utils/analysisUtils';
+import { DEEPCODE_SEVERITIES } from '../constants/analysis';
+import { DEEPCODE_OPEN_ISSUE_COMMAND } from '../constants/commands';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -23,25 +23,19 @@ export class IssueProvider extends NodeProvider {
     }
     return 0;
   }
-  
-  processProgress(progress: number): string {
-    return `${Math.round(100*progress)}%`;
-  }
 
   getSeverityIcon(severity: number): INodeIcon {
-    return {
-      [DEEPCODE_SEVERITIES.error]: NODE_ICONS.critical,
-      [DEEPCODE_SEVERITIES.warning]: NODE_ICONS.warning,
-      [DEEPCODE_SEVERITIES.information]: NODE_ICONS.info,
-    }[severity] || NODE_ICONS.info;
+    return (
+      {
+        [DEEPCODE_SEVERITIES.error]: NODE_ICONS.critical,
+        [DEEPCODE_SEVERITIES.warning]: NODE_ICONS.warning,
+        [DEEPCODE_SEVERITIES.information]: NODE_ICONS.info,
+      }[severity] || NODE_ICONS.info
+    );
   }
 
   getFileSeverity(counts: ISeverityCounts): number {
-    for (const s of [
-      DEEPCODE_SEVERITIES.error,
-      DEEPCODE_SEVERITIES.warning,
-      DEEPCODE_SEVERITIES.information,
-    ]) {
+    for (const s of [DEEPCODE_SEVERITIES.error, DEEPCODE_SEVERITIES.warning, DEEPCODE_SEVERITIES.information]) {
       if (counts[s]) return s;
     }
     return DEEPCODE_SEVERITIES.information;
@@ -131,14 +125,18 @@ export class IssueProvider extends NodeProvider {
     );
     review.sort(this.compareNodes);
     if (this.extension.runningAnalysis) {
-      review.unshift(new Node({
-        text: this.extension.analysisStatus,
-        description: this.processProgress(this.extension.analysisProgress),
-      }));
+      review.unshift(
+        new Node({
+          text: this.extension.analysisStatus,
+          description: this.extension.analysisProgress,
+        }),
+      );
     } else {
-      review.unshift(new Node({
-        text: `DeepCode found ${nIssues} issue${nIssues === 1 ? '' : 's'}`,
-      }));
+      review.unshift(
+        new Node({
+          text: `DeepCode found ${!nIssues ? 'no issue! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
+        }),
+      );
     }
     return review;
   }
