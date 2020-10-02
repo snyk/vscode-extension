@@ -83,15 +83,13 @@ $ git clone https://github.com/DeepCodeAI/tsc.git
 2. Go to the package folder, install dependencies, build package and create symlink:
 ```shell script
 $ cd tsc
-$ npm install
-$ npm run build
-$ npm link
+$ npm install && npm run compile && npx yalc publish
 ```
 
 3. Go to the extension folder and install package from local symlink:
 ```shell script
 $ cd vscode-extension
-$ npm link @deepcode/tsc
+$ npx yalc add @deepcode/tsc && npm install && npm run compile
 ```
 
 After that you can add package to your `package.json`:
@@ -100,7 +98,7 @@ After that you can add package to your `package.json`:
  "@deepcode/tsc": "^1.0.1"
 }
 ```
-           
+
 and use this package as usual:
 ```javascript
 import { ServiceAI } from '@deepcode/tsc';
