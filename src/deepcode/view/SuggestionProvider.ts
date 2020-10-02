@@ -28,12 +28,12 @@ function getWebviewContent(images: Record<string,string>) { return `
       html { height: 100%; font-size: 62.5% }
       body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
       body * { box-sizing: border-box }
-      
+
       .button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #01b9f7 solid; border-radius: 30px; line-height: 1; background: none; color: #01b9f7; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
       .button.disabled { border: 1px #676C6F solid; color: #676C6F; }
       .button:hover { background-color: #01b9f7; color: #fff; }
       .button.disabled:hover { background-color: #676C6F; }
-      
+
       .font-light { opacity: .75 }
       .font-blue { color: #01b9f7; }
       .font-red { color: #FC3838; }
@@ -60,21 +60,21 @@ function getWebviewContent(images: Record<string,string>) { return `
       .suggestion-text.warning .mark-message:hover { color: #FF9800 }
       .suggestion-text.info .mark-message:hover { color: #01b9f7 }
       .mark-message { font-weight: bold; }
-      
+
       #severity { display:flex; flex-direction: column; flex-grow: 0; float:left; width:80px; margin:1rem 0 0 -10rem; text-align: center }
       #severity .icon { width: 32px; height: 32px; margin: 0 auto 10px;  }
       #severity-text {  }
-      
+
       .vscode-dark .light-only { display: none; }
       .vscode-light .dark-only { display: none; }
       .hidden { display: none; }
       .clickable:hover { cursor: pointer; }
-      
+
       .chip { opacity:.75; display: inline-flex; padding: 2px 8px; border-radius: 15px; margin: 3px; background-color: rgba(80, 200, 239, 0.1); text-transform: capitalize; }
 
       #info-top { margin-bottom: 8px; }
       #example-top { margin-bottom: 16px; }
-      
+
       .arrow { display: inline-flex; vertical-align: middle; cursor: pointer; }
       .arrow.enabled { fill: #01b9f7; color: #01b9f7; }
       .arrow:hover { fill: #01b9f7; color: #01b9f7; }
@@ -141,7 +141,7 @@ function getWebviewContent(images: Record<string,string>) { return `
       <section class="delimiter-top" id="labels"></section>
       <section class="delimiter-top">
         <div id="info-top" class="font-light">
-          This issue was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes. 
+          This issue was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
         </div>
         <div id="example-top" class="row between">
           <div class="clickable" onclick="navigateToCurrentExample()">
@@ -383,14 +383,14 @@ function getWebviewContent(images: Record<string,string>) { return `
         };
         return suggestion ? {
          value: suggestion.severity,
-         text: stringMap[suggestion.severity], 
+         text: stringMap[suggestion.severity],
         }: undefined;
       }
       function showCurrentSuggestion() {
         const currentSeverity = getCurrentSeverity();
         const severity = document.getElementById('severity');
         const title = document.getElementById('title');
-        
+
         if (currentSeverity && currentSeverity.text) {
           severity.querySelectorAll('img').forEach(n => {
             if (n.id.slice(-1) === 'l') {
@@ -441,7 +441,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           }
           const postText = suggestion.message.substring(i);
           const postMark = document.createTextNode(postText);
-          title.appendChild(postMark);   
+          title.appendChild(postMark);
         } else {
           title.innerHTML = suggestion.message;
         }
@@ -502,7 +502,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           case 'get': {
             suggestion = vscode.getState();
             break;
-          } 
+          }
         }
         showCurrentSuggestion();
       });
@@ -514,7 +514,7 @@ function getWebviewContent(images: Record<string,string>) { return `
 export class SuggestionProvider implements SuggestionProviderInterface {
   private extension: ExtensionInterface | undefined;
   private panel: vscode.WebviewPanel | undefined;
-  
+
   activate(extension: ExtensionInterface) {
     this.extension = extension;
     vscode.window.registerWebviewPanelSerializer(
@@ -536,7 +536,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     this.panel = undefined;
   }
 
-  private checkVisibility(e: vscode.WebviewPanelOnDidChangeViewStateEvent) {
+  private checkVisibility(_e: vscode.WebviewPanelOnDidChangeViewStateEvent) {
     if (this.panel && this.panel.visible) {
       this.panel.webview.postMessage({ type: 'get' });
     }
