@@ -515,11 +515,8 @@ export class SuggestionProvider implements SuggestionProviderInterface {
   }
 
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
-    console.warn("3", suggestionId);
     if (!this.extension) return;
-    console.warn("4");
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, uri, position);
-    console.warn("5", suggestion);
     if (!suggestion) return;
     this.showPanel(suggestion);
   }

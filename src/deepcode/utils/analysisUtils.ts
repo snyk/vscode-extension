@@ -237,48 +237,6 @@ export const findCompleteSuggestion = (
     uri: uri.toString(),
     ...suggestion,
     ...fileSuggestion,
-  //  // FIXME get the complete results and proper suggestion type from server
-  //   tags: suggestion['tags'] || ["maintenance", "bug", "escape", "space", "global" ],
-  //   categories: ["Defect"],
-  //   repoDatasetSize: suggestion['repoDatasetSize'] || 1500,
-  //   exampleCommitDescriptions: suggestion['exampleCommitDescriptions'] || ["Fix errors and escaping", "added link to detailed test results and fixed replace to be global "],
-  //   exampleCommitFixes: suggestion['exampleCommitFixes'] || [{
-  //     commitURL: "https://github.com/stackvana/microcule/commit/4a6836b0e70cd42bbfc779c8e6afd05956841034?diff=split#diff-1ed683b1aa559ebf235afc7e3cd61af6L7",
-  //     lines: [{
-  //       line: "  }",
-  //       lineChange: "none",
-  //     }, {
-  //       line: "  var str = arg.toString();",
-  //       lineChange: "none",
-  //     }, {
-  //       line: "  str = str.replace('\"', '\\\\\"')",
-  //       lineChange: "removed",
-  //     }, {
-  //       line: "  str = str.replace(/\"/g, '\\\\\"')",
-  //       lineChange: "added",
-  //     }, {
-  //       line: "  return str;",
-  //       lineChange: "none",
-  //     }, {
-  //       line: "}",
-  //       lineChange: "none",
-  //     }]
-  //   },{
-  //     commitURL: "https://github.com/quasarframework/quasar-framework.org/commit/56e92ac285c3f6bdbe86d2f3ba60655977124a6f?diff=split#diff-55a33363cf831e87575712ed15264c83L7",
-  //     lines: [{
-  //       line: "function formatNavigationLinks(text) {",
-  //       lineChange: "none",
-  //     }, {
-  //       line: "  return text.replace('_', ' ');",
-  //       lineChange: "removed",
-  //     }, {
-  //       line: "  return text.replace(/_/g, ' ');",
-  //       lineChange: "added",
-  //     }, {
-  //       line: "}",
-  //       lineChange: "none",
-  //     }]
-  //   }]
   };
 };
 

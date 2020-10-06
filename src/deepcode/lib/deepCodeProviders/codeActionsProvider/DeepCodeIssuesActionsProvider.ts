@@ -165,19 +165,6 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     };
 
     return ignoreIssueAction;
-
-    // const suggestion = this.findSuggestion(matchedIssue.message);
-
-    // const issueFullId: string = suggestion?.id;
-    // const issueNameForComment: string = suggestion?.rule;
-    // const issueText: string = ignoreIssueCommentText(issueNameForComment, isFileIgnore);
-    // ignoreIssueAction.command = {
-    //   command: DEEPCODE_IGNORE_ISSUE_COMMAND,
-    //   title: DEEPCODE_IGNORE_ISSUE_COMMAND,
-    //   arguments: [{ issueText, matchedIssue, issueId: issueFullId, isFileIgnore }],
-    // };
-
-    // return ignoreIssueAction;
   }
 
   public provideCodeActions(
