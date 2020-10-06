@@ -352,29 +352,6 @@ function getWebviewContent(images: Record<string,string>) { return `
           line.appendChild(code);
         }
       }
-      function showCurrentExample() {
-        if (!suggestion || !suggestion.exampleCommitFixes.length ||
-          exampleCount < 0 || exampleCount >= suggestion.exampleCommitFixes.length
-        ) return;
-        const counter = document.getElementById('example-counter');
-        counter.innerHTML = exampleCount + 1;
-        const url = suggestion.exampleCommitFixes[exampleCount].commitURL;
-        const repo = url.match(/https?:\\/\\/[^\\/]+\\/([^\\/]+\\/[^\\/]+)/);
-        if (repo && repo[1]) {
-          const exLink = document.getElementById('example-link');
-          exLink.innerHTML = repo[1];
-        }
-        const example = document.getElementById('example');
-        example.querySelectorAll('*').forEach(n => n.remove());
-        for (let l of suggestion.exampleCommitFixes[exampleCount].lines) {
-          const line = document.createElement("div");
-          line.className = "example-line "+l.lineChange;
-          example.appendChild(line);
-          const code = document.createElement("code");
-          code.innerHTML = l.line;
-          line.appendChild(code);
-        }
-      }
       function getCurrentSeverity() {
         const stringMap = {
           1: "Info",
@@ -387,6 +364,7 @@ function getWebviewContent(images: Record<string,string>) { return `
         }: undefined;
       }
       function showCurrentSuggestion() {
+        exampleCount = 0;
         const currentSeverity = getCurrentSeverity();
         const severity = document.getElementById('severity');
         const title = document.getElementById('title');
@@ -463,14 +441,28 @@ function getWebviewContent(images: Record<string,string>) { return `
           labels.appendChild(chip);
         }
 
-        if (suggestion.exampleCommitFixes.length) {
-          const dataset = document.getElementById('dataset-number');
+        const dataset = document.getElementById('dataset-number');
+        const infoTop = document.getElementById('info-top');
+        if (suggestion.repoDatasetSize) {
           dataset.innerHTML = suggestion.repoDatasetSize;
+          infoTop.className = "font-light";
+        } else {
+          infoTop.className = "font-light hidden";
+        }
+          
+        const exampleTop = document.getElementById('example-top');
+        const example = document.getElementById('example');
+        if (suggestion.exampleCommitFixes.length) {
+          exampleTop.className = "row between";
+          example.className = "";
           const exNum = document.getElementById('example-number');
           exNum.innerHTML = suggestion.exampleCommitFixes.length;
           const exNum2 = document.getElementById('example-number2');
           exNum2.innerHTML = suggestion.exampleCommitFixes.length;
           showCurrentExample();
+        } else {
+          exampleTop.className = "row between hidden";
+          example.className = "hidden";
         }
 
         const explanationTop = document.getElementById('explanations-top');

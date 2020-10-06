@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as _ from "lodash";
 import { findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
 import {
   IGNORE_ISSUE_ACTION_NAME,
@@ -10,6 +11,7 @@ import {
   DEEPCODE_IGNORE_ISSUE_COMMAND,
   VSCODE_ADD_COMMENT_COMMAND
 } from "../../../constants/commands";
+import { COMMAND_DEBOUNCE_INTERVAL } from "../../../constants/general";
 
 export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -28,101 +30,107 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
   private registerIgnoreIssuesCommand() {
     vscode.commands.registerCommand(
       DEEPCODE_IGNORE_ISSUE_COMMAND,
-      async ({
-        uri,
-        matchedIssue,
-        issueId,
-        ruleId,
-        isFileIgnore,
-      }: {
-        uri?: vscode.Uri;
-        matchedIssue: {
-          severity: number;
-          message: string;
-          range: vscode.Range
-        };
-        issueId: string;
-        ruleId: string;
-        isFileIgnore?: boolean;
-      }): Promise<void> => {
-        this.trackIgnoreSuggestion(matchedIssue.severity, {
-          message: matchedIssue.message,
-          data: {
-            issueId,
-            isFileIgnore: !!isFileIgnore,
-          },
-        });
-        const issueText: string = ignoreIssueCommentText(ruleId, isFileIgnore);
-        const editor: vscode.TextEditor | undefined =
-          (uri && await vscode.window.showTextDocument(uri, {
-            viewColumn: vscode.ViewColumn.One,
-            selection: matchedIssue.range,
-          })) || vscode.window.activeTextEditor;
-        if (!editor || !issueText || !matchedIssue) {
-          return;
-        }
-        const symbolIndexToInsert = editor.document.lineAt(
-          matchedIssue.range.start.line
-        ).firstNonWhitespaceCharacterIndex;
-        let issuePosition = new vscode.Position(
-          matchedIssue.range.start.line,
-          symbolIndexToInsert
-        );
+      this.ignoreIssues.bind(this)
+    );
+  }
 
-        let deepCodeCommentPostition: vscode.Position | undefined;
-        if (issuePosition.line > 0) {
-          const prevLineRange = new vscode.Range(
-            new vscode.Position(issuePosition.line - 1, 0),
-            new vscode.Position(issuePosition.line, 0),
-          );
-          const prevLine = editor.document.getText(prevLineRange).split("\n").shift() || "";
-          // We have 3 cases:
-          // 1) prevLine doesn't include any dcignore line
-          // 2) prevLine is a dcignore comment
-          // 3) prevLine is a file dcignore comment
-          if (prevLine.includes(IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
-            if (prevLine.includes(FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
-              // case number 3
-              if (isFileIgnore) deepCodeCommentPostition = new vscode.Position(
+  private ignoreIssues = _.debounce(
+    async ({
+      uri,
+      matchedIssue,
+      issueId,
+      ruleId,
+      isFileIgnore,
+    }: {
+      uri?: vscode.Uri;
+      matchedIssue: {
+        severity: number;
+        message: string;
+        range: vscode.Range
+      };
+      issueId: string;
+      ruleId: string;
+      isFileIgnore?: boolean;
+    }): Promise<void> => {
+      this.trackIgnoreSuggestion(matchedIssue.severity, {
+        message: matchedIssue.message,
+        data: {
+          issueId,
+          isFileIgnore: !!isFileIgnore,
+        },
+      });
+      const issueText: string = ignoreIssueCommentText(ruleId, isFileIgnore);
+      const editor: vscode.TextEditor | undefined =
+        (uri && await vscode.window.showTextDocument(uri, {
+          viewColumn: vscode.ViewColumn.One,
+          selection: matchedIssue.range,
+        })) || vscode.window.activeTextEditor;
+      if (!editor || !issueText || !matchedIssue) {
+        return;
+      }
+      const symbolIndexToInsert = editor.document.lineAt(
+        matchedIssue.range.start.line
+      ).firstNonWhitespaceCharacterIndex;
+      let issuePosition = new vscode.Position(
+        matchedIssue.range.start.line,
+        symbolIndexToInsert
+      );
+
+      let deepCodeCommentPostition: vscode.Position | undefined;
+      if (issuePosition.line > 0) {
+        const prevLineRange = new vscode.Range(
+          new vscode.Position(issuePosition.line - 1, 0),
+          new vscode.Position(issuePosition.line, 0),
+        );
+        const prevLine = editor.document.getText(prevLineRange).split("\n").shift() || "";
+        // We have 3 cases:
+        // 1) prevLine doesn't include any dcignore line
+        // 2) prevLine is a dcignore comment
+        // 3) prevLine is a file dcignore comment
+        if (prevLine.includes(IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
+          if (prevLine.includes(FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
+            // case number 3
+            if (isFileIgnore) deepCodeCommentPostition = new vscode.Position(
+              prevLineRange.start.line,
+              prevLine.length
+            );
+            // if !isFileIgnore we want to write a new comment instead of adding to the previous one
+          } else {
+            // case number 2
+            if (!isFileIgnore) {
+              deepCodeCommentPostition = new vscode.Position(
                 prevLineRange.start.line,
                 prevLine.length
               );
-              // if !isFileIgnore we want to write a new comment instead of adding to the previous one
             } else {
-              // case number 2
-              if (!isFileIgnore) {
-                deepCodeCommentPostition = new vscode.Position(
-                  prevLineRange.start.line,
-                  prevLine.length
-                );
-              } else {
-                // we want to write a new comment 2 lines above the issue
-                issuePosition = issuePosition.with(issuePosition.line - 1);
-              } 
-            }
+              // we want to write a new comment 2 lines above the issue
+              issuePosition = issuePosition.with(issuePosition.line - 1);
+            } 
           }
         }
-        if (deepCodeCommentPostition) {
-          const position = deepCodeCommentPostition;
-          // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
-          editor.edit((e: vscode.TextEditorEdit) => 
-            e.insert(position, `, ${issueText}`)
-          );
-        } else {
-          editor.edit((e: vscode.TextEditorEdit) =>
-            e.insert(issuePosition, this.addSpacesToText(`${issueText}\n`, symbolIndexToInsert)),
-          );
-        }
-        editor.selections = [
-          new vscode.Selection(issuePosition, issuePosition)
-        ];
-        if (!deepCodeCommentPostition) {
-          await vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
-        }
-        await editor.document.save();
       }
-    );
-  }
+      if (deepCodeCommentPostition) {
+        const position = deepCodeCommentPostition;
+        // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
+        editor.edit((e: vscode.TextEditorEdit) => 
+          e.insert(position, `, ${issueText}`)
+        );
+      } else {
+        editor.edit((e: vscode.TextEditorEdit) =>
+          e.insert(issuePosition, this.addSpacesToText(`${issueText}\n`, symbolIndexToInsert)),
+        );
+      }
+      editor.selections = [
+        new vscode.Selection(issuePosition, issuePosition)
+      ];
+      if (!deepCodeCommentPostition) {
+        await vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
+      }
+      await editor.document.save();
+    },
+    COMMAND_DEBOUNCE_INTERVAL,
+    { leading: true, trailing: false },
+  )
 
   private addSpacesToText(text: string = '', spacesCount: number = 0): string {
     if (!spacesCount) {
