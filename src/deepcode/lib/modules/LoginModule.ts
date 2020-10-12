@@ -51,10 +51,15 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     let validSession = false;
     if (token || this.token) {
       try {
-        validSession = !!(await checkSession({
+        const sessionResponse = await checkSession({
           baseURL: this.baseURL,
           sessionToken: token || this.token,
-        }));
+        });
+        if (sessionResponse.type === 'error') {
+          validSession = false;
+        } else {
+          validSession = sessionResponse.value;
+        }
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus,
