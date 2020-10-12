@@ -506,6 +506,9 @@ function getWebviewContent(images: Record<string,string>) { return `
 export class SuggestionProvider implements SuggestionProviderInterface {
   private extension: ExtensionInterface | undefined;
   private panel: vscode.WebviewPanel | undefined;
+  // For consistency reasons, the single source of truth for the current suggestion is the
+  // panel state. The following field is only used in 
+  private suggestion: completeFileSuggestionType | undefined;
 
   activate(extension: ExtensionInterface) {
     this.extension = extension;
@@ -515,10 +518,20 @@ export class SuggestionProvider implements SuggestionProviderInterface {
   }
 
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
-    if (!this.extension) return;
+    if (!this.extension) return this.checkPanelAndDispose();
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, uri, position);
-    if (!suggestion) return;
+    if (!suggestion) return this.checkPanelAndDispose();
     this.showPanel(suggestion);
+  }
+
+  checkCurrentSuggestion(): void {
+    if (!this.panel || !this.suggestion || !this.extension) return;
+    const found = this.extension.analyzer.checkFullSuggestion(this.suggestion);
+    if (!found) return this.checkPanelAndDispose();
+  }
+
+  private checkPanelAndDispose() {
+    if (this.panel) this.panel.dispose();
   }
 
   private disposePanel() {
@@ -600,6 +613,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
         undefined,
         this.extension?.context?.subscriptions
       );
+      this.suggestion = suggestion;
     } catch (e) {
       if (!this.extension) return;
       this.extension.processError(e, {

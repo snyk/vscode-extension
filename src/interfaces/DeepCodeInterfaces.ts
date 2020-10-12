@@ -80,6 +80,7 @@ export interface DeepCodeWatcherInterface {
 export interface SuggestionProviderInterface {
   activate(extension: ExtensionInterface): void;
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void;
+  checkCurrentSuggestion(): void;
 }
 
 export type userStateItemType = string | number | boolean | undefined;
@@ -142,6 +143,7 @@ export interface AnalyzerInterface {
   analysisResults: IAnalysisResult;
   findSuggestion(suggestionName: string): ISuggestion | undefined;
   getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined;
+  checkFullSuggestion(suggestion: completeFileSuggestionType): boolean;
   createReviewResults(): Promise<void>;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
   setIssuesMarkersDecoration(editor: TextEditor | undefined): void;

@@ -14,6 +14,7 @@ import {
   createDeepCodeSeveritiesMap,
   getDeepCodeSeverity,
   findCompleteSuggestion,
+  checkCompleteSuggestion,
   findSuggestionByMessage,
 } from '../../utils/analysisUtils';
 import { DEEPCODE_NAME } from "../../constants/general";
@@ -56,6 +57,10 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
 
   public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined {
     return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position);
+  }
+
+  public checkFullSuggestion(suggestion: completeFileSuggestionType): boolean {
+    return checkCompleteSuggestion(this.analysisResults, suggestion);
   }
 
   public findSuggestion(suggestionName: string): ISuggestion | undefined {

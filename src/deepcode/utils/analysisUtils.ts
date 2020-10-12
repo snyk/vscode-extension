@@ -240,6 +240,33 @@ export const findCompleteSuggestion = (
   };
 };
 
+export const checkCompleteSuggestion = (
+  analysisResults: IAnalysisResult,
+  suggestion: completeFileSuggestionType,
+): boolean => {
+  let filePath = vscode.Uri.parse(suggestion.uri).fsPath;
+  if (!analysisResults.files[filePath]) return false;
+  const file: IFilePath = analysisResults.files[filePath];
+  let suggestionIndex: string | undefined = Object.keys(file).find((i) => {
+    const index = parseInt(i, 10);
+    if (
+      analysisResults.suggestions[index].id !== suggestion.id ||
+      analysisResults.suggestions[index].message !== suggestion.message
+    ) return false;
+    const found = file[index].find((fs) => {
+      let equal = true;
+      for(let dir of ['cols','rows']) {
+        for(let index of [0, 1]) {
+          equal = equal && fs[dir][index] === suggestion[dir][index];
+        }
+      }
+      return equal;
+    });
+    return !!found;
+  });
+  return !!suggestionIndex;
+}
+
 export const findSuggestionByMessage = (
   analysisResults: IAnalysisResult,
   suggestionName: string,
