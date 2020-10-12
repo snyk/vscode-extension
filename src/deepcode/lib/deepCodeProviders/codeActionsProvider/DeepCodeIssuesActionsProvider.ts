@@ -1,15 +1,17 @@
 import * as vscode from "vscode";
 import * as _ from "lodash";
-import { findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
+import { getDeepCodeSeverity, findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
 import {
+  SHOW_ISSUE_ACTION_NAME,
   IGNORE_ISSUE_ACTION_NAME,
   FILE_IGNORE_ACTION_NAME,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
 } from "../../../constants/analysis";
 import {
+  DEEPCODE_OPEN_ISSUE_COMMAND,
   DEEPCODE_IGNORE_ISSUE_COMMAND,
-  VSCODE_ADD_COMMENT_COMMAND
+  VSCODE_ADD_COMMENT_COMMAND,
 } from "../../../constants/commands";
 import { COMMAND_DEBOUNCE_INTERVAL } from "../../../constants/general";
 
@@ -167,6 +169,28 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     return ignoreIssueAction;
   }
 
+  private createShowIssueAction({
+    document,
+    matchedIssue,
+  }: {
+    document: vscode.TextDocument;
+    matchedIssue: vscode.Diagnostic;
+  }): vscode.CodeAction {
+    const showIssueAction = new vscode.CodeAction(
+      SHOW_ISSUE_ACTION_NAME,
+      DeepCodeIssuesActionProvider.providedCodeActionKinds[0],
+    );
+
+    const suggestion = this.findSuggestion(matchedIssue.message);
+    if (suggestion) showIssueAction.command = {
+      command: DEEPCODE_OPEN_ISSUE_COMMAND,
+      title: DEEPCODE_OPEN_ISSUE_COMMAND,
+      arguments: [matchedIssue.message, suggestion.severity, document.uri, matchedIssue.range, null],
+    };
+
+    return showIssueAction;
+  }
+
   public provideCodeActions(
     document: vscode.TextDocument,
     clickedRange: vscode.Range,
@@ -178,13 +202,14 @@ export class DeepCodeIssuesActionProvider implements vscode.CodeActionProvider {
     const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
       const codeActionParams = { document, matchedIssue };
+      const showIssueAction = this.createShowIssueAction(codeActionParams);
       const ignoreIssueAction = this.createIgnoreIssueAction(codeActionParams);
       const fileIgnoreIssueAction = this.createIgnoreIssueAction({
         ...codeActionParams,
         isFileIgnore: true,
       });
       // returns list of actions, all new actions should be added to this list
-      return [ignoreIssueAction, fileIgnoreIssueAction];
+      return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
   }
 }

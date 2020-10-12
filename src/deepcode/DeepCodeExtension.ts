@@ -123,7 +123,8 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
           async (message: string, severity: number, uri: vscode.Uri, range: vscode.Range, openUri?: vscode.Uri, openRange?: vscode.Range) => {
             const suggestion = this.analyzer.findSuggestion(message);
             if (!suggestion) return;
-            await vscode.commands.executeCommand(DEEPCODE_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
+            // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
+            if (openUri !== null) await vscode.commands.executeCommand(DEEPCODE_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
             this.suggestionProvider.show(suggestion.id, uri, range);
             await this.trackViewSuggestion(suggestion.id, severity);
           },
