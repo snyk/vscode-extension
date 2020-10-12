@@ -144,6 +144,5 @@ export interface AnalyzerInterface {
   getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined;
   createReviewResults(): Promise<void>;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
-  configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void>;
   setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
 }

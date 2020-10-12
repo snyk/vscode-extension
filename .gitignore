@@ -6,3 +6,4 @@ yalc.lock
 .vscode-test
 *.vsix
 yarn-error.log
+.dccache

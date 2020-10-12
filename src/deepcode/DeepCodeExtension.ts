@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
 import * as _ from "lodash";
 import open from 'open';
-import { emitter } from '@deepcode/tsc';
 
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
-import { ISupportedFiles } from '@deepcode/tsc';
 import { COMMAND_DEBOUNCE_INTERVAL } from "./constants/general";
+import { emitter, ISupportedFiles } from '@deepcode/tsc';
 import {
   DEEPCODE_START_COMMAND,
   DEEPCODE_SETMODE_COMMAND,
@@ -143,7 +142,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
 
     vscode.window.registerTreeDataProvider(DEEPCODE_VIEW_ANALYSIS, new IssueProvider(this));
 
-    vscode.workspace.onDidChangeWorkspaceFolders(() => this.startExtension());
+    vscode.workspace.onDidChangeWorkspaceFolders(this.startExtension.bind(this));
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);

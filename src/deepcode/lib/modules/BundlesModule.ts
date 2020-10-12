@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as _ from "lodash";
 
 import { BundlesModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 

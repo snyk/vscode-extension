@@ -35,15 +35,19 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResults: IAnalysisResult;
 
+  // Deprecated:
+  private ignoreActionsProvider: vscode.Disposable | undefined;
+  private issueHoverProvider: vscode.Disposable | undefined;
+
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
 
-    new DisposableCodeActionsProvider(this.deepcodeReview, {
+    this.ignoreActionsProvider = new DisposableCodeActionsProvider(this.deepcodeReview, {
       findSuggestion: this.findSuggestion.bind(this),
       trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this),
     });
-    new DisposableHoverProvider(this.deepcodeReview);
+    this.issueHoverProvider = new DisposableHoverProvider(this.deepcodeReview);
   }
 
   public activate(extension: ExtensionInterface) {
@@ -154,13 +158,6 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     }
 
     this.setIssuesMarkersDecoration();
-  }
-
-  public async configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void> {
-    this.SEVERITIES[severity].show = !hide;
-    if (Object.keys(this.analysisResults.suggestions).length) {
-      await this.createReviewResults();
-    }
   }
 
   public async updateReviewResultsPositions(
