@@ -15,7 +15,7 @@ export class DisposableHoverProvider implements vscode.Disposable {
     this.hoverProvider = vscode.languages.registerHoverProvider(
       { scheme: "file", language: "*" },
       {
-        provideHover(document, position, _token) {
+        provideHover(document, position) {
           if (!deepcodeReview || !deepcodeReview.has(document.uri)) {
             return;
           }

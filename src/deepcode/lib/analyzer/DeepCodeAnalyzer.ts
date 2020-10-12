@@ -150,13 +150,6 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
     this.setIssuesMarkersDecoration();
   }
 
-  public async configureIssuesDisplayBySeverity(severity: number, hide: boolean): Promise<void> {
-    this.SEVERITIES[severity].show = !hide;
-    if (Object.keys(this.analysisResults.suggestions).length) {
-      await this.createReviewResults();
-    }
-  }
-
   public async updateReviewResultsPositions(
     extension: ExtensionInterface,
     updatedFile: openedTextEditorType,

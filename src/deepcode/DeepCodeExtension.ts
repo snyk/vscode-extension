@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
 import open from 'open';
-import { emitter } from '@deepcode/tsc';
 
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
-import { ISupportedFiles } from '@deepcode/tsc';
+import { emitter, ISupportedFiles } from '@deepcode/tsc';
 
 import {
   DEEPCODE_START_COMMAND,

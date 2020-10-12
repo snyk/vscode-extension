@@ -11,8 +11,8 @@ import { ExtensionInterface } from "../../interfaces/DeepCodeInterfaces";
 
 const testToken = '23';
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
-const mockedFolderPath = vscode.Uri.parse('scheme:' + nodePath.join(mockedTestFilesDirPath, '/../mocked_data'), true)
-  .fsPath;
+// const mockedFolderPath = vscode.Uri.parse('scheme:' + nodePath.join(mockedTestFilesDirPath, '/../mocked_data'), true)
+//   .fsPath;
 
 // pre test configuring extension
 const preTestConfigureExtension = () => {
@@ -29,9 +29,9 @@ const preTestConfigureExtension = () => {
   return testExtension;
 };
 
-const uri = vscode.Uri.file(nodePath.join(mockedTestFilesDirPath, '../mocked_data/sample_repository', 'main.js'));
+// const uri = vscode.Uri.file(nodePath.join(mockedTestFilesDirPath, '../mocked_data/sample_repository', 'main.js'));
 
-const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
+// const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 
 suite("Deepcode Extension Tests", () => {
   let testExtension: ExtensionInterface;
