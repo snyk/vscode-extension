@@ -124,7 +124,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
 
     vscode.window.registerTreeDataProvider(DEEPCODE_VIEW_ANALYSIS, new IssueProvider(this));
 
-    vscode.workspace.onDidChangeWorkspaceFolders(() => this.startExtension());
+    vscode.workspace.onDidChangeWorkspaceFolders(this.startExtension.bind(this));
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
