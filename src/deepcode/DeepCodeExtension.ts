@@ -71,7 +71,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
       vscode.commands.registerCommand(DEEPCODE_OPEN_LOCAL_COMMAND, async (path: vscode.Uri, range?: vscode.Range) => {
         await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
           () => {},
-          // no need to wait for processError since then is called asynchronously as well
+          // no need to wait for processError since catch is called asynchronously as well
           err => this.processError(err, {
             message: errorsLogs.command(DEEPCODE_OPEN_LOCAL_COMMAND),
           }),
