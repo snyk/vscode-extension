@@ -540,20 +540,20 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     try {
       if (
         !vscode.window.activeTextEditor?.viewColumn ||
-        (this.panel?.viewColumn && this.panel.viewColumn !== vscode.ViewColumn.Three)
+        !this.panel?.viewColumn || this.panel.viewColumn !== vscode.ViewColumn.Two
       ) {
         // workaround for: https://github.com/microsoft/vscode/issues/71608
         // when resolved, we can set showPanel back to sync execution.
-        await vscode.commands.executeCommand('workbench.action.focusThirdEditorGroup');
+        await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
       } 
       if (this.panel) {
-        this.panel.reveal(vscode.ViewColumn.Three, true);
+        this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
           DEEPCODE_VIEW_SUGGESTION,
           'DeepCode Suggestion',
           {
-            viewColumn: vscode.ViewColumn.Three,
+            viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
           },
           {
