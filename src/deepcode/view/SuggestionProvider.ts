@@ -536,58 +536,76 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     this.panel = panel;
   }
 
-  showPanel(suggestion: completeFileSuggestionType) {
-    if (this.panel) {
-      this.panel.reveal(vscode.ViewColumn.Beside);
-    } else {
-      this.panel = vscode.window.createWebviewPanel(
-        DEEPCODE_VIEW_SUGGESTION,
-        'DeepCode Suggestion',
-        vscode.ViewColumn.Beside,
-        {
-          localResourceRoots: [
-            vscode.Uri.file(path.join(__filename, '..', '..', '..', '..', 'images'))
-          ],
-          enableScripts: true
-        }
+  async showPanel(suggestion: completeFileSuggestionType) {
+    try {
+      if (
+        !vscode.window.activeTextEditor?.viewColumn ||
+        (this.panel?.viewColumn && this.panel.viewColumn !== vscode.ViewColumn.Three)
+      ) {
+        // workaround for: https://github.com/microsoft/vscode/issues/71608
+        // when resolved, we can set showPanel back to sync execution.
+        await vscode.commands.executeCommand('workbench.action.focusThirdEditorGroup');
+      } 
+      if (this.panel) {
+        this.panel.reveal(vscode.ViewColumn.Three, true);
+      } else {
+        this.panel = vscode.window.createWebviewPanel(
+          DEEPCODE_VIEW_SUGGESTION,
+          'DeepCode Suggestion',
+          {
+            viewColumn: vscode.ViewColumn.Three,
+            preserveFocus: true,
+          },
+          {
+            localResourceRoots: [
+              vscode.Uri.file(path.join(__filename, '..', '..', '..', '..', 'images'))
+            ],
+            enableScripts: true
+          }
+        );
+      }
+      const images: Record<string,string> = [
+        [ "icon-lines", "svg" ],
+        [ "icon-external", "svg" ],
+        [ "icon-code", "svg" ],
+        [ "icon-github", "svg" ],
+        [ "icon-like", "svg" ],
+        [ "light-icon-info", "svg" ],
+        [ "dark-icon-info", "svg" ],
+        [ "light-icon-warning", "svg" ],
+        [ "dark-icon-warning", "svg" ],
+        [ "light-icon-critical", "svg" ],
+        [ "dark-icon-critical", "svg" ],
+      ].reduce<Record<string,string>>((accumulator: Record<string,string>, [name, ext]) => {
+        accumulator[name] = this.panel!.webview.asWebviewUri(vscode.Uri.file(
+          path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`))
+        ).toString();
+        return accumulator;
+      },{});
+      this.panel.webview.html = getWebviewContent(images);
+      this.panel.webview.postMessage({ type: 'set', args: suggestion });
+      this.panel.onDidDispose(
+        this.disposePanel.bind(this),
+        null,
+        this.extension?.context?.subscriptions
       );
+      this.panel.onDidChangeViewState(
+        this.checkVisibility.bind(this),
+        undefined,
+        this.extension?.context?.subscriptions
+      )
+      // Handle messages from the webview
+      this.panel.webview.onDidReceiveMessage(
+        this.handleMessage.bind(this),
+        undefined,
+        this.extension?.context?.subscriptions
+      );
+    } catch (e) {
+      if (!this.extension) return;
+      this.extension.processError(e, {
+        message: errorsLogs.suggestionView,
+      });
     }
-    const images: Record<string,string> = [
-      [ "icon-lines", "svg" ],
-      [ "icon-external", "svg" ],
-      [ "icon-code", "svg" ],
-      [ "icon-github", "svg" ],
-      [ "icon-like", "svg" ],
-      [ "light-icon-info", "svg" ],
-      [ "dark-icon-info", "svg" ],
-      [ "light-icon-warning", "svg" ],
-      [ "dark-icon-warning", "svg" ],
-      [ "light-icon-critical", "svg" ],
-      [ "dark-icon-critical", "svg" ],
-    ].reduce<Record<string,string>>((accumulator: Record<string,string>, [name, ext]) => {
-      accumulator[name] = this.panel!.webview.asWebviewUri(vscode.Uri.file(
-        path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`))
-      ).toString();
-      return accumulator;
-    },{});
-    this.panel.webview.html = getWebviewContent(images);
-    this.panel.webview.postMessage({ type: 'set', args: suggestion });
-    this.panel.onDidDispose(
-      this.disposePanel.bind(this),
-      null,
-      this.extension?.context?.subscriptions
-    );
-    this.panel.onDidChangeViewState(
-      this.checkVisibility.bind(this),
-      undefined,
-      this.extension?.context?.subscriptions
-    )
-    // Handle messages from the webview
-    this.panel.webview.onDidReceiveMessage(
-      this.handleMessage.bind(this),
-      undefined,
-      this.extension?.context?.subscriptions
-    );
   }
 
   private async handleMessage(message: any) {

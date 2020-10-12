@@ -27,5 +27,6 @@ export const errorsLogs = {
   loadingBadge: 'Failed to set loading badge icon',
   welcomeNotification: 'Failed to handle welcome notification',
   checkAdvancedMode: 'Failed to check advanced mode',
+  suggestionView: 'Failed to show suggestion view',
   suggestionViewMessage: 'Failed handle message from suggestion view',
 };

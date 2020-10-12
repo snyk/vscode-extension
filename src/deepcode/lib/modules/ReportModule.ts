@@ -95,7 +95,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
   }
 
   private async processErrorInternal(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
-    // console.error(`DeepCode error handler: ${JSON.stringify(error)}`);
+    // console.error(`DeepCode error handler:`, error);
 
     const defaultErrorHandler = async () => {
       await this.sendErrorToServer(error, options);
@@ -165,13 +165,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
   }
 
   private async sendErrorToServer(error: errorType, options: { [key: string]: any }): Promise<void> {
-    let errorTrace;
     let type;
-    try {
-      errorTrace = JSON.stringify(error);
-    } catch (e) {
-      errorTrace = error;
-    }
     try {
       type = `${error.statusCode || ''} ${error.name || ''}`.trim();
     } catch (e) {
@@ -184,7 +178,7 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
         ...(options.endpoint && { path: options.endpoint }),
         ...(options.bundleId && { bundleId: options.bundleId }),
         data: {
-          errorTrace,
+          errorTrace: `${error}`,
           ...options.data,
         },
       });
