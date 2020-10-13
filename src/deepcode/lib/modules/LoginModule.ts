@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import ReportModule from "./ReportModule";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import http from "../../http/requests";
+import { LoginModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 import { viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
 import { openDeepcodeViewContainer } from "../../utils/vscodeCommandsUtils";
@@ -9,12 +8,17 @@ import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 
+import { startSession, checkSession } from '@deepcode/tsc';
+
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
-abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
+abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
+  private pendingToken = '';
 
   async initiateLogin(): Promise<void> {
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+
     if (this.pendingLogin) {
       return;
     }
@@ -23,31 +27,59 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
-      const result = await http.login(this.baseURL, this.source);
-      const { sessionToken, loginURL } = result;
-      if (!sessionToken || !loginURL) {
+
+      // In case we already created a draft token earlier, check if it's confirmed already
+      if (this.pendingToken) {
+        try {
+          const confirmedPendingToken = await this.checkSession(this.pendingToken);
+          if (confirmedPendingToken) {
+            await this.setToken(this.pendingToken);
+            return;
+          }
+        } finally {
+          this.pendingToken = '';
+        }
+      }
+
+      const response = await startSession({ baseURL: this.baseURL, source: this.source });
+      if (response.type === 'error') {
         throw new Error(errorsLogs.login);
       }
-      await this.setToken(sessionToken);
+
+      const { sessionToken, loginURL } = response.value;
+
       await viewInBrowser(loginURL);
-      await this.waitLoginConfirmation();
+      const confirmed = await this.waitLoginConfirmation(sessionToken);
+      if (confirmed) {
+        await this.setToken(sessionToken);
+      } else {
+        this.pendingToken = sessionToken;
+      }
     } catch (err) {
       await this.processError(err, {
-        message: errorsLogs.login
+        message: errorsLogs.login,
       });
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  async checkSession(): Promise<boolean> {
+  async checkSession(token = ''): Promise<boolean> {
     let validSession = false;
-    if (this.token) {
+    if (token || this.token) {
       try {
-        validSession = !!(await http.checkSession(this.baseURL, this.token));
+        const sessionResponse = await checkSession({
+          baseURL: this.baseURL,
+          sessionToken: token || this.token,
+        });
+        if (sessionResponse.type === 'error') {
+          validSession = false;
+        } else {
+          validSession = sessionResponse.value;
+        }
       } catch (err) {
         await this.processError(err, {
-          message: errorsLogs.loginStatus
+          message: errorsLogs.loginStatus,
         });
       }
     }
@@ -56,17 +88,17 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
     return validSession;
   }
 
-  private async waitLoginConfirmation(): Promise<void> {
-    if (!this.token) return;
+  private async waitLoginConfirmation(token: string): Promise<boolean> {
     // 20 attempts to wait for user's login & consent
     for (let i = 0; i < 20; i++) {
       await sleep(1000);
 
-      const confirmed = await this.checkSession();
+      const confirmed = await this.checkSession(token);
       if (confirmed) {
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   async checkApproval(): Promise<boolean> {
@@ -87,7 +119,7 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
       this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
       let pressedButton = await vscode.window.showInformationMessage(
         deepCodeMessages.welcome.msg,
-        deepCodeMessages.welcome.button
+        deepCodeMessages.welcome.button,
       );
       if (pressedButton === deepCodeMessages.welcome.button) {
         await openDeepcodeViewContainer();

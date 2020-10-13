@@ -1,14 +1,14 @@
-import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import { ExtensionInterface } from "../../interfaces/DeepCodeInterfaces";
 import { TreeDataProvider, ProviderResult } from 'vscode';
 import { Node } from './Node';
 
 export abstract class NodeProvider implements TreeDataProvider<Node> {
   constructor(
-    protected extension: DeepCode.ExtensionInterface
+    protected extension: ExtensionInterface
   ) {}
 
   abstract getRootChildren(): Node[];
-  
+
   getChildren(element?: Node): ProviderResult<Node[]> {
     if (element) return element.getChildren();
     return this.getRootChildren();

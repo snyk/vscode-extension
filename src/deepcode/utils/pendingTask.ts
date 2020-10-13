@@ -13,7 +13,7 @@ export class PendingTask implements PendingTaskInterface {
     this._resolved = false;
     this._promise = new Promise((resolve) => {
       this._resolve = resolve;
-    }).then((nullValue) => {
+    }).then(() => {
       this._resolved = true;
     });
   }

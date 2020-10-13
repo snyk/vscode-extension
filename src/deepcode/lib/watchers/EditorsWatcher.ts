@@ -1,44 +1,39 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { ExtensionInterface, DeepCodeWatcherInterface, openedTextEditorType } from "../../../interfaces/DeepCodeInterfaces";
 
-class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
+class DeepCodeEditorsWatcher implements DeepCodeWatcherInterface {
   private currentTextEditors: {
-    [key: string]: DeepCode.openedTextEditorType;
+    [key: string]: openedTextEditorType;
   } = {};
 
-  private createEditorInfo(
-    extension: DeepCode.ExtensionInterface,
-    editor: vscode.TextEditor
-  ): void {
+  private createEditorInfo(editor: vscode.TextEditor): void {
     const path = editor.document.fileName;
-    const workspacePath = extension.workspacesPaths.find(p =>
-      editor.document.fileName.includes(p)
-    );
+
+    const workspacePath = (vscode.workspace.workspaceFolders || [])
+      .map(f => f.uri.fsPath)
+      .find(p => editor.document.fileName.includes(p));
+
     this.currentTextEditors[editor.document.fileName] = {
       fullPath: path,
-      workspace: workspacePath || "",
-      filePathInWorkspace: workspacePath
-        ? editor.document.fileName.split(workspacePath)[1]
-        : "",
+      workspace: workspacePath || '',
+      filePathInWorkspace: workspacePath ? editor.document.fileName.split(workspacePath)[1] : '',
       lineCount: {
         current: editor.document.lineCount,
-        prevOffset: 0
+        prevOffset: 0,
       },
       contentChanges: [],
-      document: editor.document
+      document: editor.document,
     };
   }
 
-  private watchEditorsNavChange(extension: DeepCode.ExtensionInterface) {
-    vscode.window.onDidChangeActiveTextEditor(
-      (editor: vscode.TextEditor | undefined) => {
-        if (editor && !this.currentTextEditors[editor.document.fileName]) {
-          this.createEditorInfo(extension, editor);
-        }
-        // set issues markers decorations when navigating between opened editors
-        extension.analyzer.setIssuesMarkersDecoration(editor);
+  private watchEditorsNavChange(extension: ExtensionInterface) {
+    vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined) => {
+      if (editor && !this.currentTextEditors[editor.document.fileName]) {
+        this.createEditorInfo(editor);
       }
-    );
+      // set issues markers decorations when navigating between opened editors
+      extension.analyzer.setIssuesMarkersDecoration(editor);
+    });
   }
 
   private watchClosingEditor() {
@@ -47,48 +42,35 @@ class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
     });
   }
 
-  private watchEditorCodeChanges(extension: DeepCode.ExtensionInterface) {
-    vscode.workspace.onDidChangeTextDocument(
-      (event: vscode.TextDocumentChangeEvent) => {
-        const currentEditorFileName = event.document.fileName;
-        if (
-          this.currentTextEditors[currentEditorFileName] &&
-          event.contentChanges &&
-          event.contentChanges.length
-        ) {
-          const curentLineCount = this.currentTextEditors[
-            currentEditorFileName
-          ].lineCount.current;
-          this.currentTextEditors[currentEditorFileName] = {
-            ...this.currentTextEditors[currentEditorFileName],
-            lineCount: {
-              current: event.document.lineCount,
-              prevOffset: event.document.lineCount - curentLineCount
-            },
-            contentChanges: [...event.contentChanges],
-            document: event.document
-          };
-          extension.analyzer.updateReviewResultsPositions(
-            extension,
-            this.currentTextEditors[currentEditorFileName]
-          );
-        }
+  private watchEditorCodeChanges(extension: ExtensionInterface) {
+    vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
+      const currentEditorFileName = event.document.fileName;
+      if (this.currentTextEditors[currentEditorFileName] && event.contentChanges && event.contentChanges.length) {
+        const curentLineCount = this.currentTextEditors[currentEditorFileName].lineCount.current;
+        this.currentTextEditors[currentEditorFileName] = {
+          ...this.currentTextEditors[currentEditorFileName],
+          lineCount: {
+            current: event.document.lineCount,
+            prevOffset: event.document.lineCount - curentLineCount,
+          },
+          contentChanges: [...event.contentChanges],
+          document: event.document,
+        };
+        extension.analyzer.updateReviewResultsPositions(extension, this.currentTextEditors[currentEditorFileName]);
       }
-    );
+    });
   }
 
-  private async prepareWatchers(
-    extension: DeepCode.ExtensionInterface
-  ): Promise<void> {
+  private async prepareWatchers(extension: ExtensionInterface): Promise<void> {
     for await (const editor of vscode.window.visibleTextEditors) {
-      this.createEditorInfo(extension, editor);
+      this.createEditorInfo(editor);
     }
     await this.watchEditorsNavChange(extension);
     await this.watchClosingEditor();
     await this.watchEditorCodeChanges(extension);
   }
 
-  public activate(extension: DeepCode.ExtensionInterface): void {
+  public activate(extension: ExtensionInterface): void {
     this.prepareWatchers(extension);
   }
 }
