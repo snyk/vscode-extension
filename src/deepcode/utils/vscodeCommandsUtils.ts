@@ -6,7 +6,7 @@ import {
   DEEPCODE_CONTEXT_PREFIX,
   DEEPCODE_OPEN_BROWSER_COMMAND,
 } from "../constants/commands";
-import { createDCIgnore } from "./filesUtils"
+import { createDCIgnore } from "./ignoreFileUtils"
 
 export const openDeepcodeSettingsCommand = async (): Promise<void> => {
   await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, DEEPCODE_EXTENSION_NAME);
@@ -25,7 +25,12 @@ export const viewInBrowser = async (url: string): Promise<void> => {
 };
 
 export const createDCIgnoreCommand = async (custom = false, path?: string): Promise<void> => {
-  path = path || vscode.workspace.rootPath;
-  if (!path) return;
-  await createDCIgnore(path, custom);
+  if (!path) {
+    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+    for (const p of paths) {
+      await createDCIgnore(p, custom);
+    }
+  } else {
+    await createDCIgnore(path, custom);
+  }
 };

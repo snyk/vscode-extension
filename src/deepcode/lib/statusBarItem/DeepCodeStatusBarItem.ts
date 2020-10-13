@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { StatusBarItemInterface } from "../../../interfaces/DeepCodeInterfaces";
 import { DEEPCODE_NAME } from "../../constants/general";
 import { DEEPCODE_SETTINGS_COMMAND } from "../../constants/commands";
 
-class DeepCodeStatusBarItem implements DeepCode.StatusBarItemInterface {
+class DeepCodeStatusBarItem implements StatusBarItemInterface {
   public deepcodeStatusBarItem: vscode.StatusBarItem;
   public constructor() {
     this.deepcodeStatusBarItem = vscode.window.createStatusBarItem(
