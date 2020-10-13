@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as _ from "lodash";
 
 import { BundlesModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 
@@ -21,8 +20,8 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
   constructor() {
     super();
 
-    this.lastAnalysisStartingTimestamp = _.now();
-    this.lastAnalysisTimestamp = _.now();
+    this.lastAnalysisStartingTimestamp = Date.now();
+    this.lastAnalysisTimestamp = Date.now();
   }
 
   updateStatus(status: string, progress: string) {
@@ -69,7 +68,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           return;
         }
         this.runningAnalysis = true;
-        this.lastAnalysisStartingTimestamp = _.now();
+        this.lastAnalysisStartingTimestamp = Date.now();
 
         let result;
         if (this.changedFiles.size && this.remoteBundle) {
@@ -97,7 +96,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
       });
     } finally {
       this.runningAnalysis = false;
-      this.lastAnalysisTimestamp = _.now();
+      this.lastAnalysisTimestamp = Date.now();
       this.lastAnalysisDuration = this.lastAnalysisTimestamp - this.lastAnalysisStartingTimestamp;
     }
   }
