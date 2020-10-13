@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import open from 'open';
 
+import { emitter, ISupportedFiles } from '@deepcode/tsc';
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
-import { emitter, ISupportedFiles } from '@deepcode/tsc';
 
 import {
   DEEPCODE_START_COMMAND,
@@ -150,7 +150,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   }
 
   onSupportedFilesLoaded(data: ISupportedFiles | null) {
-    const msg = !!data ? 'Ignore rules loading' : 'Loading';
+    const msg = data ? 'Ignore rules loading' : 'Loading';
 
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.FILTERS, msg);
 

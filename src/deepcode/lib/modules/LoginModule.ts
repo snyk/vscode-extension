@@ -42,7 +42,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       }
 
       const response = await startSession({ baseURL: this.baseURL, source: this.source });
-      if (response.type == 'error') {
+      if (response.type === 'error') {
         throw new Error(errorsLogs.login);
       }
 
