@@ -11,18 +11,11 @@ import { analyzeFolders, extendAnalysis } from '@deepcode/tsc';
 abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
 
-  private lastAnalysisStartingTimestamp: number;
+  private lastAnalysisStartingTimestamp = Date.now();
   lastAnalysisDuration = 0;
-  lastAnalysisTimestamp: number;
+  lastAnalysisTimestamp = Date.now();
 
   files: string[] = [];
-
-  constructor() {
-    super();
-
-    this.lastAnalysisStartingTimestamp = Date.now();
-    this.lastAnalysisTimestamp = Date.now();
-  }
 
   updateStatus(status: string, progress: string) {
     this.analysisStatus = status;
