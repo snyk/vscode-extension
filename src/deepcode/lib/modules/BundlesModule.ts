@@ -11,6 +11,10 @@ import { analyzeFolders, extendAnalysis } from '@deepcode/tsc';
 abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
 
+  private lastAnalysisStartingTimestamp = Date.now();
+  lastAnalysisDuration = 0;
+  lastAnalysisTimestamp = Date.now();
+
   files: string[] = [];
 
   updateStatus(status: string, progress: string) {
@@ -57,6 +61,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           return;
         }
         this.runningAnalysis = true;
+        this.lastAnalysisStartingTimestamp = Date.now();
 
         let result;
         if (this.changedFiles.size && this.remoteBundle) {
@@ -84,6 +89,8 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
       });
     } finally {
       this.runningAnalysis = false;
+      this.lastAnalysisTimestamp = Date.now();
+      this.lastAnalysisDuration = this.lastAnalysisTimestamp - this.lastAnalysisStartingTimestamp;
     }
   }
 }
