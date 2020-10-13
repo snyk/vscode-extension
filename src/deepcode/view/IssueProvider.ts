@@ -116,7 +116,7 @@ export class IssueProvider extends NodeProvider {
       );
     } else {
       review.unshift(new Node({
-        text: `DeepCode found ${!nIssues ? 'no issue! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
+        text: `DeepCode found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
       }));
       const sDuration = Math.round((this.extension.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
       const ts = new Date(this.extension.lastAnalysisTimestamp);
