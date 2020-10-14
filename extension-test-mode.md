@@ -100,7 +100,7 @@ After that you can add package to your `package.json`:
  "@deepcode/tsc": "^1.0.1"
 }
 ```
-           
+
 and use this package as usual:
 ```javascript
 import { ServiceAI } from '@deepcode/tsc';

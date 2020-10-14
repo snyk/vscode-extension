@@ -45,67 +45,80 @@ export class IssueProvider extends NodeProvider {
     this.extension.emitViewInitialized();
     const review: Node[] = [];
     let nIssues = 0;
-    if (!this.extension.shouldShowAnalysis || !this.extension.analyzer.deepcodeReview) return review;
-    this.extension.analyzer.deepcodeReview.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
-      const counts: ISeverityCounts = {
-        [DEEPCODE_SEVERITIES.information]: 0,
-        [DEEPCODE_SEVERITIES.warning]: 0,
-        [DEEPCODE_SEVERITIES.error]: 0,
-      };
-      const filePath = uri.path.split('/');
-      const filename = filePath.pop() || uri.path;
-      const dir = filePath.pop();
-      const issues: Node[] = diagnostics.map(d => {
-        const severity = getDeepCodeSeverity(d.severity);
-        ++counts[severity];
-        ++nIssues;
-        const issueId = this.extension.analyzer.findSuggestion(d.message)?.id;
-        const params: {
-          text: string;
-          icon: INodeIcon;
-          issue: { uri: Uri; range?: Range };
-          command: Command;
-          children?: Node[];
-        } = {
-          text: d.message,
-          icon: this.getSeverityIcon(severity),
-          issue: {
-            uri,
-            range: d.range,
-          },
-          command: {
-            command: DEEPCODE_OPEN_ISSUE_COMMAND,
-            title: '',
-            arguments: [issueId, severity, uri, d.range],
-          },
+    if (!this.extension.shouldShowAnalysis) return review;
+    if (this.extension.analyzer.deepcodeReview) this.extension.analyzer.deepcodeReview.forEach(
+      (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
+        const counts: ISeverityCounts = {
+          [DEEPCODE_SEVERITIES.information]: 0,
+          [DEEPCODE_SEVERITIES.warning]: 0,
+          [DEEPCODE_SEVERITIES.error]: 0,
         };
-        if (d.relatedInformation && d.relatedInformation.length) {
-          params.children = d.relatedInformation.map(
-            h =>
-              new Node({
-                text: h.message,
-                issue: {
-                  uri: h.location.uri,
-                  range: h.location.range,
-                },
-              }),
-          );
-        }
-        return new Node(params);
-      });
-      const fileSeverity = this.getFileSeverity(counts);
-      const file = new Node({
-        text: filename,
-        description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
-        icon: this.getSeverityIcon(fileSeverity),
-        children: issues,
-        internal: {
-          nIssues: diagnostics.length,
-          severity: fileSeverity,
-        },
-      });
-      review.push(file);
-    });
+        const filePath = uri.path.split('/');
+        const filename = filePath.pop() || uri.path;
+        const dir = filePath.pop();
+        const issues: Node[] = diagnostics.map((d) => {
+          const severity = getDeepCodeSeverity(d.severity);
+          ++counts[severity];
+          ++nIssues;
+          const params: {
+            text: string,
+            icon: INodeIcon,
+            issue: { uri: Uri, range?: Range },
+            internal: { severity: number },
+            command: Command,
+            children?: Node[]
+          } = {
+            text: d.message,
+            icon: this.getSeverityIcon(severity),
+            issue: {
+              uri,
+              range: d.range
+            },
+            internal: {
+              severity,
+            },
+            command: {
+              command: DEEPCODE_OPEN_ISSUE_COMMAND,
+              title: '',
+              arguments: [d.message, severity, uri, d.range],
+            },
+          };
+          
+          // // No need for markers in the node tree while having the suggestion view
+          // if (d.relatedInformation && d.relatedInformation.length) {
+          //   params.children = d.relatedInformation.map((h) =>
+          //     new Node({
+          //       text: h.message,
+          //       issue: {
+          //         uri: h.location.uri,
+          //         range: h.location.range,
+          //       },
+          //       command: {
+          //         command: DEEPCODE_OPEN_ISSUE_COMMAND,
+          //         title: '',
+          //         arguments: [d.message, severity, uri, d.range, h.location.uri, h.location.range],
+          //       }
+          //     })
+          //   );
+          // }
+
+          return new Node(params);
+        });
+        issues.sort(this.compareNodes);
+        const fileSeverity = this.getFileSeverity(counts);
+        const file = new Node({
+          text: filename,
+          description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
+          icon: this.getSeverityIcon(fileSeverity),
+          children: issues,
+          internal: {
+            nIssues: diagnostics.length,
+            severity: fileSeverity,
+          }
+        });
+        review.push(file);
+      }
+    );
     review.sort(this.compareNodes);
     if (this.extension.runningAnalysis) {
       review.unshift(

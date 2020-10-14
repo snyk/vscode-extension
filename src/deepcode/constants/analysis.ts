@@ -11,6 +11,8 @@ export const FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT: string = `file ${IGNORE_ISSUE_
 export const IGNORE_ISSUE_REASON_TIP: string =
   "<please specify a reason of ignoring this>";
 
+export const SHOW_ISSUE_ACTION_NAME: string =
+  "Show this suggestion (DeepCode)";
 export const IGNORE_ISSUE_ACTION_NAME: string =
   "Ignore this particular suggestion (DeepCode)";
 export const FILE_IGNORE_ACTION_NAME: string =

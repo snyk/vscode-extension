@@ -5,12 +5,14 @@ import {
   AnalyzerInterface,
   StatusBarItemInterface,
   DeepCodeWatcherInterface,
+  SuggestionProviderInterface,
   errorType,
 } from "../../../interfaces/DeepCodeInterfaces";
 import DeepCodeAnalyzer from "../analyzer/DeepCodeAnalyzer";
 import DeepCodeStatusBarItem from '../statusBarItem/DeepCodeStatusBarItem';
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
+import { SuggestionProvider } from "../../view/SuggestionProvider";
 import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
 import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { setContext } from "../../utils/vscodeCommandsUtils";
@@ -26,6 +28,7 @@ export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleIn
   filesWatcher: vscode.FileSystemWatcher;
   editorsWatcher: DeepCodeWatcherInterface;
   settingsWatcher: DeepCodeWatcherInterface;
+  suggestionProvider: SuggestionProviderInterface;
 
   // Views and analysis progress
   refreshViewEmitter: vscode.EventEmitter<any>;
@@ -50,6 +53,7 @@ export default abstract class BaseDeepCodeModule implements BaseDeepCodeModuleIn
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
     this.refreshViewEmitter = new vscode.EventEmitter<any>();
+    this.suggestionProvider = new SuggestionProvider();
     this.analysisStatus = '';
     this.analysisProgress = '';
     this.viewContext = {};

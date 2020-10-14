@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
+import * as _ from "lodash";
 import open from 'open';
 
 import { emitter, ISupportedFiles } from '@deepcode/tsc';
 import { ExtensionInterface } from '../interfaces/DeepCodeInterfaces';
 import DeepCodeLib from './lib/modules/DeepCodeLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
-
+import { COMMAND_DEBOUNCE_INTERVAL } from "./constants/general";
 import {
   DEEPCODE_START_COMMAND,
   DEEPCODE_SETMODE_COMMAND,
@@ -17,24 +18,39 @@ import {
   DEEPCODE_OPEN_LOCAL_COMMAND,
   DEEPCODE_OPEN_ISSUE_COMMAND,
 } from './constants/commands';
+import {
+  DEEPCODE_VIEW_SUPPORT,
+  DEEPCODE_VIEW_ANALYSIS,
+  DEEPCODE_ANALYSIS_STATUS,
+} from './constants/views';
 import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from './utils/vscodeCommandsUtils';
 import { errorsLogs } from './messages/errorsServerLogMessages';
-import { DEEPCODE_VIEW_SUPPORT, DEEPCODE_VIEW_ANALYSIS, DEEPCODE_ANALYSIS_STATUS } from './constants/views';
 import { SupportProvider } from './view/SupportProvider';
 import { IssueProvider } from './view/IssueProvider';
 
 class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
+  context: vscode.ExtensionContext | undefined;
+  private debouncedCommands: Record<string,_.DebouncedFunc<((...args: any[]) => Promise<any>)>> = {};
+
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
-    try {
-      await fn(...args);
-    } catch (error) {
-      await this.processError(error, {
-        message: errorsLogs.command(name),
-      });
-    }
+    if (!this.debouncedCommands[name]) this.debouncedCommands[name] = _.debounce(
+      async (...args: any[]): Promise<any> => {
+        try {
+          return await fn(...args);
+        } catch (error) {
+          await this.processError(error, {
+            message: errorsLogs.command(name),
+          });
+        }
+      },
+      COMMAND_DEBOUNCE_INTERVAL,
+      { leading: true, trailing: false },
+    );
+    return this.debouncedCommands[name](...args);
   }
 
   public activate(context: vscode.ExtensionContext): void {
+    this.context = context;
     emitter.on(emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
     emitter.on(emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
     emitter.on(emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
@@ -52,14 +68,13 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand(DEEPCODE_OPEN_LOCAL_COMMAND, (path: vscode.Uri, range?: vscode.Range) => {
-        vscode.window.showTextDocument(path, { selection: range }).then(
-          // no need to wait for processError since then is called asynchronously as well
+      vscode.commands.registerCommand(DEEPCODE_OPEN_LOCAL_COMMAND, async (path: vscode.Uri, range?: vscode.Range) => {
+        await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
           () => {},
-          err =>
-            this.processError(err, {
-              message: errorsLogs.command(DEEPCODE_OPEN_LOCAL_COMMAND),
-            }),
+          // no need to wait for processError since catch is called asynchronously as well
+          err => this.processError(err, {
+            message: errorsLogs.command(DEEPCODE_OPEN_LOCAL_COMMAND),
+          }),
         );
       }),
     );
@@ -105,9 +120,13 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
         this.executeCommand.bind(
           this,
           DEEPCODE_OPEN_ISSUE_COMMAND,
-          async (issueId: string, severity: number, uri: vscode.Uri, range: vscode.Range) => {
-            await vscode.commands.executeCommand(DEEPCODE_OPEN_LOCAL_COMMAND, uri, range);
-            await this.trackViewSuggestion(issueId, severity);
+          async (message: string, severity: number, uri: vscode.Uri, range: vscode.Range, openUri?: vscode.Uri, openRange?: vscode.Range) => {
+            const suggestion = this.analyzer.findSuggestion(message);
+            if (!suggestion) return;
+            // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
+            if (openUri !== null) await vscode.commands.executeCommand(DEEPCODE_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
+            this.suggestionProvider.show(suggestion.id, uri, range);
+            await this.trackViewSuggestion(suggestion.id, severity);
           },
         ),
       ),
@@ -129,6 +148,7 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
     this.analyzer.activate(this);
+    this.suggestionProvider.activate(this);
 
     this.checkWelcomeNotification().catch(err =>
       this.processError(err, {

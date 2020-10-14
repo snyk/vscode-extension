@@ -79,6 +79,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           this.analyzer.createReviewResults();
 
           this.refreshViews();
+          this.suggestionProvider.checkCurrentSuggestion();
         }
       } else {
         await this.setContext(DEEPCODE_CONTEXT.WORKSPACE_FOUND, false);

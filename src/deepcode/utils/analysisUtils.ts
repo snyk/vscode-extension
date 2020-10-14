@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {
   openedTextEditorType,
+  completeFileSuggestionType,
 } from '../../interfaces/DeepCodeInterfaces';
 
 import {
@@ -23,6 +24,15 @@ export const createDeepCodeSeveritiesMap = () => {
     [error]: { name: vscode.DiagnosticSeverity.Error, show: true },
   };
 };
+
+export const getVSCodeSeverity = (deepCodeSeverity: number) => {
+  const { information, error, warning } = DEEPCODE_SEVERITIES;
+  return {
+    [information]: vscode.DiagnosticSeverity.Information,
+    [warning]: vscode.DiagnosticSeverity.Warning,
+    [error]: vscode.DiagnosticSeverity.Error,
+  }[deepCodeSeverity] || vscode.DiagnosticSeverity.Information;
+}
 
 export const getDeepCodeSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) => {
   const { information, error, warning } = DEEPCODE_SEVERITIES;
@@ -194,6 +204,68 @@ export const createIssueRelatedInformation = ({ markersList, fileUri, message }:
   }, Array());
   return relatedInformation;
 };
+
+export const findCompleteSuggestion = (
+  analysisResults: IAnalysisResult,
+  suggestionId: string,
+  uri: vscode.Uri,
+  position: vscode.Range,
+): completeFileSuggestionType | undefined => {
+  let filePath = uri.fsPath;
+  if (!analysisResults.files[filePath]) return;
+  const file: IFilePath = analysisResults.files[filePath];
+  let fileSuggestion: IFileSuggestion | undefined;
+  let suggestionIndex: string | number | undefined = Object.keys(file).find((i) => {
+    const index = parseInt(i, 10);
+    if (analysisResults.suggestions[index].id !== suggestionId) return false;
+    const pos = file[index].find((fs) => {
+      const r = createIssueCorrectRange(fs);
+      return r.start.character === position.start.character && r.start.line === position.start.line
+        && r.end.character === position.end.character && r.end.line === position.end.line;
+    });
+    if(pos) {
+      fileSuggestion = pos;
+      return true;
+    }
+    return false;
+  });
+  if (!fileSuggestion || !suggestionIndex) return;
+  suggestionIndex = parseInt(suggestionIndex, 10);
+  const suggestion = analysisResults.suggestions[suggestionIndex];
+  if (!suggestion) return;
+  return {
+    uri: uri.toString(),
+    ...suggestion,
+    ...fileSuggestion,
+  };
+};
+
+export const checkCompleteSuggestion = (
+  analysisResults: IAnalysisResult,
+  suggestion: completeFileSuggestionType,
+): boolean => {
+  let filePath = vscode.Uri.parse(suggestion.uri).fsPath;
+  if (!analysisResults.files[filePath]) return false;
+  const file: IFilePath = analysisResults.files[filePath];
+  let suggestionIndex: string | undefined = Object.keys(file).find((i) => {
+    const index = parseInt(i, 10);
+    if (
+      analysisResults.suggestions[index].id !== suggestion.id ||
+      analysisResults.suggestions[index].message !== suggestion.message
+    ) return false;
+    const found = file[index].find((fs) => {
+      let equal = true;
+      for(let dir of ['cols','rows']) {
+        for(let index of [0, 1]) {
+          equal = equal && fs[dir][index] === suggestion[dir][index];
+        }
+      }
+      return equal;
+    });
+    return !!found;
+  });
+  return !!suggestionIndex;
+}
 
 export const findSuggestionByMessage = (
   analysisResults: IAnalysisResult,

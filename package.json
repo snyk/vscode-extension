@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript.",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
@@ -38,6 +38,7 @@
     "Code Quality"
   ],
   "activationEvents": [
+    "onWebviewPanel:deepcode.views.suggestion",
     "*"
   ],
   "main": "./out/extension.js",
@@ -146,11 +147,6 @@
         "view": "deepcode.views.analysis",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
         "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
-      },
-      {
-        "view": "deepcode.views.analysis",
-        "contents": "DeepCode analyzed your code and found no issue! 🎉",
-        "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
       },
       {
         "view": "deepcode.views.actions",

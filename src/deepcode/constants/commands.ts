@@ -1,5 +1,5 @@
 // vscode commands used in extension work
-export const VSCODE_GO_TO_SETTINGS_COMMAND = "workbench.action.openSettings";  
+export const VSCODE_GO_TO_SETTINGS_COMMAND = "workbench.action.openSettings";
 export const VSCODE_VIEW_CONTAINER_PREFIX = "workbench.view.extension.";
 export const VSCODE_ADD_COMMENT_COMMAND = "editor.action.addCommentLine";
 
