@@ -195,11 +195,6 @@
     },
     "commands": [
       {
-        "command": "deepcode.test",
-        "title": "DeepCode test",
-        "icon": "$(refresh)"
-      },
-      {
         "command": "deepcode.start",
         "title": "DeepCode re-scan",
         "icon": "$(refresh)"

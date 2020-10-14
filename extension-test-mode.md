@@ -83,13 +83,15 @@ $ git clone https://github.com/DeepCodeAI/tsc.git
 2. Go to the package folder, install dependencies, build package and create symlink:
 ```shell script
 $ cd tsc
-$ npm install && npm run compile && npx yalc publish
+$ npm install
+$ npm run build
+$ npm link
 ```
 
 3. Go to the extension folder and install package from local symlink:
 ```shell script
 $ cd vscode-extension
-$ npx yalc add @deepcode/tsc && npm install && npm run compile
+$ npm link @deepcode/tsc
 ```
 
 After that you can add package to your `package.json`:
