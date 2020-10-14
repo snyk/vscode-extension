@@ -4,7 +4,6 @@ import { runTests } from 'vscode-test';
 
 async function main() {
   try {
-
     console.log('STARTING TESTS');
 
     // The folder containing the Extension Manifest package.json

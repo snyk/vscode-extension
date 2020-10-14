@@ -56,6 +56,8 @@ export interface LoginModuleInterface {
 
 export interface BundlesModuleInterface {
   readonly runningAnalysis: boolean;
+  readonly lastAnalysisDuration: number;
+  readonly lastAnalysisTimestamp: number;
   startAnalysis(): Promise<void>;
 }
 

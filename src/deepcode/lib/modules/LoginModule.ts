@@ -14,6 +14,7 @@ const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, d
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
+  private pendingToken = '';
 
   async initiateLogin(): Promise<void> {
     await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
@@ -26,8 +27,22 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
+
+      // In case we already created a draft token earlier, check if it's confirmed already
+      if (this.pendingToken) {
+        try {
+          const confirmedPendingToken = await this.checkSession(this.pendingToken);
+          if (confirmedPendingToken) {
+            await this.setToken(this.pendingToken);
+            return;
+          }
+        } finally {
+          this.pendingToken = '';
+        }
+      }
+
       const response = await startSession({ baseURL: this.baseURL, source: this.source });
-      if (response.type == 'error') {
+      if (response.type === 'error') {
         throw new Error(errorsLogs.login);
       }
 
@@ -37,6 +52,8 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       const confirmed = await this.waitLoginConfirmation(sessionToken);
       if (confirmed) {
         await this.setToken(sessionToken);
+      } else {
+        this.pendingToken = sessionToken;
       }
     } catch (err) {
       await this.processError(err, {
@@ -51,10 +68,15 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     let validSession = false;
     if (token || this.token) {
       try {
-        validSession = !!(await checkSession({
+        const sessionResponse = await checkSession({
           baseURL: this.baseURL,
           sessionToken: token || this.token,
-        }));
+        });
+        if (sessionResponse.type === 'error') {
+          validSession = false;
+        } else {
+          validSession = sessionResponse.value;
+        }
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus,
