@@ -517,24 +517,30 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     );
   }
 
-  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
-    if (!this.extension) return this.checkPanelAndDispose();
+  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range) {
+    if (!this.extension) {
+      this.disposePanel();
+      return;
+    }
     const suggestion = this.extension.analyzer.getFullSuggestion(suggestionId, uri, position);
-    if (!suggestion) return this.checkPanelAndDispose();
+    if (!suggestion) {
+      this.disposePanel();
+      return;
+    }
     this.showPanel(suggestion);
   }
 
-  checkCurrentSuggestion(): void {
+  checkCurrentSuggestion() {
     if (!this.panel || !this.suggestion || !this.extension) return;
     const found = this.extension.analyzer.checkFullSuggestion(this.suggestion);
-    if (!found) return this.checkPanelAndDispose();
-  }
-
-  private checkPanelAndDispose() {
-    if (this.panel) this.panel.dispose();
+    if (!found) this.disposePanel();
   }
 
   private disposePanel() {
+    if (this.panel) this.panel.dispose();
+  }
+
+  private onPanelDispose() {
     this.panel = undefined;
   }
 
@@ -598,7 +604,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
       this.panel.webview.html = getWebviewContent(images);
       this.panel.webview.postMessage({ type: 'set', args: suggestion });
       this.panel.onDidDispose(
-        this.disposePanel.bind(this),
+        this.onPanelDispose.bind(this),
         null,
         this.extension?.context?.subscriptions
       );
