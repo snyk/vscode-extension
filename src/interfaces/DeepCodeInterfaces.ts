@@ -93,17 +93,6 @@ export type filesForSaveListType = string[];
 
 export type completeFileSuggestionType = ISuggestion & IFileSuggestion & {
   uri: string;
-  // FIXME: add new fields in tsc
-  categories: Array<string>;
-  repoDatasetSize: number;
-  exampleCommitDescriptions: Array<string>;
-  exampleCommitFixes: Array<{
-    commitURL: string;
-    lines: Array<{
-      line: string;
-      lineChange: string;
-    }>
-  }>
 };
 
 export type openedTextEditorType = {
