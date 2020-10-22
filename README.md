@@ -42,13 +42,13 @@ JavaScript, TypeScript, Java, C/C++ (beta), and Python are currently supported. 
 
 ## Video on how to install and use the extension
 
-- We've prepared a 2 minutes video on how to install and use the extension. Head over to YouTube to quickly get the extension up and running:
+- We've prepared a short video on how to install and use the extension. Head over to YouTube to quickly get the extension up and running:
 
   <a href="https://youtu.be/3J5cVuEJ8WE&utm_source=vscode-extension-readme" target="_blank">![](images/install-and-use-vs-code-extension.png)</a>
 
 # Installation
 
-In a nutshell, you can either use navigate to [DeepCode Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepCode.deepcode) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/extension_icon.png) in the sidebar. 
+You can find the DeepCode Extension in the Visual Studio Code Marketplace. So, to install, you can either navigate to the [DeepCode Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepCode.deepcode) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/extension_icon.png) in the sidebar. 
 
 ## Tips on the installation process
 
