@@ -50,12 +50,13 @@ JavaScript, TypeScript, Java, C/C++ (beta), and Python are currently supported. 
 
 You can find the DeepCode Extension in the Visual Studio Code Marketplace. So, to install, you can either navigate to the [DeepCode Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepCode.deepcode) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/extension_icon.png) in the sidebar. 
 
-## Tips on the installation process
+## Tips on using the on-premise version
 
-With the extension, you can scan code that is actually not stored in an repo yet. For this, the extension bundles the code files and send them for analysis. You can define what backend infrastructure to use (provided by DeepCode or your own on premise installation).
+With the extension, you can scan code that is actually not stored in any repo yet. The extension bundles the code files and send them for analysis. You can define which backend infrastructure to use (provided by DeepCode or your own on premise installation).
 
-- select **"Cloud"** (Default) when you want to use the free cloud infrastructure. Authentication by your Github, BitBucket or Gitlab account. DeepCode uses the authentication mechanism of these providers then to identify you. 
-- select **"Self-managed"** when you have access to an on-premise DeepCode Server installation. The DeepCode Server is likely running in combination with self-managed BitBucket or Gitlab.
+By default the VS Code extension uses deepcode.ai. However you or your organisation is running DeepCode in combination with a self-managed BitBucket or Gitlab you can change the endpoint to your on-premise installation and upload the code to the on-premise version. You could do that by going to DeepCode's preferences and update the DeepCode's URL as shown in the video below:
+
+![DeepCode On-premise url](images/on-premise-url.gif)
 
 # How to use it?
 
