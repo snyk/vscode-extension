@@ -132,12 +132,15 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
 
   public setIssuesMarkersDecoration(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor): void {
     if (editor && this.deepcodeReview && this.deepcodeReview.has(editor.document.uri)) {
-      this.clearPrevIssuesMarkersDecoration();
-      this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(ISSUES_MARKERS_DECORATION_TYPE);
-      const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
-        this.deepcodeReview.get(editor.document.uri),
-      );
-      editor.setDecorations(this.issuesMarkersdecorationType, issuesMarkersDecorationsOptions);
+      // Deprecated. Markers decoration is super noisy and intersects very often with main issue position
+
+      // this.clearPrevIssuesMarkersDecoration();
+      // this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(ISSUES_MARKERS_DECORATION_TYPE);
+      // const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
+      //   this.deepcodeReview.get(editor.document.uri),
+      // );
+      // Markers decoration is super noisy
+      // editor.setDecorations(this.issuesMarkersdecorationType, issuesMarkersDecorationsOptions);
     }
   }
 

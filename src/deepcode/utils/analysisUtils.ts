@@ -188,8 +188,8 @@ export const createIssueRelatedInformation = ({ markersList, fileUri, message }:
   markersList: IMarker[];
   fileUri: vscode.Uri;
   message: string;
-}) => {
-  const relatedInformation: vscode.DiagnosticRelatedInformation[] = markersList.reduce((relatedInfoList, marker) => {
+}): vscode.DiagnosticRelatedInformation[] => {
+  return markersList.reduce((res, marker) => {
     const { msg: markerMsgIdxs, pos: positions } = marker;
 
     positions.forEach(position => {
@@ -197,12 +197,11 @@ export const createIssueRelatedInformation = ({ markersList, fileUri, message }:
         new vscode.Location(fileUri, createIssueCorrectRange(position)),
         createIssueMarkerMsg(message, markerMsgIdxs),
       )
-      relatedInfoList.push(relatedInfo);
+      res.push(relatedInfo);
     });
 
-    return relatedInfoList;
+    return res;
   }, Array());
-  return relatedInformation;
 };
 
 export const findCompleteSuggestion = (
