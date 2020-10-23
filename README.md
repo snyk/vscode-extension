@@ -1,7 +1,5 @@
 # DeepCode for Visual Studio Code
 
-[![deepcode](https://www.deepcode.ai/api/gh/badge?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwbGF0Zm9ybTEiOiJnaCIsIm93bmVyMSI6IkRlZXBDb2RlQUkiLCJyZXBvMSI6InZzY29kZS1leHRlbnNpb24iLCJpbmNsdWRlTGludCI6ZmFsc2UsImF1dGhvcklkIjoxMjQ2OSwiaWF0IjoxNTk2MDk3ODMyfQ.F-7PlnvjMreCceZmgLr_CF1G-S1saMzt1FshPHipAvc)](https://www.deepcode.ai/app/gh/DeepCodeAI/vscode-extension/_/dashboard?utm_content=gh%2FDeepCodeAI%2Fvscode-extension)
-
 **The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java, C/C++, and Python.**
 
 # Table of Contents
@@ -26,11 +24,11 @@
 
 # DeepCode Extension
 
-Through the extension you can quickly start using DeepCode's code review and analysis within your development workflow. The extension will automatically alert you about critical vulnerabilities you need to solve in your code the moment when you hit _Save_ in your IDE. With DeepCode's superior code review you save time finding and fixing bugs before they go to production. 
+Through the extension you can quickly start using DeepCode's code review and analysis within your development workflow. The extension will automatically alert you about critical vulnerabilities you need to solve in your code the moment when you hit _Save_ in your IDE. With DeepCode's superior code review you save time finding and fixing bugs before they go to production.
 
 ## DeepCode's AI Engine finds bugs
 
-DeepCode uses symbolic AI to process hundreds of millions of commits in open source software projects and learns how to find serious coding issues. Because the platform determines the intent of the code — and not only the syntax mistakes — DeepCode identifies 10x more critical bugs and security vulnerabilities than other tools. 
+DeepCode uses symbolic AI to process hundreds of millions of commits in open source software projects and learns how to find serious coding issues. Because the platform determines the intent of the code — and not only the syntax mistakes — DeepCode identifies 10x more critical bugs and security vulnerabilities than other tools.
 
 ## Our AI provides explanation behind found bugs
 
@@ -48,7 +46,7 @@ JavaScript, TypeScript, Java, C/C++ (beta), and Python are currently supported. 
 
 # Installation
 
-You can find the DeepCode Extension in the Visual Studio Code Marketplace. So, to install, you can either navigate to the [DeepCode Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepCode.deepcode) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/extension_icon.png) in the sidebar. 
+You can find the DeepCode Extension in the Visual Studio Code Marketplace. So, to install, you can either navigate to the [DeepCode Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepCode.deepcode) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/extension_icon.png) in the sidebar.
 
 ## Tips on using the on-premise version
 
@@ -72,9 +70,9 @@ By default the VS Code extension uses deepcode.ai. However you or your organisat
 
   <a href="https://youtu.be/3J5cVuEJ8WE&utm_source=vscode-extension-readme" target="_blank">![](images/install-and-use-vs-code-extension.png)</a>
 
-## DeepCode in action 
+## DeepCode in action
 
-Whenever DeepCode encounters an unseen project, you will be asked to provide consent for DeepCode to handle the code. Without the consent, DeepCode will not touch your code. 
+Whenever DeepCode encounters an unseen project, you will be asked to provide consent for DeepCode to handle the code. Without the consent, DeepCode will not touch your code.
 
 ![DeepCode Consent](images/consent.png)
 
@@ -98,7 +96,7 @@ We also want to mention that we included the feedback mechanism for possible fal
 ## How to ignore suggestions (text)
 
 There are two key steps here:
-    
+
    1. Ignore particular alert directly within its _DeepCode Suggestion_ window as mentioned above, the suggestions tooltip or 'bulb' menu:
 
    ![deepcode ignore menu](images/ignore_menu.png)
@@ -113,7 +111,7 @@ There are two key steps here:
 
 <a href="https://www.youtube.com/watch?v=sjDuDqUy7pw&utm_source=vscode-extension-readme" target="_blank">![](images/how-to-toggle-suggestions.png)</a>
 
-## .dcignore file 
+## .dcignore file
 
 - If you want to ignore certain files/folders (like *node_modules* for example), create a _.dcignore_ file. You can create it in any folder on any level starting from the directory where your project resides. The file syntax is identical to _.gitignore_:
 
