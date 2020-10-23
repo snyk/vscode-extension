@@ -94,11 +94,10 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
       source: DEEPCODE_NAME,
       //issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
-        relatedInformation: createIssueRelatedInformation({
-          markersList: issuePositions.markers,
+        relatedInformation: createIssueRelatedInformation(issuePositions.markers,
           fileUri,
           message,
-        }),
+        ),
       }),
     };
   }
@@ -181,7 +180,7 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
       ) {
         return;
       }
-      const fileIssuesList: IFilePath = await updateFileReviewResultsPositions(this.analysisResults, updatedFile);
+      const fileIssuesList: IFilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
       // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
       const workspace = updatedFile.workspace;
       const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');

@@ -184,11 +184,7 @@ export const createIssuesMarkersDecorationOptions = (
   return issueMarkersDecorationOptions;
 };
 
-export const createIssueRelatedInformation = ({ markersList, fileUri, message }: {
-  markersList: IMarker[];
-  fileUri: vscode.Uri;
-  message: string;
-}): vscode.DiagnosticRelatedInformation[] => {
+export const createIssueRelatedInformation = (markersList: IMarker[], fileUri: vscode.Uri, message: string): vscode.DiagnosticRelatedInformation[] => {
   return markersList.reduce((res, marker) => {
     const { msg: markerMsgIdxs, pos: positions } = marker;
 
