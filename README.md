@@ -36,7 +36,7 @@ In order to show the detailed explanation of a potential bug, we introduced a ne
 
 ## Supported languages
 
-JavaScript, TypeScript, Java, C/C++ (beta), and Python are currently supported. We also provide specific coverage for VUE and REACT.
+JavaScript, TypeScript, Java, Python, C/C++ (beta), C# (beta) and PHP (beta) are currently supported. We also provide specific coverage for VUE and REACT.
 
 ## Video on how to install and use the extension
 
