@@ -1,3 +1,6 @@
+## [3.0.3] - 2020-10-26
+- Performance optimization
+
 ## [3.0.2] - 2020-10-23
 - Removed code decoration for all issue helpers
 
