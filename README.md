@@ -1,6 +1,6 @@
 # DeepCode for Visual Studio Code
 
-**The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java, C/C++, and Python.**
+**The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java, Python, C/C++, C# and PHP.**
 
 # Table of Contents
 
