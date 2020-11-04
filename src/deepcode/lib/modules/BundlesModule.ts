@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as _ from "lodash";
 
 import { BundlesModuleInterface } from "../../../interfaces/DeepCodeInterfaces";
 
@@ -28,18 +29,15 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
   }
 
   onCreateBundleProgress(processed: number, total: number) {
-    // console.log(`BUNDLE PROGRESS - ${processed}/${total}`);
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.BUNDLING, `${processed}/${total}`);
   }
 
   onUploadBundleProgress(processed: number, total: number) {
-    // console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
     this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, `${processed}/${total}`);
   }
 
   onAnalyseProgress(data: { status: string; progress: number }) {
-    // console.log(`ANALYSE PROGRESS - ${data.progress}`);
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, `${Math.round(100 * data.progress)}%`);
+    this.updateStatus(_.capitalize(_.toLower(data.status)), `${Math.round(100 * data.progress)}%`);
   }
 
   onError(error: Error) {

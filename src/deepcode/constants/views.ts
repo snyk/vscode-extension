@@ -31,5 +31,4 @@ export const DEEPCODE_ANALYSIS_STATUS = {
   COLLECTING: 'Collecting files',
   BUNDLING: 'Creating file bundles',
   UPLOADING: 'Uploading files',
-  ANALYZING: 'Analyzing files',
 };
