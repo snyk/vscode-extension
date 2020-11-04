@@ -42,7 +42,7 @@ JavaScript, TypeScript, Java, Python, C/C++ (beta), C# (beta) and PHP (beta) are
 
 - We've prepared a short video on how to install and use the extension. Head over to YouTube to quickly get the extension up and running:
 
-  <a href="https://youtu.be/3J5cVuEJ8WE&utm_source=vscode-extension-readme" target="_blank">![](images/install-and-use-vs-code-extension.png)</a>
+  <a href="https://youtu.be/3J5cVuEJ8WE?utm_source=vscode-extension-readme" target="_blank">![](images/install-and-use-vs-code-extension.png)</a>
 
 # Installation
 
@@ -63,12 +63,6 @@ By default the VS Code extension uses deepcode.ai. However you or your organisat
 - DeepCode's extension runs automatically when you opened a folder or project and hit _Save_ (or the keyboard shortcut).
 - If you don't like to save while working we strongly recommend to [enable the AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
 - In the configuration of the extension, you can enable _Advanced Mode_ which enables you to manage the scanning process even better.
-
-## Video on how to use the extension
-
-- Here is a video on how to use the extension. In short - don't forget to save and you will be in good hands:
-
-  <a href="https://youtu.be/3J5cVuEJ8WE&utm_source=vscode-extension-readme" target="_blank">![](images/install-and-use-vs-code-extension.png)</a>
 
 ## DeepCode in action
 
