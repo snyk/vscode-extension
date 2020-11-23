@@ -6,7 +6,7 @@ export interface PendingTaskInterface {
 
 export class PendingTask implements PendingTaskInterface {
   private _promise: Promise<void>;
-  private _resolve: (() => void) | undefined;
+  private _resolve: ((value?: unknown) => void) | undefined;
   private _resolved: boolean;
 
   constructor() {
