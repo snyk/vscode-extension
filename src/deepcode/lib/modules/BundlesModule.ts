@@ -49,15 +49,14 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
   }
 
   public async startAnalysis(): Promise<void> {
+    if (this.runningAnalysis) {
+      return;
+    }
     try {
       const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
 
       if (paths.length) {
         await this.setContext(DEEPCODE_CONTEXT.WORKSPACE_FOUND, true);
-
-        if (this.runningAnalysis) {
-          return;
-        }
         this.runningAnalysis = true;
         this.lastAnalysisStartingTimestamp = Date.now();
 
