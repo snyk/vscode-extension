@@ -16,7 +16,6 @@ class DeepCodeEditorsWatcher implements DeepCodeWatcherInterface {
     this.currentTextEditors[editor.document.fileName] = {
       fullPath: path,
       workspace: workspacePath || '',
-      filePathInWorkspace: workspacePath ? editor.document.fileName.split(workspacePath)[1] : '',
       lineCount: {
         current: editor.document.lineCount,
         prevOffset: 0,

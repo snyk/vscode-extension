@@ -99,10 +99,8 @@ export const updateFileReviewResultsPositions = (
   const offsetedline = changesRange.start.line + 1;
   const charOffset = 1;
 
-  const workspace = updatedFile.workspace;
-  const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');
   const fileIssuesList = {
-    ...analysisResults.files[filepath],
+    ...analysisResults.files[updatedFile.fullPath],
   };
   for (const issue in fileIssuesList) {
     for (const [index, position] of fileIssuesList[issue].entries()) {
