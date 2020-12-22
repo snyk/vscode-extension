@@ -181,10 +181,6 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
         return;
       }
       const fileIssuesList: IFilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
-      // Opening a project directory instead of a workspace leads to empty updatedFile.workspace field
-      const workspace = updatedFile.workspace;
-      const filepath = updatedFile.filePathInWorkspace || updatedFile.fullPath.replace(workspace, '');
-      this.analysisResults.files[filepath] = { ...fileIssuesList };
       if (this.deepcodeReview) {
         const issues = this.createIssuesList({
           fileIssuesList,
@@ -199,7 +195,7 @@ class DeepCodeAnalyzer implements AnalyzerInterface {
         message: errorsLogs.updateReviewPositions,
         bundleId: extension.remoteBundle.bundleId,
         data: {
-          [updatedFile.filePathInWorkspace]: updatedFile.contentChanges,
+          [updatedFile.fullPath]: updatedFile.contentChanges,
         },
       });
     }
