@@ -100,7 +100,6 @@ export type completeFileSuggestionType = ISuggestion & IFileSuggestion & {
 export type openedTextEditorType = {
   fullPath: string;
   workspace: string;
-  filePathInWorkspace: string;
   lineCount: {
     current: number;
     prevOffset: number;
