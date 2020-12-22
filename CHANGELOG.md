@@ -1,3 +1,6 @@
+## [3.0.9] - 2020-12-22
+- Performance optimization
+
 ## [3.0.5] - 2020-10-26
 - Added support to 2 new languages: C# and PHP
 
