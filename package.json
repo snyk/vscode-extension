@@ -250,6 +250,6 @@
   "dependencies": {
     "@deepcode/tsc": "^2.0.18",
     "lodash": "^4.17.19",
-    "open": "^7.2.1"
+    "open": "^7.3.1"
   }
 }
