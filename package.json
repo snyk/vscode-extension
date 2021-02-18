@@ -1,15 +1,15 @@
 {
-  "name": "deepcode",
+  "name": "snyk",
   "//": "Changing display name requires change in general.ts",
-  "displayName": "DeepCode",
-  "version": "3.0.11",
-  "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript, C# and PHP.",
-  "icon": "images/deepCodeLogo.jpg",
-  "publisher": "deepcode",
-  "homepage": "https://www.deepcode.ai/",
+  "displayName": "Snyk",
+  "version": "1.0.0",
+  "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
+  "icon": "images/readme/snyk_extension_icon.png",
+  "publisher": "snyk",
+  "homepage": "https://snyk.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DeepCodeAI/vscode-extension.git"
+    "url": "https://github.com/snyk/vscode-extension.git"
   },
   "engines": {
     "vscode": "^1.48.0"
@@ -29,10 +29,6 @@
     "Java",
     "TypeScript",
     "ts",
-    "Python",
-    "C/C++",
-    "C#",
-    "PHP",
     "Vue",
     "Angular",
     "React",
@@ -40,7 +36,7 @@
     "Code Quality"
   ],
   "activationEvents": [
-    "onWebviewPanel:deepcode.views.suggestion",
+    "onWebviewPanel:snyk.views.suggestion",
     "*"
   ],
   "main": "./out/extension.js",
@@ -48,47 +44,47 @@
   "contributes": {
     "configuration": [
       {
-        "title": "DeepCode",
+        "title": "Snyk",
         "properties": {
-          "deepcode.advancedMode": {
+          "snyk.advancedMode": {
             "type": "boolean",
             "default": false,
             "description": "Toggle advanced tools for expert users",
             "scope": "application"
           },
-          "deepcode.url": {
+          "snyk.url": {
             "type": "string",
             "default": "",
-            "description": "In order to use a self-managed DeepCode server with Bitbucket or Gitlab instance, update the instance url below:",
+            "description": "In order to use a self-managed Snyk server with Bitbucket or Gitlab instance, update the instance url below:",
             "scope": "application"
           },
-          "deepcode.token": {
+          "snyk.token": {
             "type": "string",
             "default": "",
             "description": "API key",
             "scope": "application"
           },
-          "deepcode.uploadApproved": {
+          "snyk.uploadApproved": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "User consent for code upload to `#deepcode.url#` in agreement with our [terms and conditions](https://www.deepcode.ai/tc?utm_source=vsc)",
+            "markdownDescription": "User consent for code upload to `#snyk.url#` in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc)",
             "scope": "window"
           },
-          "deepcode.yesCrashReport": {
+          "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow crash reports to be reported to `#deepcode.url#`",
+            "markdownDescription": "Allow crash reports to be reported to `#snyk.url#`",
             "scope": "application"
           },
-          "deepcode.yesTelemetry": {
+          "snyk.yesTelemetry": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow extension's telemetry to be sent to `#deepcode.url#`",
+            "markdownDescription": "Allow extension's telemetry to be sent to `#snyk.url#`",
             "scope": "application"
           },
-          "deepcode.yesWelcomeNotification": {
+          "snyk.yesWelcomeNotification": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
@@ -101,119 +97,119 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "deepcode",
-          "title": "DeepCode",
-          "icon": "images/deepcode-vscode-icon.svg"
+          "id": "snyk",
+          "title": "Snyk",
+          "icon": "images/snyk_extension_icon.svg"
         }
       ]
     },
     "views": {
-      "deepcode": [
+      "snyk": [
         {
-          "id": "deepcode.views.analysis",
-          "name": "DeepCode Analysis"
+          "id": "snyk.views.analysis",
+          "name": "Snyk Analysis"
         },
         {
-          "id": "deepcode.views.actions",
+          "id": "snyk.views.actions",
           "name": "Actions",
-          "when": "deepcode:advanced && !deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
+          "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:uploadApproved && snyk:workspaceFound"
         },
         {
-          "id": "deepcode.views.support",
+          "id": "snyk.views.support",
           "name": "Help & feedback"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "deepcode.views.analysis",
-        "contents": "DeepCode is temporarily unavailable\nWe are automatically retrying to connect...",
-        "when": "deepcode:error == 'transient'"
+        "view": "snyk.views.analysis",
+        "contents": "Snyk is temporarily unavailable\nWe are automatically retrying to connect...",
+        "when": "snyk:error == 'transient'"
       },
       {
-        "view": "deepcode.views.analysis",
-        "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2?utm_source=vsc)!",
-        "when": "deepcode:error == 'blocking'"
+        "view": "snyk.views.analysis",
+        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc)!",
+        "when": "snyk:error == 'blocking'"
       },
       {
-        "view": "deepcode.views.analysis",
-        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n👉 DeepCode's mission is to finds bugs, fast. Connect with DeepCode to start your first analysis!",
-        "when": "!deepcode:error && !deepcode:loggedIn"
+        "view": "snyk.views.analysis",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.login 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!",
+        "when": "!snyk:error && !snyk:loggedIn"
       },
       {
-        "view": "deepcode.views.analysis",
-        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers (our [terms](https://www.deepcode.ai/tc?utm_source=vsc)). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings).",
-        "when": "!deepcode:error && deepcode:loggedIn && !deepcode:uploadApproved"
+        "view": "snyk.views.analysis",
+        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗. Snyk is analysing the code remotely on Snyk's servers (our [terms](https://snyk.io/policies/terms-of-service/?utm_source=vsc)). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:snyk.approve 'Upload code to Snyk')\nYou can always change it in the [configuration panel](command:snyk.settings).",
+        "when": "!snyk:error && snyk:loggedIn && !snyk:uploadApproved"
       },
       {
-        "view": "deepcode.views.analysis",
+        "view": "snyk.views.analysis",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
-        "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && !deepcode:workspaceFound"
+        "when": "!snyk:error && snyk:loggedIn && snyk:uploadApproved && !snyk:workspaceFound"
       },
       {
-        "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
-        "when": "deepcode:mode == 'manual'"
+        "view": "snyk.views.actions",
+        "contents": "You are currently running Snyk in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "when": "snyk:mode == 'manual'"
       },
       {
-        "view": "deepcode.views.actions",
-        "contents": "DeepCode analysis is currently paused.\n[Unpause](command:deepcode.setmode?%5B%22auto%22%5D)",
-        "when": "deepcode:mode == 'paused'"
+        "view": "snyk.views.actions",
+        "contents": "Snyk analysis is currently paused.\n[Unpause](command:snyk.setmode?%5B%22auto%22%5D)",
+        "when": "snyk:mode == 'paused'"
       },
       {
-        "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
-        "when": "deepcode:mode == 'throttled'"
+        "view": "snyk.views.actions",
+        "contents": "You are currently running Snyk in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "when": "snyk:mode == 'throttled'"
       },
       {
-        "view": "deepcode.views.actions",
-        "contents": "You are currently running DeepCode in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause DeepCode for 30 minutes](command:deepcode.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:deepcode.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:deepcode.setmode?%5B%22throttled%22%5D)",
-        "when": "deepcode:mode != 'manual' && deepcode:mode != 'paused' && deepcode:mode != 'throttled'"
+        "view": "snyk.views.actions",
+        "contents": "You are currently running Snyk in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause Snyk for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
+        "when": "snyk:mode != 'manual' && snyk:mode != 'paused' && snyk:mode != 'throttled'"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "deepcode.start",
-          "when": "view == deepcode.views.analysis",
+          "command": "snyk.start",
+          "when": "view == snyk.views.analysis",
           "group": "navigation"
         },
         {
-          "command": "deepcode.settings",
-          "when": "view != deepcode.views.support",
+          "command": "snyk.settings",
+          "when": "view != snyk.views.support",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "deepcode.login",
-          "when": "!deepcode:loggedIn"
+          "command": "snyk.login",
+          "when": "!snyk:loggedIn"
         },
         {
-          "command": "deepcode.dcignore",
-          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
+          "command": "snyk.dcignore",
+          "when": "!snyk:error && snyk:loggedIn && snyk:uploadApproved && snyk:workspaceFound"
         }
       ]
     },
     "commands": [
       {
-        "command": "deepcode.start",
-        "title": "DeepCode re-scan",
+        "command": "snyk.start",
+        "title": "Snyk re-scan",
         "icon": "$(refresh)"
       },
       {
-        "command": "deepcode.settings",
-        "title": "DeepCode settings",
+        "command": "snyk.settings",
+        "title": "Snyk settings",
         "icon": "$(gear)"
       },
       {
-        "command": "deepcode.login",
-        "title": "DeepCode login",
+        "command": "snyk.login",
+        "title": "Snyk login",
         "icon": "$(log-in)"
       },
       {
-        "command": "deepcode.dcignore",
-        "title": "DeepCode create dcignore file",
+        "command": "snyk.dcignore",
+        "title": "Snyk create dcignore file",
         "icon": "$(new-file)"
       }
     ]
@@ -248,7 +244,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@deepcode/tsc": "^2.1.0",
+    "@snyk/code-client": "^2.4.1",
     "lodash": "^4.17.19",
     "open": "^7.3.1"
   }
