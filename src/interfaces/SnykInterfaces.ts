@@ -16,6 +16,7 @@ export interface BaseSnykModuleInterface {
   staticToken: string;
   defaultBaseURL: string;
   baseURL: string;
+  authHost: string;
   termsConditionsUrl: string;
   token: string;
   setToken(token: string): Promise<void>;
@@ -47,7 +48,7 @@ export interface ReportModuleInterface {
 
 export interface LoginModuleInterface {
   initiateLogin(): Promise<void>;
-  checkSession(): Promise<boolean>;
+  checkSession(): Promise<string>;
   approveUpload(): Promise<void>;
   checkApproval(): Promise<boolean>;
   checkWelcomeNotification(): Promise<void>;

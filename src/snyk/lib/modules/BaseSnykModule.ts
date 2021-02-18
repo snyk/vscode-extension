@@ -45,6 +45,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   // These attributes are used in tests
   staticToken = '';
   defaultBaseURL = 'https://deeproxy.snyk.io';
+  defaultAuthHost = 'https://snyk.io';
   staticUploadApproved = false;
 
   constructor() {
@@ -65,8 +66,13 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     return vscode.workspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;
   }
 
+  get authHost(): string {
+    // @ts-ignore */}
+    return vscode.workspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost;
+  }
+
   get termsConditionsUrl(): string {
-    return `${this.baseURL}/tc?utm_source=vsc`;
+    return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`;
   }
 
   get token(): string {

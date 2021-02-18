@@ -55,7 +55,13 @@
           "snyk.url": {
             "type": "string",
             "default": "",
-            "description": "In order to use a self-managed Snyk server with Bitbucket or Gitlab instance, update the instance url below:",
+            "description": "In order to use custom Snyk API, update the instance url below:",
+            "scope": "application"
+          },
+          "snyk.authHost": {
+            "type": "string",
+            "default": "",
+            "description": "In order to use a custom Snyk authentication server, update the instance url below:",
             "scope": "application"
           },
           "snyk.token": {
@@ -216,7 +222,7 @@
   },
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -p ./",
+    "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "tsc -p ./",
     "test": "node ./out/test/runTest.js",
@@ -244,7 +250,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@snyk/code-client": "^2.4.1",
+    "@snyk/code-client": "file:.yalc/@snyk/code-client",
     "lodash": "^4.17.19",
     "open": "^7.3.1"
   }

@@ -1,19 +1,17 @@
-import * as vscode from "vscode";
-import ReportModule from "./ReportModule";
-import { LoginModuleInterface } from "../../../interfaces/SnykInterfaces";
-import { viewInBrowser } from "../../utils/vscodeCommandsUtils";
-import { SNYK_CONTEXT } from "../../constants/views";
-import { openSnykViewContainer } from "../../utils/vscodeCommandsUtils";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { snykMessages } from "../../messages/snykMessages";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-
+import * as vscode from 'vscode';
 import { startSession, checkSession } from '@snyk/code-client';
+import ReportModule from './ReportModule';
+import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
+import { viewInBrowser, openSnykViewContainer } from '../../utils/vscodeCommandsUtils';
+import { SNYK_CONTEXT } from '../../constants/views';
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import { snykMessages } from '../../messages/snykMessages';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
-  private pendingLogin: boolean = false;
+  private pendingLogin = false;
   private pendingToken = '';
 
   async initiateLogin(): Promise<void> {
@@ -25,15 +23,15 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
     this.pendingLogin = true;
     try {
-      const checkCurrentToken = await this.checkSession();
-      if (checkCurrentToken) return;
+      // const checkCurrentToken = await this.checkSession();
+      // if (checkCurrentToken) return;
 
       // In case we already created a draft token earlier, check if it's confirmed already
       if (this.pendingToken) {
         try {
-          const confirmedPendingToken = await this.checkSession(this.pendingToken);
-          if (confirmedPendingToken) {
-            await this.setToken(this.pendingToken);
+          const token = await this.checkSession(this.pendingToken);
+          if (token) {
+            await this.setToken(token);
             return;
           }
         } finally {
@@ -41,19 +39,14 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         }
       }
 
-      const response = await startSession({ baseURL: this.baseURL, source: this.source });
-      if (response.type === 'error') {
-        throw new Error(errorsLogs.login);
-      }
-
-      const { sessionToken, loginURL } = response.value;
+      const { draftToken, loginURL } = startSession({ authHost: this.authHost, source: this.source });
 
       await viewInBrowser(loginURL);
-      const confirmed = await this.waitLoginConfirmation(sessionToken);
-      if (confirmed) {
-        await this.setToken(sessionToken);
+      const token = await this.waitLoginConfirmation(draftToken);
+      if (token) {
+        await this.setToken(token);
       } else {
-        this.pendingToken = sessionToken;
+        this.pendingToken = draftToken;
       }
     } catch (err) {
       await this.processError(err, {
@@ -64,18 +57,18 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     }
   }
 
-  async checkSession(token = ''): Promise<boolean> {
-    let validSession = false;
-    if (token || this.token) {
+  async checkSession(draftToken = ''): Promise<string> {
+    let token = '';
+    if (draftToken) {
       try {
         const sessionResponse = await checkSession({
-          baseURL: this.baseURL,
-          sessionToken: token || this.token,
+          authHost: this.authHost,
+          draftToken,
         });
         if (sessionResponse.type === 'error') {
-          validSession = false;
+          token = '';
         } else {
-          validSession = sessionResponse.value;
+          token = sessionResponse.value || '';
         }
       } catch (err) {
         await this.processError(err, {
@@ -83,22 +76,22 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         });
       }
     }
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, validSession);
-    if (!validSession) await this.setLoadingBadge(true);
-    return validSession;
+    await this.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
+    if (!token) await this.setLoadingBadge(true);
+    return token;
   }
 
-  private async waitLoginConfirmation(token: string): Promise<boolean> {
+  private async waitLoginConfirmation(draftToken: string): Promise<string> {
     // 20 attempts to wait for user's login & consent
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 20; i += 1) {
       await sleep(1000);
 
-      const confirmed = await this.checkSession(token);
-      if (confirmed) {
-        return true;
+      const token = await this.checkSession(draftToken);
+      if (token) {
+        return token;
       }
     }
-    return false;
+    return '';
   }
 
   async checkApproval(): Promise<boolean> {
@@ -117,7 +110,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   async checkWelcomeNotification(): Promise<void> {
     if (this.shouldShowWelcomeNotification) {
       this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
-      let pressedButton = await vscode.window.showInformationMessage(
+      const pressedButton = await vscode.window.showInformationMessage(
         snykMessages.welcome.msg,
         snykMessages.welcome.button,
       );
