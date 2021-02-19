@@ -1,3 +1,4 @@
+
 import * as vscode from 'vscode';
 import { startSession, checkSession } from '@snyk/code-client';
 import ReportModule from './ReportModule';
@@ -23,9 +24,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
     this.pendingLogin = true;
     try {
-      // const checkCurrentToken = await this.checkSession();
-      // if (checkCurrentToken) return;
-
       // In case we already created a draft token earlier, check if it's confirmed already
       if (this.pendingToken) {
         try {

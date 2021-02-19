@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { ExtensionInterface } from '../../../interfaces/SnykInterfaces';
-
 import { getGlobPatterns, ISupportedFiles } from '@snyk/code-client';
+import { ExtensionInterface } from '../../../interfaces/SnykInterfaces';
 
 export default function createFileWatcher(
   extension: ExtensionInterface,
@@ -12,13 +11,14 @@ export default function createFileWatcher(
 
   const updateFiles = (filePath: string): void => {
     extension.changedFiles.add(filePath);
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     extension.startExtension(); // It's debounced, so not worries about concurrent calls
   };
 
   watcher.onDidChange((documentUri: vscode.Uri) => {
     updateFiles(documentUri.fsPath);
   });
-  watcher.onDidDelete(async (documentUri: vscode.Uri) => {
+  watcher.onDidDelete((documentUri: vscode.Uri) => {
     updateFiles(documentUri.fsPath);
   });
   watcher.onDidCreate((documentUri: vscode.Uri) => {

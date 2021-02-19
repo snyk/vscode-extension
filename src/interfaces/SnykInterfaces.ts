@@ -94,9 +94,10 @@ export type errorType = Error | any;
 
 export type filesForSaveListType = string[];
 
-export type completeFileSuggestionType = ISuggestion & IFileSuggestion & {
-  uri: string;
-};
+export type completeFileSuggestionType = ISuggestion &
+  IFileSuggestion & {
+    uri: string;
+  };
 
 export type openedTextEditorType = {
   fullPath: string;
@@ -133,7 +134,11 @@ export interface AnalyzerInterface {
   snykReview: DiagnosticCollection | undefined;
   analysisResults: IAnalysisResult;
   findSuggestion(suggestionName: string): ISuggestion | undefined;
-  getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined;
+  getFullSuggestion(
+    suggestionId: string,
+    uri: vscode.Uri,
+    position: vscode.Range,
+  ): completeFileSuggestionType | undefined;
   checkFullSuggestion(suggestion: completeFileSuggestionType): boolean;
   createReviewResults(): Promise<void>;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;

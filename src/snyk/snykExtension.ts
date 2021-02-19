@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import open from 'open';
 
 import { emitter, ISupportedFiles } from '@snyk/code-client';
 import { ExtensionInterface } from '../interfaces/SnykInterfaces';
 import SnykLib from './lib/modules/SnykLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
-import { COMMAND_DEBOUNCE_INTERVAL } from "./constants/general";
+import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import {
   SNYK_START_COMMAND,
   SNYK_SETMODE_COMMAND,
@@ -18,11 +18,7 @@ import {
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
 } from './constants/commands';
-import {
-  SNYK_VIEW_SUPPORT,
-  SNYK_VIEW_ANALYSIS,
-  SNYK_ANALYSIS_STATUS,
-} from './constants/views';
+import { SNYK_VIEW_SUPPORT, SNYK_VIEW_ANALYSIS, SNYK_ANALYSIS_STATUS } from './constants/views';
 import { openSnykSettingsCommand, createDCIgnoreCommand } from './utils/vscodeCommandsUtils';
 import { errorsLogs } from './messages/errorsServerLogMessages';
 import { SupportProvider } from './view/SupportProvider';
@@ -30,22 +26,23 @@ import { IssueProvider } from './view/IssueProvider';
 
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
-  private debouncedCommands: Record<string,_.DebouncedFunc<((...args: any[]) => Promise<any>)>> = {};
+  private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
 
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
-    if (!this.debouncedCommands[name]) this.debouncedCommands[name] = _.debounce(
-      async (...args: any[]): Promise<any> => {
-        try {
-          return await fn(...args);
-        } catch (error) {
-          await this.processError(error, {
-            message: errorsLogs.command(name),
-          });
-        }
-      },
-      COMMAND_DEBOUNCE_INTERVAL,
-      { leading: true, trailing: false },
-    );
+    if (!this.debouncedCommands[name])
+      this.debouncedCommands[name] = _.debounce(
+        async (...args: any[]): Promise<any> => {
+          try {
+            return await fn(...args);
+          } catch (error) {
+            await this.processError(error, {
+              message: errorsLogs.command(name),
+            });
+          }
+        },
+        COMMAND_DEBOUNCE_INTERVAL,
+        { leading: true, trailing: false },
+      );
     return this.debouncedCommands[name](...args);
   }
 
@@ -73,9 +70,10 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
         await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
           () => {},
           // no need to wait for processError since catch is called asynchronously as well
-          err => this.processError(err, {
-            message: errorsLogs.command(SNYK_OPEN_LOCAL_COMMAND),
-          }),
+          err =>
+            this.processError(err, {
+              message: errorsLogs.command(SNYK_OPEN_LOCAL_COMMAND),
+            }),
         );
       }),
     );
@@ -121,11 +119,19 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
         this.executeCommand.bind(
           this,
           SNYK_OPEN_ISSUE_COMMAND,
-          async (message: string, severity: number, uri: vscode.Uri, range: vscode.Range, openUri?: vscode.Uri, openRange?: vscode.Range) => {
+          async (
+            message: string,
+            severity: number,
+            uri: vscode.Uri,
+            range: vscode.Range,
+            openUri?: vscode.Uri,
+            openRange?: vscode.Range,
+          ) => {
             const suggestion = this.analyzer.findSuggestion(message);
             if (!suggestion) return;
             // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-            if (openUri !== null) await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
+            if (openUri !== null)
+              await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
             this.suggestionProvider.show(suggestion.id, uri, range);
             await this.trackViewSuggestion(suggestion.id, severity);
           },
