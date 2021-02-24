@@ -66,18 +66,18 @@
 Extension has one command.
 When extension is installed or running in dev mode, go to 'Settings'(settings icon is in the left bottom of vscode window), choose 'Command Pallete...' and in opened input type commands(vscode will help with autocomplete)
 
-## Usage with local package `@deepcode/tsc`
+## Usage with local package `@snyk/code-client`
 
-In order to test plugin with local package `@deepcode/tsc` you should make the following steps.
+In order to test plugin with local package `@snyk/code-client` you should make the following steps.
 
 1. Clone package repository:
 ```shell script
-$ git clone https://github.com/DeepCodeAI/tsc.git
+$ git clone https://github.com/snyk/code-client.git
 ```
 
 > Probably you will need the `dev` branch with the latest changes:
 > ```shell script
-> $ git clone https://github.com/DeepCodeAI/tsc.git -b dev
+> $ git clone https://github.com/snyk/code-client.git -b dev
 > ```
 
 2. Go to the package folder, install dependencies, build package and create symlink:
@@ -91,26 +91,12 @@ $ npm link
 3. Go to the extension folder and install package from local symlink:
 ```shell script
 $ cd vscode-extension
-$ npm link @deepcode/tsc
+$ npm link @snyk/code-client
 ```
 
 After that you can add package to your `package.json`:
 ```json
 "dependencies": {
- "@deepcode/tsc": "^1.0.1"
-}
-```
-
-and use this package as usual:
-```javascript
-import { ServiceAI } from '@deepcode/tsc';
-
-const baseURL = 'https://www.deepcode.ai';
-
-const AI = new ServiceAI();
-
-async login(): Promise<string> {
- const { sessionToken } = await AI.startSession({ baseURL, source: IDE_NAME });
- return Promise.resolve(sessionToken);
+ "@snyk/code-client": "^2.4.1"
 }
 ```

@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import * as nodePath from 'path';
 //
 import * as extension from "../../extension";
-import { ExtensionInterface } from "../../interfaces/DeepCodeInterfaces";
+import { ExtensionInterface } from "../../interfaces/SnykInterfaces";
 
 const testToken = '23';
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
@@ -31,9 +31,9 @@ const preTestConfigureExtension = () => {
 
 // const uri = vscode.Uri.file(nodePath.join(mockedTestFilesDirPath, '../mocked_data/sample_repository', 'main.js'));
 
-// const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
+// const testIgnoreComment = '  // snyk ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 
-suite("Deepcode Extension Tests", () => {
+suite("Snyk Extension Tests", () => {
   let testExtension: ExtensionInterface;
   test('Pre-test configuring', () => {
     testExtension = preTestConfigureExtension();
@@ -45,37 +45,4 @@ suite("Deepcode Extension Tests", () => {
     // );
   });
 
-  // This is useless test
-  // test('Insert ignore comment line', async () => {
-  //   const document = await vscode.workspace.openTextDocument(uri);
-  //   const editor = await vscode.window.showTextDocument(document, 1, false);
-  //   return editor
-  //     .edit(textEditor => {
-  //       textEditor.insert(new vscode.Position(18, 0), testIgnoreComment);
-  //     })
-  //     .then(inserted => {
-  //       console.log(`${document.lineAt(18).text}\n --> `);
-  //       console.log(document.lineAt(18).text);
-  //       console.log(testIgnoreComment);
-  //       assert.equal(`${document.lineAt(18).text}\n`, testIgnoreComment);
-  //       assert.equal(inserted, testIgnoreComment);
-  //       // TODO: find a way to undo this change
-  //       // TODO: check actual analysis results with ignored line
-  //     });
-  // });
-
-  // test('Send files list to analyse', async () => {
-  //   try {
-  //     await testExtension.analyse({
-  //       baseURL: testHost,
-  //       sessionToken: testToken,
-  //       baseDir: mockedTestFilesDirPath,
-  //       files: testFilesList,
-  //       removedFiles: []
-  //     });
-  //     assert.equal(true, true);
-  //   } catch(error) {
-  //     console.log(error);
-  //   }
-  // });
 });

@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import DeepCodeExtension from './deepcode/DeepCodeExtension';
+import SnykExtension from './snyk/snykExtension';
 
-const extension = new DeepCodeExtension();
+const extension = new SnykExtension();
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('Activating DeepCodeExtension');
+  console.log('Activating SnykExtension');
   extension.activate(context);
 }
 export function deactivate() {
-  console.log('Deactivating DeepCodeExtension');
+  console.log('Deactivating SnykExtension');
   extension.deactivate();
 }
 
