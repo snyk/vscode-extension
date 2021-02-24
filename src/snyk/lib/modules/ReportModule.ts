@@ -129,9 +129,10 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
       [constants.ErrorCodes.bigPayload]: async () => {},
     };
 
-    const errorHandler = errorHandlers[error.statusCode];
-    if (errorHandler) {
-      await errorHandler();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const errorStatusCode = error.statusCode;
+    if (errorHandlers.hasOwnProperty(errorStatusCode)) {
+      await errorHandlers[errorStatusCode]();
     } else {
       await defaultErrorHandler();
     }

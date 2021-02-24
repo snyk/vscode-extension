@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 import { startSession, checkSession } from '@snyk/code-client';
 import ReportModule from './ReportModule';
