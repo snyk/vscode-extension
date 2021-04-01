@@ -62,14 +62,14 @@ Whenever Snyk encounters an unseen project, you will be asked to provide consent
 
 ![Snyk Consent](images/readme/consent.png)
 
-Snyk will then bundle the files and run an analysis. From Extension Version 3.x on, you can find a Snyk Icon in the sidebar ![Snyk Sidebar Icon](images/readme/snyk_extension_icon.png). It provides all the suggestions in a concise and clean view containing all information that is available on the online dashboard.
+Snyk will then bundle the files and run an analysis. From Extension Version 3.x on, you can find a Snyk Icon in the sidebar  ![Snyk Sidebar Icon](images/readme/snyk_extension_icon-mini.png) . It provides all the suggestions in a concise and clean view containing all information that is available on the online dashboard.
 
-![snyk problem](images/readme/problem.png)
+![snyk problem](images/readme/problem-new.png)
 
 On the top left, you can see some statistics plus a list of files with the suggestions found for them. The icons here mean:
-- ![Critical Icon](images/readme/icon-critical.png) Critical suggestion which should be addressed
-- ![Warning Icon](images/readme/icon-warning.png) Warning suggestion which seems to be a coding error
-- ![Information Icon](images/readme/icon-info.png) Information suggestion which points to style glitches or logical issues
+- ![High Icon](images/readme/icon-high.png) High suggestion which should be addressed
+- ![Medium Icon](images/readme/icon-medium.png) Medium suggestion which seems to be a coding error
+- ![Low Icon](images/readme/icon-low.png) Low suggestion which points to style glitches or logical issues
 
 Below, on the bottom left, you see a collection of helpful links about Snyk.
 

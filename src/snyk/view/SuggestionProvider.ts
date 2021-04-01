@@ -29,13 +29,13 @@ function getWebviewContent(images: Record<string,string>) { return `
       body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
       body * { box-sizing: border-box }
 
-      .button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #01b9f7 solid; border-radius: 30px; line-height: 1; background: none; color: #01b9f7; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
+      .button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #7754DB solid; border-radius: 30px; line-height: 1; background: none; color: #7754DB; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
       .button.disabled { border: 1px #676C6F solid; color: #676C6F; }
-      .button:hover { background-color: #01b9f7; color: #fff; }
+      .button:hover { background-color: #7754DB; color: #fff; }
       .button.disabled:hover { background-color: #676C6F; }
 
       .font-light { opacity: .75 }
-      .font-blue { color: #01b9f7; }
+      .font-blue { color: #7754DB; }
       .font-red { color: #FC3838; }
 
       .row { display: flex; flex-direction: row; width: 100%; }
@@ -53,12 +53,12 @@ function getWebviewContent(images: Record<string,string>) { return `
       .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
       #suggestion-info { padding-left: 12rem }
       .suggestion-text { float:left; margin-bottom: 2rem; font-size:1.6rem; line-height: 1.6; }
-      .suggestion-text.critical .mark-position { color: #FC3838 }
-      .suggestion-text.warning .mark-position { color: #FF9800 }
-      .suggestion-text.info .mark-position { color: #01b9f7 }
-      .suggestion-text.critical .mark-message:hover { color: #FC3838 }
-      .suggestion-text.warning .mark-message:hover { color: #FF9800 }
-      .suggestion-text.info .mark-message:hover { color: #01b9f7 }
+      .suggestion-text.critical .mark-position { color: #CE5019 }
+      .suggestion-text.warning .mark-position { color: #d68000 }
+      .suggestion-text.info .mark-position { color: #88879e }
+      .suggestion-text.critical .mark-message:hover { color: #CE5019 }
+      .suggestion-text.warning .mark-message:hover { color: #d68000 }
+      .suggestion-text.info .mark-message:hover { color: #88879e }
       .mark-message { font-weight: bold; }
 
       #severity { display:flex; flex-direction: column; flex-grow: 0; float:left; width:80px; margin:1rem 0 0 -10rem; text-align: center }
@@ -70,25 +70,35 @@ function getWebviewContent(images: Record<string,string>) { return `
       .hidden { display: none; }
       .clickable:hover { cursor: pointer; }
 
-      .chip { opacity:.75; display: inline-flex; padding: 2px 8px; border-radius: 15px; margin: 3px; background-color: rgba(80, 200, 239, 0.1); text-transform: capitalize; }
+      .chip { opacity:.75; display: inline-flex; padding: 2px 8px; border-radius: 15px; margin: 3px; background-color: rgba(150, 150, 150, 0.15); text-transform: capitalize; }
 
       #info-top { margin-bottom: 8px; }
       #example-top { margin-bottom: 16px; }
+      #explanations-group { padding-top:16px }
 
       .arrow { display: inline-flex; vertical-align: middle; cursor: pointer; }
-      .arrow.enabled { fill: #01b9f7; color: #01b9f7; }
-      .arrow:hover { fill: #01b9f7; color: #01b9f7; }
+      .arrow.enabled { fill: #7754DB; color: #7754DB; }
+      .arrow:hover { fill: #7754DB; color: #7754DB; }
       .arrow.left { transform: rotate(90deg); }
       .arrow.right { transform: rotate(-90deg); }
       .arrow.down { transform: rotate(-180deg); I }
 
       #example { width: 100%; border: 1px solid; border-radius: 3px; line-height: 1.5; background-color: #fff; font-weight: 600 }
       .vscode-light #example { border-color: rgba(0,0,0,.15) }
-      .vscode-dark #example { border-color: rgba(255,255,255,.075);  }
       .example-line.removed { background-color: #ffeef0; }
+      .example-line.removed>code {font-weight:600 }
       .example-line.added { background-color: #e6ffed; }
-      .example-line>code { padding-left: 30px; white-space: pre-wrap; color: #231F20; }
+      .example-line.added>code { font-weight:600 }
+      .example-line>code { padding-left: 30px; white-space: pre-wrap; color: #231F20; font-weight:400 }
       #explanations-top { margin-top: 16px; margin-bottom: 8px; }
+      
+      .vscode-dark #example { border-color: rgba(255,255,255,.075); background-color: rgba(0,0,0,.15)  }
+      .vscode-dark .removed { background-color:rgba(201,60,55,0.2); color:#fff }
+      .vscode-dark .added { background-color:rgba(70,149,74,0.2); color:#fff }
+      .vscode-dark .example-line>code { color: #ccc; font-weight:400 }
+      .vscode-dark .added>code { color: #fff; }
+      .vscode-dark .removed>code { color: #fff; }
+
 
       #ignore-top { width: 100%; margin-bottom: 8px; text-align: center; }
       .ignore-actions { justify-content: center }
@@ -120,12 +130,12 @@ function getWebviewContent(images: Record<string,string>) { return `
     <div class="suggestion">
       <section id="suggestion-info">
         <div id="severity">
-          <img id="sev1l" class="icon light-only hidden" src="${images['light-icon-info']}" />
-          <img id="sev1d" class="icon dark-only hidden" src="${images['dark-icon-info']}" />
-          <img id="sev2l" class="icon light-only hidden" src="${images['light-icon-warning']}" />
-          <img id="sev2d" class="icon dark-only hidden" src="${images['dark-icon-warning']}" />
-          <img id="sev3l" class="icon light-only hidden" src="${images['light-icon-critical']}" />
-          <img id="sev3d" class="icon dark-only hidden" src="${images['dark-icon-critical']}" />
+          <img id="sev1l" class="icon light-only hidden" src="${images['dark-low-severity']}" />
+          <img id="sev1d" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
+          <img id="sev2l" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
+          <img id="sev2d" class="icon dark-only hidden" src="${images['dark-medium-severity']}" />
+          <img id="sev3l" class="icon light-only hidden" src="${images['dark-high-severity']}" />
+          <img id="sev3d" class="icon dark-only hidden" src="${images['dark-high-severity']}" />
           <span id="severity-text"></span>
         </div>
         <div id="title" class="suggestion-text"></div>
@@ -157,7 +167,7 @@ function getWebviewContent(images: Record<string,string>) { return `
           </div>
         </div>
         <div id="example"></div>
-        <div>
+        <div id="explanations-group">
           <div id="explanations-top">Explanations from other repositories</div>
           <div id="explanations"></div>
         </div>
@@ -354,9 +364,9 @@ function getWebviewContent(images: Record<string,string>) { return `
       }
       function getCurrentSeverity() {
         const stringMap = {
-          1: "Info",
-          2: "Warning",
-          3: "Critical"
+          1: "Low",
+          2: "Medium",
+          3: "High"
         };
         return suggestion ? {
          value: suggestion.severity,
@@ -590,11 +600,11 @@ export class SuggestionProvider implements SuggestionProviderInterface {
         [ "icon-github", "svg" ],
         [ "icon-like", "svg" ],
         [ "light-icon-info", "svg" ],
-        [ "dark-icon-info", "svg" ],
+        [ "dark-high-severity", "svg" ],
         [ "light-icon-warning", "svg" ],
-        [ "dark-icon-warning", "svg" ],
+        [ "dark-medium-severity", "svg" ],
         [ "light-icon-critical", "svg" ],
-        [ "dark-icon-critical", "svg" ],
+        [ "dark-low-severity", "svg" ],
       ].reduce<Record<string,string>>((accumulator: Record<string,string>, [name, ext]) => {
         accumulator[name] = this.panel!.webview.asWebviewUri(vscode.Uri.file(
           path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`))
@@ -602,6 +612,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
         return accumulator;
       },{});
       this.panel.webview.html = getWebviewContent(images);
+
       this.panel.webview.postMessage({ type: 'set', args: suggestion });
       this.panel.onDidDispose(
         this.onPanelDispose.bind(this),

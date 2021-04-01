@@ -9,16 +9,16 @@ export interface INodeIcon {
 
 export const NODE_ICONS: {[key: string]: INodeIcon} = {
   critical: {
-    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-critical.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-critical.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
   },
   warning: {
-    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-warning.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-warning.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
   },
   info: {
-    light: path.join(__filename, '..', '..', '..', '..', 'images', 'light-icon-info.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-icon-info.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
   },
 };
 
