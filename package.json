@@ -2,7 +2,7 @@
   "name": "snyk",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
   "icon": "images/readme/snyk_extension_icon.png",
   "publisher": "snyk",
