@@ -31,7 +31,7 @@ const preTestConfigureExtension = () => {
 
 // const uri = vscode.Uri.file(nodePath.join(mockedTestFilesDirPath, '../mocked_data/sample_repository', 'main.js'));
 
-// const testIgnoreComment = '  // snyk ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
+// const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 
 suite("Snyk Extension Tests", () => {
   let testExtension: ExtensionInterface;

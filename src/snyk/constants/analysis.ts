@@ -4,7 +4,7 @@ export const SNYK_SEVERITIES: { [key: string]: number } = {
   error: 3
 };
 
-export const IGNORE_ISSUE_BASE_COMMENT_TEXT: string = "snyk ignore";
+export const IGNORE_ISSUE_BASE_COMMENT_TEXT: string = "deepcode ignore";
 
 export const FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT: string = `file ${IGNORE_ISSUE_BASE_COMMENT_TEXT}`;
 
