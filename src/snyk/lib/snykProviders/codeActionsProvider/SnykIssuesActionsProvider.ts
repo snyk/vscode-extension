@@ -113,7 +113,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       }
       if (snykCommentPostition) {
         const position = snykCommentPostition;
-        // if snyk ignore of issue already exists, paste next comment in same line after existing comment
+        // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
         editor.edit((e: vscode.TextEditorEdit) =>
           e.insert(position, `, ${issueText}`)
         );
