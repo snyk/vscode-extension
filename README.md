@@ -1,110 +1,179 @@
 # Snyk for Visual Studio Code
 
-**The Visual Studio Code extension provided by <a href="https://snyk.io/">Snyk.io</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java.**
+**The Visual Studio Code extension provided by <a href="https://snyk.io/">Snyk.io</a> finds bugs and critical
+vulnerabilities in your code. We support JavaScript and TypeScript, Java.**
+
 
 # Table of Contents
 
-- [Snyk for Visual Studio Code](#snyk-for-visual-studio-code)
-- [Table of Contents](#table-of-contents)
-- [Snyk Extension](#snyk-extension)
-  - [Snyk's AI Engine finds bugs](#Snyk-ai-engine-finds-bugs)
-  - [Our AI provides explanation behind found bugs](#our-ai-provides-explanation-behind-found-bugs)
-  - [Supported languages](#supported-languages)
-  - [Video on how to install and use the extension](#video-on-how-to-install-and-use-the-extension)
-- [Installation](#installation)
-  - [Tips on the installation process](#tips-on-the-installation-process)
-- [How to use it?](#how-to-use-it)
-  - [PROTIP - Snyk analysis on Save](#protip---snyk-analysis-on-save)
-  - [Video on how to use the extension](#video-on-how-to-use-the-extension)
-  - [Snyk in action](#snyk-in-action)
-  - [How to ignore suggestions (text)](#how-to-ignore-suggestions-text)
-  - [How to ignore suggestions (video)](#how-to-ignore-suggestions-video)
-  - [.dcignore file](#dcignore-file)
-- [Feedback and contact](#feedback-and-contact)
+- [Introduction](#introduction)
+    - [Supported languages](#supported-languages)
+- [Install the plugin](#install-the-plugin)
+    - [Authentication](#authentication)
+- [Run analysis](#run-analysis)
+- [View analysis results](#view-analysis-results)
+    - [Snyk panel](#snyk-panel)
+    - [Editor window](#editor-window)
+    - [Snyk suggestions window](#snyk-suggestions-window)
+- [Extension Configuration](#extension-configuration)
+    - [Create a .dcignore file](#create-a-dcignore-file)
 
-# Snyk Extension
 
-Through the extension you can quickly start using Snyk's code review and analysis within your development workflow. The extension will automatically alert you about critical vulnerabilities you need to solve in your code the moment when you hit _Save_ in your IDE. With Snyk's superior code review you save time finding and fixing bugs before they go to production.
+## Introduction
 
-## Snyk's AI Engine finds bugs
+Use this documentation to get started with the Visual Studio Code extension for [Snyk Code](https://support.snyk.io/hc/en-us/categories/360003257537-Snyk-Code).
 
-Snyk uses symbolic AI to process hundreds of millions of commits in open source software projects and learns how to find serious coding issues. Because the platform determines the intent of the code — and not only the syntax mistakes — Snyk identifies 10x more critical bugs and security vulnerabilities than other tools.
+### Supported languages
 
-## Our AI provides explanation behind found bugs
+Currently supported languages for Snyk Code are JavaScript, TypeScript and Java. We also provide coverage for frameworks
+like Vue and React. See [Snyk Code language and framework support](https://support.snyk.io/hc/en-us/articles/360016973477-Snyk-Code-language-and-framework-support)
+for more information. We analyze the JavaScript, TypeScript and Java files as defined by the following list: `.es`,
+`.es6`, `.htm`, `.html`, `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.java`
 
-In order to show the detailed explanation of a potential bug, we introduced a new AI technique called _Ontology_. With Ontology, we’ve integrated the capability to present logical argumentation used by the Snyk engine. If you want to learn more about the technologies behind Snyk, make sure to visit our website [Snyk.io](https://snyk.io) and the resources listed.
 
-## Supported languages
+## Install the plugin
 
-JavaScript, TypeScript, Java are currently supported. We also provide specific coverage for VUE and REACT.
+You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?itemName=Snyk.snyk) in the Visual Studio
+Code Marketplace. To install, either:
 
-## Video on how to install and use the extension
+- Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Snyk.snyk)
+  and follow the instructions for the Snyk extension. The docs from VS Code help you trigger the installation process
+  from Visual Studio Code and guide you through the installation steps.
+- Browse for the extension as advised [here](https://code.visualstudio.com/docs/editor/extension-gallery#_browse-for-extensions)
+  and search for Snyk, then install (as described [here](https://code.visualstudio.com/docs/editor/extension-gallery#_install-an-extension)).
 
-- We've prepared a short video on how to install and use the extension. Head over to YouTube to quickly get the extension up and running:
+Once installed you can find a Snyk icon in the sidebar ![extension icon](images/readme/snyk-extension-icon.png).
 
-  <a href="https://youtu.be/3J5cVuEJ8WE?utm_source=vscode-extension-readme" target="_blank">![](images/readme/install-and-use-vs-code-extension.png)</a>
+Snyk’s extension provides all the suggestions in a concise and clean view containing all information you need to decide
+how to fix or act upon:
 
-# Installation
+![Suggestion example](images/readme/install-the-plugin_suggestion-example.png)
 
-You can find the Snyk Extension in the Visual Studio Code Marketplace. So, to install, you can either navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Snyk.snyk) and press _Install_ or use the build in mechanism in Visual Studio Code behind the _Extensions Icon_ ![Extensions Icon](images/readme/extension_icon.png) in the sidebar.
 
-# How to use it?
+## Authentication
 
-## PROTIP - Snyk analysis on Save
+To authenticate follow the steps:
 
-- Snyk's extension runs automatically when you opened a folder or project and hit _Save_ (or the keyboard shortcut).
-- If you don't like to save while working we strongly recommend to [enable the AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
-- In the configuration of the extension, you can enable _Advanced Mode_ which enables you to manage the scanning process even better.
+1. Once the plugin is installed, click on the Snyk Icon in the left navigation bar, to show the following screen:
+   ![Authentication](images/readme/install-the-plugin_authentication-step1.png)
 
-## Snyk in action
+2. Click **Connect VS Code with Snyk**. The plugin relies on the Snyk authentication API and it will ask you
+   to authenticate you against Snyk’s web application:
+   ![Authentication](images/readme/install-the-plugin_authentication-step2.png)
 
-Whenever Snyk encounters an unseen project, you will be asked to provide consent for Snyk to handle the code. Without the consent, Snyk will not touch your code.
+3. Click **Authenticate**.
+4. After successful authentication, you will see a confirmation message:
+   ![Authentication](images/readme/install-the-plugin_authentication-step3.png)
 
-![Snyk Consent](images/readme/consent.png)
+5. Close the browser window and return to the IDE.
+    The IDE is now reading and saving the authentication on your local machine.
 
-Snyk will then bundle the files and run an analysis. From Extension Version 3.x on, you can find a Snyk Icon in the sidebar  ![Snyk Sidebar Icon](images/readme/snyk_extension_icon-mini.png) . It provides all the suggestions in a concise and clean view containing all information that is available on the online dashboard.
 
-![snyk problem](images/readme/problem-new.png)
+## Run analysis
 
-On the top left, you can see some statistics plus a list of files with the suggestions found for them. The icons here mean:
-- ![High Icon](images/readme/icon-high.png) High suggestion which should be addressed
-- ![Medium Icon](images/readme/icon-medium.png) Medium suggestion which seems to be a coding error
-- ![Low Icon](images/readme/icon-low.png) Low suggestion which points to style glitches or logical issues
+In the IDE you will notice that the extension is already picking up the files and uploading them for analysis. Snyk Code
+analysis runs quickly, so results may even already be available:
 
-Below, on the bottom left, you see a collection of helpful links about Snyk.
+![Run analysis](images/readme/run-analysis_results.png)
 
-In the middle, you can see the editor window showing the code that is inspected and below the _Problems_ window. These two provide syntax highlightning and context to the suggestion you are currently inspecting.
+Snyk's analysis runs automatically when you open a folder or project, or when you save your work.
 
-On the top right, you see the _Snyk Suggestion_ window. It provides the argumentation of the Snyk engine using for example variable names of your code and the line numbers in red. Also, here you can find links to external resources to explain the bug pattern in more detail (see the _More info_ link). Furthermore, you can see tags that were assigned by Snyk such as _Security_ (this is an security issue), _Database_ (it is related to database interaction), or _In Test_ (it seems it is test code) to name a few. Moreover, you can see code from open source repositories that might be of help to see how others got rid of the issue at hand. Finally, you can insert the comments that command Snyk to ignore this particular suggestion or all of these suggestions for the whole file by using the two buttons on the lower end of the window. You want to do this in the case that you know what you are doing or it is testing code that explicitly does something wrong.
+**Tip**: if you don't like to manually save while working, enable [AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
 
-We also want to mention that we included the feedback mechanism for possible false positive in the same way as you know it from the web based dashboard.
+To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you
+to control the scanning process:
 
-## How to ignore suggestions (text)
+![Advanced mode](images/readme/run-analysis_advanced-mode.png)
 
-There are two key steps here:
+To manually trigger a scan, either Save or manually rescan using the rescan icon:
 
-   1. Ignore particular alert directly within its _Snyk Suggestion_ window as mentioned above, the suggestions tooltip or 'bulb' menu:
+![Manual rescan](images/readme/run-analysis_manual-rescan.png)
 
-   ![snyk ignore menu](images/readme/ignore_menu.png)
 
-   1. Snyk will create a code comment, that will inform our analysis engine to ignore it. Don't forget to specify a description why you think it needs to be ignored.
+## View analysis results
 
-   ![snyk ignore comment](images/readme/ignore_comment.png)
+Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more
+details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once
+selected you will see the Snyk suggestion information in a panel on the right side:
 
-## How to ignore suggestions (video)
+![View analysis results](images/readme/install-the-plugin_suggestion-example.png))
 
-- If the above information is not enough and want to see it in action, here is a video:
+### Snyk panel
 
-<a href="https://www.youtube.com/watch?v=sjDuDqUy7pw&utm_source=vscode-extension-readme" target="_blank">![](images/readme/how-to-toggle-suggestions.png)</a>
+The Snyk analysis panel (on the left of the code screen in the above screenshot) shows how much time the analysis took
+plus a list of files with the suggestions found for them.
 
-## .dcignore file
+The icons here mean:
 
-- If you want to ignore certain files/folders (like *node_modules* for example), create a _.dcignore_ file. You can create it in any folder on any level starting from the directory where your project resides. The file syntax is identical to _.gitignore_:
+- ![Critical suggestion](images/readme/icon-critical.png) Critical suggestion - should be addressed.
+- ![Warning suggestion](images/readme/icon-warning.png) Warning suggestion -  likely a coding error.
+- ![Information suggestion](images/readme/icon-info.png) Information suggestion - points to style glitches or logical issues.
 
-![snyk dcignore](images/readme/ignore_file.png)
+### Editor window
 
-# Feedback and contact
+The editor window (in the middle of the results screen) shows the code that is inspected. This ensures that when you are
+inspecting a Snyk issue, you always have the code context close to the issue.
 
-- We listed feedback channels and more information resources in the window on the lower left of the Snyk dashboard in Visual Studio Code.
-- In case you need to contact us or you want to provide feedback, we love to hear from you - [here is how to get in touch with us](https://snyk.io/contact-us/).
-- If you need to update this file, you can do so by [editing this README.md](https://github.com/snyk/vscode-extension/edit/master/README.md).
+### Snyk suggestions window
+
+The Snyk Suggestion panel (on the right of the results screen) shows the argumentation of the Snyk engine using for
+example variable names of your code and the line numbers in red. You can also see:
+
+- Links to external resources to explain the bug pattern in more detail (the **More info** link).
+- Tags that were assigned by Snyk, such as **Security** (the issue found is a security issue), **Database** (it is
+  related to database interaction), or **In Test** (the issue is within the test code).
+- Code from open source repositories that might be of help to see how others fixed the issue.
+- You can add ignore comments that would make Snyk ignore this particular suggestion, or all of these suggestions for
+  the whole file, by using the two buttons on the lower end of the panel.
+
+We also include a feedback mechanism to report false positives so you others do not see the same issue.
+
+
+## Extension Configuration
+
+After the plugin is installed, you can set the following configurations for the extension:
+
+- **Advanced mode**: toggles a panel to allow the user to manually control when the analysis should be run.
+- **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch
+  to another account.
+
+### Create a .dcignore file
+
+To ignore certain files and directories (for example, **node_modules**), create a **.dcignore** file. You can create it
+in any directory on any level starting from the directory where your project resides. The file syntax is identical
+to .gitignore.
+
+- We recommend adding the file when there is no **.gitignore** file. This will significantly reduce the files that need
+  to be uploaded and speed up the analysis.
+- To quickly add the default **.dcignore** file use the command provided by VS Code and the Snyk extension: Snyk create
+  .dcignore file and save the newly created .dcignore file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
