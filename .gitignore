@@ -7,3 +7,4 @@ yalc.lock
 *.vsix
 yarn-error.log
 .dccache
+.idea/
