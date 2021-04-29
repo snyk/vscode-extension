@@ -26,7 +26,7 @@ function getWebviewContent(images: Record<string, string>) {
     <title>Snyk Suggestion</title>
     <style>
       html { height: 100%; font-size: 62.5% }
-      body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
+      body { height: 100%; padding: 0; font-size: 1.2rem; line-height: 1.5;  }
       body * { box-sizing: border-box }
 
       .button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #7754DB solid; border-radius: 30px; line-height: 1; background: none; color: #7754DB; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
@@ -51,8 +51,8 @@ function getWebviewContent(images: Record<string, string>) {
 
       section { padding: 20px }
       .suggestion { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; }
-      #suggestion-info { padding-left: 12rem }
-      .suggestion-text { float:left; margin-bottom: 2rem; font-size:1.6rem; line-height: 1.6; }
+      #suggestion-info { }  
+      .suggestion-text { float:left; margin-bottom: 2rem; margin-top: 2rem; font-size:1.2rem; line-height: 1.6; }
       .suggestion-text.critical .mark-position { color: #CE5019 }
       .suggestion-text.warning .mark-position { color: #d68000 }
       .suggestion-text.info .mark-position { color: #88879e }
@@ -61,9 +61,9 @@ function getWebviewContent(images: Record<string, string>) {
       .suggestion-text.info .mark-message:hover { color: #88879e }
       .mark-message { font-weight: bold; }
 
-      #severity { display:flex; flex-direction: column; flex-grow: 0; float:left; width:80px; margin:1rem 0 0 -10rem; text-align: center }
-      #severity .icon { width: 32px; height: 32px; margin: 0 auto 10px;  }
-      #severity-text {  }
+      #severity { }
+      #severity .icon { width: 32px; height: 32px; margin: 0 5px 0 0; }
+      #severity-text { font-size: 1.4rem; font-weight: bold; }
 
       .vscode-dark .light-only { display: none; }
       .vscode-light .dark-only { display: none; }
@@ -83,7 +83,7 @@ function getWebviewContent(images: Record<string, string>) {
       .arrow.right { transform: rotate(-90deg); }
       .arrow.down { transform: rotate(-180deg); I }
 
-      #example { width: 100%; border: 1px solid; border-radius: 3px; line-height: 1.5; background-color: #fff; font-weight: 600 }
+      #example { font-size: 1.4rem; width: 100%; border: 1px solid; border-radius: 3px; line-height: 1.5; background-color: #fff; font-weight: 600 }
       .vscode-light #example { border-color: rgba(0,0,0,.15) }
       .example-line.removed { background-color: #ffeef0; }
       .example-line.removed>code {font-weight:600 }
@@ -103,6 +103,11 @@ function getWebviewContent(images: Record<string, string>) {
       #ignore-top { width: 100%; margin-bottom: 8px; text-align: center; }
       .ignore-actions { justify-content: center }
       .ignore-actions .button { margin: 0 1rem 2rem }
+
+      #feedback-top { }
+      #feedback-left { float: left; }
+      #feedback-right { float: right; }
+      input[type="checkbox"] { vertical-align:middle; }
 
       #feedback-close { padding: 15px; border-radius: 5px; border: 1px solid; }
       .vscode-light #feedback-close { border-color: rgba(0,0,0,.15); }
@@ -187,13 +192,13 @@ function getWebviewContent(images: Record<string, string>) {
           </div>
         </div>
         <div id="feedback-open" class="hidden">
-          <div>
-            Feedback
-            <label id="feedback-fp" class="false-positive">
-              <input type="checkbox" id="feedback-checkbox">
-              False postive
-              <img class="icon" src="${images['light-icon-info']}" onclick="navigateToFP()"></img>
-            </label>
+          <div id="feedback-top">
+           <div id="feedback-left">Feedback</div>
+           <div id="feedback-right">
+            <input id="feedback-checkbox" type="checkbox"/>
+            <label id="feedback-fp" for="feedback-checkbox">False postive</label>
+            <img class="icon" src="${images['light-icon-info']}" onclick="navigateToFP()"></img>
+           </div>
           </div>
           <div>
             <textarea id="feedback-textarea" rows="8" onInput="enableFeedback(this.value)" placeholder="Send us your feedback and comments for this suggestion - we love feedback!"></textarea>
