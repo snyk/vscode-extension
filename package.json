@@ -44,7 +44,7 @@
   "contributes": {
     "configuration": [
       {
-        "title": "Snyk",
+        "title": "Snyk Vulnerability Scanner",
         "properties": {
           "snyk.advancedMode": {
             "type": "boolean",

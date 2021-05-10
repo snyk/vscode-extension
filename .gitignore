@@ -1,10 +1,36 @@
-out
+#################################
+# Compiled source               #
+#################################
 build
+out
+
+#################################
+# Node.JS & VSCode files        #
+#################################
 node_modules
+.dccache
+.vscode-test
 .yalc
 yalc.lock
-.vscode-test
-*.vsix
 yarn-error.log
-.dccache
+*.vsix
+
+#################################
+# IDE generated files           #
+#################################
 .idea/
+*.iml
+
+#################################
+# Logs and temp files           #
+#################################
+*.log
+*.swp
+*~
+
+#################################
+# OS generated files            #
+#################################
+Thumbs.db
+.directory
+.DS_Store
