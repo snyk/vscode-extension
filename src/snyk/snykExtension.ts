@@ -13,7 +13,7 @@ import {
   SNYK_SETTINGS_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_LOGIN_COMMAND,
-  SNYK_APPROVE_COMMAND,
+  SNYK_ENABLE_CODE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
@@ -87,8 +87,8 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
-        SNYK_APPROVE_COMMAND,
-        this.executeCommand.bind(this, SNYK_APPROVE_COMMAND, this.approveUpload.bind(this)),
+        SNYK_ENABLE_CODE_COMMAND,
+        this.executeCommand.bind(this, SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
       ),
     );
 

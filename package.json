@@ -73,7 +73,13 @@
           "snyk.uploadApproved": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "User consent for code upload to `#snyk.url#` in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc)",
+            "markdownDescription": "User consent for code upload to `#snyk.url#` in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc). **This setting will be removed soon. Please use `snyk.codeEnabled` instead.**",
+            "scope": "window"
+          },
+          "snyk.codeEnabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Snyk Code is enabled. If Snyk organization settings has Snyk Code disabled, this flag will be automatically set to false.",
             "scope": "window"
           },
           "snyk.yesCrashReport": {
@@ -118,7 +124,7 @@
         {
           "id": "snyk.views.actions",
           "name": "Actions",
-          "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:uploadApproved && snyk:workspaceFound"
+          "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound"
         },
         {
           "id": "snyk.views.support",
@@ -144,13 +150,13 @@
       },
       {
         "view": "snyk.views.analysis",
-        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗. Snyk is analysing the code remotely on Snyk's servers (our [terms](https://snyk.io/policies/terms-of-service/?utm_source=vsc)). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:snyk.approve 'Upload code to Snyk')\nYou can always change it in the [configuration panel](command:snyk.settings).",
-        "when": "!snyk:error && snyk:loggedIn && !snyk:uploadApproved"
+        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')",
+        "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled"
       },
       {
         "view": "snyk.views.analysis",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
-        "when": "!snyk:error && snyk:loggedIn && snyk:uploadApproved && !snyk:workspaceFound"
+        "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && !snyk:workspaceFound"
       },
       {
         "view": "snyk.views.actions",
@@ -193,7 +199,7 @@
         },
         {
           "command": "snyk.dcignore",
-          "when": "!snyk:error && snyk:loggedIn && snyk:uploadApproved && snyk:workspaceFound"
+          "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound"
         }
       ]
     },

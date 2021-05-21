@@ -91,17 +91,40 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     return '';
   }
 
-  async checkApproval(): Promise<boolean> {
-    const approved = this.uploadApproved;
-    await this.setContext(SNYK_CONTEXT.APPROVED, approved);
-    if (!approved) await this.setLoadingBadge(true);
-    return approved;
+  async checkCodeEnabled(): Promise<boolean> {
+    const apiEnabled = false; // todo: fetch sast bool from api
+    if (!apiEnabled) {
+      const pressedButton = await vscode.window.showInformationMessage(
+        snykMessages.codeDisabled.msg,
+        snykMessages.codeDisabled.enableCode,
+        snykMessages.codeDisabled.remindLater,
+      );
+
+      if (pressedButton === snykMessages.codeDisabled.enableCode) {
+        viewInBrowser(this.snykCodeUrl);
+      } else {
+        // todo: Remind later? how often? every week? every extension activation?
+      }
+    }
+
+    const inSettingsEnabled = this.codeEnabled;
+    await this.setContext(SNYK_CONTEXT.CODE_ENABLED, inSettingsEnabled);
+    if (!inSettingsEnabled) await this.setLoadingBadge(true);
+    // todo: remove old settings entry if enabled
+
+    return inSettingsEnabled;
   }
 
-  async approveUpload(): Promise<void> {
-    await this.setUploadApproved(true);
+  async enableCode(): Promise<void> {
+    // TODO: set only if org level setting is true
+    const apiEnabled = false;
+    if (!apiEnabled) {
+      return;
+    }
+
+    await this.setCodeEnabled(true);
     await this.setLoadingBadge(false);
-    await this.checkApproval();
+    await this.checkCodeEnabled(); // todo: is it needed?
   }
 
   async checkWelcomeNotification(): Promise<void> {

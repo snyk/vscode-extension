@@ -46,7 +46,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   staticToken = '';
   defaultBaseURL = 'https://deeproxy.snyk.io';
   defaultAuthHost = 'https://snyk.io';
-  staticUploadApproved = false;
+  staticCodeEnabled = false;
 
   constructor() {
     this.analyzer = new SnykAnalyzer();
@@ -72,7 +72,11 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   }
 
   get termsConditionsUrl(): string {
-    return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`;
+    return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`; //todo: unused?
+  }
+
+  get snykCodeUrl(): string {
+    return `${this.authHost}/manage/snyk-code`;
   }
 
   get token(): string {
@@ -89,16 +93,17 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     return process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
   }
 
-  get uploadApproved(): boolean {
+  get codeEnabled(): boolean {
     return (
-      this.staticUploadApproved ||
+      this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved')
+      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved') || // TODO: remove once grace period is out
+      !!vscode.workspace.getConfiguration('snyk').get<boolean>('codeEnabled') // TODO: check if matches the backend's setting result
     );
   }
 
-  async setUploadApproved(value = true): Promise<void> {
-    await vscode.workspace.getConfiguration('snyk').update('uploadApproved', value, true);
+  async setCodeEnabled(value = true): Promise<void> {
+    await vscode.workspace.getConfiguration('snyk').update('codeEnabled', value, true);
   }
 
   get shouldReportErrors(): boolean {
@@ -145,7 +150,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
         }
         break;
       }
-      case SNYK_CONTEXT.APPROVED: {
+      case SNYK_CONTEXT.CODE_ENABLED: {
         if (oldValue !== undefined) {
           if (!value && oldValue) event = TELEMETRY_EVENTS.viewConsentView;
           if (value && !oldValue) event = TELEMETRY_EVENTS.viewSuggestionView;
@@ -177,7 +182,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   get shouldShowAnalysis(): boolean {
     return (
       !this.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.APPROVED].every(c => !!this.viewContext[c])
+      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c])
     );
   }
 

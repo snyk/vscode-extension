@@ -20,10 +20,10 @@ export interface BaseSnykModuleInterface {
   termsConditionsUrl: string;
   token: string;
   setToken(token: string): Promise<void>;
-  uploadApproved: boolean;
+  codeEnabled: boolean;
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
-  setUploadApproved(value: boolean): Promise<void>;
+  setCodeEnabled(value: boolean): Promise<void>;
   remoteBundle: IFileBundle;
   changedFiles: Set<string>;
   analyzer: AnalyzerInterface;
@@ -49,8 +49,8 @@ export interface ReportModuleInterface {
 export interface LoginModuleInterface {
   initiateLogin(): Promise<void>;
   checkSession(): Promise<string>;
-  approveUpload(): Promise<void>;
-  checkApproval(): Promise<boolean>;
+  enableCode(): Promise<void>;
+  checkCodeEnabled(): Promise<boolean>;
   checkWelcomeNotification(): Promise<void>;
   checkAdvancedMode(): Promise<void>;
 }

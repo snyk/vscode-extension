@@ -6,7 +6,7 @@ export const VSCODE_ADD_COMMENT_COMMAND = "editor.action.addCommentLine";
 // custom depcode commands
 export const SNYK_START_COMMAND = "snyk.start";
 export const SNYK_LOGIN_COMMAND = "snyk.login";
-export const SNYK_APPROVE_COMMAND = "snyk.approve";
+export const SNYK_ENABLE_CODE_COMMAND = "snyk.enableCode";
 export const SNYK_SETMODE_COMMAND = "snyk.setmode";
 export const SNYK_SETTINGS_COMMAND = "snyk.settings";
 export const SNYK_DCIGNORE_COMMAND = "snyk.dcignore";

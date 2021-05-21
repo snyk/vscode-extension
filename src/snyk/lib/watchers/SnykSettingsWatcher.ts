@@ -24,7 +24,7 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
         const change = [
-          'snyk.url', 'snyk.token', 'snyk.uploadApproved', 'snyk.advancedMode'
+          'snyk.url', 'snyk.token', 'snyk.codeEnabled', 'snyk.advancedMode'
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {

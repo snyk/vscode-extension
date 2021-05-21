@@ -50,8 +50,8 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
-    const uploadApproved = await this.checkApproval();
-    if (!uploadApproved) {
+    const codeEnabled = await this.checkCodeEnabled();
+    if (!codeEnabled) {
       return;
     }
 
