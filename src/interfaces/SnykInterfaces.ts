@@ -12,18 +12,6 @@ export interface BaseSnykModuleInterface {
   refreshViews(content: any): void;
   analysisStatus: string;
   analysisProgress: string;
-  source: string;
-  staticToken: string;
-  defaultBaseURL: string;
-  baseURL: string;
-  authHost: string;
-  termsConditionsUrl: string;
-  token: string;
-  setToken(token: string): Promise<void>;
-  codeEnabled: boolean;
-  shouldReportErrors: boolean;
-  shouldReportEvents: boolean;
-  setCodeEnabled(value: boolean): Promise<void>;
   remoteBundle: IFileBundle;
   changedFiles: Set<string>;
   analyzer: AnalyzerInterface;

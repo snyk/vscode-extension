@@ -8,6 +8,7 @@ import {
   EXECUTION_THROTTLING_INTERVAL,
   EXECUTION_PAUSE_INTERVAL,
 } from "../../constants/general";
+import { configuration } from "../../configuration";
 
 export default class SnykLib extends BundlesModule implements SnykLibInterface {
   private _mode = SNYK_MODE_CODES.AUTO;
@@ -44,7 +45,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     this.resetTransientErrors();
     await this.setLoadingBadge(false);
 
-    if (!this.token) {
+    if (!configuration.token) {
       await this.checkSession();
       return;
     }

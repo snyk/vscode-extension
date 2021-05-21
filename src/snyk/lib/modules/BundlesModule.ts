@@ -8,6 +8,7 @@ import { SNYK_ANALYSIS_STATUS, SNYK_CONTEXT } from "../../constants/views";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 import { analyzeFolders, extendAnalysis, constants } from '@snyk/code-client';
+import { configuration } from "../../configuration";
 
 abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
@@ -68,9 +69,9 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
         if (this.changedFiles.size && this.remoteBundle) {
           const changedFiles = [...this.changedFiles];
           this.changedFiles.clear();
-          result = await extendAnalysis(this.remoteBundle, changedFiles, constants.MAX_PAYLOAD, this.source);
+          result = await extendAnalysis(this.remoteBundle, changedFiles, constants.MAX_PAYLOAD, configuration.source);
         } else {
-          result = await analyzeFolders({ baseURL: this.baseURL, sessionToken: this.token, paths, source: this.source });
+          result = await analyzeFolders({ baseURL: configuration.baseURL, sessionToken: configuration.token, paths, source: configuration.source });
         }
 
         if (result) {

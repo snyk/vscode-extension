@@ -7,6 +7,7 @@ import { SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { snykMessages } from '../../messages/snykMessages';
 import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { configuration } from '../../configuration';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -28,7 +29,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         try {
           const token = await this.checkSession(this.pendingToken);
           if (token) {
-            await this.setToken(token);
+            await configuration.setToken(token);
             return;
           }
         } finally {
@@ -36,12 +37,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         }
       }
 
-      const { draftToken, loginURL } = startSession({ authHost: this.authHost, source: this.source });
+      const { draftToken, loginURL } = startSession({ authHost: configuration.authHost, source: configuration.source });
 
       await viewInBrowser(loginURL);
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
-        await this.setToken(token);
+        await configuration.setToken(token);
       } else {
         this.pendingToken = draftToken;
       }
@@ -59,7 +60,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     if (draftToken) {
       try {
         const sessionResponse = await checkSession({
-          authHost: this.authHost,
+          authHost: configuration.authHost,
           draftToken,
         });
         if (sessionResponse.type === 'error') {
@@ -101,13 +102,13 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       );
 
       if (pressedButton === snykMessages.codeDisabled.enableCode) {
-        viewInBrowser(this.snykCodeUrl);
+        viewInBrowser(configuration.snykCodeUrl);
       } else {
         // todo: Remind later? how often? every week? every extension activation?
       }
     }
 
-    const inSettingsEnabled = this.codeEnabled;
+    const inSettingsEnabled = configuration.codeEnabled;
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, inSettingsEnabled);
     if (!inSettingsEnabled) await this.setLoadingBadge(true);
     // todo: remove old settings entry if enabled
@@ -122,13 +123,13 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       return;
     }
 
-    await this.setCodeEnabled(true);
+    await configuration.setCodeEnabled(true);
     await this.setLoadingBadge(false);
     await this.checkCodeEnabled(); // todo: is it needed?
   }
 
   async checkWelcomeNotification(): Promise<void> {
-    if (this.shouldShowWelcomeNotification) {
+    if (configuration.shouldShowWelcomeNotification) {
       this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
       const pressedButton = await vscode.window.showInformationMessage(
         snykMessages.welcome.msg,
@@ -137,12 +138,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       if (pressedButton === snykMessages.welcome.button) {
         await openSnykViewContainer();
       }
-      await this.hideWelcomeNotification();
+      await configuration.hideWelcomeNotification();
     }
   }
 
   async checkAdvancedMode(): Promise<void> {
-    await this.setContext(SNYK_CONTEXT.ADVANCED, this.shouldShowAdvancedView);
+    await this.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
 }
 
