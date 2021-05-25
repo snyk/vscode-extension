@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { SnykWatcherInterface, ExtensionInterface } from "../../../interfaces/SnykInterfaces";
+import { ExtensionInterface, SnykWatcherInterface } from "../../../interfaces/SnykInterfaces";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 class SnykSettingsWatcher implements SnykWatcherInterface {

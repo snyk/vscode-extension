@@ -6,7 +6,7 @@ import { COMMAND_DEBOUNCE_INTERVAL, CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECT
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { SNYK_CONTEXT, SNYK_ERROR_CODES } from "../../constants/views";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import LoadingBadge, { ILoadingBadge } from "../../view/loadingBadge";
+import { LoadingBadge, ILoadingBadge } from "../../view/loadingBadge";
 import BaseSnykModule from './BaseSnykModule';
 
 abstract class ReportModule extends BaseSnykModule implements ReportModuleInterface {

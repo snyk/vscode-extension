@@ -1,13 +1,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { configuration } from '../configuration';
 
-const headers: Readonly<Record<string, string | boolean>> = {
+const defaultHeaders: Readonly<Record<string, string | boolean>> = {
   Accept: 'application/json',
   'Content-Type': 'application/json; charset=utf-8',
 };
 
 class ApiClient {
   private instance: AxiosInstance | null = null;
-  // TODO: get token and baseURL from settings?
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
@@ -15,14 +15,14 @@ class ApiClient {
 
   initHttp() {
     const http = axios.create({
-      baseURL: 'https://snyk.io/api/v1/',
-      headers,
+      headers: defaultHeaders,
       responseType: 'json',
     });
 
     http.interceptors.response.use(
       response => response,
       error => {
+        // todo: error handling logic goes here
         return Promise.reject(error);
       },
     );
@@ -32,6 +32,16 @@ class ApiClient {
   }
 
   get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
+    this.http.interceptors.request.use(req => {
+      req.baseURL = `${configuration.authHost}/api/v1/`;
+      req.headers = {
+        ...req.headers,
+        'Authorization': `token ${configuration.token}`
+      };
+
+      return req;
+    });
+
     return this.http.get<T, R>(url, config);
   }
 }

@@ -8,7 +8,7 @@ export interface ILoadingBadge {
   setLoadingBadge(value: boolean, reportModule: BaseSnykModuleInterface): Promise<void>;
 }
 
-export default class LoadingBadge implements ILoadingBadge {
+export class LoadingBadge implements ILoadingBadge {
     private progressBadge: PendingTaskInterface | undefined;
     private shouldShowProgressBadge = false;
 

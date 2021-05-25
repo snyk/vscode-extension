@@ -78,9 +78,9 @@
           },
           "snyk.codeEnabled": {
             "type": "boolean",
-            "default": false,
             "description": "Snyk Code is enabled. If Snyk organization settings has Snyk Code disabled, this flag will be automatically set to false.",
-            "scope": "window"
+            "scope": "window",
+            "default": null
           },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
@@ -152,6 +152,11 @@
         "view": "snyk.views.analysis",
         "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')",
         "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled"
+      },
+      {
+        "view": "snyk.views.analysis",
+        "contents": "Snyk Code is disabled at the organizational level settings now. Please enable to keep analyzing the code.",
+        "when": "!snyk:error && snyk:loggedIn && snyk:uploadApproved && !snyk:codeEnabled"
       },
       {
         "view": "snyk.views.analysis",
@@ -257,6 +262,7 @@
   },
   "dependencies": {
     "@snyk/code-client": "^3.4.0",
+    "axios": "^0.21.1",
     "lodash": "^4.17.21",
     "open": "^7.4.2"
   }

@@ -1,14 +1,14 @@
+import { checkSession, startSession } from '@snyk/code-client';
 import * as vscode from 'vscode';
-import { startSession, checkSession } from '@snyk/code-client';
-import ReportModule from './ReportModule';
 import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
-import { viewInBrowser, openSnykViewContainer } from '../../utils/vscodeCommandsUtils';
+import { configuration } from '../../configuration';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { snykMessages } from '../../messages/snykMessages';
-import { TELEMETRY_EVENTS } from '../../constants/telemetry';
-import { configuration } from '../../configuration';
+import { openSnykViewContainer, viewInBrowser } from '../../utils/vscodeCommandsUtils';
 import { ISnykCode, SnykCode } from './code';
+import ReportModule from './ReportModule';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -104,6 +104,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const enabled = await this.snykCode.isEnabled();
 
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved);
     if (!enabled) await this.loadingBadge.setLoadingBadge(true, this);
 
     return enabled;
@@ -113,7 +114,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const wasEnabled = await this.snykCode.enable();
     if (wasEnabled) {
       await this.loadingBadge.setLoadingBadge(false, this);
-      await this.checkCodeEnabled(); // todo: is it needed?
+      await this.checkCodeEnabled(); // switches the context, but triggers additional api call -> todo: is it needed?
     }
   }
 

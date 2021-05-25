@@ -10,7 +10,8 @@ export interface IConfiguration {
   termsConditionsUrl: string;
   token: string;
   setToken(token: string): Promise<void>;
-  codeEnabled: boolean;
+  uploadApproved: boolean;
+  codeEnabled: boolean | undefined;
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
   setCodeEnabled(value: boolean): Promise<void>;
@@ -56,12 +57,19 @@ export class Configuration implements IConfiguration {
     return process.env.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
   }
 
-  get codeEnabled(): boolean {
+  get uploadApproved(): boolean {
     return (
       this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved') || // TODO: remove once grace period is out
-      !!vscode.workspace.getConfiguration('snyk').get<boolean>('codeEnabled') // TODO: check if matches the backend's setting result
+      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved') // TODO: remove once grace period is out
+    );
+  }
+
+  get codeEnabled(): boolean | undefined {
+    return (
+      this.staticCodeEnabled ||
+      this.source !== IDE_NAME ||
+      vscode.workspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled') // TODO: check if matches the backend's setting result
     );
   }
 
