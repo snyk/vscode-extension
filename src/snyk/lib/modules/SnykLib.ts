@@ -43,7 +43,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
 
     await this.setContext(SNYK_CONTEXT.ERROR, false);
     this.resetTransientErrors();
-    await this.setLoadingBadge(false);
+    await this.loadingBadge.setLoadingBadge(false, this);
 
     if (!configuration.token) {
       await this.checkSession();

@@ -1,17 +1,22 @@
+import { constants, reportError, reportEvent } from '@snyk/code-client';
 import * as _ from "lodash";
-import { COMMAND_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { ReportModuleInterface, errorType } from "../../../interfaces/SnykInterfaces";
-import BaseSnykModule from './BaseSnykModule';
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { errorType, ReportModuleInterface } from "../../../interfaces/SnykInterfaces";
+import { configuration } from "../../configuration";
+import { COMMAND_DEBOUNCE_INTERVAL, CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { SNYK_CONTEXT, SNYK_ERROR_CODES } from "../../constants/views";
-import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
-
-import { reportEvent, reportError, constants } from '@snyk/code-client';
-import { configuration } from "../../configuration";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import LoadingBadge, { ILoadingBadge } from "../../view/loadingBadge";
+import BaseSnykModule from './BaseSnykModule';
 
 abstract class ReportModule extends BaseSnykModule implements ReportModuleInterface {
   private transientErrors = 0;
+  protected loadingBadge: ILoadingBadge;
+
+  constructor() {
+    super();
+    this.loadingBadge = new LoadingBadge(this.initializedView);
+  }
 
   private get shouldReport(): boolean {
     // DEV: uncomment the following line to test this module in development
@@ -142,13 +147,13 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
   private async authenticationErrorHandler(): Promise<void> {
     await configuration.setToken('');
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    await this.setLoadingBadge(true);
+    await this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
     await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
-    await this.setLoadingBadge(true);
+    await this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async connectionErrorHandler(): Promise<void> {

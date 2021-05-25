@@ -18,7 +18,6 @@ export interface BaseSnykModuleInterface {
   statusBarItem: StatusBarItemInterface;
   filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: SnykWatcherInterface;
-  setLoadingBadge(value: boolean): Promise<void>;
   setContext(key: string, value: unknown): Promise<void>;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;

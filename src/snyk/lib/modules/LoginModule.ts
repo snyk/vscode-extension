@@ -8,12 +8,20 @@ import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { snykMessages } from '../../messages/snykMessages';
 import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { configuration } from '../../configuration';
+import { ISnykCode, SnykCode } from './code';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin = false;
   private pendingToken = '';
+
+  private snykCode: ISnykCode;
+
+  constructor() {
+    super();
+    this.snykCode = new SnykCode();
+  }
 
   async initiateLogin(): Promise<void> {
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
@@ -75,7 +83,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       }
     }
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
-    if (!token) await this.setLoadingBadge(true);
+    if (!token) await this.loadingBadge.setLoadingBadge(true, this);
     return token;
   }
 
@@ -93,39 +101,20 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   }
 
   async checkCodeEnabled(): Promise<boolean> {
-    const apiEnabled = false; // todo: fetch sast bool from api
-    if (!apiEnabled) {
-      const pressedButton = await vscode.window.showInformationMessage(
-        snykMessages.codeDisabled.msg,
-        snykMessages.codeDisabled.enableCode,
-        snykMessages.codeDisabled.remindLater,
-      );
+    const enabled = await this.snykCode.isEnabled();
 
-      if (pressedButton === snykMessages.codeDisabled.enableCode) {
-        viewInBrowser(configuration.snykCodeUrl);
-      } else {
-        // todo: Remind later? how often? every week? every extension activation?
-      }
-    }
+    await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    if (!enabled) await this.loadingBadge.setLoadingBadge(true, this);
 
-    const inSettingsEnabled = configuration.codeEnabled;
-    await this.setContext(SNYK_CONTEXT.CODE_ENABLED, inSettingsEnabled);
-    if (!inSettingsEnabled) await this.setLoadingBadge(true);
-    // todo: remove old settings entry if enabled
-
-    return inSettingsEnabled;
+    return enabled;
   }
 
   async enableCode(): Promise<void> {
-    // TODO: set only if org level setting is true
-    const apiEnabled = false;
-    if (!apiEnabled) {
-      return;
+    const wasEnabled = await this.snykCode.enable();
+    if (wasEnabled) {
+      await this.loadingBadge.setLoadingBadge(false, this);
+      await this.checkCodeEnabled(); // todo: is it needed?
     }
-
-    await configuration.setCodeEnabled(true);
-    await this.setLoadingBadge(false);
-    await this.checkCodeEnabled(); // todo: is it needed?
   }
 
   async checkWelcomeNotification(): Promise<void> {

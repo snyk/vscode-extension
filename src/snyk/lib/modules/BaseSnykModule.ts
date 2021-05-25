@@ -1,26 +1,19 @@
-import * as vscode from 'vscode';
+import { IFileBundle } from '@snyk/code-client';
 import * as _ from "lodash";
+import * as vscode from 'vscode';
 import {
-  BaseSnykModuleInterface,
-  AnalyzerInterface,
-  StatusBarItemInterface,
-  SnykWatcherInterface,
-  SuggestionProviderInterface,
-  errorType,
+  AnalyzerInterface, BaseSnykModuleInterface, errorType, SnykWatcherInterface, StatusBarItemInterface, SuggestionProviderInterface
 } from "../../../interfaces/SnykInterfaces";
+import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
+import { SNYK_CONTEXT } from "../../constants/views";
+import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { SuggestionProvider } from "../../view/SuggestionProvider";
 import SnykAnalyzer from "../analyzer/SnykAnalyzer";
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
 import SnykEditorsWatcher from "../watchers/EditorsWatcher";
 import SnykSettingsWatcher from "../watchers/SnykSettingsWatcher";
-import { SuggestionProvider } from "../../view/SuggestionProvider";
-import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
-import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { setContext } from "../../utils/vscodeCommandsUtils";
-import { SNYK_CONTEXT, SNYK_VIEW_ANALYSIS } from "../../constants/views";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { errorsLogs } from '../../messages/errorsServerLogMessages';
-
-import { IFileBundle } from '@snyk/code-client';
 
 export default abstract class BaseSnykModule implements BaseSnykModuleInterface {
   analyzer: AnalyzerInterface;
@@ -34,9 +27,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   refreshViewEmitter: vscode.EventEmitter<any>;
   analysisStatus = '';
   analysisProgress = '';
-  private initializedView: PendingTaskInterface;
-  private progressBadge: PendingTaskInterface | undefined;
-  private shouldShowProgressBadge = false;
+  protected initializedView: PendingTaskInterface;
   private viewContext: { [key: string]: unknown };
 
   remoteBundle: IFileBundle;
@@ -113,40 +104,6 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
       !this.viewContext[SNYK_CONTEXT.ERROR] &&
       [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c])
     );
-  }
-
-  private getProgressBadgePromise(): Promise<void> {
-    if (!this.shouldShowProgressBadge) return Promise.resolve();
-    if (!this.progressBadge || this.progressBadge.isCompleted) {
-      this.progressBadge = new PendingTask();
-    }
-    return this.progressBadge.waiter;
-  }
-
-  // Leave viewId undefined to remove the badge from all views
-  async setLoadingBadge(value: boolean): Promise<void> {
-    this.shouldShowProgressBadge = value;
-    if (value) {
-      // Using closure on this to allow partial binding in arbitrary positions
-      const self = this;
-      this.initializedView.waiter
-        .then(() =>
-          vscode.window.withProgress({ location: { viewId: SNYK_VIEW_ANALYSIS } }, () =>
-            self.getProgressBadgePromise(),
-          ),
-        )
-        .then(
-          () => {},
-          error =>
-            self.processError(error, {
-              message: errorsLogs.loadingBadge,
-            }),
-        );
-    } else {
-      if (this.progressBadge && !this.progressBadge.isCompleted) {
-        this.progressBadge.complete();
-      }
-    }
   }
 
   emitViewInitialized(): void {
