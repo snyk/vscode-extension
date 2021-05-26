@@ -104,7 +104,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const enabled = await this.snykCode.isEnabled();
 
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved);
+    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); //todo: removed once 'uploadApproved' is deprecated
     if (!enabled) await this.loadingBadge.setLoadingBadge(true, this);
 
     return enabled;
