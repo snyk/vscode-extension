@@ -23,6 +23,7 @@ import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCo
 import { errorsLogs } from './messages/errorsServerLogMessages';
 import { SupportProvider } from './view/SupportProvider';
 import { IssueProvider } from './view/IssueProvider';
+import { severityAsText } from "./utils/analysisUtils";
 
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
@@ -135,6 +136,14 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
               await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
             this.suggestionProvider.show(suggestion.id, uri, range);
             await this.trackViewSuggestion(suggestion.id, severity);
+
+            this.analytics.logEvent('Issue Is Viewed', {
+              ide: 'Visual Studio Code',
+              issueId: suggestion.id,
+              issueType: 'Code Security Vulnerability',
+              severity: severityAsText(suggestion.severity),
+              userId: this.userId,
+            });
           },
         ),
       ),

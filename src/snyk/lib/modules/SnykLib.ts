@@ -45,6 +45,16 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     await this.setLoadingBadge(false);
 
     if (!this.token) {
+      try {
+        this.createAnalytics();
+        this.analytics.identify();
+        this.analytics.logEvent('Welcome Is Viewed', {
+          ide: 'Visual Studio Code'
+        });
+      } catch (e) {
+        console.log(e)
+      }
+
       await this.checkSession();
       return;
     }
@@ -56,6 +66,13 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
 
     try {
+      this.createAnalytics();
+      this.createApiClient();
+      const user = await this.apiClient.userMe()
+      if (user) {
+        this.analytics.alias(user.id)
+      }
+
       await this.startAnalysis();
     } catch (err) {
       await this.processError(err, {
