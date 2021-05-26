@@ -5,8 +5,6 @@ import {
   AnalyzerInterface, BaseSnykModuleInterface, errorType, SnykWatcherInterface, StatusBarItemInterface, SuggestionProviderInterface
 } from "../../../interfaces/SnykInterfaces";
 import { Segment } from '../../analytics/segment';
-import { ApiClient } from '../../api/api-client';
-import { configuration } from '../../configuration';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { SNYK_CONTEXT } from "../../constants/views";
@@ -34,7 +32,6 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   private viewContext: { [key: string]: unknown };
   analytics: Segment;
   userId: string;
-  apiClient: ApiClient;
 
   remoteBundle: IFileBundle;
   changedFiles: Set<string> = new Set();
@@ -123,11 +120,6 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     REFRESH_VIEW_DEBOUNCE_INTERVAL,
     { leading: true },
   );
-
-  createApiClient(): void {
-    const baseURL: string = vscode.workspace.getConfiguration('snyk').get('authHost') || configuration.defaultAuthHost + '/api';
-    this.apiClient =  new ApiClient(baseURL, configuration.token);
-  };
 
   createAnalytics(): void {
     if (!this.analytics) {

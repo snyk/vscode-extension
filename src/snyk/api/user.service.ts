@@ -5,7 +5,7 @@ export type User = {
   username: string;
 };
 
-export const userMe = async (): Promise<User> => {
+export async function userMe(): Promise<User> {
   const { data } = await api.get<User>('/user/me');
   return data;
 };

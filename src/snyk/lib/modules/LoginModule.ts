@@ -38,7 +38,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
           const token = await this.checkSession(this.pendingToken);
           if (token) {
             await configuration.setToken(token);
-            this.createApiClient();
             return;
           }
         } finally {
@@ -52,7 +51,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
         await configuration.setToken(token);
-        this.createApiClient();
       } else {
         this.pendingToken = draftToken;
       }

@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import { SnykLibInterface } from "../../../interfaces/SnykInterfaces";
+import { userMe } from "../../api/user.service";
 import { configuration } from "../../configuration";
 import {
   EXECUTION_DEBOUNCE_INTERVAL, EXECUTION_PAUSE_INTERVAL, EXECUTION_THROTTLING_INTERVAL
@@ -66,8 +67,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
 
     try {
       this.createAnalytics();
-      this.createApiClient();
-      const user = await this.apiClient.userMe()
+      const user = await userMe()
       if (user) {
         this.analytics.alias(user.id)
       }
