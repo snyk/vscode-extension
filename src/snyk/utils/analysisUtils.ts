@@ -273,3 +273,17 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
   const snykComment = isFileIgnore ? FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT : IGNORE_ISSUE_BASE_COMMENT_TEXT;
   return `${snykComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
 };
+
+export const severityAsText = (severity: number): string => {
+  if (severity === 1) {
+    return 'Low';
+  } else if (severity === 2) {
+    return 'Medium';
+  } else if (severity === 3) {
+    return 'High';
+  } else if (severity === 4) {
+    return 'Critical';
+  } else {
+    return ''
+  }
+}

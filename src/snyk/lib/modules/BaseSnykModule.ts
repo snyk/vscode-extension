@@ -21,6 +21,8 @@ import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 import { IFileBundle } from '@snyk/code-client';
+import { ApiClient } from "../../api/api-client";
+import { Segment } from "../../analytics/segment";
 
 export default abstract class BaseSnykModule implements BaseSnykModuleInterface {
   analyzer: AnalyzerInterface;
@@ -38,6 +40,9 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   private progressBadge: PendingTaskInterface | undefined;
   private shouldShowProgressBadge = false;
   private viewContext: { [key: string]: unknown };
+  analytics: Segment;
+  userId: string;
+  apiClient: ApiClient;
 
   remoteBundle: IFileBundle;
   changedFiles: Set<string> = new Set();
@@ -83,6 +88,17 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   async setToken(token: string): Promise<void> {
     this.staticToken = '';
     await vscode.workspace.getConfiguration('snyk').update('token', token, true);
+  }
+
+  createApiClient(): void {
+    const baseURL: string = vscode.workspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost + '/api';
+    this.apiClient =  new ApiClient(baseURL, this.token);
+  };
+
+  createAnalytics(): void {
+    if (!this.analytics) {
+      this.analytics = new Segment();
+    }
   }
 
   get source(): string {

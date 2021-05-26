@@ -29,6 +29,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
           const token = await this.checkSession(this.pendingToken);
           if (token) {
             await this.setToken(token);
+            this.createApiClient();
             return;
           }
         } finally {
@@ -42,6 +43,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
         await this.setToken(token);
+        this.createApiClient();
       } else {
         this.pendingToken = draftToken;
       }
@@ -94,7 +96,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   async checkApproval(): Promise<boolean> {
     const approved = this.uploadApproved;
     await this.setContext(SNYK_CONTEXT.APPROVED, approved);
-    if (!approved) await this.setLoadingBadge(true);
+    if (!approved) {
+      this.createAnalytics();
+      //TODO: consent event here
+
+      await this.setLoadingBadge(true)
+    }
     return approved;
   }
 
