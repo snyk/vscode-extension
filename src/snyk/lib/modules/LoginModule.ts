@@ -38,6 +38,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
           const token = await this.checkSession(this.pendingToken);
           if (token) {
             await configuration.setToken(token);
+            this.createApiClient();
             return;
           }
         } finally {
@@ -51,6 +52,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
         await configuration.setToken(token);
+        this.createApiClient();
       } else {
         this.pendingToken = draftToken;
       }
@@ -105,7 +107,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
     await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); //todo: removed once 'uploadApproved' is deprecated
-    if (!enabled) await this.loadingBadge.setLoadingBadge(true, this);
+    if (!enabled) {
+      //TODO: consent event here
+      this.createAnalytics();
+
+      await this.loadingBadge.setLoadingBadge(true, this);
+    }
 
     return enabled;
   }

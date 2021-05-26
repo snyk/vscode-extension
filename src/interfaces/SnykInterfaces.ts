@@ -1,6 +1,8 @@
 import { ExtensionContext, DiagnosticCollection, StatusBarItem, TextDocument, TextEditor } from 'vscode';
 import * as vscode from 'vscode';
 import { IFilePath, IFileBundle, ISuggestions, IAnalysisResult, ISuggestion, IFileSuggestion } from '@snyk/code-client';
+import { ApiClient } from "../snyk/api/api-client";
+import { Segment } from "../snyk/analytics/segment";
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;
@@ -21,6 +23,11 @@ export interface BaseSnykModuleInterface {
   setContext(key: string, value: unknown): Promise<void>;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;
+  analytics: Segment;
+  createAnalytics(): void;
+  userId: string;
+  apiClient: ApiClient;
+  createApiClient(): void;
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;

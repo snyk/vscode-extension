@@ -60,6 +60,12 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
     try {
       const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
 
+      this.analytics.logEvent('Analysis Is Triggered', {
+        analysisType: 'Code Security',
+        ide: 'Visual Studio Code',
+        userId: this.userId,
+      });
+
       if (paths.length) {
         await this.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
         this.runningAnalysis = true;
@@ -79,6 +85,13 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
 
           this.analyzer.analysisResults = result.analysisResults;
           this.analyzer.createReviewResults();
+
+          this.analytics.logEvent('Analysis Is Ready', {
+            ide: 'Visual Studio Code',
+            product: 'Snyk Code',
+            type: 'Security vulnerabilities',
+            userId: this.userId,
+          });
 
           this.refreshViews();
           this.suggestionProvider.checkCurrentSuggestion();

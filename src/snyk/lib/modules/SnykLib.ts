@@ -1,14 +1,12 @@
 import * as _ from "lodash";
 import { SnykLibInterface } from "../../../interfaces/SnykInterfaces";
-import BundlesModule from "./BundlesModule";
+import { configuration } from "../../configuration";
+import {
+  EXECUTION_DEBOUNCE_INTERVAL, EXECUTION_PAUSE_INTERVAL, EXECUTION_THROTTLING_INTERVAL
+} from "../../constants/general";
 import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../constants/views';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import {
-  EXECUTION_DEBOUNCE_INTERVAL,
-  EXECUTION_THROTTLING_INTERVAL,
-  EXECUTION_PAUSE_INTERVAL,
-} from "../../constants/general";
-import { configuration } from "../../configuration";
+import BundlesModule from "./BundlesModule";
 
 export default class SnykLib extends BundlesModule implements SnykLibInterface {
   private _mode = SNYK_MODE_CODES.AUTO;
@@ -46,6 +44,16 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     await this.loadingBadge.setLoadingBadge(false, this);
 
     if (!configuration.token) {
+      try {
+        this.createAnalytics();
+        this.analytics.identify();
+        this.analytics.logEvent('Welcome Is Viewed', {
+          ide: 'Visual Studio Code'
+        });
+      } catch (e) {
+        console.log(e)
+      }
+
       await this.checkSession();
       return;
     }
@@ -57,6 +65,13 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
 
     try {
+      this.createAnalytics();
+      this.createApiClient();
+      const user = await this.apiClient.userMe()
+      if (user) {
+        this.analytics.alias(user.id)
+      }
+
       await this.startAnalysis();
     } catch (err) {
       await this.processError(err, {
