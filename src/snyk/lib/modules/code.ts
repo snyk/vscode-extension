@@ -21,9 +21,16 @@ export class SnykCode {
   }
 
   public async enable(): Promise<boolean> {
+    const settings = await getSastSettings();
+    if (settings.sastEnabled) {
+      await configuration.setCodeEnabled(true);
+      return true;
+    }
+
     viewInBrowser(configuration.snykCodeUrl);
 
-    for (let i = 1; i < 10; i += 1) {
+    // Poll for changed settings
+    for (let i = 2; i < 12; i += 1) {
       await this.sleep(i*1000);
 
       const settings = await getSastSettings();
