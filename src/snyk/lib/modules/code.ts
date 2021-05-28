@@ -27,7 +27,9 @@ export class SnykCode {
       return true;
     }
 
-    viewInBrowser(configuration.snykCodeUrl);
+    if (configuration.snykCodeUrl != null) {
+      viewInBrowser(configuration.snykCodeUrl);
+    }
 
     // Poll for changed settings
     for (let i = 2; i < 12; i += 1) {

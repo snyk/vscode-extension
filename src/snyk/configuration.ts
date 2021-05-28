@@ -1,3 +1,4 @@
+import { URL } from "url";
 import * as vscode from "vscode";
 import { IDE_NAME } from "./constants/general";
 
@@ -39,8 +40,11 @@ export class Configuration implements IConfiguration {
     return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`; // todo: unused?
   }
 
-  get snykCodeUrl(): string {
-    return `${this.authHost}/manage/snyk-code`;
+  get snykCodeUrl(): string | null {
+    const authUrl = new URL(this.authHost);
+    authUrl.host = `app.${authUrl.host}`;
+
+    return `${authUrl.toString()}manage/snyk-code`;
   }
 
   get token(): string {
