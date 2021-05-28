@@ -15,7 +15,9 @@ export class SnykCode {
     }
 
     const settings = await getSastSettings();
-    configuration.setCodeEnabled(settings.sastEnabled);
+    if (configuration.codeEnabled != settings.sastEnabled) {
+      configuration.setCodeEnabled(settings.sastEnabled);
+    }
 
     return settings.sastEnabled;
   }

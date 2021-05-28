@@ -145,7 +145,7 @@
       },
       {
         "view": "snyk.views.analysis",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.login 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk and analyse](command:snyk.login 'Connect with Snyk and analyse')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!",
         "when": "!snyk:error && !snyk:loggedIn"
       },
       {

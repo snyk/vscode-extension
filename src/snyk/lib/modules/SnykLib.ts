@@ -1,13 +1,15 @@
-import * as _ from "lodash";
-import { SnykLibInterface } from "../../../interfaces/SnykInterfaces";
-import { userMe } from "../../api/user.service";
-import { configuration } from "../../configuration";
+import * as _ from 'lodash';
+import { SnykLibInterface } from '../../../interfaces/SnykInterfaces';
+import { userMe } from '../../api/user.service';
+import { configuration } from '../../configuration';
 import {
-  EXECUTION_DEBOUNCE_INTERVAL, EXECUTION_PAUSE_INTERVAL, EXECUTION_THROTTLING_INTERVAL
-} from "../../constants/general";
+  EXECUTION_DEBOUNCE_INTERVAL,
+  EXECUTION_PAUSE_INTERVAL,
+  EXECUTION_THROTTLING_INTERVAL,
+} from '../../constants/general';
 import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../constants/views';
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import BundlesModule from "./BundlesModule";
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import BundlesModule from './BundlesModule';
 
 export default class SnykLib extends BundlesModule implements SnykLibInterface {
   private _mode = SNYK_MODE_CODES.AUTO;
@@ -36,8 +38,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     console.log('STARTING EXTENSION');
     // If the execution is suspended, we only allow user-triggered analyses.
     if (!manual) {
-      if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled())
-        return;
+      if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) return;
     }
 
     await this.setContext(SNYK_CONTEXT.ERROR, false);
@@ -49,27 +50,28 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
         this.createAnalytics();
         this.analytics.identify();
         this.analytics.logEvent('Welcome Is Viewed', {
-          ide: 'Visual Studio Code'
+          ide: 'Visual Studio Code',
         });
       } catch (e) {
-        console.log(e)
+        console.log(e);
       }
 
       await this.checkSession();
       return;
     }
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
     const codeEnabled = await this.checkCodeEnabled();
+    await this.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+
     if (!codeEnabled) {
       return;
     }
 
     try {
       this.createAnalytics();
-      const user = await userMe()
+      const user = await userMe();
       if (user) {
-        this.analytics.alias(user.id)
+        this.analytics.alias(user.id);
       }
 
       await this.startAnalysis();
