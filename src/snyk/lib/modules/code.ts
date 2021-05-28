@@ -21,21 +21,21 @@ export class SnykCode {
   }
 
   public async enable(): Promise<boolean> {
-    const settings = await getSastSettings();
+    let settings = await getSastSettings();
     if (settings.sastEnabled) {
       await configuration.setCodeEnabled(true);
       return true;
     }
 
     if (configuration.snykCodeUrl != null) {
-      viewInBrowser(configuration.snykCodeUrl);
+      await viewInBrowser(configuration.snykCodeUrl);
     }
 
     // Poll for changed settings
     for (let i = 2; i < 12; i += 1) {
-      await this.sleep(i*1000);
+      await this.sleep(i * 1000);
 
-      const settings = await getSastSettings();
+      settings = await getSastSettings();
       if (settings.sastEnabled) {
         await configuration.setCodeEnabled(true);
         return true;
@@ -48,4 +48,3 @@ export class SnykCode {
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 }
-

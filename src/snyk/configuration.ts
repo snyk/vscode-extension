@@ -1,6 +1,6 @@
-import { URL } from "url";
-import * as vscode from "vscode";
-import { IDE_NAME } from "./constants/general";
+import { URL } from 'url';
+import * as vscode from 'vscode';
+import { IDE_NAME } from './constants/general';
 
 export interface IConfiguration {
   source: string;
@@ -19,7 +19,6 @@ export interface IConfiguration {
 }
 
 export class Configuration implements IConfiguration {
-
   // These attributes are used in tests
   staticToken = '';
   defaultBaseURL = 'https://deeproxy.snyk.io';
