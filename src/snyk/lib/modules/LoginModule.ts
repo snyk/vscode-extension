@@ -119,7 +119,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const wasEnabled = await this.snykCode.enable();
     if (wasEnabled) {
       await this.loadingBadge.setLoadingBadge(false, this);
-      await this.checkCodeEnabled(); // switches the context, but triggers additional api call -> todo: is it needed?
+      await this.checkCodeEnabled();
     }
   }
 

@@ -73,7 +73,7 @@ export class Configuration implements IConfiguration {
     return (
       this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      vscode.workspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled') // TODO: check if matches the backend's setting result
+      vscode.workspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled')
     );
   }
 

@@ -22,7 +22,7 @@ class ApiClient {
     http.interceptors.response.use(
       response => response,
       error => {
-        // todo: error handling logic goes here
+        console.error('Call to Snyk API failed: ', error)
         return Promise.reject(error);
       },
     );
