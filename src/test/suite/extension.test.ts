@@ -8,6 +8,7 @@ import * as nodePath from 'path';
 //
 import * as extension from "../../extension";
 import { ExtensionInterface } from "../../interfaces/SnykInterfaces";
+import { configuration } from "../../snyk/configuration";
 
 const testToken = '23';
 const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
@@ -20,8 +21,8 @@ const preTestConfigureExtension = () => {
   const testExtension = extension.getExtension();
 
   // set test token and backend host
-  testExtension.staticUploadApproved = true;
-  testExtension.staticToken = testToken;
+  configuration.staticCodeEnabled = true;
+  configuration.staticToken = testToken;
 
   // // set workspace path for tests
   // testExtension.workspacesPaths = [mockedFolderPath];
@@ -37,8 +38,8 @@ suite("Snyk Extension Tests", () => {
   let testExtension: ExtensionInterface;
   test('Pre-test configuring', () => {
     testExtension = preTestConfigureExtension();
-    assert.equal(testExtension.token, testToken);
-    assert.equal(testExtension.baseURL, 'https://www.deepcoded.com');
+    assert.equal(configuration.token, testToken);
+    assert.equal(configuration.baseURL, 'https://www.deepcoded.com');
     // assert.equal(
     //   testExtension.workspacesPaths[0],
     //   path.join(mockedTestFilesDirPath, "../mocked_data")

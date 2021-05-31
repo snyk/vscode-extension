@@ -1,18 +1,27 @@
+import { checkSession, startSession } from '@snyk/code-client';
 import * as vscode from 'vscode';
-import { startSession, checkSession } from '@snyk/code-client';
-import ReportModule from './ReportModule';
 import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
-import { viewInBrowser, openSnykViewContainer } from '../../utils/vscodeCommandsUtils';
+import { configuration } from '../../configuration';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { snykMessages } from '../../messages/snykMessages';
-import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { openSnykViewContainer, viewInBrowser } from '../../utils/vscodeCommandsUtils';
+import { ISnykCode, SnykCode } from './code';
+import ReportModule from './ReportModule';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin = false;
   private pendingToken = '';
+
+  private snykCode: ISnykCode;
+
+  constructor() {
+    super();
+    this.snykCode = new SnykCode(configuration);
+  }
 
   async initiateLogin(): Promise<void> {
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
@@ -28,8 +37,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         try {
           const token = await this.checkSession(this.pendingToken);
           if (token) {
-            await this.setToken(token);
-            this.createApiClient();
+            await configuration.setToken(token);
             return;
           }
         } finally {
@@ -37,13 +45,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         }
       }
 
-      const { draftToken, loginURL } = startSession({ authHost: this.authHost, source: this.source });
+      const { draftToken, loginURL } = startSession({ authHost: configuration.authHost, source: configuration.source });
 
       await viewInBrowser(loginURL);
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
-        await this.setToken(token);
-        this.createApiClient();
+        await configuration.setToken(token);
       } else {
         this.pendingToken = draftToken;
       }
@@ -61,7 +68,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     if (draftToken) {
       try {
         const sessionResponse = await checkSession({
-          authHost: this.authHost,
+          authHost: configuration.authHost,
           draftToken,
         });
         if (sessionResponse.type === 'error') {
@@ -76,7 +83,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       }
     }
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
-    if (!token) await this.setLoadingBadge(true);
+    if (!token) await this.loadingBadge.setLoadingBadge(true, this);
     return token;
   }
 
@@ -93,26 +100,31 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     return '';
   }
 
-  async checkApproval(): Promise<boolean> {
-    const approved = this.uploadApproved;
-    await this.setContext(SNYK_CONTEXT.APPROVED, approved);
-    if (!approved) {
-      this.createAnalytics();
-      //TODO: consent event here
+  async checkCodeEnabled(): Promise<boolean> {
+    const enabled = await this.snykCode.isEnabled();
 
-      await this.setLoadingBadge(true)
+    await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); //todo: removed once 'uploadApproved' is deprecated
+    if (!enabled) {
+      //TODO: consent event here
+      this.createAnalytics();
+
+      await this.loadingBadge.setLoadingBadge(true, this);
     }
-    return approved;
+
+    return enabled;
   }
 
-  async approveUpload(): Promise<void> {
-    await this.setUploadApproved(true);
-    await this.setLoadingBadge(false);
-    await this.checkApproval();
+  async enableCode(): Promise<void> {
+    const wasEnabled = await this.snykCode.enable();
+    if (wasEnabled) {
+      await this.loadingBadge.setLoadingBadge(false, this);
+      await this.checkCodeEnabled();
+    }
   }
 
   async checkWelcomeNotification(): Promise<void> {
-    if (this.shouldShowWelcomeNotification) {
+    if (configuration.shouldShowWelcomeNotification) {
       this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
       const pressedButton = await vscode.window.showInformationMessage(
         snykMessages.welcome.msg,
@@ -121,12 +133,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       if (pressedButton === snykMessages.welcome.button) {
         await openSnykViewContainer();
       }
-      await this.hideWelcomeNotification();
+      await configuration.hideWelcomeNotification();
     }
   }
 
   async checkAdvancedMode(): Promise<void> {
-    await this.setContext(SNYK_CONTEXT.ADVANCED, this.shouldShowAdvancedView);
+    await this.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
 }
 

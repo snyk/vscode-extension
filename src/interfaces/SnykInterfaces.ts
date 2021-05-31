@@ -1,7 +1,6 @@
-import { ExtensionContext, DiagnosticCollection, StatusBarItem, TextDocument, TextEditor } from 'vscode';
+import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
-import { IFilePath, IFileBundle, ISuggestions, IAnalysisResult, ISuggestion, IFileSuggestion } from '@snyk/code-client';
-import { ApiClient } from "../snyk/api/api-client";
+import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
 import { Segment } from "../snyk/analytics/segment";
 
 export interface StatusBarItemInterface {
@@ -14,33 +13,18 @@ export interface BaseSnykModuleInterface {
   refreshViews(content: any): void;
   analysisStatus: string;
   analysisProgress: string;
-  source: string;
-  staticToken: string;
-  defaultBaseURL: string;
-  baseURL: string;
-  authHost: string;
-  termsConditionsUrl: string;
-  token: string;
-  setToken(token: string): Promise<void>;
-  uploadApproved: boolean;
-  shouldReportErrors: boolean;
-  shouldReportEvents: boolean;
-  setUploadApproved(value: boolean): Promise<void>;
   remoteBundle: IFileBundle;
   changedFiles: Set<string>;
   analyzer: AnalyzerInterface;
   statusBarItem: StatusBarItemInterface;
   filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: SnykWatcherInterface;
-  setLoadingBadge(value: boolean): Promise<void>;
   setContext(key: string, value: unknown): Promise<void>;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;
   analytics: Segment;
   createAnalytics(): void;
   userId: string;
-  apiClient: ApiClient;
-  createApiClient(): void;
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
@@ -56,8 +40,8 @@ export interface ReportModuleInterface {
 export interface LoginModuleInterface {
   initiateLogin(): Promise<void>;
   checkSession(): Promise<string>;
-  approveUpload(): Promise<void>;
-  checkApproval(): Promise<boolean>;
+  enableCode(): Promise<void>;
+  checkCodeEnabled(): Promise<boolean>;
   checkWelcomeNotification(): Promise<void>;
   checkAdvancedMode(): Promise<void>;
 }

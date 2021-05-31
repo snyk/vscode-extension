@@ -1,29 +1,26 @@
-import * as vscode from 'vscode';
+import { emitter, ISupportedFiles } from '@snyk/code-client';
 import * as _ from 'lodash';
 import open from 'open';
-
-import { emitter, ISupportedFiles } from '@snyk/code-client';
+import * as vscode from 'vscode';
 import { ExtensionInterface } from '../interfaces/SnykInterfaces';
-import SnykLib from './lib/modules/SnykLib';
-import createFileWatcher from './lib/watchers/FilesWatcher';
-import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import {
-  SNYK_APPROVE_COMMAND,
-  SNYK_DCIGNORE_COMMAND,
-  SNYK_LOGIN_COMMAND,
-  SNYK_OPEN_BROWSER_COMMAND,
+  SNYK_DCIGNORE_COMMAND, SNYK_ENABLE_CODE_COMMAND, SNYK_LOGIN_COMMAND, SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
-  SNYK_START_COMMAND,
+  SNYK_START_COMMAND
 } from './constants/commands';
+import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import { SNYK_ANALYSIS_STATUS, SNYK_VIEW_ANALYSIS, SNYK_VIEW_SUPPORT } from './constants/views';
-import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCommandsUtils';
+import SnykLib from './lib/modules/SnykLib';
+import createFileWatcher from './lib/watchers/FilesWatcher';
 import { errorsLogs } from './messages/errorsServerLogMessages';
-import { SupportProvider } from './view/SupportProvider';
-import { IssueProvider } from './view/IssueProvider';
 import { severityAsText } from "./utils/analysisUtils";
+import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCommandsUtils';
+import { IssueProvider } from './view/IssueProvider';
+import { SupportProvider } from './view/SupportProvider';
+
 
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
@@ -89,8 +86,8 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
-        SNYK_APPROVE_COMMAND,
-        this.executeCommand.bind(this, SNYK_APPROVE_COMMAND, this.approveUpload.bind(this)),
+        SNYK_ENABLE_CODE_COMMAND,
+        this.executeCommand.bind(this, SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
       ),
     );
 

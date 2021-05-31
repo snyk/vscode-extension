@@ -1,28 +1,20 @@
-import * as vscode from 'vscode';
+import { IFileBundle } from '@snyk/code-client';
 import * as _ from "lodash";
+import * as vscode from 'vscode';
 import {
-  BaseSnykModuleInterface,
-  AnalyzerInterface,
-  StatusBarItemInterface,
-  SnykWatcherInterface,
-  SuggestionProviderInterface,
-  errorType,
+  AnalyzerInterface, BaseSnykModuleInterface, errorType, SnykWatcherInterface, StatusBarItemInterface, SuggestionProviderInterface
 } from "../../../interfaces/SnykInterfaces";
+import { Segment } from '../../analytics/segment';
+import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
+import { SNYK_CONTEXT } from "../../constants/views";
+import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { SuggestionProvider } from "../../view/SuggestionProvider";
 import SnykAnalyzer from "../analyzer/SnykAnalyzer";
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
 import SnykEditorsWatcher from "../watchers/EditorsWatcher";
 import SnykSettingsWatcher from "../watchers/SnykSettingsWatcher";
-import { SuggestionProvider } from "../../view/SuggestionProvider";
-import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
-import { IDE_NAME, REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { setContext } from "../../utils/vscodeCommandsUtils";
-import { SNYK_CONTEXT, SNYK_VIEW_ANALYSIS } from "../../constants/views";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { errorsLogs } from '../../messages/errorsServerLogMessages';
-
-import { IFileBundle } from '@snyk/code-client';
-import { ApiClient } from "../../api/api-client";
-import { Segment } from "../../analytics/segment";
 
 export default abstract class BaseSnykModule implements BaseSnykModuleInterface {
   analyzer: AnalyzerInterface;
@@ -36,22 +28,13 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   refreshViewEmitter: vscode.EventEmitter<any>;
   analysisStatus = '';
   analysisProgress = '';
-  private initializedView: PendingTaskInterface;
-  private progressBadge: PendingTaskInterface | undefined;
-  private shouldShowProgressBadge = false;
+  protected initializedView: PendingTaskInterface;
   private viewContext: { [key: string]: unknown };
   analytics: Segment;
   userId: string;
-  apiClient: ApiClient;
 
   remoteBundle: IFileBundle;
   changedFiles: Set<string> = new Set();
-
-  // These attributes are used in tests
-  staticToken = '';
-  defaultBaseURL = 'https://deeproxy.snyk.io';
-  defaultAuthHost = 'https://snyk.io';
-  staticUploadApproved = false;
 
   constructor() {
     this.analyzer = new SnykAnalyzer();
@@ -64,77 +47,6 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     this.analysisProgress = '';
     this.viewContext = {};
     this.initializedView = new PendingTask();
-  }
-
-  get baseURL(): string {
-    // @ts-ignore */}
-    return vscode.workspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;
-  }
-
-  get authHost(): string {
-    // @ts-ignore */}
-    return vscode.workspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost;
-  }
-
-  get termsConditionsUrl(): string {
-    return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`;
-  }
-
-  get token(): string {
-    // @ts-ignore */}
-    return this.staticToken || vscode.workspace.getConfiguration('snyk').get('token');
-  }
-
-  async setToken(token: string): Promise<void> {
-    this.staticToken = '';
-    await vscode.workspace.getConfiguration('snyk').update('token', token, true);
-  }
-
-  createApiClient(): void {
-    const baseURL: string = vscode.workspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost + '/api';
-    this.apiClient =  new ApiClient(baseURL, this.token);
-  };
-
-  createAnalytics(): void {
-    if (!this.analytics) {
-      this.analytics = new Segment();
-    }
-  }
-
-  get source(): string {
-    return process.env['GITPOD_WORKSPACE_ID'] ? 'gitpod' : IDE_NAME;
-  }
-
-  get uploadApproved(): boolean {
-    return (
-      this.staticUploadApproved ||
-      this.source !== IDE_NAME ||
-      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved')
-    );
-  }
-
-  async setUploadApproved(value = true): Promise<void> {
-    await vscode.workspace.getConfiguration('snyk').update('uploadApproved', value, true);
-  }
-
-  get shouldReportErrors(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesCrashReport');
-  }
-
-  get shouldReportEvents(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesTelemetry');
-  }
-
-  get shouldShowWelcomeNotification(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesWelcomeNotification');
-  }
-
-  async hideWelcomeNotification(): Promise<void> {
-    await vscode.workspace.getConfiguration('snyk').update('yesWelcomeNotification', false, true);
-  }
-
-  get shouldShowAdvancedView(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('advancedMode');
   }
 
   async setContext(key: string, value: unknown): Promise<void> {
@@ -161,7 +73,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
         }
         break;
       }
-      case SNYK_CONTEXT.APPROVED: {
+      case SNYK_CONTEXT.CODE_ENABLED: {
         if (oldValue !== undefined) {
           if (!value && oldValue) event = TELEMETRY_EVENTS.viewConsentView;
           if (value && !oldValue) event = TELEMETRY_EVENTS.viewSuggestionView;
@@ -193,42 +105,8 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   get shouldShowAnalysis(): boolean {
     return (
       !this.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.APPROVED].every(c => !!this.viewContext[c])
+      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c])
     );
-  }
-
-  private getProgressBadgePromise(): Promise<void> {
-    if (!this.shouldShowProgressBadge) return Promise.resolve();
-    if (!this.progressBadge || this.progressBadge.isCompleted) {
-      this.progressBadge = new PendingTask();
-    }
-    return this.progressBadge.waiter;
-  }
-
-  // Leave viewId undefined to remove the badge from all views
-  async setLoadingBadge(value: boolean): Promise<void> {
-    this.shouldShowProgressBadge = value;
-    if (value) {
-      // Using closure on this to allow partial binding in arbitrary positions
-      const self = this;
-      this.initializedView.waiter
-        .then(() =>
-          vscode.window.withProgress({ location: { viewId: SNYK_VIEW_ANALYSIS } }, () =>
-            self.getProgressBadgePromise(),
-          ),
-        )
-        .then(
-          () => {},
-          error =>
-            self.processError(error, {
-              message: errorsLogs.loadingBadge,
-            }),
-        );
-    } else {
-      if (this.progressBadge && !this.progressBadge.isCompleted) {
-        this.progressBadge.complete();
-      }
-    }
   }
 
   emitViewInitialized(): void {
@@ -242,6 +120,12 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     REFRESH_VIEW_DEBOUNCE_INTERVAL,
     { leading: true },
   );
+
+  createAnalytics(): void {
+    if (!this.analytics) {
+      this.analytics = new Segment();
+    }
+  }
 
   abstract processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
 

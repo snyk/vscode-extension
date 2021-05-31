@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { SnykWatcherInterface, ExtensionInterface } from "../../../interfaces/SnykInterfaces";
+import { ExtensionInterface, SnykWatcherInterface } from "../../../interfaces/SnykInterfaces";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 class SnykSettingsWatcher implements SnykWatcherInterface {
@@ -24,7 +24,7 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
         const change = [
-          'snyk.url', 'snyk.token', 'snyk.uploadApproved', 'snyk.advancedMode'
+          'snyk.url', 'snyk.token', 'snyk.codeEnabled', 'snyk.advancedMode'
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {

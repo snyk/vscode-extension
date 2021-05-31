@@ -1,13 +1,14 @@
-export const SNYK_VIEW_ANALYSIS = "snyk.views.analysis";
-export const SNYK_VIEW_SUPPORT = "snyk.views.support";
-export const SNYK_VIEW_ACTIONS = "snyk.views.actions";
-export const SNYK_VIEW_SUGGESTION = "snyk.views.suggestion";
+export const SNYK_VIEW_ANALYSIS = 'snyk.views.analysis';
+export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
+export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
+export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';
 
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
 export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
-  APPROVED: 'uploadApproved',
+  APPROVED: 'uploadApproved', // todo: removed once 'uploadApproved' is deprecated
+  CODE_ENABLED: 'codeEnabled',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
   MODE: 'mode',
@@ -15,8 +16,8 @@ export const SNYK_CONTEXT = {
 };
 
 export const SNYK_ERROR_CODES = {
-  TRANSIENT: "transient",
-  BLOCKING: "blocking",
+  TRANSIENT: 'transient',
+  BLOCKING: 'blocking',
 };
 
 export const SNYK_MODE_CODES = {

@@ -1,23 +1,33 @@
-import * as _ from "lodash";
-import { COMMAND_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { ReportModuleInterface, errorType } from "../../../interfaces/SnykInterfaces";
+import { constants, reportError, reportEvent } from '@snyk/code-client';
+import * as _ from 'lodash';
+import { errorType, ReportModuleInterface } from '../../../interfaces/SnykInterfaces';
+import { configuration } from '../../configuration';
+import {
+  COMMAND_DEBOUNCE_INTERVAL,
+  CONNECTION_ERROR_RETRY_INTERVAL,
+  MAX_CONNECTION_RETRIES,
+} from '../../constants/general';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../../constants/views';
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import { ILoadingBadge, LoadingBadge } from '../../view/loadingBadge';
 import BaseSnykModule from './BaseSnykModule';
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { SNYK_CONTEXT, SNYK_ERROR_CODES } from "../../constants/views";
-import { MAX_CONNECTION_RETRIES, CONNECTION_ERROR_RETRY_INTERVAL } from "../../constants/general";
-
-import { reportEvent, reportError, constants } from '@snyk/code-client';
 
 abstract class ReportModule extends BaseSnykModule implements ReportModuleInterface {
   private transientErrors = 0;
+  protected loadingBadge: ILoadingBadge;
+
+  constructor() {
+    super();
+    this.loadingBadge = new LoadingBadge(this.initializedView);
+  }
 
   private get shouldReport(): boolean {
     // DEV: uncomment the following line to test this module in development
     // return true;
 
     // disabling request sending in dev mode or to self-managed instances.
-    return this.baseURL === this.defaultBaseURL || true;
+    return configuration.baseURL === configuration.defaultBaseURL || true;
   }
 
   resetTransientErrors(): void {
@@ -26,13 +36,13 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   private sendEvent = _.debounce(
     async (event: string, options: { [key: string]: any }): Promise<void> => {
-      if (!this.shouldReport || !this.shouldReportEvents) return;
+      if (!this.shouldReport || !configuration.shouldReportEvents) return;
       try {
         await reportEvent({
-          baseURL: this.baseURL,
+          baseURL: configuration.baseURL,
           type: event,
-          source: this.source,
-          ...(this.token && { sessionToken: this.token }),
+          source: configuration.source,
+          ...(configuration.token && { sessionToken: configuration.token }),
           ...options,
         });
       } catch (error) {
@@ -40,8 +50,8 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
           message: errorsLogs.sendEvent,
           data: {
             event,
-            source: this.source,
-            ...(this.token && { sessionToken: this.token }),
+            source: configuration.source,
+            ...(configuration.token && { sessionToken: configuration.token }),
             ...options,
           },
         });
@@ -53,9 +63,9 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   async processEvent(event: string, options: { [key: string]: any } = {}): Promise<void> {
     // processEvent must be safely callable without waiting its completition.
-    try{
+    try {
       await this.sendEvent(event, options);
-    } catch(err) {
+    } catch (err) {
       console.error('Snyk event handler failed with error:', err);
     }
   }
@@ -70,11 +80,11 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   private sendError = _.debounce(
     async (options: { [key: string]: any }): Promise<void> => {
-      if (!this.shouldReport || !this.shouldReportErrors) return;
+      if (!this.shouldReport || !configuration.shouldReportErrors) return;
       const resp = await reportError({
-        baseURL: this.baseURL,
-        source: this.source,
-        ...(this.token && { sessionToken: this.token }),
+        baseURL: configuration.baseURL,
+        source: configuration.source,
+        ...(configuration.token && { sessionToken: configuration.token }),
         ...options,
       });
 
@@ -139,15 +149,15 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
   }
 
   private async authenticationErrorHandler(): Promise<void> {
-    await this.setToken('');
+    await configuration.setToken('');
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    await this.setLoadingBadge(true);
+    await this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
     await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
-    await this.setLoadingBadge(true);
+    await this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async connectionErrorHandler(): Promise<void> {
