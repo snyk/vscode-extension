@@ -44,7 +44,7 @@ export class Configuration implements IConfiguration {
     const authUrl = new URL(this.authHost);
     authUrl.host = `app.${authUrl.host}`;
 
-    return `${authUrl.toString()}manage/snyk-code`;
+    return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
   get token(): string {
