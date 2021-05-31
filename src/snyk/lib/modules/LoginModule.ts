@@ -20,7 +20,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
   constructor() {
     super();
-    this.snykCode = new SnykCode();
+    this.snykCode = new SnykCode(configuration);
   }
 
   async initiateLogin(): Promise<void> {

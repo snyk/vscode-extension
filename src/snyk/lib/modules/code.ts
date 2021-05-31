@@ -1,5 +1,5 @@
 import { getSastSettings } from '../../api/cliConfig.service';
-import { configuration } from '../../configuration';
+import { IConfiguration } from '../../configuration';
 import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
 
 export interface ISnykCode {
@@ -8,15 +8,21 @@ export interface ISnykCode {
 }
 
 export class SnykCode {
+  /**
+   *
+   */
+  constructor(private config: IConfiguration) {
+  }
+
   public async isEnabled(): Promise<boolean> {
     // Code was disabled explicitly
-    if (configuration.codeEnabled == false) {
+    if (this.config.codeEnabled == false) {
       return false;
     }
 
     const settings = await getSastSettings();
-    if (configuration.codeEnabled != settings.sastEnabled) {
-      configuration.setCodeEnabled(settings.sastEnabled);
+    if (this.config.codeEnabled != settings.sastEnabled) {
+      this.config.setCodeEnabled(settings.sastEnabled);
     }
 
     return settings.sastEnabled;
@@ -25,12 +31,12 @@ export class SnykCode {
   public async enable(): Promise<boolean> {
     let settings = await getSastSettings();
     if (settings.sastEnabled) {
-      await configuration.setCodeEnabled(true);
+      await this.config.setCodeEnabled(true);
       return true;
     }
 
-    if (configuration.snykCodeUrl != null) {
-      await viewInBrowser(configuration.snykCodeUrl);
+    if (this.config.snykCodeUrl != null) {
+      await viewInBrowser(this.config.snykCodeUrl);
     }
 
     // Poll for changed settings
@@ -39,12 +45,12 @@ export class SnykCode {
 
       settings = await getSastSettings();
       if (settings.sastEnabled) {
-        await configuration.setCodeEnabled(true);
+        await this.config.setCodeEnabled(true);
         return true;
       }
     }
 
-    await configuration.setCodeEnabled(false);
+    await this.config.setCodeEnabled(false);
     return false;
   }
 

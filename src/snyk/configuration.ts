@@ -9,6 +9,7 @@ export interface IConfiguration {
   baseURL: string;
   authHost: string;
   termsConditionsUrl: string;
+  snykCodeUrl: string;
   token: string;
   setToken(token: string): Promise<void>;
   uploadApproved: boolean;
@@ -39,7 +40,7 @@ export class Configuration implements IConfiguration {
     return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`; // todo: unused?
   }
 
-  get snykCodeUrl(): string | null {
+  get snykCodeUrl(): string {
     const authUrl = new URL(this.authHost);
     authUrl.host = `app.${authUrl.host}`;
 
