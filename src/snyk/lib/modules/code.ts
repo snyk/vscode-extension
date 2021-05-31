@@ -11,8 +11,7 @@ export class SnykCode {
   /**
    *
    */
-  constructor(private config: IConfiguration) {
-  }
+  constructor(private config: IConfiguration) {}
 
   public async isEnabled(): Promise<boolean> {
     // Code was disabled explicitly
@@ -39,7 +38,7 @@ export class SnykCode {
       await viewInBrowser(this.config.snykCodeUrl);
     }
 
-    // Poll for changed settings
+    // Poll for changed settings (65 sec)
     for (let i = 2; i < 12; i += 1) {
       await this.sleep(i * 1000);
 

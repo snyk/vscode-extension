@@ -1,12 +1,16 @@
 import { constants, reportError, reportEvent } from '@snyk/code-client';
-import * as _ from "lodash";
-import { errorType, ReportModuleInterface } from "../../../interfaces/SnykInterfaces";
-import { configuration } from "../../configuration";
-import { COMMAND_DEBOUNCE_INTERVAL, CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from "../../constants/general";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { SNYK_CONTEXT, SNYK_ERROR_CODES } from "../../constants/views";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
-import { LoadingBadge, ILoadingBadge } from "../../view/loadingBadge";
+import * as _ from 'lodash';
+import { errorType, ReportModuleInterface } from '../../../interfaces/SnykInterfaces';
+import { configuration } from '../../configuration';
+import {
+  COMMAND_DEBOUNCE_INTERVAL,
+  CONNECTION_ERROR_RETRY_INTERVAL,
+  MAX_CONNECTION_RETRIES,
+} from '../../constants/general';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../../constants/views';
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import { ILoadingBadge, LoadingBadge } from '../../view/loadingBadge';
 import BaseSnykModule from './BaseSnykModule';
 
 abstract class ReportModule extends BaseSnykModule implements ReportModuleInterface {
@@ -59,9 +63,9 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   async processEvent(event: string, options: { [key: string]: any } = {}): Promise<void> {
     // processEvent must be safely callable without waiting its completition.
-    try{
+    try {
       await this.sendEvent(event, options);
-    } catch(err) {
+    } catch (err) {
       console.error('Snyk event handler failed with error:', err);
     }
   }
