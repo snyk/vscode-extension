@@ -267,7 +267,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@snyk/code-client": "^3.4.0",
+    "@snyk/code-client": "^3.7.0",
     "analytics-node": "^4.0.1",
     "axios": "^0.21.1",
     "lodash": "^4.17.21",
