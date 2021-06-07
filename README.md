@@ -1,7 +1,7 @@
 # Snyk for Visual Studio Code
 
 **The Visual Studio Code extension provided by <a href="https://snyk.io/">Snyk.io</a> finds bugs and critical
-vulnerabilities in your code. We support JavaScript and TypeScript, Java.**
+vulnerabilities in your code. We support JavaScript, TypeScript, Java and Python. Currently works with Snyk Code, Snyk Open Source is scheduled for Q3.**
 
 
 # Table of Contents
