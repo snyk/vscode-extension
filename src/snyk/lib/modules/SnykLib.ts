@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import { SnykLibInterface } from '../../../interfaces/SnykInterfaces';
-import { userMe } from '../../api/user.service';
 import { configuration } from '../../configuration';
 import {
   EXECUTION_DEBOUNCE_INTERVAL,
@@ -9,6 +8,7 @@ import {
 } from '../../constants/general';
 import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
+import { userMe } from '../../services/userService';
 import BundlesModule from './BundlesModule';
 
 export default class SnykLib extends BundlesModule implements SnykLibInterface {

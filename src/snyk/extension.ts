@@ -16,6 +16,7 @@ import {
 } from './constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import { SNYK_ANALYSIS_STATUS, SNYK_VIEW_ANALYSIS, SNYK_VIEW_SUPPORT } from './constants/views';
+import { NotificationService } from './services/notificationService';
 import SnykLib from './lib/modules/SnykLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
 import { errorsLogs } from './messages/errorsServerLogMessages';
@@ -165,11 +166,8 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     this.analyzer.activate(this);
     this.suggestionProvider.activate(this);
 
-    this.checkWelcomeNotification().catch(err =>
-      this.processError(err, {
-        message: errorsLogs.welcomeNotification,
-      }),
-    );
+    NotificationService.init(this.processEvent, this.processError);
+
     this.checkAdvancedMode().catch(err =>
       this.processError(err, {
         message: errorsLogs.checkAdvancedMode,

@@ -1,4 +1,4 @@
-import { getSastSettings } from '../../api/cliConfig.service';
+import { getSastSettings } from '../../services/cliConfigService';
 import { IConfiguration } from '../../configuration';
 import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
 

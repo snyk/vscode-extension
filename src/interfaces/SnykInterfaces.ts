@@ -42,7 +42,6 @@ export interface LoginModuleInterface {
   checkSession(): Promise<string>;
   enableCode(): Promise<void>;
   checkCodeEnabled(): Promise<boolean>;
-  checkWelcomeNotification(): Promise<void>;
   checkAdvancedMode(): Promise<void>;
 }
 

@@ -1,4 +1,4 @@
-import { api } from './api.client';
+import { api } from '../api/api.client';
 
 export type User = {
   id: string;
