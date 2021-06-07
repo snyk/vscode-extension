@@ -1,10 +1,10 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 import {
   AnalyzerInterface,
   ExtensionInterface,
   IssuesListOptionsInterface,
   openedTextEditorType,
-  completeFileSuggestionType
+  completeFileSuggestionType,
 } from '../../../interfaces/SnykInterfaces';
 import {
   updateFileReviewResultsPositions,
@@ -17,15 +17,15 @@ import {
   checkCompleteSuggestion,
   findSuggestionByMessage,
 } from '../../utils/analysisUtils';
-import { SNYK_NAME } from "../../constants/general";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { SNYK_NAME } from '../../constants/general';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { ISSUES_MARKERS_DECORATION_TYPE } from '../../constants/analysis';
+import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 import { IFileSuggestion, IFilePath, ISuggestion, IAnalysisResult } from '@snyk/code-client';
 
-import { DisposableCodeActionsProvider } from "../snykProviders/codeActionsProvider/SnykIssuesActionsProvider";
-import { DisposableHoverProvider } from "../snykProviders/hoverProvider/SnykHoverProvider";
+import { DisposableCodeActionsProvider } from '../snykProviders/codeActionsProvider/SnykIssuesActionsProvider';
+import { DisposableHoverProvider } from '../snykProviders/hoverProvider/SnykHoverProvider';
 
 class SnykAnalyzer implements AnalyzerInterface {
   private SEVERITIES: {
@@ -55,7 +55,11 @@ class SnykAnalyzer implements AnalyzerInterface {
     this.extension = extension;
   }
 
-  public getFullSuggestion(suggestionId: string, uri: vscode.Uri, position: vscode.Range): completeFileSuggestionType | undefined {
+  public getFullSuggestion(
+    suggestionId: string,
+    uri: vscode.Uri,
+    position: vscode.Range,
+  ): completeFileSuggestionType | undefined {
     return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position);
   }
 
@@ -94,10 +98,7 @@ class SnykAnalyzer implements AnalyzerInterface {
       source: SNYK_NAME,
       //issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
-        relatedInformation: createIssueRelatedInformation(issuePositions.markers,
-          fileUri,
-          message,
-        ),
+        relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message),
       }),
     };
   }
@@ -132,7 +133,6 @@ class SnykAnalyzer implements AnalyzerInterface {
   public setIssuesMarkersDecoration(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor): void {
     if (editor && this.snykReview && this.snykReview.has(editor.document.uri)) {
       // Deprecated. Markers decoration is super noisy and intersects very often with main issue position
-
       // this.clearPrevIssuesMarkersDecoration();
       // this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(ISSUES_MARKERS_DECORATION_TYPE);
       // const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(

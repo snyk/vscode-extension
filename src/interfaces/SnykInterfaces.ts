@@ -1,7 +1,7 @@
 import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
-import { Segment } from "../snyk/analytics/segment";
+import { Segment } from '../snyk/analytics/segment';
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;

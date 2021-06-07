@@ -22,7 +22,7 @@ class ApiClient {
     http.interceptors.response.use(
       response => response,
       error => {
-        console.error('Call to Snyk API failed: ', error)
+        console.error('Call to Snyk API failed: ', error);
         return Promise.reject(error);
       },
     );
@@ -36,7 +36,7 @@ class ApiClient {
       req.baseURL = `${configuration.authHost}/api/v1/`;
       req.headers = {
         ...req.headers,
-        'Authorization': `token ${configuration.token}`
+        Authorization: `token ${configuration.token}`,
       };
 
       return req;

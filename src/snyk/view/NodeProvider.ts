@@ -1,11 +1,9 @@
-import { ExtensionInterface } from "../../interfaces/SnykInterfaces";
+import { ExtensionInterface } from '../../interfaces/SnykInterfaces';
 import { TreeDataProvider, ProviderResult } from 'vscode';
 import { Node } from './Node';
 
 export abstract class NodeProvider implements TreeDataProvider<Node> {
-  constructor(
-    protected extension: ExtensionInterface
-  ) {}
+  constructor(protected extension: ExtensionInterface) {}
 
   abstract getRootChildren(): Node[];
 

@@ -1,20 +1,25 @@
 import { IFileBundle } from '@snyk/code-client';
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import * as vscode from 'vscode';
 import {
-  AnalyzerInterface, BaseSnykModuleInterface, errorType, SnykWatcherInterface, StatusBarItemInterface, SuggestionProviderInterface
-} from "../../../interfaces/SnykInterfaces";
+  AnalyzerInterface,
+  BaseSnykModuleInterface,
+  errorType,
+  SnykWatcherInterface,
+  StatusBarItemInterface,
+  SuggestionProviderInterface,
+} from '../../../interfaces/SnykInterfaces';
 import { Segment } from '../../analytics/segment';
-import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from "../../constants/general";
-import { TELEMETRY_EVENTS } from "../../constants/telemetry";
-import { SNYK_CONTEXT } from "../../constants/views";
-import { PendingTask, PendingTaskInterface } from "../../utils/pendingTask";
-import { setContext } from "../../utils/vscodeCommandsUtils";
-import { SuggestionProvider } from "../../view/SuggestionProvider";
-import SnykAnalyzer from "../analyzer/SnykAnalyzer";
+import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../../constants/general';
+import { TELEMETRY_EVENTS } from '../../constants/telemetry';
+import { SNYK_CONTEXT } from '../../constants/views';
+import { PendingTask, PendingTaskInterface } from '../../utils/pendingTask';
+import { setContext } from '../../utils/vscodeCommandsUtils';
+import { SuggestionProvider } from '../../view/SuggestionProvider';
+import SnykAnalyzer from '../analyzer/SnykAnalyzer';
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
-import SnykEditorsWatcher from "../watchers/EditorsWatcher";
-import SnykSettingsWatcher from "../watchers/SnykSettingsWatcher";
+import SnykEditorsWatcher from '../watchers/EditorsWatcher';
+import SnykSettingsWatcher from '../watchers/SnykSettingsWatcher';
 
 export default abstract class BaseSnykModule implements BaseSnykModuleInterface {
   analyzer: AnalyzerInterface;
