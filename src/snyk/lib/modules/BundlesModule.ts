@@ -1,14 +1,14 @@
-import * as vscode from "vscode";
-import * as _ from "lodash";
+import * as vscode from 'vscode';
+import * as _ from 'lodash';
 
-import { BundlesModuleInterface } from "../../../interfaces/SnykInterfaces";
+import { BundlesModuleInterface } from '../../../interfaces/SnykInterfaces';
 
-import LoginModule from "../../lib/modules/LoginModule";
-import { SNYK_ANALYSIS_STATUS, SNYK_CONTEXT } from "../../constants/views";
+import LoginModule from '../../lib/modules/LoginModule';
+import { SNYK_ANALYSIS_STATUS, SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 import { analyzeFolders, extendAnalysis, constants } from '@snyk/code-client';
-import { configuration } from "../../configuration";
+import { configuration } from '../../configuration';
 
 abstract class BundlesModule extends LoginModule implements BundlesModuleInterface {
   runningAnalysis = false;
@@ -77,7 +77,12 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           this.changedFiles.clear();
           result = await extendAnalysis(this.remoteBundle, changedFiles, constants.MAX_PAYLOAD, configuration.source);
         } else {
-          result = await analyzeFolders({ baseURL: configuration.baseURL, sessionToken: configuration.token, paths, source: configuration.source });
+          result = await analyzeFolders({
+            baseURL: configuration.baseURL,
+            sessionToken: configuration.token,
+            paths,
+            source: configuration.source,
+          });
         }
 
         if (result) {

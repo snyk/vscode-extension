@@ -4,20 +4,17 @@ import {
   ExtensionInterface,
   SuggestionProviderInterface,
   completeFileSuggestionType,
-} from "../../interfaces/SnykInterfaces";
-import { createIssueCorrectRange, getVSCodeSeverity } from "../utils/analysisUtils";
-import { SNYK_VIEW_SUGGESTION } from "../constants/views";
-import {
-  SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_OPEN_BROWSER_COMMAND,
-  SNYK_OPEN_LOCAL_COMMAND,
-} from "../constants/commands";
-import { TELEMETRY_EVENTS } from "../constants/telemetry";
-import { errorsLogs } from "../messages/errorsServerLogMessages";
+} from '../../interfaces/SnykInterfaces';
+import { createIssueCorrectRange, getVSCodeSeverity } from '../utils/analysisUtils';
+import { SNYK_VIEW_SUGGESTION } from '../constants/views';
+import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
+import { TELEMETRY_EVENTS } from '../constants/telemetry';
+import { errorsLogs } from '../messages/errorsServerLogMessages';
 
 // This is outside of the class just for a stylistic choice, to have clear indentation structure.
 // NOTES: tags must be closed by matching pairs (<tag/> is not valid)
-function getWebviewContent(images: Record<string,string>) { return `
+function getWebviewContent(images: Record<string, string>) {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -511,7 +508,8 @@ function getWebviewContent(images: Record<string,string>) { return `
     </script>
 </body>
 </html>
-`;}
+`;
+}
 
 export class SuggestionProvider implements SuggestionProviderInterface {
   private extension: ExtensionInterface | undefined;
@@ -522,9 +520,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
 
   activate(extension: ExtensionInterface) {
     this.extension = extension;
-    vscode.window.registerWebviewPanelSerializer(
-      SNYK_VIEW_SUGGESTION, new SuggestionSerializer(this)
-    );
+    vscode.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION, new SuggestionSerializer(this));
   }
 
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range) {
@@ -561,7 +557,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
   }
 
   restorePanel(panel: vscode.WebviewPanel) {
-    if(this.panel) this.panel.dispose();
+    if (this.panel) this.panel.dispose();
     this.panel = panel;
   }
 
@@ -569,7 +565,8 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     try {
       if (
         !vscode.window.activeTextEditor?.viewColumn ||
-        !this.panel?.viewColumn || this.panel.viewColumn !== vscode.ViewColumn.Two
+        !this.panel?.viewColumn ||
+        this.panel.viewColumn !== vscode.ViewColumn.Two
       ) {
         // workaround for: https://github.com/microsoft/vscode/issues/71608
         // when resolved, we can set showPanel back to sync execution.
@@ -586,49 +583,43 @@ export class SuggestionProvider implements SuggestionProviderInterface {
             preserveFocus: true,
           },
           {
-            localResourceRoots: [
-              vscode.Uri.file(path.join(__filename, '..', '..', '..', '..', 'images'))
-            ],
-            enableScripts: true
-          }
+            localResourceRoots: [vscode.Uri.file(path.join(__filename, '..', '..', '..', '..', 'images'))],
+            enableScripts: true,
+          },
         );
       }
-      const images: Record<string,string> = [
-        [ "icon-lines", "svg" ],
-        [ "icon-external", "svg" ],
-        [ "icon-code", "svg" ],
-        [ "icon-github", "svg" ],
-        [ "icon-like", "svg" ],
-        [ "light-icon-info", "svg" ],
-        [ "dark-high-severity", "svg" ],
-        [ "light-icon-warning", "svg" ],
-        [ "dark-medium-severity", "svg" ],
-        [ "light-icon-critical", "svg" ],
-        [ "dark-low-severity", "svg" ],
-      ].reduce<Record<string,string>>((accumulator: Record<string,string>, [name, ext]) => {
-        accumulator[name] = this.panel!.webview.asWebviewUri(vscode.Uri.file(
-          path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`))
+      const images: Record<string, string> = [
+        ['icon-lines', 'svg'],
+        ['icon-external', 'svg'],
+        ['icon-code', 'svg'],
+        ['icon-github', 'svg'],
+        ['icon-like', 'svg'],
+        ['light-icon-info', 'svg'],
+        ['dark-high-severity', 'svg'],
+        ['light-icon-warning', 'svg'],
+        ['dark-medium-severity', 'svg'],
+        ['light-icon-critical', 'svg'],
+        ['dark-low-severity', 'svg'],
+      ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
+        accumulator[name] = this.panel!.webview.asWebviewUri(
+          vscode.Uri.file(path.join(__filename, '..', '..', '..', '..', 'images', `${name}.${ext}`)),
         ).toString();
         return accumulator;
-      },{});
+      }, {});
       this.panel.webview.html = getWebviewContent(images);
 
       this.panel.webview.postMessage({ type: 'set', args: suggestion });
-      this.panel.onDidDispose(
-        this.onPanelDispose.bind(this),
-        null,
-        this.extension?.context?.subscriptions
-      );
+      this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.extension?.context?.subscriptions);
       this.panel.onDidChangeViewState(
         this.checkVisibility.bind(this),
         undefined,
-        this.extension?.context?.subscriptions
-      )
+        this.extension?.context?.subscriptions,
+      );
       // Handle messages from the webview
       this.panel.webview.onDidReceiveMessage(
         this.handleMessage.bind(this),
         undefined,
-        this.extension?.context?.subscriptions
+        this.extension?.context?.subscriptions,
       );
       this.suggestion = suggestion;
     } catch (e) {
@@ -644,23 +635,23 @@ export class SuggestionProvider implements SuggestionProviderInterface {
     try {
       const { type, args } = message;
       switch (type) {
-        case 'openLocal' : {
+        case 'openLocal': {
           let { uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
-          const range = createIssueCorrectRange({ cols , rows });
+          const range = createIssueCorrectRange({ cols, rows });
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, range);
           break;
         }
-        case 'openBrowser' : {
+        case 'openBrowser': {
           const { url } = args;
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
           break;
         }
-        case 'ignoreIssue' : {
+        case 'ignoreIssue': {
           let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
           severity = getVSCodeSeverity(severity);
-          const range = createIssueCorrectRange({ cols , rows });
+          const range = createIssueCorrectRange({ cols, rows });
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri,
             matchedIssue: { message, severity, range },
@@ -671,15 +662,12 @@ export class SuggestionProvider implements SuggestionProviderInterface {
           this.panel?.dispose();
           break;
         }
-        case 'sendFeedback' : {
-          await this.extension.processEvent(
-            TELEMETRY_EVENTS.suggestionFeedback,
-            { data: args }
-          )
+        case 'sendFeedback': {
+          await this.extension.processEvent(TELEMETRY_EVENTS.suggestionFeedback, { data: args });
           break;
         }
         default: {
-          throw new Error("Unknown message type");
+          throw new Error('Unknown message type');
         }
       }
     } catch (e) {
@@ -704,7 +692,7 @@ class SuggestionSerializer implements vscode.WebviewPanelSerializer {
       webviewPanel.dispose();
       return;
     }
-    this.suggestionProvider.restorePanel(webviewPanel)
+    this.suggestionProvider.restorePanel(webviewPanel);
     this.suggestionProvider.showPanel(state);
   }
 }

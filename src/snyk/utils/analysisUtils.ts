@@ -1,8 +1,5 @@
 import * as vscode from 'vscode';
-import {
-  openedTextEditorType,
-  completeFileSuggestionType,
-} from '../../interfaces/SnykInterfaces';
+import { openedTextEditorType, completeFileSuggestionType } from '../../interfaces/SnykInterfaces';
 
 import {
   SNYK_SEVERITIES,
@@ -27,12 +24,14 @@ export const createSnykSeveritiesMap = () => {
 
 export const getVSCodeSeverity = (snykSeverity: number) => {
   const { information, error, warning } = SNYK_SEVERITIES;
-  return {
-    [information]: vscode.DiagnosticSeverity.Information,
-    [warning]: vscode.DiagnosticSeverity.Warning,
-    [error]: vscode.DiagnosticSeverity.Error,
-  }[snykSeverity] || vscode.DiagnosticSeverity.Information;
-}
+  return (
+    {
+      [information]: vscode.DiagnosticSeverity.Information,
+      [warning]: vscode.DiagnosticSeverity.Warning,
+      [error]: vscode.DiagnosticSeverity.Error,
+    }[snykSeverity] || vscode.DiagnosticSeverity.Information
+  );
+};
 
 export const getSnykSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) => {
   const { information, error, warning } = SNYK_SEVERITIES;
@@ -161,7 +160,6 @@ export const createIssueMarkerMsg = (originalMsg: string, [markerStartIdx, marke
   return originalMsg.substring(markerStartIdx, markerEndIdx + 1);
 };
 
-
 export const createIssuesMarkersDecorationOptions = (
   currentFileReviewIssues: readonly vscode.Diagnostic[] | undefined,
 ): vscode.DecorationOptions[] => {
@@ -182,7 +180,11 @@ export const createIssuesMarkersDecorationOptions = (
   return issueMarkersDecorationOptions;
 };
 
-export const createIssueRelatedInformation = (markersList: IMarker[], fileUri: vscode.Uri, message: string): vscode.DiagnosticRelatedInformation[] => {
+export const createIssueRelatedInformation = (
+  markersList: IMarker[],
+  fileUri: vscode.Uri,
+  message: string,
+): vscode.DiagnosticRelatedInformation[] => {
   return markersList.reduce((res, marker) => {
     const { msg: markerMsgIdxs, pos: positions } = marker;
 
@@ -190,7 +192,7 @@ export const createIssueRelatedInformation = (markersList: IMarker[], fileUri: v
       const relatedInfo = new vscode.DiagnosticRelatedInformation(
         new vscode.Location(fileUri, createIssueCorrectRange(position)),
         createIssueMarkerMsg(message, markerMsgIdxs),
-      )
+      );
       res.push(relatedInfo);
     });
 
@@ -208,15 +210,19 @@ export const findCompleteSuggestion = (
   if (!analysisResults.files[filePath]) return;
   const file: IFilePath = analysisResults.files[filePath];
   let fileSuggestion: IFileSuggestion | undefined;
-  let suggestionIndex: string | number | undefined = Object.keys(file).find((i) => {
+  let suggestionIndex: string | number | undefined = Object.keys(file).find(i => {
     const index = parseInt(i, 10);
     if (analysisResults.suggestions[index].id !== suggestionId) return false;
-    const pos = file[index].find((fs) => {
+    const pos = file[index].find(fs => {
       const r = createIssueCorrectRange(fs);
-      return r.start.character === position.start.character && r.start.line === position.start.line
-        && r.end.character === position.end.character && r.end.line === position.end.line;
+      return (
+        r.start.character === position.start.character &&
+        r.start.line === position.start.line &&
+        r.end.character === position.end.character &&
+        r.end.line === position.end.line
+      );
     });
-    if(pos) {
+    if (pos) {
       fileSuggestion = pos;
       return true;
     }
@@ -240,16 +246,17 @@ export const checkCompleteSuggestion = (
   let filePath = vscode.Uri.parse(suggestion.uri).fsPath;
   if (!analysisResults.files[filePath]) return false;
   const file: IFilePath = analysisResults.files[filePath];
-  let suggestionIndex: string | undefined = Object.keys(file).find((i) => {
+  let suggestionIndex: string | undefined = Object.keys(file).find(i => {
     const index = parseInt(i, 10);
     if (
       analysisResults.suggestions[index].id !== suggestion.id ||
       analysisResults.suggestions[index].message !== suggestion.message
-    ) return false;
-    const found = file[index].find((fs) => {
+    )
+      return false;
+    const found = file[index].find(fs => {
       let equal = true;
-      for(let dir of ['cols','rows']) {
-        for(let index of [0, 1]) {
+      for (let dir of ['cols', 'rows']) {
+        for (let index of [0, 1]) {
           equal = equal && fs[dir][index] === suggestion[dir][index];
         }
       }
@@ -258,7 +265,7 @@ export const checkCompleteSuggestion = (
     return !!found;
   });
   return !!suggestionIndex;
-}
+};
 
 export const findSuggestionByMessage = (
   analysisResults: IAnalysisResult,
@@ -284,6 +291,6 @@ export const severityAsText = (severity: number): string => {
   } else if (severity === 4) {
     return 'Critical';
   } else {
-    return ''
+    return '';
   }
-}
+};

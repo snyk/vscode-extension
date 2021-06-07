@@ -46,8 +46,8 @@ export class IssueProvider extends NodeProvider {
     const review: Node[] = [];
     let nIssues = 0;
     if (!this.extension.shouldShowAnalysis) return review;
-    if (this.extension.analyzer.snykReview) this.extension.analyzer.snykReview.forEach(
-      (uri: Uri, diagnostics: readonly Diagnostic[]): void => {
+    if (this.extension.analyzer.snykReview)
+      this.extension.analyzer.snykReview.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
         const counts: ISeverityCounts = {
           [SNYK_SEVERITIES.information]: 0,
           [SNYK_SEVERITIES.warning]: 0,
@@ -56,23 +56,23 @@ export class IssueProvider extends NodeProvider {
         const filePath = uri.path.split('/');
         const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
-        const issues: Node[] = diagnostics.map((d) => {
+        const issues: Node[] = diagnostics.map(d => {
           const severity = getSnykSeverity(d.severity);
           ++counts[severity];
           ++nIssues;
           const params: {
-            text: string,
-            icon: INodeIcon,
-            issue: { uri: Uri, range?: Range },
-            internal: { severity: number },
-            command: Command,
-            children?: Node[]
+            text: string;
+            icon: INodeIcon;
+            issue: { uri: Uri; range?: Range };
+            internal: { severity: number };
+            command: Command;
+            children?: Node[];
           } = {
             text: d.message,
             icon: this.getSeverityIcon(severity),
             issue: {
               uri,
-              range: d.range
+              range: d.range,
             },
             internal: {
               severity,
@@ -114,11 +114,10 @@ export class IssueProvider extends NodeProvider {
           internal: {
             nIssues: diagnostics.length,
             severity: fileSeverity,
-          }
+          },
         });
         review.push(file);
-      }
-    );
+      });
     review.sort(this.compareNodes);
     if (this.extension.runningAnalysis) {
       review.unshift(
@@ -128,16 +127,20 @@ export class IssueProvider extends NodeProvider {
         }),
       );
     } else {
-      review.unshift(new Node({
-        text: `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
-      }));
+      review.unshift(
+        new Node({
+          text: `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
+        }),
+      );
       const sDuration = Math.round((this.extension.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
       const ts = new Date(this.extension.lastAnalysisTimestamp);
-      const time = ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      const day = ts.toLocaleDateString([], { year: "2-digit", month: "2-digit", day: "2-digit" });
-      review.unshift(new Node({
-        text: `Analysis took ${sDuration}s, finished at ${time}, ${day}`,
-      }));
+      const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const day = ts.toLocaleDateString([], { year: '2-digit', month: '2-digit', day: '2-digit' });
+      review.unshift(
+        new Node({
+          text: `Analysis took ${sDuration}s, finished at ${time}, ${day}`,
+        }),
+      );
     }
     return review;
   }

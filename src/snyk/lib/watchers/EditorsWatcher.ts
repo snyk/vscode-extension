@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import { ExtensionInterface, SnykWatcherInterface, openedTextEditorType } from "../../../interfaces/SnykInterfaces";
+import * as vscode from 'vscode';
+import { ExtensionInterface, SnykWatcherInterface, openedTextEditorType } from '../../../interfaces/SnykInterfaces';
 
 class SnykEditorsWatcher implements SnykWatcherInterface {
   private currentTextEditors: {

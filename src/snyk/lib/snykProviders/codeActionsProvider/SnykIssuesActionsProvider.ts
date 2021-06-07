@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import * as _ from "lodash";
+import * as vscode from 'vscode';
+import * as _ from 'lodash';
 import { getSnykSeverity, findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
 import {
   SHOW_ISSUE_ACTION_NAME,
@@ -7,13 +7,13 @@ import {
   FILE_IGNORE_ACTION_NAME,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
-} from "../../../constants/analysis";
+} from '../../../constants/analysis';
 import {
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   VSCODE_ADD_COMMENT_COMMAND,
-} from "../../../constants/commands";
-import { COMMAND_DEBOUNCE_INTERVAL } from "../../../constants/general";
+} from '../../../constants/commands';
+import { COMMAND_DEBOUNCE_INTERVAL } from '../../../constants/general';
 
 export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -30,10 +30,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
   }
 
   private registerIgnoreIssuesCommand() {
-    vscode.commands.registerCommand(
-      SNYK_IGNORE_ISSUE_COMMAND,
-      this.ignoreIssues.bind(this)
-    );
+    vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, this.ignoreIssues.bind(this));
   }
 
   private ignoreIssues = _.debounce(
@@ -48,7 +45,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       matchedIssue: {
         severity: number;
         message: string;
-        range: vscode.Range
+        range: vscode.Range;
       };
       issueId: string;
       ruleId: string;
@@ -63,20 +60,19 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       });
       const issueText: string = ignoreIssueCommentText(ruleId, isFileIgnore);
       const editor: vscode.TextEditor | undefined =
-        (uri && await vscode.window.showTextDocument(uri, {
-          viewColumn: vscode.ViewColumn.One,
-          selection: matchedIssue.range,
-        })) || vscode.window.activeTextEditor;
+        (uri &&
+          (await vscode.window.showTextDocument(uri, {
+            viewColumn: vscode.ViewColumn.One,
+            selection: matchedIssue.range,
+          }))) ||
+        vscode.window.activeTextEditor;
       if (!editor || !issueText || !matchedIssue) {
         return;
       }
       const symbolIndexToInsert = editor.document.lineAt(
-        matchedIssue.range.start.line
-      ).firstNonWhitespaceCharacterIndex;
-      let issuePosition = new vscode.Position(
         matchedIssue.range.start.line,
-        symbolIndexToInsert
-      );
+      ).firstNonWhitespaceCharacterIndex;
+      let issuePosition = new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert);
 
       let snykCommentPostition: vscode.Position | undefined;
       if (issuePosition.line > 0) {
@@ -84,7 +80,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
           new vscode.Position(issuePosition.line - 1, 0),
           new vscode.Position(issuePosition.line, 0),
         );
-        const prevLine = editor.document.getText(prevLineRange).split("\n").shift() || "";
+        const prevLine = editor.document.getText(prevLineRange).split('\n').shift() || '';
         // We have 3 cases:
         // 1) prevLine doesn't include any dcignore line
         // 2) prevLine is a dcignore comment
@@ -92,18 +88,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
         if (prevLine.includes(IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
           if (prevLine.includes(FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT)) {
             // case number 3
-            if (isFileIgnore) snykCommentPostition = new vscode.Position(
-              prevLineRange.start.line,
-              prevLine.length
-            );
+            if (isFileIgnore) snykCommentPostition = new vscode.Position(prevLineRange.start.line, prevLine.length);
             // if !isFileIgnore we want to write a new comment instead of adding to the previous one
           } else {
             // case number 2
             if (!isFileIgnore) {
-              snykCommentPostition = new vscode.Position(
-                prevLineRange.start.line,
-                prevLine.length
-              );
+              snykCommentPostition = new vscode.Position(prevLineRange.start.line, prevLine.length);
             } else {
               // we want to write a new comment 2 lines above the issue
               issuePosition = issuePosition.with(issuePosition.line - 1);
@@ -114,17 +104,13 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       if (snykCommentPostition) {
         const position = snykCommentPostition;
         // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
-        editor.edit((e: vscode.TextEditorEdit) =>
-          e.insert(position, `, ${issueText}`)
-        );
+        editor.edit((e: vscode.TextEditorEdit) => e.insert(position, `, ${issueText}`));
       } else {
         editor.edit((e: vscode.TextEditorEdit) =>
           e.insert(issuePosition, this.addSpacesToText(`${issueText}\n`, symbolIndexToInsert)),
         );
       }
-      editor.selections = [
-        new vscode.Selection(issuePosition, issuePosition)
-      ];
+      editor.selections = [new vscode.Selection(issuePosition, issuePosition)];
       if (!snykCommentPostition) {
         await vscode.commands.executeCommand(VSCODE_ADD_COMMENT_COMMAND);
       }
@@ -132,7 +118,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     },
     COMMAND_DEBOUNCE_INTERVAL,
     { leading: true, trailing: false },
-  )
+  );
 
   private addSpacesToText(text: string = '', spacesCount: number = 0): string {
     if (!spacesCount) {
@@ -160,11 +146,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     );
 
     const suggestion = this.findSuggestion(matchedIssue.message);
-    if (suggestion) ignoreIssueAction.command = {
-      command: SNYK_IGNORE_ISSUE_COMMAND,
-      title: SNYK_IGNORE_ISSUE_COMMAND,
-      arguments: [{ uri: document.uri, matchedIssue, issueId: suggestion.id, ruleId: suggestion.rule, isFileIgnore }]
-    };
+    if (suggestion)
+      ignoreIssueAction.command = {
+        command: SNYK_IGNORE_ISSUE_COMMAND,
+        title: SNYK_IGNORE_ISSUE_COMMAND,
+        arguments: [{ uri: document.uri, matchedIssue, issueId: suggestion.id, ruleId: suggestion.rule, isFileIgnore }],
+      };
 
     return ignoreIssueAction;
   }
@@ -182,11 +169,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     );
 
     const suggestion = this.findSuggestion(matchedIssue.message);
-    if (suggestion) showIssueAction.command = {
-      command: SNYK_OPEN_ISSUE_COMMAND,
-      title: SNYK_OPEN_ISSUE_COMMAND,
-      arguments: [matchedIssue.message, suggestion.severity, document.uri, matchedIssue.range, null],
-    };
+    if (suggestion)
+      showIssueAction.command = {
+        command: SNYK_OPEN_ISSUE_COMMAND,
+        title: SNYK_OPEN_ISSUE_COMMAND,
+        arguments: [matchedIssue.message, suggestion.severity, document.uri, matchedIssue.range, null],
+      };
 
     return showIssueAction;
   }
@@ -217,24 +205,20 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
 // disposable provider
 export class DisposableCodeActionsProvider implements vscode.Disposable {
   private disposableProvider: vscode.Disposable | undefined;
-  constructor(
-    snykReview: vscode.DiagnosticCollection | undefined,
-    callbacks: { [key: string]: Function }
-  ) {
+  constructor(snykReview: vscode.DiagnosticCollection | undefined, callbacks: { [key: string]: Function }) {
     this.registerProvider(snykReview, callbacks);
   }
 
   private registerProvider(
     snykReview: vscode.DiagnosticCollection | undefined,
-    callbacks: { [key: string]: Function }
+    callbacks: { [key: string]: Function },
   ) {
     this.disposableProvider = vscode.languages.registerCodeActionsProvider(
-      { scheme: "file", language: "*" },
+      { scheme: 'file', language: '*' },
       new SnykIssuesActionProvider(snykReview, callbacks),
       {
-        providedCodeActionKinds:
-          SnykIssuesActionProvider.providedCodeActionKinds
-      }
+        providedCodeActionKinds: SnykIssuesActionProvider.providedCodeActionKinds,
+      },
     );
   }
 

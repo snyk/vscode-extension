@@ -1,12 +1,12 @@
-import * as vscode from "vscode";
-import { SNYK_EXTENSION_NAME } from "../constants/general";
+import * as vscode from 'vscode';
+import { SNYK_EXTENSION_NAME } from '../constants/general';
 import {
   VSCODE_VIEW_CONTAINER_PREFIX,
   VSCODE_GO_TO_SETTINGS_COMMAND,
   SNYK_CONTEXT_PREFIX,
   SNYK_OPEN_BROWSER_COMMAND,
-} from "../constants/commands";
-import { createDCIgnore } from "./ignoreFileUtils"
+} from '../constants/commands';
+import { createDCIgnore } from './ignoreFileUtils';
 
 export const openSnykSettingsCommand = async (): Promise<void> => {
   await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, SNYK_EXTENSION_NAME);

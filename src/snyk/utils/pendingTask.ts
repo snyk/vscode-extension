@@ -2,7 +2,7 @@ export interface PendingTaskInterface {
   waiter: Promise<void>;
   isCompleted: boolean;
   complete(): void;
-};
+}
 
 export class PendingTask implements PendingTaskInterface {
   private _promise: Promise<void>;
@@ -11,7 +11,7 @@ export class PendingTask implements PendingTaskInterface {
 
   constructor() {
     this._resolved = false;
-    this._promise = new Promise((resolve) => {
+    this._promise = new Promise(resolve => {
       this._resolve = resolve;
     }).then(() => {
       this._resolved = true;

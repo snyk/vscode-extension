@@ -4,23 +4,25 @@ import open from 'open';
 import * as vscode from 'vscode';
 import { ExtensionInterface } from '../interfaces/SnykInterfaces';
 import {
-  SNYK_DCIGNORE_COMMAND, SNYK_ENABLE_CODE_COMMAND, SNYK_LOGIN_COMMAND, SNYK_OPEN_BROWSER_COMMAND,
+  SNYK_DCIGNORE_COMMAND,
+  SNYK_ENABLE_CODE_COMMAND,
+  SNYK_LOGIN_COMMAND,
+  SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
-  SNYK_START_COMMAND
+  SNYK_START_COMMAND,
 } from './constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import { SNYK_ANALYSIS_STATUS, SNYK_VIEW_ANALYSIS, SNYK_VIEW_SUPPORT } from './constants/views';
 import SnykLib from './lib/modules/SnykLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
 import { errorsLogs } from './messages/errorsServerLogMessages';
-import { severityAsText } from "./utils/analysisUtils";
+import { severityAsText } from './utils/analysisUtils';
 import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCommandsUtils';
 import { IssueProvider } from './view/IssueProvider';
 import { SupportProvider } from './view/SupportProvider';
-
 
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
@@ -66,8 +68,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     context.subscriptions.push(
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, async (path: vscode.Uri, range?: vscode.Range) => {
         await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
-          () => {
-          },
+          () => {},
           // no need to wait for processError since catch is called asynchronously as well
           err =>
             this.processError(err, {

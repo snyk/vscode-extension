@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import { IGNORE_TIP_FOR_USER } from "../../../constants/analysis";
-import { findIssueWithRange } from "../../../utils/analysisUtils";
+import * as vscode from 'vscode';
+import { IGNORE_TIP_FOR_USER } from '../../../constants/analysis';
+import { findIssueWithRange } from '../../../utils/analysisUtils';
 
 export class DisposableHoverProvider implements vscode.Disposable {
   private hoverProvider: vscode.Disposable | undefined;
@@ -9,11 +9,9 @@ export class DisposableHoverProvider implements vscode.Disposable {
     this.registerDisposableProvider(snykReview);
   }
 
-  private registerDisposableProvider(
-    snykReview: vscode.DiagnosticCollection | undefined
-  ) {
+  private registerDisposableProvider(snykReview: vscode.DiagnosticCollection | undefined) {
     this.hoverProvider = vscode.languages.registerHoverProvider(
-      { scheme: "file", language: "*" },
+      { scheme: 'file', language: '*' },
       {
         provideHover(document, position) {
           if (!snykReview || !snykReview.has(document.uri)) {
@@ -23,8 +21,8 @@ export class DisposableHoverProvider implements vscode.Disposable {
           if (findIssueWithRange(position, currentFileReviewIssues)) {
             return new vscode.Hover(IGNORE_TIP_FOR_USER);
           }
-        }
-      }
+        },
+      },
     );
   }
 
