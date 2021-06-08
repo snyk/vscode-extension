@@ -166,7 +166,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     this.analyzer.activate(this);
     this.suggestionProvider.activate(this);
 
-    NotificationService.init(this.processEvent, this.processError);
+    NotificationService.init(this.processEvent.bind(this), this.processError.bind(this));
 
     this.checkAdvancedMode().catch(err =>
       this.processError(err, {
