@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import SnykExtension from './snyk/snykExtension';
+import SnykExtension from './snyk/extension';
 
 const extension = new SnykExtension();
 

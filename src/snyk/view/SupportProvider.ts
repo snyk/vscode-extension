@@ -7,8 +7,12 @@ export class SupportProvider extends NodeProvider {
   getRootChildren(): Node[] {
     return [
       new Node({
+        text: 'Help Snyk and get a $100 Amazon gift card',
+        icon: new ThemeIcon('mortar-board'),
+        link: 'https://calendly.com/snyk-georgi/45min',
+      }),
+      new Node({
         text: 'Send us feedback or report a bug',
-        // description: "Send us a feedback or ask for support",
         icon: new ThemeIcon('mail'),
         link: 'https://snyk.io/contact-us/?utm_source=vsc',
       }),
@@ -29,7 +33,8 @@ export class SupportProvider extends NodeProvider {
           new Node({
             text: '3. How to ignore files and directories?',
             icon: new ThemeIcon('file-text'),
-            link: 'https://snyk.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-',
+            link:
+              'https://snyk.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-',
             collapsed: TreeItemCollapsibleState.Expanded,
             children: [
               new Node({
@@ -54,17 +59,6 @@ export class SupportProvider extends NodeProvider {
           }),
         ],
       }),
-      // new Node({
-      //   text: "Documentation",
-      //   // description: "Check our documentation online",
-      //   icon: new ThemeIcon('book'),
-      //   link: "https://snyk.freshdesk.com/support/home"
-      // }),
-      // new Node({
-      //   text: "Interested in our on-premise solution?",
-      //   icon: new ThemeIcon('desktop-download'),
-      //   link: "https://www.snyk.io/on-premises?utm_source=vsc"
-      // }),
     ];
   }
 }

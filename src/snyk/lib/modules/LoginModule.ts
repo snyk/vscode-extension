@@ -123,20 +123,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     }
   }
 
-  async checkWelcomeNotification(): Promise<void> {
-    if (configuration.shouldShowWelcomeNotification) {
-      this.processEvent(TELEMETRY_EVENTS.viewWelcomeNotification);
-      const pressedButton = await vscode.window.showInformationMessage(
-        snykMessages.welcome.msg,
-        snykMessages.welcome.button,
-      );
-      if (pressedButton === snykMessages.welcome.button) {
-        await openSnykViewContainer();
-      }
-      await configuration.hideWelcomeNotification();
-    }
-  }
-
   async checkAdvancedMode(): Promise<void> {
     await this.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
