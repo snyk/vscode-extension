@@ -1,7 +1,7 @@
+import * as vscode from 'vscode';
 import { configuration } from '../configuration';
 import { TELEMETRY_EVENTS } from '../constants/telemetry';
 import { snykMessages } from '../messages/snykMessages';
-import * as vscode from 'vscode';
 import { openSnykViewContainer } from '../utils/vscodeCommandsUtils';
 import { errorType } from '../../interfaces/SnykInterfaces';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
@@ -23,7 +23,7 @@ export class NotificationService {
       return;
     }
 
-    eventProcessor(TELEMETRY_EVENTS.viewWelcomeNotification);
+    void eventProcessor(TELEMETRY_EVENTS.viewWelcomeNotification);
     const pressedButton = await vscode.window.showInformationMessage(
       snykMessages.welcome.msg,
       snykMessages.welcome.button,

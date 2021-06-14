@@ -2,16 +2,14 @@
 // Note: This example test is leveraging the Mocha test framework.
 // Please refer to their documentation on https://mochajs.org/ for help.
 //
-import * as assert from "assert";
-import * as vscode from "vscode";
-import * as nodePath from 'path';
+import * as assert from 'assert';
 //
-import * as extension from "../../extension";
-import { ExtensionInterface } from "../../interfaces/SnykInterfaces";
-import { configuration } from "../../snyk/configuration";
+import * as extension from '../../extension';
+import { ExtensionInterface } from '../../interfaces/SnykInterfaces';
+import { configuration } from '../../snyk/configuration';
 
 const testToken = '23';
-const mockedTestFilesDirPath = __dirname.replace("out/test", "src/test");
+const mockedTestFilesDirPath = __dirname.replace('out/test', 'src/test');
 // const mockedFolderPath = vscode.Uri.parse('scheme:' + nodePath.join(mockedTestFilesDirPath, '/../mocked_data'), true)
 //   .fsPath;
 
@@ -34,7 +32,7 @@ const preTestConfigureExtension = () => {
 
 // const testIgnoreComment = '  // deepcode ignore UseStrictEquality: <please specify a reason of ignoring this>\n';
 
-suite("Snyk Extension Tests", () => {
+suite('Snyk Extension Tests', () => {
   let testExtension: ExtensionInterface;
   test('Pre-test configuring', () => {
     testExtension = preTestConfigureExtension();
@@ -45,5 +43,4 @@ suite("Snyk Extension Tests", () => {
     //   path.join(mockedTestFilesDirPath, "../mocked_data")
     // );
   });
-
 });

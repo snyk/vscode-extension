@@ -72,9 +72,9 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
         if (oldValue !== undefined) {
           if (!value && oldValue) event = TELEMETRY_EVENTS.viewLoginView;
           if (value && !oldValue) event = TELEMETRY_EVENTS.viewConsentView;
-        } else {
+        } else if (!value) {
           // If key was un-initialized (i.e. at start), we still report it if new value is false
-          if (!value) event = TELEMETRY_EVENTS.viewLoginView;
+          event = TELEMETRY_EVENTS.viewLoginView;
         }
         break;
       }
@@ -99,11 +99,13 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
         shouldWaitForView = false;
         break;
       }
+      default:
+        return;
     }
     // We want to fire the event only when the user actually sees the View
     if (event) {
-      if (shouldWaitForView) this.initializedView.waiter.then(() => this.processEvent(event, options));
-      else this.processEvent(event, options);
+      if (shouldWaitForView) void this.initializedView.waiter.then(() => this.processEvent(event, options));
+      else void this.processEvent(event, options);
     }
   }
 

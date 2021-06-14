@@ -1,12 +1,9 @@
 import { checkSession, startSession } from '@snyk/code-client';
-import * as vscode from 'vscode';
 import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
 import { configuration } from '../../configuration';
-import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { snykMessages } from '../../messages/snykMessages';
-import { openSnykViewContainer, viewInBrowser } from '../../utils/vscodeCommandsUtils';
+import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
 import { ISnykCode, SnykCode } from './code';
 import ReportModule from './ReportModule';
 
@@ -83,7 +80,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       }
     }
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
-    if (!token) await this.loadingBadge.setLoadingBadge(true, this);
+    if (!token) this.loadingBadge.setLoadingBadge(true, this);
     return token;
   }
 
@@ -104,12 +101,12 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const enabled = await this.snykCode.isEnabled();
 
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); //todo: removed once 'uploadApproved' is deprecated
+    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); // todo: removed once 'uploadApproved' is deprecated
     if (!enabled) {
-      //TODO: consent event here
+      // TODO: consent event here
       this.createAnalytics();
 
-      await this.loadingBadge.setLoadingBadge(true, this);
+      this.loadingBadge.setLoadingBadge(true, this);
     }
 
     return enabled;
@@ -118,7 +115,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   async enableCode(): Promise<void> {
     const wasEnabled = await this.snykCode.enable();
     if (wasEnabled) {
-      await this.loadingBadge.setLoadingBadge(false, this);
+      this.loadingBadge.setLoadingBadge(false, this);
       await this.checkCodeEnabled();
     }
   }

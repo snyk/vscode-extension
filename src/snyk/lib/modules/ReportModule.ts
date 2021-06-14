@@ -22,7 +22,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
     this.loadingBadge = new LoadingBadge(this.initializedView);
   }
 
-  private get shouldReport(): boolean {
+  private static get shouldReport(): boolean {
     // DEV: uncomment the following line to test this module in development
     // return true;
 
@@ -36,7 +36,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   private sendEvent = _.debounce(
     async (event: string, options: { [key: string]: any }): Promise<void> => {
-      if (!this.shouldReport || !configuration.shouldReportEvents) return;
+      if (!ReportModule.shouldReport || !configuration.shouldReportEvents) return;
       try {
         await reportEvent({
           baseURL: configuration.baseURL,
@@ -71,7 +71,6 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
   }
 
   async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
-    issueId = decodeURIComponent(issueId);
     const [language, model] = issueId.split('/');
     return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
       data: { issueId, severity, language, model },
@@ -80,7 +79,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   private sendError = _.debounce(
     async (options: { [key: string]: any }): Promise<void> => {
-      if (!this.shouldReport || !configuration.shouldReportErrors) return;
+      if (!ReportModule.shouldReport || !configuration.shouldReportErrors) return;
       const resp = await reportError({
         baseURL: configuration.baseURL,
         source: configuration.source,
@@ -99,8 +98,8 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
   async processError(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it to console.error
-    return this.processErrorInternal(error, options).catch(error =>
-      console.error(`Snyk error handler failed with error: ${error}`),
+    return this.processErrorInternal(error, options).catch(err =>
+      console.error(`Snyk error handler failed with error: ${err}`),
     );
   }
 
@@ -129,19 +128,20 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
       [constants.ErrorCodes.connectionRefused]: async () => {
         return this.connectionErrorHandler();
       },
-      [constants.ErrorCodes.loginInProgress]: async () => {},
-      [constants.ErrorCodes.unauthorizedContent]: async () => {},
+      [constants.ErrorCodes.loginInProgress]: async () => Promise.resolve(),
+      [constants.ErrorCodes.unauthorizedContent]: async () => Promise.resolve(),
       [constants.ErrorCodes.unauthorizedUser]: async () => {
         return this.authenticationErrorHandler();
       },
-      [constants.ErrorCodes.unauthorizedBundleAccess]: async () => {},
-      [constants.ErrorCodes.notFound]: async () => {},
-      [constants.ErrorCodes.bigPayload]: async () => {},
+      [constants.ErrorCodes.unauthorizedBundleAccess]: async () => Promise.resolve(),
+      [constants.ErrorCodes.notFound]: async () => Promise.resolve(),
+      [constants.ErrorCodes.bigPayload]: async () => Promise.resolve(),
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const errorStatusCode = error.statusCode;
+    const errorStatusCode = error?.statusCode;
     if (errorHandlers.hasOwnProperty(errorStatusCode)) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await errorHandlers[errorStatusCode]();
     } else {
       await defaultErrorHandler();
@@ -151,20 +151,20 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
   private async authenticationErrorHandler(): Promise<void> {
     await configuration.setToken('');
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    await this.loadingBadge.setLoadingBadge(true, this);
+    this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
     await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
-    await this.loadingBadge.setLoadingBadge(true, this);
+    this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async connectionErrorHandler(): Promise<void> {
     console.error('Connect error to Snyk service');
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
 
-    ++this.transientErrors;
+    this.transientErrors += 1;
     await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
       this.startExtension().catch(err =>
@@ -173,11 +173,13 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
         }),
       );
     }, CONNECTION_ERROR_RETRY_INTERVAL);
+    return Promise.resolve();
   }
 
   private async sendErrorToServer(error: errorType, options: { [key: string]: any }): Promise<void> {
     let type;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       type = `${error.statusCode || ''} ${error.name || ''}`.trim();
     } catch (e) {
       type = 'unknown';

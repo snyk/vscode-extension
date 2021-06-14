@@ -1,19 +1,20 @@
+import Analytics from 'analytics-node';
 import { v4 as uuidv4 } from 'uuid';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
+const { segmentWriteKey } = require('../../../snyk.config.json');
 
 export class Segment {
   private analyticsCollectionEnabled: boolean;
   private readonly anonymousId: string;
-  private analytics: any;
+  private analytics: Analytics;
   private userId: string;
 
   constructor() {
     try {
-      const { segmentWriteKey } = require('../../../snyk.config.json');
       if (!segmentWriteKey) {
         this.analyticsCollectionEnabled = false;
         console.log('Segment analytics collection is disabled because write key is empty!');
       } else {
-        const Analytics = require('analytics-node');
         this.analytics = new Analytics(segmentWriteKey, {
           flushAt: 5,
           flushInterval: 10000,
@@ -30,7 +31,6 @@ export class Segment {
 
   shutdown(): void {
     this.analytics?.flush();
-    this.analytics?.shutdown();
   }
 
   setAnalyticsCollectionEnabled(enabled: boolean): void {
@@ -62,20 +62,20 @@ export class Segment {
     });
   }
 
-  logEvent(event: string, properties?: Object): void {
+  logEvent(event: string, properties: unknown): void {
     if (!this.analyticsCollectionEnabled) return;
 
     if (this.userId) {
       this.analytics?.track({
-        event: event,
-        properties: properties,
+        event,
+        properties,
         userId: this.userId,
       });
     } else {
       this.analytics?.track({
         anonymousId: this.anonymousId,
-        event: event,
-        properties: properties,
+        event,
+        properties,
       });
     }
   }

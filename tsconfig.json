@@ -3,9 +3,7 @@
     "rootDir": "src",
     "outDir": "out",
     "target": "es2019",
-    "lib": [
-      "esnext"
-    ],
+    "lib": ["esnext"],
     "module": "commonjs",
     "sourceMap": true,
     "allowJs": false,
@@ -18,14 +16,9 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedParameters": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "out",
-    "node_modules",
-    ".vscode-test"
-  ]
+  "include": ["src"],
+  "exclude": ["out", "node_modules", ".vscode-test"]
 }

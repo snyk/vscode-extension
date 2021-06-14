@@ -1,5 +1,4 @@
 import * as path from 'path';
-
 import { runTests } from 'vscode-test';
 
 async function main() {
@@ -22,4 +21,4 @@ async function main() {
   }
 }
 
-main();
+void main();

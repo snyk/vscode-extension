@@ -1,5 +1,5 @@
-import { getSastSettings } from '../../services/cliConfigService';
 import { IConfiguration } from '../../configuration';
+import { getSastSettings } from '../../services/cliConfigService';
 import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
 
 export interface ISnykCode {
@@ -15,13 +15,13 @@ export class SnykCode {
 
   public async isEnabled(): Promise<boolean> {
     // Code was disabled explicitly
-    if (this.config.codeEnabled == false) {
+    if (this.config.codeEnabled === false) {
       return false;
     }
 
     const settings = await getSastSettings();
-    if (this.config.codeEnabled != settings.sastEnabled) {
-      this.config.setCodeEnabled(settings.sastEnabled);
+    if (this.config.codeEnabled !== settings.sastEnabled) {
+      await this.config.setCodeEnabled(settings.sastEnabled);
     }
 
     return settings.sastEnabled;

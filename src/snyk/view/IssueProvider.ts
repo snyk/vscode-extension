@@ -1,16 +1,16 @@
-import { Uri, Range, Diagnostic, Command } from 'vscode';
-import { NodeProvider } from './NodeProvider';
-import { Node, INodeIcon, NODE_ICONS } from './Node';
-import { getSnykSeverity } from '../utils/analysisUtils';
+import { Command, Diagnostic, Range, Uri } from 'vscode';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../constants/commands';
+import { getSnykSeverity } from '../utils/analysisUtils';
+import { INodeIcon, Node, NODE_ICONS } from './Node';
+import { NodeProvider } from './NodeProvider';
 
 interface ISeverityCounts {
   [severity: number]: number;
 }
 
 export class IssueProvider extends NodeProvider {
-  compareNodes(n1: Node, n2: Node): number {
+  compareNodes = (n1: Node, n2: Node): number => {
     if (n2.internal.severity - n1.internal.severity) return n2.internal.severity - n1.internal.severity;
     if (n2.internal.nIssues - n1.internal.nIssues) return n2.internal.nIssues - n1.internal.nIssues;
     if (n1.label && n2.label) {
@@ -22,9 +22,9 @@ export class IssueProvider extends NodeProvider {
       if (n1.description > n2.description) return 1;
     }
     return 0;
-  }
+  };
 
-  getSeverityIcon(severity: number): INodeIcon {
+  static getSeverityIcon(severity: number): INodeIcon {
     return (
       {
         [SNYK_SEVERITIES.error]: NODE_ICONS.critical,
@@ -34,7 +34,7 @@ export class IssueProvider extends NodeProvider {
     );
   }
 
-  getFileSeverity(counts: ISeverityCounts): number {
+  static getFileSeverity(counts: ISeverityCounts): number {
     for (const s of [SNYK_SEVERITIES.error, SNYK_SEVERITIES.warning, SNYK_SEVERITIES.information]) {
       if (counts[s]) return s;
     }
@@ -58,8 +58,8 @@ export class IssueProvider extends NodeProvider {
         const dir = filePath.pop();
         const issues: Node[] = diagnostics.map(d => {
           const severity = getSnykSeverity(d.severity);
-          ++counts[severity];
-          ++nIssues;
+          counts[severity] += 1;
+          nIssues += 1;
           const params: {
             text: string;
             icon: INodeIcon;
@@ -69,7 +69,7 @@ export class IssueProvider extends NodeProvider {
             children?: Node[];
           } = {
             text: d.message,
-            icon: this.getSeverityIcon(severity),
+            icon: IssueProvider.getSeverityIcon(severity),
             issue: {
               uri,
               range: d.range,
@@ -105,11 +105,11 @@ export class IssueProvider extends NodeProvider {
           return new Node(params);
         });
         issues.sort(this.compareNodes);
-        const fileSeverity = this.getFileSeverity(counts);
+        const fileSeverity = IssueProvider.getFileSeverity(counts);
         const file = new Node({
           text: filename,
           description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
-          icon: this.getSeverityIcon(fileSeverity),
+          icon: IssueProvider.getSeverityIcon(fileSeverity),
           children: issues,
           internal: {
             nIssues: diagnostics.length,

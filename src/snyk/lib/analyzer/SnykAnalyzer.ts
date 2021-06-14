@@ -1,29 +1,25 @@
+import { IAnalysisResult, IFilePath, IFileSuggestion, ISuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import {
   AnalyzerInterface,
+  completeFileSuggestionType,
   ExtensionInterface,
   IssuesListOptionsInterface,
   openedTextEditorType,
-  completeFileSuggestionType,
 } from '../../../interfaces/SnykInterfaces';
-import {
-  updateFileReviewResultsPositions,
-  createIssueCorrectRange,
-  createIssuesMarkersDecorationOptions,
-  createIssueRelatedInformation,
-  createSnykSeveritiesMap,
-  getSnykSeverity,
-  findCompleteSuggestion,
-  checkCompleteSuggestion,
-  findSuggestionByMessage,
-} from '../../utils/analysisUtils';
 import { SNYK_NAME } from '../../constants/general';
 import { TELEMETRY_EVENTS } from '../../constants/telemetry';
-import { ISSUES_MARKERS_DECORATION_TYPE } from '../../constants/analysis';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-
-import { IFileSuggestion, IFilePath, ISuggestion, IAnalysisResult } from '@snyk/code-client';
-
+import {
+  checkCompleteSuggestion,
+  createIssueCorrectRange,
+  createIssueRelatedInformation,
+  createSnykSeveritiesMap,
+  findCompleteSuggestion,
+  findSuggestionByMessage,
+  getSnykSeverity,
+  updateFileReviewResultsPositions,
+} from '../../utils/analysisUtils';
 import { DisposableCodeActionsProvider } from '../snykProviders/codeActionsProvider/SnykIssuesActionsProvider';
 import { DisposableHoverProvider } from '../snykProviders/hoverProvider/SnykHoverProvider';
 
@@ -73,11 +69,12 @@ class SnykAnalyzer implements AnalyzerInterface {
 
   public trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
     if (!this.extension) return;
+    // eslint-disable-next-line no-param-reassign
     options.data = {
       severity: getSnykSeverity(vscodeSeverity),
       ...options.data,
     };
-    this.extension.processEvent(TELEMETRY_EVENTS.ignoreSuggestion, options);
+    void this.extension.processEvent(TELEMETRY_EVENTS.ignoreSuggestion, options);
   }
 
   private createIssueDiagnosticInfo({
@@ -89,14 +86,14 @@ class SnykAnalyzer implements AnalyzerInterface {
     suggestion: ISuggestion;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
-    const message: string = suggestion.message;
+    const { message } = suggestion;
     return {
       code: '',
       message,
       range: createIssueCorrectRange(issuePositions),
       severity: this.SEVERITIES[suggestion.severity].name,
       source: SNYK_NAME,
-      //issues markers can be in issuesPositions as prop 'markers',
+      // issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message),
       }),
@@ -143,7 +140,7 @@ class SnykAnalyzer implements AnalyzerInterface {
     }
   }
 
-  public async createReviewResults(): Promise<void> {
+  public createReviewResults(): void {
     if (!this.snykReview) {
       return;
     }
@@ -151,6 +148,10 @@ class SnykAnalyzer implements AnalyzerInterface {
 
     const { files, suggestions } = this.analysisResults;
     for (const filePath in files) {
+      if (!files.hasOwnProperty(filePath)) {
+        continue;
+      }
+
       const fileUri = vscode.Uri.file(filePath);
       if (!fileUri) {
         return;
@@ -176,6 +177,7 @@ class SnykAnalyzer implements AnalyzerInterface {
         !this.snykReview ||
         !this.snykReview.has(updatedFile.document.uri) ||
         !updatedFile.contentChanges.length ||
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         !updatedFile.contentChanges[0].range
       ) {
         return;

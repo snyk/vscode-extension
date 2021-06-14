@@ -13,9 +13,10 @@ export class DisposableHoverProvider implements vscode.Disposable {
     this.hoverProvider = vscode.languages.registerHoverProvider(
       { scheme: 'file', language: '*' },
       {
+        // eslint-disable-next-line consistent-return
         provideHover(document, position) {
           if (!snykReview || !snykReview.has(document.uri)) {
-            return;
+            return undefined;
           }
           const currentFileReviewIssues = snykReview.get(document.uri);
           if (findIssueWithRange(position, currentFileReviewIssues)) {

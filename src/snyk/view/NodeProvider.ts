@@ -1,5 +1,5 @@
+import { ProviderResult, TreeDataProvider } from 'vscode';
 import { ExtensionInterface } from '../../interfaces/SnykInterfaces';
-import { TreeDataProvider, ProviderResult } from 'vscode';
 import { Node } from './Node';
 
 export abstract class NodeProvider implements TreeDataProvider<Node> {
