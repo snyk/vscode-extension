@@ -8,35 +8,36 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
       return extension.checkAdvancedMode();
     }
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
-    // @ts-ignore */}
-    const url: string = extensionConfig.get('url');
+    const url: string | undefined = extensionConfig.get('url');
 
-    const cleaned = url.replace(/\/$/, '');
+    const cleaned = url?.replace(/\/$/, '');
     if (cleaned !== url) {
-      extensionConfig.update('url', cleaned, true);
-    } else {
-      await extension.startExtension();
+      void extensionConfig.update('url', cleaned, true);
     }
+
+    return extension.startExtension();
   }
 
   public activate(extension: ExtensionInterface): void {
-    vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
-      const change = ['snyk.url', 'snyk.token', 'snyk.codeEnabled', 'snyk.advancedMode'].find(config =>
-        event.affectsConfiguration(config),
-      );
-      if (change) {
-        try {
-          await this.onChangeConfiguration(extension, change);
-        } catch (error) {
-          await extension.processError(error, {
-            message: errorsLogs.configWatcher,
-            data: {
-              configurationKey: change,
-            },
-          });
+    vscode.workspace.onDidChangeConfiguration(
+      async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
+        const change = ['snyk.url', 'snyk.token', 'snyk.codeEnabled', 'snyk.advancedMode'].find(config =>
+          event.affectsConfiguration(config),
+        );
+        if (change) {
+          try {
+            await this.onChangeConfiguration(extension, change);
+          } catch (error) {
+            await extension.processError(error, {
+              message: errorsLogs.configWatcher,
+              data: {
+                configurationKey: change,
+              },
+            });
+          }
         }
-      }
-    });
+      },
+    );
   }
 }
 

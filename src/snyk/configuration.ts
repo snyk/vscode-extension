@@ -10,7 +10,7 @@ export interface IConfiguration {
   authHost: string;
   termsConditionsUrl: string;
   snykCodeUrl: string;
-  token: string;
+  token: string | undefined;
   setToken(token: string): Promise<void>;
   uploadApproved: boolean;
   codeEnabled: boolean | undefined;
@@ -26,14 +26,17 @@ export class Configuration implements IConfiguration {
   defaultAuthHost = 'https://snyk.io';
   staticCodeEnabled = false;
 
+  constructor(
+    private processEnv: NodeJS.ProcessEnv = process.env,
+    private vscodeWorkspace: typeof vscode.workspace = vscode.workspace,
+  ) {}
+
   get baseURL(): string {
-    // @ts-ignore */}
-    return vscode.workspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;
+    return this.vscodeWorkspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;
   }
 
   get authHost(): string {
-    // @ts-ignore */}
-    return vscode.workspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost;
+    return this.vscodeWorkspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost;
   }
 
   get termsConditionsUrl(): string {
@@ -47,25 +50,24 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  get token(): string {
-    // @ts-ignore */}
-    return this.staticToken || vscode.workspace.getConfiguration('snyk').get('token');
+  get token(): string | undefined {
+    return this.staticToken || this.vscodeWorkspace.getConfiguration('snyk').get('token');
   }
 
   async setToken(token: string): Promise<void> {
     this.staticToken = '';
-    await vscode.workspace.getConfiguration('snyk').update('token', token, true);
+    await this.vscodeWorkspace.getConfiguration('snyk').update('token', token, true);
   }
 
   get source(): string {
-    return process.env.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
+    return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
   }
 
   get uploadApproved(): boolean {
     return (
       this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      !!vscode.workspace.getConfiguration('snyk').get<boolean>('uploadApproved') // TODO: remove once grace period is out
+      !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('uploadApproved') // TODO: remove once grace period is out
     );
   }
 
@@ -73,32 +75,32 @@ export class Configuration implements IConfiguration {
     return (
       this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      vscode.workspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled')
+      this.vscodeWorkspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled')
     );
   }
 
   async setCodeEnabled(value = true): Promise<void> {
-    await vscode.workspace.getConfiguration('snyk').update('codeEnabled', value, true);
+    await this.vscodeWorkspace.getConfiguration('snyk').update('codeEnabled', value, true);
   }
 
   get shouldReportErrors(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesCrashReport');
+    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesCrashReport');
   }
 
   get shouldReportEvents(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesTelemetry');
+    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesTelemetry');
   }
 
   get shouldShowWelcomeNotification(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('yesWelcomeNotification');
+    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesWelcomeNotification');
   }
 
   async hideWelcomeNotification(): Promise<void> {
-    await vscode.workspace.getConfiguration('snyk').update('yesWelcomeNotification', false, true);
+    await this.vscodeWorkspace.getConfiguration('snyk').update('yesWelcomeNotification', false, true);
   }
 
   get shouldShowAdvancedView(): boolean {
-    return !!vscode.workspace.getConfiguration('snyk').get<boolean>('advancedMode');
+    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('advancedMode');
   }
 }
 

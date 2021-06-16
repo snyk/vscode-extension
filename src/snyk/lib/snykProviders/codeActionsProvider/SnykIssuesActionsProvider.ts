@@ -1,19 +1,22 @@
-import * as vscode from 'vscode';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/ban-types */
 import * as _ from 'lodash';
-import { getSnykSeverity, findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
+import * as vscode from 'vscode';
 import {
-  SHOW_ISSUE_ACTION_NAME,
-  IGNORE_ISSUE_ACTION_NAME,
   FILE_IGNORE_ACTION_NAME,
-  IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  IGNORE_ISSUE_ACTION_NAME,
+  IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  SHOW_ISSUE_ACTION_NAME,
 } from '../../../constants/analysis';
 import {
-  SNYK_OPEN_ISSUE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
+  SNYK_OPEN_ISSUE_COMMAND,
   VSCODE_ADD_COMMENT_COMMAND,
 } from '../../../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../../../constants/general';
+import { findIssueWithRange, ignoreIssueCommentText } from '../../../utils/analysisUtils';
 
 export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -69,9 +72,8 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       if (!editor || !issueText || !matchedIssue) {
         return;
       }
-      const symbolIndexToInsert = editor.document.lineAt(
-        matchedIssue.range.start.line,
-      ).firstNonWhitespaceCharacterIndex;
+      const symbolIndexToInsert = editor.document.lineAt(matchedIssue.range.start.line)
+        .firstNonWhitespaceCharacterIndex;
       let issuePosition = new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert);
 
       let snykCommentPostition: vscode.Position | undefined;
@@ -90,23 +92,21 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
             // case number 3
             if (isFileIgnore) snykCommentPostition = new vscode.Position(prevLineRange.start.line, prevLine.length);
             // if !isFileIgnore we want to write a new comment instead of adding to the previous one
-          } else {
+          } else if (!isFileIgnore) {
             // case number 2
-            if (!isFileIgnore) {
-              snykCommentPostition = new vscode.Position(prevLineRange.start.line, prevLine.length);
-            } else {
-              // we want to write a new comment 2 lines above the issue
-              issuePosition = issuePosition.with(issuePosition.line - 1);
-            }
+            snykCommentPostition = new vscode.Position(prevLineRange.start.line, prevLine.length);
+          } else {
+            // we want to write a new comment 2 lines above the issue
+            issuePosition = issuePosition.with(issuePosition.line - 1);
           }
         }
       }
       if (snykCommentPostition) {
         const position = snykCommentPostition;
         // if deepcode ignore of issue already exists, paste next comment in same line after existing comment
-        editor.edit((e: vscode.TextEditorEdit) => e.insert(position, `, ${issueText}`));
+        void editor.edit((e: vscode.TextEditorEdit) => e.insert(position, `, ${issueText}`));
       } else {
-        editor.edit((e: vscode.TextEditorEdit) =>
+        void editor.edit((e: vscode.TextEditorEdit) =>
           e.insert(issuePosition, this.addSpacesToText(`${issueText}\n`, symbolIndexToInsert)),
         );
       }
@@ -120,13 +120,13 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     { leading: true, trailing: false },
   );
 
-  private addSpacesToText(text: string = '', spacesCount: number = 0): string {
+  private addSpacesToText(text = '', spacesCount = 0): string {
     if (!spacesCount) {
       return text;
     }
     while (spacesCount) {
       text += ` `;
-      spacesCount--;
+      spacesCount -= 1;
     }
     return text;
   }
@@ -184,7 +184,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     clickedRange: vscode.Range,
   ): vscode.CodeAction[] | undefined {
     if (!this.issuesList || !this.issuesList.has(document.uri)) {
-      return;
+      return undefined;
     }
     const fileIssues = this.issuesList && this.issuesList.get(document.uri);
     const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
@@ -199,6 +199,8 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       // returns list of actions, all new actions should be added to this list
       return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
+
+    return undefined;
   }
 }
 

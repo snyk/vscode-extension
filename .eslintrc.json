@@ -2,10 +2,8 @@
   "plugins": ["@typescript-eslint", "prettier", "import"],
   "extends": [
     "eslint:recommended",
-    "airbnb-base",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
-    "plugin:prettier/recommended",
     "prettier",
     "prettier/@typescript-eslint"
   ],
@@ -29,14 +27,12 @@
     "require-jsdoc": "off",
     "space-before-function-paren": "off",
     "comma-dangle": "off",
-    "object-curly-spacing": "warn",
     "padded-blocks": "off",
     "camelcase": "warn",
     "object-property-newline": "off",
     "prefer-const": "warn",
     "import/no-absolute-path": "off",
     "no-prototype-builtins": "off",
-    "indent": "warn",
     "quote-props": ["warn", "as-needed"],
     "lines-between-class-members": "off",
     "import/extensions": [
@@ -57,12 +53,29 @@
     "no-use-before-define": "off",
     "no-continue": "off",
     "@typescript-eslint/restrict-template-expressions": "off",
-    "@typescript-eslint/no-unsafe-assignment": "warn"
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "import/no-extraneous-dependencies": "off",
+    "no-useless-constructor": "off",
+    "@typescript-eslint/no-useless-constructor": ["error"],
+    "no-void": [
+      "error",
+      {
+        "allowAsStatement": true
+      }
+    ],
+    "import/prefer-default-export": "off",
+    "class-methods-use-this": "off"
   },
   "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx", ".json", ".vue"]
+      },
+      "typescript": {
+        "alwaysTryTypes": true
       }
     }
   }

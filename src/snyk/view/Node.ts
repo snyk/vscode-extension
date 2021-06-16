@@ -1,6 +1,6 @@
-import { Uri, Range, Command, TreeItem, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
-import { SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import * as path from 'path';
+import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
+import { SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 
 export interface INodeIcon {
   ['light']: string;
@@ -60,8 +60,8 @@ export class Node extends TreeItem implements INode {
     if (!desc && options.issue) {
       desc = options.issue.uri.path.split('/').pop() || '';
       if (options.issue.range) {
-        desc += '[' + (options.issue.range.start.line + 1) + ', ';
-        desc += options.issue.range.start.character + 1 + ']';
+        desc += `[${options.issue.range.start.line + 1}, `;
+        desc += `${options.issue.range.start.character + 1}]`;
       }
     }
     this.description = desc;

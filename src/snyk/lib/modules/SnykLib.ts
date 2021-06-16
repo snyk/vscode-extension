@@ -31,10 +31,10 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
   }
 
   private unpause(): void {
-    if (this._mode === SNYK_MODE_CODES.PAUSED) this.setMode(SNYK_MODE_CODES.AUTO);
+    if (this._mode === SNYK_MODE_CODES.PAUSED) void this.setMode(SNYK_MODE_CODES.AUTO);
   }
 
-  private async startExtension_(manual: Boolean = false): Promise<void> {
+  private async startExtension_(manual = false): Promise<void> {
     console.log('STARTING EXTENSION');
     // If the execution is suspended, we only allow user-triggered analyses.
     if (!manual) {
@@ -43,7 +43,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
 
     await this.setContext(SNYK_CONTEXT.ERROR, false);
     this.resetTransientErrors();
-    await this.loadingBadge.setLoadingBadge(false, this);
+    this.loadingBadge.setLoadingBadge(false, this);
 
     if (!configuration.token) {
       try {
@@ -92,12 +92,14 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     await this.setContext(SNYK_CONTEXT.MODE, mode);
     switch (mode) {
       case SNYK_MODE_CODES.PAUSED:
-        this._unpauseTimeout = setTimeout(this.unpause.bind(this), EXECUTION_PAUSE_INTERVAL);
+        this._unpauseTimeout = setTimeout(() => this.unpause(), EXECUTION_PAUSE_INTERVAL);
         break;
       case SNYK_MODE_CODES.AUTO:
       case SNYK_MODE_CODES.MANUAL:
       case SNYK_MODE_CODES.THROTTLED:
         if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
+        break;
+      default:
         break;
     }
   }

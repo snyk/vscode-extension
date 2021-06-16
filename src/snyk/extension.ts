@@ -1,4 +1,5 @@
 import { emitter, ISupportedFiles } from '@snyk/code-client';
+import { EmitterDC } from '@snyk/code-client/dist/emitter';
 import * as _ from 'lodash';
 import open from 'open';
 import * as vscode from 'vscode';
@@ -16,10 +17,11 @@ import {
 } from './constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
 import { SNYK_ANALYSIS_STATUS, SNYK_VIEW_ANALYSIS, SNYK_VIEW_SUPPORT } from './constants/views';
-import { NotificationService } from './services/notificationService';
+import BundlesModule from './lib/modules/BundlesModule';
 import SnykLib from './lib/modules/SnykLib';
 import createFileWatcher from './lib/watchers/FilesWatcher';
 import { errorsLogs } from './messages/errorsServerLogMessages';
+import { NotificationService } from './services/notificationService';
 import { severityAsText } from './utils/analysisUtils';
 import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCommandsUtils';
 import { IssueProvider } from './view/IssueProvider';
@@ -28,17 +30,26 @@ import { SupportProvider } from './view/SupportProvider';
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
+  private emitter: EmitterDC;
+
+  constructor() {
+    super();
+    this.emitter = emitter;
+  }
 
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
     if (!this.debouncedCommands[name])
       this.debouncedCommands[name] = _.debounce(
+        // eslint-disable-next-line no-shadow
         async (...args: any[]): Promise<any> => {
           try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return await fn(...args);
           } catch (error) {
             await this.processError(error, {
               message: errorsLogs.command(name),
             });
+            return Promise.resolve();
           }
         },
         COMMAND_DEBOUNCE_INTERVAL,
@@ -49,13 +60,13 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
   public activate(context: vscode.ExtensionContext): void {
     this.context = context;
-    emitter.on(emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
-    emitter.on(emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
-    emitter.on(emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
-    emitter.on(emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
-    emitter.on(emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
-    emitter.on(emitter.events.apiRequestLog, this.onAPIRequestLog.bind(this));
-    emitter.on(emitter.events.error, this.onError.bind(this));
+    this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
+    this.emitter.on(this.emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
+    this.emitter.on(this.emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
+    this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
+    this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
+    this.emitter.on(this.emitter.events.apiRequestLog, BundlesModule.onAPIRequestLog.bind(this));
+    this.emitter.on(this.emitter.events.error, this.onError.bind(this));
 
     this.statusBarItem.show();
 
@@ -69,7 +80,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     context.subscriptions.push(
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, async (path: vscode.Uri, range?: vscode.Range) => {
         await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
-          () => {},
+          () => undefined,
           // no need to wait for processError since catch is called asynchronously as well
           err =>
             this.processError(err, {
@@ -134,6 +145,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
             if (openUri !== null)
               await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
             this.suggestionProvider.show(suggestion.id, uri, range);
+            suggestion.id = decodeURIComponent(suggestion.id);
             await this.trackViewSuggestion(suggestion.id, severity);
 
             this.analytics.logEvent('Issue Is Viewed', {
@@ -166,7 +178,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     this.analyzer.activate(this);
     this.suggestionProvider.activate(this);
 
-    NotificationService.init(this.processEvent.bind(this), this.processError.bind(this));
+    void NotificationService.init(this.processEvent.bind(this), this.processError.bind(this));
 
     this.checkAdvancedMode().catch(err =>
       this.processError(err, {
@@ -179,7 +191,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
   }
 
   public deactivate(): void {
-    emitter.removeAllListeners();
+    this.emitter.removeAllListeners();
   }
 
   onSupportedFilesLoaded(data: ISupportedFiles | null) {

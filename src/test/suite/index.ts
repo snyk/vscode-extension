@@ -1,10 +1,10 @@
-import * as path from 'path';
-import * as Mocha from 'mocha';
 import glob from 'glob';
+import * as Mocha from 'mocha';
+import * as path from 'path';
 
 export function run(): Promise<void> {
-
   // Create the mocha test
+  // eslint-disable-next-line new-cap
   const mocha = new Mocha.default({
     ui: 'tdd',
   });
@@ -29,9 +29,12 @@ export function run(): Promise<void> {
             c();
           }
         });
+        // eslint-disable-next-line no-shadow
       } catch (err) {
         e(err);
       }
+
+      return undefined;
     });
   });
 }

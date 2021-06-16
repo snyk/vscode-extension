@@ -1,14 +1,16 @@
+/* eslint-disable @typescript-eslint/no-array-constructor */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { IAnalysisResult, IFilePath, IFileSuggestion, IMarker, ISuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
-import { openedTextEditorType, completeFileSuggestionType } from '../../interfaces/SnykInterfaces';
-
+import { completeFileSuggestionType, openedTextEditorType } from '../../interfaces/SnykInterfaces';
 import {
-  SNYK_SEVERITIES,
-  IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
+  IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_REASON_TIP,
+  SNYK_SEVERITIES,
 } from '../constants/analysis';
-
-import { IFileSuggestion, ISuggestion, IFilePath, IMarker, IAnalysisResult } from '@snyk/code-client';
 
 export const createSnykSeveritiesMap = () => {
   const { information, error, warning } = SNYK_SEVERITIES;
@@ -95,6 +97,7 @@ export const updateFileReviewResultsPositions = (
   const changesRange = updatedFile.contentChanges[0].range;
   const changesText = updatedFile.contentChanges[0].text;
   const goToNewLine = '\n';
+  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   const offsetedline = changesRange.start.line + 1;
   const charOffset = 1;
 
@@ -102,6 +105,10 @@ export const updateFileReviewResultsPositions = (
     ...analysisResults.files[updatedFile.fullPath],
   };
   for (const issue in fileIssuesList) {
+    if (!Object.prototype.hasOwnProperty.call(fileIssuesList, issue)) {
+      continue;
+    }
+
     for (const [index, position] of fileIssuesList[issue].entries()) {
       const currentLineIsOnEdgeOfIssueRange = offsetedline === position.rows[0] || offsetedline === position.rows[1];
 
@@ -120,6 +127,7 @@ export const updateFileReviewResultsPositions = (
         if (changesText.length && changesText !== goToNewLine && currentLineIsOnEdgeOfIssueRange) {
           if (changesRange.start.character < position.cols[0] && !changesText.includes(goToNewLine)) {
             for (const col in position.cols) {
+              if (!Object.prototype.hasOwnProperty.call(position.cols, col)) continue;
               position.cols[col] += changesText.length;
             }
           }
@@ -135,6 +143,7 @@ export const updateFileReviewResultsPositions = (
           }
           if (changesRange.start.character < position.cols[0] && !changesText.includes(goToNewLine)) {
             for (const char in position.cols) {
+              if (!Object.prototype.hasOwnProperty.call(position.cols, char)) continue;
               position.cols[char] =
                 position.cols[char] > 0 ? position.cols[char] - updatedFile.contentChanges[0].rangeLength : 0;
             }
@@ -232,6 +241,7 @@ export const findCompleteSuggestion = (
   suggestionIndex = parseInt(suggestionIndex, 10);
   const suggestion = analysisResults.suggestions[suggestionIndex];
   if (!suggestion) return;
+  // eslint-disable-next-line consistent-return
   return {
     uri: uri.toString(),
     ...suggestion,
@@ -256,8 +266,8 @@ export const checkCompleteSuggestion = (
     const found = file[index].find(fs => {
       let equal = true;
       for (let dir of ['cols', 'rows']) {
-        for (let index of [0, 1]) {
-          equal = equal && fs[dir][index] === suggestion[dir][index];
+        for (const ind of [0, 1]) {
+          equal = equal && fs[dir][ind] === suggestion[dir][ind];
         }
       }
       return equal;
@@ -282,15 +292,16 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
 };
 
 export const severityAsText = (severity: number): string => {
-  if (severity === 1) {
-    return 'Low';
-  } else if (severity === 2) {
-    return 'Medium';
-  } else if (severity === 3) {
-    return 'High';
-  } else if (severity === 4) {
-    return 'Critical';
-  } else {
-    return '';
+  switch (severity) {
+    case 1:
+      return 'Low';
+    case 2:
+      return 'Medium';
+    case 3:
+      return 'High';
+    case 4:
+      return 'Critical';
+    default:
+      return '';
   }
 };

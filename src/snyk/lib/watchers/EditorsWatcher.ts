@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExtensionInterface, SnykWatcherInterface, openedTextEditorType } from '../../../interfaces/SnykInterfaces';
+import { ExtensionInterface, openedTextEditorType, SnykWatcherInterface } from '../../../interfaces/SnykInterfaces';
 
 class SnykEditorsWatcher implements SnykWatcherInterface {
   private currentTextEditors: {
@@ -55,7 +55,7 @@ class SnykEditorsWatcher implements SnykWatcherInterface {
           contentChanges: [...event.contentChanges],
           document: event.document,
         };
-        extension.analyzer.updateReviewResultsPositions(extension, this.currentTextEditors[currentEditorFileName]);
+        void extension.analyzer.updateReviewResultsPositions(extension, this.currentTextEditors[currentEditorFileName]);
       }
     });
   }
@@ -64,13 +64,13 @@ class SnykEditorsWatcher implements SnykWatcherInterface {
     for await (const editor of vscode.window.visibleTextEditors) {
       this.createEditorInfo(editor);
     }
-    await this.watchEditorsNavChange(extension);
-    await this.watchClosingEditor();
-    await this.watchEditorCodeChanges(extension);
+    this.watchEditorsNavChange(extension);
+    this.watchClosingEditor();
+    this.watchEditorCodeChanges(extension);
   }
 
   public activate(extension: ExtensionInterface): void {
-    this.prepareWatchers(extension);
+    void this.prepareWatchers(extension);
   }
 }
 

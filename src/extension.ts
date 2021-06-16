@@ -7,11 +7,11 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
   extension.activate(context);
 }
-export function deactivate() {
+export function deactivate(): void {
   console.log('Deactivating SnykExtension');
   extension.deactivate();
 }
 
-export function getExtension() {
+export function getExtension(): SnykExtension {
   return extension;
 }

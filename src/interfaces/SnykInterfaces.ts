@@ -78,8 +78,7 @@ export interface SuggestionProviderInterface {
 
 export type userStateItemType = string | number | boolean | undefined;
 
-export type configType = string | Function;
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type errorType = Error | any;
 
 export type filesForSaveListType = string[];
@@ -104,10 +103,6 @@ export interface StateIitemsInterface {
   [key: string]: string;
 }
 
-export interface StateSelectorsInterface {
-  [key: string]: Function;
-}
-
 export interface SingleIssuePositionInterface {
   cols: number[];
   rows: number[];
@@ -130,7 +125,7 @@ export interface AnalyzerInterface {
     position: vscode.Range,
   ): completeFileSuggestionType | undefined;
   checkFullSuggestion(suggestion: completeFileSuggestionType): boolean;
-  createReviewResults(): Promise<void>;
+  createReviewResults(): void;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
   setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
 }

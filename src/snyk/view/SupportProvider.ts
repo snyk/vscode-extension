@@ -1,7 +1,7 @@
-import { TreeItemCollapsibleState, ThemeIcon } from 'vscode';
-import { NodeProvider } from './NodeProvider';
-import { Node } from './Node';
+import { ThemeIcon, TreeItemCollapsibleState } from 'vscode';
 import { SNYK_DCIGNORE_COMMAND } from '../constants/commands';
+import { Node } from './Node';
+import { NodeProvider } from './NodeProvider';
 
 export class SupportProvider extends NodeProvider {
   getRootChildren(): Node[] {

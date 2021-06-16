@@ -1,15 +1,15 @@
-import * as vscode from 'vscode';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import {
+  completeFileSuggestionType,
   ExtensionInterface,
   SuggestionProviderInterface,
-  completeFileSuggestionType,
 } from '../../interfaces/SnykInterfaces';
-import { createIssueCorrectRange, getVSCodeSeverity } from '../utils/analysisUtils';
-import { SNYK_VIEW_SUGGESTION } from '../constants/views';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { TELEMETRY_EVENTS } from '../constants/telemetry';
+import { SNYK_VIEW_SUGGESTION } from '../constants/views';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
+import { createIssueCorrectRange, getVSCodeSeverity } from '../utils/analysisUtils';
 
 // This is outside of the class just for a stylistic choice, to have clear indentation structure.
 // NOTES: tags must be closed by matching pairs (<tag/> is not valid)
@@ -88,7 +88,7 @@ function getWebviewContent(images: Record<string, string>) {
       .example-line.added>code { font-weight:600 }
       .example-line>code { padding-left: 30px; white-space: pre-wrap; color: #231F20; font-weight:400 }
       #explanations-top { margin-top: 16px; margin-bottom: 8px; }
-      
+
       .vscode-dark #example { border-color: rgba(255,255,255,.075); background-color: rgba(0,0,0,.15)  }
       .vscode-dark .removed { background-color:rgba(201,60,55,0.2); color:#fff }
       .vscode-dark .added { background-color:rgba(70,149,74,0.2); color:#fff }
@@ -533,7 +533,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
       this.disposePanel();
       return;
     }
-    this.showPanel(suggestion);
+    void this.showPanel(suggestion);
   }
 
   checkCurrentSuggestion() {
@@ -552,7 +552,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
 
   private checkVisibility(_e: vscode.WebviewPanelOnDidChangeViewStateEvent) {
     if (this.panel && this.panel.visible) {
-      this.panel.webview.postMessage({ type: 'get' });
+      void this.panel.webview.postMessage({ type: 'get' });
     }
   }
 
@@ -608,7 +608,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
       }, {});
       this.panel.webview.html = getWebviewContent(images);
 
-      this.panel.webview.postMessage({ type: 'set', args: suggestion });
+      void this.panel.webview.postMessage({ type: 'set', args: suggestion });
       this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.extension?.context?.subscriptions);
       this.panel.onDidChangeViewState(
         this.checkVisibility.bind(this),
@@ -624,7 +624,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
       this.suggestion = suggestion;
     } catch (e) {
       if (!this.extension) return;
-      this.extension.processError(e, {
+      void this.extension.processError(e, {
         message: errorsLogs.suggestionView,
       });
     }
@@ -648,6 +648,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
           break;
         }
         case 'ignoreIssue': {
+          // eslint-disable-next-line no-shadow
           let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
           severity = getVSCodeSeverity(severity);
@@ -671,7 +672,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
         }
       }
     } catch (e) {
-      this.extension.processError(e, {
+      void this.extension.processError(e, {
         message: errorsLogs.suggestionViewMessage,
         data: { message },
       });
@@ -685,14 +686,14 @@ class SuggestionSerializer implements vscode.WebviewPanelSerializer {
     this.suggestionProvider = suggestionProvider;
   }
 
-  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any): Promise<void> {
     // `state` is the state persisted using `setState` inside the webview
     console.log(`Snyk: Restoring webview state: ${state}`);
     if (!state) {
       webviewPanel.dispose();
-      return;
+      return Promise.resolve();
     }
     this.suggestionProvider.restorePanel(webviewPanel);
-    this.suggestionProvider.showPanel(state);
+    return this.suggestionProvider.showPanel(state);
   }
 }

@@ -247,8 +247,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "tsc -p ./",
     "test": "node ./out/test/runTest.js",
-    "lint": "npx eslint src/**/*.ts",
-    "lint:fix": "npx eslint --fix src/**/*.ts"
+    "lint": "npx eslint 'src/**/*.ts'",
+    "lint:fix": "npx eslint --fix 'src/**/*.ts'"
   },
   "devDependencies": {
     "@types/analytics-node": "^3.1.4",
@@ -260,8 +260,8 @@
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "eslint": "^7.8.1",
-    "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.11.0",
+    "eslint-import-resolver-typescript": "^2.4.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
     "glob": "^7.1.6",
