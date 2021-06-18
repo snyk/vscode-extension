@@ -27,7 +27,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
     // return true;
 
     // disabling request sending in dev mode or to self-managed instances.
-    return configuration.baseURL === configuration.defaultBaseURL || true;
+    return !configuration.isDevelopment;
   }
 
   resetTransientErrors(): void {

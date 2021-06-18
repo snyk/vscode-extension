@@ -52,18 +52,6 @@
             "description": "Toggle advanced tools for expert users",
             "scope": "application"
           },
-          "snyk.url": {
-            "type": "string",
-            "default": "",
-            "description": "In order to use custom Snyk API, update the instance url below:",
-            "scope": "application"
-          },
-          "snyk.authHost": {
-            "type": "string",
-            "default": "",
-            "description": "In order to use a custom Snyk authentication server, update the instance url below:",
-            "scope": "application"
-          },
           "snyk.token": {
             "type": "string",
             "default": "",

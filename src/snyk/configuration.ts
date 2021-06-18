@@ -5,11 +5,8 @@ import { IDE_NAME } from './constants/general';
 export interface IConfiguration {
   isDevelopment: boolean;
   source: string;
-  staticToken: string;
-  defaultBaseURL: string;
   baseURL: string;
   authHost: string;
-  termsConditionsUrl: string;
   snykCodeUrl: string;
   token: string | undefined;
   setToken(token: string): Promise<void>;
@@ -22,10 +19,10 @@ export interface IConfiguration {
 
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
-  staticToken = '';
-  defaultBaseURL = 'https://deeproxy.snyk.io';
-  defaultAuthHost = 'https://snyk.io';
-  staticCodeEnabled = false;
+  private staticToken = '';
+  private defaultBaseURL = 'https://deeproxy.snyk.io';
+  private defaultAuthHost = 'https://snyk.io';
+  private staticCodeEnabled = false;
 
   constructor(
     private processEnv: NodeJS.ProcessEnv = process.env,
@@ -33,19 +30,15 @@ export class Configuration implements IConfiguration {
   ) {}
 
   get isDevelopment(): boolean {
-    return process.env.SNYK_VSCE_DEVELOPMENT ? true : false;
+    return !!process.env.SNYK_VSCE_DEVELOPMENT;
   }
 
   get baseURL(): string {
-    return this.vscodeWorkspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;
+    return this.isDevelopment ? 'https://deeproxy.dev.snyk.io' : this.defaultBaseURL;
   }
 
   get authHost(): string {
-    return this.vscodeWorkspace.getConfiguration('snyk').get('authHost') || this.defaultAuthHost;
-  }
-
-  get termsConditionsUrl(): string {
-    return `${this.authHost}/policies/terms-of-service/?utm_source=${this.source}`; // todo: unused?
+    return this.isDevelopment ? 'https://dev.snyk.io' : this.defaultAuthHost;
   }
 
   get snykCodeUrl(): string {
