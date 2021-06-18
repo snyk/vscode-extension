@@ -291,7 +291,7 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
   return `${snykComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
 };
 
-export const severityAsText = (severity: number): string => {
+export const severityAsText = (severity: 1 | 2 | 3 | 4): 'Low' | 'Medium' | 'High' | 'Critical' => {
   switch (severity) {
     case 1:
       return 'Low';
@@ -301,7 +301,5 @@ export const severityAsText = (severity: number): string => {
       return 'High';
     case 4:
       return 'Critical';
-    default:
-      return '';
   }
 };

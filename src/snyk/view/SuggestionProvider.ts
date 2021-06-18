@@ -1,3 +1,4 @@
+import { reportEvent } from '@snyk/code-client';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {
@@ -5,8 +6,8 @@ import {
   ExtensionInterface,
   SuggestionProviderInterface,
 } from '../../interfaces/SnykInterfaces';
+import { configuration } from '../configuration';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
-import { TELEMETRY_EVENTS } from '../constants/telemetry';
 import { SNYK_VIEW_SUGGESTION } from '../constants/views';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { createIssueCorrectRange, getVSCodeSeverity } from '../utils/analysisUtils';
@@ -664,7 +665,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
           break;
         }
         case 'sendFeedback': {
-          await this.extension.processEvent(TELEMETRY_EVENTS.suggestionFeedback, { data: args });
+          await this.sendFeedback({ data: args });
           break;
         }
         default: {
@@ -677,6 +678,16 @@ export class SuggestionProvider implements SuggestionProviderInterface {
         data: { message },
       });
     }
+  }
+
+  private async sendFeedback(data: { [key: string]: any } = {}) {
+    await reportEvent({
+      baseURL: configuration.baseURL,
+      type: 'suggestionFeedback',
+      source: configuration.source,
+      ...(configuration.token && { sessionToken: configuration.token }),
+      ...data,
+    });
   }
 }
 

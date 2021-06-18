@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { IDE_NAME } from './constants/general';
 
 export interface IConfiguration {
+  isDevelopment: boolean;
   source: string;
   staticToken: string;
   defaultBaseURL: string;
@@ -30,6 +31,10 @@ export class Configuration implements IConfiguration {
     private processEnv: NodeJS.ProcessEnv = process.env,
     private vscodeWorkspace: typeof vscode.workspace = vscode.workspace,
   ) {}
+
+  get isDevelopment(): boolean {
+    return process.env.SNYK_VSCE_DEVELOPMENT ? true : false;
+  }
 
   get baseURL(): string {
     return this.vscodeWorkspace.getConfiguration('snyk').get('url') || this.defaultBaseURL;

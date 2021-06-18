@@ -173,7 +173,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       showIssueAction.command = {
         command: SNYK_OPEN_ISSUE_COMMAND,
         title: SNYK_OPEN_ISSUE_COMMAND,
-        arguments: [matchedIssue.message, suggestion.severity, document.uri, matchedIssue.range, null],
+        arguments: [matchedIssue.message, document.uri, matchedIssue.range, null],
       };
 
     return showIssueAction;

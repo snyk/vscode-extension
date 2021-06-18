@@ -7,6 +7,7 @@ import {
   EXECUTION_THROTTLING_INTERVAL,
 } from '../../constants/general';
 import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../constants/views';
+import { Logger } from '../../logger';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { userMe } from '../../services/userService';
 import BundlesModule from './BundlesModule';
@@ -35,7 +36,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
   }
 
   private async startExtension_(manual = false): Promise<void> {
-    console.log('STARTING EXTENSION');
+    Logger.info('Starting extension');
     // If the execution is suspended, we only allow user-triggered analyses.
     if (!manual) {
       if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) return;
@@ -46,15 +47,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     this.loadingBadge.setLoadingBadge(false, this);
 
     if (!configuration.token) {
-      try {
-        this.createAnalytics();
-        this.analytics.identify();
-        this.analytics.logEvent('Welcome Is Viewed', {
-          ide: 'Visual Studio Code',
-        });
-      } catch (e) {
-        console.log(e);
-      }
+      this.analytics.logWelcomeViewIsViewed();
 
       await this.checkSession();
       return;
@@ -68,13 +61,12 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
 
     try {
-      this.createAnalytics();
       const user = await userMe();
       if (user) {
-        this.analytics.alias(user.id);
+        this.analytics.identify(user.id);
       }
 
-      await this.startAnalysis();
+      await this.startAnalysis(manual);
     } catch (err) {
       await this.processError(err, {
         message: errorsLogs.failedExecutionDebounce,

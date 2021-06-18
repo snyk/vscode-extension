@@ -1,7 +1,6 @@
 import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
-import { Segment } from '../snyk/analytics/segment';
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;
@@ -22,19 +21,15 @@ export interface BaseSnykModuleInterface {
   setContext(key: string, value: unknown): Promise<void>;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;
-  analytics: Segment;
-  createAnalytics(): void;
-  userId: string;
+  loadAnalytics(): void;
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
-  processEvent(event: string, options: { [key: string]: any }): Promise<void>;
   startExtension(): Promise<void>;
 }
 
 export interface ReportModuleInterface {
   resetTransientErrors(): void;
-  trackViewSuggestion(issueId: string, severity: number): Promise<void>;
 }
 
 export interface LoginModuleInterface {
@@ -49,7 +44,7 @@ export interface BundlesModuleInterface {
   readonly runningAnalysis: boolean;
   readonly lastAnalysisDuration: number;
   readonly lastAnalysisTimestamp: number;
-  startAnalysis(): Promise<void>;
+  startAnalysis(manual: boolean): Promise<void>;
 }
 
 export interface SnykLibInterface {
