@@ -103,8 +103,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
     await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); // todo: removed once 'uploadApproved' is deprecated
     if (!enabled) {
-      // TODO: consent event here
-      this.createAnalytics();
+      this.loadAnalytics();
 
       this.loadingBadge.setLoadingBadge(true, this);
     }

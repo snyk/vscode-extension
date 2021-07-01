@@ -16,6 +16,7 @@ import {
   SNYK_START_COMMAND,
 } from './constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
+import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './constants/globalState';
 import { SNYK_ANALYSIS_STATUS, SNYK_VIEW_ANALYSIS, SNYK_VIEW_SUPPORT } from './constants/views';
 import BundlesModule from './lib/modules/BundlesModule';
 import SnykLib from './lib/modules/SnykLib';
@@ -107,7 +108,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         SNYK_START_COMMAND,
-        this.executeCommand.bind(this, SNYK_START_COMMAND, this.startExtension.bind(this)),
+        this.executeCommand.bind(this, SNYK_START_COMMAND, this.startExtension.bind(this), true),
       ),
     );
 
@@ -133,7 +134,6 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
           SNYK_OPEN_ISSUE_COMMAND,
           async (
             message: string,
-            severity: number,
             uri: vscode.Uri,
             range: vscode.Range,
             openUri?: vscode.Uri,
@@ -146,14 +146,12 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
               await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
             this.suggestionProvider.show(suggestion.id, uri, range);
             suggestion.id = decodeURIComponent(suggestion.id);
-            await this.trackViewSuggestion(suggestion.id, severity);
 
-            this.analytics.logEvent('Issue Is Viewed', {
+            this.analytics.logIssueIsViewed({
               ide: 'Visual Studio Code',
               issueId: suggestion.id,
               issueType: 'Code Security Vulnerability',
               severity: severityAsText(suggestion.severity),
-              userId: this.userId,
             });
           },
         ),
@@ -178,13 +176,22 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     this.analyzer.activate(this);
     this.suggestionProvider.activate(this);
 
-    void NotificationService.init(this.processEvent.bind(this), this.processError.bind(this));
+    void NotificationService.init(this.processError.bind(this));
 
     this.checkAdvancedMode().catch(err =>
       this.processError(err, {
         message: errorsLogs.checkAdvancedMode,
       }),
     );
+
+    this.loadAnalytics();
+
+    // Use memento until lifecycle hooks are implemented
+    // https://github.com/microsoft/vscode/issues/98732
+    if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
+      this.analytics.logPluginIsInstalled();
+      void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
+    }
 
     // Actually start analysis
     this.startExtension();

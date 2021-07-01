@@ -80,7 +80,7 @@ export class IssueProvider extends NodeProvider {
             command: {
               command: SNYK_OPEN_ISSUE_COMMAND,
               title: '',
-              arguments: [d.message, severity, uri, d.range],
+              arguments: [d.message, uri, d.range],
             },
           };
 

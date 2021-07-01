@@ -8,7 +8,6 @@ import {
   openedTextEditorType,
 } from '../../../interfaces/SnykInterfaces';
 import { SNYK_NAME } from '../../constants/general';
-import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import {
   checkCompleteSuggestion,
@@ -74,7 +73,6 @@ class SnykAnalyzer implements AnalyzerInterface {
       severity: getSnykSeverity(vscodeSeverity),
       ...options.data,
     };
-    void this.extension.processEvent(TELEMETRY_EVENTS.ignoreSuggestion, options);
   }
 
   private createIssueDiagnosticInfo({

@@ -1,4 +1,4 @@
-import { constants, reportError, reportEvent } from '@snyk/code-client';
+import { constants, reportError } from '@snyk/code-client';
 import * as _ from 'lodash';
 import { errorType, ReportModuleInterface } from '../../../interfaces/SnykInterfaces';
 import { configuration } from '../../configuration';
@@ -7,8 +7,8 @@ import {
   CONNECTION_ERROR_RETRY_INTERVAL,
   MAX_CONNECTION_RETRIES,
 } from '../../constants/general';
-import { TELEMETRY_EVENTS } from '../../constants/telemetry';
 import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../../constants/views';
+import { Logger } from '../../logger';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import { ILoadingBadge, LoadingBadge } from '../../view/loadingBadge';
 import BaseSnykModule from './BaseSnykModule';
@@ -34,49 +34,6 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
     this.transientErrors = 0;
   }
 
-  private sendEvent = _.debounce(
-    async (event: string, options: { [key: string]: any }): Promise<void> => {
-      if (!ReportModule.shouldReport || !configuration.shouldReportEvents) return;
-      try {
-        await reportEvent({
-          baseURL: configuration.baseURL,
-          type: event,
-          source: configuration.source,
-          ...(configuration.token && { sessionToken: configuration.token }),
-          ...options,
-        });
-      } catch (error) {
-        await this.processError(error, {
-          message: errorsLogs.sendEvent,
-          data: {
-            event,
-            source: configuration.source,
-            ...(configuration.token && { sessionToken: configuration.token }),
-            ...options,
-          },
-        });
-      }
-    },
-    COMMAND_DEBOUNCE_INTERVAL,
-    { leading: true, trailing: false },
-  );
-
-  async processEvent(event: string, options: { [key: string]: any } = {}): Promise<void> {
-    // processEvent must be safely callable without waiting its completition.
-    try {
-      await this.sendEvent(event, options);
-    } catch (err) {
-      console.error('Snyk event handler failed with error:', err);
-    }
-  }
-
-  async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
-    const [language, model] = issueId.split('/');
-    return this.processEvent(TELEMETRY_EVENTS.viewSuggestion, {
-      data: { issueId, severity, language, model },
-    });
-  }
-
   private sendError = _.debounce(
     async (options: { [key: string]: any }): Promise<void> => {
       if (!ReportModule.shouldReport || !configuration.shouldReportErrors) return;
@@ -99,7 +56,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it to console.error
     return this.processErrorInternal(error, options).catch(err =>
-      console.error(`Snyk error handler failed with error: ${err}`),
+      Logger.error(`Snyk error handler failed with error: ${err}`),
     );
   }
 

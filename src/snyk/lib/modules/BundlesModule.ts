@@ -50,17 +50,17 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
     });
   }
 
-  public async startAnalysis(): Promise<void> {
+  public async startAnalysis(manual: boolean): Promise<void> {
     if (this.runningAnalysis) {
       return;
     }
     try {
       const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
 
-      this.analytics.logEvent('Analysis Is Triggered', {
-        analysisType: 'Code Security',
+      this.analytics.logAnalysisIsTriggered({
+        analysisType: ['Snyk Code Security', 'Snyk Code Quality'],
         ide: 'Visual Studio Code',
-        userId: this.userId,
+        triggeredByUser: manual,
       });
 
       if (paths.length) {
@@ -88,11 +88,15 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           this.analyzer.analysisResults = result.analysisResults;
           this.analyzer.createReviewResults();
 
-          this.analytics.logEvent('Analysis Is Ready', {
+          this.analytics.logAnalysisIsReady({
             ide: 'Visual Studio Code',
-            product: 'Snyk Code',
-            type: 'Security vulnerabilities',
-            userId: this.userId,
+            analysisType: 'Snyk Code Security',
+            result: 'Success',
+          });
+          this.analytics.logAnalysisIsReady({
+            ide: 'Visual Studio Code',
+            analysisType: 'Snyk Code Quality',
+            result: 'Success',
           });
 
           this.refreshViews();
@@ -104,6 +108,16 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
     } catch (err) {
       await this.processError(err, {
         message: errorsLogs.failedAnalysis,
+      });
+      this.analytics.logAnalysisIsReady({
+        ide: 'Visual Studio Code',
+        analysisType: 'Snyk Code Security',
+        result: 'Error',
+      });
+      this.analytics.logAnalysisIsReady({
+        ide: 'Visual Studio Code',
+        analysisType: 'Snyk Code Quality',
+        result: 'Error',
       });
     } finally {
       this.runningAnalysis = false;

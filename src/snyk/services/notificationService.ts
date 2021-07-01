@@ -1,29 +1,24 @@
 import * as vscode from 'vscode';
+import { errorType } from '../../interfaces/SnykInterfaces';
 import { configuration } from '../configuration';
-import { TELEMETRY_EVENTS } from '../constants/telemetry';
+import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { snykMessages } from '../messages/snykMessages';
 import { openSnykViewContainer } from '../utils/vscodeCommandsUtils';
-import { errorType } from '../../interfaces/SnykInterfaces';
-import { errorsLogs } from '../messages/errorsServerLogMessages';
 
 export class NotificationService {
-  static async init(
-    eventProcessor: (event: string) => Promise<void>,
-    errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>,
-  ): Promise<void> {
-    await this.checkWelcomeNotification(eventProcessor).catch(err =>
+  static async init(errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>): Promise<void> {
+    await NotificationService.checkWelcomeNotification().catch(err =>
       errorHandler(err, {
         message: errorsLogs.welcomeNotification,
       }),
     );
   }
 
-  static async checkWelcomeNotification(eventProcessor: (event: string) => Promise<void>): Promise<void> {
+  static async checkWelcomeNotification(): Promise<void> {
     if (!configuration.shouldShowWelcomeNotification) {
       return;
     }
 
-    void eventProcessor(TELEMETRY_EVENTS.viewWelcomeNotification);
     const pressedButton = await vscode.window.showInformationMessage(
       snykMessages.welcome.msg,
       snykMessages.welcome.button,
