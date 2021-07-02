@@ -114,10 +114,8 @@ export class Iteratively {
       return;
     }
 
-    const userId = this.userId ?? '';
-
     itly.welcomeIsViewed(
-      userId,
+      '',
       {
         ide: this.ide,
       },

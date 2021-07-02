@@ -9,18 +9,17 @@ import { ExtensionInterface } from '../../interfaces/SnykInterfaces';
 import { configuration } from '../../snyk/configuration';
 
 const testToken = '23';
-const mockedTestFilesDirPath = __dirname.replace('out/test', 'src/test');
+// const mockedTestFilesDirPath = __dirname.replace('out/test', 'src/test');
 // const mockedFolderPath = vscode.Uri.parse('scheme:' + nodePath.join(mockedTestFilesDirPath, '/../mocked_data'), true)
 //   .fsPath;
 
 // pre test configuring extension
-const preTestConfigureExtension = () => {
+const preTestConfigureExtension = async () => {
   // pre-test extension changes before performing tests
   const testExtension = extension.getExtension();
 
   // set test token and backend host
-  configuration.staticCodeEnabled = true;
-  configuration.staticToken = testToken;
+  await configuration.setToken(testToken);
 
   // // set workspace path for tests
   // testExtension.workspacesPaths = [mockedFolderPath];
@@ -34,8 +33,8 @@ const preTestConfigureExtension = () => {
 
 suite('Snyk Extension Tests', () => {
   let testExtension: ExtensionInterface;
-  test('Pre-test configuring', () => {
-    testExtension = preTestConfigureExtension();
+  test('Pre-test configuring', async () => {
+    testExtension = await preTestConfigureExtension();
     assert.equal(configuration.token, testToken);
     assert.equal(configuration.baseURL, 'https://www.deepcoded.com');
     // assert.equal(
