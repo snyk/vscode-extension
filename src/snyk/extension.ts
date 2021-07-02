@@ -59,7 +59,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     return this.debouncedCommands[name](...args);
   }
 
-  public activate(context: vscode.ExtensionContext): void {
+  public async activate(context: vscode.ExtensionContext): Promise<void> {
     this.context = context;
     this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
     this.emitter.on(this.emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
@@ -189,7 +189,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     // Use memento until lifecycle hooks are implemented
     // https://github.com/microsoft/vscode/issues/98732
     if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
-      this.analytics.logPluginIsInstalled();
+      await this.analytics.logPluginIsInstalled();
       void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
     }
 
@@ -197,8 +197,9 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     this.startExtension();
   }
 
-  public deactivate(): void {
+  public async deactivate(): Promise<void> {
     this.emitter.removeAllListeners();
+    await this.analytics.flush();
   }
 
   onSupportedFilesLoaded(data: ISupportedFiles | null) {

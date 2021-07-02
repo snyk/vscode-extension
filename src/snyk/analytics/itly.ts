@@ -59,6 +59,8 @@ export class Iteratively {
     return this;
   }
 
+  public flush = (): Promise<void> => itly.flush();
+
   public identify(userId: string): void {
     if (!this.canReportEvents()) {
       return;
@@ -131,9 +133,9 @@ export class Iteratively {
     );
   }
 
-  public logPluginIsInstalled(): void {
+  public logPluginIsInstalled(): Promise<void> {
     if (!this.canReportEvents()) {
-      return;
+      return Promise.resolve();
     }
 
     itly.pluginIsInstalled(
@@ -149,6 +151,8 @@ export class Iteratively {
         },
       },
     );
+
+    return itly.flush();
   }
 
   public logPluginIsUninstalled(userId?: string): void {
