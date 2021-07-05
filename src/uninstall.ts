@@ -127,8 +127,9 @@ async function reportUninstall(): Promise<void> {
 
   const userId = await getUserId(token);
 
-  // Report event
+  // Report and flush the uninstall event
   analytics.logPluginIsUninstalled(userId);
+  await analytics.flush();
 }
 
 void reportUninstall();

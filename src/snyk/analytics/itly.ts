@@ -59,6 +59,8 @@ export class Iteratively {
     return this;
   }
 
+  public flush = (): Promise<void> => itly.flush();
+
   public identify(userId: string): void {
     if (!this.canReportEvents()) {
       return;
