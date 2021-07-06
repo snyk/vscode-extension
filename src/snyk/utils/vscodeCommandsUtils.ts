@@ -4,7 +4,6 @@ import {
   VSCODE_VIEW_CONTAINER_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
   SNYK_CONTEXT_PREFIX,
-  SNYK_OPEN_BROWSER_COMMAND,
 } from '../constants/commands';
 import { createDCIgnore } from './ignoreFileUtils';
 
@@ -18,10 +17,6 @@ export const openSnykViewContainer = async (): Promise<void> => {
 
 export const setContext = async (key: string, value: unknown): Promise<void> => {
   await vscode.commands.executeCommand('setContext', `${SNYK_CONTEXT_PREFIX}${key}`, value);
-};
-
-export const viewInBrowser = async (url: string): Promise<void> => {
-  await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
 };
 
 export const createDCIgnoreCommand = async (custom = false, path?: string): Promise<void> => {

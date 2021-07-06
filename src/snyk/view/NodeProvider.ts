@@ -20,5 +20,5 @@ export abstract class NodeProvider implements TreeDataProvider<Node> {
     return element;
   }
 
-  onDidChangeTreeData = this.extension.refreshViewEmitter.event;
+  onDidChangeTreeData = this.extension.contextService.refreshViewEmitter.event;
 }

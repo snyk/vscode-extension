@@ -20,7 +20,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
   updateStatus(status: string, progress: string): void {
     this.analysisStatus = status;
     this.analysisProgress = progress;
-    this.refreshViews();
+    this.contextService.refreshViews();
   }
 
   onScanFilesProgress(value: number): void {
@@ -66,7 +66,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           triggeredByUser: manual,
         });
 
-        await this.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
+        await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
         this.runningAnalysis = true;
         this.lastAnalysisStartingTimestamp = Date.now();
 
@@ -102,11 +102,11 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
             result: 'Success',
           });
 
-          this.refreshViews();
+          this.contextService.refreshViews();
           this.suggestionProvider.checkCurrentSuggestion();
         }
       } else {
-        await this.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, false);
+        await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, false);
       }
     } catch (err) {
       await this.processError(err, {

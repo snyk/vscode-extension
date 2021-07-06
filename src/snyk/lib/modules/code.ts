@@ -1,6 +1,6 @@
 import { IConfiguration } from '../../configuration';
 import { getSastSettings } from '../../services/cliConfigService';
-import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
+import { IOpenerService } from '../../services/openerService';
 
 export interface ISnykCode {
   isEnabled(): Promise<boolean>;
@@ -8,10 +8,7 @@ export interface ISnykCode {
 }
 
 export class SnykCode {
-  /**
-   *
-   */
-  constructor(private config: IConfiguration) {}
+  constructor(private config: IConfiguration, private openerService: IOpenerService) {}
 
   public async isEnabled(): Promise<boolean> {
     // Code was disabled explicitly
@@ -35,7 +32,7 @@ export class SnykCode {
     }
 
     if (this.config.snykCodeUrl != null) {
-      await viewInBrowser(this.config.snykCodeUrl);
+      await this.openerService.openBrowserUrl(this.config.snykCodeUrl);
     }
 
     // Poll for changed settings (65 sec)

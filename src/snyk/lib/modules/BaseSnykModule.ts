@@ -1,5 +1,4 @@
 import { IFileBundle } from '@snyk/code-client';
-import * as _ from 'lodash';
 import * as vscode from 'vscode';
 import {
   AnalyzerInterface,
@@ -11,11 +10,11 @@ import {
 } from '../../../interfaces/SnykInterfaces';
 import { Iteratively } from '../../analytics/itly';
 import { configuration } from '../../configuration';
-import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../../constants/general';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { Logger } from '../../logger';
+import { ContextService, IContextService } from '../../services/contextService';
+import { IOpenerService, OpenerService } from '../../services/openerService';
 import { PendingTask, PendingTaskInterface } from '../../utils/pendingTask';
-import { setContext } from '../../utils/vscodeCommandsUtils';
 import { SuggestionProvider } from '../../view/SuggestionProvider';
 import SnykAnalyzer from '../analyzer/SnykAnalyzer';
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
@@ -30,13 +29,13 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   editorsWatcher: SnykWatcherInterface;
   settingsWatcher: SnykWatcherInterface;
   suggestionProvider: SuggestionProviderInterface;
+  contextService: IContextService;
+  openerService: IOpenerService;
 
   // Views and analysis progress
-  refreshViewEmitter: vscode.EventEmitter<any>;
   analysisStatus = '';
   analysisProgress = '';
   protected initializedView: PendingTaskInterface;
-  private viewContext: { [key: string]: unknown };
   analytics: Iteratively;
 
   remoteBundle: IFileBundle;
@@ -49,41 +48,25 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     this.statusBarItem = new SnykStatusBarItem();
     this.editorsWatcher = new SnykEditorsWatcher();
     this.settingsWatcher = new SnykSettingsWatcher();
-    this.refreshViewEmitter = new vscode.EventEmitter<any>();
     this.suggestionProvider = new SuggestionProvider();
     this.analysisStatus = '';
     this.analysisProgress = '';
-    this.viewContext = {};
-    this.snykCode = new SnykCode(configuration);
     this.initializedView = new PendingTask();
-  }
-
-  async setContext(key: string, value: unknown): Promise<void> {
-    console.log('Snyk context', key, value);
-    const oldValue = this.viewContext[key];
-    this.viewContext[key] = value;
-    await setContext(key, value);
-    this.refreshViews();
+    this.contextService = new ContextService();
+    this.openerService = new OpenerService();
+    this.snykCode = new SnykCode(configuration, this.openerService);
   }
 
   get shouldShowAnalysis(): boolean {
     return (
-      !this.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c])
+      !this.contextService.viewContext[SNYK_CONTEXT.ERROR] &&
+      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.contextService.viewContext[c])
     );
   }
 
   emitViewInitialized(): void {
     if (!this.initializedView.isCompleted) this.initializedView.complete();
   }
-
-  // Avoid refreshing context/views too often:
-  // https://github.com/Microsoft/vscode/issues/68424
-  refreshViews = _.throttle(
-    (content?: any): void => this.refreshViewEmitter.fire(content || undefined),
-    REFRESH_VIEW_DEBOUNCE_INTERVAL,
-    { leading: true },
-  );
 
   loadAnalytics(): void {
     if (!this.analytics) {

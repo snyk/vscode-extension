@@ -1,6 +1,8 @@
 import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
+import { IContextService } from '../snyk/services/contextService';
+import { IOpenerService } from '../snyk/services/openerService';
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;
@@ -8,8 +10,6 @@ export interface StatusBarItemInterface {
 }
 
 export interface BaseSnykModuleInterface {
-  refreshViewEmitter: vscode.EventEmitter<any>;
-  refreshViews(content: any): void;
   analysisStatus: string;
   analysisProgress: string;
   remoteBundle: IFileBundle;
@@ -18,7 +18,8 @@ export interface BaseSnykModuleInterface {
   statusBarItem: StatusBarItemInterface;
   filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: SnykWatcherInterface;
-  setContext(key: string, value: unknown): Promise<void>;
+  contextService: IContextService;
+  openerService: IOpenerService;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;
   loadAnalytics(): void;

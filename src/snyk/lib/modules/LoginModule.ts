@@ -3,7 +3,6 @@ import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
 import { configuration } from '../../configuration';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { viewInBrowser } from '../../utils/vscodeCommandsUtils';
 import { ISnykCode, SnykCode } from './code';
 import ReportModule from './ReportModule';
 
@@ -14,7 +13,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   private pendingToken = '';
 
   async initiateLogin(): Promise<void> {
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
 
     if (this.pendingLogin) {
       return;
@@ -37,7 +36,8 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
       const { draftToken, loginURL } = startSession({ authHost: configuration.authHost, source: configuration.source });
 
-      await viewInBrowser(loginURL);
+      await this.openerService.openBrowserUrl(loginURL);
+      void this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
       const token = await this.waitLoginConfirmation(draftToken);
       if (token) {
         await configuration.setToken(token);
@@ -72,7 +72,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
         });
       }
     }
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
     if (!token) this.loadingBadge.setLoadingBadge(true, this);
     return token;
   }
@@ -93,8 +93,8 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   async checkCodeEnabled(): Promise<boolean> {
     const enabled = await this.snykCode.isEnabled();
 
-    await this.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    await this.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); // todo: removed once 'uploadApproved' is deprecated
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    await this.contextService.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); // todo: removed once 'uploadApproved' is deprecated
     if (!enabled) {
       this.loadAnalytics();
 
@@ -105,7 +105,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   }
 
   async checkAdvancedMode(): Promise<void> {
-    await this.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
+    await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
 }
 
