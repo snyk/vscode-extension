@@ -20,7 +20,10 @@ import {
   PluginCallOptions as PluginCallOptionsBase,
 } from '@itly/sdk';
 import SchemaValidatorPlugin from '@itly/plugin-schema-validator';
-import IterativelyPlugin, { IterativelyOptionsPartial as IterativelyOptions } from '@itly/plugin-iteratively-node';
+import {
+  IterativelyPlugin,
+  IterativelyOptionsPartial as IterativelyOptions,
+} from '@itly/plugin-iteratively-node';
 
 export type Options = OptionsBase;
 export type Environment = EnvironmentBase;
@@ -76,9 +79,17 @@ export interface IdentifyProperties {
    */
   authProvider?: string;
   /**
+   * Whether or not the user has their first project imported
+   */
+  hasFirstProject?: boolean;
+  /**
    * Whether or not the user should be considered a Snyk administrator
    */
   isSnykAdmin?: boolean;
+  /**
+   * Whether or not the user has their first integration set up
+   */
+  hasFirstIntegration?: boolean;
   /**
    * Username of the user
    */
@@ -247,7 +258,7 @@ export interface WelcomeIsViewedProperties {
 export class AnalysisIsReady implements Event {
   name = 'Analysis Is Ready';
   id = 'c9337edb-27a3-416e-a654-092fa4375feb';
-  version = '10.0.0';
+  version = '1.0.0';
   properties: AnalysisIsReadyProperties & {
     'itly': true;
   };
@@ -265,7 +276,7 @@ export class AnalysisIsReady implements Event {
 export class AnalysisIsTriggered implements Event {
   name = 'Analysis Is Triggered';
   id = 'dabf569e-219c-470f-8e31-6e029723f0cd';
-  version = '7.0.0';
+  version = '1.0.0';
   properties: AnalysisIsTriggeredProperties & {
     'itly': true;
   };
@@ -283,7 +294,7 @@ export class AnalysisIsTriggered implements Event {
 export class IssueIsViewed implements Event {
   name = 'Issue Is Viewed';
   id = 'bba9d69b-95d5-4082-80c3-4508402750bb';
-  version = '5.0.0';
+  version = '1.0.0';
   properties: IssueIsViewedProperties & {
     'itly': true;
   };
@@ -301,7 +312,7 @@ export class IssueIsViewed implements Event {
 export class PluginIsInstalled implements Event {
   name = 'Plugin Is Installed';
   id = '7bb34693-366e-460e-8f4c-5b3f1c71888a';
-  version = '4.0.0';
+  version = '1.0.0';
   properties: PluginIsInstalledProperties & {
     'itly': true;
   };
@@ -319,7 +330,7 @@ export class PluginIsInstalled implements Event {
 export class PluginIsUninstalled implements Event {
   name = 'Plugin Is Uninstalled';
   id = '5936cb0e-2639-4b76-baea-f0c086b860b0';
-  version = '4.0.0';
+  version = '1.0.0';
   properties: PluginIsUninstalledProperties & {
     'itly': true;
   };
@@ -337,7 +348,7 @@ export class PluginIsUninstalled implements Event {
 export class WelcomeIsViewed implements Event {
   name = 'Welcome Is Viewed';
   id = '91114669-bbab-4f58-a7dd-ea7c98c79221';
-  version = '4.0.0';
+  version = '1.0.0';
   properties: WelcomeIsViewedProperties & {
     'itly': true;
   };
@@ -355,7 +366,6 @@ export class WelcomeIsViewed implements Event {
 // prettier-ignore
 interface DestinationOptions {
   iteratively?: IterativelyOptions;
-
   all?: {
     disabled?: boolean;
   };
@@ -394,7 +404,7 @@ class Itly {
           ? '5HB-hbvnCrU6EhiR-byG-pFwFAnceLbW'
           : 'nFVaJJwOdaJn9ETw_3DRSpFpg790tzEi',
           {
-            url: 'https://api.iterative.ly/t/version/0e2a2281-a32f-4abd-8f0a-609b6e8902cc',
+            url: 'https://api.iterative.ly/t/version/f254a640-bfd9-4421-bb75-e6cd8f21f6a6',
             environment: options.environment || 'development',
             ...destinations.iteratively,
           },
@@ -406,7 +416,7 @@ class Itly {
       plugins: [
         new SchemaValidatorPlugin({
           'group': {"type":"object","properties":{"groupId":{"type":"string"},"name":{"type":"string"},"internalName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"groupName":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"name":{"type":"string"},"utmMedium":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"authProvider":{"type":"string"},"isSnykAdmin":{"type":"boolean"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"name":{"type":"string"},"utmMedium":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"authProvider":{"type":"string"},"hasFirstProject":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"hasFirstIntegration":{"type":"boolean"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
           'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
           'Issue Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},

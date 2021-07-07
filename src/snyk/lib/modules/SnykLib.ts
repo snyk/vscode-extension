@@ -47,8 +47,6 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     this.loadingBadge.setLoadingBadge(false, this);
 
     if (!configuration.token) {
-      this.analytics.logWelcomeViewIsViewed();
-
       await this.checkSession();
       return;
     }
@@ -93,6 +91,13 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
         break;
       default:
         break;
+    }
+  }
+
+  onDidChangeAnalysisViewVisibility(visible: boolean): void {
+    if (visible && !configuration.token) {
+      // Track if a user is not authenticated and expanded the analysis view
+      this.analytics.logWelcomeViewIsViewed();
     }
   }
 }

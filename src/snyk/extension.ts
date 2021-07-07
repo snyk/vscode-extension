@@ -71,6 +71,53 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
     this.statusBarItem.show();
 
+    this.registerCommands(context);
+
+    context.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider(this)));
+
+    const issueProvider = new IssueProvider(this);
+    context.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS, issueProvider));
+
+    const treeView = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS, {
+      treeDataProvider: issueProvider,
+    });
+    context.subscriptions.push(treeView);
+    context.subscriptions.push(treeView.onDidChangeVisibility(e => this.onDidChangeAnalysisViewVisibility(e.visible)));
+
+    vscode.workspace.onDidChangeWorkspaceFolders(this.startExtension.bind(this));
+
+    this.editorsWatcher.activate(this);
+    this.settingsWatcher.activate(this);
+    this.analyzer.activate(this);
+    this.suggestionProvider.activate(this);
+
+    void NotificationService.init(this.processError.bind(this));
+
+    this.checkAdvancedMode().catch(err =>
+      this.processError(err, {
+        message: errorsLogs.checkAdvancedMode,
+      }),
+    );
+
+    this.loadAnalytics();
+
+    // Use memento until lifecycle hooks are implemented
+    // https://github.com/microsoft/vscode/issues/98732
+    if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
+      this.analytics.logPluginIsInstalled();
+      void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
+    }
+
+    // Actually start analysis
+    this.startExtension();
+  }
+
+  public async deactivate(): Promise<void> {
+    this.emitter.removeAllListeners();
+    await this.analytics.flush();
+  }
+
+  private registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         SNYK_OPEN_BROWSER_COMMAND,
@@ -164,44 +211,9 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
         this.executeCommand.bind(this, SNYK_DCIGNORE_COMMAND, createDCIgnoreCommand),
       ),
     );
-
-    vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider(this));
-
-    vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS, new IssueProvider(this));
-
-    vscode.workspace.onDidChangeWorkspaceFolders(this.startExtension.bind(this));
-
-    this.editorsWatcher.activate(this);
-    this.settingsWatcher.activate(this);
-    this.analyzer.activate(this);
-    this.suggestionProvider.activate(this);
-
-    void NotificationService.init(this.processError.bind(this));
-
-    this.checkAdvancedMode().catch(err =>
-      this.processError(err, {
-        message: errorsLogs.checkAdvancedMode,
-      }),
-    );
-
-    this.loadAnalytics();
-
-    // Use memento until lifecycle hooks are implemented
-    // https://github.com/microsoft/vscode/issues/98732
-    if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
-      this.analytics.logPluginIsInstalled();
-      void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
-    }
-
-    // Actually start analysis
-    this.startExtension();
   }
 
-  public deactivate(): void {
-    this.emitter.removeAllListeners();
-  }
-
-  onSupportedFilesLoaded(data: ISupportedFiles | null) {
+  onSupportedFilesLoaded(data: ISupportedFiles | null): void {
     const msg = data ? 'Ignore rules loading' : 'Loading';
 
     this.updateStatus(SNYK_ANALYSIS_STATUS.FILTERS, msg);
