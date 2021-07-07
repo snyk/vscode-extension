@@ -78,15 +78,19 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   }
 
   private async waitLoginConfirmation(draftToken: string): Promise<string> {
-    // 20 attempts to wait for user's login & consent
-    for (let i = 0; i < 20; i += 1) {
-      await sleep(1000);
+    // 90 seconds to wait for user's authentication
+    /* eslint-disable no-await-in-loop */
+    for (let i = 0; i < 50; i += 1) {
+      const waitTime = i < 30 ? 1000 : 3000; // wait 1s for the first 30s, then poll each 3s
+      await sleep(waitTime);
 
       const token = await this.checkSession(draftToken);
       if (token) {
         return token;
       }
     }
+    /* eslint-enable no-await-in-loop */
+
     return '';
   }
 
@@ -94,7 +98,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     const enabled = await this.snykCode.isEnabled();
 
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    await this.contextService.setContext(SNYK_CONTEXT.APPROVED, configuration.uploadApproved); // todo: removed once 'uploadApproved' is deprecated
     if (!enabled) {
       this.loadAnalytics();
 
