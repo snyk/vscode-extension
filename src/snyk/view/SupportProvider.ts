@@ -7,7 +7,7 @@ export class SupportProvider extends NodeProvider {
   getRootChildren(): Node[] {
     return [
       new Node({
-        text: 'Help Snyk and get a $100 Amazon gift card',
+        text: 'Help Snyk to make a better extension',
         icon: new ThemeIcon('mortar-board'),
         link: 'https://calendly.com/snyk-georgi/45min',
       }),
