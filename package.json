@@ -2,7 +2,7 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Vulnerability Scanner",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
   "icon": "images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
@@ -61,7 +61,7 @@
           "snyk.uploadApproved": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "User consent for code upload to `#snyk.url#` in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc). **This setting will be removed soon. Please use `snyk.codeEnabled` instead.**",
+            "markdownDescription": "User consent for code upload to Snyk in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc). **This setting will be removed soon. Please use `snyk.codeEnabled` instead.**",
             "scope": "window"
           },
           "snyk.codeEnabled": {
@@ -74,14 +74,14 @@
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow crash reports to be reported to `#snyk.url#`",
+            "markdownDescription": "Allow crash reports to be reported to Snyk",
             "scope": "application"
           },
           "snyk.yesTelemetry": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow extension's telemetry to be sent to `#snyk.url#`",
+            "markdownDescription": "Allow extension's telemetry to be sent to Snyk",
             "scope": "application"
           },
           "snyk.yesWelcomeNotification": {
