@@ -13,13 +13,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
   private pendingLogin = false;
   private pendingToken = '';
 
-  private snykCode: ISnykCode;
-
-  constructor() {
-    super();
-    this.snykCode = new SnykCode(configuration);
-  }
-
   async initiateLogin(): Promise<void> {
     await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
 
@@ -109,14 +102,6 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     }
 
     return enabled;
-  }
-
-  async enableCode(): Promise<void> {
-    const wasEnabled = await this.snykCode.enable();
-    if (wasEnabled) {
-      this.loadingBadge.setLoadingBadge(false, this);
-      await this.checkCodeEnabled();
-    }
   }
 
   async checkAdvancedMode(): Promise<void> {

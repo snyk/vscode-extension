@@ -94,6 +94,17 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
   }
 
+  async enableCode(): Promise<void> {
+    const wasEnabled = await this.snykCode.enable();
+    if (wasEnabled) {
+      this.loadingBadge.setLoadingBadge(false, this);
+      await this.checkCodeEnabled();
+
+      Logger.info('Snyk Code was enabled.');
+      await this.startAnalysis(false);
+    }
+  }
+
   onDidChangeAnalysisViewVisibility(visible: boolean): void {
     if (visible && !configuration.token) {
       // Track if a user is not authenticated and expanded the analysis view
