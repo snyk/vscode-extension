@@ -6,7 +6,11 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
   private async onChangeConfiguration(extension: ExtensionInterface, key: string): Promise<void> {
     if (key === 'snyk.advancedMode') {
       return extension.checkAdvancedMode();
+    } else if (key === 'snyk.codeEnabled') {
+      void extension.checkCodeEnabled();
+      return;
     }
+
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
     const url: string | undefined = extensionConfig.get('url');
 

@@ -35,7 +35,6 @@ export interface ReportModuleInterface {
 export interface LoginModuleInterface {
   initiateLogin(): Promise<void>;
   checkSession(): Promise<string>;
-  enableCode(): Promise<void>;
   checkCodeEnabled(): Promise<boolean>;
   checkAdvancedMode(): Promise<void>;
 }
@@ -49,6 +48,7 @@ export interface BundlesModuleInterface {
 
 export interface SnykLibInterface {
   setMode(mode: string): void;
+  enableCode(): Promise<void>;
 }
 
 export interface ExtensionInterface

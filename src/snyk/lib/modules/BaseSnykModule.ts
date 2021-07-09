@@ -21,6 +21,7 @@ import SnykAnalyzer from '../analyzer/SnykAnalyzer';
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
 import SnykEditorsWatcher from '../watchers/EditorsWatcher';
 import SnykSettingsWatcher from '../watchers/SnykSettingsWatcher';
+import { ISnykCode, SnykCode } from './code';
 
 export default abstract class BaseSnykModule implements BaseSnykModuleInterface {
   analyzer: AnalyzerInterface;
@@ -41,6 +42,8 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   remoteBundle: IFileBundle;
   changedFiles: Set<string> = new Set();
 
+  protected snykCode: ISnykCode;
+
   constructor() {
     this.analyzer = new SnykAnalyzer();
     this.statusBarItem = new SnykStatusBarItem();
@@ -51,6 +54,7 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     this.analysisStatus = '';
     this.analysisProgress = '';
     this.viewContext = {};
+    this.snykCode = new SnykCode(configuration);
     this.initializedView = new PendingTask();
   }
 

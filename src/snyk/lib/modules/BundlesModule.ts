@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { BundlesModuleInterface } from '../../../interfaces/SnykInterfaces';
 import { configuration } from '../../configuration';
 import { SNYK_ANALYSIS_STATUS, SNYK_CONTEXT } from '../../constants/views';
+import { Logger } from '../../logger';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import LoginModule from './LoginModule';
 
@@ -57,13 +58,14 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
     try {
       const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
 
-      this.analytics.logAnalysisIsTriggered({
-        analysisType: ['Snyk Code Security', 'Snyk Code Quality'],
-        ide: 'Visual Studio Code',
-        triggeredByUser: manual,
-      });
-
       if (paths.length) {
+        Logger.info('Code analysis started.');
+        this.analytics.logAnalysisIsTriggered({
+          analysisType: ['Snyk Code Security', 'Snyk Code Quality'],
+          ide: 'Visual Studio Code',
+          triggeredByUser: manual,
+        });
+
         await this.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
         this.runningAnalysis = true;
         this.lastAnalysisStartingTimestamp = Date.now();
@@ -88,6 +90,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
           this.analyzer.analysisResults = result.analysisResults;
           this.analyzer.createReviewResults();
 
+          Logger.info('Code analysis finished.');
           this.analytics.logAnalysisIsReady({
             ide: 'Visual Studio Code',
             analysisType: 'Snyk Code Security',
@@ -119,6 +122,8 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
         analysisType: 'Snyk Code Quality',
         result: 'Error',
       });
+
+      Logger.info('Code analysis failed.');
     } finally {
       this.runningAnalysis = false;
       this.lastAnalysisTimestamp = Date.now();
