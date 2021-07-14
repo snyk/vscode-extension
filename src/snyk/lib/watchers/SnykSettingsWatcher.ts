@@ -4,7 +4,9 @@ import {
   ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   TOKEN_SETTING,
+  YES_TELEMETRY_SETTING,
 } from '../../constants/settings';
+import { configuration } from '../../configuration';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 class SnykSettingsWatcher implements SnykWatcherInterface {
@@ -14,6 +16,8 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
     } else if (key === ADVANCED_ADVANCED_CODE_ENABLED_SETTING) {
       void extension.checkCodeEnabled();
       return;
+    } else if (key === YES_TELEMETRY_SETTING) {
+      return extension.analytics.setShouldReportEvents(configuration.shouldReportEvents);
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -34,6 +38,7 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
           TOKEN_SETTING,
           ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
           ADVANCED_ADVANCED_MODE_SETTING,
+          YES_TELEMETRY_SETTING,
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {
