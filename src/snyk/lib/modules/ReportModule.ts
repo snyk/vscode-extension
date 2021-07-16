@@ -107,13 +107,13 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   private async authenticationErrorHandler(): Promise<void> {
     await configuration.setToken('');
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
     this.loadingBadge.setLoadingBadge(true, this);
   }
 
   private async generalErrorHandler(): Promise<void> {
     this.transientErrors = 0;
-    await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
+    await this.contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
     this.loadingBadge.setLoadingBadge(true, this);
   }
 
@@ -122,7 +122,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler();
 
     this.transientErrors += 1;
-    await this.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.TRANSIENT);
+    await this.contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
       this.startExtension().catch(err =>
         this.processError(err, {

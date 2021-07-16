@@ -7,6 +7,7 @@ export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';
 // with multiple values helps us to avoid flickering UI.
 export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
+  AUTHENTICATING: 'authenticating',
   APPROVED: 'uploadApproved', // todo: removed once 'uploadApproved' is deprecated
   CODE_ENABLED: 'codeEnabled',
   WORKSPACE_FOUND: 'workspaceFound',

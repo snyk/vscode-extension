@@ -1,10 +1,10 @@
 import { emitter, ISupportedFiles } from '@snyk/code-client';
 import { EmitterDC } from '@snyk/code-client/dist/emitter';
 import * as _ from 'lodash';
-import open from 'open';
 import * as vscode from 'vscode';
 import { ExtensionInterface } from '../interfaces/SnykInterfaces';
 import {
+  SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_LOGIN_COMMAND,
@@ -121,7 +121,17 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         SNYK_OPEN_BROWSER_COMMAND,
-        this.executeCommand.bind(this, SNYK_OPEN_BROWSER_COMMAND, (url: string) => open(url)),
+        this.executeCommand.bind(this, SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
+          this.openerService.openBrowserUrl(url),
+        ),
+      ),
+      vscode.commands.registerCommand(
+        SNYK_COPY_AUTH_LINK_COMMAND,
+        this.executeCommand.bind(
+          this,
+          SNYK_COPY_AUTH_LINK_COMMAND,
+          this.openerService.copyOpenedUrl.bind(this.openerService),
+        ),
       ),
     );
 

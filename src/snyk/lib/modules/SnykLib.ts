@@ -42,7 +42,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
       if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) return;
     }
 
-    await this.setContext(SNYK_CONTEXT.ERROR, false);
+    await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
     this.resetTransientErrors();
     this.loadingBadge.setLoadingBadge(false, this);
 
@@ -52,7 +52,8 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
 
     const codeEnabled = await this.checkCodeEnabled();
-    await this.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
     if (!codeEnabled) {
       return;
@@ -79,7 +80,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
   async setMode(mode: string): Promise<void> {
     if (!Object.values(SNYK_MODE_CODES).includes(mode)) return;
     this._mode = mode;
-    await this.setContext(SNYK_CONTEXT.MODE, mode);
+    await this.contextService.setContext(SNYK_CONTEXT.MODE, mode);
     switch (mode) {
       case SNYK_MODE_CODES.PAUSED:
         this._unpauseTimeout = setTimeout(() => this.unpause(), EXECUTION_PAUSE_INTERVAL);
