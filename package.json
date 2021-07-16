@@ -46,42 +46,24 @@
       {
         "title": "Snyk Vulnerability Scanner",
         "properties": {
-          "snyk.advancedMode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Toggle advanced tools for expert users",
-            "scope": "application"
-          },
           "snyk.token": {
             "type": "string",
             "default": "",
             "description": "API key",
             "scope": "application"
           },
-          "snyk.uploadApproved": {
-            "type": "boolean",
-            "default": false,
-            "markdownDescription": "User consent for code upload to Snyk in agreement with our [terms and conditions](https://snyk.io/policies/terms-of-service/?utm_source=vsc). **This setting will be removed soon. Please use `snyk.codeEnabled` instead.**",
-            "scope": "window"
-          },
-          "snyk.codeEnabled": {
-            "type": "boolean",
-            "description": "Snyk Code is enabled. If Snyk organization settings has Snyk Code disabled, this flag will be automatically set to false.",
-            "scope": "window",
-            "default": null
-          },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow crash reports to be reported to Snyk",
+            "markdownDescription": "Allow crash reports to be reported to Snyk.",
             "scope": "application"
           },
           "snyk.yesTelemetry": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow extension's telemetry to be sent to Snyk",
+            "markdownDescription": "Allow extension's telemetry to be sent to Snyk.",
             "scope": "application"
           },
           "snyk.yesWelcomeNotification": {
@@ -90,6 +72,18 @@
             "default": true,
             "markdownDescription": "Show welcome notification after installation and restart",
             "scope": "application"
+          },
+          "snyk.advanced.advancedMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "scope": "application"
+          },
+          "snyk.advanced.codeEnabled": {
+            "type": "boolean",
+            "markdownDescription": "Mirrors if Snyk Code is enabled or disabled for [your Snyk organisation](https://app.snyk.io/manage/snyk-code). Please do not manually edit this configuration as it might cause unpredictable behaviour.",
+            "scope": "window",
+            "default": null
           }
         }
       }
@@ -143,23 +137,8 @@
       },
       {
         "view": "snyk.views.analysis",
-        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.",
-        "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled && !snyk:uploadApproved"
-      },
-      {
-        "view": "snyk.views.analysis",
-        "contents": "👋 Thank you for using Snyk Code! To minimize the chances of unwanted source code upload, we've introduced a new flag, to control if source code is uploaded from a single place. This flag is valid for your Snyk organization and supersedes previous upload approval.",
-        "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled && snyk:uploadApproved"
-      },
-      {
-        "view": "snyk.views.analysis",
-        "contents": "[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')",
+        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!",
         "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled"
-      },
-      {
-        "view": "snyk.views.analysis",
-        "contents": "It looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!",
-        "when": "!snyk:error && snyk:loggedIn && !snyk:codeEnabled && snyk:uploadApproved"
       },
       {
         "view": "snyk.views.analysis",

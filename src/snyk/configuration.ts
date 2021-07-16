@@ -1,6 +1,15 @@
 import { URL } from 'url';
 import * as vscode from 'vscode';
 import { IDE_NAME } from './constants/general';
+import {
+  ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
+  ADVANCED_ADVANCED_MODE_SETTING,
+  CONFIGURATION_IDENTIFIER,
+  TOKEN_SETTING,
+  YES_CRASH_REPORT_SETTING,
+  YES_TELEMETRY_SETTING,
+  YES_WELCOME_NOTIFICATION_SETTING,
+} from './constants/settings';
 
 export interface IConfiguration {
   isDevelopment: boolean;
@@ -10,7 +19,6 @@ export interface IConfiguration {
   snykCodeUrl: string;
   token: string | undefined;
   setToken(token: string): Promise<void>;
-  uploadApproved: boolean;
   codeEnabled: boolean | undefined;
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
@@ -49,57 +57,70 @@ export class Configuration implements IConfiguration {
   }
 
   get token(): string | undefined {
-    return this.staticToken || this.vscodeWorkspace.getConfiguration('snyk').get('token');
+    return (
+      this.staticToken ||
+      this.vscodeWorkspace.getConfiguration(CONFIGURATION_IDENTIFIER).get(this.getConfigName(TOKEN_SETTING))
+    );
   }
 
   async setToken(token: string): Promise<void> {
     this.staticToken = '';
-    await this.vscodeWorkspace.getConfiguration('snyk').update('token', token, true);
+    await this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .update(this.getConfigName(TOKEN_SETTING), token, true);
   }
 
   get source(): string {
     return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
   }
 
-  get uploadApproved(): boolean {
-    return (
-      this.staticCodeEnabled ||
-      this.source !== IDE_NAME ||
-      !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('uploadApproved') // TODO: remove once grace period is out
-    );
-  }
-
   get codeEnabled(): boolean | undefined {
     return (
       this.staticCodeEnabled ||
       this.source !== IDE_NAME ||
-      this.vscodeWorkspace.getConfiguration('snyk').get<boolean | undefined>('codeEnabled')
+      this.vscodeWorkspace
+        .getConfiguration(CONFIGURATION_IDENTIFIER)
+        .get<boolean | undefined>(this.getConfigName(ADVANCED_ADVANCED_CODE_ENABLED_SETTING))
     );
   }
 
   async setCodeEnabled(value = true): Promise<void> {
-    await this.vscodeWorkspace.getConfiguration('snyk').update('codeEnabled', value, true);
+    await this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .update(this.getConfigName(ADVANCED_ADVANCED_CODE_ENABLED_SETTING), value, true);
   }
 
   get shouldReportErrors(): boolean {
-    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesCrashReport');
+    return !!this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .get<boolean>(this.getConfigName(YES_CRASH_REPORT_SETTING));
   }
 
   get shouldReportEvents(): boolean {
-    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesTelemetry');
+    return !!this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .get<boolean>(this.getConfigName(YES_TELEMETRY_SETTING));
   }
 
   get shouldShowWelcomeNotification(): boolean {
-    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('yesWelcomeNotification');
+    return !!this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .get<boolean>(this.getConfigName(YES_WELCOME_NOTIFICATION_SETTING));
   }
 
   async hideWelcomeNotification(): Promise<void> {
-    await this.vscodeWorkspace.getConfiguration('snyk').update('yesWelcomeNotification', false, true);
+    await this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .update(this.getConfigName(YES_WELCOME_NOTIFICATION_SETTING), false, true);
   }
 
   get shouldShowAdvancedView(): boolean {
-    return !!this.vscodeWorkspace.getConfiguration('snyk').get<boolean>('advancedMode');
+    return !!this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .get<boolean>(this.getConfigName(ADVANCED_ADVANCED_MODE_SETTING));
   }
+
+  private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
 }
 
 export const configuration = new Configuration();

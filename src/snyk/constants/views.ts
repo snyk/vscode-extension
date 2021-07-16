@@ -8,7 +8,6 @@ export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';
 export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
-  APPROVED: 'uploadApproved', // todo: removed once 'uploadApproved' is deprecated
   CODE_ENABLED: 'codeEnabled',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',

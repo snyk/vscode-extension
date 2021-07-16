@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
 import { ExtensionInterface, SnykWatcherInterface } from '../../../interfaces/SnykInterfaces';
+import {
+  ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
+  ADVANCED_ADVANCED_MODE_SETTING,
+  TOKEN_SETTING,
+} from '../../constants/settings';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 
 class SnykSettingsWatcher implements SnykWatcherInterface {
   private async onChangeConfiguration(extension: ExtensionInterface, key: string): Promise<void> {
-    if (key === 'snyk.advancedMode') {
+    if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
-    } else if (key === 'snyk.codeEnabled') {
+    } else if (key === ADVANCED_ADVANCED_CODE_ENABLED_SETTING) {
       void extension.checkCodeEnabled();
       return;
     }
@@ -25,9 +30,11 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
   public activate(extension: ExtensionInterface): void {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
-        const change = ['snyk.url', 'snyk.token', 'snyk.codeEnabled', 'snyk.advancedMode'].find(config =>
-          event.affectsConfiguration(config),
-        );
+        const change = [
+          TOKEN_SETTING,
+          ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
+          ADVANCED_ADVANCED_MODE_SETTING,
+        ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {
             await this.onChangeConfiguration(extension, change);
