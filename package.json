@@ -218,7 +218,8 @@
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "tsc -p ./",
-    "test": "node ./out/test/runTest.js",
+    "test:unit": "mocha --ui tdd -c out/test/unit/**/*.test.js",
+    "test:integration": "node ./out/test/integration/runTest.js",
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
     "vscode:uninstall": "node ./out/uninstall"
@@ -230,6 +231,7 @@
     "@types/lodash": "^4.14.161",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.6.2",
+    "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.0",
     "@types/vscode": "^1.48.0",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
@@ -242,6 +244,7 @@
     "glob": "^7.1.6",
     "mocha": "^8.1.3",
     "prettier": "^2.1.1",
+    "sinon": "^11.1.1",
     "typescript": "^4.0.2",
     "vscode-test": "^1.4.0",
     "yalc": "^1.0.0-pre.44"

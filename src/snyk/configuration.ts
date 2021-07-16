@@ -102,6 +102,12 @@ export class Configuration implements IConfiguration {
       .get<boolean>(this.getConfigName(YES_TELEMETRY_SETTING));
   }
 
+  async setShouldReportEvents(yesTelemetry: boolean): Promise<void> {
+    await this.vscodeWorkspace
+      .getConfiguration(CONFIGURATION_IDENTIFIER)
+      .update(this.getConfigName(YES_TELEMETRY_SETTING), yesTelemetry, true);
+  }
+
   get shouldShowWelcomeNotification(): boolean {
     return !!this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)

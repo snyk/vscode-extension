@@ -32,6 +32,11 @@ export class Iteratively {
     this.anonymousId = uuidv4();
   }
 
+  public setShouldReportEvents(shouldReportEvents: boolean): void {
+    this.shouldReportEvents = shouldReportEvents;
+    this.load();
+  }
+
   public load(): Iteratively | null {
     if (!this.shouldReportEvents) {
       return null;

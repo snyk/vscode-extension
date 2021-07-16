@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
 import { IContextService } from '../snyk/services/contextService';
 import { IOpenerService } from '../snyk/services/openerService';
+import { Iteratively } from '../snyk/analytics/itly';
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;
@@ -22,6 +23,7 @@ export interface BaseSnykModuleInterface {
   openerService: IOpenerService;
   shouldShowAnalysis: boolean;
   emitViewInitialized(): void;
+  analytics: Iteratively;
   loadAnalytics(): void;
 
   // Abstract methods
