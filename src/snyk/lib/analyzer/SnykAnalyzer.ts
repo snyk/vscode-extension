@@ -7,7 +7,10 @@ import {
   IssuesListOptionsInterface,
   openedTextEditorType,
 } from '../../../interfaces/SnykInterfaces';
-import { SNYK_NAME } from '../../constants/general';
+import {
+  DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
+  DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
+} from '../../constants/analysis';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
 import {
   checkCompleteSuggestion,
@@ -19,35 +22,19 @@ import {
   getSnykSeverity,
   updateFileReviewResultsPositions,
 } from '../../utils/analysisUtils';
-import { DisposableCodeActionsProvider } from '../snykProviders/codeActionsProvider/SnykIssuesActionsProvider';
-import { DisposableHoverProvider } from '../snykProviders/hoverProvider/SnykHoverProvider';
 
 class SnykAnalyzer implements AnalyzerInterface {
   private SEVERITIES: {
     [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
   };
-  private extension: ExtensionInterface | undefined;
-  private issuesMarkersdecorationType: vscode.TextEditorDecorationType | undefined;
-  public snykReview: vscode.DiagnosticCollection | undefined;
+  public readonly codeQualityReview: vscode.DiagnosticCollection | undefined;
+  public readonly codeSecurityReview: vscode.DiagnosticCollection | undefined;
   public analysisResults: IAnalysisResult;
-
-  // Deprecated:
-  private ignoreActionsProvider: vscode.Disposable | undefined;
-  private issueHoverProvider: vscode.Disposable | undefined;
 
   public constructor() {
     this.SEVERITIES = createSnykSeveritiesMap();
-    this.snykReview = vscode.languages.createDiagnosticCollection(SNYK_NAME);
-
-    this.ignoreActionsProvider = new DisposableCodeActionsProvider(this.snykReview, {
-      findSuggestion: this.findSuggestion.bind(this),
-      trackIgnoreSuggestion: this.trackIgnoreSuggestion.bind(this),
-    });
-    this.issueHoverProvider = new DisposableHoverProvider(this.snykReview);
-  }
-
-  public activate(extension: ExtensionInterface) {
-    this.extension = extension;
+    this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
+    this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
   }
 
   public getFullSuggestion(
@@ -67,7 +54,6 @@ class SnykAnalyzer implements AnalyzerInterface {
   }
 
   public trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
-    if (!this.extension) return;
     // eslint-disable-next-line no-param-reassign
     options.data = {
       severity: getSnykSeverity(vscodeSeverity),
@@ -79,10 +65,12 @@ class SnykAnalyzer implements AnalyzerInterface {
     issuePositions,
     suggestion,
     fileUri,
+    isSecurityType,
   }: {
     issuePositions: IFileSuggestion;
     suggestion: ISuggestion;
     fileUri: vscode.Uri;
+    isSecurityType: boolean;
   }): vscode.Diagnostic {
     const { message } = suggestion;
     return {
@@ -90,7 +78,7 @@ class SnykAnalyzer implements AnalyzerInterface {
       message,
       range: createIssueCorrectRange(issuePositions),
       severity: this.SEVERITIES[suggestion.severity].name,
-      source: SNYK_NAME,
+      source: isSecurityType ? DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME : DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
       // issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message),
@@ -98,51 +86,42 @@ class SnykAnalyzer implements AnalyzerInterface {
     };
   }
 
-  private createIssuesList(options: IssuesListOptionsInterface): vscode.Diagnostic[] {
-    const issuesList: vscode.Diagnostic[] = [];
+  private createIssuesList(
+    options: IssuesListOptionsInterface,
+  ): [securityIssues: vscode.Diagnostic[], qualityIssues: vscode.Diagnostic[]] {
+    const securityIssues: vscode.Diagnostic[] = [];
+    const qualityIssues: vscode.Diagnostic[] = [];
+
     const { fileIssuesList, suggestions, fileUri } = options;
 
     for (const issue in fileIssuesList) {
       if (!this.SEVERITIES[suggestions[issue].severity].show) {
         continue;
       }
+
+      const isSecurityType = suggestions[issue].categories.includes('Security');
+      const issueList = isSecurityType ? securityIssues : qualityIssues;
       for (const issuePositions of fileIssuesList[issue]) {
-        issuesList.push(
+        issueList.push(
           this.createIssueDiagnosticInfo({
             issuePositions,
             suggestion: suggestions[issue],
             fileUri,
+            isSecurityType,
           }),
         );
       }
     }
-    return issuesList;
-  }
 
-  private clearPrevIssuesMarkersDecoration() {
-    if (this.issuesMarkersdecorationType) {
-      this.issuesMarkersdecorationType.dispose();
-    }
-  }
-
-  public setIssuesMarkersDecoration(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor): void {
-    if (editor && this.snykReview && this.snykReview.has(editor.document.uri)) {
-      // Deprecated. Markers decoration is super noisy and intersects very often with main issue position
-      // this.clearPrevIssuesMarkersDecoration();
-      // this.issuesMarkersdecorationType = vscode.window.createTextEditorDecorationType(ISSUES_MARKERS_DECORATION_TYPE);
-      // const issuesMarkersDecorationsOptions = createIssuesMarkersDecorationOptions(
-      //   this.snykReview.get(editor.document.uri),
-      // );
-      // Markers decoration is super noisy
-      // editor.setDecorations(this.issuesMarkersdecorationType, issuesMarkersDecorationsOptions);
-    }
+    return [securityIssues, qualityIssues];
   }
 
   public createReviewResults(): void {
-    if (!this.snykReview) {
+    if (!this.codeSecurityReview || !this.codeQualityReview) {
       return;
     }
-    this.snykReview.clear();
+    this.codeSecurityReview.clear();
+    this.codeQualityReview.clear();
 
     const { files, suggestions } = this.analysisResults;
     for (const filePath in files) {
@@ -155,15 +134,15 @@ class SnykAnalyzer implements AnalyzerInterface {
         return;
       }
       const fileIssuesList = files[filePath];
-      const issues = this.createIssuesList({
+      const [securityIssues, qualityIssues] = this.createIssuesList({
         fileIssuesList,
         suggestions,
         fileUri,
       });
-      this.snykReview.set(fileUri, [...issues]);
-    }
 
-    this.setIssuesMarkersDecoration();
+      if (securityIssues.length > 0) this.codeSecurityReview.set(fileUri, [...securityIssues]);
+      if (qualityIssues.length > 0) this.codeQualityReview.set(fileUri, [...qualityIssues]);
+    }
   }
 
   public async updateReviewResultsPositions(
@@ -172,8 +151,8 @@ class SnykAnalyzer implements AnalyzerInterface {
   ): Promise<void> {
     try {
       if (
-        !this.snykReview ||
-        !this.snykReview.has(updatedFile.document.uri) ||
+        !this.codeSecurityReview ||
+        !this.codeSecurityReview.has(updatedFile.document.uri) ||
         !updatedFile.contentChanges.length ||
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         !updatedFile.contentChanges[0].range
@@ -181,14 +160,13 @@ class SnykAnalyzer implements AnalyzerInterface {
         return;
       }
       const fileIssuesList: IFilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
-      if (this.snykReview) {
-        const issues = this.createIssuesList({
+      if (this.codeSecurityReview) {
+        const [securityIssues, qualityIssues] = this.createIssuesList({
           fileIssuesList,
           suggestions: this.analysisResults.suggestions,
           fileUri: vscode.Uri.file(updatedFile.fullPath),
         });
-        this.snykReview.set(vscode.Uri.file(updatedFile.fullPath), [...issues]);
-        this.setIssuesMarkersDecoration();
+        this.codeSecurityReview.set(vscode.Uri.file(updatedFile.fullPath), [...securityIssues]); // todo
       }
     } catch (err) {
       await extension.processError(err, {

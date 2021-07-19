@@ -1,10 +1,7 @@
 import { ProviderResult, TreeDataProvider } from 'vscode';
-import { ExtensionInterface } from '../../interfaces/SnykInterfaces';
-import { Node } from './Node';
+import { Node } from './node';
 
-export abstract class NodeProvider implements TreeDataProvider<Node> {
-  constructor(protected extension: ExtensionInterface) {}
-
+export abstract class TreeNodeProvider implements TreeDataProvider<Node> {
   abstract getRootChildren(): Node[];
 
   getChildren(element?: Node): ProviderResult<Node[]> {
@@ -19,6 +16,4 @@ export abstract class NodeProvider implements TreeDataProvider<Node> {
   getTreeItem(element: Node): Node {
     return element;
   }
-
-  onDidChangeTreeData = this.extension.contextService.refreshViewEmitter.event;
 }

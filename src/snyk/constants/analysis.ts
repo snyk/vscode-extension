@@ -1,3 +1,5 @@
+import { SNYK_NAME } from "./general";
+
 export const SNYK_SEVERITIES: { [key: string]: number } = {
   information: 1,
   warning: 2,
@@ -20,3 +22,6 @@ export const ISSUES_MARKERS_DECORATION_TYPE: { [key: string]: string } = {
   borderColor: 'green',
   borderStyle: 'none none dashed none',
 };
+
+export const DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME = `${SNYK_NAME} (Code Security)`;
+export const DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME = `${SNYK_NAME} (Code Quality)`;
