@@ -22,19 +22,12 @@ export class SupportProvider extends NodeProvider {
         children: [
           new Node({
             text: '1. How to get the most out of Snyk’s extension?',
-            icon: new ThemeIcon('play'),
-            link: 'https://www.youtube.com/watch?v=NIDeVYLWkMI',
-          }),
-          new Node({
-            text: '2. How to ignore issues within the code?',
-            icon: new ThemeIcon('play'),
-            link: 'https://www.youtube.com/watch?v=sjDuDqUy7pw',
-          }),
-          new Node({
-            text: '3. How to ignore files and directories?',
             icon: new ThemeIcon('file-text'),
-            link:
-              'https://snyk.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-',
+            link: 'https://support.snyk.io/hc/en-us/articles/360018585717-Visual-Studio-Code-extension-for-Snyk-Code-',
+          }),
+          new Node({
+            text: '2. How to ignore files and directories?',
+            icon: new ThemeIcon('file-text'),
             collapsed: TreeItemCollapsibleState.Expanded,
             children: [
               new Node({
