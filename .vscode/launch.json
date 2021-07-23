@@ -18,16 +18,33 @@
       }
     },
     {
-      "name": "Extension Tests",
+      "name": "Extension Integration Tests",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+        "--extensionTestsPath=${workspaceFolder}/out/test/integration/index"
       ],
-      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "${defaultBuildTask}"
+      "outFiles": ["${workspaceFolder}/out/test/integration/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}",
+      "env": {
+        "SNYK_VSCE_DEVELOPMENT": "1"
+      }
+    },
+    {
+      // Ref: https://github.com/microsoft/vscode-recipes/tree/main/debugging-mocha-tests
+      "type": "node",
+      "request": "launch",
+      "name": "Extension Unit Tests",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": ["--ui", "tdd", "--timeout", "999999", "--colors", "${workspaceFolder}/out/test/unit"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**/*.js"],
+      "env": {
+        "SNYK_VSCE_DEVELOPMENT": "1"
+      }
     }
   ]
 }

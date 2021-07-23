@@ -1,18 +1,19 @@
+import path from 'path';
+import Mocha from 'mocha';
 import glob from 'glob';
-import * as Mocha from 'mocha';
-import * as path from 'path';
 
 export function run(): Promise<void> {
   // Create the mocha test
-  // eslint-disable-next-line new-cap
-  const mocha = new Mocha.default({
+  const mocha = new Mocha({
     ui: 'tdd',
+    color: true,
+    timeout: process.env.SNYK_VSCE_DEVELOPMENT ? 60000 : undefined,
   });
 
-  const testsRoot = path.resolve(__dirname, '..');
+  const testsRoot = path.resolve(__dirname, '.');
 
   return new Promise((c, e) => {
-    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+    glob('./**/**.test.js', { cwd: testsRoot }, (err, files) => {
       if (err) {
         return e(err);
       }
@@ -29,12 +30,10 @@ export function run(): Promise<void> {
             c();
           }
         });
-        // eslint-disable-next-line no-shadow
       } catch (err) {
+        console.error(err);
         e(err);
       }
-
-      return undefined;
     });
   });
 }
