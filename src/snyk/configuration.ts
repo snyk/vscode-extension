@@ -2,7 +2,6 @@ import { URL } from 'url';
 import * as vscode from 'vscode';
 import { IDE_NAME } from './constants/general';
 import {
-  ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -26,10 +25,8 @@ export interface IConfiguration {
   snykCodeUrl: string;
   token: string | undefined;
   setToken(token: string): Promise<void>;
-  codeEnabled: boolean | undefined;
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
-  setCodeEnabled(value: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -37,7 +34,6 @@ export class Configuration implements IConfiguration {
   private staticToken = '';
   private defaultBaseURL = 'https://deeproxy.snyk.io';
   private defaultAuthHost = 'https://snyk.io';
-  private staticCodeEnabled = false;
 
   constructor(
     private processEnv: NodeJS.ProcessEnv = process.env,
@@ -106,22 +102,6 @@ export class Configuration implements IConfiguration {
     await this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)
       .update(this.getConfigName(CODE_QUALITY_ENABLED_SETTING), config.codeQualityEnabled, true);
-  }
-
-  get codeEnabled(): boolean | undefined {
-    return (
-      this.staticCodeEnabled ||
-      this.source !== IDE_NAME ||
-      this.vscodeWorkspace
-        .getConfiguration(CONFIGURATION_IDENTIFIER)
-        .get<boolean | undefined>(this.getConfigName(ADVANCED_ADVANCED_CODE_ENABLED_SETTING))
-    );
-  }
-
-  async setCodeEnabled(value = true): Promise<void> {
-    await this.vscodeWorkspace
-      .getConfiguration(CONFIGURATION_IDENTIFIER)
-      .update(this.getConfigName(ADVANCED_ADVANCED_CODE_ENABLED_SETTING), value, true);
   }
 
   get shouldReportErrors(): boolean {

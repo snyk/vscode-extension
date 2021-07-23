@@ -79,12 +79,6 @@
             "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
             "scope": "application"
           },
-          "snyk.advanced.codeEnabled": {
-            "type": "boolean",
-            "markdownDescription": "Mirrors if Snyk Code is enabled or disabled for [your Snyk organisation](https://app.snyk.io/manage/snyk-code). Please do not manually edit this configuration as it might cause unpredictable behaviour.",
-            "scope": "window",
-            "default": null
-          },
           "snyk.features.codeSecurity": {
             "type": "boolean",
             "title": "Snyk Code security issues",
