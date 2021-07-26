@@ -203,30 +203,3 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     return undefined;
   }
 }
-
-// disposable provider
-export class DisposableCodeActionsProvider implements vscode.Disposable {
-  private disposableProvider: vscode.Disposable | undefined;
-  constructor(snykReview: vscode.DiagnosticCollection | undefined, callbacks: { [key: string]: Function }) {
-    this.registerProvider(snykReview, callbacks);
-  }
-
-  private registerProvider(
-    snykReview: vscode.DiagnosticCollection | undefined,
-    callbacks: { [key: string]: Function },
-  ) {
-    this.disposableProvider = vscode.languages.registerCodeActionsProvider(
-      { scheme: 'file', language: '*' },
-      new SnykIssuesActionProvider(snykReview, callbacks),
-      {
-        providedCodeActionKinds: SnykIssuesActionProvider.providedCodeActionKinds,
-      },
-    );
-  }
-
-  public dispose() {
-    if (this.disposableProvider) {
-      this.disposableProvider.dispose();
-    }
-  }
-}

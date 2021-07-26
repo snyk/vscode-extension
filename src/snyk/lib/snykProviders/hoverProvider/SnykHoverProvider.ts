@@ -27,7 +27,7 @@ export class DisposableHoverProvider implements vscode.Disposable {
     );
   }
 
-  public dispose() {
+  dispose(): void {
     if (this.hoverProvider) {
       this.hoverProvider.dispose();
     }

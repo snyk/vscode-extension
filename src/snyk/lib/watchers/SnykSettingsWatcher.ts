@@ -3,6 +3,8 @@ import { ExtensionInterface, SnykWatcherInterface } from '../../../interfaces/Sn
 import {
   ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
+  CODE_QUALITY_ENABLED_SETTING,
+  CODE_SECURITY_ENABLED_SETTING,
   TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
 } from '../../constants/settings';
@@ -18,6 +20,9 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
       return;
     } else if (key === YES_TELEMETRY_SETTING) {
       return extension.analytics.setShouldReportEvents(configuration.shouldReportEvents);
+    } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
+      // If two settings are changed simultaneously, only one will be applied, thus refresh all views
+      extension.viewManagerService.refreshAllAnalysisViews();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -39,6 +44,8 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
           ADVANCED_ADVANCED_CODE_ENABLED_SETTING,
           ADVANCED_ADVANCED_MODE_SETTING,
           YES_TELEMETRY_SETTING,
+          CODE_SECURITY_ENABLED_SETTING,
+          CODE_QUALITY_ENABLED_SETTING,
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {

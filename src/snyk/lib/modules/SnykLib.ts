@@ -51,10 +51,17 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
       return;
     }
 
-    const codeEnabled = await this.checkCodeEnabled();
     await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
+    if (!configuration.getFeaturesConfiguration()) {
+      await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
+      return;
+    }
+
+    await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
+
+    const codeEnabled = await this.checkCodeEnabled();
     if (!codeEnabled) {
       return;
     }
@@ -106,7 +113,7 @@ export default class SnykLib extends BundlesModule implements SnykLibInterface {
     }
   }
 
-  onDidChangeAnalysisViewVisibility(visible: boolean): void {
+  onDidChangeWelcomeViewVisibility(visible: boolean): void {
     if (visible && !configuration.token) {
       // Track if a user is not authenticated and expanded the analysis view
       this.analytics.logWelcomeViewIsViewed();

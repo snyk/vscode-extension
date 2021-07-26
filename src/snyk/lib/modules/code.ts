@@ -3,14 +3,68 @@ import { getSastSettings } from '../../services/cliConfigService';
 import { IOpenerService } from '../../services/openerService';
 
 export interface ISnykCode {
+  isAnalysisRunning: boolean;
+  lastAnalysisDuration: number;
+  lastAnalysisTimestamp: number;
+  analysisStatus: string;
+  analysisProgress: string;
+
+  startAnalysis(): void;
+  stopAnalysis(): void;
+  finaliseAnalysis(): void;
+  updateStatus(status: string, progress: string): void;
   isEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
 }
 
-export class SnykCode {
+export class SnykCode implements ISnykCode {
+  runningAnalysis = false;
+
+  private lastAnalysisStartingTimestamp = Date.now();
+  private _lastAnalysisDuration = 0;
+  private _lastAnalysisTimestamp = Date.now();
+  private _analysisStatus = '';
+  private _analysisProgress = '';
+
   constructor(private config: IConfiguration, private openerService: IOpenerService) {}
 
-  public async isEnabled(): Promise<boolean> {
+  get isAnalysisRunning(): boolean {
+    return this.runningAnalysis;
+  }
+  get lastAnalysisDuration(): number {
+    return this._lastAnalysisDuration;
+  }
+  get lastAnalysisTimestamp(): number {
+    return this._lastAnalysisTimestamp;
+  }
+  get analysisStatus(): string {
+    return this._analysisStatus;
+  }
+  get analysisProgress(): string {
+    return this._analysisProgress;
+  }
+
+  startAnalysis(): void {
+    this.runningAnalysis = true;
+    this.lastAnalysisStartingTimestamp = Date.now();
+  }
+
+  stopAnalysis(): void {
+    this.runningAnalysis = false;
+  }
+
+  finaliseAnalysis(): void {
+    this.runningAnalysis = false;
+    this._lastAnalysisTimestamp = Date.now();
+    this._lastAnalysisDuration = this._lastAnalysisTimestamp - this.lastAnalysisStartingTimestamp;
+  }
+
+  updateStatus(status: string, progress: string): void {
+    this._analysisStatus = status;
+    this._analysisProgress = progress;
+  }
+
+  async isEnabled(): Promise<boolean> {
     // Code was disabled explicitly
     if (this.config.codeEnabled === false) {
       return false;
@@ -24,7 +78,7 @@ export class SnykCode {
     return settings.sastEnabled;
   }
 
-  public async enable(): Promise<boolean> {
+  async enable(): Promise<boolean> {
     let settings = await getSastSettings();
     if (settings.sastEnabled) {
       await this.config.setCodeEnabled(true);

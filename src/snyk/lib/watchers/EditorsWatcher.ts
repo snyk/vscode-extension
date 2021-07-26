@@ -25,13 +25,11 @@ class SnykEditorsWatcher implements SnykWatcherInterface {
     };
   }
 
-  private watchEditorsNavChange(extension: ExtensionInterface) {
+  private watchEditorsNavChange() {
     vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined) => {
       if (editor && !this.currentTextEditors[editor.document.fileName]) {
         this.createEditorInfo(editor);
       }
-      // set issues markers decorations when navigating between opened editors
-      extension.analyzer.setIssuesMarkersDecoration(editor);
     });
   }
 
@@ -64,7 +62,7 @@ class SnykEditorsWatcher implements SnykWatcherInterface {
     for await (const editor of vscode.window.visibleTextEditors) {
       this.createEditorInfo(editor);
     }
-    this.watchEditorsNavChange(extension);
+    this.watchEditorsNavChange();
     this.watchClosingEditor();
     this.watchEditorCodeChanges(extension);
   }

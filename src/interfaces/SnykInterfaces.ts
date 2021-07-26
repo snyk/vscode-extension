@@ -1,9 +1,10 @@
 import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
-import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument, TextEditor } from 'vscode';
+import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument } from 'vscode';
+import { Iteratively } from '../snyk/analytics/itly';
 import { IContextService } from '../snyk/services/contextService';
 import { IOpenerService } from '../snyk/services/openerService';
-import { Iteratively } from '../snyk/analytics/itly';
+import { IViewManagerService } from '../snyk/services/viewManagerService';
 
 export interface StatusBarItemInterface {
   snykStatusBarItem: StatusBarItem;
@@ -11,8 +12,6 @@ export interface StatusBarItemInterface {
 }
 
 export interface BaseSnykModuleInterface {
-  analysisStatus: string;
-  analysisProgress: string;
   remoteBundle: IFileBundle;
   changedFiles: Set<string>;
   analyzer: AnalyzerInterface;
@@ -21,8 +20,7 @@ export interface BaseSnykModuleInterface {
   settingsWatcher: SnykWatcherInterface;
   contextService: IContextService;
   openerService: IOpenerService;
-  shouldShowAnalysis: boolean;
-  emitViewInitialized(): void;
+  viewManagerService: IViewManagerService;
   analytics: Iteratively;
   loadAnalytics(): void;
 
@@ -43,9 +41,6 @@ export interface LoginModuleInterface {
 }
 
 export interface BundlesModuleInterface {
-  readonly runningAnalysis: boolean;
-  readonly lastAnalysisDuration: number;
-  readonly lastAnalysisTimestamp: number;
   startAnalysis(manual: boolean): Promise<void>;
 }
 
@@ -113,8 +108,8 @@ export interface IssuesListOptionsInterface {
 }
 
 export interface AnalyzerInterface {
-  activate(extension: ExtensionInterface | any): void;
-  snykReview: DiagnosticCollection | undefined;
+  codeSecurityReview: DiagnosticCollection | undefined;
+  codeQualityReview: DiagnosticCollection | undefined;
   analysisResults: IAnalysisResult;
   findSuggestion(suggestionName: string): ISuggestion | undefined;
   getFullSuggestion(
@@ -125,5 +120,4 @@ export interface AnalyzerInterface {
   checkFullSuggestion(suggestion: completeFileSuggestionType): boolean;
   createReviewResults(): void;
   updateReviewResultsPositions(extension: ExtensionInterface, updatedFile: openedTextEditorType): Promise<void>;
-  setIssuesMarkersDecoration(editor: TextEditor | undefined): void;
 }

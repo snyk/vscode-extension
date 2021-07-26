@@ -10,11 +10,10 @@ import {
 } from '../../../interfaces/SnykInterfaces';
 import { Iteratively } from '../../analytics/itly';
 import { configuration } from '../../configuration';
-import { SNYK_CONTEXT } from '../../constants/views';
 import { Logger } from '../../logger';
 import { ContextService, IContextService } from '../../services/contextService';
 import { IOpenerService, OpenerService } from '../../services/openerService';
-import { PendingTask, PendingTaskInterface } from '../../utils/pendingTask';
+import { IViewManagerService, ViewManagerService } from '../../services/viewManagerService';
 import { SuggestionProvider } from '../../view/SuggestionProvider';
 import SnykAnalyzer from '../analyzer/SnykAnalyzer';
 import SnykStatusBarItem from '../statusBarItem/SnykStatusBarItem';
@@ -31,11 +30,8 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
   suggestionProvider: SuggestionProviderInterface;
   contextService: IContextService;
   openerService: IOpenerService;
+  viewManagerService: IViewManagerService;
 
-  // Views and analysis progress
-  analysisStatus = '';
-  analysisProgress = '';
-  protected initializedView: PendingTaskInterface;
   analytics: Iteratively;
 
   remoteBundle: IFileBundle;
@@ -49,23 +45,10 @@ export default abstract class BaseSnykModule implements BaseSnykModuleInterface 
     this.editorsWatcher = new SnykEditorsWatcher();
     this.settingsWatcher = new SnykSettingsWatcher();
     this.suggestionProvider = new SuggestionProvider();
-    this.analysisStatus = '';
-    this.analysisProgress = '';
-    this.initializedView = new PendingTask();
+    this.viewManagerService = new ViewManagerService();
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
     this.snykCode = new SnykCode(configuration, this.openerService);
-  }
-
-  get shouldShowAnalysis(): boolean {
-    return (
-      !this.contextService.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.contextService.viewContext[c])
-    );
-  }
-
-  emitViewInitialized(): void {
-    if (!this.initializedView.isCompleted) this.initializedView.complete();
   }
 
   loadAnalytics(): void {

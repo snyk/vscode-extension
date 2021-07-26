@@ -1,4 +1,7 @@
-export const SNYK_VIEW_ANALYSIS = 'snyk.views.analysis';
+export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
+export const SNYK_VIEW_FEATURES = 'snyk.views.features';
+export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
+export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
 export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';
@@ -8,6 +11,7 @@ export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';
 export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
+  FEATURES_SELECTED: 'featuresSelected',
   CODE_ENABLED: 'codeEnabled',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
@@ -32,4 +36,6 @@ export const SNYK_ANALYSIS_STATUS = {
   COLLECTING: 'Collecting files',
   BUNDLING: 'Creating file bundles',
   UPLOADING: 'Uploading files',
+  CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
+  CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',
 };
