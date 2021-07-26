@@ -12,7 +12,8 @@ export interface IViewManagerService {
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
   refreshCodeSecurityView(): void;
   refreshCodeQualityView(): void;
-  refreshAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
+  refreshAllAnalysisViews(): void;
+  refreshFeatureAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
 }
 
 export class ViewManagerService implements IViewManagerService {
@@ -30,7 +31,12 @@ export class ViewManagerService implements IViewManagerService {
     if (!this.initializedView.isCompleted) this.initializedView.complete();
   }
 
-  refreshAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void {
+  refreshAllAnalysisViews(): void {
+    this.refreshCodeSecurityView();
+    this.refreshCodeQualityView();
+  }
+
+  refreshFeatureAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void {
     enabledFeatures = enabledFeatures ?? configuration.getFeaturesConfiguration();
 
     if (!enabledFeatures) {

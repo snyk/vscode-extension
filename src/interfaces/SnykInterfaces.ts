@@ -1,6 +1,7 @@
 import { IAnalysisResult, IFileBundle, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { DiagnosticCollection, ExtensionContext, StatusBarItem, TextDocument } from 'vscode';
+import { Iteratively } from '../snyk/analytics/itly';
 import { IContextService } from '../snyk/services/contextService';
 import { IOpenerService } from '../snyk/services/openerService';
 import { IViewManagerService } from '../snyk/services/viewManagerService';
@@ -20,6 +21,7 @@ export interface BaseSnykModuleInterface {
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
+  analytics: Iteratively;
   loadAnalytics(): void;
 
   // Abstract methods

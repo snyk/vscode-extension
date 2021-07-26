@@ -20,10 +20,9 @@ class SnykSettingsWatcher implements SnykWatcherInterface {
       return;
     } else if (key === YES_TELEMETRY_SETTING) {
       return extension.analytics.setShouldReportEvents(configuration.shouldReportEvents);
-    } else if (key === CODE_SECURITY_ENABLED_SETTING) {
-      extension.viewManagerService.refreshCodeSecurityView();
-    } else if (key === CODE_QUALITY_ENABLED_SETTING) {
-      extension.viewManagerService.refreshCodeQualityView();
+    } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
+      // If two settings are changed simultaneously, only one will be applied, thus refresh all views
+      extension.viewManagerService.refreshAllAnalysisViews();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');

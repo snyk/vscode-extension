@@ -14,7 +14,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
 
   updateStatus(status: string, progress: string): void {
     this.snykCode.updateStatus(status, progress);
-    this.viewManagerService.refreshAnalysisViews();
+    this.viewManagerService.refreshAllAnalysisViews();
   }
 
   onScanFilesProgress(value: number): void {
@@ -109,7 +109,7 @@ abstract class BundlesModule extends LoginModule implements BundlesModuleInterfa
             });
           }
 
-          this.viewManagerService.refreshAnalysisViews(enabledFeatures);
+          this.viewManagerService.refreshFeatureAnalysisViews(enabledFeatures);
           this.suggestionProvider.checkCurrentSuggestion();
         }
       } else {
