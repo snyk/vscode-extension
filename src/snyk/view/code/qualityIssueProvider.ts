@@ -5,7 +5,7 @@ import { ISnykCode } from '../../lib/modules/code';
 import { IContextService } from '../../services/contextService';
 import { IViewManagerService } from '../../services/viewManagerService';
 import { IssueProvider } from '../IssueProvider';
-import { Node } from '../node';
+import { TreeNode } from '../treeNode';
 
 export class CodeQualityIssueProvider extends IssueProvider {
   constructor(
@@ -17,12 +17,12 @@ export class CodeQualityIssueProvider extends IssueProvider {
     super(contextService, snykCode, analyzer.codeQualityReview);
   }
 
-  getRootChildren(): Node[] {
+  getRootChildren(): TreeNode[] {
     this.viewManagerService.emitViewInitialized();
 
     if (!configuration.getFeaturesConfiguration()?.codeQualityEnabled) {
       return [
-        new Node({
+        new TreeNode({
           text: SNYK_ANALYSIS_STATUS.CODE_QUALITY_DISABLED,
         }),
       ];

@@ -36,8 +36,8 @@ export interface INodeOptions {
   icon?: INodeIcon | ThemeIcon;
   command?: Command;
   collapsed?: TreeItemCollapsibleState;
-  parent?: Node;
-  children?: Node[];
+  parent?: TreeNode;
+  children?: TreeNode[];
   internal?: InternalType;
 }
 
@@ -45,10 +45,10 @@ export type INode = TreeItem & {
   readonly internal: InternalType;
 };
 
-export class Node extends TreeItem implements INode {
+export class TreeNode extends TreeItem implements INode {
   readonly internal: { [key: string]: any };
-  private parent: Node | undefined;
-  private children: Node[] | undefined;
+  private parent: TreeNode | undefined;
+  private children: TreeNode[] | undefined;
 
   constructor(options: INodeOptions) {
     const collapsed =
@@ -86,11 +86,11 @@ export class Node extends TreeItem implements INode {
     this.internal = options.internal || {};
   }
 
-  getParent(): Node | undefined {
+  getParent(): TreeNode | undefined {
     return this.parent;
   }
 
-  getChildren(): Node[] {
+  getChildren(): TreeNode[] {
     return this.children || [];
   }
 }

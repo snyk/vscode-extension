@@ -275,7 +275,7 @@
     "@itly/plugin-schema-validator": "^2.3.1",
     "@itly/plugin-segment-node": "^2.3.1",
     "@itly/sdk": "^2.3.1",
-    "@snyk/code-client": "^3.7.0",
+    "@snyk/code-client": "^3.10.0",
     "analytics-node": "^4.0.1",
     "axios": "^0.21.1",
     "lodash": "^4.17.21",

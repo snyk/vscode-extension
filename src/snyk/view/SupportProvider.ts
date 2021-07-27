@@ -1,36 +1,36 @@
 import { ThemeIcon, TreeItemCollapsibleState } from 'vscode';
 import { SNYK_DCIGNORE_COMMAND } from '../constants/commands';
-import { Node } from './node';
+import { TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 
 export class SupportProvider extends TreeNodeProvider {
-  getRootChildren(): Node[] {
+  getRootChildren(): TreeNode[] {
     return [
-      new Node({
+      new TreeNode({
         text: 'Help Snyk to make a better extension',
         icon: new ThemeIcon('mortar-board'),
         link: 'https://calendly.com/snyk-georgi/45min',
       }),
-      new Node({
+      new TreeNode({
         text: 'Send us feedback or report a bug',
         icon: new ThemeIcon('mail'),
         link: 'https://snyk.io/contact-us/?utm_source=vsc',
       }),
-      new Node({
+      new TreeNode({
         text: 'Top 3 FAQ',
         collapsed: TreeItemCollapsibleState.Expanded,
         children: [
-          new Node({
+          new TreeNode({
             text: '1. How to get the most out of Snyk’s extension?',
             icon: new ThemeIcon('file-text'),
             link: 'https://support.snyk.io/hc/en-us/articles/360018585717-Visual-Studio-Code-extension-for-Snyk-Code-',
           }),
-          new Node({
+          new TreeNode({
             text: '2. How to ignore files and directories?',
             icon: new ThemeIcon('file-text'),
             collapsed: TreeItemCollapsibleState.Expanded,
             children: [
-              new Node({
+              new TreeNode({
                 text: 'Add default .dcignore file to your workspace',
                 icon: new ThemeIcon('new-file'),
                 command: {
@@ -39,7 +39,7 @@ export class SupportProvider extends TreeNodeProvider {
                   arguments: [],
                 },
               }),
-              new Node({
+              new TreeNode({
                 text: 'Add a custom .dcignore file to your workspace',
                 icon: new ThemeIcon('new-file'),
                 command: {
