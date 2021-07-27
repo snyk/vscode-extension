@@ -14,12 +14,17 @@ suite('Configuration', () => {
 
   test('configuration change is reflected', async () => {
     const token = 'fake-token';
+    const featuresConfig = {
+      codeSecurityEnabled: true,
+      codeQualityEnabled: false,
+    };
+
     await configuration.setToken(token);
-    await configuration.setCodeEnabled(false);
+    await configuration.setFeaturesConfiguration(featuresConfig);
     await configuration.setShouldReportEvents(false);
 
     strictEqual(configuration.token, token);
-    strictEqual(configuration.codeEnabled, false);
+    strictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
     strictEqual(configuration.shouldReportEvents, false);
     await configuration.setToken('');
   });

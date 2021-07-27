@@ -65,23 +65,13 @@ export class SnykCode implements ISnykCode {
   }
 
   async isEnabled(): Promise<boolean> {
-    // Code was disabled explicitly
-    if (this.config.codeEnabled === false) {
-      return false;
-    }
-
     const settings = await getSastSettings();
-    if (this.config.codeEnabled !== settings.sastEnabled) {
-      await this.config.setCodeEnabled(settings.sastEnabled);
-    }
-
     return settings.sastEnabled;
   }
 
   async enable(): Promise<boolean> {
     let settings = await getSastSettings();
     if (settings.sastEnabled) {
-      await this.config.setCodeEnabled(true);
       return true;
     }
 
@@ -95,12 +85,10 @@ export class SnykCode implements ISnykCode {
 
       settings = await getSastSettings();
       if (settings.sastEnabled) {
-        await this.config.setCodeEnabled(true);
         return true;
       }
     }
 
-    await this.config.setCodeEnabled(false);
     return false;
   }
 
