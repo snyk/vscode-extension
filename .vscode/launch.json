@@ -24,7 +24,8 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/integration/index"
+        "--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
+        "${workspaceFolder}/src/test/integration/mocked_data"
       ],
       "outFiles": ["${workspaceFolder}/out/test/integration/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",

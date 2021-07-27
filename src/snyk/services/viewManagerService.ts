@@ -1,10 +1,28 @@
 import _ from 'lodash';
-import { EventEmitter } from 'vscode';
+import { EventEmitter, TreeView } from 'vscode';
 import { configuration, FeaturesConfiguration } from '../configuration';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { PendingTask, PendingTaskInterface } from '../utils/pendingTask';
+import { FeaturesViewProvider } from '../view/welcome/welcomeViewProvider';
+import { Node } from './../view/node';
+
+export type ViewType = FeaturesViewProvider | TreeView<Node>;
+
+export class ViewContainer {
+  private container = new Map<string, ViewType>();
+
+  get<T extends ViewType>(key: string): T | undefined {
+    return this.container.get(key) as T;
+  }
+
+  set<T extends ViewType>(key: string, value: T): void {
+    this.container.set(key, value);
+  }
+}
 
 export interface IViewManagerService {
+  viewContainer: ViewContainer;
+
   initializedView: PendingTaskInterface;
   emitViewInitialized(): void;
 
@@ -17,6 +35,8 @@ export interface IViewManagerService {
 }
 
 export class ViewManagerService implements IViewManagerService {
+  readonly viewContainer: ViewContainer;
+
   readonly initializedView: PendingTaskInterface;
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
@@ -25,6 +45,7 @@ export class ViewManagerService implements IViewManagerService {
     this.initializedView = new PendingTask();
     this.refreshCodeSecurityViewEmitter = new EventEmitter<void>();
     this.refreshCodeQualityViewEmitter = new EventEmitter<void>();
+    this.viewContainer = new ViewContainer();
   }
 
   emitViewInitialized(): void {

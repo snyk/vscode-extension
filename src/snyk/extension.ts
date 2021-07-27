@@ -36,7 +36,7 @@ import { EmptyTreeDataProvider } from './view/emptyTreeDataProvider';
 import { CodeQualityIssueProvider } from './view/code/qualityIssueProvider';
 import { CodeSecurityIssueProvider } from './view/code/securityIssueProvider';
 import { SupportProvider } from './view/SupportProvider';
-import { WelcomeViewProvider } from './view/welcome/welcomeViewProvider';
+import { FeaturesViewProvider } from './view/welcome/welcomeViewProvider';
 
 class SnykExtension extends SnykLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
@@ -95,11 +95,11 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
         this.contextService,
         this.snykCode,
       );
+
+    const featuresViewProvider = new FeaturesViewProvider(context.extensionUri, this.contextService);
+
     context.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(
-        SNYK_VIEW_FEATURES,
-        new WelcomeViewProvider(context.extensionUri, this.contextService),
-      ),
+      vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
@@ -108,6 +108,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
+
     const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
       treeDataProvider: codeSecurityIssueProvider,
     });
@@ -119,6 +120,11 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
       codeQualityTree,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
     );
+
+    // Fill the view container to expose views for tests
+    const viewContainer = this.viewManagerService.viewContainer;
+    viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
+    viewContainer.set(SNYK_VIEW_FEATURES, featuresViewProvider);
 
     vscode.workspace.onDidChangeWorkspaceFolders(this.startExtension.bind(this));
 

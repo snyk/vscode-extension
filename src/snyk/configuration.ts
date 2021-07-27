@@ -66,7 +66,7 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  async setToken(token: string): Promise<void> {
+  async setToken(token: string | undefined): Promise<void> {
     this.staticToken = '';
     await this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)
@@ -77,7 +77,7 @@ export class Configuration implements IConfiguration {
     return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
   }
 
-  getFeaturesConfiguration(): FeaturesConfiguration | null {
+  getFeaturesConfiguration(): FeaturesConfiguration | undefined {
     const codeSecurityEnabled = this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)
       .get<boolean>(this.getConfigName(CODE_SECURITY_ENABLED_SETTING));
@@ -86,7 +86,7 @@ export class Configuration implements IConfiguration {
       .get<boolean>(this.getConfigName(CODE_QUALITY_ENABLED_SETTING));
 
     if (!codeSecurityEnabled && !codeQualityEnabled) {
-      return null;
+      return undefined;
     }
 
     return {
@@ -95,13 +95,13 @@ export class Configuration implements IConfiguration {
     };
   }
 
-  async setFeaturesConfiguration(config: FeaturesConfiguration): Promise<void> {
+  async setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void> {
     await this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)
-      .update(this.getConfigName(CODE_SECURITY_ENABLED_SETTING), config.codeSecurityEnabled, true);
+      .update(this.getConfigName(CODE_SECURITY_ENABLED_SETTING), config?.codeSecurityEnabled, true);
     await this.vscodeWorkspace
       .getConfiguration(CONFIGURATION_IDENTIFIER)
-      .update(this.getConfigName(CODE_QUALITY_ENABLED_SETTING), config.codeQualityEnabled, true);
+      .update(this.getConfigName(CODE_QUALITY_ENABLED_SETTING), config?.codeQualityEnabled, true);
   }
 
   get shouldReportErrors(): boolean {
