@@ -1,6 +1,5 @@
 import { setContext } from '../utils/vscodeCommandsUtils';
 import { Logger } from '../logger';
-import { IViewManagerService } from './viewManagerService';
 import { SNYK_CONTEXT } from '../constants/views';
 
 export interface IContextService {

@@ -13,8 +13,8 @@ type WelcomeViewEventMessage = {
   value: unknown;
 };
 
-export class WelcomeViewProvider implements vscode.WebviewViewProvider {
-  private _view?: vscode.WebviewView;
+export class FeaturesViewProvider implements vscode.WebviewViewProvider {
+  private view?: vscode.WebviewView;
 
   constructor(private readonly _extensionUri: vscode.Uri, private readonly contextService: IContextService) {}
 
@@ -23,7 +23,7 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ): void {
-    this._view = webviewView;
+    this.view = webviewView;
 
     webviewView.webview.options = {
       // Allow scripts in the webview
@@ -31,7 +31,7 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+    webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (data: WelcomeViewEventMessage) => {
       switch (data.type) {
@@ -44,7 +44,11 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview) {
+  getWebView(): vscode.WebviewView | undefined {
+    return this.view;
+  }
+
+  private getHtmlForWebview(webview: vscode.Webview) {
     const scriptUri = this.getWebViewUri('out', 'snyk', 'view', 'welcome', 'welcomeViewScript.js');
     const styleVSCodeUri = this.getWebViewUri('media', 'view', 'welcome', 'vscode.css');
     const styleWelcomeUri = this.getWebViewUri('media', 'view', 'welcome', 'welcome.css');
@@ -94,7 +98,7 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private getWebViewUri(...pathSegments: string[]) {
-    return this._view?.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...pathSegments));
+    return this.view?.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...pathSegments));
   }
 
   private getNonce() {
