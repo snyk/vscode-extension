@@ -1,4 +1,4 @@
-import { Node } from './node';
+import { TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 
 /*
@@ -7,7 +7,7 @@ import { TreeNodeProvider } from './treeNodeProvider';
   This allows attaching event listeners to such views.
 */
 export class EmptyTreeDataProvider extends TreeNodeProvider {
-  getRootChildren(): Node[] {
+  getRootChildren(): TreeNode[] {
     return [];
   }
 }

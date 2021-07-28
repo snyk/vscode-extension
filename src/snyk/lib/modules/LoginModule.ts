@@ -1,9 +1,10 @@
 import { checkSession, startSession } from '@snyk/code-client';
+import { getIpFamily, IpFamily } from '@snyk/code-client/dist/http';
 import { LoginModuleInterface } from '../../../interfaces/SnykInterfaces';
 import { configuration } from '../../configuration';
 import { SNYK_CONTEXT } from '../../constants/views';
+import { Logger } from '../../logger';
 import { errorsLogs } from '../../messages/errorsServerLogMessages';
-import { ISnykCode, SnykCode } from './code';
 import ReportModule from './ReportModule';
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
@@ -19,12 +20,17 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
       return;
     }
 
+    const ipFamily = await getIpFamily(configuration.authHost);
+    if (ipFamily) {
+      Logger.info('IPv6 is used to authenticate.');
+    }
+
     this.pendingLogin = true;
     try {
       // In case we already created a draft token earlier, check if it's confirmed already
       if (this.pendingToken) {
         try {
-          const token = await this.checkSession(this.pendingToken);
+          const token = await this.checkSession(this.pendingToken, ipFamily);
           if (token) {
             await configuration.setToken(token);
             return;
@@ -38,7 +44,7 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
       await this.openerService.openBrowserUrl(loginURL);
       void this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
-      const token = await this.waitLoginConfirmation(draftToken);
+      const token = await this.waitLoginConfirmation(draftToken, ipFamily);
       if (token) {
         await configuration.setToken(token);
       } else {
@@ -53,13 +59,14 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     }
   }
 
-  async checkSession(draftToken = ''): Promise<string> {
+  async checkSession(draftToken = '', ipFamily?: IpFamily): Promise<string> {
     let token = '';
     if (draftToken) {
       try {
         const sessionResponse = await checkSession({
           authHost: configuration.authHost,
           draftToken,
+          ipFamily,
         });
         if (sessionResponse.type === 'error') {
           token = '';
@@ -77,14 +84,14 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     return token;
   }
 
-  private async waitLoginConfirmation(draftToken: string): Promise<string> {
+  private async waitLoginConfirmation(draftToken: string, ipFamily?: IpFamily): Promise<string> {
     // 90 seconds to wait for user's authentication
     /* eslint-disable no-await-in-loop */
     for (let i = 0; i < 50; i += 1) {
       const waitTime = i < 30 ? 1000 : 3000; // wait 1s for the first 30s, then poll each 3s
       await sleep(waitTime);
 
-      const token = await this.checkSession(draftToken);
+      const token = await this.checkSession(draftToken, ipFamily);
       if (token) {
         return token;
       }

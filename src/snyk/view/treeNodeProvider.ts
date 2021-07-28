@@ -1,19 +1,19 @@
 import { ProviderResult, TreeDataProvider } from 'vscode';
-import { Node } from './node';
+import { TreeNode } from './treeNode';
 
-export abstract class TreeNodeProvider implements TreeDataProvider<Node> {
-  abstract getRootChildren(): Node[];
+export abstract class TreeNodeProvider implements TreeDataProvider<TreeNode> {
+  abstract getRootChildren(): TreeNode[];
 
-  getChildren(element?: Node): ProviderResult<Node[]> {
+  getChildren(element?: TreeNode): ProviderResult<TreeNode[]> {
     if (element) return element.getChildren();
     return this.getRootChildren();
   }
 
-  getParent(element: Node): Node | undefined {
+  getParent(element: TreeNode): TreeNode | undefined {
     return element.getParent();
   }
 
-  getTreeItem(element: Node): Node {
+  getTreeItem(element: TreeNode): TreeNode {
     return element;
   }
 }

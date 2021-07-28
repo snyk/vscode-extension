@@ -4,7 +4,7 @@ import { SNYK_OPEN_ISSUE_COMMAND } from '../constants/commands';
 import { ISnykCode } from '../lib/modules/code';
 import { IContextService } from '../services/contextService';
 import { getSnykSeverity } from '../utils/analysisUtils';
-import { INodeIcon, Node, NODE_ICONS } from './node';
+import { INodeIcon, TreeNode, NODE_ICONS } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 
 interface ISeverityCounts {
@@ -20,7 +20,7 @@ export class IssueProvider extends TreeNodeProvider {
     super();
   }
 
-  compareNodes = (n1: Node, n2: Node): number => {
+  compareNodes = (n1: TreeNode, n2: TreeNode): number => {
     if (n2.internal.severity - n1.internal.severity) return n2.internal.severity - n1.internal.severity;
     if (n2.internal.nIssues - n1.internal.nIssues) return n2.internal.nIssues - n1.internal.nIssues;
     if (n1.label && n2.label) {
@@ -51,8 +51,8 @@ export class IssueProvider extends TreeNodeProvider {
     return SNYK_SEVERITIES.information;
   }
 
-  getRootChildren(): Node[] {
-    const review: Node[] = [];
+  getRootChildren(): TreeNode[] {
+    const review: TreeNode[] = [];
     let nIssues = 0;
     if (!this.contextService.shouldShowAnalysis) return review;
     if (this.diagnosticCollection)
@@ -65,7 +65,7 @@ export class IssueProvider extends TreeNodeProvider {
         const filePath = uri.path.split('/');
         const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
-        const issues: Node[] = diagnostics.map(d => {
+        const issues: TreeNode[] = diagnostics.map(d => {
           const severity = getSnykSeverity(d.severity);
           counts[severity] += 1;
           nIssues += 1;
@@ -75,7 +75,7 @@ export class IssueProvider extends TreeNodeProvider {
             issue: { uri: Uri; range?: Range };
             internal: { severity: number };
             command: Command;
-            children?: Node[];
+            children?: TreeNode[];
           } = {
             text: d.message,
             icon: IssueProvider.getSeverityIcon(severity),
@@ -111,11 +111,11 @@ export class IssueProvider extends TreeNodeProvider {
           //   );
           // }
 
-          return new Node(params);
+          return new TreeNode(params);
         });
         issues.sort(this.compareNodes);
         const fileSeverity = IssueProvider.getFileSeverity(counts);
-        const file = new Node({
+        const file = new TreeNode({
           text: filename,
           description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
           icon: IssueProvider.getSeverityIcon(fileSeverity),
@@ -130,14 +130,14 @@ export class IssueProvider extends TreeNodeProvider {
     review.sort(this.compareNodes);
     if (this.snykCode.isAnalysisRunning) {
       review.unshift(
-        new Node({
+        new TreeNode({
           text: this.snykCode.analysisStatus,
           description: this.snykCode.analysisProgress,
         }),
       );
     } else {
       review.unshift(
-        new Node({
+        new TreeNode({
           text: `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
         }),
       );
@@ -146,7 +146,7 @@ export class IssueProvider extends TreeNodeProvider {
       const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const day = ts.toLocaleDateString([], { year: '2-digit', month: '2-digit', day: '2-digit' });
       review.unshift(
-        new Node({
+        new TreeNode({
           text: `Analysis took ${sDuration}s, finished at ${time}, ${day}`,
         }),
       );
