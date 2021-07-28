@@ -1,7 +1,7 @@
 import { strictEqual } from 'assert';
-import { configuration } from '../../snyk/configuration';
+import { configuration } from '../../snyk/common/configuration';
 import * as vscode from 'vscode';
-import { VSCODE_VIEW_CONTAINER_COMMAND } from '../../snyk/constants/commands';
+import { VSCODE_VIEW_CONTAINER_COMMAND } from '../../snyk/common/constants/commands';
 import * as sinon from 'sinon';
 import itly from '../../itly';
 

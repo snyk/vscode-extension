@@ -2,10 +2,10 @@ import axios from 'axios';
 import { promises as fs } from 'fs';
 import { homedir } from 'os';
 import { dirname, posix } from 'path';
-import { ILog } from './interfaces/loggerInterface';
-import { Iteratively } from './snyk/analytics/itly';
-import { SNYK_NAME_EXTENSION } from './snyk/constants/general';
-import { User } from './snyk/services/userService';
+import { ILog } from './snyk/common/logger/interfaces';
+import { Iteratively } from './snyk/common/analytics/itly';
+import { SNYK_NAME_EXTENSION } from './snyk/common/constants/general';
+import { User } from './snyk/common/services/userService';
 
 /**
  * The script is responsible for reporting uninstall event to the Iteratively.

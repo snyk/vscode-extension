@@ -1,10 +1,10 @@
 import { strictEqual } from 'assert';
-import { configuration } from '../../snyk/configuration';
+import { configuration } from '../../snyk/common/configuration';
 import { getExtension } from '../../extension';
-import { SNYK_VIEW_FEATURES, SNYK_VIEW_WELCOME } from '../../snyk/constants/views';
+import { SNYK_VIEW_FEATURES, SNYK_VIEW_WELCOME } from '../../snyk/common/constants/views';
 import { TreeView } from 'vscode';
-import { FeaturesViewProvider } from '../../snyk/view/welcome/welcomeViewProvider';
-import { TreeNode } from '../../snyk/view/treeNode';
+import { FeaturesViewProvider } from '../../snyk/base/views/welcome/welcomeViewProvider';
+import { TreeNode } from '../../snyk/common/views/treeNode';
 
 suite('View Navigation', () => {
   setup(async () => {
