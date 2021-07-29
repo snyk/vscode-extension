@@ -3,10 +3,10 @@ import { EventEmitter, TreeView } from 'vscode';
 import { configuration, FeaturesConfiguration } from '../configuration';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { PendingTask, PendingTaskInterface } from '../utils/pendingTask';
+import { TreeNode } from '../view/treeNode';
 import { FeaturesViewProvider } from '../view/welcome/welcomeViewProvider';
-import { Node } from './../view/node';
 
-export type ViewType = FeaturesViewProvider | TreeView<Node>;
+export type ViewType = FeaturesViewProvider | TreeView<TreeNode>;
 
 export class ViewContainer {
   private container = new Map<string, ViewType>();

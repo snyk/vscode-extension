@@ -31,11 +31,8 @@ export class LoadingBadge implements ILoadingBadge {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
       this.viewManagerService.initializedView.waiter
-        .then(
-          () =>
-            vscode.window.withProgress({ location: { viewId: SNYK_VIEW_WELCOME } }, () =>
-              self.getProgressBadgePromise(),
-            ), // todo check if correct with respect to security/quality split
+        .then(() =>
+          vscode.window.withProgress({ location: { viewId: SNYK_VIEW_WELCOME } }, () => self.getProgressBadgePromise()),
         )
         .then(
           () => undefined,
