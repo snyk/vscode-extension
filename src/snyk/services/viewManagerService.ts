@@ -23,9 +23,6 @@ export class ViewContainer {
 export interface IViewManagerService {
   viewContainer: ViewContainer;
 
-  initializedView: PendingTaskInterface;
-  emitViewInitialized(): void;
-
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
   refreshCodeSecurityView(): void;
@@ -37,19 +34,13 @@ export interface IViewManagerService {
 export class ViewManagerService implements IViewManagerService {
   readonly viewContainer: ViewContainer;
 
-  readonly initializedView: PendingTaskInterface;
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
 
   constructor() {
-    this.initializedView = new PendingTask();
     this.refreshCodeSecurityViewEmitter = new EventEmitter<void>();
     this.refreshCodeQualityViewEmitter = new EventEmitter<void>();
     this.viewContainer = new ViewContainer();
-  }
-
-  emitViewInitialized(): void {
-    if (!this.initializedView.isCompleted) this.initializedView.complete();
   }
 
   refreshAllAnalysisViews(): void {

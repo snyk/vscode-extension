@@ -18,8 +18,6 @@ export class CodeSecurityIssueProvider extends IssueProvider {
   }
 
   getRootChildren(): TreeNode[] {
-    this.viewManagerService.emitViewInitialized();
-
     if (!configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
       return [
         new TreeNode({
