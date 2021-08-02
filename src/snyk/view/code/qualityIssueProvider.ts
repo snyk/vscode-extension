@@ -18,8 +18,6 @@ export class CodeQualityIssueProvider extends IssueProvider {
   }
 
   getRootChildren(): TreeNode[] {
-    this.viewManagerService.emitViewInitialized();
-
     if (!configuration.getFeaturesConfiguration()?.codeQualityEnabled) {
       return [
         new TreeNode({

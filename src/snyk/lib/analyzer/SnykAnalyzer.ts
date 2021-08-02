@@ -150,9 +150,11 @@ class SnykAnalyzer implements AnalyzerInterface {
     updatedFile: openedTextEditorType,
   ): Promise<void> {
     try {
+      const isSecurityReviewFile = this.codeSecurityReview && this.codeSecurityReview.has(updatedFile.document.uri);
+      const isQualityReviewFile = this.codeQualityReview && this.codeQualityReview.has(updatedFile.document.uri);
+
       if (
-        !this.codeSecurityReview ||
-        !this.codeSecurityReview.has(updatedFile.document.uri) ||
+        (!isSecurityReviewFile && !isQualityReviewFile) ||
         !updatedFile.contentChanges.length ||
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         !updatedFile.contentChanges[0].range
@@ -160,13 +162,15 @@ class SnykAnalyzer implements AnalyzerInterface {
         return;
       }
       const fileIssuesList: IFilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
-      if (this.codeSecurityReview) {
-        const [securityIssues, qualityIssues] = this.createIssuesList({
-          fileIssuesList,
-          suggestions: this.analysisResults.suggestions,
-          fileUri: vscode.Uri.file(updatedFile.fullPath),
-        });
-        this.codeSecurityReview.set(vscode.Uri.file(updatedFile.fullPath), [...securityIssues]); // todo
+      const [securityIssues, qualityIssues] = this.createIssuesList({
+        fileIssuesList,
+        suggestions: this.analysisResults.suggestions,
+        fileUri: vscode.Uri.file(updatedFile.fullPath),
+      });
+      if (isSecurityReviewFile) {
+        this.codeSecurityReview?.set(vscode.Uri.file(updatedFile.fullPath), [...securityIssues]);
+      } else if (isQualityReviewFile) {
+        this.codeQualityReview?.set(vscode.Uri.file(updatedFile.fullPath), [...qualityIssues]);
       }
     } catch (err) {
       await extension.processError(err, {

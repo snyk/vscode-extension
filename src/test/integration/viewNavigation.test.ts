@@ -3,8 +3,8 @@ import { configuration } from '../../snyk/configuration';
 import { getExtension } from '../../extension';
 import { SNYK_VIEW_FEATURES, SNYK_VIEW_WELCOME } from '../../snyk/constants/views';
 import { TreeView } from 'vscode';
-import { Node } from '../../snyk/view/node';
 import { FeaturesViewProvider } from '../../snyk/view/welcome/welcomeViewProvider';
+import { TreeNode } from '../../snyk/view/treeNode';
 
 suite('View Navigation', () => {
   setup(async () => {
@@ -19,7 +19,7 @@ suite('View Navigation', () => {
   test('"Feature view is seen after user authenticates within welcome view', async () => {
     const extension = getExtension();
     const viewContainer = extension.viewManagerService.viewContainer;
-    const welcomeTree = viewContainer.get<TreeView<Node>>(SNYK_VIEW_WELCOME);
+    const welcomeTree = viewContainer.get<TreeView<TreeNode>>(SNYK_VIEW_WELCOME);
 
     // 1. Check welcome view is visible
     strictEqual(welcomeTree?.visible, true);

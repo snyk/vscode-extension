@@ -19,7 +19,7 @@ abstract class ReportModule extends BaseSnykModule implements ReportModuleInterf
 
   constructor() {
     super();
-    this.loadingBadge = new LoadingBadge(this.viewManagerService);
+    this.loadingBadge = new LoadingBadge();
   }
 
   private static get shouldReport(): boolean {

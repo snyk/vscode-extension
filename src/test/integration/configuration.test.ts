@@ -1,4 +1,4 @@
-import { strictEqual } from 'assert';
+import { deepStrictEqual, strictEqual } from 'assert';
 import { configuration } from '../../snyk/configuration';
 
 suite('Configuration', () => {
@@ -24,7 +24,7 @@ suite('Configuration', () => {
     await configuration.setShouldReportEvents(false);
 
     strictEqual(configuration.token, token);
-    strictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
+    deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
     strictEqual(configuration.shouldReportEvents, false);
     await configuration.setToken('');
   });
