@@ -1,4 +1,4 @@
-import { configuration } from '../../common/configuration';
+import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { ISnykCode } from '../../snykCode/code';
 import { IContextService } from '../../common/services/contextService';

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as vscode from 'vscode';
-import { configuration, FeaturesConfiguration } from '../../../common/configuration';
+import { FeaturesConfiguration } from '../../../common/configuration/configuration';
+import { configuration } from '../../../common/configuration/instance';
 import { SNYK_CONTEXT } from '../../../common/constants/views';
 import { IContextService } from '../../../common/services/contextService';
 

@@ -1,9 +1,10 @@
 import _ from 'lodash';
 import { EventEmitter, TreeView } from 'vscode';
-import { configuration, FeaturesConfiguration } from '../configuration';
+import { FeaturesConfiguration } from '../configuration/configuration';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { FeaturesViewProvider } from '../../base/views/welcome/welcomeViewProvider';
 import { TreeNode } from '../views/treeNode';
+import { configuration } from '../configuration/instance';
 
 export type ViewType = FeaturesViewProvider | TreeView<TreeNode>;
 

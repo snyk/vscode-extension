@@ -1,4 +1,4 @@
-import { IConfiguration } from '../common/configuration';
+import { IConfiguration } from '../common/configuration/configuration';
 import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
 import * as vscode from 'vscode';
@@ -114,7 +114,7 @@ export class SnykCode implements ISnykCode {
       } else {
         result = await analyzeFolders({
           baseURL: this.config.baseURL,
-          sessionToken: this.config.token ?? '', // todo: handle the case appropriately
+          sessionToken: this.config.snykCodeToken ?? '', // todo: handle the case appropriately
           paths,
           source: this.config.source,
         });

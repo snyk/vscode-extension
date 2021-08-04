@@ -2,7 +2,7 @@ import { reportEvent } from '@snyk/code-client';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
-import { configuration } from '../../common/configuration';
+import { configuration } from '../../common/configuration/instance';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,

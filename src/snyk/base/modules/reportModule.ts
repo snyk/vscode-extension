@@ -1,6 +1,6 @@
 import { constants, reportError } from '@snyk/code-client';
 import * as _ from 'lodash';
-import { configuration } from '../../common/configuration';
+import { configuration } from '../../common/configuration/instance';
 import {
   COMMAND_DEBOUNCE_INTERVAL,
   CONNECTION_ERROR_RETRY_INTERVAL,
