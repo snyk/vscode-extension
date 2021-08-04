@@ -1,5 +1,5 @@
 import { deepStrictEqual, strictEqual } from 'assert';
-import { configuration } from '../../snyk/configuration';
+import { configuration } from '../../snyk/common/configuration';
 
 suite('Configuration', () => {
   test('configuration constants differ between DEV and PROD', () => {

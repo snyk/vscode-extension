@@ -1,8 +1,6 @@
-import { emitter, ISupportedFiles } from '@snyk/code-client';
-import { EmitterDC } from '@snyk/code-client/dist/emitter';
+import { ISupportedFiles } from '@snyk/code-client';
 import * as _ from 'lodash';
 import * as vscode from 'vscode';
-import { ExtensionInterface } from '../interfaces/SnykInterfaces';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_DCIGNORE_COMMAND,
@@ -14,39 +12,32 @@ import {
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_START_COMMAND,
-} from './constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL } from './constants/general';
-import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './constants/globalState';
+} from './common/constants/commands';
+import { COMMAND_DEBOUNCE_INTERVAL } from './common/constants/general';
+import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
-  SNYK_ANALYSIS_STATUS,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_WELCOME,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_FEATURES,
-} from './constants/views';
-import BundlesModule from './lib/modules/BundlesModule';
-import SnykLib from './lib/modules/SnykLib';
-import createFileWatcher from './lib/watchers/FilesWatcher';
-import { errorsLogs } from './messages/errorsServerLogMessages';
-import { NotificationService } from './services/notificationService';
-import { severityAsText } from './utils/analysisUtils';
-import { createDCIgnoreCommand, openSnykSettingsCommand } from './utils/vscodeCommandsUtils';
-import { EmptyTreeDataProvider } from './view/emptyTreeDataProvider';
-import { CodeQualityIssueProvider } from './view/code/qualityIssueProvider';
-import { CodeSecurityIssueProvider } from './view/code/securityIssueProvider';
-import { SupportProvider } from './view/SupportProvider';
-import { FeaturesViewProvider } from './view/welcome/welcomeViewProvider';
+} from './common/constants/views';
+import SnykLib from './base/modules/snykLib';
+import { errorsLogs } from './common/messages/errorsServerLogMessages';
+import { NotificationService } from './common/services/notificationService';
+import { severityAsText } from './snykCode/utils/analysisUtils';
+import { createDCIgnoreCommand, openSnykSettingsCommand } from './common/vscodeCommandsUtils';
+import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
+import { CodeQualityIssueProvider } from './snykCode/views/qualityIssueProvider';
+import { SupportProvider } from './base/views/supportProvider';
+import { FeaturesViewProvider } from './base/views/welcome/welcomeViewProvider';
+import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvider';
+import { analytics } from './common/analytics/analytics';
+import { IExtension } from './base/modules/interfaces';
 
-class SnykExtension extends SnykLib implements ExtensionInterface {
+class SnykExtension extends SnykLib implements IExtension {
   context: vscode.ExtensionContext | undefined;
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
-  private emitter: EmitterDC;
-
-  constructor() {
-    super();
-    this.emitter = emitter;
-  }
 
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
     if (!this.debouncedCommands[name])
@@ -71,13 +62,6 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
   public activate(context: vscode.ExtensionContext): void {
     this.context = context;
-    this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
-    this.emitter.on(this.emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
-    this.emitter.on(this.emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
-    this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
-    this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
-    this.emitter.on(this.emitter.events.apiRequestLog, BundlesModule.onAPIRequestLog.bind(this));
-    this.emitter.on(this.emitter.events.error, this.onError.bind(this));
 
     this.statusBarItem.show();
 
@@ -85,13 +69,11 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
     const codeSecurityIssueProvider = new CodeSecurityIssueProvider(
         this.viewManagerService,
-        this.analyzer,
         this.contextService,
         this.snykCode,
       ),
       codeQualityIssueProvider = new CodeQualityIssueProvider(
         this.viewManagerService,
-        this.analyzer,
         this.contextService,
         this.snykCode,
       );
@@ -130,7 +112,7 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
-    this.suggestionProvider.activate(this);
+    this.snykCode.suggestionProvider.activate(this);
 
     void NotificationService.init(this.processError.bind(this));
 
@@ -140,12 +122,12 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
       }),
     );
 
-    this.loadAnalytics();
+    analytics.load();
 
     // Use memento until lifecycle hooks are implemented
     // https://github.com/microsoft/vscode/issues/98732
     if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
-      this.analytics.logPluginIsInstalled();
+      analytics.logPluginIsInstalled();
       void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
     }
 
@@ -154,8 +136,8 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
   }
 
   public async deactivate(): Promise<void> {
-    this.emitter.removeAllListeners();
-    await this.analytics.flush();
+    this.snykCode.dispose();
+    await analytics.flush();
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
@@ -237,15 +219,15 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
             openUri?: vscode.Uri,
             openRange?: vscode.Range,
           ) => {
-            const suggestion = this.analyzer.findSuggestion(message);
+            const suggestion = this.snykCode.analyzer.findSuggestion(message);
             if (!suggestion) return;
             // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
             if (openUri !== null)
               await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
-            this.suggestionProvider.show(suggestion.id, uri, range);
+            this.snykCode.suggestionProvider.show(suggestion.id, uri, range);
             suggestion.id = decodeURIComponent(suggestion.id);
 
-            this.analytics.logIssueIsViewed({
+            analytics.logIssueIsViewed({
               ide: 'Visual Studio Code',
               issueId: suggestion.id,
               issueType: 'Code Security Vulnerability',
@@ -262,17 +244,6 @@ class SnykExtension extends SnykLib implements ExtensionInterface {
         this.executeCommand.bind(this, SNYK_DCIGNORE_COMMAND, createDCIgnoreCommand),
       ),
     );
-  }
-
-  onSupportedFilesLoaded(data: ISupportedFiles | null): void {
-    const msg = data ? 'Ignore rules loading' : 'Loading';
-
-    this.updateStatus(SNYK_ANALYSIS_STATUS.FILTERS, msg);
-
-    // Setup file watcher
-    if (!this.filesWatcher && data) {
-      this.filesWatcher = createFileWatcher(this, data);
-    }
   }
 }
 
