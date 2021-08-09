@@ -246,6 +246,7 @@ export const findCompleteSuggestion = (
     uri: uri.toString(),
     ...suggestion,
     ...fileSuggestion,
+    isSecurityType: isSecurityTypeSuggestion(suggestion),
   };
 };
 
@@ -289,6 +290,10 @@ export const findSuggestionByMessage = (
 export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean): string => {
   const snykComment = isFileIgnore ? FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT : IGNORE_ISSUE_BASE_COMMENT_TEXT;
   return `${snykComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
+};
+
+export const isSecurityTypeSuggestion = (suggestion: ISuggestion): boolean => {
+  return suggestion.categories.includes('Security');
 };
 
 export const severityAsText = (severity: 1 | 2 | 3 | 4): 'Low' | 'Medium' | 'High' | 'Critical' => {

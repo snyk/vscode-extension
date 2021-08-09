@@ -1,10 +1,10 @@
-import { ISupportedFiles } from '@snyk/code-client';
 import * as _ from 'lodash';
 import * as vscode from 'vscode';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
+  SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
@@ -34,6 +34,7 @@ import { FeaturesViewProvider } from './base/views/welcome/welcomeViewProvider';
 import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvider';
 import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';
+import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
 
 class SnykExtension extends SnykLib implements IExtension {
   context: vscode.ExtensionContext | undefined;
@@ -244,6 +245,8 @@ class SnykExtension extends SnykLib implements IExtension {
         this.executeCommand.bind(this, SNYK_DCIGNORE_COMMAND, createDCIgnoreCommand),
       ),
     );
+
+    context.subscriptions.push(vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues));
   }
 }
 

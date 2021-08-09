@@ -117,7 +117,7 @@ export class IssueProvider extends TreeNodeProvider {
         const fileSeverity = IssueProvider.getFileSeverity(counts);
         const file = new TreeNode({
           text: filename,
-          description: `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`,
+          description: this.getIssueDescriptionText(dir, diagnostics),
           icon: IssueProvider.getSeverityIcon(fileSeverity),
           children: issues,
           internal: {
@@ -138,7 +138,7 @@ export class IssueProvider extends TreeNodeProvider {
     } else {
       review.unshift(
         new TreeNode({
-          text: `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`,
+          text: this.getNoIssueFoundText(nIssues),
         }),
       );
       const sDuration = Math.round((this.snykCode.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
@@ -152,5 +152,13 @@ export class IssueProvider extends TreeNodeProvider {
       );
     }
     return review;
+  }
+
+  protected getNoIssueFoundText(nIssues: number): string {
+    return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
+  }
+
+  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
+    return `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`;
   }
 }

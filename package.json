@@ -214,7 +214,7 @@
     "commands": [
       {
         "command": "snyk.start",
-        "title": "Snyk re-scan",
+        "title": "Snyk rescan",
         "icon": "$(run)"
       },
       {
