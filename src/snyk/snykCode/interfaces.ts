@@ -6,6 +6,7 @@ import { IExtension } from '../base/modules/interfaces';
 export type completeFileSuggestionType = ISuggestion &
   IFileSuggestion & {
     uri: string;
+    isSecurityType: boolean;
   };
 
 export type openedTextEditorType = {

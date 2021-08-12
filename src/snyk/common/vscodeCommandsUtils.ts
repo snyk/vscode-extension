@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SNYK_NAME } from './constants/general';
+import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from './constants/general';
 import {
   VSCODE_VIEW_CONTAINER_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
@@ -8,7 +8,7 @@ import {
 import { createDCIgnore } from '../snykCode/utils/ignoreFileUtils';
 
 export const openSnykSettingsCommand = async (): Promise<void> => {
-  await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, SNYK_NAME);
+  await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`);
 };
 
 export const openSnykViewContainer = async (): Promise<void> => {

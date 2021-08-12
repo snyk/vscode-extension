@@ -5,6 +5,7 @@ import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IssueProvider } from './issueProvider';
 import { TreeNode } from '../../common/views/treeNode';
+import { Diagnostic } from 'vscode';
 
 export class CodeSecurityIssueProvider extends IssueProvider {
   constructor(
@@ -28,4 +29,14 @@ export class CodeSecurityIssueProvider extends IssueProvider {
   }
 
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
+
+  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
+    return `${dir} - ${diagnostics.length} ${diagnostics.length === 1 ? 'vulnerability' : 'vulnerabilities'}`;
+  }
+
+  protected getNoIssueFoundText(nIssues: number): string {
+    return `Snyk found ${
+      !nIssues ? 'no vulnerabilities! ✅' : `${nIssues} ${nIssues === 1 ? 'vulnerability' : 'vulnerabilities'}`
+    }`;
+  }
 }

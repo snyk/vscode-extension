@@ -141,7 +141,7 @@ function getWebviewContent(images: Record<string, string>) {
         <div id="title" class="suggestion-text"></div>
         <div class="suggestion-links">
           <div class="clickable" onclick="navigateToIssue()">
-            <img class="icon" src="${images['icon-lines']}" /> This issue happens on line <span id="line-position"></span>
+            <img class="icon" src="${images['icon-lines']}" /> This <span class="issue-type">issue</span> happens on line <span id="line-position"></span>
           </div>
           <div id="lead-url" class="clickable hidden" onclick="navigateToLeadURL()">
             <img class="icon" src="${images['icon-external']}" /> More info
@@ -151,7 +151,7 @@ function getWebviewContent(images: Record<string, string>) {
       <section class="delimiter-top" id="labels"></section>
       <section class="delimiter-top">
         <div id="info-top" class="font-light">
-          This issue was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
+          This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
         </div>
         <div id="example-top" class="row between">
           <div class="clickable" onclick="navigateToCurrentExample()">
@@ -379,6 +379,12 @@ function getWebviewContent(images: Record<string, string>) {
         const severity = document.getElementById('severity');
         const title = document.getElementById('title');
 
+        // Display correct issue type text
+        const issueType = document.getElementsByClassName('issue-type');
+        for (const typeElement of issueType) {
+          typeElement.innerHTML = suggestion.isSecurityType ? 'vulnerability' : 'issue';
+        }
+
         if (currentSeverity && currentSeverity.text) {
           severity.querySelectorAll('img').forEach(n => {
             if (n.id.slice(-1) === 'l') {
@@ -536,6 +542,7 @@ export class SuggestionProvider implements ISuggestionProvider {
       this.disposePanel();
       return;
     }
+
     void this.showPanel(suggestion);
   }
 

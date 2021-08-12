@@ -12,11 +12,13 @@ import {
   createSnykSeveritiesMap,
   findCompleteSuggestion,
   findSuggestionByMessage,
-  getSnykSeverity,
+  isSecurityTypeSuggestion,
   updateFileReviewResultsPositions,
 } from '../utils/analysisUtils';
 import { IExtension } from '../../base/modules/interfaces';
 import { ISnykCodeAnalyzer, completeFileSuggestionType, IIssuesListOptions, openedTextEditorType } from '../interfaces';
+import { DisposableHoverProvider } from '../hoverProvider/hoverProvider';
+import { DisposableCodeActionsProvider } from '../codeActionsProvider/issuesActionsProvider';
 
 class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   private SEVERITIES: {
@@ -30,6 +32,17 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     this.SEVERITIES = createSnykSeveritiesMap();
     this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
     this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
+
+    new DisposableCodeActionsProvider(this.codeSecurityReview, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      findSuggestion: this.findSuggestion.bind(this),
+    });
+    new DisposableCodeActionsProvider(this.codeQualityReview, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      findSuggestion: this.findSuggestion.bind(this),
+    });
+    new DisposableHoverProvider(this.codeSecurityReview);
+    new DisposableHoverProvider(this.codeQualityReview);
   }
 
   public getFullSuggestion(
@@ -46,14 +59,6 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
 
   public findSuggestion(suggestionName: string): ISuggestion | undefined {
     return findSuggestionByMessage(this.analysisResults, suggestionName);
-  }
-
-  public trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
-    // eslint-disable-next-line no-param-reassign
-    options.data = {
-      severity: getSnykSeverity(vscodeSeverity),
-      ...options.data,
-    };
   }
 
   private createIssueDiagnosticInfo({
@@ -94,7 +99,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         continue;
       }
 
-      const isSecurityType = suggestions[issue].categories.includes('Security');
+      const isSecurityType = isSecurityTypeSuggestion(suggestions[issue]);
       const issueList = isSecurityType ? securityIssues : qualityIssues;
       for (const issuePositions of fileIssuesList[issue]) {
         issueList.push(
