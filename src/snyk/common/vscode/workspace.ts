@@ -11,6 +11,9 @@ export interface IVSCodeWorkspace {
   ): Promise<void>;
 }
 
+/**
+ * A wrapper class for the vscode.workspace to provide centralised access to dealing with the current workspace.
+ */
 export class VSCodeWorkspace implements IVSCodeWorkspace {
   getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined {
     return vscode.workspace.getConfiguration(configurationIdentifier).get(section);

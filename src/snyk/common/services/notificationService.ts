@@ -26,6 +26,11 @@ export class NotificationService {
     if (pressedButton === snykMessages.welcome.button) {
       await openSnykViewContainer();
     }
+
     await configuration.hideWelcomeNotification();
+  }
+
+  static async showErrorNotification(message: string): Promise<void> {
+    await vscode.window.showErrorMessage(message);
   }
 }
