@@ -33,10 +33,10 @@ for more information. We analyze the JavaScript, TypeScript and Java files as de
 
 ## Install the plugin
 
-You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?itemName=Snyk.snyk) in the Visual Studio
+You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) in the Visual Studio
 Code Marketplace. To install, either:
 
-- Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Snyk.snyk)
+- Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner)
   and follow the instructions for the Snyk extension. The docs from VS Code help you trigger the installation process
   from Visual Studio Code and guide you through the installation steps.
 - Browse for the extension as advised [here](https://code.visualstudio.com/docs/editor/extension-gallery#_browse-for-extensions)
