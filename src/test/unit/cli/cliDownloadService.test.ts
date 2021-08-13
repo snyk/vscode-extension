@@ -7,7 +7,7 @@ import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
 import { LoggerMock } from '../mocks/logger.mock';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { Checksum } from '../../../snyk/cli/checksum';
-import { CliService } from '../../../snyk/cli/cliService';
+import { CliDownloadService } from '../../../snyk/cli/services/cliDownloadService';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../snyk/common/constants/globalState';
 import { Platform } from '../../../snyk/common/platform';
@@ -53,7 +53,7 @@ suite('CliService', () => {
   });
 
   test('Tries to download if not installed', async () => {
-    const service = new CliService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, window, logger, downloader);
     stub(service, 'isInstalled').resolves(false);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
@@ -65,7 +65,7 @@ suite('CliService', () => {
   });
 
   test('Tries to update if installed', async () => {
-    const service = new CliService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, window, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
@@ -77,7 +77,7 @@ suite('CliService', () => {
   });
 
   test('Updates if >4 days passed since last update and new version available', async () => {
-    const service = new CliService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, window, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -99,7 +99,7 @@ suite('CliService', () => {
   });
 
   test("Doesn't update if >4 days passed since last update but no new version available", async () => {
-    const service = new CliService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, window, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -121,7 +121,7 @@ suite('CliService', () => {
   });
 
   test("Doesn't update if 3 days passed since last update", async () => {
-    const service = new CliService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, window, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;

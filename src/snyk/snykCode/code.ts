@@ -100,7 +100,7 @@ export class SnykCode implements ISnykCode {
 
       analytics.logAnalysisIsTriggered({
         analysisType,
-        ide: 'Visual Studio Code',
+        ide: 'Visual Studio Code', // TODO: user general.ts IDE_NAME const for it
         triggeredByUser: manual,
       });
 

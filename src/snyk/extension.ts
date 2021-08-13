@@ -36,6 +36,12 @@ import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
 import { extensionContext, ExtensionContext } from './common/vscode/extensionContext';
+import { CliDownloadService } from './cli/services/cliDownloadService';
+import { StaticCliApi } from './cli/api/staticCliApi';
+import { vsCodeWindow } from './common/vscode/window';
+import { Logger } from './common/logger/logger';
+import { messages as cliMessages } from './cli/messages/messages';
+import { snykMessages } from './base/messages/snykMessages';
 
 class SnykExtension extends SnykLib implements IExtension {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
@@ -133,6 +139,8 @@ class SnykExtension extends SnykLib implements IExtension {
       void this.context.updateGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
     }
 
+    this.initCliDownload();
+
     // Actually start analysis
     this.startExtension();
   }
@@ -140,6 +148,18 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.snykCode.dispose();
     await analytics.flush();
+  }
+
+  private initCliDownload(): CliDownloadService {
+    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+
+    this.cliDownloadService.downloadOrUpdateCli().catch(err => {
+      const errorMsg = cliMessages.cliDownloadFailed;
+      Logger.error(`${errorMsg} ${err}`);
+      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.errorQuery}`);
+    });
+
+    return this.cliDownloadService;
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
