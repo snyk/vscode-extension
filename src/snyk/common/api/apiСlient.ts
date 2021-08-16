@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { configuration } from '../configuration';
+import { configuration } from '../configuration/instance';
 
 const defaultHeaders: Readonly<Record<string, string | boolean>> = {
   Accept: 'application/json',

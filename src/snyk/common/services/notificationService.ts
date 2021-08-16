@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { configuration } from '../configuration';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { snykMessages } from '../../base/messages/snykMessages';
 import { openSnykViewContainer } from '../vscodeCommandsUtils';
 import { errorType } from '../../base/modules/interfaces';
+import { configuration } from '../configuration/instance';
 
 export class NotificationService {
   static async init(errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>): Promise<void> {

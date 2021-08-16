@@ -7,7 +7,7 @@ import {
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
 import { analytics } from '../analytics/analytics';
-import { configuration } from '../configuration';
+import { configuration } from '../configuration/instance';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { IWatcher } from './interfaces';
 import { IExtension } from '../../base/modules/interfaces';

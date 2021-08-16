@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { configuration } from '../../common/configuration';
 import {
   EXECUTION_DEBOUNCE_INTERVAL,
   EXECUTION_PAUSE_INTERVAL,
@@ -13,6 +12,7 @@ import * as vscode from 'vscode';
 import LoginModule from './loginModule';
 import { analytics } from '../../common/analytics/analytics';
 import { ISnykLib } from './interfaces';
+import { configuration } from '../../common/configuration/instance';
 
 export default class SnykLib extends LoginModule implements ISnykLib {
   private _mode = SNYK_MODE_CODES.AUTO;

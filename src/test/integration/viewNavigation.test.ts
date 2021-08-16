@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert';
-import { configuration } from '../../snyk/common/configuration';
+import { configuration } from '../../snyk/common/configuration/instance';
 import { getExtension } from '../../extension';
 import { SNYK_VIEW_FEATURES, SNYK_VIEW_WELCOME } from '../../snyk/common/constants/views';
 import { TreeView } from 'vscode';

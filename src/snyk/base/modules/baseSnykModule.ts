@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { configuration } from '../../common/configuration';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
@@ -9,6 +8,7 @@ import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarIte
 import SettingsWatcher from '../../common/watchers/settingsWatcher';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { IBaseSnykModule, errorType } from './interfaces';
+import { configuration } from '../../common/configuration/instance';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   statusBarItem: IStatusBarItem;
