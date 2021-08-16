@@ -82,12 +82,14 @@
           "snyk.features.codeSecurity": {
             "type": "boolean",
             "title": "Snyk Code security issues",
-            "description": "Find and fix vulnerabilities in your application code in real time."
+            "description": "Find and fix vulnerabilities in your application code in real time.",
+            "default": true
           },
           "snyk.features.codeQuality": {
             "type": "boolean",
             "title": "Snyk Code quality issues",
-            "description": "Find and fix code quality issues in your application code in real time."
+            "description": "Find and fix code quality issues in your application code in real time.",
+            "default": true
           }
         }
       }
