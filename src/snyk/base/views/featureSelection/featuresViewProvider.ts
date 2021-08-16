@@ -5,12 +5,12 @@ import { configuration } from '../../../common/configuration/instance';
 import { SNYK_CONTEXT } from '../../../common/constants/views';
 import { IContextService } from '../../../common/services/contextService';
 
-enum WelcomeViewEventMessageType {
+enum FeaturesViewEventMessageType {
   FeaturesSelected = 'featuresSelected',
 }
 
-type WelcomeViewEventMessage = {
-  type: WelcomeViewEventMessageType;
+type FeaturesViewEventMessage = {
+  type: FeaturesViewEventMessageType;
   value: unknown;
 };
 
@@ -34,9 +34,9 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-    webviewView.webview.onDidReceiveMessage(async (data: WelcomeViewEventMessage) => {
+    webviewView.webview.onDidReceiveMessage(async (data: FeaturesViewEventMessage) => {
       switch (data.type) {
-        case WelcomeViewEventMessageType.FeaturesSelected: {
+        case FeaturesViewEventMessageType.FeaturesSelected: {
           await configuration.setFeaturesConfiguration(data.value as FeaturesConfiguration);
           await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
           break;
@@ -50,9 +50,9 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
   }
 
   private getHtmlForWebview(webview: vscode.Webview) {
-    const scriptUri = this.getWebViewUri('out', 'snyk', 'base', 'views', 'welcome', 'welcomeViewScript.js');
-    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'welcome', 'vscode.css');
-    const styleWelcomeUri = this.getWebViewUri('media', 'views', 'welcome', 'welcome.css');
+    const scriptUri = this.getWebViewUri('out', 'snyk', 'base', 'views', 'featureSelection', 'featuresViewScript.js');
+    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'featureSelection', 'vscode.css');
+    const styleUri = this.getWebViewUri('media', 'views', 'featureSelection', 'featureSelection.css');
     const avatarUri = this.getWebViewUri('images', 'avatar-transparent.svg');
 
     // Use a nonce to only allow a specific script to be run.
@@ -72,7 +72,7 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 				<link href="${styleVSCodeUri}" rel="stylesheet">
-				<link href="${styleWelcomeUri}" rel="stylesheet">
+				<link href="${styleUri}" rel="stylesheet">
 
 				<title>Snyk</title>
 			</head>

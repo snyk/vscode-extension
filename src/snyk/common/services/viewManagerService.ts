@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { EventEmitter, TreeView } from 'vscode';
 import { FeaturesConfiguration } from '../configuration/configuration';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
-import { FeaturesViewProvider } from '../../base/views/welcome/welcomeViewProvider';
+import { FeaturesViewProvider } from '../../base/views/featureSelection/featuresViewProvider';
 import { TreeNode } from '../views/treeNode';
 import { configuration } from '../configuration/instance';
 

@@ -30,7 +30,7 @@ import { createDCIgnoreCommand, openSnykSettingsCommand } from './common/vscodeC
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { CodeQualityIssueProvider } from './snykCode/views/qualityIssueProvider';
 import { SupportProvider } from './base/views/supportProvider';
-import { FeaturesViewProvider } from './base/views/welcome/welcomeViewProvider';
+import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvider';
 import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';

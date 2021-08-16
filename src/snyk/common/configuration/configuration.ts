@@ -89,7 +89,8 @@ export class Configuration implements IConfiguration {
     );
 
     if (!codeSecurityEnabled && !codeQualityEnabled) {
-      return undefined;
+      // TODO: return 'undefined' to render feature selection screen once OSS integration is available
+      return { codeSecurityEnabled: true, codeQualityEnabled: true };
     }
 
     return {
