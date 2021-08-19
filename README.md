@@ -89,6 +89,10 @@ To manually trigger a scan, either Save or manually rescan using the rescan icon
 
 ![Manual rescan](images/readme/run-analysis_manual-rescan.png)
 
+If you only need the Code Quality or Code Security portion of the Snyk Code findings, you can easily hide the view with the results you don't want to see:
+
+![Manual rescan](images/readme/configure-snyk-code-quality-code-security.png)
+
 
 ## View analysis results
 
