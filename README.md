@@ -89,6 +89,10 @@ To manually trigger a scan, either Save or manually rescan using the rescan icon
 
 ![Manual rescan](images/readme/run-analysis_manual-rescan.png)
 
+If you only need the Code Quality or Code Security portion of the Snyk Code findings, you can easily hide the view with the results you don't want to see:
+
+![Manual rescan](images/readme/configure-snyk-code-quality-code-security.png)
+
 
 ## View analysis results
 
@@ -96,7 +100,7 @@ Snyk Code analysis shows a list of security vulnerabilities and code issues foun
 details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once
 selected you will see the Snyk suggestion information in a panel on the right side:
 
-![View analysis results](images/readme/install-the-plugin_suggestion-example.png))
+![View analysis results](images/readme/install-the-plugin_suggestion-example.png)
 
 ### Snyk panel
 
