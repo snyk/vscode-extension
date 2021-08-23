@@ -5,12 +5,12 @@ import { CliDownloader } from '../../../snyk/cli/downloader';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
 import { LoggerMock } from '../mocks/logger.mock';
-
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { Checksum } from '../../../snyk/cli/checksum';
 import { CliService } from '../../../snyk/cli/cliService';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE, MEMENTO_CLI_VERSION_KEY } from '../../../snyk/common/constants/globalState';
+import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../snyk/common/constants/globalState';
+import { Platform } from '../../../snyk/common/platform';
 
 suite('CliService', () => {
   let logger: ILog;
@@ -21,11 +21,11 @@ suite('CliService', () => {
 
   // Stubbed functions to re-wrap
   let contextGetGlobalStateValue: sinon.SinonStub;
-  let apiGetLatestVersion: sinon.SinonStub;
+  let apigetSha256Checksum: sinon.SinonStub;
 
   setup(() => {
     contextGetGlobalStateValue = sinon.stub();
-    apiGetLatestVersion = sinon.stub();
+    apigetSha256Checksum = sinon.stub();
 
     window = {
       withProgress: sinon.fake(),
@@ -33,8 +33,8 @@ suite('CliService', () => {
     api = {
       getDownloadUrl: sinon.fake(),
       getExecutable: sinon.fake(),
-      getLatestVersion: apiGetLatestVersion,
-      getSha256Checksum: sinon.fake(),
+      getLatestVersion: sinon.fake(),
+      getSha256Checksum: apigetSha256Checksum,
     };
     logger = new LoggerMock();
     context = {
@@ -81,13 +81,17 @@ suite('CliService', () => {
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
-    const [currentVersion, latestVersion] = ['1.0.0', '1.0.1'];
 
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(Date.now() - fiveDaysInMs);
-    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION_KEY).returns(currentVersion);
-    apiGetLatestVersion.returns(latestVersion);
 
-    sinon.stub(downloader, 'download').resolves(new CliExecutable(latestVersion, new Checksum('test')));
+    const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
+    const latestChecksumStr = 'bdf6446bfaed1ae551b6eca14e8e101a53d855d33622094495e68e9a0b0069fc';
+    const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
+    apigetSha256Checksum.returns(latestChecksumStr);
+
+    sinon.stub(Platform, 'getCurrent').returns('darwin');
+    sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
+    sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.1', new Checksum(latestChecksumStr)));
 
     const updated = await service.updateCli();
 
@@ -99,13 +103,17 @@ suite('CliService', () => {
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
-    const [currentVersion, latestVersion] = ['1.0.0', '1.0.0'];
 
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(Date.now() - fiveDaysInMs);
-    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION_KEY).returns(currentVersion);
-    apiGetLatestVersion.returns(latestVersion);
 
-    sinon.stub(downloader, 'download').resolves(new CliExecutable(latestVersion, new Checksum('test')));
+    const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
+    const latestChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
+    const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
+    apigetSha256Checksum.returns(latestChecksumStr);
+
+    sinon.stub(Platform, 'getCurrent').returns('darwin');
+    sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
+    sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.0', new Checksum(latestChecksumStr)));
 
     const updated = await service.updateCli();
 

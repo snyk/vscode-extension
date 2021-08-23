@@ -1,12 +1,14 @@
 import { CliDownloader } from './downloader';
 import { CliExecutable } from './cliExecutable';
 import { ExtensionContext } from '../common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE, MEMENTO_CLI_VERSION_KEY } from '../common/constants/globalState';
+import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../common/constants/globalState';
 import { IStaticCliApi } from './api/staticCliApi';
 import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWindow } from '../common/vscode/window';
-import { CliVersion } from './version';
 import { messages } from './constants/messages';
+import { Checksum } from './checksum';
+import { Platform } from '../common/platform';
+import { CliSupportedPlatform, isPlatformSupported } from './supportedPlatforms';
 
 export class CliService {
   private readonly downloader: CliDownloader;
@@ -37,7 +39,7 @@ export class CliService {
       return false;
     }
 
-    await this.setLatestVersion(executable.version);
+    await this.setLastUpdateDate();
     this.logger.info(messages.downloadFinished(executable.version));
     return true;
   }
@@ -45,8 +47,13 @@ export class CliService {
   async updateCli(): Promise<boolean> {
     // TODO: check if scan not running
     if (this.isFourDaysPassedSinceLastUpdate()) {
-      const [currentVersion, latestVersion] = await this.getCurrentAndLatestVersion();
-      if (currentVersion.isLatest(latestVersion)) {
+      const platform = Platform.getCurrent();
+      if (!isPlatformSupported(platform)) {
+        return Promise.reject(messages.notSupported);
+      }
+
+      const updateAvailable = await this.isUpdateAvailable(platform as CliSupportedPlatform);
+      if (!updateAvailable) {
         return false;
       }
 
@@ -57,7 +64,7 @@ export class CliService {
         return false;
       }
 
-      await this.setLatestVersion(executable.version);
+      await this.setLastUpdateDate();
       this.logger.info(messages.updateFinished(executable.version));
       return true;
     } else {
@@ -70,9 +77,22 @@ export class CliService {
     return CliExecutable.exists(this.extensionContext.extensionPath);
   }
 
-  private async setLatestVersion(version: string): Promise<void> {
+  private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
+    const latestChecksum = await this.api.getSha256Checksum(platform);
+    const path = CliExecutable.getPath(this.extensionContext.extensionPath);
+
+    // Update is available if fetched checksum not matching the current one
+    const checksum = await Checksum.getChecksumOf(path, latestChecksum);
+    if (checksum.verify()) {
+      this.logger.info(messages.isLatest);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async setLastUpdateDate(): Promise<void> {
     await this.extensionContext.updateGlobalStateValue(MEMENTO_CLI_LAST_UPDATE_DATE, Date.now());
-    await this.extensionContext.updateGlobalStateValue(MEMENTO_CLI_VERSION_KEY, version);
   }
 
   private isFourDaysPassedSinceLastUpdate(): boolean {
@@ -87,15 +107,5 @@ export class CliService {
     }
 
     return false;
-  }
-
-  private async getCurrentAndLatestVersion(): Promise<[currentVersion: CliVersion, latestVersion: CliVersion]> {
-    const latestVersion = await this.api.getLatestVersion();
-    const currentVersion = this.extensionContext.getGlobalStateValue<string>(MEMENTO_CLI_VERSION_KEY);
-    if (!currentVersion) {
-      throw new Error('Current version is not known.');
-    }
-
-    return [new CliVersion(currentVersion), new CliVersion(latestVersion)];
   }
 }

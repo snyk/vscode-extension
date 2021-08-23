@@ -1,25 +1,25 @@
 import axios, { CancelTokenSource } from 'axios';
 import stream from 'stream';
 import { CliExecutable } from '../cliExecutable';
-import { SupportedPlatformsType } from '../downloader';
+import { CliSupportedPlatform } from '../supportedPlatforms';
 
 export type CliDownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
 export interface IStaticCliApi {
-  getDownloadUrl(platform: SupportedPlatformsType): string;
-  getExecutable(platform: SupportedPlatformsType): [Promise<CliDownloadAxiosResponse>, CancelTokenSource];
+  getDownloadUrl(platform: CliSupportedPlatform): string;
+  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource];
   getLatestVersion(): Promise<string>;
-  getSha256Checksum(platform: SupportedPlatformsType): Promise<string>;
+  getSha256Checksum(platform: CliSupportedPlatform): Promise<string>;
 }
 
 export class StaticCliApi implements IStaticCliApi {
   private readonly baseUrl = 'https://static.snyk.io';
 
-  getDownloadUrl(platform: SupportedPlatformsType): string {
+  getDownloadUrl(platform: CliSupportedPlatform): string {
     return `${this.baseUrl}/cli/latest/${CliExecutable.getFilename(platform)}`;
   }
 
-  getExecutable(platform: SupportedPlatformsType): [Promise<CliDownloadAxiosResponse>, CancelTokenSource] {
+  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource] {
     const axiosCancelToken = axios.CancelToken.source();
     const downloadUrl = this.getDownloadUrl(platform);
 
@@ -39,7 +39,7 @@ export class StaticCliApi implements IStaticCliApi {
     return data;
   }
 
-  async getSha256Checksum(platform: SupportedPlatformsType): Promise<string> {
+  async getSha256Checksum(platform: CliSupportedPlatform): Promise<string> {
     // https://static.snyk.io/cli/latest/snyk-macos.sha256
     let { data } = await axios.get<string>(`${this.baseUrl}/cli/latest/${CliExecutable.getFilename(platform)}.sha256`);
 

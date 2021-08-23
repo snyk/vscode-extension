@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 
 export class Checksum {
   private readonly hash: crypto.Hash;
@@ -23,5 +24,32 @@ export class Checksum {
   digest(): Checksum {
     this.hexDigest = this.hash.digest('hex');
     return this;
+  }
+
+  static getChecksumOf(filePath: string, expectedChecksum: string): Promise<Checksum> {
+    return new Promise((resolve, reject) => {
+      const checksum = new Checksum(expectedChecksum);
+      const fileStream = fs.createReadStream(filePath);
+
+      fileStream.on('error', err => {
+        reject(err);
+      });
+
+      fileStream.on('data', (chunk: Buffer) => {
+        checksum.update(chunk);
+      });
+
+      fileStream.on('end', function () {
+        checksum.digest();
+        return resolve(checksum);
+      });
+    });
+  }
+
+  static fromDigest(digest: string, expected: string): Checksum {
+    const d = new Checksum(expected);
+    d.hexDigest = digest;
+
+    return d;
   }
 }

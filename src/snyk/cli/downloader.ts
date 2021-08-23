@@ -9,9 +9,7 @@ import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { Checksum } from './checksum';
 import { messages } from './constants/messages';
-
-const SupportedPlatforms = ['linux', 'win32', 'darwin'] as const;
-export type SupportedPlatformsType = typeof SupportedPlatforms[number];
+import { isPlatformSupported, CliSupportedPlatform } from './supportedPlatforms';
 
 export class CliDownloader {
   constructor(
@@ -27,11 +25,11 @@ export class CliDownloader {
   async download(): Promise<CliExecutable | null> {
     let platform = Platform.getCurrent();
 
-    if (!this.isPlatformSupported(platform)) {
+    if (!isPlatformSupported(platform)) {
       return Promise.reject(messages.notSupported);
     }
 
-    platform = platform as SupportedPlatformsType;
+    platform = platform as CliSupportedPlatform;
 
     const cliPath = CliExecutable.getPath(this.extensionDir);
     if (await this.cliExists(cliPath)) {
@@ -54,14 +52,6 @@ export class CliDownloader {
     return new CliExecutable(cliVersion, checksum);
   }
 
-  private isPlatformSupported(platform: NodeJS.Platform): boolean {
-    if (SupportedPlatforms.find(p => p === platform) !== undefined) {
-      return true;
-    }
-
-    return false;
-  }
-
   private async cliExists(filePath: string): Promise<boolean> {
     try {
       await fsPromises.access(filePath);
@@ -81,7 +71,7 @@ export class CliDownloader {
 
   public async downloadCli(
     cliPath: string,
-    platform: SupportedPlatformsType,
+    platform: CliSupportedPlatform,
     expectedChecksum: string,
   ): Promise<Checksum | null> {
     const hash = new Checksum(expectedChecksum);

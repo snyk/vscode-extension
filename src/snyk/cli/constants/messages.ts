@@ -1,5 +1,5 @@
 export const messages = {
-  progressTitle: 'Downloading Snyk CLI',
+  progressTitle: 'Downloading Snyk CLI...',
   startingDownload: 'Starting Snyk CLI download...',
   startingUpdate: 'Starting Snyk CLI update...',
   isLatest: 'Snyk CLI version is up-to-date.',
