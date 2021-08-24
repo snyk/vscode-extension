@@ -18,7 +18,7 @@
     },
     {
       "type": "npm",
-      "script": "vscode:prepublish",
+      "script": "test:unit:watch",
       "problemMatcher": []
     }
   ]

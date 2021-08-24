@@ -9,8 +9,11 @@ import SettingsWatcher from '../../common/watchers/settingsWatcher';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { IBaseSnykModule, errorType } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
+import { CliService } from '../../cli/cliService';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
+  context: ExtensionContext;
   statusBarItem: IStatusBarItem;
   filesWatcher: vscode.FileSystemWatcher;
   editorsWatcher: IWatcher;
@@ -18,6 +21,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
+  cliService?: CliService;
 
   snykCode: ISnykCode;
 

@@ -37,7 +37,7 @@ class ApiClient {
       req.headers = {
         ...req.headers,
         Authorization: `token ${configuration.token}`,
-      };
+      } as { [header: string]: string };
 
       return req;
     });
