@@ -245,7 +245,8 @@
     "test:integration": "node ./out/test/integration/runTest.js",
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
-    "vscode:uninstall": "node ./out/uninstall"
+    "vscode:uninstall": "node ./out/uninstall",
+    "itly:verify": "itly verify -u --skip-update-on-default-branch"
   },
   "devDependencies": {
     "@itly/itly": "^1.2.0",
