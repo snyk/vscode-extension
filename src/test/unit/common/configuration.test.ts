@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { strictEqual } from 'assert';
-import sinon from 'sinon';
+import sinon, { stub } from 'sinon';
 import { Configuration } from '../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
@@ -28,6 +28,10 @@ suite('Configuration', () => {
     } as IVSCodeWorkspace);
 
     workspaceStub = stub();
+  });
+
+  teardown(() => {
+    sinon.restore();
   });
 
   test('Production base url is returned when not in development', () => {
