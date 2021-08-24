@@ -35,9 +35,9 @@ import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvide
 import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
+import { extensionContext, ExtensionContext } from './common/vscode/extensionContext';
 
 class SnykExtension extends SnykLib implements IExtension {
-  context: vscode.ExtensionContext | undefined;
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
 
   private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
@@ -61,12 +61,13 @@ class SnykExtension extends SnykLib implements IExtension {
     return this.debouncedCommands[name](...args);
   }
 
-  public activate(context: vscode.ExtensionContext): void {
-    this.context = context;
+  public activate(vscodeContext: vscode.ExtensionContext): void {
+    extensionContext.setContext(vscodeContext);
+    this.context = extensionContext;
 
     this.statusBarItem.show();
 
-    this.registerCommands(context);
+    this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueProvider(
         this.viewManagerService,
@@ -79,9 +80,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.snykCode,
       );
 
-    const featuresViewProvider = new FeaturesViewProvider(context.extensionUri, this.contextService);
+    const featuresViewProvider = new FeaturesViewProvider(vscodeContext.extensionUri, this.contextService);
 
-    context.subscriptions.push(
+    vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
@@ -98,7 +99,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
       treeDataProvider: codeQualityIssueProvider,
     });
-    context.subscriptions.push(
+    vscodeContext.subscriptions.push(
       codeSecurityTree,
       codeQualityTree,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
@@ -127,9 +128,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Use memento until lifecycle hooks are implemented
     // https://github.com/microsoft/vscode/issues/98732
-    if (!context.globalState.get(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
+    if (!this.context.getGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
       analytics.logPluginIsInstalled();
-      void context.globalState.update(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
+      void this.context.updateGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
     }
 
     // Actually start analysis
