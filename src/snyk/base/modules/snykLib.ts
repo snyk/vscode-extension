@@ -13,6 +13,11 @@ import LoginModule from './loginModule';
 import { analytics } from '../../common/analytics/analytics';
 import { ISnykLib } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
+import { CliService } from '../../cli/cliService';
+import { StaticCliApi } from '../../cli/api/staticCliApi';
+import { vsCodeWindow } from '../../common/vscode/window';
+import { NotificationService } from '../../common/services/notificationService';
+import { snykMessages } from '../messages/snykMessages';
 
 export default class SnykLib extends LoginModule implements ISnykLib {
   private _mode = SNYK_MODE_CODES.AUTO;
@@ -62,6 +67,13 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
 
     await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
+
+    this.cliService = new CliService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+    this.cliService.downloadOrUpdateCli().catch(err => {
+      const errorMsg = snykMessages.cliDownloadFailed.msg;
+      Logger.error(`${errorMsg} ${err}`);
+      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.cliDownloadFailed.detail}`);
+    });
 
     const codeEnabled = await this.checkCodeEnabled();
     if (!codeEnabled) {

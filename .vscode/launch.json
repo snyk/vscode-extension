@@ -39,13 +39,14 @@
       "request": "launch",
       "name": "Extension Unit Tests",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "args": ["--ui", "tdd", "--timeout", "999999", "--colors", "${workspaceFolder}/out/test/unit"],
+      "args": ["--ui", "tdd", "--timeout", "999999", "--colors", "${workspaceFolder}/out/test/unit/**/*.test.js"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**/*.js"],
       "env": {
         "SNYK_VSCE_DEVELOPMENT": "1"
-      }
+      },
+      "outFiles": ["${workspaceFolder}/out/test/unit/**/*.js"]
     }
   ]
 }
