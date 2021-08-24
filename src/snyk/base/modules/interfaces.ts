@@ -3,12 +3,13 @@ import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ISnykCode } from '../../snykCode/code';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
-import { ExtensionContext, FileSystemWatcher } from 'vscode';
+import * as vscode from 'vscode';
 import { IWatcher } from '../../common/watchers/interfaces';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
 
 export interface IBaseSnykModule {
   statusBarItem: IStatusBarItem;
-  filesWatcher: FileSystemWatcher;
+  filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: IWatcher;
   contextService: IContextService;
   openerService: IOpenerService;
@@ -38,7 +39,7 @@ export interface ISnykLib {
 
 export interface IExtension extends IBaseSnykModule, IReportModule, ILoginModule, ISnykLib {
   context: ExtensionContext | undefined;
-  activate(context: ExtensionContext): void;
+  activate(context: vscode.ExtensionContext): void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
