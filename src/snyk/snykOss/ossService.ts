@@ -1,10 +1,12 @@
 import { CliService } from '../cli/services/cliService';
 import { IConfiguration } from '../common/configuration/configuration';
 import { ILog } from '../common/logger/interfaces';
+import { IViewManagerService } from '../common/services/viewManagerService';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { messages } from './messages/test';
 import { OssResult } from './ossResult';
 
+// TODO: move to /services folder
 export class OssService extends CliService<OssResult> {
   protected readonly command: string[] = ['test'];
 
@@ -13,9 +15,12 @@ export class OssService extends CliService<OssResult> {
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
+    private readonly viewManagerService: IViewManagerService,
   ) {
     super(extensionPath, logger, config, workspace);
   }
+
+  public getResult = (): OssResult | undefined => this.result;
 
   protected mapToResultType(rawCliResult: string): OssResult {
     if (rawCliResult.length == 0) {
@@ -27,6 +32,13 @@ export class OssService extends CliService<OssResult> {
     return result;
   }
 
-  protected logStart = (): void => this.logger.info(messages.testStarted);
-  protected logFinish = (): void => this.logger.info(messages.testFinished);
+  protected beforeTest(): void {
+    this.logger.info(messages.testStarted);
+    this.viewManagerService.refreshOssView();
+  }
+
+  protected afterTest(): void {
+    this.logger.info(messages.testFinished);
+    this.viewManagerService.refreshOssView();
+  }
 }

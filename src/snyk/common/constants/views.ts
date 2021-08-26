@@ -2,6 +2,7 @@ export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_FEATURES = 'snyk.views.features';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
+export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
 export const SNYK_VIEW_SUGGESTION = 'snyk.views.suggestion';

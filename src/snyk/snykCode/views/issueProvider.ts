@@ -1,46 +1,32 @@
 import { Command, Diagnostic, DiagnosticCollection, Range, Uri } from 'vscode';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { ISnykCode } from '../code';
+import { ISnykCodeService } from '../codeService';
 import { IContextService } from '../../common/services/contextService';
 import { getSnykSeverity } from '../utils/analysisUtils';
 import { INodeIcon, TreeNode, NODE_ICONS } from '../../common/views/treeNode';
-import { TreeNodeProvider } from '../../common/views/treeNodeProvider';
+import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 
 interface ISeverityCounts {
   [severity: number]: number;
 }
 
-export class IssueProvider extends TreeNodeProvider {
+export class IssueProvider extends AnalysisTreeNodeProvder {
   constructor(
     protected contextService: IContextService,
-    protected snykCode: ISnykCode,
+    protected snykCode: ISnykCodeService,
     protected diagnosticCollection: DiagnosticCollection | undefined,
   ) {
-    super();
+    super(snykCode);
   }
-
-  compareNodes = (n1: TreeNode, n2: TreeNode): number => {
-    if (n2.internal.severity - n1.internal.severity) return n2.internal.severity - n1.internal.severity;
-    if (n2.internal.nIssues - n1.internal.nIssues) return n2.internal.nIssues - n1.internal.nIssues;
-    if (n1.label && n2.label) {
-      if (n1.label < n2.label) return -1;
-      if (n1.label > n2.label) return 1;
-    }
-    if (n1.description && n2.description) {
-      if (n1.description < n2.description) return -1;
-      if (n1.description > n2.description) return 1;
-    }
-    return 0;
-  };
 
   static getSeverityIcon(severity: number): INodeIcon {
     return (
       {
-        [SNYK_SEVERITIES.error]: NODE_ICONS.critical,
-        [SNYK_SEVERITIES.warning]: NODE_ICONS.warning,
-        [SNYK_SEVERITIES.information]: NODE_ICONS.info,
-      }[severity] || NODE_ICONS.info
+        [SNYK_SEVERITIES.error]: NODE_ICONS.high,
+        [SNYK_SEVERITIES.warning]: NODE_ICONS.medium,
+        [SNYK_SEVERITIES.information]: NODE_ICONS.low,
+      }[severity] || NODE_ICONS.low
     );
   }
 
@@ -138,23 +124,15 @@ export class IssueProvider extends TreeNodeProvider {
     } else {
       review.unshift(
         new TreeNode({
-          text: this.getNoIssueFoundText(nIssues),
+          text: this.getIssueFoundText(nIssues),
         }),
-      );
-      const sDuration = Math.round((this.snykCode.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
-      const ts = new Date(this.snykCode.lastAnalysisTimestamp);
-      const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const day = ts.toLocaleDateString([], { year: '2-digit', month: '2-digit', day: '2-digit' });
-      review.unshift(
-        new TreeNode({
-          text: `Analysis took ${sDuration}s, finished at ${time}, ${day}`,
-        }),
+        this.getDurationTreeNode(),
       );
     }
     return review;
   }
 
-  protected getNoIssueFoundText(nIssues: number): string {
+  protected getIssueFoundText(nIssues: number): string {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 

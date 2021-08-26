@@ -9,6 +9,7 @@ import * as fs from 'fs/promises';
 import { OssResult } from '../../../snyk/snykOss/ossResult';
 import { CliProcess } from '../../../snyk/cli/process';
 import { CliError } from '../../../snyk/cli/services/cliService';
+import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 
 suite('OssService', () => {
   const extensionPath = 'test/path';
@@ -25,6 +26,9 @@ suite('OssService', () => {
       {
         workspaceFolders: () => [''],
       } as IVSCodeWorkspace,
+      {
+        refreshOssView: () => undefined,
+      } as IViewManagerService,
     );
   });
 

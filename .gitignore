@@ -34,3 +34,10 @@ yarn-error.log
 Thumbs.db
 .directory
 .DS_Store
+
+#################################
+# Snyk CLI                      #
+#################################
+snyk-macos
+snyk-win.exe
+snyk-linux

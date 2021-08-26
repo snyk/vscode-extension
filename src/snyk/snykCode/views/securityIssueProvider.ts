@@ -1,6 +1,6 @@
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
-import { ISnykCode } from '../../snykCode/code';
+import { ISnykCodeService } from '../codeService';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IssueProvider } from './issueProvider';
@@ -11,7 +11,7 @@ export class CodeSecurityIssueProvider extends IssueProvider {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
-    protected snykCode: ISnykCode,
+    protected snykCode: ISnykCodeService,
   ) {
     super(contextService, snykCode, snykCode.analyzer.codeSecurityReview);
   }
@@ -34,7 +34,7 @@ export class CodeSecurityIssueProvider extends IssueProvider {
     return `${dir} - ${diagnostics.length} ${diagnostics.length === 1 ? 'vulnerability' : 'vulnerabilities'}`;
   }
 
-  protected getNoIssueFoundText(nIssues: number): string {
+  protected getIssueFoundText(nIssues: number): string {
     return `Snyk found ${
       !nIssues ? 'no vulnerabilities! ✅' : `${nIssues} ${nIssues === 1 ? 'vulnerability' : 'vulnerabilities'}`
     }`;
