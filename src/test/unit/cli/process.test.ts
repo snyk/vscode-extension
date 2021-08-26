@@ -17,7 +17,7 @@ suite('CliProcess', () => {
       shouldReportEvents: false,
     } as IConfiguration);
     const vars = process.getProcessEnv();
-    strictEqual(Object.keys(vars).includes('DISABLE_ANALYTICS'), true);
+    strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), true);
   });
 
   test("Doesn't set DISABLE_ANALYTICS when telemetry is on ", () => {
@@ -26,7 +26,7 @@ suite('CliProcess', () => {
     } as IConfiguration);
     const vars = process.getProcessEnv();
 
-    strictEqual(Object.keys(vars).includes('DISABLE_ANALYTICS'), false);
+    strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), false);
   });
 
   test('Sets correct integration name, version, token and API endpoint ', () => {

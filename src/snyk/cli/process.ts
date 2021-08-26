@@ -42,7 +42,7 @@ export class CliProcess {
     } as NodeJS.ProcessEnv;
 
     if (!this.config.shouldReportEvents) {
-      env = { ...env, DISABLE_ANALYTICS: '1' };
+      env = { ...env, SNYK_CFG_DISABLE_ANALYTICS: '1' };
     }
     return env;
   }
