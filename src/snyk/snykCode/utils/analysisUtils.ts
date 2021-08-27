@@ -10,7 +10,7 @@ import {
   IGNORE_ISSUE_REASON_TIP,
   SNYK_SEVERITIES,
 } from '../constants/analysis';
-import { completeFileSuggestionType, openedTextEditorType } from '../interfaces';
+import { completeFileSuggestionType, ICodeSuggestion, ISnykCodeResult, openedTextEditorType } from '../interfaces';
 
 export const createSnykSeveritiesMap = () => {
   const { information, error, warning } = SNYK_SEVERITIES;
@@ -210,7 +210,7 @@ export const createIssueRelatedInformation = (
 };
 
 export const findCompleteSuggestion = (
-  analysisResults: IAnalysisResult,
+  analysisResults: ISnykCodeResult,
   suggestionId: string,
   uri: vscode.Uri,
   position: vscode.Range,
@@ -246,7 +246,6 @@ export const findCompleteSuggestion = (
     uri: uri.toString(),
     ...suggestion,
     ...fileSuggestion,
-    isSecurityType: isSecurityTypeSuggestion(suggestion),
   };
 };
 
@@ -279,11 +278,11 @@ export const checkCompleteSuggestion = (
 };
 
 export const findSuggestionByMessage = (
-  analysisResults: IAnalysisResult,
+  analysisResults: ISnykCodeResult,
   suggestionName: string,
-): ISuggestion | undefined => {
+): ICodeSuggestion | undefined => {
   return Object.values(analysisResults.suggestions).find(
-    (suggestion: ISuggestion) => suggestion.message === suggestionName,
+    (suggestion: ICodeSuggestion) => suggestion.message === suggestionName,
   );
 };
 

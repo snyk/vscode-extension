@@ -1,12 +1,11 @@
-import { IAnalysisResult, IFilePath, IFileSuggestion, ISuggestion, ISuggestions } from '@snyk/code-client';
+import { IAnalysisResult, IFilePath, IFileSuggestion, ISuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { DiagnosticCollection, TextDocument } from 'vscode';
 import { IExtension } from '../base/modules/interfaces';
 
-export type completeFileSuggestionType = ISuggestion &
+export type completeFileSuggestionType = ICodeSuggestion &
   IFileSuggestion & {
     uri: string;
-    isSecurityType: boolean;
   };
 
 export type openedTextEditorType = {
@@ -22,15 +21,28 @@ export type openedTextEditorType = {
 
 export interface IIssuesListOptions {
   fileIssuesList: IFilePath;
-  suggestions: ISuggestions;
+  suggestions: ICodeSuggestions;
   fileUri: vscode.Uri;
+}
+
+export type ICodeSuggestion = ISuggestion & {
+  isSecurityType: boolean;
+};
+
+interface ICodeSuggestions {
+  [suggestionIndex: string]: ICodeSuggestion;
+}
+
+export interface ISnykCodeResult extends IAnalysisResult {
+  suggestions: ICodeSuggestions;
 }
 
 export interface ISnykCodeAnalyzer {
   codeSecurityReview: DiagnosticCollection | undefined;
   codeQualityReview: DiagnosticCollection | undefined;
-  analysisResults: IAnalysisResult;
-  findSuggestion(suggestionName: string): ISuggestion | undefined;
+  setAnalysisResults(results: IAnalysisResult): void;
+  getAnalysisResults(): ISnykCodeResult;
+  findSuggestion(suggestionName: string): ICodeSuggestion | undefined;
   getFullSuggestion(
     suggestionId: string,
     uri: vscode.Uri,

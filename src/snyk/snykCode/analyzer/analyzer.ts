@@ -1,4 +1,4 @@
-import { IAnalysisResult, IFilePath, IFileSuggestion, ISuggestion } from '@snyk/code-client';
+import { IAnalysisResult, IFilePath, IFileSuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
@@ -16,7 +16,14 @@ import {
   updateFileReviewResultsPositions,
 } from '../utils/analysisUtils';
 import { IExtension } from '../../base/modules/interfaces';
-import { ISnykCodeAnalyzer, completeFileSuggestionType, IIssuesListOptions, openedTextEditorType } from '../interfaces';
+import {
+  ISnykCodeAnalyzer,
+  completeFileSuggestionType,
+  IIssuesListOptions,
+  openedTextEditorType,
+  ISnykCodeResult,
+  ICodeSuggestion,
+} from '../interfaces';
 import { DisposableHoverProvider } from '../hoverProvider/hoverProvider';
 import { DisposableCodeActionsProvider } from '../codeActionsProvider/issuesActionsProvider';
 
@@ -26,7 +33,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   };
   public readonly codeQualityReview: vscode.DiagnosticCollection | undefined;
   public readonly codeSecurityReview: vscode.DiagnosticCollection | undefined;
-  public analysisResults: IAnalysisResult;
+  private analysisResults: ISnykCodeResult;
 
   public constructor() {
     this.SEVERITIES = createSnykSeveritiesMap();
@@ -45,6 +52,18 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     new DisposableHoverProvider(this.codeQualityReview);
   }
 
+  public setAnalysisResults(results: IAnalysisResult): void {
+    Object.values(results.suggestions).forEach(suggestion => {
+      suggestion['isSecurityType'] = isSecurityTypeSuggestion(suggestion);
+    });
+
+    this.analysisResults = results as ISnykCodeResult;
+  }
+
+  public getAnalysisResults(): ISnykCodeResult {
+    return this.analysisResults;
+  }
+
   public getFullSuggestion(
     suggestionId: string,
     uri: vscode.Uri,
@@ -57,7 +76,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     return checkCompleteSuggestion(this.analysisResults, suggestion);
   }
 
-  public findSuggestion(suggestionName: string): ISuggestion | undefined {
+  public findSuggestion(suggestionName: string): ICodeSuggestion | undefined {
     return findSuggestionByMessage(this.analysisResults, suggestionName);
   }
 
@@ -65,12 +84,10 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     issuePositions,
     suggestion,
     fileUri,
-    isSecurityType,
   }: {
     issuePositions: IFileSuggestion;
-    suggestion: ISuggestion;
+    suggestion: ICodeSuggestion;
     fileUri: vscode.Uri;
-    isSecurityType: boolean;
   }): vscode.Diagnostic {
     const { message } = suggestion;
     return {
@@ -78,7 +95,9 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
       message,
       range: createIssueCorrectRange(issuePositions),
       severity: this.SEVERITIES[suggestion.severity].name,
-      source: isSecurityType ? DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME : DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
+      source: suggestion.isSecurityType
+        ? DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME
+        : DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
       // issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
         relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message),
@@ -99,7 +118,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         continue;
       }
 
-      const isSecurityType = isSecurityTypeSuggestion(suggestions[issue]);
+      const isSecurityType = suggestions[issue].isSecurityType;
       const issueList = isSecurityType ? securityIssues : qualityIssues;
       for (const issuePositions of fileIssuesList[issue]) {
         issueList.push(
@@ -107,7 +126,6 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
             issuePositions,
             suggestion: suggestions[issue],
             fileUri,
-            isSecurityType,
           }),
         );
       }
