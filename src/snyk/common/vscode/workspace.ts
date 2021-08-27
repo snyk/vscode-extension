@@ -9,6 +9,7 @@ export interface IVSCodeWorkspace {
     configurationTarget?: boolean,
     overrideInLanguage?: boolean,
   ): Promise<void>;
+  workspaceFolders(): string[];
 }
 
 /**
@@ -35,6 +36,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
           reason => reject(reason),
         );
     });
+  }
+
+  workspaceFolders(): string[] {
+    return (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
   }
 }
 

@@ -7,6 +7,7 @@ export const messages = {
   integrityCheckFailed: 'The downloaded Snyk CLI integrity check failed.',
   couldNotDeleteExecutable: 'Could not delete existing CLI executable.',
   downloadCanceled: 'CLI download has been canceled.',
+  cliDownloadFailed: 'Failed to download or update Snyk CLI.',
 
   downloadFinished: (version: string): string => `Snyk CLI v${version} has been successfully downloaded.`,
   updateFinished: (version: string): string => `Snyk CLI has been updated to v${version}.`,
