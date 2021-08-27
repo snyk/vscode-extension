@@ -9,19 +9,24 @@ import SettingsWatcher from '../../common/watchers/settingsWatcher';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { IBaseSnykModule, errorType } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
-import { CliService } from '../../cli/cliService';
+import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { OssService } from '../../snykOss/ossService';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
-  statusBarItem: IStatusBarItem;
-  filesWatcher: vscode.FileSystemWatcher;
-  editorsWatcher: IWatcher;
-  settingsWatcher: IWatcher;
-  contextService: IContextService;
-  openerService: IOpenerService;
-  viewManagerService: IViewManagerService;
-  cliService?: CliService;
+
+  readonly statusBarItem: IStatusBarItem;
+
+  readonly filesWatcher: vscode.FileSystemWatcher;
+  protected readonly editorsWatcher: IWatcher;
+  readonly settingsWatcher: IWatcher;
+
+  readonly contextService: IContextService;
+  readonly openerService: IOpenerService;
+  readonly viewManagerService: IViewManagerService;
+  protected cliDownloadService: CliDownloadService;
+  protected ossService?: OssService;
 
   snykCode: ISnykCode;
 

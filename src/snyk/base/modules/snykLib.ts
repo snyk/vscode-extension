@@ -13,11 +13,12 @@ import LoginModule from './loginModule';
 import { analytics } from '../../common/analytics/analytics';
 import { ISnykLib } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
-import { CliService } from '../../cli/cliService';
-import { StaticCliApi } from '../../cli/api/staticCliApi';
-import { vsCodeWindow } from '../../common/vscode/window';
 import { NotificationService } from '../../common/services/notificationService';
 import { snykMessages } from '../messages/snykMessages';
+import { OssService } from '../../snykOss/ossService';
+import { vsCodeWorkspace } from '../../common/vscode/workspace';
+import { messages as ossTestMessages } from '../../snykOss/messages/test';
+import { CliError } from '../../cli/services/cliService';
 
 export default class SnykLib extends LoginModule implements ISnykLib {
   private _mode = SNYK_MODE_CODES.AUTO;
@@ -68,14 +69,11 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-    this.cliService = new CliService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
-    this.cliService.downloadOrUpdateCli().catch(err => {
-      const errorMsg = snykMessages.cliDownloadFailed.msg;
-      Logger.error(`${errorMsg} ${err}`);
-      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.cliDownloadFailed.detail}`);
+    this.cliDownloadService.downloadFinished$.subscribe(() => {
+      void this.onCliDownloadFinished();
     });
 
-    const codeEnabled = await this.checkCodeEnabled();
+    const codeEnabled = await this.checkCodeEnabled(); // todo: run CLI scan independently of snyk code enablement view
     if (!codeEnabled) {
       return;
     }
@@ -132,7 +130,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
   }
 
   async startSnykCodeAnalysis(manual: boolean): Promise<void> {
-    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
 
     if (paths.length) {
       await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
@@ -147,6 +145,22 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     if (visible && !configuration.token) {
       // Track if a user is not authenticated and expanded the analysis view
       analytics.logWelcomeViewIsViewed();
+    }
+  }
+
+  private async onCliDownloadFinished(): Promise<void> {
+    this.ossService = new OssService(this.context.extensionPath, Logger, configuration, vsCodeWorkspace);
+    try {
+      const result = await this.ossService.test();
+      if (result instanceof CliError) reportError(result.error);
+    } catch (err) {
+      reportError(err);
+    }
+
+    function reportError(err: unknown) {
+      const errorMsg = ossTestMessages.testFailed;
+      Logger.error(`${errorMsg} ${err}`);
+      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.errorQuery}`);
     }
   }
 }
