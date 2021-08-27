@@ -14,6 +14,7 @@ import { analytics } from '../common/analytics/analytics';
 import { errorType } from '../base/modules/interfaces';
 import { ISnykCodeAnalyzer } from './interfaces';
 import { ISuggestionProvider } from './views/interfaces';
+import { IDE_NAME } from '../common/constants/general';
 
 export interface ISnykCode {
   analyzer: ISnykCodeAnalyzer;
@@ -100,7 +101,7 @@ export class SnykCode implements ISnykCode {
 
       analytics.logAnalysisIsTriggered({
         analysisType,
-        ide: 'Visual Studio Code',
+        ide: IDE_NAME,
         triggeredByUser: manual,
       });
 
@@ -139,14 +140,14 @@ export class SnykCode implements ISnykCode {
 
         if (enabledFeatures?.codeSecurityEnabled) {
           analytics.logAnalysisIsReady({
-            ide: 'Visual Studio Code',
+            ide: IDE_NAME,
             analysisType: 'Snyk Code Security',
             result: 'Success',
           });
         }
         if (enabledFeatures?.codeQualityEnabled) {
           analytics.logAnalysisIsReady({
-            ide: 'Visual Studio Code',
+            ide: IDE_NAME,
             analysisType: 'Snyk Code Quality',
             result: 'Success',
           });
@@ -162,14 +163,14 @@ export class SnykCode implements ISnykCode {
       });
       if (enabledFeatures?.codeSecurityEnabled) {
         analytics.logAnalysisIsReady({
-          ide: 'Visual Studio Code',
+          ide: IDE_NAME,
           analysisType: 'Snyk Code Security',
           result: 'Error',
         });
       }
       if (enabledFeatures?.codeQualityEnabled) {
         analytics.logAnalysisIsReady({
-          ide: 'Visual Studio Code',
+          ide: IDE_NAME,
           analysisType: 'Snyk Code Quality',
           result: 'Error',
         });
