@@ -8,7 +8,7 @@ import { CliDownloadAxiosResponse, IStaticCliApi } from './api/staticCliApi';
 import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { Checksum } from './checksum';
-import { messages } from './constants/messages';
+import { messages } from './messages/messages';
 import { isPlatformSupported, CliSupportedPlatform } from './supportedPlatforms';
 
 export class CliDownloader {

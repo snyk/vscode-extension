@@ -13,7 +13,7 @@ import {
   SNYK_SETTINGS_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL } from './common/constants/general';
+import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME } from './common/constants/general';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
@@ -36,6 +36,12 @@ import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
 import { extensionContext, ExtensionContext } from './common/vscode/extensionContext';
+import { CliDownloadService } from './cli/services/cliDownloadService';
+import { StaticCliApi } from './cli/api/staticCliApi';
+import { vsCodeWindow } from './common/vscode/window';
+import { Logger } from './common/logger/logger';
+import { messages as cliMessages } from './cli/messages/messages';
+import { snykMessages } from './base/messages/snykMessages';
 
 class SnykExtension extends SnykLib implements IExtension {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
@@ -133,6 +139,8 @@ class SnykExtension extends SnykLib implements IExtension {
       void this.context.updateGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
     }
 
+    this.initCliDownload();
+
     // Actually start analysis
     this.startExtension();
   }
@@ -140,6 +148,18 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.snykCode.dispose();
     await analytics.flush();
+  }
+
+  private initCliDownload(): CliDownloadService {
+    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+
+    this.cliDownloadService.downloadOrUpdateCli().catch(err => {
+      const errorMsg = cliMessages.cliDownloadFailed;
+      Logger.error(`${errorMsg} ${err}`);
+      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.errorQuery}`);
+    });
+
+    return this.cliDownloadService;
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
@@ -230,7 +250,7 @@ class SnykExtension extends SnykLib implements IExtension {
             suggestion.id = decodeURIComponent(suggestion.id);
 
             analytics.logIssueIsViewed({
-              ide: 'Visual Studio Code',
+              ide: IDE_NAME,
               issueId: suggestion.id,
               issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
               severity: severityAsText(suggestion.severity),

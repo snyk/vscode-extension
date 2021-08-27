@@ -1,5 +1,6 @@
+import path from 'path';
 import { URL } from 'url';
-import { IDE_NAME } from '../constants/general';
+import { IDE_NAME_SHORT } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
@@ -24,6 +25,7 @@ export interface IConfiguration {
   authHost: string;
   snykCodeUrl: string;
   token: string | undefined;
+  snykOssApiEndpoint: string;
   snykCodeToken: string | undefined;
   setToken(token: string): Promise<void>;
   shouldReportErrors: boolean;
@@ -34,10 +36,17 @@ export interface IConfiguration {
 
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
-  private defaultBaseURL = 'https://deeproxy.snyk.io';
-  private defaultAuthHost = 'https://snyk.io';
+  private readonly defaultBaseURL = 'https://deeproxy.snyk.io';
+  private readonly defaultAuthHost = 'https://snyk.io';
+  private readonly defaulOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+
+  static get version(): string {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { version } = require(path.join('../../../..', 'package.json')) as { version: string };
+    return version;
+  }
 
   get isDevelopment(): boolean {
     return !!this.processEnv.SNYK_VSCE_DEVELOPMENT;
@@ -53,6 +62,10 @@ export class Configuration implements IConfiguration {
 
   get authHost(): string {
     return this.isDevelopment ? 'https://dev.snyk.io' : this.defaultAuthHost;
+  }
+
+  get snykOssApiEndpoint(): string {
+    return this.isDevelopment ? `${this.authHost}/api/v1` : this.defaulOssApiEndpoint;
   }
 
   get snykCodeUrl(): string {
@@ -75,7 +88,7 @@ export class Configuration implements IConfiguration {
   }
 
   get source(): string {
-    return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME;
+    return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME_SHORT;
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration | undefined {
