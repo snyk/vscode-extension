@@ -1,16 +1,18 @@
-import { CliDownloader } from './downloader';
-import { CliExecutable } from './cliExecutable';
-import { ExtensionContext } from '../common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../common/constants/globalState';
-import { IStaticCliApi } from './api/staticCliApi';
-import { ILog } from '../common/logger/interfaces';
-import { IVSCodeWindow } from '../common/vscode/window';
-import { messages } from './constants/messages';
-import { Checksum } from './checksum';
-import { Platform } from '../common/platform';
-import { CliSupportedPlatform, isPlatformSupported } from './supportedPlatforms';
+import { CliDownloader } from '../downloader';
+import { CliExecutable } from '../cliExecutable';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
+import { IStaticCliApi } from '../api/staticCliApi';
+import { ILog } from '../../common/logger/interfaces';
+import { IVSCodeWindow } from '../../common/vscode/window';
+import { messages } from '../messages/messages';
+import { Checksum } from '../checksum';
+import { Platform } from '../../common/platform';
+import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
+import { ReplaySubject } from 'rxjs';
 
-export class CliService {
+export class CliDownloadService {
+  readonly downloadFinished$ = new ReplaySubject<void>(1);
   private readonly downloader: CliDownloader;
 
   constructor(
@@ -26,10 +28,15 @@ export class CliService {
   async downloadOrUpdateCli(): Promise<boolean> {
     const installed = await this.isInstalled();
     if (!installed) {
-      return this.downloadCli();
+      const downloaded = await this.downloadCli();
+      this.downloadFinished$.next();
+      return downloaded;
     }
 
-    return this.updateCli();
+    const updated = await this.updateCli();
+    this.downloadFinished$.next();
+
+    return updated;
   }
 
   async downloadCli(): Promise<boolean> {

@@ -9,6 +9,8 @@ import itly, {
   IssueIsViewedProperties,
 } from '../../../itly';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
+import { Configuration } from '../configuration/configuration';
+import { IDE_NAME } from '../constants/general';
 
 export type SupportedAnalysisProperties =
   | 'Snyk Advisor'
@@ -37,7 +39,7 @@ export interface IAnalytics {
  * Import required dependencies dynamically, if needed.
  */
 export class Iteratively implements IAnalytics {
-  private readonly ide = 'Visual Studio Code';
+  private readonly ide = IDE_NAME;
   private readonly anonymousId: string;
   private loaded = false;
   private userId: string;
@@ -89,8 +91,6 @@ export class Iteratively implements IAnalytics {
 
     this.userId = userId;
 
-    const { version } = require(path.join(this.configsPath, 'package.json')) as { version: string };
-
     // Calling identify again is the preferred way to merge authenticated user with anonymous one,
     // see https://snyk.slack.com/archives/C01U2SPRB3Q/p1624276750134700?thread_ts=1624030602.128900&cid=C01U2SPRB3Q
     itly.identify(this.userId, undefined, {
@@ -100,7 +100,7 @@ export class Iteratively implements IAnalytics {
           context: {
             app: {
               name: this.ide,
-              version,
+              version: Configuration.version,
             },
           },
         },

@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "error": "Authentication failed. Please check the API token on https://snyk.io",
+  "path": "/Users/snyk/Git/goof"
+}
