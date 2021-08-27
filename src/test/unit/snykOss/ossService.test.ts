@@ -2,7 +2,7 @@ import { deepStrictEqual, ok, rejects } from 'assert';
 import sinon from 'sinon';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
-import { OssService } from '../../../snyk/snykOss/ossService';
+import { OssService } from '../../../snyk/snykOss/services/ossService';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import * as fs from 'fs/promises';

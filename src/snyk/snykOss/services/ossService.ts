@@ -1,12 +1,11 @@
-import { CliService } from '../cli/services/cliService';
-import { IConfiguration } from '../common/configuration/configuration';
-import { ILog } from '../common/logger/interfaces';
-import { IViewManagerService } from '../common/services/viewManagerService';
-import { IVSCodeWorkspace } from '../common/vscode/workspace';
-import { messages } from './messages/test';
-import { OssResult } from './ossResult';
+import { CliService } from '../../cli/services/cliService';
+import { IConfiguration } from '../../common/configuration/configuration';
+import { ILog } from '../../common/logger/interfaces';
+import { IViewManagerService } from '../../common/services/viewManagerService';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
+import { messages } from '../messages/test';
+import { OssResult } from '../ossResult';
 
-// TODO: move to /services folder
 export class OssService extends CliService<OssResult> {
   protected readonly command: string[] = ['test'];
 

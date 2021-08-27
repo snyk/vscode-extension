@@ -11,7 +11,7 @@ import { IBaseSnykModule, errorType } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { OssService } from '../../snykOss/ossService';
+import { OssService } from '../../snykOss/services/ossService';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;

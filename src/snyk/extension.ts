@@ -44,7 +44,7 @@ import { Logger } from './common/logger/logger';
 import { messages as cliMessages } from './cli/messages/messages';
 import { snykMessages } from './base/messages/snykMessages';
 import { OssVulnerabilityProvider } from './snykOss/views/vulnerabilityProvider';
-import { OssService } from './snykOss/ossService';
+import { OssService } from './snykOss/services/ossService';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import { configuration } from './common/configuration/instance';
 

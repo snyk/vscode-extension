@@ -15,7 +15,7 @@ import { ISnykLib } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
 import { NotificationService } from '../../common/services/notificationService';
 import { snykMessages } from '../messages/snykMessages';
-import { OssService } from '../../snykOss/ossService';
+import { OssService } from '../../snykOss/services/ossService';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { messages as ossTestMessages } from '../../snykOss/messages/test';
 import { CliError } from '../../cli/services/cliService';
