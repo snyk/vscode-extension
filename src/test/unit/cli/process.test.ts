@@ -3,7 +3,7 @@ import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
 import { CliProcess } from '../../../snyk/cli/process';
 import { Configuration, IConfiguration } from '../../../snyk/common/configuration/configuration';
-import { IDE_NAME } from '../../../snyk/common/constants/general';
+import { CLI_INTEGRATION_NAME } from '../../../snyk/cli/contants/integration';
 
 suite('CliProcess', () => {
   let logger: ILog;
@@ -39,7 +39,7 @@ suite('CliProcess', () => {
 
     const envVars = process.getProcessEnv();
 
-    strictEqual(envVars['SNYK_INTEGRATION_NAME'], IDE_NAME);
+    strictEqual(envVars['SNYK_INTEGRATION_NAME'], CLI_INTEGRATION_NAME);
     strictEqual(envVars['SNYK_INTEGRATION_VERSION'], Configuration.version);
     strictEqual(envVars['SNYK_TOKEN'], token);
     strictEqual(envVars['SNYK_API'], snykOssApiEndpoint);

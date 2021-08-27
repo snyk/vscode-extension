@@ -10,6 +10,7 @@ import itly, {
 } from '../../../itly';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
 import { Configuration } from '../configuration/configuration';
+import { IDE_NAME } from '../constants/general';
 
 export type SupportedAnalysisProperties =
   | 'Snyk Advisor'
@@ -38,7 +39,7 @@ export interface IAnalytics {
  * Import required dependencies dynamically, if needed.
  */
 export class Iteratively implements IAnalytics {
-  private readonly ide = 'Visual Studio Code';
+  private readonly ide = IDE_NAME;
   private readonly anonymousId: string;
   private loaded = false;
   private userId: string;

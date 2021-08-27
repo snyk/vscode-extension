@@ -13,7 +13,7 @@ import {
   SNYK_SETTINGS_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL } from './common/constants/general';
+import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME } from './common/constants/general';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
@@ -250,7 +250,7 @@ class SnykExtension extends SnykLib implements IExtension {
             suggestion.id = decodeURIComponent(suggestion.id);
 
             analytics.logIssueIsViewed({
-              ide: 'Visual Studio Code',
+              ide: IDE_NAME,
               issueId: suggestion.id,
               issueType: 'Code Security Vulnerability',
               severity: severityAsText(suggestion.severity),

@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { Configuration, IConfiguration } from '../common/configuration/configuration';
-import { IDE_NAME } from '../common/constants/general';
 import { ILog } from '../common/logger/interfaces';
+import { CLI_INTEGRATION_NAME } from './contants/integration';
 
 export class CliProcess {
   private readonly successExitCodes = [0, 1];
@@ -35,7 +35,7 @@ export class CliProcess {
 
   getProcessEnv(): NodeJS.ProcessEnv {
     let env = {
-      SNYK_INTEGRATION_NAME: IDE_NAME,
+      SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
       SNYK_INTEGRATION_VERSION: Configuration.version,
       SNYK_TOKEN: this.config.token,
       SNYK_API: this.config.snykOssApiEndpoint,
