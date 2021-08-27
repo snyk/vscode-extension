@@ -20,6 +20,7 @@ suite('CLI Downloader', () => {
   setup(() => {
     window = {
       withProgress: sinon.fake(),
+      registerWebviewPanelSerializer: sinon.fake(),
     };
     api = {
       getDownloadUrl: sinon.fake(),

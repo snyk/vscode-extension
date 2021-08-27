@@ -10,6 +10,7 @@ import { OssResult } from '../../../snyk/snykOss/ossResult';
 import { CliProcess } from '../../../snyk/cli/process';
 import { CliError } from '../../../snyk/cli/services/cliService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
+import { ISuggestionViewProvider } from '../../../snyk/snykOss/views/suggestion/suggestionViewProvider';
 
 suite('OssService', () => {
   const extensionPath = 'test/path';
@@ -23,6 +24,7 @@ suite('OssService', () => {
       extensionPath,
       logger,
       {} as IConfiguration,
+      {} as ISuggestionViewProvider,
       {
         workspaceFolders: () => [''],
       } as IVSCodeWorkspace,
