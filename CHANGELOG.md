@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.1.1]
+
+### Fixed
+
+- Missing capture for "Issue Is Viewed" for Snyk Code quality issues.
+
 ## [1.1.0]
 
 ### Added
