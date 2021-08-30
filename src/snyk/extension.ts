@@ -231,7 +231,7 @@ class SnykExtension extends SnykLib implements IExtension {
             analytics.logIssueIsViewed({
               ide: 'Visual Studio Code',
               issueId: suggestion.id,
-              issueType: 'Code Security Vulnerability',
+              issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
               severity: severityAsText(suggestion.severity),
             });
           },

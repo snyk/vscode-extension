@@ -123,7 +123,7 @@ export class SnykCode implements ISnykCode {
       if (result) {
         this.remoteBundle = result;
 
-        this.analyzer.analysisResults = result.analysisResults;
+        this.analyzer.setAnalysisResults(result.analysisResults);
         this.analyzer.createReviewResults();
 
         Logger.info('Code analysis finished.');
