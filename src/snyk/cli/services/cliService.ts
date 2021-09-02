@@ -34,9 +34,20 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     let output: string;
     try {
       output = await process.spawn(cliPath, args);
-    } catch (err) {
-      const output = JSON.parse(err) as CliError;
-      return new CliError(output.error, output.path); // creates new object to allow "instanceof" to work
+    } catch (spawnError) {
+      let result: CliError;
+
+      try {
+        const output = JSON.parse(spawnError) as CliError;
+        result = new CliError(output.error, output.path); // creates new object to allow "instanceof" to work
+      } catch (parsingErr) {
+        result = new CliError(spawnError, '');
+      }
+
+      this.analysisFinished();
+      this.afterTest(result);
+
+      return result;
     }
 
     const mappedResult = this.mapToResultType(output);
@@ -51,7 +62,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract mapToResultType(rawCliResult: string): CliResult;
 
   protected abstract beforeTest(): void;
-  protected abstract afterTest(): void;
+  protected abstract afterTest(error?: CliError): void;
 
   private buildArguments(): string[] {
     const args = [];

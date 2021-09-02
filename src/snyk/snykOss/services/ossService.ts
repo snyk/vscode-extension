@@ -1,4 +1,4 @@
-import { CliService } from '../../cli/services/cliService';
+import { CliError, CliService } from '../../cli/services/cliService';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../../common/logger/interfaces';
 import { IViewManagerService } from '../../common/services/viewManagerService';
@@ -39,8 +39,13 @@ export class OssService extends CliService<OssResult> {
     this.viewManagerService.refreshOssView();
   }
 
-  protected afterTest(): void {
-    this.logger.info(messages.testFinished);
+  protected afterTest(error?: CliError): void {
+    if (error) {
+      this.logger.error(`${messages.testFailed} ${error.error}`);
+    } else {
+      this.logger.info(messages.testFinished);
+    }
+
     this.viewManagerService.refreshOssView();
   }
 

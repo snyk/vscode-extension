@@ -151,17 +151,9 @@ export default class SnykLib extends LoginModule implements ISnykLib {
   private async startOssAnalysis(): Promise<void> {
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
-    try {
-      const result = await this.ossService.test(); // TODO: do not run on all file saves
-      if (result instanceof CliError) reportError(result.error);
-    } catch (err) {
-      reportError(err);
-    }
-
-    function reportError(err: unknown) {
-      const errorMsg = ossTestMessages.testFailed;
-      Logger.error(`${errorMsg} ${err}`);
-      void NotificationService.showErrorNotification(`${errorMsg} ${snykMessages.errorQuery}`);
+    const result = await this.ossService.test(); // TODO: do not run on all file saves
+    if (result instanceof CliError) {
+      void NotificationService.showErrorNotification(`${ossTestMessages.testFailed} ${snykMessages.errorQuery}`);
     }
   }
 }
