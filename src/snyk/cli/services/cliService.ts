@@ -1,3 +1,4 @@
+import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../../common/logger/interfaces';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
@@ -8,23 +9,27 @@ export class CliError {
   constructor(public error: string, public path: string) {}
 }
 
-export abstract class CliService<CliResult> {
+export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract readonly command: string[];
+  protected result: CliResult | undefined;
 
   constructor(
     protected readonly extensionPath: string,
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
-  ) {}
+  ) {
+    super();
+  }
 
   async test(): Promise<CliResult | CliError> {
+    this.analysisStarted();
+    this.beforeTest();
+
     const process = new CliProcess(this.logger, this.config);
 
     const cliPath = CliExecutable.getPath(this.extensionPath);
     const args = this.buildArguments();
-
-    this.logStart();
 
     let output: string;
     try {
@@ -34,16 +39,19 @@ export abstract class CliService<CliResult> {
       return new CliError(output.error, output.path); // creates new object to allow "instanceof" to work
     }
 
-    const result = this.mapToResultType(output);
-    this.logFinish();
+    const mappedResult = this.mapToResultType(output);
+    this.result = mappedResult;
 
-    return result;
+    this.analysisFinished();
+    this.afterTest();
+
+    return this.result;
   }
 
   protected abstract mapToResultType(rawCliResult: string): CliResult;
 
-  protected abstract logStart(): void;
-  protected abstract logFinish(): void;
+  protected abstract beforeTest(): void;
+  protected abstract afterTest(): void;
 
   private buildArguments(): string[] {
     const args = [];

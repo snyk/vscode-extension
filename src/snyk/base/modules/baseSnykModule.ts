@@ -3,7 +3,7 @@ import { ContextService, IContextService } from '../../common/services/contextSe
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
-import { ISnykCode, SnykCode } from '../../snykCode/code';
+import { ISnykCodeService, SnykCodeService } from '../../snykCode/codeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import SettingsWatcher from '../../common/watchers/settingsWatcher';
 import { IWatcher } from '../../common/watchers/interfaces';
@@ -11,7 +11,7 @@ import { IBaseSnykModule, errorType } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { OssService } from '../../snykOss/ossService';
+import { OssService } from '../../snykOss/services/ossService';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -28,7 +28,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected cliDownloadService: CliDownloadService;
   protected ossService?: OssService;
 
-  snykCode: ISnykCode;
+  snykCode: ISnykCodeService;
 
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
@@ -37,7 +37,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.viewManagerService = new ViewManagerService();
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
-    this.snykCode = new SnykCode(
+    this.snykCode = new SnykCodeService(
       configuration,
       this.openerService,
       this.viewManagerService,
