@@ -15,12 +15,10 @@ import { errorType } from '../base/modules/interfaces';
 import { ISnykCodeAnalyzer } from './interfaces';
 import { ISuggestionProvider } from './views/interfaces';
 import { IDE_NAME } from '../common/constants/general';
+import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 
-export interface ISnykCode {
+export interface ISnykCodeService extends AnalysisStatusProvider {
   analyzer: ISnykCodeAnalyzer;
-  isAnalysisRunning: boolean;
-  lastAnalysisDuration: number;
-  lastAnalysisTimestamp: number;
   analysisStatus: string;
   analysisProgress: string;
   changedFiles: Set<string>;
@@ -29,25 +27,19 @@ export interface ISnykCode {
   onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
 
   startAnalysis(paths: string[], manual: boolean): Promise<void>;
-  stopAnalysis(): void;
-  finaliseAnalysis(): void;
   updateStatus(status: string, progress: string): void;
   isEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
   dispose(): void;
 }
 
-export class SnykCode implements ISnykCode {
-  runningAnalysis = false;
+export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   changedFiles: Set<string> = new Set();
   remoteBundle: IFileBundle;
   analyzer: ISnykCodeAnalyzer;
   suggestionProvider: ISuggestionProvider;
 
   private progress: Progress;
-  private lastAnalysisStartingTimestamp = Date.now();
-  private _lastAnalysisDuration = 0;
-  private _lastAnalysisTimestamp = Date.now();
   private _analysisStatus = '';
   private _analysisProgress = '';
 
@@ -58,6 +50,7 @@ export class SnykCode implements ISnykCode {
     filesWatcher: vscode.FileSystemWatcher,
     private onErrorFn: (error: errorType, options: { [key: string]: any }) => Promise<void>,
   ) {
+    super();
     this.analyzer = new SnykCodeAnalyzer();
     this.suggestionProvider = new SuggestionProvider();
 
@@ -69,15 +62,6 @@ export class SnykCode implements ISnykCode {
     return this.onErrorFn;
   }
 
-  get isAnalysisRunning(): boolean {
-    return this.runningAnalysis;
-  }
-  get lastAnalysisDuration(): number {
-    return this._lastAnalysisDuration;
-  }
-  get lastAnalysisTimestamp(): number {
-    return this._lastAnalysisTimestamp;
-  }
   get analysisStatus(): string {
     return this._analysisStatus;
   }
@@ -105,7 +89,7 @@ export class SnykCode implements ISnykCode {
         triggeredByUser: manual,
       });
 
-      this.runAnalysis();
+      this.analysisStarted();
 
       let result;
       if (this.changedFiles.size && this.remoteBundle) {
@@ -144,11 +128,11 @@ export class SnykCode implements ISnykCode {
           });
         }
 
-        this.viewManagerService.refreshFeatureAnalysisViews(enabledFeatures);
+        this.viewManagerService.refreshCodeAnalysisViews(enabledFeatures);
         this.suggestionProvider.checkCurrentSuggestion();
       }
     } catch (err) {
-      this.stopAnalysis();
+      this.analysisFinished();
       void this.onErrorFn(err, {
         message: errorsLogs.failedServiceAI,
       });
@@ -169,23 +153,8 @@ export class SnykCode implements ISnykCode {
 
       Logger.info('Code analysis failed.');
     } finally {
-      this.finaliseAnalysis();
+      this.analysisFinished();
     }
-  }
-
-  runAnalysis(): void {
-    this.runningAnalysis = true;
-    this.lastAnalysisStartingTimestamp = Date.now();
-  }
-
-  stopAnalysis(): void {
-    this.runningAnalysis = false;
-  }
-
-  finaliseAnalysis(): void {
-    this.runningAnalysis = false;
-    this._lastAnalysisTimestamp = Date.now();
-    this._lastAnalysisDuration = this._lastAnalysisTimestamp - this.lastAnalysisStartingTimestamp;
   }
 
   updateStatus(status: string, progress: string): void {

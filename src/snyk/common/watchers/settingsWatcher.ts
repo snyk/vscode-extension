@@ -20,7 +20,7 @@ class SettingsWatcher implements IWatcher {
       return analytics.setShouldReportEvents(configuration.shouldReportEvents);
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
       // If two settings are changed simultaneously, only one will be applied, thus refresh all views
-      extension.viewManagerService.refreshAllAnalysisViews();
+      extension.viewManagerService.refreshAllCodeAnalysisViews();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
