@@ -15,7 +15,7 @@ import { ISnykLib } from './interfaces';
 import { configuration } from '../../common/configuration/instance';
 import { NotificationService } from '../../common/services/notificationService';
 import { snykMessages } from '../messages/snykMessages';
-import { OssService } from '../../snykOss/ossService';
+import { OssService } from '../../snykOss/services/ossService';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { messages as ossTestMessages } from '../../snykOss/messages/test';
 import { CliError } from '../../cli/services/cliService';
@@ -69,10 +69,6 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-    this.cliDownloadService.downloadFinished$.subscribe(() => {
-      void this.onCliDownloadFinished();
-    });
-
     const codeEnabled = await this.checkCodeEnabled(); // todo: run CLI scan independently of snyk code enablement view
     if (!codeEnabled) {
       return;
@@ -83,6 +79,10 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       if (user) {
         analytics.identify(user.id);
       }
+
+      this.cliDownloadService.downloadFinished$.subscribe(() => {
+        void this.startOssAnalysis();
+      });
 
       await this.startSnykCodeAnalysis(manual);
     } catch (err) {
@@ -148,8 +148,9 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
   }
 
-  private async onCliDownloadFinished(): Promise<void> {
-    this.ossService = new OssService(this.context.extensionPath, Logger, configuration, vsCodeWorkspace);
+  private async startOssAnalysis(): Promise<void> {
+    if (!this.ossService) throw new Error('OSS service is not initialized.');
+
     try {
       const result = await this.ossService.test();
       if (result instanceof CliError) reportError(result.error);

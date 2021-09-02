@@ -2,13 +2,14 @@ import { deepStrictEqual, ok, rejects } from 'assert';
 import sinon from 'sinon';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
-import { OssService } from '../../../snyk/snykOss/ossService';
+import { OssService } from '../../../snyk/snykOss/services/ossService';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import * as fs from 'fs/promises';
 import { OssResult } from '../../../snyk/snykOss/ossResult';
 import { CliProcess } from '../../../snyk/cli/process';
 import { CliError } from '../../../snyk/cli/services/cliService';
+import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 
 suite('OssService', () => {
   const extensionPath = 'test/path';
@@ -25,6 +26,9 @@ suite('OssService', () => {
       {
         workspaceFolders: () => [''],
       } as IVSCodeWorkspace,
+      {
+        refreshOssView: () => undefined,
+      } as IViewManagerService,
     );
   });
 

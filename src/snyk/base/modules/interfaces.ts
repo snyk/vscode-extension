@@ -1,7 +1,7 @@
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { ISnykCode } from '../../snykCode/code';
+import { ISnykCodeService } from '../../snykCode/codeService';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import * as vscode from 'vscode';
 import { IWatcher } from '../../common/watchers/interfaces';
@@ -14,7 +14,7 @@ export interface IBaseSnykModule {
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
-  snykCode: ISnykCode;
+  snykCode: ISnykCodeService;
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
