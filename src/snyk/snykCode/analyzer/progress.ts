@@ -1,7 +1,7 @@
 import { emitter as emitterDC, SupportedFiles } from '@snyk/code-client';
 import _ from 'lodash';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
-import { ISnykCode } from '../code';
+import { ISnykCodeService } from '../codeService';
 import * as vscode from 'vscode';
 import createFileWatcher from '../../common/watchers/filesWatcher';
 import { getExtension } from '../../../extension';
@@ -11,7 +11,7 @@ export class Progress {
   private emitter = emitterDC;
 
   constructor(
-    private readonly snykCode: ISnykCode,
+    private readonly snykCode: ISnykCodeService,
     private filesWatcher: vscode.FileSystemWatcher,
     private viewManagerService: IViewManagerService,
   ) {}
@@ -28,7 +28,7 @@ export class Progress {
 
   updateStatus(status: string, progress: string): void {
     this.snykCode.updateStatus(status, progress);
-    this.viewManagerService.refreshAllAnalysisViews();
+    this.viewManagerService.refreshAllCodeAnalysisViews();
   }
 
   onSupportedFilesLoaded(data: SupportedFiles | null): void {

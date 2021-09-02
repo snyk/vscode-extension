@@ -21,6 +21,7 @@ import {
   SNYK_VIEW_WELCOME,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_FEATURES,
+  SNYK_VIEW_ANALYSIS_OSS,
 } from './common/constants/views';
 import SnykLib from './base/modules/snykLib';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
@@ -35,13 +36,17 @@ import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvide
 import { analytics } from './common/analytics/analytics';
 import { IExtension } from './base/modules/interfaces';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
-import { extensionContext, ExtensionContext } from './common/vscode/extensionContext';
+import { extensionContext } from './common/vscode/extensionContext';
 import { CliDownloadService } from './cli/services/cliDownloadService';
 import { StaticCliApi } from './cli/api/staticCliApi';
 import { vsCodeWindow } from './common/vscode/window';
 import { Logger } from './common/logger/logger';
 import { messages as cliMessages } from './cli/messages/messages';
 import { snykMessages } from './base/messages/snykMessages';
+import { OssVulnerabilityProvider } from './snykOss/views/vulnerabilityProvider';
+import { OssService } from './snykOss/services/ossService';
+import { vsCodeWorkspace } from './common/vscode/workspace';
+import { configuration } from './common/configuration/instance';
 
 class SnykExtension extends SnykLib implements IExtension {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
@@ -86,10 +91,24 @@ class SnykExtension extends SnykLib implements IExtension {
         this.snykCode,
       );
 
+    this.ossService = new OssService(
+      this.context.extensionPath,
+      Logger,
+      configuration,
+      vsCodeWorkspace,
+      this.viewManagerService,
+    );
+    const ossVulnerabilityProvider = new OssVulnerabilityProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.ossService,
+    );
+
     const featuresViewProvider = new FeaturesViewProvider(vscodeContext.extensionUri, this.contextService);
 
     vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
@@ -99,6 +118,9 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
 
+    const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
+      treeDataProvider: ossVulnerabilityProvider,
+    });
     const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
       treeDataProvider: codeSecurityIssueProvider,
     });
@@ -106,6 +128,7 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: codeQualityIssueProvider,
     });
     vscodeContext.subscriptions.push(
+      ossTree,
       codeSecurityTree,
       codeQualityTree,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),

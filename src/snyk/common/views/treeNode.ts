@@ -7,22 +7,31 @@ export interface INodeIcon {
   ['dark']: string;
 }
 
-export const NODE_ICONS: { [key: string]: INodeIcon } = {
+type NODE_ICON_SEVERITY = 'critical' | 'high' | 'medium' | 'low';
+
+export const NODE_ICONS: { [key in NODE_ICON_SEVERITY]: INodeIcon } = {
   critical: {
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-critical-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-critical-severity.svg'),
+  },
+  high: {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
   },
-  warning: {
+  medium: {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
   },
-  info: {
+  low: {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
   },
 };
 
-export type InternalType = { [key: string]: any };
+export type InternalType = {
+  nIssues?: number;
+  severity?: unknown;
+};
 
 export interface INodeOptions {
   text: string;
