@@ -34,6 +34,7 @@
     isUpgradable: boolean;
 
     matchingIdVulnerabilities: Vulnerability[];
+    overviewHtml: string;
   };
 
   type Identifiers = {
@@ -184,7 +185,7 @@
 
     function fillOverview() {
       const overview = document.getElementById('overview')!;
-      // todo
+      overview.innerHTML = vulnerability.overviewHtml;
     }
   }
 
