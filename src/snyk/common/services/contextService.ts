@@ -25,7 +25,7 @@ export class ContextService implements IContextService {
   get shouldShowAnalysis(): boolean {
     return (
       !this.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c])
+      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c]) // todo: ensure correct work for OSS Tree view in ROAD-270 wrt to Code Enabled context.
     );
   }
 }
