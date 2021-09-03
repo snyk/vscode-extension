@@ -156,6 +156,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       if (result instanceof CliError) reportError();
     } catch (err) {
       // catch unhandled error cases by reporting test failure
+      this.ossService.finalizeTest();
       Logger.error(`${ossTestMessages.testFailed} ${err}`);
       reportError();
     }

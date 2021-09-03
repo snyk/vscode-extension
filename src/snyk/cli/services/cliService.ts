@@ -35,7 +35,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     const checksumCorrect = await this.isChecksumCorrect(cliPath);
     if (!checksumCorrect) {
       const error = new CliError('Snyk CLI is corrupt. Please reinstall the extension.');
-      this.finalizeAnalysis(error);
+      this.finalizeTest(error);
       return error;
     }
 
@@ -55,14 +55,14 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
         result = new CliError(spawnError, '');
       }
 
-      this.finalizeAnalysis(result);
+      this.finalizeTest(result);
       return result;
     }
 
     const mappedResult = this.mapToResultType(output);
     this.result = mappedResult;
 
-    this.finalizeAnalysis();
+    this.finalizeTest();
 
     return this.result;
   }
@@ -102,7 +102,8 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     return this.verifiedChecksumCorrect;
   }
 
-  private finalizeAnalysis(error?: CliError) {
+  // To be called to finalise the analysis
+  public finalizeTest(error?: CliError): void {
     this.analysisFinished();
     this.afterTest(error);
   }
