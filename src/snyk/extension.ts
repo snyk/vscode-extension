@@ -55,7 +55,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.statusBarItem.show();
 
     this.ossService = new OssService(
-      this.context.extensionPath,
+      this.context,
       Logger,
       configuration,
       new SuggestionViewProvider(this.context, vsCodeWindow),

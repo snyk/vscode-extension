@@ -8,9 +8,9 @@ import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import * as fs from 'fs/promises';
 import { OssResult } from '../../../snyk/snykOss/ossResult';
 import { CliProcess } from '../../../snyk/cli/process';
-import { CliError } from '../../../snyk/cli/services/cliService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ISuggestionViewProvider } from '../../../snyk/snykOss/views/suggestion/suggestionViewProvider';
+import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 
 suite('OssService', () => {
   const extensionPath = 'test/path';
@@ -21,7 +21,9 @@ suite('OssService', () => {
     logger = new LoggerMock();
 
     ossService = new OssService(
-      extensionPath,
+      {
+        extensionPath,
+      } as ExtensionContext,
       logger,
       {} as IConfiguration,
       {} as ISuggestionViewProvider,
@@ -32,6 +34,7 @@ suite('OssService', () => {
         refreshOssView: () => undefined,
       } as IViewManagerService,
     );
+    sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });
 
   teardown(() => {
@@ -62,23 +65,7 @@ suite('OssService', () => {
   });
 
   test('Invalid JSON output throws an error', async () => {
-    sinon.stub(CliProcess.prototype, 'spawn').resolves('{');
-    await rejects(async () => await ossService.test());
-  });
-
-  test('Returns CliError if test fails', async () => {
-    const cliError = {
-      ok: false,
-      error: 'Authentication failed. Please check the API token on https://snyk.io',
-      path: '/Users/snyk/Git/goof',
-    };
-
-    sinon.stub(CliProcess.prototype, 'spawn').rejects(JSON.stringify(cliError));
-
-    const result = await ossService.test();
-
-    ok(result instanceof CliError);
-    deepStrictEqual(result.error, cliError.error);
-    deepStrictEqual(result.path, cliError.path);
+      sinon.stub(CliProcess.prototype, 'spawn').resolves('{');
+      await rejects(async () => await ossService.test());
   });
 });
