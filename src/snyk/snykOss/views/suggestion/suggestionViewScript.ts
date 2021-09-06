@@ -121,8 +121,13 @@
       if (vulnerability.from.length == 0) {
         introducedThrough.classList.add('hidden');
       } else {
-        vulnerability.from.forEach((from, i, arr) => {
-          appendIntroducedThroughSpan(introducedThrough, from, vulnerability.packageManager);
+        let modules = vulnerability.matchingIdVulnerabilities
+          .filter(vuln => vuln.from.length > 1)
+          .map(vuln => vuln.from[1]);
+        modules = [...new Set(modules)]; // obtain distinct only
+
+        modules.forEach((module, i, arr) => {
+          appendIntroducedThroughSpan(introducedThrough, module, vulnerability.packageManager);
           if (i != arr.length - 1) introducedThrough.append(document.createTextNode(', '));
         });
       }
@@ -194,20 +199,32 @@
     delimiter.className = 'delimiter';
     identifiers.appendChild(delimiter);
 
-    const cveNode = document.createElement('span');
-    cveNode.innerText = id;
+    let cveNode: HTMLElement;
     if (link) {
-      cveNode.className = 'url';
+      cveNode = document.createElement('a');
       cveNode.onclick = () => navigateToUrl(link);
+    } else {
+      cveNode = document.createElement('span');
     }
+
+    cveNode.innerText = id;
+
     identifiers.appendChild(cveNode);
   }
 
   function appendIntroducedThroughSpan(introducedThrough: Element, module: string, packageManager: string) {
-    const node = document.createElement('span');
+    const supportedPackageManagers = ['npm'];
+
+    let node: HTMLElement;
+    // replicate app.snyk.io linking logic from https://github.com/snyk/registry/blob/c78f0ae84dc20f25146880b3d3d5661f3d3e4db2/frontend/src/lib/issue-utils.ts#L547
+    if (supportedPackageManagers.includes(packageManager.toLowerCase())) {
+      node = document.createElement('a');
+      node.onclick = () => navigateToUrl(`https://app.snyk.io/test/${packageManager}/${module}`);
+    } else {
+      node = document.createElement('span');
+    }
+
     node.innerText = module;
-    node.className = 'url';
-    node.onclick = () => navigateToUrl(`https://app.snyk.io/test/${packageManager}/${module}`);
     introducedThrough.appendChild(node);
   }
 

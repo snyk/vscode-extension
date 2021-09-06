@@ -17,6 +17,17 @@ h2 {
   margin-block-start: 0;
 }
 
+a {
+  cursor: pointer;
+  color: #7c74f2;
+  user-select: none;
+  text-decoration: none;
+}
+a:hover {
+  color: #7c74f2;
+  text-decoration: underline;
+}
+
 .font-light {
   opacity: 0.75;
 }
@@ -111,14 +122,6 @@ section {
 
 #identifiers {
   font-size: small;
-}
-.url {
-  cursor: pointer;
-  color: #7754db;
-  user-select: none;
-}
-.url:hover {
-  text-decoration: underline;
 }
 .delimiter {
   margin: 0 0.2em 0 0.2em;
