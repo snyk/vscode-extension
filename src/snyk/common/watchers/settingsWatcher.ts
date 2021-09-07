@@ -31,7 +31,7 @@ class SettingsWatcher implements IWatcher {
       void extensionConfig.update('url', cleaned, true);
     }
 
-    return extension.startExtension();
+    return extension.runScan();
   }
 
   public activate(extension: IExtension): void {

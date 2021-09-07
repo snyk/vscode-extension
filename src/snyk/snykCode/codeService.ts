@@ -1,27 +1,26 @@
+import { analyzeFolders, constants, extendAnalysis, IFileBundle } from '@snyk/code-client';
+import { errorType } from '../base/modules/interfaces';
+import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
+import { analytics } from '../common/analytics/analytics';
+import { SupportedAnalysisProperties } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
+import { IDE_NAME } from '../common/constants/general';
+import { Logger } from '../common/logger/logger';
+import { errorsLogs } from '../common/messages/errorsServerLogMessages';
 import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
-import * as vscode from 'vscode';
-import { Logger } from '../common/logger/logger';
-import { SupportedAnalysisProperties } from '../common/analytics/itly';
-import { analyzeFolders, constants, extendAnalysis, IFileBundle } from '@snyk/code-client';
-import SnykCodeAnalyzer from './analyzer/analyzer';
 import { IViewManagerService } from '../common/services/viewManagerService';
-import { SuggestionProvider } from './views/suggestionProvider';
-import { errorsLogs } from '../common/messages/errorsServerLogMessages';
+import { IVSCodeWorkspace } from '../common/vscode/workspace';
+import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
-import { analytics } from '../common/analytics/analytics';
-import { errorType } from '../base/modules/interfaces';
 import { ISnykCodeAnalyzer } from './interfaces';
 import { ISuggestionProvider } from './views/interfaces';
-import { IDE_NAME } from '../common/constants/general';
-import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
+import { SuggestionProvider } from './views/suggestionProvider';
 
 export interface ISnykCodeService extends AnalysisStatusProvider {
   analyzer: ISnykCodeAnalyzer;
   analysisStatus: string;
   analysisProgress: string;
-  changedFiles: Set<string>;
   remoteBundle: IFileBundle;
   suggestionProvider: ISuggestionProvider;
   onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
@@ -30,14 +29,16 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   updateStatus(status: string, progress: string): void;
   isEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
+  addChangedFile(filePath: string): void;
   dispose(): void;
 }
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
-  changedFiles: Set<string> = new Set();
   remoteBundle: IFileBundle;
   analyzer: ISnykCodeAnalyzer;
   suggestionProvider: ISuggestionProvider;
+
+  private changedFiles: Set<string> = new Set();
 
   private progress: Progress;
   private _analysisStatus = '';
@@ -47,14 +48,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
-    filesWatcher: vscode.FileSystemWatcher,
+    private readonly workspace: IVSCodeWorkspace,
     private onErrorFn: (error: errorType, options: { [key: string]: any }) => Promise<void>,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer();
     this.suggestionProvider = new SuggestionProvider();
 
-    this.progress = new Progress(this, filesWatcher, viewManagerService);
+    this.progress = new Progress(this, viewManagerService, this.workspace);
     this.progress.bindListeners();
   }
 
@@ -188,6 +189,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     }
 
     return false;
+  }
+
+  addChangedFile(filePath: string): void {
+    this.changedFiles.add(filePath);
   }
 
   dispose(): void {

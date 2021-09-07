@@ -124,7 +124,7 @@ abstract class ReportModule extends BaseSnykModule implements IReportModule {
     this.transientErrors += 1;
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
-      this.startExtension().catch(err =>
+      this.runScan().catch(err =>
         this.processError(err, {
           message: errorsLogs.failedExecutionTransient,
         }),
