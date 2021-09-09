@@ -192,7 +192,7 @@ function getWebviewContent(images: Record<string, string>) {
             <label id="feedback-fp" class="false-positive">
               <input type="checkbox" id="feedback-checkbox">
               False postive
-              <img class="icon" src="${images['light-icon-info']}" onclick="navigateToFP()"></img>
+              <img class="icon clickable" src="${images['light-icon-info']}" onclick="navigateToFP()"></img>
             </label>
           </div>
           <div>
