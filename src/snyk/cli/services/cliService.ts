@@ -11,13 +11,14 @@ import { CliProcess } from '../process';
 import { CliDownloadService } from './cliDownloadService';
 
 export class CliError {
-  constructor(public error: string, public path?: string) {}
+  constructor(public error: string, public path?: string, public isCancellation = false) {}
 }
 
 export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract readonly command: string[];
   protected result: CliResult | undefined;
 
+  private cliProcess?: CliProcess;
   private verifiedChecksumCorrect?: boolean;
 
   constructor(
@@ -47,18 +48,27 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       }
     }
 
-    const process = new CliProcess(this.logger, this.config);
+    if (this.cliProcess) {
+      const killed = this.cliProcess.kill();
+      if (!killed) this.logger.error('Failed to kill an already running CLI instance.');
+    }
+
+    this.cliProcess = new CliProcess(this.logger, this.config);
     const args = this.buildArguments();
 
     let output: string;
     try {
-      output = await process.spawn(cliPath, args);
+      output = await this.cliProcess.spawn(cliPath, args);
     } catch (spawnError) {
+      if (spawnError instanceof CliError) {
+        return spawnError;
+      }
+
       let result: CliError;
 
       try {
         const output = JSON.parse(spawnError) as CliError;
-        result = new CliError(output.error, output.path); // creates new object to allow "instanceof" to work
+        result = new CliError(output.error, output.path, output.isCancellation); // creates new object to allow "instanceof" to work
       } catch (parsingErr) {
         result = new CliError(spawnError, '');
       }
