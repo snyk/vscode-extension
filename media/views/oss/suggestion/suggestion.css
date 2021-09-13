@@ -20,7 +20,6 @@ h2 {
 a {
   cursor: pointer;
   color: #7c74f2;
-  user-select: none;
   text-decoration: none;
 }
 a:hover {
@@ -64,14 +63,14 @@ section {
   width: 100%;
   height: 100%;
 }
-.suggestion-text {
+.suggestion .suggestion-text {
   margin-bottom: 1rem;
   margin-top: 0.2em;
   font-size: 1.6rem;
   line-height: 1.6;
 }
 
-#severity {
+.severity {
   display: flex;
   flex-direction: column;
   flex-grow: 0;
@@ -79,7 +78,7 @@ section {
   margin: 0 1rem 0 0;
   text-align: center;
 }
-#severity .icon {
+.severity .icon {
   width: 32px;
   height: 32px;
 }
@@ -120,8 +119,8 @@ section {
   color: #fff;
 }
 
-#identifiers {
-  font-size: small;
+.identifiers {
+  font-size: 1em;
 }
 .delimiter {
   margin: 0 0.2em 0 0.2em;

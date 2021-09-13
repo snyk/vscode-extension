@@ -52,8 +52,8 @@
   }
 
   function showCurrentSuggestion() {
-    const severity = document.getElementById('severity')!;
-    const title = document.getElementById('title')!;
+    const severity = document.querySelector('.severity')!;
+    const title = document.querySelector('.suggestion .suggestion-text')!;
 
     // Set title
     title.innerHTML = vulnerability.title;
@@ -90,7 +90,7 @@
     }
 
     function fillIdentifiers() {
-      const identifiers = document.getElementById('identifiers')!;
+      const identifiers = document.querySelector('.identifiers')!;
       identifiers.innerHTML = ''; // reset node
 
       const type = vulnerability.license ? 'License' : 'Vulnerability';
@@ -147,7 +147,7 @@
     }
 
     function fillDetailedPaths() {
-      const paths = document.getElementById('detailed-paths')!;
+      const paths = document.querySelector('.detailed-paths')!;
       paths.innerHTML = ''; // reset node
 
       vulnerability.matchingIdVulnerabilities.forEach(vuln => {
@@ -193,7 +193,7 @@
     return `https://cwe.mitre.org/data/definitions/${id}.html`;
   }
 
-  function appendIdentifierSpan(identifiers: HTMLElement, id: string, link?: string) {
+  function appendIdentifierSpan(identifiers: Element, id: string, link?: string) {
     const delimiter = document.createElement('span');
     delimiter.innerText = ' | ';
     delimiter.className = 'delimiter';

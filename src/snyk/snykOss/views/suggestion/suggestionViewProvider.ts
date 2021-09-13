@@ -138,8 +138,8 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
 			</head>
 			<body>
         <div class="suggestion">
-          <section id="suggestion-info">
-            <div id="severity">
+          <section>
+            <div class="severity">
               <img id="lowl" class="icon light-only hidden" src="${images['dark-low-severity']}" />
               <img id="lowd" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
               <img id="mediuml" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
@@ -150,8 +150,8 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
               <img id="criticald" class="icon dark-only hidden" src="${images['dark-critical-severity']}" />
               <span id="severity-text"></span>
             </div>
-            <div id="title" class="suggestion-text"></div>
-            <div id="identifiers"></div>
+            <div class="suggestion-text"></div>
+            <div class="identifiers"></div>
           </section>
           <section class="delimiter-top summary">
             <div class="summary-item module">
@@ -173,7 +173,7 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
           </section>
           <section class="delimiter-top">
             <h2>Detailed paths</h2>
-            <div id="detailed-paths"></div>
+            <div class="detailed-paths"></div>
           </section>
           <section class="delimiter-top">
             <h2>Overview</h2>
