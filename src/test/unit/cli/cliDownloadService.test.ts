@@ -29,6 +29,7 @@ suite('CliService', () => {
 
     window = {
       withProgress: sinon.fake(),
+      registerWebviewPanelSerializer: sinon.fake(),
     };
     api = {
       getDownloadUrl: sinon.fake(),
@@ -37,13 +38,16 @@ suite('CliService', () => {
       getSha256Checksum: apigetSha256Checksum,
     };
     logger = new LoggerMock();
-    context = {
+
+    context = ({
       extensionPath: 'test/path',
       getGlobalStateValue: contextGetGlobalStateValue,
       updateGlobalStateValue: sinon.fake(),
       setContext: sinon.fake(),
       subscriptions: [],
-    };
+      addDisposables: sinon.fake(),
+      getExtensionUri: sinon.fake(),
+    } as unknown) as ExtensionContext;
 
     downloader = new CliDownloader(api, context.extensionPath, window, logger);
   });

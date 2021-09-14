@@ -4,6 +4,7 @@ import { FeaturesConfiguration } from '../../../common/configuration/configurati
 import { configuration } from '../../../common/configuration/instance';
 import { SNYK_CONTEXT } from '../../../common/constants/views';
 import { IContextService } from '../../../common/services/contextService';
+import { getNonce } from '../../../common/views/nonce';
 
 enum FeaturesViewEventMessageType {
   FeaturesSelected = 'featuresSelected',
@@ -56,7 +57,7 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
     const avatarUri = this.getWebViewUri('images', 'avatar-transparent.svg');
 
     // Use a nonce to only allow a specific script to be run.
-    const nonce = this.getNonce();
+    const nonce = getNonce();
 
     return `<!DOCTYPE html>
 			<html lang="en">
@@ -73,8 +74,6 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
 
 				<link href="${styleVSCodeUri}" rel="stylesheet">
 				<link href="${styleUri}" rel="stylesheet">
-
-				<title>Snyk</title>
 			</head>
 			<body>
         <div class="welcome">
@@ -100,14 +99,5 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
 
   private getWebViewUri(...pathSegments: string[]) {
     return this.view?.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...pathSegments));
-  }
-
-  private getNonce() {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 32; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
   }
 }

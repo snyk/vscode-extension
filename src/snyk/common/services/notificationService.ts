@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { snykMessages } from '../../base/messages/snykMessages';
-import { openSnykViewContainer } from '../vscodeCommandsUtils';
+import { openSnykViewContainer } from '../vscode/vscodeCommandsUtils';
 import { errorType } from '../../base/modules/interfaces';
 import { configuration } from '../configuration/instance';
 
