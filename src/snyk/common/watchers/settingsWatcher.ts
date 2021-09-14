@@ -1,16 +1,17 @@
 import * as vscode from 'vscode';
+import { IExtension } from '../../base/modules/interfaces';
+import { analytics } from '../analytics/analytics';
+import { configuration } from '../configuration/instance';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTOSCAN_OSS_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
-import { analytics } from '../analytics/analytics';
-import { configuration } from '../configuration/instance';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { IWatcher } from './interfaces';
-import { IExtension } from '../../base/modules/interfaces';
 
 class SettingsWatcher implements IWatcher {
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
@@ -40,6 +41,7 @@ class SettingsWatcher implements IWatcher {
         const change = [
           TOKEN_SETTING,
           ADVANCED_ADVANCED_MODE_SETTING,
+          ADVANCED_AUTOSCAN_OSS_SETTING,
           YES_TELEMETRY_SETTING,
           CODE_SECURITY_ENABLED_SETTING,
           CODE_QUALITY_ENABLED_SETTING,

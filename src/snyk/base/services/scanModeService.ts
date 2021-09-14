@@ -1,34 +1,43 @@
+import { IConfiguration } from '../../common/configuration/configuration';
 import { EXECUTION_PAUSE_INTERVAL, EXECUTION_THROTTLING_INTERVAL } from '../../common/constants/general';
-import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../common/constants/views';
+import { SNYK_CONTEXT } from '../../common/constants/views';
 import { IContextService } from '../../common/services/contextService';
+import { CODE_SCAN_MODE } from '../../snykCode/constants/modes';
 
 export class ScanModeService {
-  private _mode = SNYK_MODE_CODES.AUTO;
+  private _mode = CODE_SCAN_MODE.AUTO;
   // Platform-independant type definition.
   private _unpauseTimeout: ReturnType<typeof setTimeout> | undefined;
   private _lastThrottledExecution: number | undefined;
 
-  constructor(private contextService: IContextService) {}
+  constructor(private contextService: IContextService, private config: IConfiguration) {}
 
-  isAutoScanAllowed(): boolean {
-    if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) {
+  isOssAutoScanAllowed(): boolean {
+    return this.config.shouldAutoScanOss;
+  }
+
+  isCodeAutoScanAllowed(): boolean {
+    if (
+      [CODE_SCAN_MODE.MANUAL, CODE_SCAN_MODE.PAUSED].includes(this._mode) ||
+      this.shouldCodeBeThrottled()
+    ) {
       return false;
     }
 
     return true;
   }
 
-  async setMode(mode: string): Promise<void> {
-    if (!Object.values(SNYK_MODE_CODES).includes(mode)) return;
+  async setCodeMode(mode: string): Promise<void> {
+    if (!Object.values(CODE_SCAN_MODE).includes(mode)) return;
     this._mode = mode;
     await this.contextService.setContext(SNYK_CONTEXT.MODE, mode);
     switch (mode) {
-      case SNYK_MODE_CODES.PAUSED:
-        this._unpauseTimeout = setTimeout(() => this.unpause(), EXECUTION_PAUSE_INTERVAL);
+      case CODE_SCAN_MODE.PAUSED:
+        this._unpauseTimeout = setTimeout(() => this.unpauseCode(), EXECUTION_PAUSE_INTERVAL);
         break;
-      case SNYK_MODE_CODES.AUTO:
-      case SNYK_MODE_CODES.MANUAL:
-      case SNYK_MODE_CODES.THROTTLED:
+      case CODE_SCAN_MODE.AUTO:
+      case CODE_SCAN_MODE.MANUAL:
+      case CODE_SCAN_MODE.THROTTLED:
         if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
         break;
       default:
@@ -36,12 +45,12 @@ export class ScanModeService {
     }
   }
 
-  private unpause(): void {
-    if (this._mode === SNYK_MODE_CODES.PAUSED) void this.setMode(SNYK_MODE_CODES.AUTO);
+  private unpauseCode(): void {
+    if (this._mode === CODE_SCAN_MODE.PAUSED) void this.setCodeMode(CODE_SCAN_MODE.AUTO);
   }
 
-  private shouldBeThrottled(): boolean {
-    if (this._mode !== SNYK_MODE_CODES.THROTTLED) return false;
+  private shouldCodeBeThrottled(): boolean {
+    if (this._mode !== CODE_SCAN_MODE.THROTTLED) return false;
     const now = Date.now();
     if (
       this._lastThrottledExecution === undefined ||

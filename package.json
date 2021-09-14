@@ -85,7 +85,13 @@
           "snyk.advanced.advancedMode": {
             "type": "boolean",
             "default": false,
-            "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "scope": "application"
+          },
+          "snyk.advanced.autoScanOss": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
           },
           "snyk.features.codeSecurity": {
@@ -184,12 +190,12 @@
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running code security and quality scanning in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'manual'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "Snyk analysis is currently paused.\n[Unpause](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "Code security and quality analysis is currently paused.\n[Unpause](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'paused'"
       },
       {
