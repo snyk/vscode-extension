@@ -37,7 +37,8 @@
     "Python"
   ],
   "activationEvents": [
-    "onWebviewPanel:snyk.views.suggestion",
+    "onWebviewPanel:snyk.views.suggestion.code",
+    "onWebviewPanel:snyk.views.suggestion.oss",
     "*"
   ],
   "main": "./out/extension.js",

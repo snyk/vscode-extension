@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ProgressLocation } from 'vscode';
+import { Disposable, ProgressLocation, WebviewPanelSerializer } from 'vscode';
 
 export interface IVSCodeWindow {
   withProgress<R>(
@@ -9,12 +9,18 @@ export interface IVSCodeWindow {
       token: vscode.CancellationToken,
     ) => Thenable<R>,
   ): Promise<R>;
+
+  registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
 }
 
 /**
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
 export class VSCodeWindow implements IVSCodeWindow {
+  registerWebviewPanelSerializer(viewType: string, serializer: vscode.WebviewPanelSerializer): vscode.Disposable {
+    return vscode.window.registerWebviewPanelSerializer(viewType, serializer);
+  }
+
   withProgress<R>(
     progressTitle: string,
     task: (
