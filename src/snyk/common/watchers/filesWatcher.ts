@@ -14,6 +14,7 @@ export default function createFileWatcher(
     extension.snykCode.changedFiles.add(filePath);
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     extension.startExtension(); // It's debounced, so not worries about concurrent calls
+    // TODO: don't run OSS test for non-manifest files
   };
 
   watcher.onDidChange((documentUri: vscode.Uri) => {

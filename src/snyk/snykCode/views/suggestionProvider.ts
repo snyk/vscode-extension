@@ -7,8 +7,9 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
 } from '../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION } from '../../common/constants/views';
+import { SNYK_VIEW_SUGGESTION_CODE } from '../../common/constants/views';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
+import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../constants/analysis';
 import { completeFileSuggestionType } from '../interfaces';
 import { createIssueCorrectRange, getVSCodeSeverity } from '../utils/analysisUtils';
 import { ISuggestionProvider } from './interfaces';
@@ -22,7 +23,6 @@ function getWebviewContent(images: Record<string, string>) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snyk Suggestion</title>
     <style>
       html { height: 100%; font-size: 62.5% }
       body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
@@ -528,12 +528,12 @@ export class SuggestionProvider implements ISuggestionProvider {
   // panel state. The following field is only used in
   private suggestion: completeFileSuggestionType | undefined;
 
-  activate(extension: IExtension) {
+  activate(extension: IExtension): void {
     this.extension = extension;
-    vscode.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION, new SuggestionSerializer(this));
+    vscode.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE, new SuggestionSerializer(this));
   }
 
-  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range) {
+  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
     if (!this.extension) {
       this.disposePanel();
       return;
@@ -547,7 +547,7 @@ export class SuggestionProvider implements ISuggestionProvider {
     void this.showPanel(suggestion);
   }
 
-  checkCurrentSuggestion() {
+  checkCurrentSuggestion(): void {
     if (!this.panel || !this.suggestion || !this.extension) return;
     const found = this.extension.snykCode.analyzer.checkFullSuggestion(this.suggestion);
     if (!found) this.disposePanel();
@@ -567,12 +567,12 @@ export class SuggestionProvider implements ISuggestionProvider {
     }
   }
 
-  restorePanel(panel: vscode.WebviewPanel) {
+  restorePanel(panel: vscode.WebviewPanel): void {
     if (this.panel) this.panel.dispose();
     this.panel = panel;
   }
 
-  async showPanel(suggestion: completeFileSuggestionType) {
+  async showPanel(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       if (
         !vscode.window.activeTextEditor?.viewColumn ||
@@ -584,11 +584,12 @@ export class SuggestionProvider implements ISuggestionProvider {
         await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
       }
       if (this.panel) {
+        this.panel.title = this.getTitle(suggestion);
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION,
-          'Snyk Suggestion',
+          SNYK_VIEW_SUGGESTION_CODE,
+          this.getTitle(suggestion),
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
@@ -700,6 +701,10 @@ export class SuggestionProvider implements ISuggestionProvider {
     //   ...data,
     // });
   }
+
+  private getTitle(suggestion: completeFileSuggestionType): string {
+    return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
+  }
 }
 
 class SuggestionSerializer implements vscode.WebviewPanelSerializer {
@@ -708,7 +713,7 @@ class SuggestionSerializer implements vscode.WebviewPanelSerializer {
     this.suggestionProvider = suggestionProvider;
   }
 
-  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any): Promise<void> {
+  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: completeFileSuggestionType): Promise<void> {
     // `state` is the state persisted using `setState` inside the webview
     console.log(`Snyk: Restoring webview state: ${state}`);
     if (!state) {

@@ -6,6 +6,8 @@ import { IContextService } from '../../common/services/contextService';
 import { getSnykSeverity } from '../utils/analysisUtils';
 import { INodeIcon, TreeNode, NODE_ICONS } from '../../common/views/treeNode';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
+import { CodeIssueCommandArg } from './interfaces';
+import { OpenIssueCommandArg, OpenCommandIssueType } from '../../common/commands/types';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -75,7 +77,16 @@ export class IssueProvider extends AnalysisTreeNodeProvder {
             command: {
               command: SNYK_OPEN_ISSUE_COMMAND,
               title: '',
-              arguments: [d.message, uri, d.range],
+              arguments: [
+                {
+                  issueType: OpenCommandIssueType.CodeIssue,
+                  issue: {
+                    message: d.message,
+                    uri: uri,
+                    range: d.range,
+                  } as CodeIssueCommandArg,
+                } as OpenIssueCommandArg,
+              ],
             },
           };
 

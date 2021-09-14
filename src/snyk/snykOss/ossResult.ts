@@ -1,13 +1,13 @@
 export type OssResult = OssFileResult[] | OssFileResult;
 
 export type OssFileResult = {
-  vulnerabilities: Vulnerability[];
+  vulnerabilities: OssVulnerability[];
   projectName: string;
   displayTargetFile: string;
   packageManager: string;
 };
 
-export type Vulnerability = {
+export type OssVulnerability = {
   id: string;
   license?: string;
   identifiers?: Identifiers;
@@ -27,6 +27,8 @@ export type Vulnerability = {
   fixedIn?: Array<string>;
   from: Array<string>;
   upgradePath: Array<string>;
+  isPatchable: boolean;
+  isUpgradable: boolean;
 };
 
 export type Identifiers = {

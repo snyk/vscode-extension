@@ -69,7 +69,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-    const codeEnabled = await this.checkCodeEnabled(); // todo: run CLI scan independently of snyk code enablement view
+    const codeEnabled = await this.checkCodeEnabled();
     if (!codeEnabled) {
       return;
     }
@@ -152,7 +152,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
     try {
-      const result = await this.ossService.test();
+      const result = await this.ossService.test(); // TODO: do not run on all file saves
       if (result instanceof CliError) reportError(result.error);
     } catch (err) {
       reportError(err);

@@ -12,6 +12,7 @@ import { configuration } from '../../common/configuration/instance';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { OssService } from '../../snykOss/services/ossService';
+import { CommandController } from '../../common/commands/commandController';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -27,6 +28,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly viewManagerService: IViewManagerService;
   protected cliDownloadService: CliDownloadService;
   protected ossService?: OssService;
+  protected commandController: CommandController;
 
   snykCode: ISnykCodeService;
 
