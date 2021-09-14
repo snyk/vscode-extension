@@ -1,0 +1,140 @@
+html {
+  height: 100%;
+  font-size: 62.5%;
+}
+body {
+  height: 100%;
+  padding: 0;
+  font-size: 1.4rem;
+  line-height: 1.5;
+}
+body * {
+  box-sizing: border-box;
+}
+
+h2 {
+  font-size: 1em;
+  margin-block-start: 0;
+}
+
+a {
+  cursor: pointer;
+  color: #7c74f2;
+  text-decoration: none;
+}
+a:hover {
+  color: #7c74f2;
+  text-decoration: underline;
+}
+
+.font-light {
+  opacity: 0.75;
+}
+
+.vscode-light {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+.vscode-dark {
+  background-color: rgba(255, 255, 255, 0.075);
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+}
+.vscode-light .delimiter-top {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.vscode-dark .delimiter-top {
+  border-top: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.icon {
+  display: inline-flex;
+  vertical-align: middle;
+  width: 18px;
+  height: 18px;
+}
+
+section {
+  padding: 20px;
+}
+.suggestion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+.suggestion .suggestion-text {
+  margin-bottom: 1rem;
+  margin-top: 0.2em;
+  font-size: 1.6rem;
+  line-height: 1.6;
+}
+
+.severity {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  float: left;
+  margin: 0 1rem 0 0;
+  text-align: center;
+}
+.severity .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.vscode-dark .light-only {
+  display: none;
+}
+.vscode-light .dark-only {
+  display: none;
+}
+.hidden {
+  display: none;
+}
+.clickable:hover {
+  cursor: pointer;
+}
+
+.vscode-dark #example {
+  border-color: rgba(255, 255, 255, 0.075);
+  background-color: rgba(0, 0, 0, 0.15);
+}
+.vscode-dark .removed {
+  background-color: rgba(201, 60, 55, 0.2);
+  color: #fff;
+}
+.vscode-dark .added {
+  background-color: rgba(70, 149, 74, 0.2);
+  color: #fff;
+}
+.vscode-dark .example-line > code {
+  color: #ccc;
+  font-weight: 400;
+}
+.vscode-dark .added > code {
+  color: #fff;
+}
+.vscode-dark .removed > code {
+  color: #fff;
+}
+
+.identifiers {
+  font-size: 1em;
+}
+.delimiter {
+  margin: 0 0.2em 0 0.2em;
+}
+.summary .summary-item {
+  display: flex;
+  margin: 0.3em 0 0.3em 0;
+}
+.summary .label {
+  flex: 30%;
+}
+.summary .content {
+  flex: 70%;
+}
+.path {
+  margin-bottom: 0.75em;
+}
