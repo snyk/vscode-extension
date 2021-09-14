@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM } from '../../common/constants/globalState';
@@ -87,7 +88,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   public async isChecksumCorrect(cliPath: string): Promise<boolean> {
-    if (this.verifiedChecksumCorrect !== undefined) {
+    if (!_.isUndefined(this.verifiedChecksumCorrect)) {
       return this.verifiedChecksumCorrect;
     }
 
