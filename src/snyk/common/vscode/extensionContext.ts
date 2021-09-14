@@ -10,24 +10,33 @@ export class ExtensionContext {
     this.context = context;
   }
 
+  getExtensionUri(): vscode.Uri {
+    return this.acquireContext().extensionUri;
+  }
+
+  addDisposables(...disposables: vscode.Disposable[]): void {
+    this.acquireContext().subscriptions.push(...disposables);
+  }
+
   get extensionPath(): string {
-    if (!this.context) throw new Error('VS Code extension context not set.');
-    return this.context.extensionPath;
+    return this.acquireContext().extensionPath;
   }
 
   get subscriptions(): { dispose(): unknown }[] {
-    if (!this.context) throw new Error('VS Code extension context not set.');
-    return this.context.subscriptions;
+    return this.acquireContext().subscriptions;
   }
 
   getGlobalStateValue<T>(key: string): T | undefined {
-    if (!this.context) throw new Error('VS Code extension context not set.');
-    return this.context.globalState.get(key);
+    return this.acquireContext().globalState.get(key);
   }
 
   updateGlobalStateValue(key: string, value: unknown): Thenable<void> {
+    return this.acquireContext().globalState.update(key, value);
+  }
+
+  private acquireContext(): vscode.ExtensionContext {
     if (!this.context) throw new Error('VS Code extension context not set.');
-    return this.context.globalState.update(key, value);
+    return this.context;
   }
 }
 

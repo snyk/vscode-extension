@@ -13,7 +13,6 @@ import {
   SNYK_SETTINGS_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME } from './common/constants/general';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
@@ -26,8 +25,6 @@ import {
 import SnykLib from './base/modules/snykLib';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
 import { NotificationService } from './common/services/notificationService';
-import { severityAsText } from './snykCode/utils/analysisUtils';
-import { createDCIgnoreCommand, openSnykSettingsCommand } from './common/vscodeCommandsUtils';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { CodeQualityIssueProvider } from './snykCode/views/qualityIssueProvider';
 import { SupportProvider } from './base/views/supportProvider';
@@ -47,37 +44,26 @@ import { OssVulnerabilityProvider } from './snykOss/views/vulnerabilityProvider'
 import { OssService } from './snykOss/services/ossService';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import { configuration } from './common/configuration/instance';
+import { CommandController } from './common/commands/commandController';
+import { SuggestionViewProvider } from './snykOss/views/suggestion/suggestionViewProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
-  private debouncedCommands: Record<string, _.DebouncedFunc<(...args: any[]) => Promise<any>>> = {};
-
-  private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
-    if (!this.debouncedCommands[name])
-      this.debouncedCommands[name] = _.debounce(
-        // eslint-disable-next-line no-shadow
-        async (...args: any[]): Promise<any> => {
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-            return await fn(...args);
-          } catch (error) {
-            await this.processError(error, {
-              message: errorsLogs.command(name),
-            });
-            return Promise.resolve();
-          }
-        },
-        COMMAND_DEBOUNCE_INTERVAL,
-        { leading: true, trailing: false },
-      );
-    return this.debouncedCommands[name](...args);
-  }
-
   public activate(vscodeContext: vscode.ExtensionContext): void {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
     this.statusBarItem.show();
 
+    this.ossService = new OssService(
+      this.context.extensionPath,
+      Logger,
+      configuration,
+      new SuggestionViewProvider(this.context, vsCodeWindow),
+      vsCodeWorkspace,
+      this.viewManagerService,
+    );
+
+    this.commandController = new CommandController(this.openerService, this.snykCode, this.ossService);
     this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueProvider(
@@ -91,13 +77,6 @@ class SnykExtension extends SnykLib implements IExtension {
         this.snykCode,
       );
 
-    this.ossService = new OssService(
-      this.context.extensionPath,
-      Logger,
-      configuration,
-      vsCodeWorkspace,
-      this.viewManagerService,
-    );
     const ossVulnerabilityProvider = new OssVulnerabilityProvider(
       this.viewManagerService,
       this.contextService,
@@ -143,7 +122,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
-    this.snykCode.suggestionProvider.activate(this);
+    this.snykCode.suggestionProvider.activate(this); // todo: wire the same way as OSS
+    this.ossService.activateSuggestionProvider();
 
     void NotificationService.init(this.processError.bind(this));
 
@@ -186,111 +166,31 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
+    // todo: move common callbacks to the CommandController, verify if all commands work
     context.subscriptions.push(
       vscode.commands.registerCommand(
         SNYK_OPEN_BROWSER_COMMAND,
-        this.executeCommand.bind(this, SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
-          this.openerService.openBrowserUrl(url),
-        ),
+        this.commandController.openBrowser.bind(this.commandController),
       ),
-      vscode.commands.registerCommand(
-        SNYK_COPY_AUTH_LINK_COMMAND,
-        this.executeCommand.bind(
-          this,
-          SNYK_COPY_AUTH_LINK_COMMAND,
-          this.openerService.copyOpenedUrl.bind(this.openerService),
-        ),
+      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.commandController.copyAuthLink.bind(this)),
+      vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, this.commandController.openLocal.bind(this)),
+      vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () =>
+        this.commandController.executeCommand(SNYK_LOGIN_COMMAND, this.initiateLogin.bind(this)),
       ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, async (path: vscode.Uri, range?: vscode.Range) => {
-        await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range }).then(
-          () => undefined,
-          // no need to wait for processError since catch is called asynchronously as well
-          err =>
-            this.processError(err, {
-              message: errorsLogs.command(SNYK_OPEN_LOCAL_COMMAND),
-            }),
-        );
-      }),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_LOGIN_COMMAND,
-        this.executeCommand.bind(this, SNYK_LOGIN_COMMAND, this.initiateLogin.bind(this)),
+      vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
+        this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
       ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_ENABLE_CODE_COMMAND,
-        this.executeCommand.bind(this, SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
+      vscode.commands.registerCommand(SNYK_START_COMMAND, () =>
+        this.commandController.executeCommand(SNYK_START_COMMAND, this.startExtension.bind(this), true),
       ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_START_COMMAND,
-        this.executeCommand.bind(this, SNYK_START_COMMAND, this.startExtension.bind(this), true),
+      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, () =>
+        this.commandController.executeCommand(SNYK_SETMODE_COMMAND, this.setMode.bind(this)),
       ),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, this.commandController.openSettings.bind(this)),
+      vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, this.commandController.createDCIgnore.bind(this)),
+      vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, this.commandController.openIssueCommand.bind(this)),
+      vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
     );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_SETMODE_COMMAND,
-        this.executeCommand.bind(this, SNYK_SETMODE_COMMAND, this.setMode.bind(this)),
-      ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_SETTINGS_COMMAND,
-        this.executeCommand.bind(this, SNYK_SETTINGS_COMMAND, openSnykSettingsCommand),
-      ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_OPEN_ISSUE_COMMAND,
-        this.executeCommand.bind(
-          this,
-          SNYK_OPEN_ISSUE_COMMAND,
-          async (
-            message: string,
-            uri: vscode.Uri,
-            range: vscode.Range,
-            openUri?: vscode.Uri,
-            openRange?: vscode.Range,
-          ) => {
-            const suggestion = this.snykCode.analyzer.findSuggestion(message);
-            if (!suggestion) return;
-            // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-            if (openUri !== null)
-              await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, openUri || uri, openRange || range);
-            this.snykCode.suggestionProvider.show(suggestion.id, uri, range);
-            suggestion.id = decodeURIComponent(suggestion.id);
-
-            analytics.logIssueIsViewed({
-              ide: IDE_NAME,
-              issueId: suggestion.id,
-              issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
-              severity: severityAsText(suggestion.severity),
-            });
-          },
-        ),
-      ),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_DCIGNORE_COMMAND,
-        this.executeCommand.bind(this, SNYK_DCIGNORE_COMMAND, createDCIgnoreCommand),
-      ),
-    );
-
-    context.subscriptions.push(vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues));
   }
 }
 

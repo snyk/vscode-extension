@@ -1,4 +1,4 @@
-import { setContext } from '../vscodeCommandsUtils';
+import { setContext } from '../vscode/vscodeCommandsUtils';
 import { Logger } from '../logger/logger';
 import { SNYK_CONTEXT } from '../constants/views';
 
