@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { CliError } from '../../cli/services/cliService';
 import { analytics } from '../../common/analytics/analytics';
 import { configuration } from '../../common/configuration/instance';
-import { CODE_SCAN_DEBOUNCE_INTERVAL, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
+import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
@@ -60,9 +60,9 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
   // This function is called by commands, error handlers, etc.
   // We should avoid having duplicate parallel executions.
-  public runScan = _.debounce(this.runFullScan_.bind(this), CODE_SCAN_DEBOUNCE_INTERVAL, { leading: true });
+  public runScan = _.debounce(this.runFullScan_.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, { leading: true });
 
-  public runCodeScan = _.debounce(this.startSnykCodeAnalysis.bind(this), CODE_SCAN_DEBOUNCE_INTERVAL, {
+  public runCodeScan = _.debounce(this.startSnykCodeAnalysis.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, {
     leading: true,
   });
 
