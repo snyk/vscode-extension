@@ -176,7 +176,6 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
             <div class="detailed-paths"></div>
           </section>
           <section class="delimiter-top">
-            <h2>Overview</h2>
             <div id="overview" class="font-light"></div>
           </section>
         </div>
