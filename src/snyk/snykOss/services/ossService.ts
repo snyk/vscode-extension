@@ -2,7 +2,6 @@ import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { IExtension } from '../../base/modules/interfaces';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { configuration } from '../../common/configuration/instance';
 import { ILog } from '../../common/logger/interfaces';
 import { INotificationService } from '../../common/services/notificationService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
@@ -60,7 +59,7 @@ export class OssService extends CliService<OssResult> {
 
     this.viewManagerService.refreshOssView();
 
-    if (configuration.shouldAutoScanOss) {
+    if (this.config.shouldAutoScanOss) {
       this.dailyScanJob.schedule();
     }
   }
