@@ -4,7 +4,8 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { getNonce } from '../../../common/views/nonce';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
-import { OssIssueCommandArg } from '../vulnerabilityProvider';
+import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
+import { WebviewProvider } from '../../../common/views/webviewProvider';
 
 enum SuggestionViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -16,15 +17,15 @@ type FeaturesViewEventMessage = {
 };
 
 // todo: unify interface between oss and snyk code
-export interface ISuggestionViewProvider {
+export interface IOssSuggestionWebviewProvider {
   activate(): void;
   showPanel(vulnerability: OssIssueCommandArg): Promise<void>;
 }
 
-export class SuggestionViewProvider implements ISuggestionViewProvider {
-  private panel?: vscode.WebviewPanel;
-
-  constructor(private readonly context: ExtensionContext, private readonly window: IVSCodeWindow) {}
+export class OssSuggestionWebviewProvider extends WebviewProvider implements IOssSuggestionWebviewProvider {
+  constructor(protected readonly context: ExtensionContext, private readonly window: IVSCodeWindow) {
+    super(context);
+  }
 
   activate(): void {
     this.context.addDisposables(
@@ -78,30 +79,7 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
     this.panel.onDidChangeViewState(this.checkVisibility.bind(this));
   }
 
-  restorePanel(panel: vscode.WebviewPanel): void {
-    if (this.panel) this.panel.dispose();
-    this.panel = panel;
-  }
-
-  private disposePanel() {
-    if (this.panel) this.panel.dispose();
-  }
-
-  private onPanelDispose() {
-    this.panel = undefined;
-  }
-
-  private checkVisibility(_e: vscode.WebviewPanelOnDidChangeViewStateEvent): void {
-    if (this.panel && this.panel.visible) {
-      void this.panel.webview.postMessage({ type: 'get' });
-    }
-  }
-
-  private getWebViewUri(...pathSegments: string[]) {
-    return this.panel?.webview.asWebviewUri(vscode.Uri.joinPath(this.context.getExtensionUri(), ...pathSegments));
-  }
-
-  private getHtmlForWebview(webview: vscode.Webview) {
+  protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
       ['icon-code', 'svg'],
       ['dark-critical-severity', 'svg'],
@@ -109,13 +87,13 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
       ['dark-medium-severity', 'svg'],
       ['dark-low-severity', 'svg'],
     ].reduce((accumulator: Record<string, string>, [name, ext]) => {
-      const uri = this.getWebViewUri('images', `${name}.${ext}`); // todo move to media folder
+      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`); // todo move to media folder
       if (!uri) throw new Error('Image missing.');
       accumulator[name] = uri.toString();
       return accumulator;
     }, {});
 
-    const scriptUri = this.getWebViewUri('out', 'snyk', 'snykOss', 'views', 'suggestion', 'suggestionViewScript.js');
+    const scriptUri = this.getWebViewUri('out', 'snyk', 'snykOss', 'views', 'suggestion', 'ossSuggestionWebviewScript.js');
     const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
 
     const nonce = getNonce();
@@ -131,8 +109,6 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
 					and only allow scripts that have a specific nonce.
 				-->
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
-
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 				<link href="${styleUri}" rel="stylesheet">
 			</head>
@@ -186,7 +162,7 @@ export class SuggestionViewProvider implements ISuggestionViewProvider {
 }
 
 class SuggestionSerializer implements vscode.WebviewPanelSerializer {
-  constructor(private readonly suggestionProvider: SuggestionViewProvider) {}
+  constructor(private readonly suggestionProvider: OssSuggestionWebviewProvider) {}
 
   async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: OssIssueCommandArg): Promise<void> {
     if (!state) {
