@@ -1,7 +1,7 @@
 import { CliDownloader } from '../downloader';
 import { CliExecutable } from '../cliExecutable';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
+import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
 import { IStaticCliApi } from '../api/staticCliApi';
 import { ILog } from '../../common/logger/interfaces';
 import { IVSCodeWindow } from '../../common/vscode/window';
@@ -46,7 +46,7 @@ export class CliDownloadService {
       return false;
     }
 
-    await this.setLastUpdateDate();
+    await this.setLastUpdateDateAndChecksum(executable.checksum);
     this.logger.info(messages.downloadFinished(executable.version));
     return true;
   }
@@ -71,7 +71,7 @@ export class CliDownloadService {
         return false;
       }
 
-      await this.setLastUpdateDate();
+      await this.setLastUpdateDateAndChecksum(executable.checksum);
       this.logger.info(messages.updateFinished(executable.version));
       return true;
     } else {
@@ -98,8 +98,9 @@ export class CliDownloadService {
     return true;
   }
 
-  private async setLastUpdateDate(): Promise<void> {
+  private async setLastUpdateDateAndChecksum(checksum: Checksum): Promise<void> {
     await this.extensionContext.updateGlobalStateValue(MEMENTO_CLI_LAST_UPDATE_DATE, Date.now());
+    await this.extensionContext.updateGlobalStateValue(MEMENTO_CLI_CHECKSUM, checksum.checksum);
   }
 
   private isFourDaysPassedSinceLastUpdate(): boolean {
