@@ -33,7 +33,8 @@
     "Angular",
     "React",
     "Static Code Analysis",
-    "Code Quality"
+    "Code Quality",
+    "Python"
   ],
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion",
