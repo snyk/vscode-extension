@@ -1,18 +1,18 @@
 import { strictEqual } from 'assert';
 import sinon, { stub } from 'sinon';
-import { IStaticCliApi } from '../../../snyk/cli/api/staticCliApi';
-import { CliDownloader } from '../../../snyk/cli/downloader';
-import { ILog } from '../../../snyk/common/logger/interfaces';
-import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
-import { LoggerMock } from '../mocks/logger.mock';
-import { CliExecutable } from '../../../snyk/cli/cliExecutable';
-import { Checksum } from '../../../snyk/cli/checksum';
-import { CliDownloadService } from '../../../snyk/cli/services/cliDownloadService';
-import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../snyk/common/constants/globalState';
-import { Platform } from '../../../snyk/common/platform';
+import { IStaticCliApi } from '../../../../snyk/cli/api/staticCliApi';
+import { CliDownloader } from '../../../../snyk/cli/downloader';
+import { ILog } from '../../../../snyk/common/logger/interfaces';
+import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
+import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
+import { Checksum } from '../../../../snyk/cli/checksum';
+import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
+import { Platform } from '../../../../snyk/common/platform';
+import { LoggerMock } from '../../mocks/logger.mock';
 
-suite('CliService', () => {
+suite('CliDownloaderService', () => {
   let logger: ILog;
   let api: IStaticCliApi;
   let window: IVSCodeWindow;
