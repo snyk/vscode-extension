@@ -1,4 +1,4 @@
-import { deepStrictEqual, ok, rejects } from 'assert';
+import { deepStrictEqual, rejects } from 'assert';
 import sinon from 'sinon';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
@@ -11,6 +11,7 @@ import { CliProcess } from '../../../snyk/cli/process';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ISuggestionViewProvider } from '../../../snyk/snykOss/views/suggestion/suggestionViewProvider';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
+import { CliDownloadService } from '../../../snyk/cli/services/cliDownloadService';
 
 suite('OssService', () => {
   const extensionPath = 'test/path';
@@ -33,6 +34,7 @@ suite('OssService', () => {
       {
         refreshOssView: () => undefined,
       } as IViewManagerService,
+      {} as CliDownloadService
     );
     sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });

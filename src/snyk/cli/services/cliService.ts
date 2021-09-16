@@ -8,6 +8,7 @@ import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { CliProcess } from '../process';
+import { CliDownloadService } from './cliDownloadService';
 
 export class CliError {
   constructor(public error: string, public path?: string) {}
@@ -24,6 +25,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
+    protected readonly downloadService: CliDownloadService
   ) {
     super();
   }
@@ -35,9 +37,14 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath);
     const checksumCorrect = await this.isChecksumCorrect(cliPath);
     if (!checksumCorrect) {
-      const error = new CliError('Snyk CLI is corrupt. Please reinstall the extension.');
-      this.finalizeTest(error);
-      return error;
+      // Redownload CLI if corrupt,
+      const downloaded = await this.downloadService.downloadCli();
+
+      if (!downloaded) {
+        const error = new CliError('Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.');
+        this.finalizeTest(error);
+        return error;
+      }
     }
 
     const process = new CliProcess(this.logger, this.config);

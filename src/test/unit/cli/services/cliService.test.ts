@@ -3,6 +3,7 @@ import { deepStrictEqual, notStrictEqual, ok, rejects, strictEqual } from 'asser
 import sinon from 'sinon';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliProcess } from '../../../../snyk/cli/process';
+import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
 import { CliError, CliService } from '../../../../snyk/cli/services/cliService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
@@ -32,6 +33,7 @@ suite('CliService', () => {
   let logger: ILog;
   let testCliService: TestCliService;
   let extensionContext: ExtensionContext;
+  let cliDownloadService: CliDownloadService;
 
   setup(() => {
     logger = new LoggerMock();
@@ -41,6 +43,10 @@ suite('CliService', () => {
       getGlobalStateValue: () => undefined,
     } as unknown) as ExtensionContext;
 
+    cliDownloadService = {
+      downloadCli: () => false
+    } as unknown as CliDownloadService;
+
     testCliService = new TestCliService(
       extensionContext,
       logger,
@@ -48,6 +54,7 @@ suite('CliService', () => {
       {
         workspaceFolders: () => [''],
       } as IVSCodeWorkspace,
+      cliDownloadService
     );
   });
 
@@ -91,8 +98,16 @@ suite('CliService', () => {
     deepStrictEqual(result.error, errOutput);
   });
 
+  test('Test tries redownloading CLI when checksum verification fails', async () => {
+    sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
+    const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(true);
+    const result = await testCliService.test();
+    deepStrictEqual(download.calledOnce, true);
+  });
+
   test('Test returns error when CLI checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
+    const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(false);
     const result = await testCliService.test();
 
     ok(result instanceof CliError);

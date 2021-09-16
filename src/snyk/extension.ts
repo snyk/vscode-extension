@@ -54,6 +54,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.statusBarItem.show();
 
+    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+
     this.ossService = new OssService(
       this.context,
       Logger,
@@ -61,6 +63,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new SuggestionViewProvider(this.context, vsCodeWindow),
       vsCodeWorkspace,
       this.viewManagerService,
+      this.cliDownloadService,
     );
 
     this.commandController = new CommandController(this.openerService, this.snykCode, this.ossService);
@@ -154,8 +157,6 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private initCliDownload(): CliDownloadService {
-    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
-
     this.cliDownloadService.downloadOrUpdateCli().catch(err => {
       const errorMsg = cliMessages.cliDownloadFailed;
       Logger.error(`${errorMsg} ${err}`);

@@ -1,3 +1,4 @@
+import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../../common/logger/interfaces';
@@ -19,8 +20,9 @@ export class OssService extends CliService<OssResult> {
     private readonly suggestionProvider: ISuggestionViewProvider,
     protected readonly workspace: IVSCodeWorkspace,
     private readonly viewManagerService: IViewManagerService,
+    protected readonly downloadService: CliDownloadService
   ) {
-    super(extensionContext, logger, config, workspace);
+    super(extensionContext, logger, config, workspace, downloadService);
   }
 
   public getResult = (): OssResult | undefined => this.result;
