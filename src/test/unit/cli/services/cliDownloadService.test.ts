@@ -3,7 +3,6 @@ import sinon, { stub } from 'sinon';
 import { IStaticCliApi } from '../../../../snyk/cli/api/staticCliApi';
 import { CliDownloader } from '../../../../snyk/cli/downloader';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
-import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
@@ -11,11 +10,11 @@ import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContex
 import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
 import { Platform } from '../../../../snyk/common/platform';
 import { LoggerMock } from '../../mocks/logger.mock';
+import { windowMock } from '../../mocks/window.mock';
 
 suite('CliDownloaderService', () => {
   let logger: ILog;
   let api: IStaticCliApi;
-  let window: IVSCodeWindow;
   let context: ExtensionContext;
   let downloader: CliDownloader;
 
@@ -27,10 +26,6 @@ suite('CliDownloaderService', () => {
     contextGetGlobalStateValue = sinon.stub();
     apigetSha256Checksum = sinon.stub();
 
-    window = {
-      withProgress: sinon.fake(),
-      registerWebviewPanelSerializer: sinon.fake(),
-    };
     api = {
       getDownloadUrl: sinon.fake(),
       getExecutable: sinon.fake(),
@@ -49,7 +44,7 @@ suite('CliDownloaderService', () => {
       getExtensionUri: sinon.fake(),
     } as unknown) as ExtensionContext;
 
-    downloader = new CliDownloader(api, context.extensionPath, window, logger);
+    downloader = new CliDownloader(api, context.extensionPath, windowMock, logger);
   });
 
   teardown(() => {
@@ -57,7 +52,7 @@ suite('CliDownloaderService', () => {
   });
 
   test('Tries to download if not installed', async () => {
-    const service = new CliDownloadService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(false);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
@@ -69,7 +64,7 @@ suite('CliDownloaderService', () => {
   });
 
   test('Tries to update if installed', async () => {
-    const service = new CliDownloadService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
@@ -81,7 +76,7 @@ suite('CliDownloaderService', () => {
   });
 
   test('Updates if >4 days passed since last update and new version available', async () => {
-    const service = new CliDownloadService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -103,7 +98,7 @@ suite('CliDownloaderService', () => {
   });
 
   test("Doesn't update if >4 days passed since last update but no new version available", async () => {
-    const service = new CliDownloadService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -125,7 +120,7 @@ suite('CliDownloaderService', () => {
   });
 
   test("Doesn't update if 3 days passed since last update", async () => {
-    const service = new CliDownloadService(context, api, window, logger, downloader);
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;

@@ -1,53 +1,26 @@
 import * as _ from 'lodash';
-import {
-  EXECUTION_DEBOUNCE_INTERVAL,
-  EXECUTION_PAUSE_INTERVAL,
-  EXECUTION_THROTTLING_INTERVAL,
-} from '../../common/constants/general';
-import { SNYK_CONTEXT, SNYK_MODE_CODES } from '../../common/constants/views';
+import { firstValueFrom } from 'rxjs';
+import * as vscode from 'vscode';
+import { CliError } from '../../cli/services/cliService';
+import { analytics } from '../../common/analytics/analytics';
+import { configuration } from '../../common/configuration/instance';
+import { EXECUTION_DEBOUNCE_INTERVAL } from '../../common/constants/general';
+import { SNYK_CONTEXT } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
+import { INotificationService } from '../../common/services/notificationService';
 import { userMe } from '../../common/services/userService';
-import * as vscode from 'vscode';
-import LoginModule from './loginModule';
-import { analytics } from '../../common/analytics/analytics';
-import { ISnykLib } from './interfaces';
-import { configuration } from '../../common/configuration/instance';
-import { NotificationService } from '../../common/services/notificationService';
-import { snykMessages } from '../messages/snykMessages';
-import { OssService } from '../../snykOss/services/ossService';
-import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { messages as ossTestMessages } from '../../snykOss/messages/test';
-import { CliError } from '../../cli/services/cliService';
+import { snykMessages } from '../messages/snykMessages';
+import { ISnykLib } from './interfaces';
+import LoginModule from './loginModule';
 
 export default class SnykLib extends LoginModule implements ISnykLib {
-  private _mode = SNYK_MODE_CODES.AUTO;
-  // Platform-independant type definition.
-  private _unpauseTimeout: ReturnType<typeof setTimeout> | undefined;
-  private _lastThrottledExecution: number | undefined;
-
-  private shouldBeThrottled(): boolean {
-    if (this._mode !== SNYK_MODE_CODES.THROTTLED) return false;
-    const now = Date.now();
-    if (
-      this._lastThrottledExecution === undefined ||
-      now - this._lastThrottledExecution >= EXECUTION_THROTTLING_INTERVAL
-    ) {
-      this._lastThrottledExecution = now;
-      return false;
-    }
-    return true;
-  }
-
-  private unpause(): void {
-    if (this._mode === SNYK_MODE_CODES.PAUSED) void this.setMode(SNYK_MODE_CODES.AUTO);
-  }
-
-  private async startExtension_(manual = false): Promise<void> {
-    Logger.info('Starting extension');
+  private async runFullScan_(manual = false): Promise<void> {
+    Logger.info('Starting full scan');
     // If the execution is suspended, we only allow user-triggered analyses.
-    if (!manual) {
-      if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) return;
+    if (!manual && !this.scanModeService.isAutoScanAllowed()) {
+      return;
     }
 
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
@@ -80,11 +53,8 @@ export default class SnykLib extends LoginModule implements ISnykLib {
         analytics.identify(user.id);
       }
 
-      this.cliDownloadService.downloadFinished$.subscribe(() => {
-        void this.startOssAnalysis();
-      });
-
-      await this.startSnykCodeAnalysis(manual);
+      void this.runOssScan(manual);
+      await this.runCodeScan(manual); // mark void, handle errors inside of startSnykCodeAnalysis()
     } catch (err) {
       await this.processError(err, {
         message: errorsLogs.failedExecutionDebounce,
@@ -94,25 +64,13 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
   // This function is called by commands, error handlers, etc.
   // We should avoid having duplicate parallel executions.
-  public startExtension = _.debounce(this.startExtension_.bind(this), EXECUTION_DEBOUNCE_INTERVAL, { leading: true });
+  public runScan = _.debounce(this.runFullScan_.bind(this), EXECUTION_DEBOUNCE_INTERVAL, { leading: true });
 
-  async setMode(mode: string): Promise<void> {
-    if (!Object.values(SNYK_MODE_CODES).includes(mode)) return;
-    this._mode = mode;
-    await this.contextService.setContext(SNYK_CONTEXT.MODE, mode);
-    switch (mode) {
-      case SNYK_MODE_CODES.PAUSED:
-        this._unpauseTimeout = setTimeout(() => this.unpause(), EXECUTION_PAUSE_INTERVAL);
-        break;
-      case SNYK_MODE_CODES.AUTO:
-      case SNYK_MODE_CODES.MANUAL:
-      case SNYK_MODE_CODES.THROTTLED:
-        if (this._unpauseTimeout) clearTimeout(this._unpauseTimeout);
-        break;
-      default:
-        break;
-    }
-  }
+  public runCodeScan = _.debounce(this.startSnykCodeAnalysis.bind(this), EXECUTION_DEBOUNCE_INTERVAL, {
+    leading: true,
+  });
+
+  public runOssScan = _.debounce(this.startOssAnalysis.bind(this), EXECUTION_DEBOUNCE_INTERVAL, { leading: true });
 
   async enableCode(): Promise<void> {
     const wasEnabled = await this.snykCode.enable();
@@ -129,7 +87,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
   }
 
-  async startSnykCodeAnalysis(manual: boolean): Promise<void> {
+  async startSnykCodeAnalysis(manual = false): Promise<void> {
     const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
 
     if (paths.length) {
@@ -148,21 +106,35 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
   }
 
-  private async startOssAnalysis(): Promise<void> {
+  onDidChangeOssTreeVisibility(visible: boolean): void {
+    if (this.ossService) {
+      this.ossService.setVulnerabilityTreeVisibility(visible);
+    }
+  }
+
+  private async startOssAnalysis(_manual = false): Promise<void> {
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
+    // wait until Snyk CLI is downloaded
+    await firstValueFrom(this.cliDownloadService.downloadFinished$);
+
     try {
+      const oldResult = this.ossService.getResult();
       const result = await this.ossService.test();
-      if (result instanceof CliError) reportError();
+      if (result instanceof CliError) {
+        reportError(this.notificationService);
+      } else if (oldResult) {
+        await this.ossService.showBackgroundNotification(oldResult);
+      }
     } catch (err) {
       // catch unhandled error cases by reporting test failure
       this.ossService.finalizeTest();
       Logger.error(`${ossTestMessages.testFailed} ${err}`);
-      reportError();
+      reportError(this.notificationService);
     }
 
-    function reportError() {
-      void NotificationService.showErrorNotification(`${ossTestMessages.testFailed} ${snykMessages.errorQuery}`);
+    function reportError(notificationService: INotificationService) {
+      void notificationService.showErrorNotification(`${ossTestMessages.testFailed} ${snykMessages.errorQuery}`);
     }
   }
 }

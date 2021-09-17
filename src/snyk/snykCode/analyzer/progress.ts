@@ -1,21 +1,19 @@
 import { emitter, ISupportedFiles } from '@snyk/code-client';
 import { EmitterDC } from '@snyk/code-client/dist/emitter';
 import _ from 'lodash';
-import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
-import { ISnykCodeService } from '../codeService';
 import * as vscode from 'vscode';
-import createFileWatcher from '../../common/watchers/filesWatcher';
 import { getExtension } from '../../../extension';
+import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IViewManagerService } from '../../common/services/viewManagerService';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
+import { ISnykCodeService } from '../codeService';
+import createFileWatcher from '../watchers/filesWatcher';
 
 export class Progress {
   private emitter: EmitterDC;
+  private filesWatcher: vscode.FileSystemWatcher;
 
-  constructor(
-    private readonly snykCode: ISnykCodeService,
-    private filesWatcher: vscode.FileSystemWatcher,
-    private viewManagerService: IViewManagerService,
-  ) {
+  constructor(private readonly snykCode: ISnykCodeService, private readonly viewManagerService: IViewManagerService, private readonly workspace: IVSCodeWorkspace) {
     this.emitter = emitter;
   }
 
@@ -41,7 +39,7 @@ export class Progress {
 
     // Setup file watcher
     if (!this.filesWatcher && data) {
-      this.filesWatcher = createFileWatcher(getExtension(), data);
+      this.filesWatcher = createFileWatcher(getExtension(), this.workspace, data);
     }
   }
 

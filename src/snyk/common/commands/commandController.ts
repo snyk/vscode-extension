@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as vscode from 'vscode';
+import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { severityAsText } from '../../snykCode/utils/analysisUtils';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
@@ -15,7 +16,7 @@ import {
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { IOpenerService } from '../services/openerService';
-import { OpenIssueCommandArg, OpenCommandIssueType } from './types';
+import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -24,6 +25,7 @@ export class CommandController {
     private openerService: IOpenerService,
     private snykCode: ISnykCodeService,
     private ossService: OssService,
+    private scanModeService: ScanModeService,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -81,6 +83,10 @@ export class CommandController {
       const issue = arg.issue as OssIssueCommandArg;
       void this.ossService.showSuggestionProvider(issue);
     }
+  }
+
+  setScanMode(mode: string): Promise<void> {
+    return this.scanModeService.setMode(mode);
   }
 
   async executeCommand(
