@@ -58,7 +58,10 @@ export class OssService extends CliService<OssResult> {
     }
 
     this.viewManagerService.refreshOssView();
-    this.dailyScanJob.schedule();
+
+    if (this.config.shouldAutoScanOss) {
+      this.dailyScanJob.schedule();
+    }
   }
 
   activateSuggestionProvider(): void {
@@ -70,7 +73,7 @@ export class OssService extends CliService<OssResult> {
   }
 
   activateManifestFileWatcher(extension: IExtension): void {
-    const manifestWatcher = createManifestFileWatcher(extension, this.workspace);
+    const manifestWatcher = createManifestFileWatcher(extension, this.workspace, this.config);
     this.extensionContext.addDisposables(manifestWatcher);
   }
 

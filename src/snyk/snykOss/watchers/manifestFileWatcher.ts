@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 
 // to be kept in sync with Snyk CLI support list
@@ -39,13 +40,20 @@ enum SUPPORTED_MANIFEST_FILES {
 export default function createManifestFileWatcher(
   extension: IExtension,
   workspace: IVSCodeWorkspace,
+  configuration: IConfiguration,
 ): vscode.FileSystemWatcher {
   const globPattern = `**/{${Object.values(SUPPORTED_MANIFEST_FILES).join(',')}}`;
   const watcher = workspace.createFileSystemWatcher(globPattern);
 
-  watcher.onDidChange(() => extension.runOssScan());
-  watcher.onDidDelete(() => extension.runOssScan());
-  watcher.onDidCreate(() => extension.runOssScan());
+  watcher.onDidChange(() => runOssScan());
+  watcher.onDidDelete(() => runOssScan());
+  watcher.onDidCreate(() => runOssScan());
+
+  function runOssScan() {
+    if (configuration.shouldAutoScanOss) {
+      void extension.runOssScan();
+    }
+  }
 
   return watcher;
 }
