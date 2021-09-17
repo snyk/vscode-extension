@@ -86,7 +86,7 @@ export class CommandController {
   }
 
   setScanMode(mode: string): Promise<void> {
-    return this.scanModeService.setMode(mode);
+    return this.scanModeService.setCodeMode(mode);
   }
 
   async executeCommand(

@@ -3,6 +3,7 @@ import { URL } from 'url';
 import { IDE_NAME_SHORT } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTOSCAN_OSS_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
@@ -34,6 +35,7 @@ export interface IConfiguration {
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
   shouldShowOssBackgroundScanNotification: boolean;
+  shouldAutoScanOss: boolean
 }
 
 export class Configuration implements IConfiguration {
@@ -188,6 +190,13 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_ADVANCED_MODE_SETTING),
+    );
+  }
+
+  get shouldAutoScanOss(): boolean {
+    return !!this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTOSCAN_OSS_SETTING),
     );
   }
 
