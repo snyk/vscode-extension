@@ -1,20 +1,19 @@
 import { getGlobPatterns, SupportedFiles } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 
 export default function createFileWatcher(
   extension: IExtension,
+  workspace: IVSCodeWorkspace,
   supportedFiles: SupportedFiles,
 ): vscode.FileSystemWatcher {
-  // eslint-disable-next-line no-useless-escape
-  const globPattern: vscode.GlobPattern = `**/\{${getGlobPatterns(supportedFiles).join(',')}\}`;
-  const watcher = vscode.workspace.createFileSystemWatcher(globPattern);
+  const globPattern: vscode.GlobPattern = `**/{${getGlobPatterns(supportedFiles).join(',')}}`;
+  const watcher = workspace.createFileSystemWatcher(globPattern);
 
   const updateFiles = (filePath: string): void => {
-    extension.snykCode.changedFiles.add(filePath);
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    extension.startExtension(); // It's debounced, so not worries about concurrent calls
-    // TODO: don't run OSS test for non-manifest files
+    extension.snykCode.addChangedFile(filePath);
+    void extension.runCodeScan(); // It's debounced, so not worries about concurrent calls
   };
 
   watcher.onDidChange((documentUri: vscode.Uri) => {
