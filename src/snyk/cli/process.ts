@@ -1,10 +1,13 @@
-import { spawn } from 'child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Configuration, IConfiguration } from '../common/configuration/configuration';
 import { ILog } from '../common/logger/interfaces';
 import { CLI_INTEGRATION_NAME } from './contants/integration';
+import { CliError } from './services/cliService';
 
 export class CliProcess {
   private readonly successExitCodes = [0, 1];
+
+  private runningProcess: ChildProcessWithoutNullStreams | null;
 
   constructor(private readonly logger: ILog, private readonly config: IConfiguration) {}
 
@@ -12,25 +15,39 @@ export class CliProcess {
    * Returns CLI output given provided arguments.
    */
   spawn(cliPath: string, args: string[]): Promise<string> {
-    // todo: implement cancellation
     return new Promise((resolve, reject) => {
       let output = '';
 
-      const cli = spawn(cliPath, args, { env: this.getProcessEnv() });
+      this.runningProcess = spawn(cliPath, args, { env: this.getProcessEnv() });
 
-      cli.stdout.setEncoding('utf8');
-      cli.stdout.on('data', (data: string | Buffer) => (output += data));
+      this.runningProcess.stdout.setEncoding('utf8');
+      this.runningProcess.stdout.on('data', (data: string | Buffer) => (output += data));
 
-      cli.on('error', err => reject(err));
-      cli.on('close', (code, signal) => {
-        if (code && code in this.successExitCodes) {
+      this.runningProcess.on('error', err => {
+        this.cleanupProcess();
+        reject(err);
+      });
+      this.runningProcess.on('close', (code, signal) => {
+        this.cleanupProcess();
+
+        // Successful termination
+        if (code !== null && code in this.successExitCodes) {
           return resolve(output);
         }
 
-        this.logger.debug(`Failure exit code ${code} received. ${signal ?? ''}.`);
+        // Cancellation process kill was issued
+        if (signal === 'SIGTERM') {
+          return reject(new CliError('', '', true));
+        }
+
+        this.logger.debug(`Failure exit code ${code} received. ${signal ?? ''}`);
         reject(output);
       });
     });
+  }
+
+  kill(): boolean {
+    return !this.runningProcess || this.runningProcess.kill('SIGTERM');
   }
 
   getProcessEnv(): NodeJS.ProcessEnv {
@@ -45,5 +62,12 @@ export class CliProcess {
       env = { ...env, SNYK_CFG_DISABLE_ANALYTICS: '1' };
     }
     return env;
+  }
+
+  private cleanupProcess() {
+    if (this.runningProcess) {
+      this.runningProcess.removeAllListeners();
+      this.runningProcess = null;
+    }
   }
 }
