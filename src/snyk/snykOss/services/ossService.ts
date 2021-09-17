@@ -1,5 +1,5 @@
-import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { IExtension } from '../../base/modules/interfaces';
+import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../../common/logger/interfaces';
@@ -9,8 +9,8 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
 import { OssResult, OssSeverity, OssVulnerability } from '../ossResult';
-import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
+import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
