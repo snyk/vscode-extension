@@ -122,8 +122,11 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       const oldResult = this.ossService.getResult();
       const result = await this.ossService.test();
       if (result instanceof CliError) {
+        if (result.isCancellation) return;
         reportError(this.notificationService);
-      } else if (oldResult) {
+      }
+
+      if (oldResult) {
         await this.ossService.showBackgroundNotification(oldResult);
       }
     } catch (err) {
