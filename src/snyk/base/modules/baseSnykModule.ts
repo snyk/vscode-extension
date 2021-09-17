@@ -51,7 +51,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
       vsCodeWorkspace,
       this.processError.bind(this),
     );
-    this.scanModeService = new ScanModeService(this.contextService);
+    this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.notificationService = new NotificationService(vsCodeWindow);
   }
 

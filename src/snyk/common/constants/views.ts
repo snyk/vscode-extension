@@ -26,13 +26,6 @@ export const SNYK_ERROR_CODES = {
   BLOCKING: 'blocking',
 };
 
-export const SNYK_MODE_CODES = {
-  AUTO: 'auto',
-  MANUAL: 'manual',
-  PAUSED: 'paused',
-  THROTTLED: 'throttled',
-};
-
 export const SNYK_ANALYSIS_STATUS = {
   FILTERS: 'Supported extentions',
   COLLECTING: 'Collecting files',

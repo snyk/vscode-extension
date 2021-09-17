@@ -85,7 +85,13 @@
           "snyk.advanced.advancedMode": {
             "type": "boolean",
             "default": false,
-            "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "scope": "application"
+          },
+          "snyk.advanced.autoScanOss": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
           },
           "snyk.features.codeSecurity": {
@@ -142,7 +148,7 @@
         },
         {
           "id": "snyk.views.actions",
-          "name": "Actions",
+          "name": "Code Security & Quality Actions",
           "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound"
         },
         {
@@ -184,22 +190,22 @@
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running code security and quality scanning in manual mode. You are in control, no automated actions from our side.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'manual'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "Snyk analysis is currently paused.\n[Unpause](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "Code security and quality analysis is currently paused.\n[Resume](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'paused'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running code security and quality scanning in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'throttled'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause Snyk for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
+        "contents": "You are currently running code security and quality in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
         "when": "snyk:mode != 'manual' && snyk:mode != 'paused' && snyk:mode != 'throttled'"
       }
     ],
