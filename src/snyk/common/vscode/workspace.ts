@@ -10,6 +10,7 @@ export interface IVSCodeWorkspace {
     overrideInLanguage?: boolean,
   ): Promise<void>;
   workspaceFolders(): string[];
+  createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
 }
 
 /**
@@ -40,6 +41,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
 
   workspaceFolders(): string[] {
     return (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+  }
+
+  createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher {
+    return vscode.workspace.createFileSystemWatcher(globPattern);
   }
 }
 
