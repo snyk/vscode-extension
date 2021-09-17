@@ -16,7 +16,7 @@ export type OssVulnerability = {
   language: string;
   packageManager: string;
   packageName: string;
-  severity: string;
+  severity: OssSeverity;
   name: string;
   version: string;
   exploit?: string;
@@ -35,3 +35,10 @@ export type Identifiers = {
   CWE: string[];
   CVE: string[];
 };
+
+export enum OssSeverity {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Critical = 'critical',
+}

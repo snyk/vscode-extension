@@ -11,6 +11,9 @@ export interface IVSCodeWindow {
   ): Promise<R>;
 
   registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
+
+  showInformationMessage(message: string, ...items: string[]): Promise<string | undefined>;
+  showErrorMessage(message: string, ...items: string[]): Promise<string | undefined>;
 }
 
 /**
@@ -50,6 +53,24 @@ export class VSCodeWindow implements IVSCodeWindow {
     };
 
     return vscode.window.withProgress(options, task);
+  }
+
+  showInformationMessage(message: string, ...items: string[]): Promise<string | undefined> {
+    return new Promise((resolve, reject) => {
+      vscode.window.showInformationMessage(message, ...items).then(
+        (value: string | undefined) => resolve(value),
+        reason => reject(reason),
+      );
+    });
+  }
+
+  showErrorMessage(message: string, ...items: string[]): Promise<string | undefined> {
+    return new Promise((resolve, reject) => {
+      vscode.window.showErrorMessage(message, ...items).then(
+        (value: string | undefined) => resolve(value),
+        reason => reject(reason),
+      );
+    });
   }
 }
 

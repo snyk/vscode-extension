@@ -1,15 +1,14 @@
+import * as vscode from 'vscode';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
-import * as vscode from 'vscode';
-import { IWatcher } from '../../common/watchers/interfaces';
-import { ExtensionContext } from '../../common/vscode/extensionContext';
 
 export interface IBaseSnykModule {
   statusBarItem: IStatusBarItem;
-  filesWatcher: vscode.FileSystemWatcher;
   settingsWatcher: IWatcher;
   contextService: IContextService;
   openerService: IOpenerService;
@@ -18,7 +17,9 @@ export interface IBaseSnykModule {
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
-  startExtension(): Promise<void>;
+  runScan(): Promise<void>;
+  runCodeScan(manual?: boolean): Promise<void>;
+  runOssScan(manual?: boolean): Promise<void>;
 }
 
 export interface IReportModule {
@@ -33,7 +34,6 @@ export interface ILoginModule {
 }
 
 export interface ISnykLib {
-  setMode(mode: string): void;
   enableCode(): Promise<void>;
 }
 
