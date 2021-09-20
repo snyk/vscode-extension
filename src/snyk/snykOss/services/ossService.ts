@@ -9,8 +9,8 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
 import { OssResult, OssSeverity, OssVulnerability } from '../ossResult';
-import { ISuggestionViewProvider } from '../views/suggestion/suggestionViewProvider';
-import { OssIssueCommandArg } from '../views/vulnerabilityProvider';
+import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
+import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
@@ -23,7 +23,7 @@ export class OssService extends CliService<OssResult> {
     protected readonly extensionContext: ExtensionContext,
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
-    private readonly suggestionProvider: ISuggestionViewProvider,
+    private readonly suggestionProvider: IOssSuggestionWebviewProvider,
     protected readonly workspace: IVSCodeWorkspace,
     private readonly viewManagerService: IViewManagerService,
     protected readonly downloadService: CliDownloadService,

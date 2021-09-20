@@ -3,11 +3,11 @@ import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { ISnykCodeService } from '../codeService';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { IssueProvider } from './issueProvider';
+import { IssueTreeProvider } from './issueTreeProvider';
 import { TreeNode } from '../../common/views/treeNode';
 import { Diagnostic } from 'vscode';
 
-export class CodeSecurityIssueProvider extends IssueProvider {
+export class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
