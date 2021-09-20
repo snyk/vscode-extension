@@ -39,12 +39,13 @@ import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
-import { CodeQualityIssueProvider } from './snykCode/views/qualityIssueProvider';
-import { CodeSecurityIssueProvider } from './snykCode/views/securityIssueProvider';
+import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
+import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
 import { OssService } from './snykOss/services/ossService';
-import { SuggestionViewProvider } from './snykOss/views/suggestion/suggestionViewProvider';
-import { OssVulnerabilityProvider } from './snykOss/views/vulnerabilityProvider';
+import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
+import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
+import { SnykCodeService } from './snykCode/codeService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public activate(vscodeContext: vscode.ExtensionContext): void {
@@ -53,13 +54,21 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.statusBarItem.show();
 
-    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+    this.snykCode = new SnykCodeService(
+      this.context,
+      configuration,
+      this.openerService,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.processError.bind(this),
+    );
 
+    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
     this.ossService = new OssService(
       this.context,
       Logger,
       configuration,
-      new SuggestionViewProvider(this.context, vsCodeWindow),
+      new OssSuggestionWebviewProvider(this.context, vsCodeWindow),
       vsCodeWorkspace,
       this.viewManagerService,
       this.cliDownloadService,
@@ -75,18 +84,18 @@ class SnykExtension extends SnykLib implements IExtension {
     );
     this.registerCommands(vscodeContext);
 
-    const codeSecurityIssueProvider = new CodeSecurityIssueProvider(
+    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
         this.viewManagerService,
         this.contextService,
         this.snykCode,
       ),
-      codeQualityIssueProvider = new CodeQualityIssueProvider(
+      codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
         this.viewManagerService,
         this.contextService,
         this.snykCode,
       );
 
-    const ossVulnerabilityProvider = new OssVulnerabilityProvider(
+    const ossVulnerabilityProvider = new OssVulnerabilityTreeProvider(
       this.viewManagerService,
       this.contextService,
       this.ossService,

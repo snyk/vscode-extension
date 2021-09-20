@@ -11,20 +11,20 @@ type NODE_ICON_SEVERITY = 'critical' | 'high' | 'medium' | 'low';
 
 export const NODE_ICONS: { [key in NODE_ICON_SEVERITY]: INodeIcon } = {
   critical: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-critical-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-critical-severity.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
   },
   high: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-high-severity.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
   },
   medium: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-medium-severity.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
   },
   low: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'images', 'dark-low-severity.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
   },
 };
 

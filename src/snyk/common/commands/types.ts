@@ -1,5 +1,5 @@
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
-import { OssIssueCommandArg } from '../../snykOss/views/vulnerabilityProvider';
+import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 
 export enum OpenCommandIssueType {
   CodeIssue,

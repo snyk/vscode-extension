@@ -10,19 +10,20 @@ import { errorsLogs } from '../common/messages/errorsServerLogMessages';
 import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
+import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
 import { ISnykCodeAnalyzer } from './interfaces';
-import { ISuggestionProvider } from './views/interfaces';
-import { SuggestionProvider } from './views/suggestionProvider';
+import { ICodeSuggestionWebviewProvider } from './views/interfaces';
+import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
 export interface ISnykCodeService extends AnalysisStatusProvider {
   analyzer: ISnykCodeAnalyzer;
   analysisStatus: string;
   analysisProgress: string;
   remoteBundle: FileAnalysis;
-  suggestionProvider: ISuggestionProvider;
+  suggestionProvider: ICodeSuggestionWebviewProvider;
   onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
 
   startAnalysis(paths: string[], manual: boolean): Promise<void>;
@@ -36,7 +37,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   remoteBundle: FileAnalysis;
   analyzer: ISnykCodeAnalyzer;
-  suggestionProvider: ISuggestionProvider;
+  suggestionProvider: ICodeSuggestionWebviewProvider;
 
   private changedFiles: Set<string> = new Set();
 
@@ -45,6 +46,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   private _analysisProgress = '';
 
   constructor(
+    private readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
@@ -53,7 +55,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer();
-    this.suggestionProvider = new SuggestionProvider();
+    this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);
     this.progress.bindListeners();
