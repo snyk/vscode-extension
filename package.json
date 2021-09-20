@@ -267,7 +267,8 @@
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
     "vscode:uninstall": "node ./out/uninstall",
-    "ampli:verify": "ampli status -u --skip-update-on-default-branch"
+    "ampli:verify": "ampli status -u --skip-update-on-default-branch",
+    "patch-preview": "node ./scripts/patchPreview.js"
   },
   "devDependencies": {
     "@amplitude/ampli": "^0.2.1",
