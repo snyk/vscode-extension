@@ -19,6 +19,5 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["out", "node_modules", ".vscode-test"]
+  "exclude": ["out", "node_modules", ".vscode-test", "mocked_data"]
 }

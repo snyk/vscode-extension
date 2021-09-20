@@ -267,7 +267,8 @@
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
     "vscode:uninstall": "node ./out/uninstall",
-    "itly:verify": "itly verify -u --skip-update-on-default-branch"
+    "itly:verify": "itly verify -u --skip-update-on-default-branch",
+    "patch-preview": "node ./scripts/patchPreview.js"
   },
   "devDependencies": {
     "@itly/itly": "^1.2.0",
