@@ -26,7 +26,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
-    protected readonly downloadService: CliDownloadService
+    protected readonly downloadService: CliDownloadService,
   ) {
     super();
   }
@@ -42,7 +42,9 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       const downloaded = await this.downloadService.downloadCli();
 
       if (!downloaded) {
-        const error = new CliError('Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.');
+        const error = new CliError(
+          'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
+        );
         this.finalizeTest(error);
         return error;
       }
@@ -100,6 +102,11 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     args.push(...this.command);
     args.push(...foldersToTest);
     args.push('--json');
+
+    const additionalParams = this.config.getAdditionalCliParameters();
+    if (additionalParams) {
+      args.push(...additionalParams.trim().split(' '));
+    }
 
     return args;
   }

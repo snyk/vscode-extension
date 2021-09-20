@@ -94,6 +94,17 @@
             "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
           },
+          "snyk.advanced.additionalParameters": {
+            "type": "string",
+            "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
+            "scope": "window"
+          },
+          "snyk.features.oss": {
+            "type": "boolean",
+            "title": "Snyk Open Source security issues",
+            "description": "Find and fix open source vulnerabilities.",
+            "default": true
+          },
           "snyk.features.codeSecurity": {
             "type": "boolean",
             "title": "Snyk Code security issues",
@@ -105,6 +116,36 @@
             "title": "Snyk Code quality issues",
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
+          },
+          "snyk.severity": {
+            "type": "object",
+            "default": {
+              "critical": true,
+              "high": true,
+              "medium": true,
+              "low": true
+            },
+            "properties": {
+              "critical": {
+                "type": "boolean",
+                "default": true
+              },
+              "high": {
+                "type": "boolean",
+                "default": true
+              },
+              "medium": {
+                "type": "boolean",
+                "default": true
+              },
+              "low": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "Severity issues to display.",
+            "scope": "window"
           }
         }
       }

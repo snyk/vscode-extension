@@ -14,9 +14,11 @@ export class CliProcess {
   /**
    * Returns CLI output given provided arguments.
    */
-  spawn(cliPath: string, args: string[]): Promise<string> {
+  spawn(cliPath: string, args: readonly string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       let output = '';
+
+      this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
       this.runningProcess = spawn(cliPath, args, { env: this.getProcessEnv() });
 
