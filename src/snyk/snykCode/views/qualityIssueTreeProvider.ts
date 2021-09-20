@@ -3,10 +3,10 @@ import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { ISnykCodeService } from '../codeService';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { IssueProvider } from './issueProvider';
+import { IssueTreeProvider } from './issueTreeProvider';
 import { TreeNode } from '../../common/views/treeNode';
 
-export class CodeQualityIssueProvider extends IssueProvider {
+export class CodeQualityIssueTreeProvider extends IssueTreeProvider {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,

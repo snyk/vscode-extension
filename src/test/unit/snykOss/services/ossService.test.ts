@@ -12,7 +12,7 @@ import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContex
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { OssFileResult, OssResult, OssSeverity } from '../../../../snyk/snykOss/ossResult';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
-import { ISuggestionViewProvider } from '../../../../snyk/snykOss/views/suggestion/suggestionViewProvider';
+import { IOssSuggestionWebviewProvider } from '../../../../snyk/snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from '../../../../snyk/snykOss/watchers/dailyScanJob';
 import { LoggerMock } from '../../mocks/logger.mock';
 
@@ -30,7 +30,7 @@ suite('OssService', () => {
       } as ExtensionContext,
       logger,
       {} as IConfiguration,
-      {} as ISuggestionViewProvider,
+      {} as IOssSuggestionWebviewProvider,
       {
         workspaceFolders: () => [''],
       } as IVSCodeWorkspace,

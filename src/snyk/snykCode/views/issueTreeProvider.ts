@@ -13,7 +13,7 @@ interface ISeverityCounts {
   [severity: number]: number;
 }
 
-export class IssueProvider extends AnalysisTreeNodeProvder {
+export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   constructor(
     protected contextService: IContextService,
     protected snykCode: ISnykCodeService,
@@ -66,7 +66,7 @@ export class IssueProvider extends AnalysisTreeNodeProvder {
             children?: TreeNode[];
           } = {
             text: d.message,
-            icon: IssueProvider.getSeverityIcon(severity),
+            icon: IssueTreeProvider.getSeverityIcon(severity),
             issue: {
               uri,
               range: d.range,
@@ -111,11 +111,11 @@ export class IssueProvider extends AnalysisTreeNodeProvder {
           return new TreeNode(params);
         });
         issues.sort(this.compareNodes);
-        const fileSeverity = IssueProvider.getFileSeverity(counts);
+        const fileSeverity = IssueTreeProvider.getFileSeverity(counts);
         const file = new TreeNode({
           text: filename,
           description: this.getIssueDescriptionText(dir, diagnostics),
-          icon: IssueProvider.getSeverityIcon(fileSeverity),
+          icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
           children: issues,
           internal: {
             nIssues: diagnostics.length,

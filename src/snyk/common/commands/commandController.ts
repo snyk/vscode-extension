@@ -6,7 +6,7 @@ import { severityAsText } from '../../snykCode/utils/analysisUtils';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { OssService } from '../../snykOss/services/ossService';
-import { OssIssueCommandArg } from '../../snykOss/views/vulnerabilityProvider';
+import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { analytics } from '../analytics/analytics';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,

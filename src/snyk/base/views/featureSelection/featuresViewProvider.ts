@@ -54,7 +54,7 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
     const scriptUri = this.getWebViewUri('out', 'snyk', 'base', 'views', 'featureSelection', 'featuresViewScript.js');
     const styleVSCodeUri = this.getWebViewUri('media', 'views', 'featureSelection', 'vscode.css');
     const styleUri = this.getWebViewUri('media', 'views', 'featureSelection', 'featureSelection.css');
-    const avatarUri = this.getWebViewUri('images', 'avatar-transparent.svg');
+    const avatarUri = this.getWebViewUri('media', 'images', 'avatar-transparent.svg');
 
     // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
