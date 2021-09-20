@@ -1,4 +1,5 @@
 import { deepStrictEqual, strictEqual } from 'assert';
+import { FeaturesConfiguration } from '../../snyk/common/configuration/configuration';
 import { configuration } from '../../snyk/common/configuration/instance';
 
 suite('Configuration', () => {
@@ -15,9 +16,10 @@ suite('Configuration', () => {
   test('configuration change is reflected', async () => {
     const token = 'fake-token';
     const featuresConfig = {
+      ossEnabled: true,
       codeSecurityEnabled: true,
       codeQualityEnabled: false,
-    };
+    } as FeaturesConfiguration;
 
     await configuration.setToken(token);
     await configuration.setFeaturesConfiguration(featuresConfig);

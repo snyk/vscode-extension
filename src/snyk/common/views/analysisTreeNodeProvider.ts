@@ -32,4 +32,6 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
       text: messages.duration(sDuration, time, day),
     });
   }
+
+  protected abstract getFilteredIssues(issues: readonly unknown[]): unknown[];
 }

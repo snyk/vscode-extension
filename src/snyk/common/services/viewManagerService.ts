@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import { EventEmitter, TreeView } from 'vscode';
-import { FeaturesConfiguration } from '../configuration/configuration';
-import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { FeaturesViewProvider } from '../../base/views/featureSelection/featuresViewProvider';
-import { TreeNode } from '../views/treeNode';
+import { FeaturesConfiguration } from '../configuration/configuration';
 import { configuration } from '../configuration/instance';
+import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
+import { TreeNode } from '../views/treeNode';
 
 export type ViewType = FeaturesViewProvider | TreeView<TreeNode>;
 
@@ -26,6 +26,8 @@ export interface IViewManagerService {
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
   readonly refreshOssViewEmitter: EventEmitter<void>;
+
+  refreshAllViews(): void;
   refreshAllCodeAnalysisViews(): void;
   refreshCodeAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
   refreshCodeSecurityView(): void;
@@ -45,6 +47,11 @@ export class ViewManagerService implements IViewManagerService {
     this.refreshCodeQualityViewEmitter = new EventEmitter<void>();
     this.refreshOssViewEmitter = new EventEmitter<void>();
     this.viewContainer = new ViewContainer();
+  }
+
+  refreshAllViews(): void {
+    this.refreshOssView();
+    this.refreshAllCodeAnalysisViews();
   }
 
   refreshAllCodeAnalysisViews(): void {
