@@ -19,7 +19,7 @@ json = JSON.stringify({
   name: `${json.name}-preview`,
   displayName: `${json.displayName} (Preview)`,
   description: 'This is a preview release for functionality that is not yet officially released.',
-  version: `${args[0]}-preview`,
+  version: `${args[0]}`, // semver is not supported
   preview: true,
 });
 fs.writeFileSync('./package.json', json);
