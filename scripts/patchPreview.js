@@ -18,8 +18,7 @@ json = JSON.stringify({
   ...json,
   name: `${json.name}-preview`,
   displayName: `${json.displayName} (Preview)`,
-  description:
-    'This is an preview release for functionality that is not yet officially released. This preview functionality will be removed in a couple of weeks and the functionality merged in the official release.',
+  description: 'This is a preview release for functionality that is not yet officially released.',
   version: `${args[0]}-preview`,
   preview: true,
 });
