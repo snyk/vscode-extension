@@ -1,4 +1,4 @@
-import { IAnalysisResult, IFilePath, IFileSuggestion } from '@snyk/code-client';
+import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
@@ -52,7 +52,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     new DisposableHoverProvider(this.codeQualityReview);
   }
 
-  public setAnalysisResults(results: IAnalysisResult): void {
+  public setAnalysisResults(results: AnalysisResultLegacy): void {
     Object.values(results.suggestions).forEach(suggestion => {
       suggestion['isSecurityType'] = isSecurityTypeSuggestion(suggestion);
     });
@@ -85,7 +85,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     suggestion,
     fileUri,
   }: {
-    issuePositions: IFileSuggestion;
+    issuePositions: FileSuggestion;
     suggestion: ICodeSuggestion;
     fileUri: vscode.Uri;
   }): vscode.Diagnostic {
@@ -176,7 +176,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
       ) {
         return;
       }
-      const fileIssuesList: IFilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
+      const fileIssuesList: FilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
       const [securityIssues, qualityIssues] = this.createIssuesList({
         fileIssuesList,
         suggestions: this.analysisResults.suggestions,
@@ -190,7 +190,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     } catch (err) {
       await extension.processError(err, {
         message: errorsLogs.updateReviewPositions,
-        bundleId: extension.snykCode.remoteBundle.bundleId,
+        bundleId: extension.snykCode.remoteBundle.fileBundle.bundleHash,
         data: {
           [updatedFile.fullPath]: updatedFile.contentChanges,
         },

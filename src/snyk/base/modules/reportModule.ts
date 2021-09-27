@@ -1,4 +1,4 @@
-import { constants, reportError } from '@snyk/code-client';
+import { constants } from '@snyk/code-client';
 import * as _ from 'lodash';
 import { configuration } from '../../common/configuration/instance';
 import {
@@ -34,23 +34,23 @@ abstract class ReportModule extends BaseSnykModule implements IReportModule {
     this.transientErrors = 0;
   }
 
-  private sendError = _.debounce(
-    async (options: { [key: string]: any }): Promise<void> => {
-      if (!ReportModule.shouldReport || !configuration.shouldReportErrors) return;
-      const resp = await reportError({
-        baseURL: configuration.baseURL,
-        source: configuration.source,
-        ...(configuration.token && { sessionToken: configuration.token }),
-        ...options,
-      });
+  // private sendError = _.debounce(
+  //   async (options: { [key: string]: any }): Promise<void> => {
+  //     if (!ReportModule.shouldReport || !configuration.shouldReportErrors) return;
+  //     const resp = await reportError({
+  //       baseURL: configuration.baseURL,
+  //       source: configuration.source,
+  //       ...(configuration.token && { sessionToken: configuration.token }),
+  //       ...options,
+  //     });
 
-      if (resp.type === 'error') {
-        console.error(resp.error);
-      }
-    },
-    COMMAND_DEBOUNCE_INTERVAL,
-    { leading: true, trailing: false },
-  );
+  //     if (resp.type === 'error') {
+  //       console.error(resp.error);
+  //     }
+  //   },
+  //   COMMAND_DEBOUNCE_INTERVAL,
+  //   { leading: true, trailing: false },
+  // );
 
   async processError(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
@@ -62,9 +62,10 @@ abstract class ReportModule extends BaseSnykModule implements IReportModule {
 
   private async processErrorInternal(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // console.error(`Snyk error handler:`, error);
+    console.debug(options);
 
     const defaultErrorHandler = async () => {
-      await this.sendErrorToServer(error, options);
+      // await this.sendErrorToServer(error, options);
       await this.generalErrorHandler();
     };
 
@@ -86,7 +87,7 @@ abstract class ReportModule extends BaseSnykModule implements IReportModule {
         return this.connectionErrorHandler();
       },
       [constants.ErrorCodes.loginInProgress]: async () => Promise.resolve(),
-      [constants.ErrorCodes.unauthorizedContent]: async () => Promise.resolve(),
+      [constants.ErrorCodes.badRequest]: async () => Promise.resolve(),
       [constants.ErrorCodes.unauthorizedUser]: async () => {
         return this.authenticationErrorHandler();
       },
@@ -133,30 +134,30 @@ abstract class ReportModule extends BaseSnykModule implements IReportModule {
     return Promise.resolve();
   }
 
-  private async sendErrorToServer(error: errorType, options: { [key: string]: any }): Promise<void> {
-    let type;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      type = `${error.statusCode || ''} ${error.name || ''}`.trim();
-    } catch (e) {
-      type = 'unknown';
-    }
-    try {
-      await this.sendError({
-        type,
-        message: options.message || errorsLogs.undefinedError,
-        ...(options.endpoint && { path: options.endpoint }),
-        ...(options.bundleId && { bundleId: options.bundleId }),
-        data: {
-          errorTrace: `${error}`,
-          ...options.data,
-        },
-      });
-    } catch (e) {
-      console.error(errorsLogs.errorReportFail);
-      console.error(e);
-    }
-  }
+  // private async sendErrorToServer(error: errorType, options: { [key: string]: any }): Promise<void> {
+  //   let type;
+  //   try {
+  //     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  //     type = `${error.statusCode || ''} ${error.name || ''}`.trim();
+  //   } catch (e) {
+  //     type = 'unknown';
+  //   }
+  //   try {
+  //     await this.sendError({
+  //       type,
+  //       message: options.message || errorsLogs.undefinedError,
+  //       ...(options.endpoint && { path: options.endpoint }),
+  //       ...(options.bundleId && { bundleId: options.bundleId }),
+  //       data: {
+  //         errorTrace: `${error}`,
+  //         ...options.data,
+  //       },
+  //     });
+  //   } catch (e) {
+  //     console.error(errorsLogs.errorReportFail);
+  //     console.error(e);
+  //   }
+  // }
 }
 
 export default ReportModule;

@@ -1,5 +1,4 @@
-import { emitter, ISupportedFiles } from '@snyk/code-client';
-import { EmitterDC } from '@snyk/code-client/dist/emitter';
+import { emitter as emitterDC, SupportedFiles } from '@snyk/code-client';
 import _ from 'lodash';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { ISnykCode } from '../code';
@@ -9,15 +8,13 @@ import { getExtension } from '../../../extension';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 
 export class Progress {
-  private emitter: EmitterDC;
+  private emitter = emitterDC;
 
   constructor(
     private readonly snykCode: ISnykCode,
     private filesWatcher: vscode.FileSystemWatcher,
     private viewManagerService: IViewManagerService,
-  ) {
-    this.emitter = emitter;
-  }
+  ) {}
 
   bindListeners(): void {
     this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
@@ -34,7 +31,7 @@ export class Progress {
     this.viewManagerService.refreshAllAnalysisViews();
   }
 
-  onSupportedFilesLoaded(data: ISupportedFiles | null): void {
+  onSupportedFilesLoaded(data: SupportedFiles | null): void {
     const msg = data ? 'Ignore rules loading' : 'Loading';
 
     this.updateStatus(SNYK_ANALYSIS_STATUS.FILTERS, msg);

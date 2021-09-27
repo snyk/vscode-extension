@@ -1,5 +1,4 @@
-import { checkSession, startSession } from '@snyk/code-client';
-import { getIpFamily, IpFamily } from '@snyk/code-client/dist/http';
+import { checkSession, startSession, getIpFamily, IpFamily } from '@snyk/code-client';
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';

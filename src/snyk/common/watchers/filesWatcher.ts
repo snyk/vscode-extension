@@ -1,10 +1,10 @@
-import { getGlobPatterns, ISupportedFiles } from '@snyk/code-client';
+import { getGlobPatterns, SupportedFiles } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
 
 export default function createFileWatcher(
   extension: IExtension,
-  supportedFiles: ISupportedFiles,
+  supportedFiles: SupportedFiles,
 ): vscode.FileSystemWatcher {
   // eslint-disable-next-line no-useless-escape
   const globPattern: vscode.GlobPattern = `**/\{${getGlobPatterns(supportedFiles).join(',')}\}`;
