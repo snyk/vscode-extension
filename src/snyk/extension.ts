@@ -33,6 +33,7 @@ import {
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
+import { ErrorReporting } from './common/errorReporting/errorReporting';
 import { Logger } from './common/logger/logger';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
 import { extensionContext } from './common/vscode/extensionContext';
@@ -49,6 +50,8 @@ import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public activate(vscodeContext: vscode.ExtensionContext): void {
+    ErrorReporting.init();
+
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 

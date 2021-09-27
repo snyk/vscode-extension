@@ -23,6 +23,7 @@ export class NotificationService implements INotificationService {
         message: errorsLogs.welcomeNotification,
       }),
     );
+    throw new Error('testing');
   }
 
   private async checkWelcomeNotification(): Promise<void> {
