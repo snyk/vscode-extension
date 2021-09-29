@@ -156,14 +156,21 @@ suite('CliService', () => {
   });
 
   test('Test passes additional CLI arguments from settings', async () => {
-    const additionalParameters = "--file=package.json --configuration-matching='iamaRegex' --sub-project=snyk";
+    const additionalParameters = `--exclude="folder with spaces" --configuration-matching="iamaRegex" --sub-project=snyk`;
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(configuration, 'getAdditionalCliParameters').returns(additionalParameters);
 
     const spawnSpy = sinon.spy(CliProcess.prototype, 'spawn');
     await testCliService.test();
 
-    const expectedArgs = ['', 'test-folder', '--json', ...additionalParameters.split(' ')];
+    const expectedArgs = [
+      '',
+      'test-folder',
+      '--json',
+      '--exclude="folder with spaces"',
+      '--configuration-matching="iamaRegex"',
+      '--sub-project=snyk',
+    ];
     deepStrictEqual(spawnSpy.calledWith(sinon.match.any, expectedArgs), true);
   });
 });

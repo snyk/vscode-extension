@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM } from '../../common/constants/globalState';
@@ -105,7 +106,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
     const additionalParams = this.config.getAdditionalCliParameters();
     if (additionalParams) {
-      args.push(...additionalParams.trim().split(' '));
+      args.push(...parseArgsStringToArgv(additionalParams.trim()));
     }
 
     return args;
