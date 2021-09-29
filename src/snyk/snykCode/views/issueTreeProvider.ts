@@ -21,7 +21,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     protected diagnosticCollection: DiagnosticCollection | undefined,
     protected configuration: IConfiguration,
   ) {
-    super(snykCode);
+    super(configuration, snykCode);
   }
 
   static getSeverityIcon(severity: number): INodeIcon {
@@ -58,7 +58,10 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
         nIssues += diagnostics.length;
 
-        const issues: TreeNode[] = this.getFilteredIssues(diagnostics).map(d => {
+        const fileVulnerabilities = this.getFilteredIssues(diagnostics);
+        if (fileVulnerabilities.length == 0) return;
+
+        const issues: TreeNode[] = fileVulnerabilities.map(d => {
           const severity = getSnykSeverity(d.severity);
           counts[severity] += 1;
           const params: {
@@ -137,12 +140,14 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         }),
       );
     } else {
-      review.unshift(
+      const topNodes = [
         new TreeNode({
           text: this.getIssueFoundText(nIssues),
         }),
         this.getDurationTreeNode(),
-      );
+        this.getNoSeverityFiltersSelectedTreeNode(),
+      ];
+      review.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     }
     return review;
   }

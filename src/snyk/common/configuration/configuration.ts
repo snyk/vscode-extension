@@ -30,6 +30,8 @@ export interface SeverityFilter {
   high: boolean;
   medium: boolean;
   low: boolean;
+
+  [severity: string]: boolean;
 }
 
 export interface IConfiguration {
