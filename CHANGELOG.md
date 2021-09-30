@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.1.2]
+### Changed
+
+- Disabled feedback form temporarily.
+- Implemented support for new Snyk Code API.
+
 ## [1.1.1]
 
 ### Fixed
