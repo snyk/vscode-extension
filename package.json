@@ -88,7 +88,7 @@
             "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
             "scope": "application"
           },
-          "snyk.advanced.autoScanOss": {
+          "snyk.advanced.autoScanOpenSourceSecurity": {
             "type": "boolean",
             "default": false,
             "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
@@ -99,7 +99,7 @@
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
             "scope": "window"
           },
-          "snyk.features.oss": {
+          "snyk.features.openSourceSecurity": {
             "type": "boolean",
             "title": "Snyk Open Source security issues",
             "description": "Find and fix open source vulnerabilities.",
