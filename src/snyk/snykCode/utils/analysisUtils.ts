@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { IAnalysisResult, IFilePath, IFileSuggestion, IMarker, ISuggestion } from '@snyk/code-client';
+import { AnalysisResultLegacy, FilePath, FileSuggestion, Marker, Suggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import {
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
@@ -50,7 +50,7 @@ export const createSnykProgress = (progress: number): number => {
   return Math.round(progress * progressOffset);
 };
 
-export const createCorrectIssuePlacement = (item: IFileSuggestion): { [key: string]: { [key: string]: number } } => {
+export const createCorrectIssuePlacement = (item: FileSuggestion): { [key: string]: { [key: string]: number } } => {
   const rowOffset = 1;
   const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
   return {
@@ -72,7 +72,7 @@ export const createIssueRange = (position: { [key: string]: { [key: string]: num
   );
 };
 
-export const createIssueCorrectRange = (issuePosition: IFileSuggestion): vscode.Range => {
+export const createIssueCorrectRange = (issuePosition: FileSuggestion): vscode.Range => {
   return createIssueRange({
     ...createCorrectIssuePlacement(issuePosition),
   });
@@ -91,9 +91,9 @@ export const findIssueWithRange = (
 };
 
 export const updateFileReviewResultsPositions = (
-  analysisResults: IAnalysisResult,
+  analysisResults: AnalysisResultLegacy,
   updatedFile: openedTextEditorType,
-): IFilePath => {
+): FilePath => {
   const changesRange = updatedFile.contentChanges[0].range;
   const changesText = updatedFile.contentChanges[0].text;
   const goToNewLine = '\n';
@@ -190,7 +190,7 @@ export const createIssuesMarkersDecorationOptions = (
 };
 
 export const createIssueRelatedInformation = (
-  markersList: IMarker[],
+  markersList: Marker[],
   fileUri: vscode.Uri,
   message: string,
 ): vscode.DiagnosticRelatedInformation[] => {
@@ -217,8 +217,8 @@ export const findCompleteSuggestion = (
 ): completeFileSuggestionType | undefined => {
   let filePath = uri.fsPath;
   if (!analysisResults.files[filePath]) return;
-  const file: IFilePath = analysisResults.files[filePath];
-  let fileSuggestion: IFileSuggestion | undefined;
+  const file: FilePath = analysisResults.files[filePath];
+  let fileSuggestion: FileSuggestion | undefined;
   let suggestionIndex: string | number | undefined = Object.keys(file).find(i => {
     const index = parseInt(i, 10);
     if (analysisResults.suggestions[index].id !== suggestionId) return false;
@@ -250,12 +250,12 @@ export const findCompleteSuggestion = (
 };
 
 export const checkCompleteSuggestion = (
-  analysisResults: IAnalysisResult,
+  analysisResults: AnalysisResultLegacy,
   suggestion: completeFileSuggestionType,
 ): boolean => {
   let filePath = vscode.Uri.parse(suggestion.uri).fsPath;
   if (!analysisResults.files[filePath]) return false;
-  const file: IFilePath = analysisResults.files[filePath];
+  const file: FilePath = analysisResults.files[filePath];
   let suggestionIndex: string | undefined = Object.keys(file).find(i => {
     const index = parseInt(i, 10);
     if (
@@ -291,7 +291,7 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
   return `${snykComment} ${issueId}: ${IGNORE_ISSUE_REASON_TIP}`;
 };
 
-export const isSecurityTypeSuggestion = (suggestion: ISuggestion): boolean => {
+export const isSecurityTypeSuggestion = (suggestion: Suggestion): boolean => {
   return suggestion.categories.includes('Security');
 };
 

@@ -1,4 +1,3 @@
-import { reportEvent } from '@snyk/code-client';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
@@ -180,6 +179,7 @@ function getWebviewContent(images: Record<string, string>) {
             <div class="button" onclick="ignoreIssue(false)">Ignore in this file</div>
           </div>
         </div>
+        <!--
         <div id="feedback-close" onclick="openFeebackSection()">
           <div class="row between clickable">
             <span>A false positive? Helpful? Let us know here</span>
@@ -211,6 +211,7 @@ function getWebviewContent(images: Record<string, string>) {
         <div id="feedback-sent" class="hidden">
           <div class="row center font-blue">Thank you for your feedback!</div>
         </div>
+        -->
       </section>
     </div>
     <script>
@@ -674,7 +675,7 @@ export class SuggestionProvider implements ISuggestionProvider {
           break;
         }
         case 'sendFeedback': {
-          await this.sendFeedback({ data: args });
+          this.sendFeedback({ data: args });
           break;
         }
         default: {
@@ -689,14 +690,15 @@ export class SuggestionProvider implements ISuggestionProvider {
     }
   }
 
-  private async sendFeedback(data: { [key: string]: any } = {}) {
-    await reportEvent({
-      baseURL: configuration.baseURL,
-      type: 'suggestionFeedback',
-      source: configuration.source,
-      ...(configuration.token && { sessionToken: configuration.token }),
-      ...data,
-    });
+  private sendFeedback(data: { [key: string]: any } = {}) {
+    console.debug(data);
+    // await reportEvent({
+    //   baseURL: configuration.baseURL,
+    //   type: 'suggestionFeedback',
+    //   source: configuration.source,
+    //   ...(configuration.token && { sessionToken: configuration.token }),
+    //   ...data,
+    // });
   }
 }
 

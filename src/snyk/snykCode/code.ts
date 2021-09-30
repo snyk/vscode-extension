@@ -4,7 +4,7 @@ import { IOpenerService } from '../common/services/openerService';
 import * as vscode from 'vscode';
 import { Logger } from '../common/logger/logger';
 import { SupportedAnalysisProperties } from '../common/analytics/itly';
-import { analyzeFolders, constants, extendAnalysis, IFileBundle } from '@snyk/code-client';
+import { analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { SuggestionProvider } from './views/suggestionProvider';
@@ -23,7 +23,7 @@ export interface ISnykCode {
   analysisStatus: string;
   analysisProgress: string;
   changedFiles: Set<string>;
-  remoteBundle: IFileBundle;
+  remoteBundle: FileAnalysis;
   suggestionProvider: ISuggestionProvider;
   onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
 
@@ -39,7 +39,7 @@ export interface ISnykCode {
 export class SnykCode implements ISnykCode {
   runningAnalysis = false;
   changedFiles: Set<string> = new Set();
-  remoteBundle: IFileBundle;
+  remoteBundle: FileAnalysis;
   analyzer: ISnykCodeAnalyzer;
   suggestionProvider: ISuggestionProvider;
 
@@ -106,24 +106,33 @@ export class SnykCode implements ISnykCode {
 
       this.runAnalysis();
 
-      let result;
+      let result: FileAnalysis | null = null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
         this.changedFiles.clear();
-        result = await extendAnalysis(this.remoteBundle, changedFiles, constants.MAX_PAYLOAD, this.config.source);
+        result = await extendAnalysis({ ...this.remoteBundle, files: changedFiles });
       } else {
         result = await analyzeFolders({
-          baseURL: this.config.baseURL,
-          sessionToken: this.config.snykCodeToken ?? '', // todo: handle the case appropriately
-          paths,
-          source: this.config.source,
+          connection: {
+            baseURL: this.config.baseURL,
+            sessionToken: this.config.snykCodeToken ?? '', // todo: handle the case appropriately
+            source: this.config.source,
+          },
+          analysisOptions: {
+            legacy: true,
+          },
+          fileOptions: {
+            paths,
+          }
         });
       }
 
       if (result) {
         this.remoteBundle = result;
 
-        this.analyzer.setAnalysisResults(result.analysisResults);
+        if (result.analysisResults.type == 'legacy') {
+          this.analyzer.setAnalysisResults(result.analysisResults);
+        }
         this.analyzer.createReviewResults();
 
         Logger.info('Code analysis finished.');
