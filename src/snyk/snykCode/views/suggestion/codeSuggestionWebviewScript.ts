@@ -315,13 +315,13 @@
   document.getElementById('next-example')!.addEventListener('click', nextExample);
   document.getElementById('ignore-line-issue')!.addEventListener('click', ignoreIssue.bind(true));
   document.getElementById('ignore-file-issue')!.addEventListener('click', ignoreIssue.bind(false));
-  document.getElementById('feedback-close')!.addEventListener('click', openFeebackSection);
-  document.getElementById('false-positive')!.addEventListener('click', navigateToFP);
-  document.getElementById('feedback-dislike')!.addEventListener('click', likeFeedback.bind(false));
-  document.getElementById('feedback-like')!.addEventListener('click', likeFeedback.bind(true));
-  document.getElementById('feedback-cancel')!.addEventListener('click', closeFeebackSection);
-  document.getElementById('feedback-send')!.addEventListener('click', sendFeedback);
-  document.getElementById('feedback-textarea')!.addEventListener('input', enableFeedback);
+  // document.getElementById('feedback-close')!.addEventListener('click', openFeebackSection);
+  // document.getElementById('false-positive')!.addEventListener('click', navigateToFP);
+  // document.getElementById('feedback-dislike')!.addEventListener('click', likeFeedback.bind(false));
+  // document.getElementById('feedback-like')!.addEventListener('click', likeFeedback.bind(true));
+  // document.getElementById('feedback-cancel')!.addEventListener('click', closeFeebackSection);
+  // document.getElementById('feedback-send')!.addEventListener('click', sendFeedback);
+  // document.getElementById('feedback-textarea')!.addEventListener('input', enableFeedback);
 
   window.addEventListener('message', event => {
     const { type, args } = event.data;
