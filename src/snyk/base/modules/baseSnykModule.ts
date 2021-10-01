@@ -1,6 +1,7 @@
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
+import { IErrorReporting } from '../../common/errorReporting/errorReporting';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { INotificationService, NotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
@@ -18,6 +19,8 @@ import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarIte
 import { errorType, IBaseSnykModule } from './interfaces';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
+  protected errorReporting: IErrorReporting;
+
   context: ExtensionContext;
 
   readonly statusBarItem: IStatusBarItem;

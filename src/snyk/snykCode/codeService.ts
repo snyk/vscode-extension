@@ -1,12 +1,11 @@
 import { analyzeFolders, constants, extendAnalysis, IFileBundle } from '@snyk/code-client';
-import { errorType } from '../base/modules/interfaces';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { analytics } from '../common/analytics/analytics';
 import { SupportedAnalysisProperties } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
+import { IErrorReporting } from '../common/errorReporting/errorReporting';
 import { Logger } from '../common/logger/logger';
-import { errorsLogs } from '../common/messages/errorsServerLogMessages';
 import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
@@ -24,7 +23,6 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   analysisProgress: string;
   remoteBundle: IFileBundle;
   suggestionProvider: ICodeSuggestionWebviewProvider;
-  onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
 
   startAnalysis(paths: string[], manual: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
@@ -51,18 +49,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
     private readonly workspace: IVSCodeWorkspace,
-    private onErrorFn: (error: errorType, options: { [key: string]: any }) => Promise<void>,
+    private readonly errorReporting: IErrorReporting,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer();
     this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
 
-    this.progress = new Progress(this, viewManagerService, this.workspace);
+    this.progress = new Progress(this, viewManagerService, this.workspace, errorReporting);
     this.progress.bindListeners();
-  }
-
-  get onError(): (error: errorType, options: { [key: string]: any }) => Promise<void> {
-    return this.onErrorFn;
   }
 
   get analysisStatus(): string {
@@ -136,9 +130,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       }
     } catch (err) {
       this.analysisFinished();
-      void this.onErrorFn(err, {
-        message: errorsLogs.failedServiceAI,
-      });
+
+      this.errorReporting.reportError(err);
+
       if (enabledFeatures?.codeSecurityEnabled) {
         analytics.logAnalysisIsReady({
           ide: IDE_NAME,

@@ -4,6 +4,7 @@ import _ from 'lodash';
 import * as vscode from 'vscode';
 import { getExtension } from '../../../extension';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
+import { IErrorReporting } from '../../common/errorReporting/errorReporting';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { ISnykCodeService } from '../codeService';
@@ -13,7 +14,7 @@ export class Progress {
   private emitter: EmitterDC;
   private filesWatcher: vscode.FileSystemWatcher;
 
-  constructor(private readonly snykCode: ISnykCodeService, private readonly viewManagerService: IViewManagerService, private readonly workspace: IVSCodeWorkspace) {
+  constructor(private readonly snykCode: ISnykCodeService, private readonly viewManagerService: IViewManagerService, private readonly workspace: IVSCodeWorkspace, private readonly errorReporting: IErrorReporting) {
     this.emitter = emitter;
   }
 
@@ -24,7 +25,7 @@ export class Progress {
     this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
     this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
     this.emitter.on(this.emitter.events.apiRequestLog, Progress.onAPIRequestLog.bind(this));
-    this.emitter.on(this.emitter.events.error, this.snykCode.onError.bind(this));
+    this.emitter.on(this.emitter.events.error, this.errorReporting.reportError.bind(this));
   }
 
   updateStatus(status: string, progress: string): void {

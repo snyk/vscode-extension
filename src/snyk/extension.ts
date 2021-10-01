@@ -50,7 +50,7 @@ import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public activate(vscodeContext: vscode.ExtensionContext): void {
-    ErrorReporting.init();
+    this.errorReporting = ErrorReporting.init();
 
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
@@ -63,7 +63,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.openerService,
       this.viewManagerService,
       vsCodeWorkspace,
-      this.processError.bind(this),
+      this.errorReporting,
     );
 
     this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
@@ -176,6 +176,7 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.snykCode.dispose();
     await analytics.flush();
+    await this.errorReporting.end();
   }
 
   private initCliDownload(): CliDownloadService {
