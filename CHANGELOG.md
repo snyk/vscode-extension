@@ -1,5 +1,9 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.1.3]
+### Changed
+- Provide feedback around Snyk's technical issues impacting Snyk Code.
+
 ## [1.1.2]
 ### Changed
 
