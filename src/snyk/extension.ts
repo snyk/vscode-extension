@@ -62,6 +62,10 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public activate(context: vscode.ExtensionContext): void {
+    // Temporarily avoid CA check until VS Code pushes fix for the Electron bug: https://github.com/microsoft/vscode/issues/134244
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (global as any).ignoreUnknownCA = true;
+
     this.context = context;
 
     this.statusBarItem.show();

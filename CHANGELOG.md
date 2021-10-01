@@ -1,5 +1,10 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.1.3]
+### Fixed
+
+- Ignore CA check temporarily before VS Code pushes fix for expired Let's Encrypt certificate. Bug: https://github.com/microsoft/vscode/issues/134244
+
 ## [1.1.2]
 ### Changed
 
