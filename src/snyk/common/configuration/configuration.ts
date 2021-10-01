@@ -2,6 +2,7 @@ import { URL } from 'url';
 import { IDE_NAME } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_IGNORE_UNKNOWN_CA_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
@@ -157,6 +158,13 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_ADVANCED_MODE_SETTING),
+    );
+  }
+
+  get ignoreUnknownCa(): boolean {
+    return !!this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_IGNORE_UNKNOWN_CA_SETTING),
     );
   }
 

@@ -2,7 +2,7 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Vulnerability Scanner",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
   "icon": "images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
@@ -80,6 +80,12 @@
             "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
             "scope": "application"
           },
+          "snyk.advanced.ignoreUnknownCa": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Ignore unknown certificate authorities. Can be temporarily used to address [VS Code bug](https://github.com/microsoft/vscode/issues/134244) that prevents from running analysis.",
+            "scope": "application"
+          },
           "snyk.features.codeSecurity": {
             "type": "boolean",
             "title": "Snyk Code security issues",
@@ -146,7 +152,7 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc)!",
+        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nYou might experience this due to [VS Code bug](https://github.com/microsoft/vscode/issues/134244). If so, setting \"Ignore Unknown CA\" to `true` in [settings](command:snyk.settings) might fix this issue for you.\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc)!",
         "when": "snyk:error == 'blocking'"
       },
       {

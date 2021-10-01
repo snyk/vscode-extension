@@ -39,6 +39,10 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
   private async startExtension_(manual = false): Promise<void> {
     Logger.info('Starting extension');
+    // Temporarily avoid CA check until VS Code pushes fix for the Electron bug: https://github.com/microsoft/vscode/issues/134244
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (global as any).ignoreUnknownCA = configuration.ignoreUnknownCa;
+
     // If the execution is suspended, we only allow user-triggered analyses.
     if (!manual) {
       if ([SNYK_MODE_CODES.MANUAL, SNYK_MODE_CODES.PAUSED].includes(this._mode) || this.shouldBeThrottled()) return;

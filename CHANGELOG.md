@@ -1,5 +1,10 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.1.3]
+### Changed
+- Added setting to allow ignoring CA checks to enable users who experience [this VS Code bug](https://github.com/microsoft/vscode/issues/134244).
+
+
 ## [1.1.2]
 ### Changed
 
