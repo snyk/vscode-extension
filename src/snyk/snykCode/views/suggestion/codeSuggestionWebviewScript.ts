@@ -293,7 +293,7 @@
     }
 
     feedbackVisibility = 'close';
-    showCurrentFeedback();
+    // showCurrentFeedback();
   }
   function sendMessage(message: {
     type: string;
