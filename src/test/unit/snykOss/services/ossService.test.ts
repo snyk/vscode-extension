@@ -29,7 +29,9 @@ suite('OssService', () => {
         extensionPath,
       } as ExtensionContext,
       logger,
-      {} as IConfiguration,
+      {
+        getAdditionalCliParameters: () => '',
+      } as IConfiguration,
       {} as IOssSuggestionWebviewProvider,
       {
         workspaceFolders: () => [''],

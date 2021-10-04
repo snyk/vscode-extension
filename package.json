@@ -88,11 +88,22 @@
             "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
             "scope": "application"
           },
-          "snyk.advanced.autoScanOss": {
+          "snyk.advanced.autoScanOpenSourceSecurity": {
             "type": "boolean",
             "default": false,
             "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
+          },
+          "snyk.advanced.additionalParameters": {
+            "type": "string",
+            "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
+            "scope": "window"
+          },
+          "snyk.features.openSourceSecurity": {
+            "type": "boolean",
+            "title": "Snyk Open Source security issues",
+            "description": "Find and fix open source vulnerabilities.",
+            "default": true
           },
           "snyk.features.codeSecurity": {
             "type": "boolean",
@@ -105,6 +116,36 @@
             "title": "Snyk Code quality issues",
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
+          },
+          "snyk.severity": {
+            "type": "object",
+            "default": {
+              "critical": true,
+              "high": true,
+              "medium": true,
+              "low": true
+            },
+            "properties": {
+              "critical": {
+                "type": "boolean",
+                "default": true
+              },
+              "high": {
+                "type": "boolean",
+                "default": true
+              },
+              "medium": {
+                "type": "boolean",
+                "default": true
+              },
+              "low": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "Severity issues to display.",
+            "scope": "window"
           }
         }
       }
@@ -294,7 +335,8 @@
     "sinon": "^11.1.1",
     "typescript": "^4.0.2",
     "vscode-test": "^1.4.0",
-    "yalc": "^1.0.0-pre.44"
+    "yalc": "^1.0.0-pre.44",
+    "string-argv": "^0.3.1"
   },
   "dependencies": {
     "@itly/plugin-iteratively-node": "^2.3.1",

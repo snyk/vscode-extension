@@ -1,13 +1,14 @@
-import { Command, Diagnostic, DiagnosticCollection, Range, Uri } from 'vscode';
-import { SNYK_SEVERITIES } from '../constants/analysis';
+import { Command, Diagnostic, DiagnosticCollection, DiagnosticSeverity, Range, Uri } from 'vscode';
+import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { ISnykCodeService } from '../codeService';
 import { IContextService } from '../../common/services/contextService';
-import { getSnykSeverity } from '../utils/analysisUtils';
-import { INodeIcon, TreeNode, NODE_ICONS } from '../../common/views/treeNode';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
+import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
+import { ISnykCodeService } from '../codeService';
+import { SNYK_SEVERITIES } from '../constants/analysis';
+import { getSnykSeverity } from '../utils/analysisUtils';
 import { CodeIssueCommandArg } from './interfaces';
-import { OpenIssueCommandArg, OpenCommandIssueType } from '../../common/commands/types';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -18,8 +19,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     protected contextService: IContextService,
     protected snykCode: ISnykCodeService,
     protected diagnosticCollection: DiagnosticCollection | undefined,
+    protected configuration: IConfiguration,
   ) {
-    super(snykCode);
+    super(configuration, snykCode);
   }
 
   static getSeverityIcon(severity: number): INodeIcon {
@@ -53,10 +55,15 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         const filePath = uri.path.split('/');
         const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
-        const issues: TreeNode[] = diagnostics.map(d => {
+
+        nIssues += diagnostics.length;
+
+        const fileVulnerabilities = this.getFilteredIssues(diagnostics);
+        if (fileVulnerabilities.length == 0) return;
+
+        const issues: TreeNode[] = fileVulnerabilities.map(d => {
           const severity = getSnykSeverity(d.severity);
           counts[severity] += 1;
-          nIssues += 1;
           const params: {
             text: string;
             icon: INodeIcon;
@@ -133,12 +140,14 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         }),
       );
     } else {
-      review.unshift(
+      const topNodes = [
         new TreeNode({
           text: this.getIssueFoundText(nIssues),
         }),
         this.getDurationTreeNode(),
-      );
+        this.getNoSeverityFiltersSelectedTreeNode(),
+      ];
+      review.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     }
     return review;
   }
@@ -149,5 +158,21 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
   protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
     return `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`;
+  }
+
+  protected getFilteredIssues(diagnostics: readonly Diagnostic[]): Diagnostic[] {
+    return diagnostics.filter(issue => {
+      switch (issue.severity) {
+        case DiagnosticSeverity.Error:
+          return this.configuration.severityFilter.high;
+        case DiagnosticSeverity.Warning:
+          return this.configuration.severityFilter.medium;
+        case DiagnosticSeverity.Information:
+        case DiagnosticSeverity.Hint:
+          return this.configuration.severityFilter.low;
+        default:
+          return true;
+      }
+    });
   }
 }
