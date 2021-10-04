@@ -1,10 +1,11 @@
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
+import { IConfiguration } from '../configuration/configuration';
 import { messages } from '../messages/analysisMessages';
 import { TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 
 export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
-  constructor(private statusProvider: AnalysisStatusProvider) {
+  constructor(protected readonly configuration: IConfiguration, private statusProvider: AnalysisStatusProvider) {
     super();
   }
 
@@ -32,4 +33,17 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
       text: messages.duration(sDuration, time, day),
     });
   }
+
+  protected getNoSeverityFiltersSelectedTreeNode(): TreeNode | null {
+    const anyFilterEnabled = Object.values<boolean>(this.configuration.severityFilter).find(enabled => !!enabled);
+    if (anyFilterEnabled) {
+      return null;
+    }
+
+    return new TreeNode({
+      text: messages.allSeverityFiltersDisabled,
+    });
+  }
+
+  protected abstract getFilteredIssues(issues: readonly unknown[]): unknown[];
 }

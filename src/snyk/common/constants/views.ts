@@ -31,6 +31,7 @@ export const SNYK_ANALYSIS_STATUS = {
   COLLECTING: 'Collecting files',
   BUNDLING: 'Creating file bundles',
   UPLOADING: 'Uploading files',
+  OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
   CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',
 };

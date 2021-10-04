@@ -34,6 +34,7 @@ suite('CliService', () => {
   let testCliService: TestCliService;
   let extensionContext: ExtensionContext;
   let cliDownloadService: CliDownloadService;
+  let configuration: IConfiguration;
 
   setup(() => {
     logger = new LoggerMock();
@@ -43,18 +44,22 @@ suite('CliService', () => {
       getGlobalStateValue: () => undefined,
     } as unknown) as ExtensionContext;
 
-    cliDownloadService = {
-      downloadCli: () => false
-    } as unknown as CliDownloadService;
+    configuration = ({
+      getAdditionalCliParameters: () => '',
+    } as unknown) as IConfiguration;
+
+    cliDownloadService = ({
+      downloadCli: () => false,
+    } as unknown) as CliDownloadService;
 
     testCliService = new TestCliService(
       extensionContext,
       logger,
-      {} as IConfiguration,
+      configuration,
       {
-        workspaceFolders: () => [''],
+        workspaceFolders: () => ['test-folder'],
       } as IVSCodeWorkspace,
-      cliDownloadService
+      cliDownloadService,
     );
   });
 
@@ -148,5 +153,24 @@ suite('CliService', () => {
 
     strictEqual(getGlobalStateValueSpy.calledOnce, true);
     strictEqual(getChecksumOfSpy.calledOnce, true);
+  });
+
+  test('Test passes additional CLI arguments from settings', async () => {
+    const additionalParameters = `--exclude="folder with spaces" --configuration-matching="iamaRegex" --sub-project=snyk`;
+    sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
+    sinon.stub(configuration, 'getAdditionalCliParameters').returns(additionalParameters);
+
+    const spawnSpy = sinon.spy(CliProcess.prototype, 'spawn');
+    await testCliService.test();
+
+    const expectedArgs = [
+      '',
+      'test-folder',
+      '--json',
+      '--exclude="folder with spaces"',
+      '--configuration-matching="iamaRegex"',
+      '--sub-project=snyk',
+    ];
+    deepStrictEqual(spawnSpy.calledWith(sinon.match.any, expectedArgs), true);
   });
 });

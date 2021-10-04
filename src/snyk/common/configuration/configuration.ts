@@ -1,12 +1,16 @@
+import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
 import { IDE_NAME_SHORT } from '../constants/general';
 import {
+  ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
+  OSS_ENABLED_SETTING,
+  SEVERITY_FILTER_SETTING,
   TOKEN_SETTING,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
@@ -16,9 +20,19 @@ import {
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
 export type FeaturesConfiguration = {
+  ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
   codeQualityEnabled: boolean | undefined;
 };
+
+export interface SeverityFilter {
+  critical: boolean;
+  high: boolean;
+  medium: boolean;
+  low: boolean;
+
+  [severity: string]: boolean;
+}
 
 export interface IConfiguration {
   isDevelopment: boolean;
@@ -35,7 +49,9 @@ export interface IConfiguration {
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
   shouldShowOssBackgroundScanNotification: boolean;
-  shouldAutoScanOss: boolean
+  shouldAutoScanOss: boolean;
+  severityFilter: SeverityFilter;
+  getAdditionalCliParameters(): string | undefined;
 }
 
 export class Configuration implements IConfiguration {
@@ -96,6 +112,10 @@ export class Configuration implements IConfiguration {
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration | undefined {
+    const ossEnabled = this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(OSS_ENABLED_SETTING),
+    );
     const codeSecurityEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
@@ -105,12 +125,13 @@ export class Configuration implements IConfiguration {
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
     );
 
-    if (!codeSecurityEnabled && !codeQualityEnabled) {
+    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(codeQualityEnabled)) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { codeSecurityEnabled: true, codeQualityEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true };
     }
 
     return {
+      ossEnabled,
       codeSecurityEnabled,
       codeQualityEnabled,
     };
@@ -197,6 +218,29 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_AUTOSCAN_OSS_SETTING),
+    );
+  }
+
+  get severityFilter(): SeverityFilter {
+    const config = this.workspace.getConfiguration<SeverityFilter>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(SEVERITY_FILTER_SETTING),
+    );
+
+    return (
+      config ?? {
+        critical: true,
+        high: true,
+        medium: true,
+        low: true,
+      }
+    );
+  }
+
+  getAdditionalCliParameters(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING),
     );
   }
 

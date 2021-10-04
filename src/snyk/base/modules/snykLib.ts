@@ -114,6 +114,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
   }
 
   private async startOssAnalysis(_manual = false): Promise<void> {
+    if (!configuration.getFeaturesConfiguration()?.ossEnabled) return;
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
     // wait until Snyk CLI is downloaded
