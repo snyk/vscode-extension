@@ -71,7 +71,7 @@ suite('CliService', () => {
     const cliOutput = { success: true } as TestCliResult;
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(CliProcess.prototype, 'spawn').resolves(JSON.stringify(cliOutput));
-    const result = await testCliService.test();
+    const result = await testCliService.test(false, false);
 
     deepStrictEqual(result, cliOutput);
   });
@@ -86,7 +86,7 @@ suite('CliService', () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(CliProcess.prototype, 'spawn').rejects(JSON.stringify(cliError));
 
-    const result = await testCliService.test();
+    const result = await testCliService.test(false, false);
 
     ok(result instanceof CliError);
     deepStrictEqual(result.error, cliError.error);
@@ -97,7 +97,7 @@ suite('CliService', () => {
     const errOutput = new Error('Failed to run snyk command.');
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(CliProcess.prototype, 'spawn').rejects(errOutput);
-    const result = await testCliService.test();
+    const result = await testCliService.test(false, false);
 
     ok(result instanceof CliError);
     deepStrictEqual(result.error, errOutput);
@@ -106,14 +106,14 @@ suite('CliService', () => {
   test('Test tries redownloading CLI when checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
     const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(true);
-    const result = await testCliService.test();
+    const result = await testCliService.test(false, false);
     deepStrictEqual(download.calledOnce, true);
   });
 
   test('Test returns error when CLI checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
     const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(false);
-    const result = await testCliService.test();
+    const result = await testCliService.test(false, false);
 
     ok(result instanceof CliError);
   });
@@ -161,7 +161,7 @@ suite('CliService', () => {
     sinon.stub(configuration, 'getAdditionalCliParameters').returns(additionalParameters);
 
     const spawnSpy = sinon.spy(CliProcess.prototype, 'spawn');
-    await testCliService.test();
+    await testCliService.test(false, false);
 
     const expectedArgs = [
       '',

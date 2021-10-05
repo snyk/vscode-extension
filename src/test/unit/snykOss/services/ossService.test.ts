@@ -4,6 +4,7 @@ import _ from 'lodash';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
 import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
+import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
@@ -44,6 +45,9 @@ suite('OssService', () => {
         schedule: sinon.fake(),
       } as unknown) as DailyScanJob,
       {} as INotificationService,
+      {
+        logAnalysisIsReady: sinon.fake()
+      } as unknown as IAnalytics,
     );
     sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });
@@ -56,7 +60,7 @@ suite('OssService', () => {
     const cliOutput = await fs.readFile('mocked_data/snykOss/single-project-vulnerabilities.json', 'utf-8');
     sinon.stub(CliProcess.prototype, 'spawn').resolves(cliOutput);
 
-    const result = await ossService.test();
+    const result = await ossService.test(false, false);
     const expected = JSON.parse(cliOutput) as OssResult;
     deepStrictEqual(result, expected);
   });
@@ -65,19 +69,19 @@ suite('OssService', () => {
     const cliOutput = await fs.readFile('mocked_data/snykOss/multi-project-vulnerabilities.json', 'utf-8');
     sinon.stub(CliProcess.prototype, 'spawn').resolves(cliOutput);
 
-    const result = await ossService.test();
+    const result = await ossService.test(false, false);
     const expected = JSON.parse(cliOutput) as OssResult;
     deepStrictEqual(result, expected);
   });
 
   test('Empty result output throws an error', async () => {
     sinon.stub(CliProcess.prototype, 'spawn').resolves('');
-    await rejects(async () => await ossService.test());
+    await rejects(async () => await ossService.test(false, false));
   });
 
   test('Invalid JSON output throws an error', async () => {
     sinon.stub(CliProcess.prototype, 'spawn').resolves('{');
-    await rejects(async () => await ossService.test());
+    await rejects(async () => await ossService.test(false, false));
   });
 
   test('Gets new critical vulns count correctly for single project', () => {
