@@ -9,10 +9,7 @@ import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } 
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
-import { INotificationService } from '../../common/services/notificationService';
 import { userMe } from '../../common/services/userService';
-import { messages as ossTestMessages } from '../../snykOss/messages/test';
-import { snykMessages } from '../messages/snykMessages';
 import { ISnykLib } from './interfaces';
 import LoginModule from './loginModule';
 
@@ -137,8 +134,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       const oldResult = this.ossService.getResult();
       const result = await this.ossService.test(manual, reportTriggeredEvent);
       if (result instanceof CliError) {
-        if (result.isCancellation) return;
-        reportError(this.notificationService);
+        return;
       }
 
       if (oldResult) {
@@ -146,13 +142,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       }
     } catch (err) {
       // catch unhandled error cases by reporting test failure
-      this.ossService.finalizeTest();
-      Logger.error(`${ossTestMessages.testFailed} ${err}`);
-      reportError(this.notificationService);
-    }
-
-    function reportError(notificationService: INotificationService) {
-      void notificationService.showErrorNotification(`${ossTestMessages.testFailed} ${snykMessages.errorQuery}`);
+      this.ossService.finalizeTest(new CliError(err));
     }
   }
 

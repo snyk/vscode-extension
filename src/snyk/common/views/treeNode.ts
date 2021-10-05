@@ -7,9 +7,9 @@ export interface INodeIcon {
   ['dark']: string;
 }
 
-type NODE_ICON_SEVERITY = 'critical' | 'high' | 'medium' | 'low';
+type NODE_ICON_TYPE = 'critical' | 'high' | 'medium' | 'low' | 'error';
 
-export const NODE_ICONS: { [key in NODE_ICON_SEVERITY]: INodeIcon } = {
+export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
   critical: {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
@@ -26,11 +26,16 @@ export const NODE_ICONS: { [key in NODE_ICON_SEVERITY]: INodeIcon } = {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
   },
+  error: {
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
+  },
 };
 
 export type InternalType = {
   nIssues?: number;
-  severity?: unknown;
+  severity?: number;
+  isError?: boolean;
 };
 
 export interface INodeOptions {
@@ -55,7 +60,7 @@ export type INode = TreeItem & {
 };
 
 export class TreeNode extends TreeItem implements INode {
-  readonly internal: { [key: string]: any };
+  readonly internal: InternalType;
   private parent: TreeNode | undefined;
   private children: TreeNode[] | undefined;
 

@@ -12,12 +12,12 @@ import { CliProcess } from '../process';
 import { CliDownloadService } from './cliDownloadService';
 
 export class CliError {
-  constructor(public error: string, public path?: string, public isCancellation = false) {}
+  constructor(public error: string | Error, public path?: string, public isCancellation = false) {}
 }
 
 export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract readonly command: string[];
-  protected result: CliResult | undefined;
+  protected result: CliResult | CliError | undefined;
 
   private cliProcess?: CliProcess;
   private verifiedChecksumCorrect?: boolean;
@@ -45,6 +45,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       if (!downloaded) {
         const error = new CliError(
           'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
+          cliPath,
         );
         this.finalizeTest(error);
         return error;
@@ -67,31 +68,21 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
         return spawnError;
       }
 
-      let result: CliError;
-
-      try {
-        const output = JSON.parse(spawnError) as CliError;
-        result = new CliError(output.error, output.path, output.isCancellation); // creates new object to allow "instanceof" to work
-      } catch (parsingErr) {
-        result = new CliError(spawnError, '');
-      }
-
+      const result = new CliError(spawnError, '');
       this.finalizeTest(result);
       return result;
     }
 
     const mappedResult = this.mapToResultType(output);
-    this.result = mappedResult;
+    this.finalizeTest(mappedResult);
 
-    this.finalizeTest();
-
-    return this.result;
+    return mappedResult;
   }
 
   protected abstract mapToResultType(rawCliResult: string): CliResult;
 
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
-  protected abstract afterTest(error?: CliError): void;
+  protected abstract afterTest(result: CliResult | CliError): void;
 
   private buildArguments(): string[] {
     const args = [];
@@ -129,8 +120,10 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   // To be called to finalise the analysis
-  public finalizeTest(error?: CliError): void {
+  public finalizeTest(result: CliResult | CliError): void {
+    this.result = result;
+
     this.analysisFinished();
-    this.afterTest(error);
+    this.afterTest(result);
   }
 }

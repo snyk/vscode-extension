@@ -277,23 +277,32 @@
     "commands": [
       {
         "command": "snyk.start",
-        "title": "Snyk rescan",
+        "title": "Rescan",
+        "category": "Snyk",
         "icon": "$(run)"
       },
       {
         "command": "snyk.settings",
-        "title": "Snyk settings",
+        "title": "Settings",
+        "category": "Snyk",
         "icon": "$(gear)"
       },
       {
         "command": "snyk.login",
-        "title": "Snyk login",
+        "title": "Login",
+        "category": "Snyk",
         "icon": "$(log-in)"
       },
       {
         "command": "snyk.dcignore",
-        "title": "Snyk create dcignore file",
+        "title": "Create dcignore file",
+        "category": "Snyk",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "snyk.showOutputChannel",
+        "title": "Show Output Channel",
+        "category": "Snyk"
       }
     ]
   },

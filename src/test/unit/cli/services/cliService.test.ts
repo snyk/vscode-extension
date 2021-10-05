@@ -11,19 +11,21 @@ import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContex
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LoggerMock } from '../../mocks/logger.mock';
 
-interface TestCliResult {
-  success: boolean;
-}
+type TestCliResult =
+  | {
+      success: boolean;
+    }
+  | CliError;
 
 class TestCliService extends CliService<TestCliResult> {
   protected command: string[] = [''];
-  protected mapToResultType(_rawCliResult: string): TestCliResult {
-    return { success: true };
+  protected mapToResultType(rawCliResult: string): TestCliResult {
+    return JSON.parse(rawCliResult) as TestCliResult;
   }
   protected beforeTest(): void {
     return;
   }
-  protected afterTest(_error?: CliError): void {
+  protected afterTest(_result: TestCliResult): void {
     return;
   }
 }
@@ -84,11 +86,10 @@ suite('CliService', () => {
     };
 
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
-    sinon.stub(CliProcess.prototype, 'spawn').rejects(JSON.stringify(cliError));
+    sinon.stub(CliProcess.prototype, 'spawn').resolves(JSON.stringify(cliError));
 
-    const result = await testCliService.test(false, false);
+    const result = await testCliService.test(false, false) as CliError;
 
-    ok(result instanceof CliError);
     deepStrictEqual(result.error, cliError.error);
     deepStrictEqual(result.path, cliError.path);
   });

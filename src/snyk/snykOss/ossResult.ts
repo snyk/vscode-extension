@@ -1,13 +1,16 @@
 import _ from 'lodash';
+import { CliError } from '../cli/services/cliService';
 
 export type OssResult = OssFileResult[] | OssFileResult;
 
-export type OssFileResult = {
-  vulnerabilities: OssVulnerability[];
-  projectName: string;
-  displayTargetFile: string;
-  packageManager: string;
-};
+export type OssFileResult =
+  | {
+      vulnerabilities: OssVulnerability[];
+      projectName: string;
+      displayTargetFile: string;
+      packageManager: string;
+    }
+  | CliError;
 
 export type OssVulnerability = {
   id: string;
@@ -47,4 +50,8 @@ export enum OssSeverity {
 
 export function capitalizeOssSeverity(ossSeverity: OssSeverity): Capitalize<OssSeverity> {
   return _.capitalize(ossSeverity) as Capitalize<OssSeverity>;
+}
+
+export function isResultCliError(fileResult: OssFileResult): fileResult is CliError {
+  return (fileResult as CliError).error !== undefined;
 }

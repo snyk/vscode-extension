@@ -42,8 +42,7 @@ export class CliProcess {
           return reject(new CliError('', '', true));
         }
 
-        this.logger.debug(`Failure exit code ${code} received. ${signal ?? ''}`);
-        reject(output);
+        resolve(output);
       });
     });
   }
