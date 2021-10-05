@@ -32,9 +32,9 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     super();
   }
 
-  async test(): Promise<CliResult | CliError> {
+  async test(manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<CliResult | CliError> {
     this.analysisStarted();
-    this.beforeTest();
+    this.beforeTest(manualTrigger, reportTriggeredEvent);
 
     const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath);
     const checksumCorrect = await this.isChecksumCorrect(cliPath);
@@ -90,7 +90,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
   protected abstract mapToResultType(rawCliResult: string): CliResult;
 
-  protected abstract beforeTest(): void;
+  protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(error?: CliError): void;
 
   private buildArguments(): string[] {

@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 export type OssResult = OssFileResult[] | OssFileResult;
 
 export type OssFileResult = {
@@ -41,4 +43,8 @@ export enum OssSeverity {
   Medium = 'medium',
   High = 'high',
   Critical = 'critical',
+}
+
+export function capitalizeOssSeverity(ossSeverity: OssSeverity): Capitalize<OssSeverity> {
+  return _.capitalize(ossSeverity) as Capitalize<OssSeverity>;
 }

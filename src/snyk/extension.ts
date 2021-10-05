@@ -74,6 +74,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.cliDownloadService,
       new DailyScanJob(this),
       this.notificationService,
+      analytics,
     );
 
     this.commandController = new CommandController(
