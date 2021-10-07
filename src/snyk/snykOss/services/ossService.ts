@@ -1,7 +1,9 @@
 import { IExtension } from '../../base/modules/interfaces';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
+import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
+import { IDE_NAME } from '../../common/constants/general';
 import { ILog } from '../../common/logger/interfaces';
 import { INotificationService } from '../../common/services/notificationService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
@@ -29,6 +31,7 @@ export class OssService extends CliService<OssResult> {
     protected readonly downloadService: CliDownloadService,
     private readonly dailyScanJob: DailyScanJob,
     private readonly notificationService: INotificationService,
+    private readonly analytics: IAnalytics,
   ) {
     super(extensionContext, logger, config, workspace, downloadService);
   }
@@ -45,17 +48,34 @@ export class OssService extends CliService<OssResult> {
     return result;
   }
 
-  protected beforeTest(): void {
+  protected beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void {
     this.logger.info(messages.testStarted);
     this.viewManagerService.refreshOssView();
+
+    if (reportTriggeredEvent) {
+      this.analytics.logAnalysisIsTriggered({
+        analysisType: ['Snyk Open Source'],
+        ide: IDE_NAME,
+        triggeredByUser: manualTrigger,
+      });
+    }
   }
 
   protected afterTest(error?: CliError): void {
+    let analyticsResult: 'Success' | 'Error';
     if (error) {
       this.logger.error(`${messages.testFailed} ${error.error}`);
+      analyticsResult = 'Error';
     } else {
       this.logger.info(messages.testFinished);
+      analyticsResult = 'Success';
     }
+
+    this.analytics.logAnalysisIsReady({
+      ide: IDE_NAME,
+      analysisType: 'Snyk Open Source',
+      result: analyticsResult,
+    });
 
     this.viewManagerService.refreshOssView();
 

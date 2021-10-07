@@ -74,6 +74,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.cliDownloadService,
       new DailyScanJob(this),
       this.notificationService,
+      analytics,
     );
 
     this.commandController = new CommandController(
@@ -192,7 +193,10 @@ class SnykExtension extends SnykLib implements IExtension {
         SNYK_OPEN_BROWSER_COMMAND,
         this.commandController.openBrowser.bind(this.commandController),
       ),
-      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.commandController.copyAuthLink.bind(this)),
+      vscode.commands.registerCommand(
+        SNYK_COPY_AUTH_LINK_COMMAND,
+        this.commandController.copyAuthLink.bind(this.commandController),
+      ),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, this.commandController.openLocal.bind(this)),
       vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () =>
         this.commandController.executeCommand(SNYK_LOGIN_COMMAND, this.initiateLogin.bind(this)),

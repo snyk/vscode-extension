@@ -5,6 +5,7 @@ import { ISnykCodeService } from '../../snykCode/codeService';
 import { severityAsText } from '../../snykCode/utils/analysisUtils';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
+import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { analytics } from '../analytics/analytics';
@@ -82,6 +83,13 @@ export class CommandController {
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issue = arg.issue as OssIssueCommandArg;
       void this.ossService.showSuggestionProvider(issue);
+
+      analytics.logIssueIsViewed({
+        ide: IDE_NAME,
+        issueId: issue.id,
+        issueType: 'Open Source Vulnerability',
+        severity: capitalizeOssSeverity(issue.severity),
+      });
     }
   }
 

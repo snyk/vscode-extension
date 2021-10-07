@@ -3,8 +3,9 @@ import { firstValueFrom } from 'rxjs';
 import * as vscode from 'vscode';
 import { CliError } from '../../cli/services/cliService';
 import { analytics } from '../../common/analytics/analytics';
+import { SupportedAnalysisProperties } from '../../common/analytics/itly';
 import { configuration } from '../../common/configuration/instance';
-import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
+import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
@@ -49,8 +50,13 @@ export default class SnykLib extends LoginModule implements ISnykLib {
         analytics.identify(user.id);
       }
 
-      void this.startOssAnalysis(manual);
-      await this.startSnykCodeAnalysis(manual); // mark void, handle errors inside of startSnykCodeAnalysis()
+      const paths = await this.getWorkspacePaths();
+      if (paths.length) {
+        this.logFullAnalysisIsTriggered(manual);
+
+        void this.startOssAnalysis(manual, false);
+        await this.startSnykCodeAnalysis(paths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
+      }
     } catch (err) {
       await this.processError(err, {
         message: errorsLogs.failedExecutionDebounce,
@@ -76,28 +82,24 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
       Logger.info('Snyk Code was enabled.');
       try {
-        await this.startSnykCodeAnalysis(false);
+        await this.startSnykCodeAnalysis();
       } catch (err) {
         await this.processError(err);
       }
     }
   }
 
-  async startSnykCodeAnalysis(manual = false): Promise<void> {
+  async startSnykCodeAnalysis(paths: string[] = [], manual = false, reportTriggeredEvent = true): Promise<void> {
     // If the execution is suspended, we only allow user-triggered Snyk Code analyses.
-    if (!manual && !this.scanModeService.isCodeAutoScanAllowed()) {
+    if (this.isSnykCodeAutoscanSuspended(manual)) {
       return;
     }
 
-    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
-
-    if (paths.length) {
-      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
-
-      await this.snykCode.startAnalysis(paths, manual);
-    } else {
-      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, false);
+    if (!paths.length) {
+      paths = await this.getWorkspacePaths();
     }
+
+    await this.snykCode.startAnalysis(paths, manual, reportTriggeredEvent);
   }
 
   onDidChangeWelcomeViewVisibility(visible: boolean): void {
@@ -113,7 +115,18 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
   }
 
-  private async startOssAnalysis(_manual = false): Promise<void> {
+  private async getWorkspacePaths(): Promise<string[]> {
+    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
+    if (paths.length) {
+      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
+    } else {
+      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, false);
+    }
+
+    return paths;
+  }
+
+  private async startOssAnalysis(manual = false, reportTriggeredEvent = true): Promise<void> {
     if (!configuration.getFeaturesConfiguration()?.ossEnabled) return;
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
@@ -122,7 +135,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     try {
       const oldResult = this.ossService.getResult();
-      const result = await this.ossService.test();
+      const result = await this.ossService.test(manual, reportTriggeredEvent);
       if (result instanceof CliError) {
         if (result.isCancellation) return;
         reportError(this.notificationService);
@@ -141,5 +154,28 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     function reportError(notificationService: INotificationService) {
       void notificationService.showErrorNotification(`${ossTestMessages.testFailed} ${snykMessages.errorQuery}`);
     }
+  }
+
+  private isSnykCodeAutoscanSuspended(manual: boolean) {
+    return !manual && !this.scanModeService.isCodeAutoScanAllowed();
+  }
+
+  private logFullAnalysisIsTriggered(manual: boolean) {
+    const analysisType: SupportedAnalysisProperties[] = [];
+
+    const enabledFeatures = configuration.getFeaturesConfiguration();
+
+    // Ensure preconditions are the same as within running specific analysis
+    if (!this.isSnykCodeAutoscanSuspended(manual)) {
+      if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
+      if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
+    }
+    if (enabledFeatures?.ossEnabled) analysisType.push('Snyk Open Source');
+
+    analytics.logAnalysisIsTriggered({
+      analysisType,
+      ide: IDE_NAME,
+      triggeredByUser: manual,
+    });
   }
 }
