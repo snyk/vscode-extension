@@ -26,7 +26,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   suggestionProvider: ICodeSuggestionWebviewProvider;
   onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
 
-  startAnalysis(paths: string[], manual: boolean): Promise<void>;
+  startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
   isEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
@@ -72,7 +72,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     return this._analysisProgress;
   }
 
-  public async startAnalysis(paths: string[], manual: boolean): Promise<void> {
+  public async startAnalysis(paths: string[], manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<void> {
     if (this.isAnalysisRunning || !paths.length) {
       return;
     }
@@ -82,15 +82,17 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     try {
       Logger.info('Code analysis started.');
 
-      const analysisType: SupportedAnalysisProperties[] = [];
-      if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
-      if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
+      if (reportTriggeredEvent) {
+        const analysisType: SupportedAnalysisProperties[] = [];
+        if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
+        if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
 
-      analytics.logAnalysisIsTriggered({
-        analysisType,
-        ide: IDE_NAME,
-        triggeredByUser: manual,
-      });
+        analytics.logAnalysisIsTriggered({
+          analysisType,
+          ide: IDE_NAME,
+          triggeredByUser: manualTrigger,
+        });
+      }
 
       this.analysisStarted();
 
@@ -98,7 +100,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
         this.changedFiles.clear();
-        result = await extendAnalysis({...this.remoteBundle, files: changedFiles});
+        result = await extendAnalysis({ ...this.remoteBundle, files: changedFiles });
       } else {
         result = await analyzeFolders({
           connection: {
@@ -111,7 +113,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
           },
           fileOptions: {
             paths,
-          }
+          },
         });
       }
 
@@ -191,8 +193,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     // Poll for changed settings (65 sec)
     for (let i = 2; i < 12; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
       await this.sleep(i * 1000);
 
+      // eslint-disable-next-line no-await-in-loop
       settings = await getSastSettings();
       if (settings.sastEnabled) {
         return true;
