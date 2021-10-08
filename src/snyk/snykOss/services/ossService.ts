@@ -64,35 +64,17 @@ export class OssService extends CliService<OssResult> {
   protected afterTest(result: OssResult | CliError): void {
     if (result instanceof CliError) {
       this.logger.error(`${messages.testFailed} ${result.error}`);
-      this.analytics.logAnalysisIsReady({
-        ide: IDE_NAME,
-        analysisType: 'Snyk Open Source',
-        result: 'Error',
-      });
+      this.logAnalysisIsReady('Error');
     } else {
       const fileResults = Array.isArray(result) ? result : [result];
 
       for (const fileResult of fileResults) {
         if (isResultCliError(fileResult)) {
-          let errorMessage: string;
-          if (fileResult.path) {
-            errorMessage = `${messages.testFailedForPath(fileResult.path)} ${fileResult.error}`;
-          } else {
-            errorMessage = `${messages.testFailed} ${fileResult.error}`;
-          }
-          this.logger.error(errorMessage);
-          this.analytics.logAnalysisIsReady({
-            ide: IDE_NAME,
-            analysisType: 'Snyk Open Source',
-            result: 'Error',
-          });
+          this.logger.error(this.getTestErrorMessage(fileResult));
+          this.logAnalysisIsReady('Error');
         } else {
           this.logger.info(messages.testFinished(fileResult.projectName));
-          this.analytics.logAnalysisIsReady({
-            ide: IDE_NAME,
-            analysisType: 'Snyk Open Source',
-            result: 'Success',
-          });
+          this.logAnalysisIsReady('Success');
         }
       }
 
@@ -172,5 +154,23 @@ export class OssService extends CliService<OssResult> {
     }
 
     return 0;
+  }
+
+  private getTestErrorMessage(fileResult: CliError): string {
+    let errorMessage: string;
+    if (fileResult.path) {
+      errorMessage = `${messages.testFailedForPath(fileResult.path)} ${fileResult.error}`;
+    } else {
+      errorMessage = `${messages.testFailed} ${fileResult.error}`;
+    }
+    return errorMessage;
+  }
+
+  private logAnalysisIsReady(result: 'Error' | 'Success'): void {
+    this.analytics.logAnalysisIsReady({
+      ide: IDE_NAME,
+      analysisType: 'Snyk Open Source',
+      result,
+    });
   }
 }
