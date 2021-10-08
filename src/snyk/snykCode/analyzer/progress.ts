@@ -3,6 +3,7 @@ import _ from 'lodash';
 import * as vscode from 'vscode';
 import { getExtension } from '../../../extension';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
+import { Logger } from '../../common/logger/logger';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { ISnykCodeService } from '../codeService';
@@ -12,8 +13,11 @@ export class Progress {
   private emitter = emitterDC;
   private filesWatcher: vscode.FileSystemWatcher;
 
-  constructor(private readonly snykCode: ISnykCodeService, private readonly viewManagerService: IViewManagerService, private readonly workspace: IVSCodeWorkspace) {
-  }
+  constructor(
+    private readonly snykCode: ISnykCodeService,
+    private readonly viewManagerService: IViewManagerService,
+    private readonly workspace: IVSCodeWorkspace,
+  ) {}
 
   bindListeners(): void {
     this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
@@ -62,6 +66,6 @@ export class Progress {
   }
 
   static onAPIRequestLog(message: string): void {
-    console.log(message);
+    Logger.debug(message.slice(0, 399));
   }
 }
