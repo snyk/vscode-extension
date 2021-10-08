@@ -11,7 +11,6 @@ export const errorsLogs = {
   // failedStatusOfAnalysis: "Analysis results have status FAILED",
   analyse: 'Analyse request failed',
   failedAnalysis: 'Failed executing analysis',
-  failedServiceAI: 'ServiceAI returned an error',
   failedExecution: 'Failed extension pipeline execution',
   failedExecutionDebounce: 'Failed extension pipeline execution after debounce',
   failedExecutionTransient: 'Failed extension pipeline execution after transient error',

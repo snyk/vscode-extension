@@ -22,7 +22,7 @@ export class Progress {
     this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
     this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
     this.emitter.on(this.emitter.events.apiRequestLog, Progress.onAPIRequestLog.bind(this));
-    this.emitter.on(this.emitter.events.error, this.snykCode.onError.bind(this));
+    this.emitter.on(this.emitter.events.error, this.snykCode.errorEncountered.bind(this));
   }
 
   updateStatus(status: string, progress: string): void {

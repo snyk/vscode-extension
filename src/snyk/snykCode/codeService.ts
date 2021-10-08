@@ -1,12 +1,11 @@
 import { analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
-import { errorType } from '../base/modules/interfaces';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { analytics } from '../common/analytics/analytics';
 import { SupportedAnalysisProperties } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
+import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
-import { errorsLogs } from '../common/messages/errorsServerLogMessages';
 import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
@@ -15,6 +14,7 @@ import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
 import { ISnykCodeAnalyzer } from './interfaces';
+import { messages as analysisMessages } from './messages/analysis';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
@@ -24,10 +24,11 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   analysisProgress: string;
   remoteBundle: FileAnalysis;
   suggestionProvider: ICodeSuggestionWebviewProvider;
-  onError: (error: errorType, options: { [key: string]: any }) => Promise<void>;
+  hasError: boolean;
 
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
+  errorEncountered(error: Error): void;
   isEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
@@ -44,14 +45,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   private progress: Progress;
   private _analysisStatus = '';
   private _analysisProgress = '';
+  private failed = false;
 
   constructor(
-    private readonly extensionContext: ExtensionContext,
+    readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
     private readonly workspace: IVSCodeWorkspace,
-    private onErrorFn: (error: errorType, options: { [key: string]: any }) => Promise<void>,
+    private readonly logger: ILog,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer();
@@ -61,8 +63,8 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.progress.bindListeners();
   }
 
-  get onError(): (error: errorType, options: { [key: string]: any }) => Promise<void> {
-    return this.onErrorFn;
+  get hasError(): boolean {
+    return this.failed;
   }
 
   get analysisStatus(): string {
@@ -80,7 +82,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     const enabledFeatures = this.config.getFeaturesConfiguration();
 
     try {
-      Logger.info('Code analysis started.');
+      Logger.info(analysisMessages.started);
+
+      throw new Error('err');
 
       if (reportTriggeredEvent) {
         const analysisType: SupportedAnalysisProperties[] = [];
@@ -125,7 +129,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         }
         this.analyzer.createReviewResults();
 
-        Logger.info('Code analysis finished.');
+        Logger.info(analysisMessages.finished);
 
         if (enabledFeatures?.codeSecurityEnabled) {
           analytics.logAnalysisIsReady({
@@ -142,14 +146,11 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
           });
         }
 
-        this.viewManagerService.refreshCodeAnalysisViews(enabledFeatures);
         this.suggestionProvider.checkCurrentSuggestion();
       }
     } catch (err) {
-      this.analysisFinished();
-      void this.onErrorFn(err, {
-        message: errorsLogs.failedServiceAI,
-      });
+      this.errorEncountered(err);
+
       if (enabledFeatures?.codeSecurityEnabled) {
         analytics.logAnalysisIsReady({
           ide: IDE_NAME,
@@ -164,16 +165,20 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
           result: 'Error',
         });
       }
-
-      Logger.info('Code analysis failed.');
     } finally {
       this.analysisFinished();
+      this.viewManagerService.refreshCodeAnalysisViews(enabledFeatures);
     }
   }
 
   updateStatus(status: string, progress: string): void {
     this._analysisStatus = status;
     this._analysisProgress = progress;
+  }
+
+  errorEncountered(error: Error): void {
+    this.failed = true;
+    this.logger.error(`${analysisMessages.failed} ${error.message}`);
   }
 
   async isEnabled(): Promise<boolean> {

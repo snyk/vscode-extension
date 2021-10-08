@@ -45,7 +45,12 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     const review: TreeNode[] = [];
     let nIssues = 0;
     if (!this.contextService.shouldShowCodeAnalysis) return review;
-    if (this.diagnosticCollection)
+
+    if (this.snykCode.hasError) {
+      return [this.getErrorEncounteredTreeNode()];
+    }
+
+    if (this.diagnosticCollection) {
       this.diagnosticCollection.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
         const counts: ISeverityCounts = {
           [SNYK_SEVERITIES.information]: 0,
@@ -131,6 +136,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         });
         review.push(file);
       });
+    }
     review.sort(this.compareNodes);
     if (this.snykCode.isAnalysisRunning) {
       review.unshift(

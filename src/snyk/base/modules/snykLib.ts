@@ -21,25 +21,25 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     this.resetTransientErrors();
     this.loadingBadge.setLoadingBadge(false, this);
 
-    if (!configuration.token) {
-      await this.checkSession();
-      return;
-    }
+    try {
+      if (!configuration.token) {
+        await this.checkSession();
+        return;
+      }
 
-    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
-    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+      await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
-    if (!configuration.getFeaturesConfiguration()) {
-      await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
-      return;
-    }
+      if (!configuration.getFeaturesConfiguration()) {
+        await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
+        return;
+      }
 
-    await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
+      await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
     const workspacePaths = this.getWorkspacePaths();
     await this.setWorkspaceContext(workspacePaths);
 
-    try {
       const user = await userMe();
       if (user) {
         analytics.identify(user.id);
