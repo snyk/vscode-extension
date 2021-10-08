@@ -84,8 +84,6 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     try {
       Logger.info(analysisMessages.started);
 
-      throw new Error('err');
-
       if (reportTriggeredEvent) {
         const analysisType: SupportedAnalysisProperties[] = [];
         if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
