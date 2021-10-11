@@ -44,7 +44,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   getRootChildren(): TreeNode[] {
     const review: TreeNode[] = [];
     let nIssues = 0;
-    if (!this.contextService.shouldShowAnalysis) return review;
+    if (!this.contextService.shouldShowCodeAnalysis) return review;
     if (this.diagnosticCollection)
       this.diagnosticCollection.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
         const counts: ISeverityCounts = {

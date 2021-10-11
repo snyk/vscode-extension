@@ -36,10 +36,8 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-    const codeEnabled = await this.checkCodeEnabled();
-    if (!codeEnabled) {
-      return;
-    }
+    const workspacePaths = this.getWorkspacePaths();
+    await this.setWorkspaceContext(workspacePaths);
 
     try {
       const user = await userMe();
@@ -47,12 +45,11 @@ export default class SnykLib extends LoginModule implements ISnykLib {
         analytics.identify(user.id);
       }
 
-      const paths = await this.getWorkspacePaths();
-      if (paths.length) {
+      if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
 
         void this.startOssAnalysis(manual, false);
-        await this.startSnykCodeAnalysis(paths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
+        await this.startSnykCodeAnalysis(workspacePaths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
       }
     } catch (err) {
       await this.processError(err, {
@@ -74,7 +71,6 @@ export default class SnykLib extends LoginModule implements ISnykLib {
   async enableCode(): Promise<void> {
     const wasEnabled = await this.snykCode.enable();
     if (wasEnabled) {
-      this.loadingBadge.setLoadingBadge(false, this);
       await this.checkCodeEnabled();
 
       Logger.info('Snyk Code was enabled.');
@@ -92,8 +88,13 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       return;
     }
 
+    const codeEnabled = await this.checkCodeEnabled();
+    if (!codeEnabled) {
+      return;
+    }
+
     if (!paths.length) {
-      paths = await this.getWorkspacePaths();
+      paths = this.getWorkspacePaths();
     }
 
     await this.snykCode.startAnalysis(paths, manual, reportTriggeredEvent);
@@ -112,15 +113,14 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
   }
 
-  private async getWorkspacePaths(): Promise<string[]> {
+  private getWorkspacePaths(): string[] {
     const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
-    if (paths.length) {
-      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, true);
-    } else {
-      await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, false);
-    }
-
     return paths;
+  }
+
+  private async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
+    const workspaceFound = !!workspacePaths.length;
+    await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, workspaceFound);
   }
 
   private async startOssAnalysis(manual = false, reportTriggeredEvent = true): Promise<void> {

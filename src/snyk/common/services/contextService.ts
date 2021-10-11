@@ -1,10 +1,11 @@
-import { setContext } from '../vscode/vscodeCommandsUtils';
-import { Logger } from '../logger/logger';
 import { SNYK_CONTEXT } from '../constants/views';
+import { Logger } from '../logger/logger';
+import { setContext } from '../vscode/vscodeCommandsUtils';
 
 export interface IContextService {
   readonly viewContext: { [key: string]: unknown };
-  shouldShowAnalysis: boolean;
+  shouldShowCodeAnalysis: boolean;
+  shouldShowOssAnalysis: boolean;
 
   setContext(key: string, value: unknown): Promise<void>;
 }
@@ -22,10 +23,15 @@ export class ContextService implements IContextService {
     await setContext(key, value);
   }
 
-  get shouldShowAnalysis(): boolean {
-    return (
-      !this.viewContext[SNYK_CONTEXT.ERROR] &&
-      [SNYK_CONTEXT.LOGGEDIN, SNYK_CONTEXT.CODE_ENABLED].every(c => !!this.viewContext[c]) // todo: ensure correct work for OSS Tree view in ROAD-270 wrt to Code Enabled context.
-    );
+  get shouldShowCodeAnalysis(): boolean {
+    return this.shouldShowAnalysis && !!this.viewContext[SNYK_CONTEXT.CODE_ENABLED];
+  }
+
+  get shouldShowOssAnalysis(): boolean {
+    return this.shouldShowAnalysis;
+  }
+
+  private get shouldShowAnalysis(): boolean {
+    return !this.viewContext[SNYK_CONTEXT.ERROR] && [SNYK_CONTEXT.LOGGEDIN].every(c => !!this.viewContext[c]);
   }
 }
