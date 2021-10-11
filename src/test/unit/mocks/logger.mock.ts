@@ -7,4 +7,6 @@ export class LoggerMock implements ILog {
   warn = (_message: string): void => undefined;
   error = (_message: string): void => undefined;
   debug = (_message: string): void => undefined;
+
+  showOutput = (): void => undefined;
 }

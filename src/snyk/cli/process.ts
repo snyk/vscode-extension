@@ -29,21 +29,16 @@ export class CliProcess {
         this.cleanupProcess();
         reject(err);
       });
-      this.runningProcess.on('close', (code, signal) => {
+      this.runningProcess.on('close', (_, signal) => {
         this.cleanupProcess();
-
-        // Successful termination
-        if (code !== null && code in this.successExitCodes) {
-          return resolve(output);
-        }
 
         // Cancellation process kill was issued
         if (signal === 'SIGTERM') {
           return reject(new CliError('', '', true));
         }
 
-        this.logger.debug(`Failure exit code ${code} received. ${signal ?? ''}`);
-        reject(output);
+        // Treat as succesful termination
+        resolve(output);
       });
     });
   }

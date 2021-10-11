@@ -22,6 +22,7 @@ import {
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
@@ -82,6 +83,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       this.ossService,
       this.scanModeService,
+      Logger,
     );
     this.registerCommands(vscodeContext);
 
@@ -140,7 +142,9 @@ class SnykExtension extends SnykLib implements IExtension {
     viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
     viewContainer.set(SNYK_VIEW_FEATURES, featuresViewProvider);
 
-    vscode.workspace.onDidChangeWorkspaceFolders(this.runScan.bind(this));
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      this.runScan(false);
+    });
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
@@ -211,6 +215,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, this.commandController.openSettings.bind(this)),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, this.commandController.createDCIgnore.bind(this)),
       vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, this.commandController.openIssueCommand.bind(this)),
+      vscode.commands.registerCommand(
+        SNYK_SHOW_OUTPUT_COMMAND,
+        this.commandController.showOutputChannel.bind(this.commandController),
+      ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
     );
   }

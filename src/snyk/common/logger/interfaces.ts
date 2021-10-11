@@ -7,4 +7,6 @@ export interface ILog {
   debug(message: string): void;
 
   log(level: LogLevel, message: string): void;
+
+  showOutput(): void;
 }

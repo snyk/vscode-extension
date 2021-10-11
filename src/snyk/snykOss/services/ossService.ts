@@ -10,7 +10,7 @@ import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
-import { OssResult, OssSeverity, OssVulnerability } from '../ossResult';
+import { isResultCliError, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
 import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
@@ -61,27 +61,29 @@ export class OssService extends CliService<OssResult> {
     }
   }
 
-  protected afterTest(error?: CliError): void {
-    let analyticsResult: 'Success' | 'Error';
-    if (error) {
-      this.logger.error(`${messages.testFailed} ${error.error}`);
-      analyticsResult = 'Error';
+  protected afterTest(result: OssResult | CliError): void {
+    if (result instanceof CliError) {
+      this.logger.error(`${messages.testFailed} ${result.error}`);
+      this.logAnalysisIsReady('Error');
     } else {
-      this.logger.info(messages.testFinished);
-      analyticsResult = 'Success';
-    }
+      const fileResults = Array.isArray(result) ? result : [result];
 
-    this.analytics.logAnalysisIsReady({
-      ide: IDE_NAME,
-      analysisType: 'Snyk Open Source',
-      result: analyticsResult,
-    });
+      for (const fileResult of fileResults) {
+        if (isResultCliError(fileResult)) {
+          this.logger.error(this.getTestErrorMessage(fileResult));
+          this.logAnalysisIsReady('Error');
+        } else {
+          this.logger.info(messages.testFinished(fileResult.projectName));
+          this.logAnalysisIsReady('Success');
+        }
+      }
+
+      if (this.config.shouldAutoScanOss) {
+        this.dailyScanJob.schedule();
+      }
+    }
 
     this.viewManagerService.refreshOssView();
-
-    if (this.config.shouldAutoScanOss) {
-      this.dailyScanJob.schedule();
-    }
   }
 
   activateSuggestionProvider(): void {
@@ -131,13 +133,18 @@ export class OssService extends CliService<OssResult> {
       throw new Error('Result types mismatch for new vulnerabilities calculation.');
     }
 
-    if (!currentResult) {
-      return otherResult.vulnerabilities.length;
+    if (!currentResult || isResultCliError(currentResult)) {
+      return 0;
     }
 
     const currentVulnSet = this.getUniqueVulnerabilities(currentResult.vulnerabilities).filter(
       v => v.severity === OssSeverity.Critical,
     );
+
+    if (isResultCliError(otherResult)) {
+      return currentVulnSet.length;
+    }
+
     const otherVulnSet = this.getUniqueVulnerabilities(otherResult.vulnerabilities).filter(
       v => v.severity === OssSeverity.Critical,
     );
@@ -147,5 +154,23 @@ export class OssService extends CliService<OssResult> {
     }
 
     return 0;
+  }
+
+  private getTestErrorMessage(fileResult: CliError): string {
+    let errorMessage: string;
+    if (fileResult.path) {
+      errorMessage = `${messages.testFailedForPath(fileResult.path)} ${fileResult.error}`;
+    } else {
+      errorMessage = `${messages.testFailed} ${fileResult.error}`;
+    }
+    return errorMessage;
+  }
+
+  private logAnalysisIsReady(result: 'Error' | 'Success'): void {
+    this.analytics.logAnalysisIsReady({
+      ide: IDE_NAME,
+      analysisType: 'Snyk Open Source',
+      result,
+    });
   }
 }
