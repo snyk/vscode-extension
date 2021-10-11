@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { ILog, LogLevel } from './interfaces';
 import { SNYK_NAME } from '../constants/general';
+import { ILog, LogLevel } from './interfaces';
 
 class Log implements ILog {
   private output: vscode.OutputChannel;
@@ -9,28 +9,32 @@ class Log implements ILog {
     this.output = vscode.window.createOutputChannel(SNYK_NAME);
   }
 
-  public info(message: string): void {
+  info(message: string): void {
     this.log('Info', message);
   }
 
-  public warn(message: string): void {
+  warn(message: string): void {
     this.log('Warn', message);
   }
 
-  public error(message: string): void {
+  error(message: string): void {
     this.log('Error', message);
   }
 
-  public debug(message: string): void {
+  debug(message: string): void {
     this.log('Debug', message);
   }
 
-  public log(level: LogLevel, message: string): void {
+  log(level: LogLevel, message: string): void {
     if (level == 'Debug') {
       return console.log(message);
     }
 
     this.output.appendLine(`[${level}] ${message}`);
+  }
+
+  showOutput() {
+    this.output.show();
   }
 }
 

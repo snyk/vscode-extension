@@ -16,6 +16,7 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 
@@ -27,6 +28,7 @@ export class CommandController {
     private snykCode: ISnykCodeService,
     private ossService: OssService,
     private scanModeService: ScanModeService,
+    private logger: ILog,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -95,6 +97,10 @@ export class CommandController {
 
   setScanMode(mode: string): Promise<void> {
     return this.scanModeService.setCodeMode(mode);
+  }
+
+  showOutputChannel(): void {
+    return this.logger.showOutput();
   }
 
   async executeCommand(

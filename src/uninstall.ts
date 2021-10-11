@@ -21,6 +21,8 @@ class UninstallLogger implements ILog {
   error = (message: string) => this.log('Error', message);
   debug = (message: string) => this.log('Debug', message);
 
+  showOutput = () => undefined;
+
   log = (level: 'Info' | 'Warn' | 'Error' | 'Debug', message: string) => console.log(level, message);
 }
 
