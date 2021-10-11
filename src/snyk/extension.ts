@@ -27,6 +27,7 @@ import {
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
+  SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_OSS,
@@ -120,6 +121,9 @@ class SnykExtension extends SnykLib implements IExtension {
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
+    const codeEnablementTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT, {
+      treeDataProvider: new EmptyTreeDataProvider(),
+    });
 
     const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossVulnerabilityProvider,
@@ -135,6 +139,7 @@ class SnykExtension extends SnykLib implements IExtension {
       codeSecurityTree,
       codeQualityTree,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
+      codeEnablementTree,
     );
 
     // Fill the view container to expose views for tests
