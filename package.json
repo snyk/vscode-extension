@@ -170,7 +170,7 @@
         {
           "id": "snyk.views.welcome",
           "name": "Snyk",
-          "when": "snyk:featuresSelected && !snyk:codeEnabled || !snyk:loggedIn || snyk:error || snyk:featuresSelected && !snyk:workspaceFound"
+          "when": "!snyk:loggedIn || snyk:error || snyk:featuresSelected && !snyk:workspaceFound"
         },
         {
           "id": "snyk.views.analysis.oss",
@@ -186,6 +186,11 @@
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
+          "id": "snyk.views.analysis.code.enablement",
+          "name": "Code Security & Quality",
+          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.actions",
@@ -220,14 +225,13 @@
         "when": "!snyk:error && !snyk:loggedIn && snyk:authenticating"
       },
       {
-        "view": "snyk.views.welcome",
-        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!",
-        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled"
+        "view": "snyk.views.analysis.code.enablement",
+        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!"
       },
       {
         "view": "snyk.views.welcome",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
-        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:workspaceFound"
+        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:workspaceFound"
       },
       {
         "view": "snyk.views.actions",
