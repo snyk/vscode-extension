@@ -1,40 +1,46 @@
 # Snyk for Visual Studio Code
 
-**The Visual Studio Code extension provided by <a href="https://snyk.io/">Snyk.io</a> finds bugs and critical
-vulnerabilities in your code. We support JavaScript, TypeScript, Java and Python. Currently works with Snyk Code, Snyk Open Source is scheduled for Q3.**
+Snyk’s Vulnerability Scanner provided by <a href="https://snyk.io/">Snyk.io</a> helps you find and fix security vulnerabilities and code quality issues in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, together with actionable fix advice:
 
+* **Open Source Security** - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+* **Code Security** - security weaknesses identified in your own code.
+* **Code Quality** - code quality issues in your own code.
 
 # Table of Contents
 
 - [Introduction](#introduction)
-    - [Supported languages](#supported-languages)
+  - [Supported languages](#supported-languages)
 - [Install the plugin](#install-the-plugin)
-    - [Authentication](#authentication)
+  - [Authentication](#authentication)
 - [Run analysis](#run-analysis)
 - [View analysis results](#view-analysis-results)
-    - [Snyk panel](#snyk-panel)
-    - [Editor window](#editor-window)
-    - [Snyk suggestions window](#snyk-suggestions-window)
+  - [Snyk panel](#snyk-panel)
+  - [Editor window](#editor-window)
+  - [Snyk suggestions window](#snyk-suggestions-window)
 - [Extension Configuration](#extension-configuration)
-    - [Create a .dcignore file](#create-a-dcignore-file)
-
+  - [Create a .dcignore file](#create-a-dcignore-file)
 
 ## Introduction
 
-Use this documentation to get started with the Visual Studio Code extension for [Snyk Code](https://support.snyk.io/hc/en-us/categories/360003257537-Snyk-Code).
+Use this documentation to get started with the Visual Studio Code extension for [Snyk Code](https://docs.snyk.io/products/snyk-code) and [Snyk Open Source](https://docs.snyk.io/products/snyk-open-source).
 
 ### Supported languages
 
-Currently supported languages for Snyk Code are JavaScript, TypeScript and Java. We also provide coverage for frameworks
-like Vue and React. See [Snyk Code language and framework support](https://support.snyk.io/hc/en-us/articles/360016973477-Snyk-Code-language-and-framework-support)
+#### Snyk Code
+
+Currently supported languages for Snyk Code are JavaScript, TypeScript, Java and Python. We also provide coverage for frameworks
+like Vue and React. See [Snyk Code language and framework support](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support)
 for more information. We analyze the JavaScript, TypeScript, Java and Python files as defined by the following list: `.es`,
 `.es6`, `.htm`, `.html`, `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.java`, `.py`.
 
+#### Snyk Open Source
 
-## Install the plugin
+As the open source vulnerability scanning is based on Snyk CLI, for Snyk Open Source the plugin supports all the ecosystems that are supported within the CLI.
+For the full list see [Snyk Open Source language and package manager support](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
 
-You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) in the Visual Studio
-Code Marketplace. To install, either:
+## Install the extension
+
+You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) in the Visual Studio Code Marketplace. To install, either:
 
 - Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner)
   and follow the instructions for the Snyk extension. The docs from VS Code help you trigger the installation process
@@ -48,7 +54,6 @@ Snyk’s extension provides all the suggestions in a concise and clean view cont
 how to fix or act upon:
 
 ![Suggestion example](images/readme/install-the-plugin_suggestion-example.png)
-
 
 ## Authentication
 
@@ -65,9 +70,8 @@ To authenticate follow the steps:
 4. After successful authentication, you will see a confirmation message:
    ![Authentication](images/readme/install-the-plugin_authentication-step3.png)
 
-5. Close the browser window and return to the IDE.
-    The IDE is now reading and saving the authentication on your local machine.
-
+5. Close the browser window and return to VS Code.
+   VS Code is now reading and saving the authentication on your local machine.
 
 ## Run analysis
 
@@ -93,7 +97,6 @@ If you only need the Code Quality or Code Security portion of the Snyk Code find
 
 ![Manual rescan](images/readme/configure-snyk-code-quality-code-security.png)
 
-
 ## View analysis results
 
 Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more
@@ -110,7 +113,7 @@ plus a list of files with the suggestions found for them.
 The icons here mean:
 
 - ![Critical suggestion](images/readme/icon-critical.png) Critical suggestion - should be addressed.
-- ![Warning suggestion](images/readme/icon-warning.png) Warning suggestion -  likely a coding error.
+- ![Warning suggestion](images/readme/icon-warning.png) Warning suggestion - likely a coding error.
 - ![Information suggestion](images/readme/icon-info.png) Information suggestion - points to style glitches or logical issues.
 
 ### Editor window
@@ -132,7 +135,6 @@ example variable names of your code and the line numbers in red. You can also se
 
 We also include a feedback mechanism to report false positives so you others do not see the same issue.
 
-
 ## Extension Configuration
 
 After the plugin is installed, you can set the following configurations for the extension:
@@ -151,33 +153,3 @@ to .gitignore.
   to be uploaded and speed up the analysis.
 - To quickly add the default **.dcignore** file use the command provided by VS Code and the Snyk extension: Snyk create
   .dcignore file and save the newly created .dcignore file.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
