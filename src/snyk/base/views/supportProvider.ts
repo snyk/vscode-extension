@@ -23,7 +23,7 @@ export class SupportProvider extends TreeNodeProvider {
           new TreeNode({
             text: '1. How to get the most out of Snyk’s extension?',
             icon: new ThemeIcon('file-text'),
-            link: 'https://docs.snyk.io/features/integrations/ide-tools/visual-studio-extension',
+            link: 'https://docs.snyk.io/features/integrations/ide-tools/visual-studio-code-extension-for-snyk-code',
           }),
           new TreeNode({
             text: '2. How to ignore files and directories?',
