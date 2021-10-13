@@ -2,9 +2,9 @@
 
 Snyk’s Vulnerability Scanner provided by <a href="https://snyk.io/">Snyk.io</a> helps you find and fix security vulnerabilities and code quality issues in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, together with actionable fix advice:
 
-* **Open Source Security** - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
-* **Code Security** - security weaknesses identified in your own code.
-* **Code Quality** - code quality issues in your own code.
+- **Open Source Security** - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+- **Code Security** - security weaknesses identified in your own code.
+- **Code Quality** - code quality issues in your own code.
 
 # Table of Contents
 
@@ -75,27 +75,36 @@ To authenticate follow the steps:
 
 ## Run analysis
 
-In the IDE you will notice that the extension is already picking up the files and uploading them for analysis. Snyk Code
-analysis runs quickly, so results may even already be available:
+In the IDE you will notice that the extension is already picking up the files and uploading them for analysis.
 
-![Run analysis](images/readme/run-analysis_results.png)
+Snyk Open Source requires Snyk CLI, so it will proceed with the download in the background. Snyk Code analysis runs quickly without it, so results may even already be available. Otherwise, you will see the following screen while Snyk scans your workspace for vulnerabilities:
 
-Snyk's analysis runs automatically when you open a folder or project, or when you save your work.
+![Run analysis](images/readme/run-analysis.png)
+
+Snyk's analysis runs automatically when you open a folder or workspace.
+
+- Snyk Code performs scans automatically on file saves.
+- Snyk Open Source does not automatically run on save by default, but you can enable it in settings:
+  ![Enable Auto Scan Open Source Security](images/readme/enable-oss-autoscan.png)
 
 **Tip**: if you don't like to manually save while working, enable [AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
 
-To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you
-to control the scanning process:
+### Snyk Code advanced mode
+
+Snyk Code has "Advanced" mode that allows you to control how scan is performed.
+
+To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you to control the scanning process:
 
 ![Advanced mode](images/readme/run-analysis_advanced-mode.png)
 
+### Rescan
 To manually trigger a scan, either Save or manually rescan using the rescan icon:
 
 ![Manual rescan](images/readme/run-analysis_manual-rescan.png)
 
-If you only need the Code Quality or Code Security portion of the Snyk Code findings, you can easily hide the view with the results you don't want to see:
+If you only need the Code Quality, Code Security or Open Source Security portion of the findings, you can easily disable the feature with the results you don't want to see or simply collapse the view:
 
-![Manual rescan](images/readme/configure-snyk-code-quality-code-security.png)
+![Feature configuration](images/readme/configure-features.png)
 
 ## View analysis results
 
