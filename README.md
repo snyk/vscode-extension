@@ -38,7 +38,7 @@ for more information. We analyze the JavaScript, TypeScript, Java and Python fil
 
 #### Snyk Open Source
 
-As the open source vulnerability scanning is based on Snyk CLI, for Snyk Open Source the plugin supports all the ecosystems that are supported within the CLI.
+As the open source vulnerability scanning is based on Snyk CLI, for Snyk Open Source the extension supports all the ecosystems that are supported within the CLI.
 For the full list see [Snyk Open Source language and package manager support](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
 
 ## Install the extension
@@ -56,22 +56,22 @@ Once installed you can find a Snyk icon in the sidebar ![extension icon](media/i
 Snyk’s extension provides all the suggestions in a concise and clean view containing all information you need to decide
 how to fix or act upon:
 
-![Suggestion example](media/images/readme/install-the-plugin_suggestion-example.png)
+![Suggestion example](media/images/readme/install-the-extension_suggestion-example.png)
 
 ## Authentication
 
 To authenticate follow the steps:
 
-1. Once the plugin is installed, click on the Snyk Icon in the left navigation bar, to show the following screen:
-   ![Authentication](media/images/readme/install-the-plugin_authentication-step1.png)
+1. Once the extension is installed, click on the Snyk Icon in the left navigation bar, to show the following screen:
+   ![Authentication](media/images/readme/install-the-extension_authentication-step1.png)
 
-2. Click **Connect VS Code with Snyk**. The plugin relies on the Snyk authentication API and it will ask you
+2. Click **Connect VS Code with Snyk**. The extension relies on the Snyk authentication API and it will ask you
    to authenticate you against Snyk’s web application:
-   ![Authentication](media/images/readme/install-the-plugin_authentication-step2.png)
+   ![Authentication](media/images/readme/install-the-extension_authentication-step2.png)
 
 3. Click **Authenticate**.
 4. After successful authentication, you will see a confirmation message:
-   ![Authentication](media/images/readme/install-the-plugin_authentication-step3.png)
+   ![Authentication](media/images/readme/install-the-extension_authentication-step3.png)
 
 5. Close the browser window and return to VS Code.
    VS Code is now reading and saving the authentication on your local machine.
@@ -118,7 +118,7 @@ Snyk analysis shows a list of security vulnerabilities and code issues found in 
 details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once
 selected you will see the Snyk suggestion information in a panel on the right side:
 
-![Snyk Code analysis results](media/images/readme/install-the-plugin_suggestion-example.png)
+![Snyk Code analysis results](media/images/readme/install-the-extension_suggestion-example.png)
 
 ![Snyk Open Source analysis results](media/images/readme/oss-example.png)
 
@@ -166,7 +166,7 @@ OSS vulnerability tab shows information about the vulnerable module.
 
 ## Extension Configuration
 
-After the plugin is installed, you can set the following configurations for the extension:
+After the extension is installed, you can set the following configurations for the extension:
 
 - **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch to another account.
 - **Features**
