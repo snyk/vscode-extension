@@ -48,27 +48,27 @@ You can find the [Snyk Extension](https://marketplace.visualstudio.com/items?ite
 - Browse for the extension as advised [here](https://code.visualstudio.com/docs/editor/extension-gallery#_browse-for-extensions)
   and search for Snyk, then install (as described [here](https://code.visualstudio.com/docs/editor/extension-gallery#_install-an-extension)).
 
-Once installed you can find a Snyk icon in the sidebar ![extension icon](images/readme/snyk-extension-icon.png).
+Once installed you can find a Snyk icon in the sidebar ![extension icon](media/images/readme/snyk-extension-icon.png).
 
 Snyk’s extension provides all the suggestions in a concise and clean view containing all information you need to decide
 how to fix or act upon:
 
-![Suggestion example](images/readme/install-the-plugin_suggestion-example.png)
+![Suggestion example](media/images/readme/install-the-plugin_suggestion-example.png)
 
 ## Authentication
 
 To authenticate follow the steps:
 
 1. Once the plugin is installed, click on the Snyk Icon in the left navigation bar, to show the following screen:
-   ![Authentication](images/readme/install-the-plugin_authentication-step1.png)
+   ![Authentication](media/images/readme/install-the-plugin_authentication-step1.png)
 
 2. Click **Connect VS Code with Snyk**. The plugin relies on the Snyk authentication API and it will ask you
    to authenticate you against Snyk’s web application:
-   ![Authentication](images/readme/install-the-plugin_authentication-step2.png)
+   ![Authentication](media/images/readme/install-the-plugin_authentication-step2.png)
 
 3. Click **Authenticate**.
 4. After successful authentication, you will see a confirmation message:
-   ![Authentication](images/readme/install-the-plugin_authentication-step3.png)
+   ![Authentication](media/images/readme/install-the-plugin_authentication-step3.png)
 
 5. Close the browser window and return to VS Code.
    VS Code is now reading and saving the authentication on your local machine.
@@ -81,13 +81,13 @@ Snyk Open Source requires Snyk CLI, so it will proceed with the download in the 
 
 Snyk Code analysis runs quickly without it, so results may even already be available. Otherwise, you will see the following screen while Snyk scans your workspace for vulnerabilities:
 
-![Run analysis](images/readme/run-analysis.png)
+![Run analysis](media/images/readme/run-analysis.png)
 
 Snyk's analysis runs automatically when you open a folder or workspace.
 
 - Snyk Code performs scans automatically on file saves.
 - Snyk Open Source does not automatically run on save by default, but you can enable it in settings:
-  ![Enable Auto Scan Open Source Security](images/readme/enable-oss-autoscan.png)
+  ![Enable Auto Scan Open Source Security](media/images/readme/enable-oss-autoscan.png)
 
 **Tip**: if you don't like to manually save while working, enable [AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
 
@@ -95,11 +95,11 @@ Snyk's analysis runs automatically when you open a folder or workspace.
 
 To manually trigger a scan, either Save or manually rescan using the rescan icon:
 
-![Manual rescan](images/readme/run-analysis_manual-rescan.png)
+![Manual rescan](media/images/readme/run-analysis_manual-rescan.png)
 
 If you only need the Code Quality, Code Security or Open Source Security portion of the findings, you can easily disable the feature with the results you don't want to see or simply collapse the view:
 
-![Feature configuration](images/readme/configure-features.png)
+![Feature configuration](media/images/readme/configure-features.png)
 
 ### Snyk Code advanced mode
 
@@ -107,7 +107,7 @@ Snyk Code has "Advanced" mode that allows you to control how scan is performed.
 
 To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you to control the scanning process:
 
-![Advanced mode](images/readme/run-analysis_advanced-mode.png)
+![Advanced mode](media/images/readme/run-analysis_advanced-mode.png)
 
 ## View analysis results
 
@@ -115,9 +115,9 @@ Snyk analysis shows a list of security vulnerabilities and code issues found in 
 details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once
 selected you will see the Snyk suggestion information in a panel on the right side:
 
-![Snyk Code analysis results](images/readme/install-the-plugin_suggestion-example.png)
+![Snyk Code analysis results](media/images/readme/install-the-plugin_suggestion-example.png)
 
-![Snyk Open Source analysis results](images/readme/oss-example.png)
+![Snyk Open Source analysis results](media/images/readme/oss-example.png)
 
 ### Snyk panel
 
@@ -126,10 +126,10 @@ plus a list of issues with the suggestions found for them.
 
 The icons here mean:
 
-- ![Critical severity](images/readme/icon-critical.png) Critical severity - may allow attackers to access sensitive data and run code on your application.
-- ![High severity](images/readme/icon-high.png) High severity - may allow attackers to access sensitive data on your application.
-- ![Medium severity](images/readme/icon-medium.png) Medium severity - may allow attackers under some conditions to access sensitive data on your application.
-- ![Low severity](images/readme/icon-low.png) Low severity - the application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application.
+- ![Critical severity](media/images/readme/icon-critical.png) Critical severity - may allow attackers to access sensitive data and run code on your application.
+- ![High severity](media/images/readme/icon-high.png) High severity - may allow attackers to access sensitive data on your application.
+- ![Medium severity](media/images/readme/icon-medium.png) Medium severity - may allow attackers under some conditions to access sensitive data on your application.
+- ![Low severity](media/images/readme/icon-low.png) Low severity - the application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application.
 
 You can filter the issues by setting the severities you want to see using the `snyk.severity` setting. E.g. set `"snyk.severity": { "critical": true, "high": true, "medium": true, "low": false }` to hide low severity issues. You can also apply the setting via Settings UI.
 
