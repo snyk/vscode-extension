@@ -77,7 +77,9 @@ To authenticate follow the steps:
 
 In the IDE you will notice that the extension is already picking up the files and uploading them for analysis.
 
-Snyk Open Source requires Snyk CLI, so it will proceed with the download in the background. Snyk Code analysis runs quickly without it, so results may even already be available. Otherwise, you will see the following screen while Snyk scans your workspace for vulnerabilities:
+Snyk Open Source requires Snyk CLI, so it will proceed with the download in the background.
+
+Snyk Code analysis runs quickly without it, so results may even already be available. Otherwise, you will see the following screen while Snyk scans your workspace for vulnerabilities:
 
 ![Run analysis](images/readme/run-analysis.png)
 
@@ -89,15 +91,8 @@ Snyk's analysis runs automatically when you open a folder or workspace.
 
 **Tip**: if you don't like to manually save while working, enable [AutoSave](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).
 
-### Snyk Code advanced mode
-
-Snyk Code has "Advanced" mode that allows you to control how scan is performed.
-
-To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you to control the scanning process:
-
-![Advanced mode](images/readme/run-analysis_advanced-mode.png)
-
 ### Rescan
+
 To manually trigger a scan, either Save or manually rescan using the rescan icon:
 
 ![Manual rescan](images/readme/run-analysis_manual-rescan.png)
@@ -106,31 +101,44 @@ If you only need the Code Quality, Code Security or Open Source Security portion
 
 ![Feature configuration](images/readme/configure-features.png)
 
+### Snyk Code advanced mode
+
+Snyk Code has "Advanced" mode that allows you to control how scan is performed.
+
+To manually perform the analysis, in the configuration of the extension, you can enable Advanced Mode which enables you to control the scanning process:
+
+![Advanced mode](images/readme/run-analysis_advanced-mode.png)
+
 ## View analysis results
 
-Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more
+Snyk analysis shows a list of security vulnerabilities and code issues found in the application code. For more
 details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once
 selected you will see the Snyk suggestion information in a panel on the right side:
 
-![View analysis results](images/readme/install-the-plugin_suggestion-example.png)
+![Snyk Code analysis results](images/readme/install-the-plugin_suggestion-example.png)
+
+![Snyk Open Source analysis results](images/readme/oss-example.png)
 
 ### Snyk panel
 
 The Snyk analysis panel (on the left of the code screen in the above screenshot) shows how much time the analysis took
-plus a list of files with the suggestions found for them.
+plus a list of issues with the suggestions found for them.
 
 The icons here mean:
 
-- ![Critical suggestion](images/readme/icon-critical.png) Critical suggestion - should be addressed.
-- ![Warning suggestion](images/readme/icon-warning.png) Warning suggestion - likely a coding error.
-- ![Information suggestion](images/readme/icon-info.png) Information suggestion - points to style glitches or logical issues.
+- ![Critical severity](images/readme/icon-critical.png) Critical severity - may allow attackers to access sensitive data and run code on your application.
+- ![High severity](images/readme/icon-high.png) High severity - may allow attackers to access sensitive data on your application.
+- ![Medium severity](images/readme/icon-medium.png) Medium severity - may allow attackers under some conditions to access sensitive data on your application.
+- ![Low severity](images/readme/icon-low.png) Low severity - the application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application.
+
+You can filter the issues by setting the severities you want to see using the `snyk.severity` setting. E.g. set `"snyk.severity": { "critical": true, "high": true, "medium": true, "low": false }` to hide low severity issues. You can also apply the setting via Settings UI.
 
 ### Editor window
 
 The editor window (in the middle of the results screen) shows the code that is inspected. This ensures that when you are
 inspecting a Snyk issue, you always have the code context close to the issue.
 
-### Snyk suggestions window
+### Snyk Code vulnerability window
 
 The Snyk Suggestion panel (on the right of the results screen) shows the argumentation of the Snyk engine using for
 example variable names of your code and the line numbers in red. You can also see:
@@ -142,15 +150,31 @@ example variable names of your code and the line numbers in red. You can also se
 - You can add ignore comments that would make Snyk ignore this particular suggestion, or all of these suggestions for
   the whole file, by using the two buttons on the lower end of the panel.
 
-We also include a feedback mechanism to report false positives so you others do not see the same issue.
+We also include a feedback mechanism to report false positives so that others do not see the same issue.
+
+### Snyk OSS vulnerability window
+
+OSS vulnerability tab shows information about the vulnerable module.
+
+- Links to external resources (CVE, CWE, Snyk Vulnerability DB) to explain the vulnerability in more detail.
+- Displays CVSS score and exploit maturity.
+- Provides detailed path on how vulnerability is introduced to the system.
+- Shows summary of the vulnerability together with the remediation advice to fix it.
 
 ## Extension Configuration
 
 After the plugin is installed, you can set the following configurations for the extension:
 
-- **Advanced mode**: toggles a panel to allow the user to manually control when the analysis should be run.
-- **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch
-  to another account.
+- **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch to another account.
+- **Features**
+  - **Code Security**: configures if code security analysis should run over your code.
+  - **Code Quality**: configures if code quality analysis should run over your code.
+  - **Open Source Security**: configures if security analysis should run over your open source dependencies.
+- **Severity**: sets severity level to display in the analysis result tree.
+- **Advanced**
+  - **Advanced mode**: toggles a panel to allow the user to manually control when the analysis should be run.
+  - **Auto Scan Open Source Security**: sets severity level to display in the analysis result tree.
+  - **Additional Parameters**: sets parameters to be passed to Snyk CLI for Open Source Security tests. For the full list you can consult [this reference](https://docs.snyk.io/features/snyk-cli/guides-for-our-cli/cli-reference).
 
 ### Create a .dcignore file
 
