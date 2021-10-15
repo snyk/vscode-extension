@@ -1,10 +1,11 @@
+import * as fs from 'fs/promises';
 import path from 'path';
 import { Platform } from '../common/platform';
-import * as fs from 'fs/promises';
 import { Checksum } from './checksum';
 import { CliSupportedPlatform } from './supportedPlatforms';
 
 export class CliExecutable {
+  // If values updated, `.vscodeignore` to be changed.
   public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
     linux: 'snyk-linux',
     win32: 'snyk-win.exe',
