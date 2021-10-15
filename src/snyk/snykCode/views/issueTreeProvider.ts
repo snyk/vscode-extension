@@ -45,13 +45,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     const review: TreeNode[] = [];
     let nIssues = 0;
     if (!this.contextService.shouldShowCodeAnalysis) return review;
-    if (this.diagnosticCollection)
+
+    if (this.snykCode.hasError) {
+      return [this.getErrorEncounteredTreeNode()];
+    }
+
+    if (this.diagnosticCollection) {
       this.diagnosticCollection.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
-        const counts: ISeverityCounts = {
-          [SNYK_SEVERITIES.information]: 0,
-          [SNYK_SEVERITIES.warning]: 0,
-          [SNYK_SEVERITIES.error]: 0,
-        };
         const filePath = uri.path.split('/');
         const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
@@ -61,64 +61,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         const fileVulnerabilities = this.getFilteredIssues(diagnostics);
         if (fileVulnerabilities.length == 0) return;
 
-        const issues: TreeNode[] = fileVulnerabilities.map(d => {
-          const severity = getSnykSeverity(d.severity);
-          counts[severity] += 1;
-          const params: {
-            text: string;
-            icon: INodeIcon;
-            issue: { uri: Uri; range?: Range };
-            internal: { severity: number };
-            command: Command;
-            children?: TreeNode[];
-          } = {
-            text: d.message,
-            icon: IssueTreeProvider.getSeverityIcon(severity),
-            issue: {
-              uri,
-              range: d.range,
-            },
-            internal: {
-              severity,
-            },
-            command: {
-              command: SNYK_OPEN_ISSUE_COMMAND,
-              title: '',
-              arguments: [
-                {
-                  issueType: OpenCommandIssueType.CodeIssue,
-                  issue: {
-                    message: d.message,
-                    uri: uri,
-                    range: d.range,
-                  } as CodeIssueCommandArg,
-                } as OpenIssueCommandArg,
-              ],
-            },
-          };
-
-          // // No need for markers in the node tree while having the suggestion view
-          // if (d.relatedInformation && d.relatedInformation.length) {
-          //   params.children = d.relatedInformation.map((h) =>
-          //     new Node({
-          //       text: h.message,
-          //       issue: {
-          //         uri: h.location.uri,
-          //         range: h.location.range,
-          //       },
-          //       command: {
-          //         command: SNYK_OPEN_ISSUE_COMMAND,
-          //         title: '',
-          //         arguments: [d.message, severity, uri, d.range, h.location.uri, h.location.range],
-          //       }
-          //     })
-          //   );
-          // }
-
-          return new TreeNode(params);
-        });
+        const [issues, severityCounts] = this.getVulnerabilityTreeNodes(fileVulnerabilities, uri);
         issues.sort(this.compareNodes);
-        const fileSeverity = IssueTreeProvider.getFileSeverity(counts);
+        const fileSeverity = IssueTreeProvider.getFileSeverity(severityCounts);
         const file = new TreeNode({
           text: filename,
           description: this.getIssueDescriptionText(dir, diagnostics),
@@ -131,6 +76,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         });
         review.push(file);
       });
+    }
     review.sort(this.compareNodes);
     if (this.snykCode.isAnalysisRunning) {
       review.unshift(
@@ -174,5 +120,54 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
           return true;
       }
     });
+  }
+
+  private getVulnerabilityTreeNodes(fileVulnerabilities: Diagnostic[], uri: Uri): [TreeNode[], ISeverityCounts] {
+    const severityCounts: ISeverityCounts = {
+      [SNYK_SEVERITIES.information]: 0,
+      [SNYK_SEVERITIES.warning]: 0,
+      [SNYK_SEVERITIES.error]: 0,
+    };
+
+    const nodes = fileVulnerabilities.map(d => {
+      const severity = getSnykSeverity(d.severity);
+      severityCounts[severity] += 1;
+      const params: {
+        text: string;
+        icon: INodeIcon;
+        issue: { uri: Uri; range?: Range };
+        internal: { severity: number };
+        command: Command;
+        children?: TreeNode[];
+      } = {
+        text: d.message,
+        icon: IssueTreeProvider.getSeverityIcon(severity),
+        issue: {
+          uri,
+          range: d.range,
+        },
+        internal: {
+          severity,
+        },
+        command: {
+          command: SNYK_OPEN_ISSUE_COMMAND,
+          title: '',
+          arguments: [
+            {
+              issueType: OpenCommandIssueType.CodeIssue,
+              issue: {
+                message: d.message,
+                uri: uri,
+                range: d.range,
+              } as CodeIssueCommandArg,
+            } as OpenIssueCommandArg,
+          ],
+        },
+      };
+
+      return new TreeNode(params);
+    });
+
+    return [nodes, severityCounts];
   }
 }

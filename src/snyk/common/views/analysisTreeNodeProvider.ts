@@ -59,24 +59,17 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
   }
 
   protected getErrorEncounteredTreeNode(scanPath?: string): TreeNode {
-    if (scanPath) {
-      const scanDir = path.basename(scanPath);
-      return new TreeNode({
-        icon: NODE_ICONS.error,
-        text: scanDir ?? '',
-        description: messages.errorEncountered,
-        internal: {
-          isError: true,
-        },
-        command: {
-          command: SNYK_SHOW_OUTPUT_COMMAND,
-          title: '',
-        },
-      });
-    }
-
     return new TreeNode({
-      text: messages.errorEncountered,
+      icon: NODE_ICONS.error,
+      text: scanPath ? path.basename(scanPath) : messages.scanFailed,
+      description: messages.clickToProblem,
+      internal: {
+        isError: true,
+      },
+      command: {
+        command: SNYK_SHOW_OUTPUT_COMMAND,
+        title: '',
+      },
     });
   }
 
