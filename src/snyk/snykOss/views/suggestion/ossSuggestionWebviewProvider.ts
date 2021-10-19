@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
+import { getNonce } from '../../../common/views/nonce';
+import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
-import { getNonce } from '../../../common/views/nonce';
-import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
-import { WebviewProvider } from '../../../common/views/webviewProvider';
 
 enum SuggestionViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -33,7 +33,6 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
     );
   }
 
-  // todo: perhaps create a base class for both Code and OSS providers?
   async showPanel(vulnerability: OssIssueCommandArg): Promise<void> {
     if (
       !vscode.window.activeTextEditor?.viewColumn ||
@@ -66,17 +65,21 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
 
     void this.panel.webview.postMessage({ type: 'set', args: vulnerability });
 
-    this.panel.onDidDispose(this.onPanelDispose.bind(this));
-    this.panel.webview.onDidReceiveMessage((data: FeaturesViewEventMessage) => {
-      switch (data.type) {
-        case SuggestionViewEventMessageType.OpenBrowser:
-          void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
-          break;
-        default:
-          break;
-      }
-    });
-    this.panel.onDidChangeViewState(this.checkVisibility.bind(this));
+    this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
+    this.panel.webview.onDidReceiveMessage(
+      (data: FeaturesViewEventMessage) => {
+        switch (data.type) {
+          case SuggestionViewEventMessageType.OpenBrowser:
+            void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
+            break;
+          default:
+            break;
+        }
+      },
+      null,
+      this.disposables,
+    );
+    this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
@@ -93,7 +96,14 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
       return accumulator;
     }, {});
 
-    const scriptUri = this.getWebViewUri('out', 'snyk', 'snykOss', 'views', 'suggestion', 'ossSuggestionWebviewScript.js');
+    const scriptUri = this.getWebViewUri(
+      'out',
+      'snyk',
+      'snykOss',
+      'views',
+      'suggestion',
+      'ossSuggestionWebviewScript.js',
+    );
     const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
 
     const nonce = getNonce();

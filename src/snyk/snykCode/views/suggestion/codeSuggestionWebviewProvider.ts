@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { IExtension } from '../../../base/modules/interfaces';
-import { configuration } from '../../../common/configuration/instance';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
@@ -79,18 +78,10 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
 
       void this.panel.webview.postMessage({ type: 'set', args: suggestion });
 
-      this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.extension?.context?.subscriptions);
-      this.panel.onDidChangeViewState(
-        this.checkVisibility.bind(this),
-        undefined,
-        this.extension?.context?.subscriptions,
-      );
+      this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
+      this.panel.onDidChangeViewState(this.checkVisibility.bind(this), undefined, this.disposables);
       // Handle messages from the webview
-      this.panel.webview.onDidReceiveMessage(
-        this.handleMessage.bind(this),
-        undefined,
-        this.extension?.context?.subscriptions,
-      );
+      this.panel.webview.onDidReceiveMessage(this.handleMessage.bind(this), undefined, this.disposables);
       this.suggestion = suggestion;
     } catch (e) {
       if (!this.extension) return;
