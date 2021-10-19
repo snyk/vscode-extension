@@ -1,5 +1,5 @@
 import { ILog } from '../logger/interfaces';
-import { Event, Plugin, Properties, ValidationResponse } from '../../../itly';
+import { Event, Plugin, Properties, ValidationResponse } from '../../../ampli';
 
 export class ItlyErrorPlugin extends Plugin {
   constructor(private logger: ILog) {

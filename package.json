@@ -247,10 +247,10 @@
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
     "vscode:uninstall": "node ./out/uninstall",
-    "itly:verify": "itly verify -u --skip-update-on-default-branch"
+    "ampli:verify": "ampli status -u --skip-update-on-default-branch"
   },
   "devDependencies": {
-    "@itly/itly": "^1.2.0",
+    "@amplitude/ampli": "^0.2.1",
     "@types/analytics-node": "^3.1.4",
     "@types/glob": "^7.1.3",
     "@types/lodash": "^4.14.161",
@@ -275,9 +275,9 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@itly/plugin-iteratively-node": "^2.3.1",
-    "@itly/plugin-schema-validator": "^2.3.1",
-    "@itly/plugin-segment-node": "^2.3.1",
+    "@itly/plugin-amplitude-node": "^2.5.0",
+    "@itly/plugin-schema-validator": "^2.4.0",
+    "@itly/plugin-segment-node": "^2.4.0",
     "@itly/sdk": "^2.3.1",
     "@snyk/code-client": "^4.3.0",
     "analytics-node": "^4.0.1",
