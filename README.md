@@ -31,10 +31,9 @@ Use this documentation to get started with the Visual Studio Code extension for 
 
 #### Snyk Code
 
-Currently supported languages for Snyk Code are JavaScript, TypeScript, Java and Python. We also provide coverage for frameworks
+Currently supported languages for Snyk Code are JavaScript, TypeScript, Java, Python and C#. We also provide coverage for frameworks
 like Vue and React. See [Snyk Code language and framework support](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support)
-for more information. We analyze the JavaScript, TypeScript, Java and Python files as defined by the following list: `.es`,
-`.es6`, `.htm`, `.html`, `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.java`, `.py`.
+for more information. We analyze the JavaScript, TypeScript, Java and Python files as defined by the following list: `aspx`, `CS`, `ejs`, `.es`, `.es6`, `.htm`, `.html`, `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.py`, `.java`.
 
 #### Snyk Open Source
 
