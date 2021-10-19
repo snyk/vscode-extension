@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import { Logger } from '../logger/logger';
 import { ExtensionContext } from '../vscode/extensionContext';
 
 export abstract class WebviewProvider {
+  protected disposables: vscode.Disposable[] = [];
+
   protected panel?: vscode.WebviewPanel;
 
   constructor(protected readonly context: ExtensionContext) {}
@@ -21,11 +24,23 @@ export abstract class WebviewProvider {
 
   protected onPanelDispose(): void {
     this.panel = undefined;
+
+    while (this.disposables.length) {
+      const disposable = this.disposables.pop();
+      if (disposable) {
+        disposable.dispose();
+      }
+    }
   }
 
-  protected checkVisibility(_e: vscode.WebviewPanelOnDidChangeViewStateEvent): void {
+  protected async checkVisibility(): Promise<void> {
     if (this.panel && this.panel.visible) {
-      void this.panel.webview.postMessage({ type: 'get' });
+      try {
+        await this.panel.webview.postMessage({ type: 'get' });
+      } catch (e) {
+        if (!this.panel) return; // can happen due to asynchronicity, ignore such cases
+        Logger.error(`Failed to restore the '${this.panel.title}' webview.`);
+      }
     }
   }
 
