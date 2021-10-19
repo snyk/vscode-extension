@@ -135,12 +135,16 @@ The icons here mean:
 
 You can filter the issues by setting the severities you want to see using the `snyk.severity` setting. E.g. set `"snyk.severity": { "critical": true, "high": true, "medium": true, "low": false }` to hide low severity issues. You can also apply the setting via Settings UI.
 
+![Severity filters](media/images/readme/severity-filters.png)
+
 ### Editor window
 
 The editor window (in the middle of the results screen) shows the code that is inspected. This ensures that when you are
 inspecting a Snyk issue, you always have the code context close to the issue.
 
 ### Snyk Code vulnerability window
+
+![Snyk Code analysis results](media/images/readme/install-the-extension_suggestion-example.png)
 
 The Snyk Suggestion panel (on the right of the results screen) shows the argumentation of the Snyk engine using for
 example variable names of your code and the line numbers in red. You can also see:
@@ -155,6 +159,8 @@ example variable names of your code and the line numbers in red. You can also se
 We also include a feedback mechanism to report false positives so that others do not see the same issue.
 
 ### Snyk OSS vulnerability window
+
+![Snyk Open Source analysis results](media/images/readme/oss-example.png)
 
 OSS vulnerability tab shows information about the vulnerable module.
 
