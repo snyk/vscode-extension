@@ -5,9 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { ILog } from '../logger/interfaces';
 import itly, {
   AnalysisIsReadyProperties,
-  
+
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
-  IssueIsViewedProperties,
+  IssueInTreeIsClickedProperties,
 } from '../../../ampli';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
 import { Configuration } from '../configuration/configuration';
@@ -27,7 +27,7 @@ export interface IAnalytics {
   flush(): Promise<void>;
   setShouldReportEvents(shouldReportEvents: boolean): void;
   identify(userId: string): void;
-  logIssueIsViewed(properties: IssueIsViewedProperties): void;
+  logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void;
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
   logAnalysisIsTriggered(properties: AnalysisIsTriggeredProperties): void;
   logWelcomeViewIsViewed(): void;
@@ -109,12 +109,12 @@ export class Iteratively implements IAnalytics {
     });
   }
 
-  public logIssueIsViewed(properties: IssueIsViewedProperties): void {
+  public logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void {
     if (!this.canReportEvents() || !this.userId) {
       return;
     }
 
-    itly.issueIsViewed(this.userId, properties);
+    itly.issueInTreeIsClicked(this.userId, properties);
   }
 
   public logAnalysisIsReady(properties: AnalysisIsReadyProperties): void {

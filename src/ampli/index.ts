@@ -267,7 +267,7 @@ export interface AnalysisIsTriggeredProperties {
   triggeredByUser: boolean;
 }
 
-export interface IssueIsViewedProperties {
+export interface IssueInTreeIsClickedProperties {
   /**
    * Ide family.
    *
@@ -372,16 +372,16 @@ export class AnalysisIsTriggered implements Event {
   }
 }
 
-export class IssueIsViewed implements Event {
-  name = 'Issue Is Viewed';
-  id = 'bba9d69b-95d5-4082-80c3-4508402750bb';
+export class IssueInTreeIsClicked implements Event {
+  name = 'Issue In Tree Is Clicked';
+  id = 'fae15d02-eab9-49bb-9833-18414e26058b';
   version = '1.0.0';
-  properties: IssueIsViewedProperties & {
+  properties: IssueInTreeIsClickedProperties & {
     'itly': true;
   };
 
   constructor(
-    properties: IssueIsViewedProperties,
+    properties: IssueInTreeIsClickedProperties,
   ) {
     this.properties = {
         ...properties,
@@ -493,7 +493,7 @@ class Itly {
           'page': {"type":"object","properties":{"package":{"type":"string"},"search":{"type":"string"},"url":{"type":"string"},"title":{"type":"string"},"path":{"type":"string"},"ecosystem":{"type":"string"},"referrer":{"type":"string"}},"additionalProperties":false,"required":[]},
           'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
-          'Issue Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
+          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Plugin Is Uninstalled': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
@@ -584,12 +584,12 @@ class Itly {
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
    */
-  issueIsViewed(
+  issueInTreeIsClicked(
     userId: string,
-    properties: IssueIsViewedProperties,
+    properties: IssueInTreeIsClickedProperties,
     options?: TrackOptions,
   ) {
-    this.itly.track(userId, new IssueIsViewed(properties), options);
+    this.itly.track(userId, new IssueInTreeIsClicked(properties), options);
   }
 
   /**
