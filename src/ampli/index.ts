@@ -20,10 +20,6 @@ import {
   PluginCallOptions as PluginCallOptionsBase,
 } from '@itly/sdk';
 import SchemaValidatorPlugin from '@itly/plugin-schema-validator';
-import {
-  IterativelyPlugin,
-  IterativelyOptionsPartial as IterativelyOptions,
-} from '@itly/plugin-iteratively-node';
 
 export type Options = OptionsBase;
 export type Environment = EnvironmentBase;
@@ -51,6 +47,18 @@ export interface TrackOptions extends CallOptions {
 
 export interface IdentifyProperties {
   /**
+   * Applies to non-user identities, such as Snyk Orgs
+   */
+  isNonUser?: boolean;
+  /**
+   * Whether or not the user belongs to the Snyk org (determined by the email address ending with @snyk.io)
+   */
+  is_snyk?: boolean;
+  /**
+   * query utm_medium
+   */
+  utm_medium?: string;
+  /**
    * Name of the user
    */
   name?: string;
@@ -58,6 +66,10 @@ export interface IdentifyProperties {
    * query utm_medium
    */
   utmMedium?: string;
+  /**
+   * query utm_campaign
+   */
+  utm_campaign?: string;
   /**
    * Link to access more information about the user
    */
@@ -79,6 +91,22 @@ export interface IdentifyProperties {
    */
   authProvider?: string;
   /**
+   * Whether or not the user belongs to the Snyk org (determined by the email address ending with @snyk.io)
+   */
+  isSnyk?: boolean;
+  /**
+   * query utm_source
+   */
+  utm_source?: string;
+  /**
+   * Timestamp of user creation
+   */
+  created_at?: number;
+  /**
+   * Auth provider (login method)
+   */
+  auth_provider?: string;
+  /**
    * Whether or not the user has their first project imported
    */
   hasFirstProject?: boolean;
@@ -87,9 +115,17 @@ export interface IdentifyProperties {
    */
   isSnykAdmin?: boolean;
   /**
+   * Public ID of user
+   */
+  user_id?: string;
+  /**
    * Whether or not the user has their first integration set up
    */
   hasFirstIntegration?: boolean;
+  /**
+   * Link to access more information about the user
+   */
+  admin_link?: string;
   /**
    * Username of the user
    */
@@ -125,6 +161,41 @@ export interface GroupProperties {
    * The name of the group associated with the org
    */
   groupName?: string;
+  /**
+   * The types of projects in the org
+   */
+  projectTypes?: string[];
+}
+
+export interface PageProperties {
+  /**
+   * The name of the package
+   */
+  package?: string;
+  /**
+   * Query parameters in url.
+   */
+  search?: string;
+  /**
+   * The url of the page.
+   */
+  url?: string;
+  /**
+   * The page title.
+   */
+  title?: string;
+  /**
+   * The canonical path of the page
+   */
+  path?: string;
+  /**
+   * Name of the ecosystem (npm|python|docker...)
+   */
+  ecosystem?: string;
+  /**
+   * The page that linked to this page.
+   */
+  referrer?: string;
 }
 
 export interface AnalysisIsReadyProperties {
@@ -147,11 +218,21 @@ export interface AnalysisIsReadyProperties {
    *
    * * advisor issues
    *
+   * * infrastructure as code issues
+   *
+   * * container vulnerabilities
+   *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Snyk Advisor, Snyk Code Quality, Snyk Code Security, Snyk Open Source |
+   * | Enum Values | Snyk Advisor, Snyk Code Quality, Snyk Code Security, Snyk Open Source, Snyk Container, Snyk Infrastructure as Code |
    */
-  analysisType: "Snyk Advisor" | "Snyk Code Quality" | "Snyk Code Security" | "Snyk Open Source";
+  analysisType:
+    | "Snyk Advisor"
+    | "Snyk Code Quality"
+    | "Snyk Code Security"
+    | "Snyk Open Source"
+    | "Snyk Container"
+    | "Snyk Infrastructure as Code";
   /**
    * | Rule | Value |
    * |---|---|
@@ -258,7 +339,7 @@ export interface WelcomeIsViewedProperties {
 export class AnalysisIsReady implements Event {
   name = 'Analysis Is Ready';
   id = 'c9337edb-27a3-416e-a654-092fa4375feb';
-  version = '1.0.0';
+  version = '2.0.0';
   properties: AnalysisIsReadyProperties & {
     'itly': true;
   };
@@ -365,7 +446,7 @@ export class WelcomeIsViewed implements Event {
 
 // prettier-ignore
 interface DestinationOptions {
-  iteratively?: IterativelyOptions;
+
   all?: {
     disabled?: boolean;
   };
@@ -400,24 +481,17 @@ class Itly {
     const destinationPlugins = destinations.all && destinations.all.disabled
       ? []
       : [
-        new IterativelyPlugin(options.environment === 'production'
-          ? '5HB-hbvnCrU6EhiR-byG-pFwFAnceLbW'
-          : 'nFVaJJwOdaJn9ETw_3DRSpFpg790tzEi',
-          {
-            url: 'https://api.iterative.ly/t/version/f254a640-bfd9-4421-bb75-e6cd8f21f6a6',
-            environment: options.environment || 'development',
-            ...destinations.iteratively,
-          },
-        ),
+
       ];
 
     this.itly.load({
       ...options,
       plugins: [
         new SchemaValidatorPlugin({
-          'group': {"type":"object","properties":{"groupId":{"type":"string"},"name":{"type":"string"},"internalName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"groupName":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"name":{"type":"string"},"utmMedium":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"authProvider":{"type":"string"},"hasFirstProject":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"hasFirstIntegration":{"type":"boolean"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
+          'group': {"type":"object","properties":{"groupId":{"type":"string"},"name":{"type":"string"},"internalName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"groupName":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"utm_medium":{"type":"string"},"name":{"type":"string"},"utmMedium":{"type":"string"},"utm_campaign":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"authProvider":{"type":"string"},"isSnyk":{"type":"boolean"},"utm_source":{"type":"string"},"created_at":{"type":"number"},"auth_provider":{"type":"string"},"hasFirstProject":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"user_id":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"admin_link":{"type":"string"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'page': {"type":"object","properties":{"package":{"type":"string"},"search":{"type":"string"},"url":{"type":"string"},"title":{"type":"string"},"path":{"type":"string"},"ecosystem":{"type":"string"},"referrer":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
           'Issue Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
@@ -473,7 +547,7 @@ class Itly {
   /**
    * Triggered when the analysis is loaded within the IDE.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
@@ -489,7 +563,7 @@ class Itly {
   /**
    * User triggers an analysis or analysis is automatically triggered.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
@@ -505,7 +579,7 @@ class Itly {
   /**
    * Triggered when the user selects an issue from the issues list and the issue is loaded.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
@@ -521,7 +595,7 @@ class Itly {
   /**
    * Triggered when the user installs the plugin.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
@@ -537,7 +611,7 @@ class Itly {
   /**
    * Triggered when the user uninstalls the plugin.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.
@@ -553,7 +627,7 @@ class Itly {
   /**
    * User installs the IDE plugin and see Snyk's welcome screen.
    * 
-   * Owner: Georgi 
+   * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
    * @param options Options for this track call.

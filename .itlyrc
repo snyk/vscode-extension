@@ -1,7 +1,0 @@
-{
-  CompanyId: '6d7c255e-5bf5-46fc-be87-58b75c7e0ad5',
-  SourceId: '4be0392d-f232-4850-943e-edab84cc8ccd',
-  Path: './src/itly',
-  Branch: 'main',
-  Version: '31.0.0',
-}

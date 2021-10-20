@@ -5,9 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { ILog } from '../logger/interfaces';
 import itly, {
   AnalysisIsReadyProperties,
+  
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
   IssueIsViewedProperties,
-} from '../../../itly';
+} from '../../../ampli';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
 
 export type SupportedAnalysisProperties =

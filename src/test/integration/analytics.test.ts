@@ -3,7 +3,7 @@ import { configuration } from '../../snyk/common/configuration/instance';
 import * as vscode from 'vscode';
 import { VSCODE_VIEW_CONTAINER_COMMAND } from '../../snyk/common/constants/commands';
 import * as sinon from 'sinon';
-import itly from '../../itly';
+import itly from '../../ampli';
 
 suite('Analytics', () => {
   let welcomeIsViewed: sinon.SinonSpy;

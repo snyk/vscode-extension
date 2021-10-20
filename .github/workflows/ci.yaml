@@ -38,4 +38,4 @@ jobs:
         run: npm run test:unit
 
       - name: Verify analytics events
-        run: npm run itly:verify -- -t ${{ secrets.ITERATIVELY_KEY }}
+        run: npm run ampli:verify -- -t ${{ secrets.ITERATIVELY_KEY }}
