@@ -2,7 +2,7 @@
   "WorkspaceId": "6d7c255e-5bf5-46fc-be87-58b75c7e0ad5",
   "SourceId": "4be0392d-f232-4850-943e-edab84cc8ccd",
   "Path": "./src/ampli",
-  "Branch": "main",
-  "Version": "83.0.0",
+  "Branch": "feat/ide_issue-interaction",
+  "Version": "93.0.0",
   "OrgId": "114775"
 }

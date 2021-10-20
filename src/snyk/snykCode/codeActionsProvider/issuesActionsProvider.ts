@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/ban-types */
-import * as _ from 'lodash';
 import * as vscode from 'vscode';
-import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { analytics } from '../../common/analytics/analytics';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
+import { IDE_NAME } from '../../common/constants/general';
+import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { findIssueWithRange } from '../utils/analysisUtils';
 
 export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
@@ -85,6 +86,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
         ...codeActionParams,
         isFileIgnore: true,
       });
+
+      analytics.logQuickFixIsDisplayed({
+        quickFixType: ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'],
+        ide: IDE_NAME,
+      });
+
       // returns list of actions, all new actions should be added to this list
       return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }

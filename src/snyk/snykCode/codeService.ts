@@ -56,7 +56,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly logger: ILog,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer();
+    this.analyzer = new SnykCodeAnalyzer(logger);
     this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

@@ -1,10 +1,22 @@
 import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
+import { IExtension } from '../../base/modules/interfaces';
+import { ILog } from '../../common/logger/interfaces';
+import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
+import { DisposableCodeActionsProvider } from '../codeActionsProvider/issuesActionsProvider';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
 } from '../constants/analysis';
-import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
+import { DisposableHoverProvider } from '../hoverProvider/hoverProvider';
+import {
+  completeFileSuggestionType,
+  ICodeSuggestion,
+  IIssuesListOptions,
+  ISnykCodeAnalyzer,
+  ISnykCodeResult,
+  openedTextEditorType,
+} from '../interfaces';
 import {
   checkCompleteSuggestion,
   createIssueCorrectRange,
@@ -15,17 +27,6 @@ import {
   isSecurityTypeSuggestion,
   updateFileReviewResultsPositions,
 } from '../utils/analysisUtils';
-import { IExtension } from '../../base/modules/interfaces';
-import {
-  ISnykCodeAnalyzer,
-  completeFileSuggestionType,
-  IIssuesListOptions,
-  openedTextEditorType,
-  ISnykCodeResult,
-  ICodeSuggestion,
-} from '../interfaces';
-import { DisposableHoverProvider } from '../hoverProvider/hoverProvider';
-import { DisposableCodeActionsProvider } from '../codeActionsProvider/issuesActionsProvider';
 
 class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   private SEVERITIES: {
@@ -35,7 +36,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   public readonly codeSecurityReview: vscode.DiagnosticCollection | undefined;
   private analysisResults: ISnykCodeResult;
 
-  public constructor() {
+  public constructor(readonly logger: ILog) {
     this.SEVERITIES = createSnykSeveritiesMap();
     this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
     this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
@@ -48,8 +49,8 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       findSuggestion: this.findSuggestion.bind(this),
     });
-    new DisposableHoverProvider(this.codeSecurityReview);
-    new DisposableHoverProvider(this.codeQualityReview);
+    new DisposableHoverProvider(this, this.codeSecurityReview, logger);
+    new DisposableHoverProvider(this, this.codeQualityReview, logger);
   }
 
   public setAnalysisResults(results: AnalysisResultLegacy): void {

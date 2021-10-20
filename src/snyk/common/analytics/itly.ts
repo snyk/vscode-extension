@@ -7,7 +7,9 @@ import itly, {
   AnalysisIsReadyProperties,
 
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
-  IssueInTreeIsClickedProperties,
+  QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
+  IssueHoverIsDisplayedProperties,
+  IssueIsViewedProperties,
 } from '../../../ampli';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
 import { Configuration } from '../configuration/configuration';
@@ -22,6 +24,14 @@ export type AnalysisIsTriggeredProperties = _AnalysisIsTriggeredProperties & {
   analysisType: SupportedAnalysisProperties[];
 };
 
+export type SupportedQuickFixProperties =
+  | 'Show Suggestion'
+  | 'Ignore Suggestion In Line'
+  | 'Ignore Suggestion In File';
+export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
+  quickFixType: SupportedQuickFixProperties[];
+};
+
 export interface IAnalytics {
   load(): Iteratively | null;
   flush(): Promise<void>;
@@ -33,6 +43,8 @@ export interface IAnalytics {
   logWelcomeViewIsViewed(): void;
   logPluginIsInstalled(): void;
   logPluginIsUninstalled(userId?: string): void;
+  logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
+  logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
 }
 
 /**
@@ -185,6 +197,23 @@ export class Iteratively implements IAnalytics {
     itly.pluginIsUninstalled(userId, {
       ide: this.ide,
     });
+  }
+
+  public logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void {
+    if (!this.canReportEvents() || !this.userId) {
+      return;
+    }
+
+    itly.quickFixIsDisplayed(this.userId, properties);
+  }
+
+
+  public logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void {
+    if (!this.canReportEvents() || !this.userId) {
+      return;
+    }
+
+    itly.issueHoverIsDisplayed(this.userId, properties);
   }
 
   private canReportEvents(): boolean {
