@@ -9,8 +9,13 @@ export interface IVSCodeWorkspace {
     configurationTarget?: boolean,
     overrideInLanguage?: boolean,
   ): Promise<void>;
+  workspaceFolders(): string[];
+  createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
 }
 
+/**
+ * A wrapper class for the vscode.workspace to provide centralised access to dealing with the current workspace.
+ */
 export class VSCodeWorkspace implements IVSCodeWorkspace {
   getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined {
     return vscode.workspace.getConfiguration(configurationIdentifier).get(section);
@@ -32,6 +37,14 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
           reason => reject(reason),
         );
     });
+  }
+
+  workspaceFolders(): string[] {
+    return (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+  }
+
+  createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher {
+    return vscode.workspace.createFileSystemWatcher(globPattern);
   }
 }
 

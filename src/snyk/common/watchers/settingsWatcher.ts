@@ -1,16 +1,19 @@
 import * as vscode from 'vscode';
+import { IExtension } from '../../base/modules/interfaces';
+import { analytics } from '../analytics/analytics';
+import { configuration } from '../configuration/instance';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTOSCAN_OSS_SETTING,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
+  OSS_ENABLED_SETTING,
+  SEVERITY_FILTER_SETTING,
   TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
-import { analytics } from '../analytics/analytics';
-import { configuration } from '../configuration/instance';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { IWatcher } from './interfaces';
-import { IExtension } from '../../base/modules/interfaces';
 
 class SettingsWatcher implements IWatcher {
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
@@ -18,9 +21,13 @@ class SettingsWatcher implements IWatcher {
       return extension.checkAdvancedMode();
     } else if (key === YES_TELEMETRY_SETTING) {
       return analytics.setShouldReportEvents(configuration.shouldReportEvents);
+    } else if (key === OSS_ENABLED_SETTING) {
+      extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
       // If two settings are changed simultaneously, only one will be applied, thus refresh all views
-      extension.viewManagerService.refreshAllAnalysisViews();
+      extension.viewManagerService.refreshAllCodeAnalysisViews();
+    } else if (key === SEVERITY_FILTER_SETTING) {
+      return extension.viewManagerService.refreshAllViews();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -31,7 +38,7 @@ class SettingsWatcher implements IWatcher {
       void extensionConfig.update('url', cleaned, true);
     }
 
-    return extension.startExtension();
+    return extension.runScan();
   }
 
   public activate(extension: IExtension): void {
@@ -40,9 +47,12 @@ class SettingsWatcher implements IWatcher {
         const change = [
           TOKEN_SETTING,
           ADVANCED_ADVANCED_MODE_SETTING,
+          ADVANCED_AUTOSCAN_OSS_SETTING,
           YES_TELEMETRY_SETTING,
+          OSS_ENABLED_SETTING,
           CODE_SECURITY_ENABLED_SETTING,
           CODE_QUALITY_ENABLED_SETTING,
+          SEVERITY_FILTER_SETTING,
         ].find(config => event.affectsConfiguration(config));
         if (change) {
           try {

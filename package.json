@@ -4,7 +4,7 @@
   "displayName": "Snyk Vulnerability Scanner",
   "version": "1.1.3",
   "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
-  "icon": "images/readme/snyk_extension_icon.png",
+  "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
   "homepage": "https://snyk.io",
   "repository": {
@@ -37,7 +37,8 @@
     "Python"
   ],
   "activationEvents": [
-    "onWebviewPanel:snyk.views.suggestion",
+    "onWebviewPanel:snyk.views.suggestion.code",
+    "onWebviewPanel:snyk.views.suggestion.oss",
     "*"
   ],
   "main": "./out/extension.js",
@@ -74,11 +75,35 @@
             "markdownDescription": "Show welcome notification after installation and restart",
             "scope": "application"
           },
+          "snyk.yesBackgroundOssNotification": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
+            "scope": "application"
+          },
           "snyk.advanced.advancedMode": {
             "type": "boolean",
             "default": false,
-            "description": "Allows the user to configure if Snyk analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
+            "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
             "scope": "application"
+          },
+          "snyk.advanced.autoScanOpenSourceSecurity": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
+            "scope": "application"
+          },
+          "snyk.advanced.additionalParameters": {
+            "type": "string",
+            "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
+            "scope": "window"
+          },
+          "snyk.features.openSourceSecurity": {
+            "type": "boolean",
+            "title": "Snyk Open Source security issues",
+            "description": "Find and fix open source vulnerabilities.",
+            "default": true
           },
           "snyk.features.codeSecurity": {
             "type": "boolean",
@@ -91,6 +116,36 @@
             "title": "Snyk Code quality issues",
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
+          },
+          "snyk.severity": {
+            "type": "object",
+            "default": {
+              "critical": true,
+              "high": true,
+              "medium": true,
+              "low": true
+            },
+            "properties": {
+              "critical": {
+                "type": "boolean",
+                "default": true
+              },
+              "high": {
+                "type": "boolean",
+                "default": true
+              },
+              "medium": {
+                "type": "boolean",
+                "default": true
+              },
+              "low": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "Severity issues to display.",
+            "scope": "window"
           }
         }
       }
@@ -100,7 +155,7 @@
         {
           "id": "snyk",
           "title": "Snyk",
-          "icon": "images/snyk_extension_icon_new.svg"
+          "icon": "media/images/snyk_extension_icon_new.svg"
         }
       ]
     },
@@ -115,7 +170,12 @@
         {
           "id": "snyk.views.welcome",
           "name": "Snyk",
-          "when": "snyk:featuresSelected && !snyk:codeEnabled || !snyk:loggedIn || snyk:error || snyk:featuresSelected && !snyk:workspaceFound"
+          "when": "!snyk:loggedIn || snyk:error || snyk:featuresSelected && !snyk:workspaceFound"
+        },
+        {
+          "id": "snyk.views.analysis.oss",
+          "name": "Open Source Security",
+          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.security",
@@ -128,8 +188,13 @@
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
+          "id": "snyk.views.analysis.code.enablement",
+          "name": "Code Security & Quality",
+          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
           "id": "snyk.views.actions",
-          "name": "Actions",
+          "name": "Code Security & Quality Actions",
           "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound"
         },
         {
@@ -160,33 +225,32 @@
         "when": "!snyk:error && !snyk:loggedIn && snyk:authenticating"
       },
       {
-        "view": "snyk.views.welcome",
-        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!",
-        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled"
+        "view": "snyk.views.analysis.code.enablement",
+        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!"
       },
       {
         "view": "snyk.views.welcome",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
-        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:workspaceFound"
+        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:workspaceFound"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running code security and quality scanning in manual mode. You are in control, no automated actions from our side.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'manual'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "Snyk analysis is currently paused.\n[Unpause](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "Code security and quality analysis is currently paused.\n[Resume](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'paused'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
+        "contents": "You are currently running code security and quality scanning in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
         "when": "snyk:mode == 'throttled'"
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running Snyk in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause Snyk for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
+        "contents": "You are currently running code security and quality in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
         "when": "snyk:mode != 'manual' && snyk:mode != 'paused' && snyk:mode != 'throttled'"
       }
     ],
@@ -194,7 +258,7 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
           "group": "navigation"
         },
         {
@@ -217,23 +281,32 @@
     "commands": [
       {
         "command": "snyk.start",
-        "title": "Snyk rescan",
+        "title": "Rescan",
+        "category": "Snyk",
         "icon": "$(run)"
       },
       {
         "command": "snyk.settings",
-        "title": "Snyk settings",
+        "title": "Settings",
+        "category": "Snyk",
         "icon": "$(gear)"
       },
       {
         "command": "snyk.login",
-        "title": "Snyk login",
+        "title": "Login",
+        "category": "Snyk",
         "icon": "$(log-in)"
       },
       {
         "command": "snyk.dcignore",
-        "title": "Snyk create dcignore file",
+        "title": "Create dcignore file",
+        "category": "Snyk",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "snyk.showOutputChannel",
+        "title": "Show Output Channel",
+        "category": "Snyk"
       }
     ]
   },
@@ -242,12 +315,14 @@
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "tsc -p ./",
-    "test:unit": "mocha --ui tdd -c out/test/unit/**/*.test.js",
+    "test:unit": "mocha --ui tdd -c 'out/test/unit/**/*.test.js'",
+    "test:unit:watch": "mocha --ui tdd -w -c 'out/test/unit/**/*.test.js'",
     "test:integration": "node ./out/test/integration/runTest.js",
     "lint": "npx eslint 'src/**/*.ts'",
     "lint:fix": "npx eslint --fix 'src/**/*.ts'",
     "vscode:uninstall": "node ./out/uninstall",
-    "ampli:verify": "ampli status -u --skip-update-on-default-branch"
+    "ampli:verify": "ampli status -u --skip-update-on-default-branch",
+    "patch-preview": "node ./scripts/patchPreview.js"
   },
   "devDependencies": {
     "@amplitude/ampli": "^0.2.1",
@@ -259,6 +334,7 @@
     "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.0",
     "@types/vscode": "^1.48.0",
+    "@types/marked": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "eslint": "^7.8.1",
@@ -279,11 +355,14 @@
     "@itly/plugin-schema-validator": "^2.4.0",
     "@itly/plugin-segment-node": "^2.4.0",
     "@itly/sdk": "^2.3.1",
-    "@snyk/code-client": "^4.3.0",
+    "@snyk/code-client": "^4.3.2",
     "analytics-node": "^4.0.1",
     "axios": "^0.21.1",
     "lodash": "^4.17.21",
     "open": "^7.4.2",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "rxjs": "^7.3.0",
+    "marked": "^3.0.2",
+    "string-argv": "^0.3.1"
   }
 }

@@ -104,9 +104,6 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
     const enabled = await this.snykCode.isEnabled();
 
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    if (!enabled) {
-      this.loadingBadge.setLoadingBadge(true, this);
-    }
 
     return enabled;
   }

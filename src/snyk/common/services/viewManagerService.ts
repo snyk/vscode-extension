@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import { EventEmitter, TreeView } from 'vscode';
-import { FeaturesConfiguration } from '../configuration/configuration';
-import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { FeaturesViewProvider } from '../../base/views/featureSelection/featuresViewProvider';
-import { TreeNode } from '../views/treeNode';
+import { FeaturesConfiguration } from '../configuration/configuration';
 import { configuration } from '../configuration/instance';
+import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
+import { TreeNode } from '../views/treeNode';
 
 export type ViewType = FeaturesViewProvider | TreeView<TreeNode>;
 
@@ -25,10 +25,14 @@ export interface IViewManagerService {
 
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
+  readonly refreshOssViewEmitter: EventEmitter<void>;
+
+  refreshAllViews(): void;
+  refreshAllCodeAnalysisViews(): void;
+  refreshCodeAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
   refreshCodeSecurityView(): void;
   refreshCodeQualityView(): void;
-  refreshAllAnalysisViews(): void;
-  refreshFeatureAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
+  refreshOssView(): void;
 }
 
 export class ViewManagerService implements IViewManagerService {
@@ -36,19 +40,26 @@ export class ViewManagerService implements IViewManagerService {
 
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
+  readonly refreshOssViewEmitter: EventEmitter<void>;
 
   constructor() {
     this.refreshCodeSecurityViewEmitter = new EventEmitter<void>();
     this.refreshCodeQualityViewEmitter = new EventEmitter<void>();
+    this.refreshOssViewEmitter = new EventEmitter<void>();
     this.viewContainer = new ViewContainer();
   }
 
-  refreshAllAnalysisViews(): void {
+  refreshAllViews(): void {
+    this.refreshOssView();
+    this.refreshAllCodeAnalysisViews();
+  }
+
+  refreshAllCodeAnalysisViews(): void {
     this.refreshCodeSecurityView();
     this.refreshCodeQualityView();
   }
 
-  refreshFeatureAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void {
+  refreshCodeAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void {
     enabledFeatures = enabledFeatures ?? configuration.getFeaturesConfiguration();
 
     if (!enabledFeatures) {
@@ -80,4 +91,8 @@ export class ViewManagerService implements IViewManagerService {
       leading: true,
     },
   );
+
+  refreshOssView = _.throttle((): void => this.refreshOssViewEmitter.fire(), REFRESH_VIEW_DEBOUNCE_INTERVAL, {
+    leading: true,
+  });
 }

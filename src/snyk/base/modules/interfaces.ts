@@ -1,23 +1,25 @@
+import * as vscode from 'vscode';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { ISnykCode } from '../../snykCode/code';
-import { IStatusBarItem } from '../statusBarItem/statusBarItem';
-import { ExtensionContext, FileSystemWatcher } from 'vscode';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IWatcher } from '../../common/watchers/interfaces';
+import { ISnykCodeService } from '../../snykCode/codeService';
+import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 
 export interface IBaseSnykModule {
   statusBarItem: IStatusBarItem;
-  filesWatcher: FileSystemWatcher;
   settingsWatcher: IWatcher;
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
-  snykCode: ISnykCode;
+  snykCode: ISnykCodeService;
 
   // Abstract methods
   processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
-  startExtension(): Promise<void>;
+  runScan(): Promise<void>;
+  runCodeScan(manual?: boolean): Promise<void>;
+  runOssScan(manual?: boolean): Promise<void>;
 }
 
 export interface IReportModule {
@@ -32,13 +34,12 @@ export interface ILoginModule {
 }
 
 export interface ISnykLib {
-  setMode(mode: string): void;
   enableCode(): Promise<void>;
 }
 
 export interface IExtension extends IBaseSnykModule, IReportModule, ILoginModule, ISnykLib {
   context: ExtensionContext | undefined;
-  activate(context: ExtensionContext): void;
+  activate(context: vscode.ExtensionContext): void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

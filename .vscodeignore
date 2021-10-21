@@ -1,11 +1,28 @@
+# Build and testing
 .vscode/**
 .vscode-test/**
 out/test/**
 src/**
-.gitignore
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
+mocked_data/**
 **/*.map
 **/*.ts
-extension-test-mode.md
+.dccache
+.github/**
+
+# Configuration
+.gitignore
+tsconfig.json
+.eslintrc.json
+.prettierrc.js
+.editorconfig
+.itlyrc
+
+# Documentation
+README.preview.md
+development.md
+
+# Snyk CLI
+snyk-macos
+snyk-linux
+snyk-win.exe
+

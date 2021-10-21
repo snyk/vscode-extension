@@ -1,19 +1,22 @@
 import { emitter as emitterDC, SupportedFiles } from '@snyk/code-client';
 import _ from 'lodash';
-import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
-import { ISnykCode } from '../code';
 import * as vscode from 'vscode';
-import createFileWatcher from '../../common/watchers/filesWatcher';
 import { getExtension } from '../../../extension';
+import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
+import { Logger } from '../../common/logger/logger';
 import { IViewManagerService } from '../../common/services/viewManagerService';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
+import { ISnykCodeService } from '../codeService';
+import createFileWatcher from '../watchers/filesWatcher';
 
 export class Progress {
   private emitter = emitterDC;
+  private filesWatcher: vscode.FileSystemWatcher;
 
   constructor(
-    private readonly snykCode: ISnykCode,
-    private filesWatcher: vscode.FileSystemWatcher,
-    private viewManagerService: IViewManagerService,
+    private readonly snykCode: ISnykCodeService,
+    private readonly viewManagerService: IViewManagerService,
+    private readonly workspace: IVSCodeWorkspace,
   ) {}
 
   bindListeners(): void {
@@ -23,12 +26,12 @@ export class Progress {
     this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
     this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
     this.emitter.on(this.emitter.events.apiRequestLog, Progress.onAPIRequestLog.bind(this));
-    this.emitter.on(this.emitter.events.error, this.snykCode.onError.bind(this));
+    this.emitter.on(this.emitter.events.error, this.snykCode.errorEncountered.bind(this));
   }
 
   updateStatus(status: string, progress: string): void {
     this.snykCode.updateStatus(status, progress);
-    this.viewManagerService.refreshAllAnalysisViews();
+    this.viewManagerService.refreshAllCodeAnalysisViews();
   }
 
   onSupportedFilesLoaded(data: SupportedFiles | null): void {
@@ -38,7 +41,7 @@ export class Progress {
 
     // Setup file watcher
     if (!this.filesWatcher && data) {
-      this.filesWatcher = createFileWatcher(getExtension(), data);
+      this.filesWatcher = createFileWatcher(getExtension(), this.workspace, data);
     }
   }
 
@@ -63,6 +66,6 @@ export class Progress {
   }
 
   static onAPIRequestLog(message: string): void {
-    console.log(message);
+    Logger.debug(message.slice(0, 399));
   }
 }

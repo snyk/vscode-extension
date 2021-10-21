@@ -2,6 +2,7 @@
 export const VSCODE_GO_TO_SETTINGS_COMMAND = 'workbench.action.openSettings';
 export const VSCODE_VIEW_CONTAINER_COMMAND = 'workbench.view.extension.snyk';
 export const VSCODE_ADD_COMMENT_COMMAND = 'editor.action.addCommentLine';
+export const VSCODE_VIEW_OSS_VIEW_COMMAND = 'snyk.views.analysis.oss.focus';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
@@ -15,6 +16,7 @@ export const SNYK_COPY_AUTH_LINK_COMMAND = 'snyk.copyAuthLink';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
+export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';
