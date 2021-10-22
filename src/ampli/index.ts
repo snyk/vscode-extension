@@ -448,7 +448,7 @@ export class AnalysisIsTriggered implements Event {
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
-  version = '1.0.1';
+  version = '1.0.0';
   properties: IssueHoverIsDisplayedProperties & {
     'itly': true;
   };
@@ -520,7 +520,7 @@ export class PluginIsUninstalled implements Event {
 export class QuickFixIsDisplayed implements Event {
   name = 'Quick Fix Is Displayed';
   id = '170c1284-9ee6-457f-aa82-6c49e49cde93';
-  version = '4.0.0';
+  version = '1.0.0';
   properties: QuickFixIsDisplayedProperties & {
     'itly': true;
   };
