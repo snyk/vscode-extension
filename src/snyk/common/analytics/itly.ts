@@ -20,7 +20,7 @@ export type SupportedAnalysisProperties =
   | 'Snyk Code Security'
   | 'Snyk Open Source';
 export type AnalysisIsTriggeredProperties = _AnalysisIsTriggeredProperties & {
-  analysisType: [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]]; // [string, ...string[]]
+  analysisType: [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]];
 };
 
 export type SupportedQuickFixProperties = 'Show Suggestion' | 'Ignore Suggestion In Line' | 'Ignore Suggestion In File';
