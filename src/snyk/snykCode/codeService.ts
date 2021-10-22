@@ -89,11 +89,13 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
         if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
 
-        analytics.logAnalysisIsTriggered({
-          analysisType,
-          ide: IDE_NAME,
-          triggeredByUser: manualTrigger,
-        });
+        if (analysisType) {
+          analytics.logAnalysisIsTriggered({
+            analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
+            ide: IDE_NAME,
+            triggeredByUser: manualTrigger,
+          });
+        }
       }
 
       this.analysisStarted();
