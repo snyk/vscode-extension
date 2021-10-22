@@ -76,7 +76,7 @@ export class CommandController {
       this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
       suggestion.id = decodeURIComponent(suggestion.id);
 
-      analytics.logIssueIsViewed({
+      analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: suggestion.id,
         issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
@@ -86,7 +86,7 @@ export class CommandController {
       const issue = arg.issue as OssIssueCommandArg;
       void this.ossService.showSuggestionProvider(issue);
 
-      analytics.logIssueIsViewed({
+      analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: issue.id,
         issueType: 'Open Source Vulnerability',
