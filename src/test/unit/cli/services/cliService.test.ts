@@ -59,7 +59,7 @@ suite('CliService', () => {
       logger,
       configuration,
       {
-        workspaceFolders: () => ['test-folder'],
+        getWorkspaceFolders: () => ['test-folder'],
       } as IVSCodeWorkspace,
       cliDownloadService,
     );

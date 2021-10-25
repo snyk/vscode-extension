@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { TextDocumentChangeEvent } from 'vscode';
 
 export interface IVSCodeWorkspace {
   getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined;
@@ -9,8 +10,9 @@ export interface IVSCodeWorkspace {
     configurationTarget?: boolean,
     overrideInLanguage?: boolean,
   ): Promise<void>;
-  workspaceFolders(): string[];
+  getWorkspaceFolders(): string[];
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
+  onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
 }
 
 /**
@@ -39,12 +41,16 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
     });
   }
 
-  workspaceFolders(): string[] {
+  getWorkspaceFolders(): string[] {
     return (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
   }
 
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher {
     return vscode.workspace.createFileSystemWatcher(globPattern);
+  }
+
+  onDidChangeTextDocument(listener: (e: vscode.TextDocumentChangeEvent) => unknown): vscode.Disposable {
+    return vscode.workspace.onDidChangeTextDocument(listener);
   }
 }
 

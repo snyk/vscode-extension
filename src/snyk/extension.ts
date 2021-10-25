@@ -46,6 +46,9 @@ import { SnykCodeService } from './snykCode/codeService';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
 import { OssService } from './snykOss/services/ossService';
+import { NpmModuleInfoFetchService } from './snykOss/services/vulnerabilityCount/npmModuleInfoFetchService';
+import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
+import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
@@ -178,12 +181,24 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.initCliDownload();
 
+    const npmModuleInfoFetchService = new NpmModuleInfoFetchService(configuration, Logger);
+    this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
+      vsCodeWorkspace,
+      vsCodeWindow,
+      configuration,
+      new ModuleVulnerabilityCountProvider(this.ossService, npmModuleInfoFetchService),
+      this.ossService,
+      Logger,
+    );
+    this.ossVulnerabilityCountService.activate();
+
     // Actually start analysis
     this.runScan();
   }
 
   public async deactivate(): Promise<void> {
     this.snykCode.dispose();
+    this.ossVulnerabilityCountService.dispose();
     await analytics.flush();
   }
 

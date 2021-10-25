@@ -5,6 +5,7 @@ export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
 export type DocumentSelector = vscode.DocumentSelector;
 export type HoverProvider = vscode.HoverProvider;
+export type TextEditor = vscode.TextEditor;
 export type TextDocument = vscode.TextDocument;
 export type Position = vscode.Position;
 export type Range = vscode.Range;

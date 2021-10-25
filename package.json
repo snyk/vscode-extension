@@ -263,7 +263,7 @@
         },
         {
           "command": "snyk.settings",
-          "when": "view != snyk.views.support",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.actions'",
           "group": "navigation"
         }
       ],
@@ -327,14 +327,17 @@
   "devDependencies": {
     "@amplitude/ampli": "^0.2.3",
     "@types/analytics-node": "^3.1.4",
+    "@types/babel__traverse": "^7.12.2",
+    "@types/find-package-json": "^1.2.2",
     "@types/glob": "^7.1.3",
     "@types/lodash": "^4.14.161",
+    "@types/marked": "^3.0.0",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.6.2",
     "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.0",
+    "@types/validate-npm-package-name": "^3.0.3",
     "@types/vscode": "^1.48.0",
-    "@types/marked": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "eslint": "^7.8.1",
@@ -351,6 +354,9 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
+    "@babel/parser": "^7.12.11",
+    "@babel/traverse": "^7.12.12",
+    "@babel/types": "^7.12.12",
     "@itly/plugin-amplitude-node": "^2.5.0",
     "@itly/plugin-schema-validator": "^2.4.0",
     "@itly/plugin-segment-node": "^2.4.0",
@@ -358,11 +364,13 @@
     "@snyk/code-client": "^4.4.0",
     "analytics-node": "^4.0.1",
     "axios": "^0.21.1",
+    "find-package-json": "^1.2.0",
     "lodash": "^4.17.21",
-    "open": "^7.4.2",
-    "uuid": "^8.3.2",
-    "rxjs": "^7.3.0",
     "marked": "^3.0.2",
-    "string-argv": "^0.3.1"
+    "open": "^7.4.2",
+    "rxjs": "^7.3.0",
+    "string-argv": "^0.3.1",
+    "uuid": "^8.3.2",
+    "validate-npm-package-name": "^3.0.0"
   }
 }

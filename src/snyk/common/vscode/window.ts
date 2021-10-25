@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { Disposable, ProgressLocation, WebviewPanelSerializer } from 'vscode';
 
 export interface IVSCodeWindow {
+  getActiveTextEditor(): vscode.TextEditor | undefined
+
   withProgress<R>(
     progressTitle: string,
     task: (
@@ -14,12 +16,19 @@ export interface IVSCodeWindow {
 
   showInformationMessage(message: string, ...items: string[]): Promise<string | undefined>;
   showErrorMessage(message: string, ...items: string[]): Promise<string | undefined>;
+
+  onDidChangeActiveTextEditor(listener: (e: vscode.TextEditor | undefined) => unknown): vscode.Disposable;
 }
 
 /**
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
 export class VSCodeWindow implements IVSCodeWindow {
+
+  getActiveTextEditor(): vscode.TextEditor | undefined {
+    return vscode.window.activeTextEditor;
+  }
+
   registerWebviewPanelSerializer(viewType: string, serializer: vscode.WebviewPanelSerializer): vscode.Disposable {
     return vscode.window.registerWebviewPanelSerializer(viewType, serializer);
   }
@@ -71,6 +80,10 @@ export class VSCodeWindow implements IVSCodeWindow {
         reason => reject(reason),
       );
     });
+  }
+
+  onDidChangeActiveTextEditor(listener: (e: vscode.TextEditor | undefined) => unknown): vscode.Disposable {
+    return vscode.window.onDidChangeActiveTextEditor(listener);
   }
 }
 
