@@ -1,15 +1,15 @@
-import { CliDownloader } from '../downloader';
-import { CliExecutable } from '../cliExecutable';
-import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
-import { IStaticCliApi } from '../api/staticCliApi';
-import { ILog } from '../../common/logger/interfaces';
-import { IVSCodeWindow } from '../../common/vscode/window';
-import { messages } from '../messages/messages';
-import { Checksum } from '../checksum';
-import { Platform } from '../../common/platform';
-import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 import { ReplaySubject } from 'rxjs';
+import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
+import { ILog } from '../../common/logger/interfaces';
+import { Platform } from '../../common/platform';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { IVSCodeWindow } from '../../common/vscode/window';
+import { IStaticCliApi } from '../api/staticCliApi';
+import { Checksum } from '../checksum';
+import { CliExecutable } from '../cliExecutable';
+import { CliDownloader } from '../downloader';
+import { messages } from '../messages/messages';
+import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 
 export class CliDownloadService {
   readonly downloadFinished$ = new ReplaySubject<void>(1);
@@ -52,7 +52,6 @@ export class CliDownloadService {
   }
 
   async updateCli(): Promise<boolean> {
-    // TODO: check if scan not running
     if (this.isFourDaysPassedSinceLastUpdate()) {
       const platform = Platform.getCurrent();
       if (!isPlatformSupported(platform)) {
@@ -81,7 +80,11 @@ export class CliDownloadService {
   }
 
   async isInstalled(): Promise<boolean> {
-    return CliExecutable.exists(this.extensionContext.extensionPath);
+    const executableExists = await CliExecutable.exists(this.extensionContext.extensionPath);
+    const lastUpdateDateWritten = !!this.getLastCliUpdateDate();
+    const clicheksumWritten = !!this.getCliChecksum();
+
+    return executableExists && lastUpdateDateWritten && clicheksumWritten;
   }
 
   private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
@@ -104,7 +107,7 @@ export class CliDownloadService {
   }
 
   private isFourDaysPassedSinceLastUpdate(): boolean {
-    const lastUpdateDate = this.extensionContext.getGlobalStateValue<number>(MEMENTO_CLI_LAST_UPDATE_DATE);
+    const lastUpdateDate = this.getLastCliUpdateDate();
     if (!lastUpdateDate) {
       throw new Error('Last update date is not known.');
     }
@@ -115,5 +118,13 @@ export class CliDownloadService {
     }
 
     return false;
+  }
+
+  private getLastCliUpdateDate(): number | undefined {
+    return this.extensionContext.getGlobalStateValue<number>(MEMENTO_CLI_LAST_UPDATE_DATE);
+  }
+
+  private getCliChecksum(): number | undefined {
+    return this.extensionContext.getGlobalStateValue<number>(MEMENTO_CLI_CHECKSUM);
   }
 }

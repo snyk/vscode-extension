@@ -1,14 +1,14 @@
 import { strictEqual } from 'assert';
 import sinon, { stub } from 'sinon';
 import { IStaticCliApi } from '../../../../snyk/cli/api/staticCliApi';
-import { CliDownloader } from '../../../../snyk/cli/downloader';
-import { ILog } from '../../../../snyk/common/logger/interfaces';
-import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { Checksum } from '../../../../snyk/cli/checksum';
+import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
+import { CliDownloader } from '../../../../snyk/cli/downloader';
 import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
-import { MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
+import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
+import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { Platform } from '../../../../snyk/common/platform';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
@@ -131,5 +131,21 @@ suite('CliDownloaderService', () => {
     const updated = await service.updateCli();
 
     strictEqual(updated, false);
+  });
+
+  test("Doesn't try to update if last cli update date was not set", async () => {
+    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns(undefined);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(undefined);
+
+    stub(CliExecutable, 'exists').resolves(true);
+
+    const downloadSpy = stub(service, 'downloadCli');
+    const updateSpy = stub(service, 'updateCli');
+
+    await service.downloadOrUpdateCli();
+
+    strictEqual(downloadSpy.called, true);
+    strictEqual(updateSpy.calledOnce, false);
   });
 });
