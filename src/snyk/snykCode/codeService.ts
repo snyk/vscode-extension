@@ -10,6 +10,7 @@ import { getSastSettings } from '../common/services/cliConfigService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
@@ -54,9 +55,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly viewManagerService: IViewManagerService,
     private readonly workspace: IVSCodeWorkspace,
     private readonly logger: ILog,
+    readonly languages: IVSCodeLanguages,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger);
+    this.analyzer = new SnykCodeAnalyzer(logger, languages);
     this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

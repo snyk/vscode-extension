@@ -1,53 +1,64 @@
-import * as vscode from 'vscode';
-import { analytics } from '../../common/analytics/analytics';
+import { IAnalytics } from '../../common/analytics/itly';
 import { IDE_NAME } from '../../common/constants/general';
 import { ILog } from '../../common/logger/interfaces';
+import { IHoverAdapter } from '../../common/vscode/hover';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
+import {
+  DiagnosticCollection,
+  Disposable,
+  Position,
+  TextDocument,
+  Hover,
+  Diagnostic,
+} from '../../common/vscode/types';
 import { IGNORE_TIP_FOR_USER } from '../constants/analysis';
 import { ISnykCodeAnalyzer } from '../interfaces';
-import { findIssueWithRange, severityAsText } from '../utils/analysisUtils';
+import { IssueUtils } from '../utils/issueUtils';
 
-export class DisposableHoverProvider implements vscode.Disposable {
-  private hoverProvider: vscode.Disposable | undefined;
+export class DisposableHoverProvider implements Disposable {
+  private hoverProvider: Disposable | undefined;
 
   constructor(
     private readonly analyzer: ISnykCodeAnalyzer,
-    snykReview: vscode.DiagnosticCollection | undefined,
     private readonly logger: ILog,
-  ) {
-    this.registerDisposableProvider(snykReview);
-  }
+    private readonly vscodeLanguages: IVSCodeLanguages,
+    private readonly analytics: IAnalytics,
+  ) {}
 
-  private registerDisposableProvider(snykReview: vscode.DiagnosticCollection | undefined) {
-    this.hoverProvider = vscode.languages.registerHoverProvider(
+  register(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter): void {
+    this.hoverProvider = this.vscodeLanguages.registerHoverProvider(
       { scheme: 'file', language: '*' },
       {
-        provideHover: (document, position) => {
-          if (!snykReview || !snykReview.has(document.uri)) {
-            return undefined;
-          }
-
-          const currentFileReviewIssues = snykReview.get(document.uri);
-          const issue = findIssueWithRange(position, currentFileReviewIssues);
-          if (issue) {
-            this.logIssueHoverIsDisplayed(issue);
-            return new vscode.Hover(IGNORE_TIP_FOR_USER);
-          }
-        },
+        provideHover: this.getHover(snykReview, hoverAdapter),
       },
     );
   }
 
-  private logIssueHoverIsDisplayed(issue: vscode.Diagnostic): void {
+  getHover(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter) {
+    return (document: TextDocument, position: Position): Hover | undefined => {
+      if (!snykReview || !snykReview.has(document.uri)) {
+        return undefined;
+      }
+      const currentFileReviewIssues = snykReview.get(document.uri);
+      const issue = IssueUtils.findIssueWithRange(position, currentFileReviewIssues);
+      if (issue) {
+        this.logIssueHoverIsDisplayed(issue);
+        return hoverAdapter.create(IGNORE_TIP_FOR_USER);
+      }
+    };
+  }
+
+  private logIssueHoverIsDisplayed(issue: Diagnostic): void {
     const suggestion = this.analyzer.findSuggestion(issue.message);
     if (!suggestion) {
       this.logger.debug('Failed to log hover displayed analytical event.');
       return;
     }
 
-    analytics.logIssueHoverIsDisplayed({
+    this.analytics.logIssueHoverIsDisplayed({
       issueId: suggestion.id,
       issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
-      severity: severityAsText(suggestion.severity),
+      severity: IssueUtils.severityAsText(suggestion.severity),
       ide: IDE_NAME,
     });
   }

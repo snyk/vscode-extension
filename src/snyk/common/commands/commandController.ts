@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as vscode from 'vscode';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
-import { severityAsText } from '../../snykCode/utils/analysisUtils';
+import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
@@ -80,7 +80,7 @@ export class CommandController {
         ide: IDE_NAME,
         issueId: suggestion.id,
         issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
-        severity: severityAsText(suggestion.severity),
+        severity: IssueUtils.severityAsText(suggestion.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issue = arg.issue as OssIssueCommandArg;

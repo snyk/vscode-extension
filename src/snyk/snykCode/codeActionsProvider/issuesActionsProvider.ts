@@ -6,7 +6,7 @@ import { analytics } from '../../common/analytics/analytics';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IDE_NAME } from '../../common/constants/general';
 import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
-import { findIssueWithRange } from '../utils/analysisUtils';
+import { IssueUtils } from '../utils/issueUtils';
 
 export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -77,7 +77,7 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
       return undefined;
     }
     const fileIssues = this.issuesList && this.issuesList.get(document.uri);
-    const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
+    const matchedIssue = IssueUtils.findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
       const codeActionParams = { document, matchedIssue };
       const showIssueAction = this.createShowIssueAction(codeActionParams);
