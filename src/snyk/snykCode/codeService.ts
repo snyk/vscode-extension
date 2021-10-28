@@ -58,7 +58,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly languages: IVSCodeLanguages,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger, languages);
+    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics);
     this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

@@ -1,12 +1,12 @@
 import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
-import { analytics } from '../../common/analytics/analytics';
+import { IAnalytics } from '../../common/analytics/itly';
 import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
 import { HoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { DisposableCodeActionsProvider } from '../codeActionsProvider/issuesActionsProvider';
+import { DisposableCodeActionsProvider } from '../codeActionsProvider/disposableCodeActionsProvider';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
@@ -39,21 +39,35 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   public readonly codeSecurityReview: vscode.DiagnosticCollection | undefined;
   private analysisResults: ISnykCodeResult;
 
-  public constructor(readonly logger: ILog, readonly languages: IVSCodeLanguages) {
+  public constructor(readonly logger: ILog, readonly languages: IVSCodeLanguages, readonly analytics: IAnalytics) {
     this.SEVERITIES = createSnykSeveritiesMap();
     this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
     this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
 
-    new DisposableCodeActionsProvider(this.codeSecurityReview, {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      findSuggestion: this.findSuggestion.bind(this),
-    });
-    new DisposableCodeActionsProvider(this.codeQualityReview, {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      findSuggestion: this.findSuggestion.bind(this),
-    });
-    new DisposableHoverProvider(this, logger, languages, analytics).register(this.codeSecurityReview, new HoverAdapter());
-    new DisposableHoverProvider(this, logger, languages, analytics).register(this.codeQualityReview, new HoverAdapter());
+    new DisposableCodeActionsProvider(
+      this.codeSecurityReview,
+      {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        findSuggestion: this.findSuggestion.bind(this),
+      },
+      analytics,
+    );
+    new DisposableCodeActionsProvider(
+      this.codeQualityReview,
+      {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        findSuggestion: this.findSuggestion.bind(this),
+      },
+      analytics,
+    );
+    new DisposableHoverProvider(this, logger, languages, analytics).register(
+      this.codeSecurityReview,
+      new HoverAdapter(),
+    );
+    new DisposableHoverProvider(this, logger, languages, analytics).register(
+      this.codeQualityReview,
+      new HoverAdapter(),
+    );
   }
 
   public setAnalysisResults(results: AnalysisResultLegacy): void {

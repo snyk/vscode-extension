@@ -11,3 +11,6 @@ export type Range = vscode.Range;
 export type Uri = vscode.Uri;
 export type MarkedString = vscode.MarkedString;
 export type Hover = vscode.Hover;
+export type CodeAction = vscode.CodeAction;
+export type CodeActionKind = vscode.CodeActionKind;
+export type CodeActionProvider = vscode.CodeActionProvider;
