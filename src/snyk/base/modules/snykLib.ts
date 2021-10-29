@@ -37,8 +37,8 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
       await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-    const workspacePaths = this.getWorkspacePaths();
-    await this.setWorkspaceContext(workspacePaths);
+      const workspacePaths = this.getWorkspacePaths();
+      await this.setWorkspaceContext(workspacePaths);
 
       const user = await userMe();
       if (user) {
@@ -152,7 +152,6 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
   private logFullAnalysisIsTriggered(manual: boolean) {
     const analysisType: SupportedAnalysisProperties[] = [];
-
     const enabledFeatures = configuration.getFeaturesConfiguration();
 
     // Ensure preconditions are the same as within running specific analysis
@@ -162,10 +161,12 @@ export default class SnykLib extends LoginModule implements ISnykLib {
     }
     if (enabledFeatures?.ossEnabled) analysisType.push('Snyk Open Source');
 
-    analytics.logAnalysisIsTriggered({
-      analysisType,
-      ide: IDE_NAME,
-      triggeredByUser: manual,
-    });
+    if (analysisType.length) {
+      analytics.logAnalysisIsTriggered({
+        analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
+        ide: IDE_NAME,
+        triggeredByUser: manual,
+      });
+    }
   }
 }

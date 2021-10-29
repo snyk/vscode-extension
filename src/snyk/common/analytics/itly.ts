@@ -2,16 +2,17 @@
 import SegmentPlugin from '@itly/plugin-segment-node';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { ILog } from '../logger/interfaces';
 import itly, {
   AnalysisIsReadyProperties,
-
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
+  IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
+  QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
 } from '../../../ampli';
-import { ItlyErrorPlugin } from './itlyErrorPlugin';
 import { Configuration } from '../configuration/configuration';
 import { IDE_NAME } from '../constants/general';
+import { ILog } from '../logger/interfaces';
+import { ItlyErrorPlugin } from './itlyErrorPlugin';
 
 export type SupportedAnalysisProperties =
   | 'Snyk Advisor'
@@ -19,7 +20,12 @@ export type SupportedAnalysisProperties =
   | 'Snyk Code Security'
   | 'Snyk Open Source';
 export type AnalysisIsTriggeredProperties = _AnalysisIsTriggeredProperties & {
-  analysisType: SupportedAnalysisProperties[];
+  analysisType: [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]];
+};
+
+export type SupportedQuickFixProperties = 'Show Suggestion' | 'Ignore Suggestion In Line' | 'Ignore Suggestion In File';
+export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
+  quickFixType: [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]];
 };
 
 export interface IAnalytics {
@@ -33,6 +39,8 @@ export interface IAnalytics {
   logWelcomeViewIsViewed(): void;
   logPluginIsInstalled(): void;
   logPluginIsUninstalled(userId?: string): void;
+  logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
+  logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
 }
 
 /**
@@ -185,6 +193,22 @@ export class Iteratively implements IAnalytics {
     itly.pluginIsUninstalled(userId, {
       ide: this.ide,
     });
+  }
+
+  public logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void {
+    if (!this.canReportEvents() || !this.userId) {
+      return;
+    }
+
+    itly.quickFixIsDisplayed(this.userId, properties);
+  }
+
+  public logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void {
+    if (!this.canReportEvents() || !this.userId) {
+      return;
+    }
+
+    itly.issueHoverIsDisplayed(this.userId, properties);
   }
 
   private canReportEvents(): boolean {

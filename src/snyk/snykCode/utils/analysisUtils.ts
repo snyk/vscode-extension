@@ -78,18 +78,6 @@ export const createIssueCorrectRange = (issuePosition: FileSuggestion): vscode.R
   });
 };
 
-export const findIssueWithRange = (
-  matchingRange: vscode.Range | vscode.Position,
-  issuesList: readonly vscode.Diagnostic[] | undefined,
-): vscode.Diagnostic | undefined => {
-  return (
-    issuesList &&
-    issuesList.find((issue: vscode.Diagnostic) => {
-      return issue.range.contains(matchingRange);
-    })
-  );
-};
-
 export const updateFileReviewResultsPositions = (
   analysisResults: AnalysisResultLegacy,
   updatedFile: openedTextEditorType,
@@ -293,17 +281,4 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
 
 export const isSecurityTypeSuggestion = (suggestion: Suggestion): boolean => {
   return suggestion.categories.includes('Security');
-};
-
-export const severityAsText = (severity: 1 | 2 | 3 | 4): 'Low' | 'Medium' | 'High' | 'Critical' => {
-  switch (severity) {
-    case 1:
-      return 'Low';
-    case 2:
-      return 'Medium';
-    case 3:
-      return 'High';
-    case 4:
-      return 'Critical';
-  }
 };

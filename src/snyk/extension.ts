@@ -38,6 +38,7 @@ import {
 import { Logger } from './common/logger/logger';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
 import { extensionContext } from './common/vscode/extensionContext';
+import { VSCodeLanguages } from './common/vscode/languages';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
@@ -63,6 +64,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.viewManagerService,
       vsCodeWorkspace,
       Logger,
+      new VSCodeLanguages(),
     );
 
     this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);

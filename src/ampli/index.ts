@@ -255,16 +255,53 @@ export interface AnalysisIsTriggeredProperties {
    *
    * | Rule | Value |
    * |---|---|
+   * | Min Items | 1 |
    * | Unique Items | true |
    * | Item Type | string |
    */
-  analysisType: string[];
+  analysisType: [string, ...string[]];
   /**
    * * True means that the analysis was triggered by the User.
    *
    * * False means that the analysis was triggered automatically by the plugin.
    */
   triggeredByUser: boolean;
+}
+
+export interface IssueHoverIsDisplayedProperties {
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
+   * Issue type
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Open Source Vulnerability, Licence Issue, Code Quality Issue, Code Security Vulnerability, Advisor |
+   */
+  issueType:
+    | "Open Source Vulnerability"
+    | "Licence Issue"
+    | "Code Quality Issue"
+    | "Code Security Vulnerability"
+    | "Advisor";
+  /**
+   * Severity of the issue
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | High, Medium, Low, Critical |
+   */
+  severity: "High" | "Medium" | "Low" | "Critical";
+  /**
+   * Issue ID as received from the backend.
+   */
+  issueId: string;
 }
 
 export interface IssueInTreeIsClickedProperties {
@@ -325,6 +362,42 @@ export interface PluginIsUninstalledProperties {
   ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
 }
 
+export interface QuickFixIsDisplayedProperties {
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
+   * Quick fix types displayed to the user:
+   *
+   * * Show this suggestion
+   *
+   * * Ignore this particular suggestion
+   *
+   * * Ignore this suggestion in current file
+   *
+   * Due to array type definition limitation in Iteratively, the type is enforced in the code as follows:
+   *
+   * ```
+   * type SupportedQuickFixProperties =
+   * | 'Show Suggestion'
+   * | 'Ignore Suggestion In Line'
+   * | 'Ignore Suggestion In File';
+   * ```
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Items | 1 |
+   * | Unique Items | true |
+   * | Item Type | string |
+   */
+  quickFixType: [string, ...string[]];
+}
+
 export interface WelcomeIsViewedProperties {
   /**
    * Ide family.
@@ -357,13 +430,31 @@ export class AnalysisIsReady implements Event {
 export class AnalysisIsTriggered implements Event {
   name = 'Analysis Is Triggered';
   id = 'dabf569e-219c-470f-8e31-6e029723f0cd';
-  version = '1.0.0';
+  version = '2.0.0';
   properties: AnalysisIsTriggeredProperties & {
     'itly': true;
   };
 
   constructor(
     properties: AnalysisIsTriggeredProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
+export class IssueHoverIsDisplayed implements Event {
+  name = 'Issue Hover Is Displayed';
+  id = '5bcc7fd8-6118-4777-b719-366cda263a13';
+  version = '1.0.0';
+  properties: IssueHoverIsDisplayedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: IssueHoverIsDisplayedProperties,
   ) {
     this.properties = {
         ...properties,
@@ -418,6 +509,24 @@ export class PluginIsUninstalled implements Event {
 
   constructor(
     properties: PluginIsUninstalledProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
+export class QuickFixIsDisplayed implements Event {
+  name = 'Quick Fix Is Displayed';
+  id = '170c1284-9ee6-457f-aa82-6c49e49cde93';
+  version = '1.0.0';
+  properties: QuickFixIsDisplayedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: QuickFixIsDisplayedProperties,
   ) {
     this.properties = {
         ...properties,
@@ -492,10 +601,12 @@ class Itly {
           'identify': {"type":"object","properties":{"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"utm_medium":{"type":"string"},"name":{"type":"string"},"utmMedium":{"type":"string"},"utm_campaign":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"authProvider":{"type":"string"},"isSnyk":{"type":"boolean"},"utm_source":{"type":"string"},"created_at":{"type":"number"},"auth_provider":{"type":"string"},"hasFirstProject":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"user_id":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"admin_link":{"type":"string"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
           'page': {"type":"object","properties":{"package":{"type":"string"},"search":{"type":"string"},"url":{"type":"string"},"title":{"type":"string"},"path":{"type":"string"},"ecosystem":{"type":"string"},"referrer":{"type":"string"}},"additionalProperties":false,"required":[]},
           'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
-          'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
+          'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true,"minItems":1},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
+          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
           'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Open Source Vulnerability","Licence Issue","Code Quality Issue","Code Security Vulnerability","Advisor"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Plugin Is Uninstalled': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"uniqueItems":true,"minItems":1}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
           'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
         }),
         ...destinationPlugins,
@@ -546,7 +657,7 @@ class Itly {
 
   /**
    * Triggered when the analysis is loaded within the IDE.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -562,7 +673,7 @@ class Itly {
 
   /**
    * User triggers an analysis or analysis is automatically triggered.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -577,8 +688,24 @@ class Itly {
   }
 
   /**
+   * Triggered when issue hover is displayed in the IDE editor.
+   *
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. ide)
+   * @param options Options for this track call.
+   */
+  issueHoverIsDisplayed(
+    userId: string,
+    properties: IssueHoverIsDisplayedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new IssueHoverIsDisplayed(properties), options);
+  }
+
+  /**
    * Triggered when the user selects an issue from the issues list and the issue is loaded.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -594,7 +721,7 @@ class Itly {
 
   /**
    * Triggered when the user installs the plugin.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -610,7 +737,7 @@ class Itly {
 
   /**
    * Triggered when the user uninstalls the plugin.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -625,8 +752,24 @@ class Itly {
   }
 
   /**
+   * Triggered when quick fix options are displayed to the user in IDE.
+   *
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. ide)
+   * @param options Options for this track call.
+   */
+  quickFixIsDisplayed(
+    userId: string,
+    properties: QuickFixIsDisplayedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new QuickFixIsDisplayed(properties), options);
+  }
+
+  /**
    * User installs the IDE plugin and see Snyk's welcome screen.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)

@@ -1,23 +1,43 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/ban-types */
-import * as _ from 'lodash';
-import * as vscode from 'vscode';
-import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { IAnalytics } from '../../common/analytics/itly';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { findIssueWithRange } from '../utils/analysisUtils';
+import { IDE_NAME } from '../../common/constants/general';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
+import {
+  CodeAction,
+  CodeActionKind,
+  CodeActionProvider,
+  Diagnostic,
+  DiagnosticCollection,
+  Range,
+  TextDocument,
+} from '../../common/vscode/types';
+import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { IssueUtils } from '../utils/issueUtils';
 
-export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
-  public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
+export class SnykIssuesActionProvider implements CodeActionProvider {
+  private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
 
-  private issuesList: vscode.DiagnosticCollection | undefined;
+  private issuesList: DiagnosticCollection | undefined;
   private findSuggestion: Function;
   private trackIgnoreSuggestion: Function;
 
-  constructor(issuesList: vscode.DiagnosticCollection | undefined, callbacks: { [key: string]: Function }) {
+  constructor(
+    issuesList: DiagnosticCollection | undefined,
+    callbacks: { [key: string]: Function },
+    private readonly codeActionAdapter: ICodeActionAdapter,
+    private readonly codeActionKindProvider: ICodeActionKindAdapter,
+    private readonly analytics: IAnalytics,
+  ) {
     this.issuesList = issuesList;
     this.findSuggestion = callbacks.findSuggestion;
     this.trackIgnoreSuggestion = callbacks.trackIgnoreSuggestion;
+  }
+
+  getProvidedCodeActionKinds(): CodeActionKind[] {
+    return this.providedCodeActionKinds;
   }
 
   private createIgnoreIssueAction({
@@ -25,13 +45,13 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     matchedIssue,
     isFileIgnore,
   }: {
-    document: vscode.TextDocument;
-    matchedIssue: vscode.Diagnostic;
+    document: TextDocument;
+    matchedIssue: Diagnostic;
     isFileIgnore?: boolean;
-  }): vscode.CodeAction {
-    const ignoreIssueAction = new vscode.CodeAction(
+  }): CodeAction {
+    const ignoreIssueAction = this.codeActionAdapter.create(
       isFileIgnore ? FILE_IGNORE_ACTION_NAME : IGNORE_ISSUE_ACTION_NAME,
-      SnykIssuesActionProvider.providedCodeActionKinds[0],
+      this.providedCodeActionKinds[0],
     );
 
     const suggestion = this.findSuggestion(matchedIssue.message);
@@ -49,12 +69,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     document,
     matchedIssue,
   }: {
-    document: vscode.TextDocument;
-    matchedIssue: vscode.Diagnostic;
-  }): vscode.CodeAction {
-    const showIssueAction = new vscode.CodeAction(
+    document: TextDocument;
+    matchedIssue: Diagnostic;
+  }): CodeAction {
+    const showIssueAction = this.codeActionAdapter.create(
       SHOW_ISSUE_ACTION_NAME,
-      SnykIssuesActionProvider.providedCodeActionKinds[0],
+      this.providedCodeActionKinds[0],
     );
 
     const suggestion = this.findSuggestion(matchedIssue.message);
@@ -68,15 +88,12 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
     return showIssueAction;
   }
 
-  public provideCodeActions(
-    document: vscode.TextDocument,
-    clickedRange: vscode.Range,
-  ): vscode.CodeAction[] | undefined {
+  public provideCodeActions(document: TextDocument, clickedRange: Range): CodeAction[] | undefined {
     if (!this.issuesList || !this.issuesList.has(document.uri)) {
       return undefined;
     }
     const fileIssues = this.issuesList && this.issuesList.get(document.uri);
-    const matchedIssue = findIssueWithRange(clickedRange, fileIssues);
+    const matchedIssue = IssueUtils.findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
       const codeActionParams = { document, matchedIssue };
       const showIssueAction = this.createShowIssueAction(codeActionParams);
@@ -85,37 +102,16 @@ export class SnykIssuesActionProvider implements vscode.CodeActionProvider {
         ...codeActionParams,
         isFileIgnore: true,
       });
+
+      this.analytics.logQuickFixIsDisplayed({
+        quickFixType: ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'],
+        ide: IDE_NAME,
+      });
+
       // returns list of actions, all new actions should be added to this list
       return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
 
     return undefined;
-  }
-}
-
-// disposable provider
-export class DisposableCodeActionsProvider implements vscode.Disposable {
-  private disposableProvider: vscode.Disposable | undefined;
-  constructor(snykReview: vscode.DiagnosticCollection | undefined, callbacks: { [key: string]: Function }) {
-    this.registerProvider(snykReview, callbacks);
-  }
-
-  private registerProvider(
-    snykReview: vscode.DiagnosticCollection | undefined,
-    callbacks: { [key: string]: Function },
-  ) {
-    this.disposableProvider = vscode.languages.registerCodeActionsProvider(
-      { scheme: 'file', language: '*' },
-      new SnykIssuesActionProvider(snykReview, callbacks),
-      {
-        providedCodeActionKinds: SnykIssuesActionProvider.providedCodeActionKinds,
-      },
-    );
-  }
-
-  dispose(): void {
-    if (this.disposableProvider) {
-      this.disposableProvider.dispose();
-    }
   }
 }
