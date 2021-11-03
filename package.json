@@ -3,7 +3,7 @@
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Vulnerability Scanner",
   "version": "1.2.0",
-  "description": "Find and automatically fix vulnerabilities in your code and open source dependencies — all powered by Snyk’s industry-leading security intelligence.",
+  "description": "Find vulnerabilities in your code and open source dependencies — all powered by Snyk’s industry-leading security intelligence.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
   "homepage": "https://snyk.io",
