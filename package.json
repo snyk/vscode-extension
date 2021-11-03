@@ -2,8 +2,8 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Vulnerability Scanner",
-  "version": "1.1.3",
-  "description": "Snyk finds bugs, security vulnerabilities, performance and API issues based on AI. Snyk's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, JavaScript, and TypeScript",
+  "version": "1.2.0",
+  "description": "Find and automatically fix vulnerabilities in your code and open source dependencies — all powered by Snyk’s industry-leading security intelligence.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
   "homepage": "https://snyk.io",
@@ -211,7 +211,7 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nWe are experiencing a technical issue which prevents scanning your code for vulnerabilities using our VSCode extension.\nUntil the issue is resolved, please use Snyk's CLI command or the [snyk.io](https://snyk.io) web interface to scan your code. ",
+        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc)!",
         "when": "snyk:error == 'blocking'"
       },
       {

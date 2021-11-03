@@ -1,10 +1,29 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.0]
+
+### Added
+
+- Snyk Open Source product support using Snyk CLI.
+- Support of the latest Snyk Code API.
+- Additional analytical events for issue hover and quick fix contributions.
+
+### Fixed
+
+- Relative Snyk Code bundle file path resolution on Linux systems that leads to extension crashing.
+
+### Removed
+
+- Feedback form for Snyk Code suggestions.
+
 ## [1.1.3]
+
 ### Changed
+
 - Provide feedback around Snyk's technical issues impacting Snyk Code.
 
 ## [1.1.2]
+
 ### Changed
 
 - Disabled feedback form temporarily.
