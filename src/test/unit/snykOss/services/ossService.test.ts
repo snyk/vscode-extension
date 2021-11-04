@@ -35,7 +35,7 @@ suite('OssService', () => {
       } as IConfiguration,
       {} as IOssSuggestionWebviewProvider,
       {
-        workspaceFolders: () => [''],
+        getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
       {
         refreshOssView: () => undefined,

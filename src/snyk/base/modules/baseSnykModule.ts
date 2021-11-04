@@ -7,12 +7,12 @@ import { IOpenerService, OpenerService } from '../../common/services/openerServi
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { vsCodeWindow } from '../../common/vscode/window';
-import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
 import SettingsWatcher from '../../common/watchers/settingsWatcher';
-import { ISnykCodeService, SnykCodeService } from '../../snykCode/codeService';
+import { ISnykCodeService } from '../../snykCode/codeService';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
 import { OssService } from '../../snykOss/services/ossService';
+import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { errorType, IBaseSnykModule } from './interfaces';
@@ -32,6 +32,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected ossService?: OssService;
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
+  protected ossVulnerabilityCountService: OssVulnerabilityCountService;
 
   protected readonly notificationService: INotificationService;
 

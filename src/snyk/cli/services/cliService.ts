@@ -86,7 +86,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
   private buildArguments(): string[] {
     const args = [];
-    const foldersToTest = this.workspace.workspaceFolders();
+    const foldersToTest = this.workspace.getWorkspaceFolders();
     if (foldersToTest.length == 0) {
       throw new Error('No workspace was opened.');
     }

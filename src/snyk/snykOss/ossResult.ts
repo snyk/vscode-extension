@@ -3,14 +3,15 @@ import { CliError } from '../cli/services/cliService';
 
 export type OssResult = OssFileResult[] | OssFileResult;
 
-export type OssFileResult =
-  | {
-      vulnerabilities: OssVulnerability[];
-      projectName: string;
-      displayTargetFile: string;
-      packageManager: string;
-    }
-  | CliError;
+export type OssFileResult = OssResultBody | CliError;
+
+export type OssResultBody = {
+  vulnerabilities: OssVulnerability[];
+  projectName: string;
+  displayTargetFile: string;
+  packageManager: string;
+  path: string;
+};
 
 export type OssVulnerability = {
   id: string;

@@ -1,9 +1,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { configuration } from '../configuration/instance';
-import { DEFAULT_API_HEADERS } from './headers';
+import { DEFAULT_API_HEADERS } from '../../common/api/headers';
+import { ILog } from '../../common/logger/interfaces';
+import { Logger } from '../../common/logger/logger';
 
-class ApiClient {
+class NpmRegistryApiClient {
   private instance: AxiosInstance | null = null;
+  private readonly npmRegistryHost = 'https://registry.npmjs.org/';
+
+  constructor(private readonly logger: ILog) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
@@ -13,12 +17,13 @@ class ApiClient {
     const http = axios.create({
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
+      baseURL: this.npmRegistryHost,
     });
 
     http.interceptors.response.use(
       response => response,
       error => {
-        console.error('Call to Snyk API failed: ', error);
+        this.logger.error(`Call to NPM Registry API failed. ${error}`);
         return Promise.reject(error);
       },
     );
@@ -28,18 +33,8 @@ class ApiClient {
   }
 
   get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
-    this.http.interceptors.request.use(req => {
-      req.baseURL = `${configuration.authHost}/api/v1/`;
-      req.headers = {
-        ...req.headers,
-        Authorization: `token ${configuration.token}`,
-      } as { [header: string]: string };
-
-      return req;
-    });
-
     return this.http.get<T, R>(url, config);
   }
 }
 
-export const api = new ApiClient();
+export const npmRegistryApi = new NpmRegistryApiClient(Logger);

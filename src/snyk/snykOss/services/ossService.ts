@@ -10,7 +10,7 @@ import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
-import { isResultCliError, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
+import { isResultCliError, OssFileResult, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
 import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
@@ -37,6 +37,14 @@ export class OssService extends CliService<OssResult> {
   }
 
   public getResult = (): OssResult | undefined => this.result;
+
+  public getResultArray = (): OssFileResult[] | undefined => {
+    if (!this.result) {
+      return undefined;
+    }
+
+    return Array.isArray(this.result) ? this.result : [this.result];
+  };
 
   protected mapToResultType(rawCliResult: string): OssResult {
     if (rawCliResult.length == 0) {

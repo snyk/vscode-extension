@@ -1,9 +1,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { configuration } from '../configuration/instance';
-import { DEFAULT_API_HEADERS } from './headers';
+import { DEFAULT_API_HEADERS } from '../../common/api/headers';
+import { configuration } from '../../common/configuration/instance';
+import { ILog } from '../../common/logger/interfaces';
+import { Logger } from '../../common/logger/logger';
 
-class ApiClient {
+class NpmTestApi {
   private instance: AxiosInstance | null = null;
+
+  constructor(private readonly logger: ILog) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
@@ -13,12 +17,13 @@ class ApiClient {
     const http = axios.create({
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
+      baseURL: configuration.authHost + '/test',
     });
 
     http.interceptors.response.use(
       response => response,
       error => {
-        console.error('Call to Snyk API failed: ', error);
+        this.logger.error(`Call to Snyk NPM Test API failed. ${error}`);
         return Promise.reject(error);
       },
     );
@@ -28,18 +33,8 @@ class ApiClient {
   }
 
   get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
-    this.http.interceptors.request.use(req => {
-      req.baseURL = `${configuration.authHost}/api/v1/`;
-      req.headers = {
-        ...req.headers,
-        Authorization: `token ${configuration.token}`,
-      } as { [header: string]: string };
-
-      return req;
-    });
-
     return this.http.get<T, R>(url, config);
   }
 }
 
-export const api = new ApiClient();
+export const npmTestApi = new NpmTestApi(Logger);
