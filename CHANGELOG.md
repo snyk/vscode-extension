@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.1]
+
+### Fixed
+
+- Wrong casing for the emitted JS file that break extension on Linux and Windows machines.
+
 ## [1.2.0]
 
 ### Added
