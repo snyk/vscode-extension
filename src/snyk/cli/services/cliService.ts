@@ -104,6 +104,10 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   public async isChecksumCorrect(cliPath: string): Promise<boolean> {
+    if (!await this.downloadService.isInstalled()) {
+      return false;
+    }
+
     if (!_.isUndefined(this.verifiedChecksumCorrect)) {
       return this.verifiedChecksumCorrect;
     }
