@@ -35,6 +35,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   async test(manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<CliResult | CliError> {
     this.analysisStarted();
     this.beforeTest(manualTrigger, reportTriggeredEvent);
+    this.result = undefined;
 
     const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath);
     const checksumCorrect = await this.isChecksumCorrect(cliPath);

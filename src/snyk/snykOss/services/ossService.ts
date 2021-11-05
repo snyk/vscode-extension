@@ -1,3 +1,4 @@
+import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
@@ -20,6 +21,8 @@ export class OssService extends CliService<OssResult> {
   protected readonly command: string[] = ['test'];
 
   private isVulnerabilityTreeVisible = false;
+
+  readonly scanFinished$ = new Subject<void>();
 
   constructor(
     protected readonly extensionContext: ExtensionContext,
@@ -74,21 +77,13 @@ export class OssService extends CliService<OssResult> {
       this.logger.error(`${messages.testFailed} ${result.error}`);
       this.logAnalysisIsReady('Error');
     } else {
-      const fileResults = Array.isArray(result) ? result : [result];
-
-      for (const fileResult of fileResults) {
-        if (isResultCliError(fileResult)) {
-          this.logger.error(this.getTestErrorMessage(fileResult));
-          this.logAnalysisIsReady('Error');
-        } else {
-          this.logger.info(messages.testFinished(fileResult.projectName));
-          this.logAnalysisIsReady('Success');
-        }
-      }
+      this.logOssResult(result);
 
       if (this.config.shouldAutoScanOss) {
         this.dailyScanJob.schedule();
       }
+
+      this.scanFinished$.next();
     }
 
     this.viewManagerService.refreshOssView();
@@ -162,6 +157,20 @@ export class OssService extends CliService<OssResult> {
     }
 
     return 0;
+  }
+
+  private logOssResult(result: OssResult) {
+    const fileResults = Array.isArray(result) ? result : [result];
+
+    for (const fileResult of fileResults) {
+      if (isResultCliError(fileResult)) {
+        this.logger.error(this.getTestErrorMessage(fileResult));
+        this.logAnalysisIsReady('Error');
+      } else {
+        this.logger.info(messages.testFinished(fileResult.projectName));
+        this.logAnalysisIsReady('Success');
+      }
+    }
   }
 
   private getTestErrorMessage(fileResult: CliError): string {
