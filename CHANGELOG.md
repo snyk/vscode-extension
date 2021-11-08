@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [Unreleased]
+### Fixed
+### Added
+- Retry CLI download when CLI is not installed correctly and scan is requested
+### Removed
+
 ## [1.2.1]
 
 ### Fixed

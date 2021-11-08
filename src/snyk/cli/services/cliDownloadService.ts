@@ -82,9 +82,9 @@ export class CliDownloadService {
   async isInstalled(): Promise<boolean> {
     const executableExists = await CliExecutable.exists(this.extensionContext.extensionPath);
     const lastUpdateDateWritten = !!this.getLastCliUpdateDate();
-    const clicheksumWritten = !!this.getCliChecksum();
+    const cliChecksumWritten = !!this.getCliChecksum();
 
-    return executableExists && lastUpdateDateWritten && clicheksumWritten;
+    return executableExists && lastUpdateDateWritten && cliChecksumWritten;
   }
 
   private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {

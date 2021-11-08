@@ -52,6 +52,7 @@ suite('CliService', () => {
 
     cliDownloadService = ({
       downloadCli: () => false,
+      isInstalled: () => true,
     } as unknown) as CliDownloadService;
 
     testCliService = new TestCliService(
@@ -88,7 +89,7 @@ suite('CliService', () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(CliProcess.prototype, 'spawn').resolves(JSON.stringify(cliError));
 
-    const result = await testCliService.test(false, false) as CliError;
+    const result = (await testCliService.test(false, false)) as CliError;
 
     deepStrictEqual(result.error, cliError.error);
     deepStrictEqual(result.path, cliError.path);
@@ -107,13 +108,13 @@ suite('CliService', () => {
   test('Test tries redownloading CLI when checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
     const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(true);
-    const result = await testCliService.test(false, false);
+    await testCliService.test(false, false);
     deepStrictEqual(download.calledOnce, true);
   });
 
   test('Test returns error when CLI checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
-    const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(false);
+    sinon.stub(cliDownloadService, 'downloadCli').resolves(false);
     const result = await testCliService.test(false, false);
 
     ok(result instanceof CliError);
@@ -142,6 +143,22 @@ suite('CliService', () => {
 
     const result = await testCliService.isChecksumCorrect('test/path');
     notStrictEqual(result, false);
+  });
+
+  test("isChecksumCorrect returns true when CLI file is installed and checksum correct", async () => {
+    const checksumStr = 'e06fa5f8d963e8a3e2f9d1bfcf5f66d412ce4d5ad60e24512cfe8a65e7077d88';
+    sinon.stub(extensionContext, 'getGlobalStateValue').returns(checksumStr);
+    sinon.stub(Checksum, 'getChecksumOf').resolves(Checksum.fromDigest(checksumStr, checksumStr));
+
+    const result = await testCliService.isChecksumCorrect('test/path');
+
+    strictEqual(result, true);
+  });
+
+  test("isChecksumCorrect returns false when CLI file is not installed", async () => {
+    sinon.stub(cliDownloadService, 'isInstalled').resolves(false);
+    const result = await testCliService.isChecksumCorrect('test/path');
+    strictEqual(result, false);
   });
 
   test("isChecksumCorrect doesn't calculate checksum twice after first time verification", async () => {
