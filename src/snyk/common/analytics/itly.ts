@@ -23,7 +23,11 @@ export type AnalysisIsTriggeredProperties = _AnalysisIsTriggeredProperties & {
   analysisType: [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]];
 };
 
-export type SupportedQuickFixProperties = 'Show Suggestion' | 'Ignore Suggestion In Line' | 'Ignore Suggestion In File';
+export type SupportedQuickFixProperties =
+  | 'Show Suggestion'
+  | 'Ignore Suggestion In Line'
+  | 'Ignore Suggestion In File'
+  | 'Show Most Severe Vulnerability';
 export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
   quickFixType: [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]];
 };

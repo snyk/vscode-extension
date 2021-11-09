@@ -10,7 +10,7 @@ import {
   TextDocument,
   Uri,
 } from '../../../../snyk/common/vscode/types';
-import { SnykIssuesActionProvider } from '../../../../snyk/snykCode/codeActionsProvider/issuesActionsProvider';
+import { SnykIssuesActionProvider } from '../../../../snyk/snykCode/codeActions/issuesActionsProvider';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 
 suite('Snyk Code actions provider', () => {

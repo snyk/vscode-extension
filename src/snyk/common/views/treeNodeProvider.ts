@@ -2,7 +2,7 @@ import { ProviderResult, TreeDataProvider } from 'vscode';
 import { TreeNode } from './treeNode';
 
 export abstract class TreeNodeProvider implements TreeDataProvider<TreeNode> {
-  abstract getRootChildren(): TreeNode[];
+  abstract getRootChildren(): ProviderResult<TreeNode[]>;
 
   getChildren(element?: TreeNode): ProviderResult<TreeNode[]> {
     if (element) return element.getChildren();
