@@ -46,12 +46,15 @@ export interface IConfiguration {
   setToken(token: string): Promise<void>;
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
+  shouldShowWelcomeNotification: boolean;
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
   shouldShowOssBackgroundScanNotification: boolean;
   shouldAutoScanOss: boolean;
   severityFilter: SeverityFilter;
   getAdditionalCliParameters(): string | undefined;
+  hideWelcomeNotification(): Promise<void>;
+  hideOssBackgroundScanNotification(): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {

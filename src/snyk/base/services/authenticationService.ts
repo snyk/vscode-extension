@@ -1,28 +1,46 @@
-import { checkSession, startSession, getIpFamily, IpFamily } from '@snyk/code-client';
-import { configuration } from '../../common/configuration/instance';
+import { checkSession, getIpFamily as getNetworkFamily, IpFamily, startSession } from '@snyk/code-client';
+import { IAnalytics } from '../../common/analytics/itly';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../common/constants/views';
-import { Logger } from '../../common/logger/logger';
-import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
-import { ILoginModule } from './interfaces';
-import ReportModule from './reportModule';
+import { ILog } from '../../common/logger/interfaces';
+import { IContextService } from '../../common/services/contextService';
+import { IOpenerService } from '../../common/services/openerService';
+import { messages } from '../messages/loginMessages';
+import { IBaseSnykModule } from '../modules/interfaces';
+
+export interface IAuthenticationService {
+  initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
+  checkSession(): Promise<string>;
+}
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
-abstract class LoginModule extends ReportModule implements ILoginModule {
+export class AuthenticationService implements IAuthenticationService {
   private pendingLogin = false;
   private pendingToken = '';
 
-  async initiateLogin(): Promise<void> {
+  constructor(
+    private readonly contextService: IContextService,
+    private readonly openerService: IOpenerService,
+    private readonly baseModule: IBaseSnykModule,
+    private readonly configuration: IConfiguration,
+    private readonly analytics: IAnalytics,
+    private readonly logger: ILog,
+  ) {}
+
+  async initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void> {
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
 
     if (this.pendingLogin) {
       return;
     }
 
-    const ipFamily = await getIpFamily(configuration.authHost);
+    const ipFamily = await getIpFamily(this.configuration.authHost);
     if (ipFamily) {
-      Logger.info('IPv6 is used to authenticate.');
+      this.logger.info('IPv6 is used to authenticate.');
     }
+
+    this.analytics.logAuthenticateButtonIsClicked();
 
     this.pendingLogin = true;
     try {
@@ -31,7 +49,7 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
         try {
           const token = await this.checkSession(this.pendingToken, ipFamily);
           if (token) {
-            await configuration.setToken(token);
+            await this.configuration.setToken(token);
             return;
           }
         } finally {
@@ -39,20 +57,18 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
         }
       }
 
-      const { draftToken, loginURL } = startSession({ authHost: configuration.authHost, source: configuration.source });
+      const { draftToken, loginURL } = startSession({ authHost: this.configuration.authHost, source: this.configuration.source });
 
       await this.openerService.openBrowserUrl(loginURL);
       void this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
       const token = await this.waitLoginConfirmation(draftToken, ipFamily);
       if (token) {
-        await configuration.setToken(token);
+        await this.configuration.setToken(token);
       } else {
         this.pendingToken = draftToken;
       }
     } catch (err) {
-      await this.processError(err, {
-        message: errorsLogs.login,
-      });
+      this.logger.error(messages.loginFailed);
     } finally {
       this.pendingLogin = false;
     }
@@ -63,7 +79,7 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
     if (draftToken) {
       try {
         const sessionResponse = await checkSession({
-          authHost: configuration.authHost,
+          authHost: this.configuration.authHost,
           draftToken,
           ipFamily,
         });
@@ -73,13 +89,11 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
           token = sessionResponse.value || '';
         }
       } catch (err) {
-        await this.processError(err, {
-          message: errorsLogs.loginStatus,
-        });
+        this.logger.error(messages.sessionCheckFailed);
       }
     }
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
-    if (!token) this.loadingBadge.setLoadingBadge(true, this);
+    if (!token) this.baseModule.loadingBadge.setLoadingBadge(true, this.baseModule);
     return token;
   }
 
@@ -99,18 +113,4 @@ abstract class LoginModule extends ReportModule implements ILoginModule {
 
     return '';
   }
-
-  async checkCodeEnabled(): Promise<boolean> {
-    const enabled = await this.snykCode.isEnabled();
-
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-
-    return enabled;
-  }
-
-  async checkAdvancedMode(): Promise<void> {
-    await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
-  }
 }
-
-export default LoginModule;

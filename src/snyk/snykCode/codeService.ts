@@ -4,9 +4,11 @@ import { analytics } from '../common/analytics/analytics';
 import { SupportedAnalysisProperties } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
+import { SNYK_CONTEXT } from '../common/constants/views';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { getSastSettings } from '../common/services/cliConfigService';
+import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
@@ -30,7 +32,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
   errorEncountered(error: Error): void;
-  isEnabled(): Promise<boolean>;
+  checkCodeEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
   dispose(): void;
@@ -53,6 +55,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
+    private readonly contextService: IContextService,
     private readonly workspace: IVSCodeWorkspace,
     private readonly logger: ILog,
     readonly languages: IVSCodeLanguages,
@@ -183,7 +186,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.logger.error(`${analysisMessages.failed} ${error.message}`);
   }
 
-  async isEnabled(): Promise<boolean> {
+  async checkCodeEnabled(): Promise<boolean> {
+    const enabled = await this.isEnabled();
+
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+
+    return enabled;
+  }
+
+  private async isEnabled(): Promise<boolean> {
     const settings = await getSastSettings();
     return settings.sastEnabled;
   }

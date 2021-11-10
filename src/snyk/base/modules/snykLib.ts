@@ -11,9 +11,9 @@ import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
 import { userMe } from '../../common/services/userService';
 import { ISnykLib } from './interfaces';
-import LoginModule from './loginModule';
+import ReportModule from './reportModule';
 
-export default class SnykLib extends LoginModule implements ISnykLib {
+export default class SnykLib extends ReportModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
     Logger.info('Starting full scan');
 
@@ -23,7 +23,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
 
     try {
       if (!configuration.token) {
-        await this.checkSession();
+        await this.authService.checkSession();
         return;
       }
 
@@ -71,7 +71,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
   async enableCode(): Promise<void> {
     const wasEnabled = await this.snykCode.enable();
     if (wasEnabled) {
-      await this.checkCodeEnabled();
+      await this.snykCode.checkCodeEnabled();
 
       Logger.info('Snyk Code was enabled.');
       try {
@@ -88,7 +88,7 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       return;
     }
 
-    const codeEnabled = await this.checkCodeEnabled();
+    const codeEnabled = await this.snykCode.checkCodeEnabled();
     if (!codeEnabled) {
       return;
     }
@@ -112,6 +112,11 @@ export default class SnykLib extends LoginModule implements ISnykLib {
       this.ossService.setVulnerabilityTreeVisibility(visible);
     }
   }
+
+  async checkAdvancedMode(): Promise<void> {
+    await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
+  }
+
 
   private getWorkspacePaths(): string[] {
     const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction

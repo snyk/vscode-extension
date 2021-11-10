@@ -1,5 +1,4 @@
 export const errorsLogs = {
-  login: 'Login of new user has failed',
   loginStatus: 'Failed to check user session on server',
   filtersFiles: 'Failed fetching filters files for bundles from server',
   // createBundle: "Failed to create bundle on server",
