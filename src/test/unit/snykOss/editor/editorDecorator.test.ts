@@ -54,8 +54,8 @@ suite('OSS Editor Decorator', () => {
     const decorations = decorator.fileDecorations.get(fileName);
 
     assert.deepStrictEqual(decorations?.[line].range, {
-      start: { line: line - 1, character: 1024 },
-      end: { line: line - 1, character: 1024 },
+      start: { line: line - 1, character: Number.MAX_SAFE_INTEGER },
+      end: { line: line - 1, character: Number.MAX_SAFE_INTEGER },
     });
   });
 });
