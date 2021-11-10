@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
-import { Disposable, ProgressLocation, WebviewPanelSerializer } from 'vscode';
+import { Disposable, ProgressLocation, TextEditorDecorationType, WebviewPanelSerializer } from 'vscode';
+import { TextEditor } from './types';
 
 export interface IVSCodeWindow {
-  getActiveTextEditor(): vscode.TextEditor | undefined
+  getActiveTextEditor(): vscode.TextEditor | undefined;
+  getVisibleTextEditors(): TextEditor[];
+  createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
   withProgress<R>(
     progressTitle: string,
@@ -24,9 +27,16 @@ export interface IVSCodeWindow {
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
 export class VSCodeWindow implements IVSCodeWindow {
-
   getActiveTextEditor(): vscode.TextEditor | undefined {
     return vscode.window.activeTextEditor;
+  }
+
+  getVisibleTextEditors(): TextEditor[] {
+    return vscode.window.visibleTextEditors;
+  }
+
+  createTextEditorDecorationType(options: vscode.DecorationRenderOptions): vscode.TextEditorDecorationType {
+    return vscode.window.createTextEditorDecorationType(options);
   }
 
   registerWebviewPanelSerializer(viewType: string, serializer: vscode.WebviewPanelSerializer): vscode.Disposable {

@@ -1,5 +1,3 @@
-import { SNYK_NAME } from '../../common/constants/general';
-
 export const SNYK_SEVERITIES: { [key: string]: number } = {
   information: 1,
   warning: 2,
@@ -23,8 +21,9 @@ export const ISSUES_MARKERS_DECORATION_TYPE: { [key: string]: string } = {
   borderStyle: 'none none dashed none',
 };
 
-export const DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME = `${SNYK_NAME} (Code Security)`;
-export const DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME = `${SNYK_NAME} (Code Quality)`;
+export const DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME = 'Snyk Code Security';
+export const DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME = 'Snyk Code Quality';
+export const DIAGNOSTICS_OSS_COLLECTION_NAME = 'Snyk Open Source Security';
 
 export const WEBVIEW_PANEL_SECURITY_TITLE = 'Snyk Code Vulnerability';
 export const WEBVIEW_PANEL_QUALITY_TITLE = 'Snyk Code Issue';

@@ -38,13 +38,15 @@ import {
 import { Logger } from './common/logger/logger';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
 import { extensionContext } from './common/vscode/extensionContext';
-import { VSCodeLanguages } from './common/vscode/languages';
+import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import { ThemeColorAdapter } from './common/vscode/theme';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
+import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
 import { NpmModuleInfoFetchService } from './snykOss/services/vulnerabilityCount/npmModuleInfoFetchService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
@@ -185,10 +187,12 @@ class SnykExtension extends SnykLib implements IExtension {
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
       vsCodeWindow,
+      vsCodeLanguages,
       configuration,
       new ModuleVulnerabilityCountProvider(this.ossService, npmModuleInfoFetchService),
       this.ossService,
       Logger,
+      new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
     );
     this.ossVulnerabilityCountService.activate();
 

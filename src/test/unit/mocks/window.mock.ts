@@ -8,4 +8,6 @@ export const windowMock = {
   showErrorMessage: sinon.fake(),
   showInformationMessage: sinon.fake(),
   onDidChangeActiveTextEditor: sinon.fake(),
+  createTextEditorDecorationType: sinon.fake(),
+  getVisibleTextEditors: sinon.fake(),
 } as IVSCodeWindow;

@@ -72,10 +72,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
     document: TextDocument;
     matchedIssue: Diagnostic;
   }): CodeAction {
-    const showIssueAction = this.codeActionAdapter.create(
-      SHOW_ISSUE_ACTION_NAME,
-      this.providedCodeActionKinds[0],
-    );
+    const showIssueAction = this.codeActionAdapter.create(SHOW_ISSUE_ACTION_NAME, this.providedCodeActionKinds[0]);
 
     const suggestion = this.findSuggestion(matchedIssue.message);
     if (suggestion)
