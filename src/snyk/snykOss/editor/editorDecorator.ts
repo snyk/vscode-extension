@@ -15,6 +15,7 @@ type LineDecorations = DecorationOptions[]; // array index is a line number
 export class EditorDecorator {
   private readonly decorationType: TextEditorDecorationType;
   private readonly fileDecorationMap: Map<string, LineDecorations>;
+  private readonly editorLastCharacterIndex = Number.MAX_SAFE_INTEGER;
 
   private updateTimeout: NodeJS.Timer | undefined = undefined;
 
@@ -42,7 +43,12 @@ export class EditorDecorator {
       }
 
       lineDecorations[module.line] = {
-        range: this.languages.createRange(module.line - 1, 1024, module.line - 1, 1024),
+        range: this.languages.createRange(
+          module.line - 1,
+          this.editorLastCharacterIndex,
+          module.line - 1,
+          this.editorLastCharacterIndex,
+        ),
         renderOptions: this.getRenderOptions(messages.fetchingVulnerabilities),
       };
     }
@@ -57,14 +63,18 @@ export class EditorDecorator {
   }
 
   setScanDoneDecorations(filePath: string, vulnerabilityCounts: ModuleVulnerabilityCount[]): void {
-    for (const count of vulnerabilityCounts) {
-      this.setScannedDecoration(count, false);
+    for (const moduleVulnerabilityCount of vulnerabilityCounts) {
+      this.setScannedDecoration(moduleVulnerabilityCount, false);
     }
 
     this.triggerUpdateDecorations(filePath);
   }
 
   setScannedDecoration(vulnerabilityCount: ModuleVulnerabilityCount, triggerUpdate = true): void {
+    if (_.isNull(vulnerabilityCount.line)) {
+      return;
+    }
+
     const filePath = vulnerabilityCount.fileName;
 
     let lineDecorations = this.fileDecorationMap.get(filePath);
@@ -73,14 +83,15 @@ export class EditorDecorator {
       this.fileDecorationMap.set(filePath, lineDecorations); // set map, if no decoration was set before
     }
 
-    if (_.isNull(vulnerabilityCount.line)) {
-      return;
-    }
-
     const text = vulnerabilityCount.count ? messages.decoratorMessage(vulnerabilityCount.count) : '';
 
     lineDecorations[vulnerabilityCount.line] = {
-      range: this.languages.createRange(vulnerabilityCount.line - 1, 1024, vulnerabilityCount.line - 1, 1024),
+      range: this.languages.createRange(
+        vulnerabilityCount.line - 1,
+        this.editorLastCharacterIndex,
+        vulnerabilityCount.line - 1,
+        this.editorLastCharacterIndex,
+      ),
       renderOptions: this.getRenderOptions(text),
     };
 
