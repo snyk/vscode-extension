@@ -1,7 +1,7 @@
 import { analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
-import { analytics } from '../common/analytics/analytics';
-import { SupportedAnalysisProperties } from '../common/analytics/itly';
+import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
+import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
 import { SNYK_CONTEXT } from '../common/constants/views';
@@ -57,7 +57,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly viewManagerService: IViewManagerService,
     private readonly contextService: IContextService,
     private readonly workspace: IVSCodeWorkspace,
+    private readonly snykApiClient: ISnykApiClient,
     private readonly logger: ILog,
+    private readonly analytics: IAnalytics,
     readonly languages: IVSCodeLanguages,
   ) {
     super();
@@ -95,7 +97,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
 
         if (analysisType) {
-          analytics.logAnalysisIsTriggered({
+          this.analytics.logAnalysisIsTriggered({
             analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
             ide: IDE_NAME,
             triggeredByUser: manualTrigger,
@@ -137,14 +139,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         Logger.info(analysisMessages.finished);
 
         if (enabledFeatures?.codeSecurityEnabled) {
-          analytics.logAnalysisIsReady({
+          this.analytics.logAnalysisIsReady({
             ide: IDE_NAME,
             analysisType: 'Snyk Code Security',
             result: 'Success',
           });
         }
         if (enabledFeatures?.codeQualityEnabled) {
-          analytics.logAnalysisIsReady({
+          this.analytics.logAnalysisIsReady({
             ide: IDE_NAME,
             analysisType: 'Snyk Code Quality',
             result: 'Success',
@@ -157,14 +159,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.errorEncountered(err);
 
       if (enabledFeatures?.codeSecurityEnabled) {
-        analytics.logAnalysisIsReady({
+        this.analytics.logAnalysisIsReady({
           ide: IDE_NAME,
           analysisType: 'Snyk Code Security',
           result: 'Error',
         });
       }
       if (enabledFeatures?.codeQualityEnabled) {
-        analytics.logAnalysisIsReady({
+        this.analytics.logAnalysisIsReady({
           ide: IDE_NAME,
           analysisType: 'Snyk Code Quality',
           result: 'Error',
@@ -195,12 +197,12 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   }
 
   private async isEnabled(): Promise<boolean> {
-    const settings = await getSastSettings();
+    const settings = await getSastSettings(this.snykApiClient);
     return settings.sastEnabled;
   }
 
   async enable(): Promise<boolean> {
-    let settings = await getSastSettings();
+    let settings = await getSastSettings(this.snykApiClient);
     if (settings.sastEnabled) {
       return true;
     }
@@ -215,7 +217,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       await this.sleep(i * 1000);
 
       // eslint-disable-next-line no-await-in-loop
-      settings = await getSastSettings();
+      settings = await getSastSettings(this.snykApiClient);
       if (settings.sastEnabled) {
         return true;
       }

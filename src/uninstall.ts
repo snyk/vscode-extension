@@ -2,10 +2,10 @@ import axios from 'axios';
 import { promises as fs } from 'fs';
 import { homedir } from 'os';
 import { dirname, posix } from 'path';
-import { ILog } from './snyk/common/logger/interfaces';
 import { Iteratively } from './snyk/common/analytics/itly';
 import { SNYK_NAME_EXTENSION } from './snyk/common/constants/general';
-import { User } from './snyk/common/services/userService';
+import { ILog } from './snyk/common/logger/interfaces';
+import { User, UserDto } from './snyk/common/user';
 
 /**
  * The script is responsible for reporting uninstall event to the Iteratively.
@@ -94,7 +94,7 @@ async function getUserId(authToken: string): Promise<string> {
     responseType: 'json',
   });
 
-  const { data } = await http.get<User>('https://snyk.io/api/v1/user/me');
+  const { data } = await http.get<UserDto>('https://snyk.io/api/v1/user/me');
   return data.id;
 }
 
@@ -120,17 +120,19 @@ async function reportUninstall(): Promise<void> {
   }
 
   const [token, yesTelemetry] = await getSnykSettings();
-  if (!token) {
-    return;
+
+  let authenticatedUserId;
+  if (token) {
+    authenticatedUserId = await getUserId(token);
   }
 
-  const analytics = new Iteratively(new UninstallLogger(), yesTelemetry, !!process.env.SNYK_VSCE_DEVELOPMENT);
-  analytics.load();
+  const user = new User(undefined, authenticatedUserId);
 
-  const userId = await getUserId(token);
+  const analytics = new Iteratively(user, new UninstallLogger(), yesTelemetry, !!process.env.SNYK_VSCE_DEVELOPMENT);
+  await analytics.load();
 
   // Report and flush the uninstall event
-  analytics.logPluginIsUninstalled(userId);
+  analytics.logPluginIsUninstalled();
   await analytics.flush();
 }
 

@@ -2,14 +2,13 @@ import * as _ from 'lodash';
 import { firstValueFrom } from 'rxjs';
 import * as vscode from 'vscode';
 import { CliError } from '../../cli/services/cliService';
-import { analytics } from '../../common/analytics/analytics';
 import { SupportedAnalysisProperties } from '../../common/analytics/itly';
 import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
+import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
-import { userMe } from '../../common/services/userService';
 import { ISnykLib } from './interfaces';
 import ReportModule from './reportModule';
 
@@ -23,6 +22,7 @@ export default class SnykLib extends ReportModule implements ISnykLib {
 
     try {
       if (!configuration.token) {
+        await this.initializeWelcomeViewExperiment();
         await this.authService.checkSession();
         return;
       }
@@ -40,10 +40,7 @@ export default class SnykLib extends ReportModule implements ISnykLib {
       const workspacePaths = this.getWorkspacePaths();
       await this.setWorkspaceContext(workspacePaths);
 
-      const user = await userMe();
-      if (user) {
-        analytics.identify(user.id);
-      }
+      await this.user.identify(this.snykApiClient);
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
@@ -67,6 +64,11 @@ export default class SnykLib extends ReportModule implements ISnykLib {
   });
 
   public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
+
+  private async initializeWelcomeViewExperiment(): Promise<void> {
+    const partOfExperiment = await this.experimentService.isUserPartOfExperiment(ExperimentKey.UpdateCopyOnWelcomeView);
+    await this.contextService.setContext(SNYK_CONTEXT.WELCOME_VIEW_EXPERIMENT, partOfExperiment);
+  }
 
   async enableCode(): Promise<void> {
     const wasEnabled = await this.snykCode.enable();
@@ -103,7 +105,7 @@ export default class SnykLib extends ReportModule implements ISnykLib {
   onDidChangeWelcomeViewVisibility(visible: boolean): void {
     if (visible && !configuration.token) {
       // Track if a user is not authenticated and expanded the analysis view
-      analytics.logWelcomeViewIsViewed();
+      this.analytics.logWelcomeViewIsViewed();
     }
   }
 
@@ -116,7 +118,6 @@ export default class SnykLib extends ReportModule implements ISnykLib {
   async checkAdvancedMode(): Promise<void> {
     await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
-
 
   private getWorkspacePaths(): string[] {
     const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
@@ -167,7 +168,7 @@ export default class SnykLib extends ReportModule implements ISnykLib {
     if (enabledFeatures?.ossEnabled) analysisType.push('Snyk Open Source');
 
     if (analysisType.length) {
-      analytics.logAnalysisIsTriggered({
+      this.analytics.logAnalysisIsTriggered({
         analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
         ide: IDE_NAME,
         triggeredByUser: manual,

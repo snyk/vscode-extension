@@ -5,7 +5,7 @@ const extension = new SnykExtension();
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
-  extension.activate(context);
+  void extension.activate(context);
 }
 export function deactivate(): void {
   console.log('Deactivating SnykExtension');

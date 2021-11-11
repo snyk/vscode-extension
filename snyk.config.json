@@ -1,3 +1,4 @@
 {
-  "segmentWriteKey": "${env.SNYK_VSCE_SEGMENT_WRITE_KEY}"
+  "segmentWriteKey": "${env.SNYK_VSCE_SEGMENT_WRITE_KEY}",
+  "amplitudeExperimentApiKey": "${env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY}"
 }

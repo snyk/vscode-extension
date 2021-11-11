@@ -8,7 +8,6 @@ import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
-import { analytics } from '../analytics/analytics';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_LOGIN_COMMAND,
@@ -21,6 +20,8 @@ import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 import { IAuthenticationService } from '../../base/services/authenticationService';
+import { IAnalytics } from '../analytics/itly';
+import { getIpFamily } from '@snyk/code-client';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -32,6 +33,7 @@ export class CommandController {
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private logger: ILog,
+    private analytics: IAnalytics,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -43,7 +45,7 @@ export class CommandController {
   }
 
   initiateLogin(): unknown {
-    return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
+    return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService, getIpFamily));
   }
 
   openLocal(path: vscode.Uri, range?: vscode.Range): void {
@@ -83,7 +85,7 @@ export class CommandController {
       this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
       suggestion.id = decodeURIComponent(suggestion.id);
 
-      analytics.logIssueInTreeIsClicked({
+      this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: suggestion.id,
         issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
@@ -93,7 +95,7 @@ export class CommandController {
       const issue = arg.issue as OssIssueCommandArg;
       void this.ossService.showSuggestionProvider(issue);
 
-      analytics.logIssueInTreeIsClicked({
+      this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: issue.id,
         issueType: 'Open Source Vulnerability',

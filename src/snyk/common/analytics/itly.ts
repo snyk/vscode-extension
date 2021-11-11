@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 import SegmentPlugin from '@itly/plugin-segment-node';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import itly, {
   AnalysisIsReadyProperties,
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
@@ -11,8 +9,10 @@ import itly, {
   TrackOptions,
 } from '../../../ampli';
 import { Configuration } from '../configuration/configuration';
+import { SnykConfiguration } from '../configuration/snykConfiguration';
 import { IDE_NAME } from '../constants/general';
 import { ILog } from '../logger/interfaces';
+import { User } from '../user';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
 
 export type SupportedAnalysisProperties =
@@ -34,9 +34,9 @@ export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
 };
 
 export interface IAnalytics {
-  load(): Iteratively | null;
+  load(): Promise<Iteratively | null>;
   flush(): Promise<void>;
-  setShouldReportEvents(shouldReportEvents: boolean): void;
+  setShouldReportEvents(shouldReportEvents: boolean): Promise<void>;
   identify(userId: string): void;
   logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void;
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
@@ -56,27 +56,30 @@ export interface IAnalytics {
  */
 export class Iteratively implements IAnalytics {
   private readonly ide = IDE_NAME;
-  private readonly anonymousId: string;
-  private loaded = false;
-  private userId: string;
 
+  private loaded = false;
   private configsPath = '../../../..';
 
-  constructor(private logger: ILog, private shouldReportEvents: boolean, private isDevelopment: boolean) {
-    this.anonymousId = uuidv4();
-  }
+  constructor(
+    private readonly user: User,
+    private logger: ILog,
+    private shouldReportEvents: boolean,
+    private isDevelopment: boolean,
+  ) {}
 
-  public setShouldReportEvents(shouldReportEvents: boolean): void {
+  async setShouldReportEvents(shouldReportEvents: boolean): Promise<void> {
     this.shouldReportEvents = shouldReportEvents;
-    this.load();
+    await this.load();
   }
 
-  public load(): Iteratively | null {
+  async load(): Promise<Iteratively | null> {
     if (!this.shouldReportEvents) {
       return null;
     }
 
-    let { segmentWriteKey } = require(path.join(this.configsPath, '/snyk.config.json')) as { segmentWriteKey: string };
+    const snykConfiguration = await SnykConfiguration.get(path.join(this.configsPath));
+    let segmentWriteKey = snykConfiguration.segmentWriteKey;
+
     if (!segmentWriteKey) {
       this.logger.debug('Segment analytics write key is empty. No analytics will be collected.');
       return this;
@@ -87,32 +90,41 @@ export class Iteratively implements IAnalytics {
     const segment = new SegmentPlugin(segmentWriteKey);
     const isDevelopment = this.isDevelopment;
 
-    itly.load({
-      disabled: !this.shouldReportEvents,
-      environment: isDevelopment ? 'development' : 'production',
-      plugins: [segment, new ItlyErrorPlugin(this.logger)],
-    });
+    if (!this.loaded) {
+      try {
+        itly.load({
+          disabled: !this.shouldReportEvents,
+          environment: isDevelopment ? 'development' : 'production',
+          plugins: [segment, new ItlyErrorPlugin(this.logger)],
+        });
+      } catch (err) {
+        this.logger.warn(`Failed to load analytics: ${err}`);
+      }
 
-    this.loaded = true;
+      this.loaded = true;
+    }
 
     return this;
   }
 
   public flush = (): Promise<void> => itly.flush();
 
-  public identify(userId: string): void {
+  public identify(): void {
     if (!this.canReportEvents()) {
       return;
     }
 
-    this.userId = userId;
+    if (!this.user.authenticatedId) {
+      this.logger.error('Tried to identify non-authenticated user');
+      return;
+    }
 
     // Calling identify again is the preferred way to merge authenticated user with anonymous one,
     // see https://snyk.slack.com/archives/C01U2SPRB3Q/p1624276750134700?thread_ts=1624030602.128900&cid=C01U2SPRB3Q
-    itly.identify(this.userId, undefined, {
+    itly.identify(this.user.authenticatedId, undefined, {
       segment: {
         options: {
-          anonymousId: this.anonymousId,
+          anonymousId: this.user.anonymousId,
           context: {
             app: {
               name: this.ide,
@@ -125,27 +137,27 @@ export class Iteratively implements IAnalytics {
   }
 
   public logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void {
-    if (!this.canReportEvents() || !this.userId) {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
       return;
     }
 
-    itly.issueInTreeIsClicked(this.userId, properties);
+    itly.issueInTreeIsClicked(this.user.authenticatedId, properties);
   }
 
   public logAnalysisIsReady(properties: AnalysisIsReadyProperties): void {
-    if (!this.canReportEvents() || !this.userId) {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
       return;
     }
 
-    itly.analysisIsReady(this.userId, properties);
+    itly.analysisIsReady(this.user.authenticatedId, properties);
   }
 
   public logAnalysisIsTriggered(properties: AnalysisIsTriggeredProperties): void {
-    if (!this.canReportEvents() || !this.userId) {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
       return;
     }
 
-    itly.analysisIsTriggered(this.userId, properties);
+    itly.analysisIsTriggered(this.user.authenticatedId, properties);
   }
 
   public logWelcomeViewIsViewed(): void {
@@ -183,7 +195,7 @@ export class Iteratively implements IAnalytics {
     }
 
     itly.welcomeButtonIsClicked(
-      this.userId ?? '',
+      this.user.authenticatedId ?? '',
       {
         ide: this.ide,
         eventSource: 'IDE',
@@ -202,14 +214,18 @@ export class Iteratively implements IAnalytics {
       {
         ide: this.ide,
       },
-      this.getAnonymousSegmentOptions(),
+      {
+        segment: {
+          options: {
+            anonymousId: this.user.anonymousId,
+          },
+        },
+      },
     );
   }
 
-  public logPluginIsUninstalled(userId?: string): void {
-    if (!userId) {
-      userId = this.userId;
-    }
+  public logPluginIsUninstalled(): void {
+    const userId = this.user.authenticatedId ?? this.user.anonymousId;
 
     if (!this.canReportEvents() || !userId) {
       return;
@@ -221,19 +237,19 @@ export class Iteratively implements IAnalytics {
   }
 
   public logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void {
-    if (!this.canReportEvents() || !this.userId) {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
       return;
     }
 
-    itly.quickFixIsDisplayed(this.userId, properties);
+    itly.quickFixIsDisplayed(this.user.authenticatedId, properties);
   }
 
   public logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void {
-    if (!this.canReportEvents() || !this.userId) {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
       return;
     }
 
-    itly.issueHoverIsDisplayed(this.userId, properties);
+    itly.issueHoverIsDisplayed(this.user.authenticatedId, properties);
   }
 
   private canReportEvents(): boolean {
@@ -253,7 +269,7 @@ export class Iteratively implements IAnalytics {
     return {
       segment: {
         options: {
-          anonymousId: this.anonymousId,
+          anonymousId: this.user.anonymousId,
         },
       },
     };

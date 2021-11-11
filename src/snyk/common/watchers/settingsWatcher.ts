@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
-import { analytics } from '../analytics/analytics';
+import { IAnalytics } from '../analytics/itly';
 import { configuration } from '../configuration/instance';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -16,11 +16,13 @@ import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { IWatcher } from './interfaces';
 
 class SettingsWatcher implements IWatcher {
+  constructor(private readonly analytics: IAnalytics) {}
+
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === YES_TELEMETRY_SETTING) {
-      return analytics.setShouldReportEvents(configuration.shouldReportEvents);
+      return await this.analytics.setShouldReportEvents(configuration.shouldReportEvents);
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
