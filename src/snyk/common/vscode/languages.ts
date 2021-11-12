@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import {
+  CodeActionProvider,
+  CodeActionProviderMetadata,
   Diagnostic,
   DiagnosticCollection,
   DiagnosticSeverity,
@@ -14,6 +16,11 @@ export interface IVSCodeLanguages {
   createDiagnosticCollection(name: string): DiagnosticCollection;
   createDiagnostic(range: Range, message: string, severity?: DiagnosticSeverity): Diagnostic;
   createRange(...args: ConstructorParameters<typeof vscode.Range>): Range;
+  registerCodeActionsProvider(
+    selector: DocumentSelector,
+    provider: CodeActionProvider,
+    metadata?: CodeActionProviderMetadata,
+  ): Disposable;
 }
 
 export class VSCodeLanguages implements IVSCodeLanguages {
@@ -31,6 +38,14 @@ export class VSCodeLanguages implements IVSCodeLanguages {
 
   createRange(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
     return new vscode.Range(startLine, startCharacter, endLine, endCharacter);
+  }
+
+  registerCodeActionsProvider(
+    selector: DocumentSelector,
+    provider: CodeActionProvider,
+    metadata?: CodeActionProviderMetadata,
+  ): Disposable {
+    return vscode.languages.registerCodeActionsProvider(selector, provider, metadata);
   }
 }
 

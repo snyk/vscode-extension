@@ -6,7 +6,7 @@ import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
 import { HoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { DisposableCodeActionsProvider } from '../codeActionsProvider/disposableCodeActionsProvider';
+import { DisposableCodeActionsProvider } from '../codeActions/disposableCodeActionsProvider';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,

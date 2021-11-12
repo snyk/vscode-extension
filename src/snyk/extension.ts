@@ -37,12 +37,13 @@ import {
 } from './common/constants/views';
 import { Logger } from './common/logger/logger';
 import { errorsLogs } from './common/messages/errorsServerLogMessages';
+import { CodeActionKindAdapter } from './common/vscode/codeAction';
 import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
-import { IgnoreCommand } from './snykCode/codeActionsProvider/ignoreCommand';
+import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
@@ -193,6 +194,8 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
+      new CodeActionKindAdapter(),
+      analytics,
     );
     this.ossVulnerabilityCountService.activate();
 

@@ -1,3 +1,4 @@
+import marked from 'marked';
 import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
@@ -41,7 +42,7 @@ export class OssService extends CliService<OssResult> {
 
   public getResult = (): OssResult | undefined => this.result;
 
-  public getResultArray = (): OssFileResult[] | undefined => {
+  public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
     if (!this.result) {
       return undefined;
     }
@@ -157,6 +158,26 @@ export class OssService extends CliService<OssResult> {
     }
 
     return 0;
+  }
+
+  getOssIssueCommandArg(
+    vulnerability: OssVulnerability,
+    allVulnerabilities: OssVulnerability[],
+  ): Promise<OssIssueCommandArg> {
+    return new Promise((resolve, reject) => {
+      const matchingIdVulnerabilities = allVulnerabilities.filter(v => v.id === vulnerability.id);
+      marked(vulnerability.description, (err, overviewHtml) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve({
+          ...vulnerability,
+          matchingIdVulnerabilities: matchingIdVulnerabilities,
+          overviewHtml,
+        });
+      });
+    });
   }
 
   private logOssResult(result: OssResult) {
