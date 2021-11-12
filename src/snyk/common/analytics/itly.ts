@@ -8,6 +8,7 @@ import itly, {
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
   QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
+  TrackOptions,
 } from '../../../ampli';
 import { Configuration } from '../configuration/configuration';
 import { IDE_NAME } from '../constants/general';
@@ -41,6 +42,8 @@ export interface IAnalytics {
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
   logAnalysisIsTriggered(properties: AnalysisIsTriggeredProperties): void;
   logWelcomeViewIsViewed(): void;
+  logAuthenticateButtonIsClicked(): void;
+  logWelcomeButtonIsClicked(): void;
   logPluginIsInstalled(): void;
   logPluginIsUninstalled(userId?: string): void;
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
@@ -155,13 +158,37 @@ export class Iteratively implements IAnalytics {
       {
         ide: this.ide,
       },
+      this.getAnonymousSegmentOptions(),
+    );
+  }
+
+  public logAuthenticateButtonIsClicked(): void {
+    if (!this.canReportEvents()) {
+      return;
+    }
+
+    itly.authenticateButtonIsClicked(
+      '',
       {
-        segment: {
-          options: {
-            anonymousId: this.anonymousId,
-          },
-        },
+        ide: this.ide,
+        eventSource: 'IDE',
       },
+      this.getAnonymousSegmentOptions(),
+    );
+  }
+
+  public logWelcomeButtonIsClicked(): void {
+    if (!this.canReportEvents()) {
+      return;
+    }
+
+    itly.welcomeButtonIsClicked(
+      this.userId ?? '',
+      {
+        ide: this.ide,
+        eventSource: 'IDE',
+      },
+      this.getAnonymousSegmentOptions(),
     );
   }
 
@@ -175,13 +202,7 @@ export class Iteratively implements IAnalytics {
       {
         ide: this.ide,
       },
-      {
-        segment: {
-          options: {
-            anonymousId: this.anonymousId,
-          },
-        },
-      },
+      this.getAnonymousSegmentOptions(),
     );
   }
 
@@ -226,5 +247,15 @@ export class Iteratively implements IAnalytics {
     }
 
     return true;
+  }
+
+  private getAnonymousSegmentOptions(): TrackOptions {
+    return {
+      segment: {
+        options: {
+          anonymousId: this.anonymousId,
+        },
+      },
+    };
   }
 }

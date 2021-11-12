@@ -6,8 +6,10 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
+import { ILoadingBadge } from '../views/loadingBadge';
 
 export interface IBaseSnykModule {
+  readonly loadingBadge: ILoadingBadge;
   statusBarItem: IStatusBarItem;
   settingsWatcher: IWatcher;
   contextService: IContextService;
@@ -26,18 +28,12 @@ export interface IReportModule {
   resetTransientErrors(): void;
 }
 
-export interface ILoginModule {
-  initiateLogin(): Promise<void>;
-  checkSession(): Promise<string>;
-  checkCodeEnabled(): Promise<boolean>;
+export interface ISnykLib {
+  enableCode(): Promise<void>;
   checkAdvancedMode(): Promise<void>;
 }
 
-export interface ISnykLib {
-  enableCode(): Promise<void>;
-}
-
-export interface IExtension extends IBaseSnykModule, IReportModule, ILoginModule, ISnykLib {
+export interface IExtension extends IBaseSnykModule, IReportModule, ISnykLib {
   context: ExtensionContext | undefined;
   activate(context: vscode.ExtensionContext): void;
 }

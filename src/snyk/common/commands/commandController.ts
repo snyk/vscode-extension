@@ -11,6 +11,7 @@ import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProv
 import { analytics } from '../analytics/analytics';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
+  SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
@@ -19,12 +20,14 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
+import { IAuthenticationService } from '../../base/services/authenticationService';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
 
   constructor(
     private openerService: IOpenerService,
+    private authService: IAuthenticationService,
     private snykCode: ISnykCodeService,
     private ossService: OssService,
     private scanModeService: ScanModeService,
@@ -37,6 +40,10 @@ export class CommandController {
 
   copyAuthLink(): unknown {
     return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.openerService.copyOpenedUrl.bind(this.openerService));
+  }
+
+  initiateLogin(): unknown {
+    return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
   }
 
   openLocal(path: vscode.Uri, range?: vscode.Range): void {

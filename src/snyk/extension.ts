@@ -68,6 +68,7 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
       this.openerService,
       this.viewManagerService,
+      this.contextService,
       vsCodeWorkspace,
       Logger,
       new VSCodeLanguages(),
@@ -89,6 +90,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.commandController = new CommandController(
       this.openerService,
+      this.authService,
       this.snykCode,
       this.ossService,
       this.scanModeService,
@@ -231,8 +233,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.copyAuthLink.bind(this.commandController),
       ),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, this.commandController.openLocal.bind(this)),
-      vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () =>
-        this.commandController.executeCommand(SNYK_LOGIN_COMMAND, this.initiateLogin.bind(this)),
+      vscode.commands.registerCommand(
+        SNYK_LOGIN_COMMAND,
+        this.commandController.initiateLogin.bind(this.commandController),
       ),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),

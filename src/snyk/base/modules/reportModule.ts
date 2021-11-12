@@ -2,25 +2,17 @@ import { constants } from '@snyk/code-client';
 import * as _ from 'lodash';
 import { configuration } from '../../common/configuration/instance';
 import {
-  COMMAND_DEBOUNCE_INTERVAL,
   CONNECTION_ERROR_RETRY_INTERVAL,
   MAX_CONNECTION_RETRIES,
 } from '../../common/constants/general';
 import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
-import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import BaseSnykModule from './baseSnykModule';
 import { errorType, IReportModule } from './interfaces';
 
 abstract class ReportModule extends BaseSnykModule implements IReportModule {
   private transientErrors = 0;
-  protected loadingBadge: ILoadingBadge;
-
-  constructor() {
-    super();
-    this.loadingBadge = new LoadingBadge();
-  }
 
   private static get shouldReport(): boolean {
     // DEV: uncomment the following line to test this module in development

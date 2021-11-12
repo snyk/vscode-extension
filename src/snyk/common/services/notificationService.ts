@@ -1,11 +1,11 @@
-import * as vscode from 'vscode';
 import { snykMessages } from '../../base/messages/snykMessages';
 import { errorType } from '../../base/modules/interfaces';
 import { messages as ossMessages } from '../../snykOss/messages/test';
-import { configuration } from '../configuration/instance';
-import { VSCODE_VIEW_OSS_VIEW_COMMAND } from '../constants/commands';
+import { IAnalytics } from '../analytics/itly';
+import { IConfiguration } from '../configuration/configuration';
+import { VSCODE_VIEW_CONTAINER_COMMAND, VSCODE_VIEW_OSS_VIEW_COMMAND } from '../constants/commands';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
-import { openSnykViewContainer } from '../vscode/vscodeCommandsUtils';
+import { IVSCodeCommands } from '../vscode/commands';
 import { IVSCodeWindow } from '../vscode/window';
 
 export interface INotificationService {
@@ -15,7 +15,12 @@ export interface INotificationService {
 }
 
 export class NotificationService implements INotificationService {
-  constructor(private readonly window: IVSCodeWindow) {}
+  constructor(
+    private readonly window: IVSCodeWindow,
+    private readonly commands: IVSCodeCommands,
+    private readonly configuration: IConfiguration,
+    private readonly analytics: IAnalytics,
+  ) {}
 
   async init(errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>): Promise<void> {
     await this.checkWelcomeNotification().catch(err =>
@@ -26,7 +31,7 @@ export class NotificationService implements INotificationService {
   }
 
   private async checkWelcomeNotification(): Promise<void> {
-    if (!configuration.shouldShowWelcomeNotification) {
+    if (!this.configuration.shouldShowWelcomeNotification) {
       return;
     }
 
@@ -34,11 +39,13 @@ export class NotificationService implements INotificationService {
       snykMessages.welcome.msg,
       snykMessages.welcome.button,
     );
+
     if (pressedButton === snykMessages.welcome.button) {
-      await openSnykViewContainer();
+      await this.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
+      this.analytics.logWelcomeButtonIsClicked();
     }
 
-    await configuration.hideWelcomeNotification();
+    await this.configuration.hideWelcomeNotification();
   }
 
   async showErrorNotification(message: string): Promise<void> {
@@ -53,9 +60,9 @@ export class NotificationService implements INotificationService {
     );
 
     if (pressedButton === ossMessages.viewResults) {
-      await vscode.commands.executeCommand(VSCODE_VIEW_OSS_VIEW_COMMAND);
+      await this.commands.executeCommand(VSCODE_VIEW_OSS_VIEW_COMMAND);
     } else if (pressedButton === ossMessages.hide) {
-      await configuration.hideOssBackgroundScanNotification();
+      await this.configuration.hideOssBackgroundScanNotification();
     }
   }
 }
