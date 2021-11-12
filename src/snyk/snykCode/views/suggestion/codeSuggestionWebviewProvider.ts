@@ -246,8 +246,8 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
           <div id="ignore-section">
             <div id="ignore-top">Do you want to hide this suggestion from the results?</div>
             <div class="ignore-actions row">
-              <div id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></div>
-              <div id="ignore-file-issue" class="button">Ignore in this file</div>
+              <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
+              <button id="ignore-file-issue" class="button">Ignore in this file</button>
             </div>
           </div>
           <!--
