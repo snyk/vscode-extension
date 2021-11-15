@@ -52,7 +52,7 @@ export class FeaturesViewProvider implements vscode.WebviewViewProvider {
 
   private getHtmlForWebview(webview: vscode.Webview) {
     const scriptUri = this.getWebViewUri('out', 'snyk', 'base', 'views', 'featureSelection', 'featuresViewScript.js');
-    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'featureSelection', 'vscode.css');
+    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
     const styleUri = this.getWebViewUri('media', 'views', 'featureSelection', 'featureSelection.css');
     const avatarUri = this.getWebViewUri('media', 'images', 'avatar-transparent.svg');
 

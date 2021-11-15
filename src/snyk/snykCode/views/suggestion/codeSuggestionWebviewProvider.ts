@@ -184,7 +184,7 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       'codeSuggestionWebviewScript.js',
     );
     const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
-    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'featureSelection', 'vscode.css');
+    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
     const nonce = getNonce();
     return `
   <!DOCTYPE html>
