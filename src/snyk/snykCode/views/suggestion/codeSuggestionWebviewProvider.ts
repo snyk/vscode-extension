@@ -184,8 +184,8 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       'codeSuggestionWebviewScript.js',
     );
     const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
+    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'featureSelection', 'vscode.css');
     const nonce = getNonce();
-
     return `
   <!DOCTYPE html>
   <html lang="en">
@@ -195,6 +195,7 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
       <link href="${styleUri}" rel="stylesheet">
+      <link href="${styleVSCodeUri}" rel="stylesheet">
   </head>
   <body>
       <div class="suggestion">
