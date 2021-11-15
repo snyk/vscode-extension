@@ -237,10 +237,6 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
             </div>
           </div>
           <div id="example"></div>
-          <div id="explanations-group">
-            <div id="explanations-top">Explanations from other repositories</div>
-            <div id="explanations"></div>
-          </div>
         </section>
         <section class="feedback-section delimiter-top">
           <div id="ignore-section">
