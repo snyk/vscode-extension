@@ -2,11 +2,6 @@ html { height: 100%; font-size: 62.5% }
 body { height: 100%; padding: 0; font-size: 1.4rem; line-height: 1.5;  }
 body * { box-sizing: border-box }
 
-.button { vertical-align: middle; padding: .9rem 1.5rem 1rem; border: 1px #7754DB solid; border-radius: 30px; line-height: 1; background: none; color: #7754DB; text-align: center; font-weight: 700; font-family: inherit; transition: all 0.25s; cursor: pointer; }
-.button.disabled { border: 1px #676C6F solid; color: #676C6F; }
-.button:hover { background-color: #7754DB; color: #fff; }
-.button.disabled:hover { background-color: #676C6F; }
-
 .font-light { opacity: .75 }
 .font-blue { color: #7754DB; }
 .font-red { color: #FC3838; }

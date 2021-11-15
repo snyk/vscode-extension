@@ -184,8 +184,8 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       'codeSuggestionWebviewScript.js',
     );
     const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
+    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
     const nonce = getNonce();
-
     return `
   <!DOCTYPE html>
   <html lang="en">
@@ -195,6 +195,7 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
       <link href="${styleUri}" rel="stylesheet">
+      <link href="${styleVSCodeUri}" rel="stylesheet">
   </head>
   <body>
       <div class="suggestion">
@@ -246,8 +247,8 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
           <div id="ignore-section">
             <div id="ignore-top">Do you want to hide this suggestion from the results?</div>
             <div class="ignore-actions row">
-              <div id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></div>
-              <div id="ignore-file-issue" class="button">Ignore in this file</div>
+              <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
+              <button id="ignore-file-issue" class="button">Ignore in this file</button>
             </div>
           </div>
           <!--
