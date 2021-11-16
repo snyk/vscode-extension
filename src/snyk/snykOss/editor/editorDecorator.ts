@@ -34,6 +34,20 @@ export class EditorDecorator {
     return this.fileDecorationMap;
   }
 
+  resetDecorations(filePath: string): void {
+    const decorations = this.fileDecorationMap.get(filePath);
+    if (!decorations) {
+      return;
+    }
+
+    const emptyDecorations = decorations.map(d => ({
+      ...d,
+      renderOptions: this.getRenderOptions(''),
+    }));
+    this.fileDecorationMap.set(filePath, emptyDecorations);
+    this.triggerUpdateDecorations(filePath);
+  }
+
   setScanStartDecorations(filePath: string, modules: ImportedModule[]): void {
     const lineDecorations: LineDecorations = [];
 

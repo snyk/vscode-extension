@@ -77,6 +77,7 @@ export class OssService extends CliService<OssResult> {
     if (result instanceof CliError) {
       this.logger.error(`${messages.testFailed} ${result.error}`);
       this.logAnalysisIsReady('Error');
+      this.scanFinished$.next();
     } else {
       this.logOssResult(result);
 
