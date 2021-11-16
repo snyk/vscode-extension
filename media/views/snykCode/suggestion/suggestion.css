@@ -42,7 +42,6 @@ section { padding: 20px }
 
 #info-top { margin-bottom: 8px; }
 #example-top { margin-bottom: 16px; }
-#explanations-group { padding-top:16px }
 
 .arrow { display: inline-flex; vertical-align: middle; cursor: pointer; }
 .arrow.enabled { fill: #7754DB; color: #7754DB; }
@@ -58,7 +57,6 @@ section { padding: 20px }
 .example-line.added { background-color: #e6ffed; }
 .example-line.added>code { font-weight:600 }
 .example-line>code { padding-left: 30px; white-space: pre-wrap; color: #231F20; font-weight:400 }
-#explanations-top { margin-top: 16px; margin-bottom: 8px; }
 
 .vscode-dark #example { border-color: rgba(255,255,255,.075); background-color: rgba(0,0,0,.15)  }
 .vscode-dark .removed { background-color:rgba(201,60,55,0.2); color:#fff }

@@ -280,18 +280,6 @@
       example.className = 'hidden';
     }
 
-    const explanationTop = document.getElementById('explanations-top')!;
-    explanationTop.className = suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
-
-    const explanations = document.getElementById('explanations')!;
-    explanations.querySelectorAll('*').forEach(n => n.remove());
-    for (let e of suggestion.exampleCommitDescriptions) {
-      const exp = document.createElement('div');
-      exp.className = 'explanation font-light';
-      exp.innerHTML = e;
-      explanations.appendChild(exp);
-    }
-
     feedbackVisibility = 'close';
     // showCurrentFeedback();
   }
