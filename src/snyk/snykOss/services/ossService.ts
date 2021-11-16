@@ -77,17 +77,15 @@ export class OssService extends CliService<OssResult> {
     if (result instanceof CliError) {
       this.logger.error(`${messages.testFailed} ${result.error}`);
       this.logAnalysisIsReady('Error');
-      this.scanFinished$.next();
     } else {
       this.logOssResult(result);
 
       if (this.config.shouldAutoScanOss) {
         this.dailyScanJob.schedule();
       }
-
-      this.scanFinished$.next();
     }
 
+    this.scanFinished$.next();
     this.viewManagerService.refreshOssView();
   }
 
