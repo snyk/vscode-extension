@@ -17,7 +17,6 @@ import {
   YES_TELEMETRY_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
-import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
 export type FeaturesConfiguration = {
@@ -64,10 +63,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaulOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
 
-  constructor(
-    private processEnv: NodeJS.ProcessEnv = process.env,
-    private workspace: IVSCodeWorkspace,
-  ) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
   static get version(): string {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
