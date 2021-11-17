@@ -18,3 +18,16 @@ export const ADVANCED_AUTOSCAN_OSS_SETTING = `${CONFIGURATION_IDENTIFIER}.advanc
 export const ADVANCED_ADDITIONAL_PARAMETERS_SETTING = `${CONFIGURATION_IDENTIFIER}.advanced.additionalParameters`;
 
 export const SEVERITY_FILTER_SETTING = `${CONFIGURATION_IDENTIFIER}.severity`;
+
+/**
+ * HDIV Settings:
+ * 1. HDIV API token
+ * 2. HDIV enable of disable
+ * 3. HDIV application name ( Required to call API )
+ *
+ * The settings have prefix of hDIV, to group them together
+ * and VSCode capitalizes the first alphabet in the string
+ */
+export const HDIV_TOKEN_SETTING = `${CONFIGURATION_IDENTIFIER}.hDIV.Token`;
+export const HDIV_IAST_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.hDIV.interactiveApplicationTesting`;
+export const HDIV_APPLICATION_NAME = `${CONFIGURATION_IDENTIFIER}.hDIV.applicationName`;

@@ -11,6 +11,8 @@ import {
   SEVERITY_FILTER_SETTING,
   TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
+  // HDIV settings
+  HDIV_IAST_ENABLED_SETTING,
 } from '../constants/settings';
 import { errorsLogs } from '../messages/errorsServerLogMessages';
 import { IWatcher } from './interfaces';
@@ -28,6 +30,8 @@ class SettingsWatcher implements IWatcher {
       extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === SEVERITY_FILTER_SETTING) {
       return extension.viewManagerService.refreshAllViews();
+    } else if (key === HDIV_IAST_ENABLED_SETTING) {
+      // Refresh the HDIV view
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');

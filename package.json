@@ -39,6 +39,7 @@
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
     "onWebviewPanel:snyk.views.suggestion.oss",
+    "onWebviewPanel:snyk.views.suggestion.hdiv",
     "*"
   ],
   "main": "./out/extension.js",
@@ -116,6 +117,23 @@
             "title": "Snyk Code quality issues",
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
+          },
+          "snyk.hDIV.Token": {
+            "type": "string",
+            "default": "",
+            "description": "HDIV API key",
+            "scope": "application"
+          },
+          "snyk.hDIV.interactiveApplicationTesting": {
+            "type": "boolean",
+            "title": "HDIV IAST Detection",
+            "description": "HDIV IAST detects security vulnerabilities. It uses a runtime dataflow technique to report vulnerabilities.",
+            "default": true
+          },
+          "snyk.hDIV.applicationName": {
+            "type": "string",
+            "default": "",
+            "description": "The application name in HDIV console"
           },
           "snyk.severity": {
             "type": "object",
@@ -196,6 +214,16 @@
           "id": "snyk.views.actions",
           "name": "Code Security & Quality Actions",
           "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound"
+        },
+        {
+          "id": "snyk.views.analysis.hdiv",
+          "name": "HDIV Interact Application Security Testing",
+          "when": "snyk:hdiv"
+        },
+        {
+          "id": "snyk.views.analysis.hdiv.enablement",
+          "name": "HDIV Interact Application Security Testing",
+          "when": "!snyk:hdiv"
         },
         {
           "id": "snyk.views.support",

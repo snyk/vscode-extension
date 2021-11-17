@@ -8,6 +8,15 @@ export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
 export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
+/**
+ * HDIV Views:
+ * 1. Analysis display view
+ * 2. Suggested remediation view
+ * 3. If HDIV disabled, enablement view
+ */
+export const SNYK_VIEW_HDIV = 'snyk.views.analysis.hdiv';
+export const SNYK_VIEW_HDIV_SUGGESTION = 'snyk.views.suggestion.hdiv';
+export const SNYK_VIEW_HDIV_ENABLEMENT = 'snyk.views.analysis.hdiv.enablement';
 
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
@@ -20,6 +29,8 @@ export const SNYK_CONTEXT = {
   ERROR: 'error',
   MODE: 'mode',
   ADVANCED: 'advanced',
+  // HDIV context for when context in views
+  HDIV: 'hdiv',
 };
 
 export const SNYK_ERROR_CODES = {
@@ -35,4 +46,6 @@ export const SNYK_ANALYSIS_STATUS = {
   OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
   CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',
+  // HDIV status
+  HDIV_DISABLE: 'HDIV IAST scanning is disbaled. Enable it in settings to use it.',
 };

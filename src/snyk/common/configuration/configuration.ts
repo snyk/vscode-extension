@@ -9,6 +9,9 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
+  HDIV_APPLICATION_NAME,
+  HDIV_IAST_ENABLED_SETTING,
+  HDIV_TOKEN_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TOKEN_SETTING,
@@ -23,6 +26,7 @@ export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
   codeQualityEnabled: boolean | undefined;
+  hdivEnabled: boolean | undefined;
 };
 
 export interface SeverityFilter {
@@ -114,6 +118,36 @@ export class Configuration implements IConfiguration {
     return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME_SHORT;
   }
 
+  // HDIV related configs
+  // 1. HDIV API token
+  // 1.1 Get HDIV token
+  get hdivToken(): string | undefined {
+    return this.workspace.getConfiguration(CONFIGURATION_IDENTIFIER, HDIV_TOKEN_SETTING);
+  }
+  // 1.2 Set HDIV token
+  async setHdivToken(token: string | undefined): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(HDIV_TOKEN_SETTING),
+      token,
+      true,
+    );
+  }
+  // 2. HDIV application name
+  // 2.1 get application name
+  get hdivApplicationName(): string | undefined {
+    return this.workspace.getConfiguration(CONFIGURATION_IDENTIFIER, HDIV_APPLICATION_NAME);
+  }
+  // 2.2 set application name
+  async setHdivApplicationName(applicationName: string | undefined): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(HDIV_APPLICATION_NAME),
+      applicationName,
+      true,
+    );
+  }
+
   getFeaturesConfiguration(): FeaturesConfiguration | undefined {
     const ossEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
@@ -128,15 +162,26 @@ export class Configuration implements IConfiguration {
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
     );
 
-    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(codeQualityEnabled)) {
+    const hdivEnabled = this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(HDIV_IAST_ENABLED_SETTING),
+    );
+
+    if (
+      _.isUndefined(ossEnabled) &&
+      _.isUndefined(codeSecurityEnabled) &&
+      _.isUndefined(codeQualityEnabled) &&
+      _.isUndefined(hdivEnabled)
+    ) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true, hdivEnabled: true };
     }
 
     return {
       ossEnabled,
       codeSecurityEnabled,
       codeQualityEnabled,
+      hdivEnabled,
     };
   }
 
