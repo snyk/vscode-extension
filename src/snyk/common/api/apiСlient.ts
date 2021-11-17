@@ -1,15 +1,21 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { configuration } from '../configuration/instance';
+import { IConfiguration } from '../configuration/configuration';
 import { DEFAULT_API_HEADERS } from './headers';
 
-class ApiClient {
+export interface ISnykApiClient {
+  get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R>;
+}
+
+export class SnykApiClient implements ISnykApiClient {
   private instance: AxiosInstance | null = null;
+
+  constructor(private readonly configuration: IConfiguration) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
   }
 
-  initHttp() {
+  initHttp(): AxiosInstance {
     const http = axios.create({
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
@@ -29,10 +35,10 @@ class ApiClient {
 
   get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
     this.http.interceptors.request.use(req => {
-      req.baseURL = `${configuration.authHost}/api/v1/`;
+      req.baseURL = `${this.configuration.authHost}/api/v1/`;
       req.headers = {
         ...req.headers,
-        Authorization: `token ${configuration.token}`,
+        Authorization: `token ${this.configuration.token}`,
       } as { [header: string]: string };
 
       return req;
@@ -41,5 +47,3 @@ class ApiClient {
     return this.http.get<T, R>(url, config);
   }
 }
-
-export const api = new ApiClient();

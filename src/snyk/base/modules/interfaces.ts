@@ -11,7 +11,6 @@ import { ILoadingBadge } from '../views/loadingBadge';
 export interface IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   statusBarItem: IStatusBarItem;
-  settingsWatcher: IWatcher;
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
