@@ -67,7 +67,10 @@ export default class SnykLib extends ReportModule implements ISnykLib {
 
   private async initializeWelcomeViewExperiment(): Promise<void> {
     const partOfExperiment = await this.experimentService.isUserPartOfExperiment(ExperimentKey.UpdateCopyOnWelcomeView);
-    await this.contextService.setContext(SNYK_CONTEXT.WELCOME_VIEW_EXPERIMENT, partOfExperiment);
+    await this.contextService.setContext(
+      SNYK_CONTEXT.WELCOME_VIEW_EXPERIMENT,
+      partOfExperiment ? 'treatment' : 'control',
+    );
   }
 
   async enableCode(): Promise<void> {

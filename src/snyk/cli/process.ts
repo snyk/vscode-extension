@@ -48,17 +48,13 @@ export class CliProcess {
   }
 
   getProcessEnv(): NodeJS.ProcessEnv {
-    let env = {
+    return {
       SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
       SNYK_INTEGRATION_VERSION: Configuration.version,
       SNYK_TOKEN: this.config.token,
       SNYK_API: this.config.snykOssApiEndpoint,
-    } as NodeJS.ProcessEnv;
-
-    if (!this.config.shouldReportEvents) {
-      env = { ...env, SNYK_CFG_DISABLE_ANALYTICS: '1' };
-    }
-    return env;
+      SNYK_CFG_ORG: this.config.organization,
+    };
   }
 
   private cleanupProcess() {

@@ -6,6 +6,8 @@ import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
+  ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
@@ -37,31 +39,39 @@ export interface SeverityFilter {
 export interface IConfiguration {
   isDevelopment: boolean;
   source: string;
-  baseURL: string;
+
   authHost: string;
-  snykCodeUrl: string;
   token: string | undefined;
-  snykOssApiEndpoint: string;
-  snykCodeToken: string | undefined;
   setToken(token: string): Promise<void>;
+
+  snykCodeBaseURL: string;
+  snykCodeUrl: string;
+  snykCodeToken: string | undefined;
+
+  organization: string | undefined;
+  getAdditionalCliParameters(): string | undefined;
+
+  snykOssApiEndpoint: string;
+  shouldShowOssBackgroundScanNotification: boolean;
+  hideOssBackgroundScanNotification(): Promise<void>;
+  shouldAutoScanOss: boolean;
+
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
   shouldShowWelcomeNotification: boolean;
+  hideWelcomeNotification(): Promise<void>;
+
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
-  shouldShowOssBackgroundScanNotification: boolean;
-  shouldAutoScanOss: boolean;
+
   severityFilter: SeverityFilter;
-  getAdditionalCliParameters(): string | undefined;
-  hideWelcomeNotification(): Promise<void>;
-  hideOssBackgroundScanNotification(): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
-  private readonly defaultBaseURL = 'https://deeproxy.snyk.io';
+  private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://snyk.io';
-  private readonly defaulOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
+  private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -75,20 +85,46 @@ export class Configuration implements IConfiguration {
     return !!this.processEnv.SNYK_VSCE_DEVELOPMENT;
   }
 
-  get baseURL(): string {
+  get snykCodeBaseURL(): string {
     if (this.isDevelopment) {
       return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL ?? 'https://deeproxy.dev.snyk.io';
+    } else if (this.customEndpoint) {
+      const url = new URL(this.customEndpoint);
+      url.host = `deeproxy.${url.host}`;
+      url.pathname = url.pathname.replace('api', '');
+
+      return this.removeTrailingSlash(url.toString());
     }
 
-    return this.defaultBaseURL;
+    return this.defaultSnykCodeBaseURL;
+  }
+
+  private get customEndpoint(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_ENDPOINT),
+    );
   }
 
   get authHost(): string {
-    return this.isDevelopment ? 'https://dev.snyk.io' : this.defaultAuthHost;
+    if (this.isDevelopment) {
+      return 'https://dev.snyk.io';
+    } else if (this.customEndpoint) {
+      const url = new URL(this.customEndpoint);
+      return `${url.protocol}//${url.host}`;
+    }
+
+    return this.defaultAuthHost;
   }
 
   get snykOssApiEndpoint(): string {
-    return this.isDevelopment ? `${this.authHost}/api/v1` : this.defaulOssApiEndpoint;
+    if (this.isDevelopment) {
+      return `${this.authHost}/api/v1`;
+    } else if (this.customEndpoint) {
+      return this.customEndpoint;
+    }
+
+    return this.defaultOssApiEndpoint;
   }
 
   get snykCodeUrl(): string {
@@ -240,6 +276,10 @@ export class Configuration implements IConfiguration {
     );
   }
 
+  get organization(): string | undefined {
+    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
+  }
+
   getAdditionalCliParameters(): string | undefined {
     return this.workspace.getConfiguration<string>(
       CONFIGURATION_IDENTIFIER,
@@ -248,4 +288,8 @@ export class Configuration implements IConfiguration {
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
+
+  private removeTrailingSlash(str: string) {
+    return str.replace(/\/$/, '');
+  }
 }

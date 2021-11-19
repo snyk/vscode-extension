@@ -5,11 +5,11 @@ import { configuration } from '../../snyk/common/configuration/instance';
 suite('Configuration', () => {
   test('configuration constants differ between DEV and PROD', () => {
     process.env.SNYK_VSCE_DEVELOPMENT = '';
-    strictEqual(configuration.baseURL, 'https://deeproxy.snyk.io');
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
     strictEqual(configuration.authHost, 'https://snyk.io');
 
     process.env.SNYK_VSCE_DEVELOPMENT = '1';
-    strictEqual(configuration.baseURL, 'https://deeproxy.dev.snyk.io');
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.dev.snyk.io');
     strictEqual(configuration.authHost, 'https://dev.snyk.io');
   });
 

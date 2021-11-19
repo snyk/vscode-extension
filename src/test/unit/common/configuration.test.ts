@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { strictEqual } from 'assert';
-import sinon, { stub } from 'sinon';
+import sinon from 'sinon';
 import { Configuration } from '../../../snyk/common/configuration/configuration';
+import { ADVANCED_CUSTOM_ENDPOINT } from '../../../snyk/common/constants/settings';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Configuration', () => {
@@ -34,27 +35,36 @@ suite('Configuration', () => {
     sinon.restore();
   });
 
-  test('Production base url is returned when not in development', () => {
+  test('Snyk Code: production base url is returned when not in development', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
     const configuration = new Configuration(
       {
         SNYK_VSCE_DEVELOPMENT: '',
       },
-      workspaceStub,
+      workspace,
     );
-    strictEqual(configuration.baseURL, 'https://deeproxy.snyk.io');
+
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
   });
 
-  test('Development base url is returned when in development', () => {
+  test('Snyk Code: development base url is returned when in development', () => {
     const configuration = new Configuration(
       {
         SNYK_VSCE_DEVELOPMENT: '1',
       },
       workspaceStub,
     );
-    strictEqual(configuration.baseURL, 'https://deeproxy.dev.snyk.io');
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.dev.snyk.io');
   });
 
-  test('Custom base url is returned when in development and custom url specified', () => {
+  test('Snyk Code: base url respects custom endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'http://custom.endpoint.com');
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykCodeBaseURL, 'http://deeproxy.custom.endpoint.com');
+  });
+
+  test('Snyk Code: Custom base url is returned when in development and custom url specified', () => {
     const customUrl = 'https://custom.url';
     const configuration = new Configuration(
       {
@@ -63,10 +73,10 @@ suite('Configuration', () => {
       },
       workspaceStub,
     );
-    strictEqual(configuration.baseURL, customUrl);
+    strictEqual(configuration.snykCodeBaseURL, customUrl);
   });
 
-  test('Snyk Code token returns snyk.io token when not in development', async () => {
+  test('Snyk Code: token returns snyk.io token when not in development', async () => {
     const token = 'snyk-token';
     const configuration = new Configuration(process.env, workspaceStub);
     await configuration.setToken(token);
@@ -74,7 +84,7 @@ suite('Configuration', () => {
     strictEqual(configuration.snykCodeToken, token);
   });
 
-  test('Snyk Code token returns Snyk Code token when in development', async () => {
+  test('Snyk Code: token returns Snyk Code token when in development', async () => {
     const token = 'test-token';
     const snykCodeToken = 'snykCode-token';
     const configuration = new Configuration(
@@ -88,4 +98,30 @@ suite('Configuration', () => {
 
     strictEqual(configuration.snykCodeToken, snykCodeToken);
   });
+
+  test('Snyk OSS: API endpoint returns default endpoint when no custom set', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykOssApiEndpoint, 'https://snyk.io/api/v1');
+  });
+
+  test('Snyk OSS: API endpoint returns custom endpoint when set', () => {
+    const customEndpoint = 'http://custom.endpoint.com/api';
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykOssApiEndpoint, customEndpoint);
+  });
+
+  function stubWorkspaceConfiguration(configSetting: string, returnValue: string | undefined): IVSCodeWorkspace {
+    return {
+      getConfiguration: (identifier: string, key: string) => {
+        if (`${identifier}.${key}` === configSetting) return returnValue;
+        return undefined;
+      },
+    } as IVSCodeWorkspace;
+  }
 });
