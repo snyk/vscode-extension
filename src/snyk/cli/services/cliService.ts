@@ -101,10 +101,6 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       args.push(...parseArgsStringToArgv(additionalParams.trim()));
     }
 
-    if (!this.config.shouldReportEvents) {
-      args.push('--DISABLE_ANALYTICS');
-    }
-
     return args;
   }
 

@@ -37,7 +37,6 @@ suite('CliService', () => {
   let extensionContext: ExtensionContext;
   let cliDownloadService: CliDownloadService;
   let configuration: IConfiguration;
-  let workspace: IVSCodeWorkspace;
 
   setup(() => {
     logger = new LoggerMock();
@@ -49,18 +48,22 @@ suite('CliService', () => {
 
     configuration = ({
       getAdditionalCliParameters: () => '',
-      shouldReportEvents: true,
     } as unknown) as IConfiguration;
 
     cliDownloadService = ({
       downloadCli: () => false,
       isInstalled: () => true,
     } as unknown) as CliDownloadService;
-    workspace = {
-      getWorkspaceFolders: () => ['test-folder'],
-    } as IVSCodeWorkspace;
 
-    testCliService = new TestCliService(extensionContext, logger, configuration, workspace, cliDownloadService);
+    testCliService = new TestCliService(
+      extensionContext,
+      logger,
+      configuration,
+      {
+        getWorkspaceFolders: () => ['test-folder'],
+      } as IVSCodeWorkspace,
+      cliDownloadService,
+    );
   });
 
   teardown(() => {
@@ -142,7 +145,7 @@ suite('CliService', () => {
     notStrictEqual(result, false);
   });
 
-  test('isChecksumCorrect returns true when CLI file is installed and checksum correct', async () => {
+  test("isChecksumCorrect returns true when CLI file is installed and checksum correct", async () => {
     const checksumStr = 'e06fa5f8d963e8a3e2f9d1bfcf5f66d412ce4d5ad60e24512cfe8a65e7077d88';
     sinon.stub(extensionContext, 'getGlobalStateValue').returns(checksumStr);
     sinon.stub(Checksum, 'getChecksumOf').resolves(Checksum.fromDigest(checksumStr, checksumStr));
@@ -152,7 +155,7 @@ suite('CliService', () => {
     strictEqual(result, true);
   });
 
-  test('isChecksumCorrect returns false when CLI file is not installed', async () => {
+  test("isChecksumCorrect returns false when CLI file is not installed", async () => {
     sinon.stub(cliDownloadService, 'isInstalled').resolves(false);
     const result = await testCliService.isChecksumCorrect('test/path');
     strictEqual(result, false);
@@ -187,29 +190,5 @@ suite('CliService', () => {
       '--sub-project=snyk',
     ];
     deepStrictEqual(spawnSpy.calledWith(sinon.match.any, expectedArgs), true);
-  });
-
-  test("Passes '--DISABLE_ANALYTICS' when telemetry is off ", () => {
-    const config = ({
-      shouldReportEvents: false,
-      getAdditionalCliParameters: () => undefined,
-    } as unknown) as IConfiguration;
-    testCliService = new TestCliService(extensionContext, logger, config, workspace, cliDownloadService);
-
-    const args = testCliService.buildArguments();
-
-    notStrictEqual(args.indexOf('--DISABLE_ANALYTICS'), -1);
-  });
-
-  test("Passes '--DISABLE_ANALYTICS' when telemetry is on ", () => {
-    const config = ({
-      shouldReportEvents: true,
-      getAdditionalCliParameters: () => undefined,
-    } as unknown) as IConfiguration;
-    testCliService = new TestCliService(extensionContext, logger, config, workspace, cliDownloadService);
-
-    const args = testCliService.buildArguments();
-
-    notStrictEqual(args.indexOf('--DISABLE_ANALYTICS') > -1, true);
   });
 });
