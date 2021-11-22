@@ -98,6 +98,13 @@ export default class SnykLib extends ReportModule implements ISnykLib {
       return;
     }
 
+    if (
+      !configuration.getFeaturesConfiguration()?.codeSecurityEnabled &&
+      !configuration.getFeaturesConfiguration()?.codeQualityEnabled
+    ) {
+      return;
+    }
+
     if (!paths.length) {
       paths = this.getWorkspacePaths();
     }
