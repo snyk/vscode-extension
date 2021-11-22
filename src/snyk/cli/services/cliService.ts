@@ -8,6 +8,7 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
+import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
 import { CliDownloadService } from './cliDownloadService';
 
@@ -21,6 +22,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
   private cliProcess?: CliProcess;
   private verifiedChecksumCorrect?: boolean;
+  private _isCliDownloadSuccessful = true;
 
   constructor(
     protected readonly extensionContext: ExtensionContext,
@@ -30,6 +32,10 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly downloadService: CliDownloadService,
   ) {
     super();
+  }
+
+  get isCliDownloadSuccessful(): boolean {
+    return this._isCliDownloadSuccessful;
   }
 
   async test(manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<CliResult | CliError> {
@@ -85,7 +91,12 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  buildArguments(): string[] {
+  handleCliDownloadFailure(error: Error): void {
+    this.logger.error(`${messages.cliDownloadFailed} ${error}`);
+    this._isCliDownloadSuccessful = false;
+  }
+
+  private buildArguments(): string[] {
     const args = [];
     const foldersToTest = this.workspace.getWorkspaceFolders();
     if (foldersToTest.length == 0) {

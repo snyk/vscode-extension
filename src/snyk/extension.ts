@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { snykMessages } from './base/messages/snykMessages';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
@@ -7,7 +6,6 @@ import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { StaticCliApi } from './cli/api/staticCliApi';
-import { messages as cliMessages } from './cli/messages/messages';
 import { CliDownloadService } from './cli/services/cliDownloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
@@ -244,9 +242,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private initCliDownload(): CliDownloadService {
     this.cliDownloadService.downloadOrUpdateCli().catch(err => {
-      const errorMsg = cliMessages.cliDownloadFailed;
-      Logger.error(`${errorMsg} ${err}`);
-      void this.notificationService.showErrorNotification(`${errorMsg} ${snykMessages.errorQuery}`);
+      this.ossService?.handleCliDownloadFailure(err);
     });
 
     return this.cliDownloadService;
