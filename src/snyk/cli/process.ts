@@ -53,6 +53,7 @@ export class CliProcess {
       SNYK_INTEGRATION_VERSION: Configuration.version,
       SNYK_TOKEN: this.config.token,
       SNYK_API: this.config.snykOssApiEndpoint,
+      SNYK_CFG_ORG: this.config.organization,
     } as NodeJS.ProcessEnv;
 
     if (!this.config.shouldReportEvents) {

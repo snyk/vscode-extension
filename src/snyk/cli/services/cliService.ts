@@ -85,7 +85,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  private buildArguments(): string[] {
+  buildArguments(): string[] {
     const args = [];
     const foldersToTest = this.workspace.getWorkspaceFolders();
     if (foldersToTest.length == 0) {
@@ -105,7 +105,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   public async isChecksumCorrect(cliPath: string): Promise<boolean> {
-    if (!await this.downloadService.isInstalled()) {
+    if (!(await this.downloadService.isInstalled())) {
       return false;
     }
 

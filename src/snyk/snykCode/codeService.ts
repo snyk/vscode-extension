@@ -115,7 +115,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       } else {
         result = await analyzeFolders({
           connection: {
-            baseURL: this.config.baseURL,
+            baseURL: this.config.snykCodeBaseURL,
             sessionToken: this.config.snykCodeToken ?? '', // todo: handle the case appropriately
             source: this.config.source,
           },
@@ -185,7 +185,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
   errorEncountered(error: Error): void {
     this.failed = true;
-    this.logger.error(`${analysisMessages.failed} ${error.message}`);
+    this.logger.error(`${analysisMessages.failed} ${JSON.stringify(error)}`);
   }
 
   async checkCodeEnabled(): Promise<boolean> {
