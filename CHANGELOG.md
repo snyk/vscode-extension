@@ -1,10 +1,25 @@
 # Snyk Vulnerability Scanner Changelog
 
-## [Unreleased]
-### Fixed
+## [1.2.2]
+
+### Changed
+
+- Use standard VS Code buttons for ignoring Snyk Code suggestions in webview.
+- Improved network outage tolerance for Snyk Code requests.
+- Feedback link updated.
+
 ### Added
-- Retry CLI download when CLI is not installed correctly and scan is requested
+
+- Surface vulnerability count from OSS scan in editor for JavaScript and TypeScript files.
+- Surface vulnerability count from OSS scan in editor for package.json for NPM projects.
+- Surface imported modules as part of `<script>` element in editor for HTML files.
+- Retry CLI download when CLI is not installed correctly and scan is requested.
+- Show CLI download failure within the Open Source Security tree view.
+- Ability to run A/B experiments using Amplitude Experiment.
+
 ### Removed
+
+- Commit comments as part of Snyk Code suggestion view.
 
 ## [1.2.1]
 
