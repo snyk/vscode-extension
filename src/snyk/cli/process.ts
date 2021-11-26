@@ -20,7 +20,7 @@ export class CliProcess {
 
       this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
-      this.runningProcess = spawn(cliPath, args, { env: this.getProcessEnv() });
+      this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...this.getProcessEnv() } });
 
       this.runningProcess.stdout.setEncoding('utf8');
       this.runningProcess.stdout.on('data', (data: string | Buffer) => (output += data));
