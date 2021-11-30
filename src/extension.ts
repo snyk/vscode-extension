@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import SnykExtension from './snyk/extension';
 
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
-import { workspace } from 'vscode';
+import { commands, workspace } from 'vscode';
 
 let client: LanguageClient;
 
@@ -13,7 +13,7 @@ const extension = new SnykExtension();
 export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
   void extension.activate(context);
-  // The server is implemented in node
+
   const serverModule = '/Users/bdoetsch/workspace/go/bin/snyk-lsp';
 
   // If the extension is launched in debug mode then the debug server options are used
@@ -41,7 +41,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   client.start();
+  commands.registerCommand("snyk.launchBrowser", (uri: string) => {
+    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri))
+  });
+  commands.registerCommand("snyk.showRule", (uri: string) => {
+    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri))
+  });
 }
+
 
 export function deactivate(): void {
   console.log('Deactivating SnykExtension');
