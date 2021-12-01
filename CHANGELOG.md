@@ -1,6 +1,17 @@
 # Snyk Vulnerability Scanner Changelog
 
-## [1.2.2]
+## [1.2.4]
+
+### Added
+
+- Use user environment settings when spawning Snyk CLI as a child process.
+
+### Fixed
+
+- Snyk Code 'Show this suggestion' quick fix not opening the view from an editor.
+- Snyk Code suggestion view not displaying when navigating multiple times to the same issue.
+
+## [1.2.3]
 
 ### Changed
 
