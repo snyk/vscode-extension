@@ -1,13 +1,16 @@
+import { getIpFamily } from '@snyk/code-client';
 import _ from 'lodash';
 import * as vscode from 'vscode';
+import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
-import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
+import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_LOGIN_COMMAND,
@@ -19,9 +22,6 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
-import { IAuthenticationService } from '../../base/services/authenticationService';
-import { IAnalytics } from '../analytics/itly';
-import { getIpFamily } from '@snyk/code-client';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -82,12 +82,12 @@ export class CommandController {
           issue.openUri || issue.uri,
           issue.openRange || issue.range,
         );
+
       this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
-      suggestion.id = decodeURIComponent(suggestion.id);
 
       this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
-        issueId: suggestion.id,
+        issueId: decodeURIComponent(suggestion.id),
         issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
         severity: IssueUtils.severityAsText(suggestion.severity),
       });
