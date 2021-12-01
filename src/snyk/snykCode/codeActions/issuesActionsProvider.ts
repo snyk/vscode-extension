@@ -2,6 +2,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/ban-types */
 import { IAnalytics } from '../../common/analytics/itly';
+import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IDE_NAME } from '../../common/constants/general';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
@@ -16,6 +17,7 @@ import {
 } from '../../common/vscode/types';
 import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { IssueUtils } from '../utils/issueUtils';
+import { CodeIssueCommandArg } from '../views/interfaces';
 
 export class SnykIssuesActionProvider implements CodeActionProvider {
   private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
@@ -79,7 +81,16 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
       showIssueAction.command = {
         command: SNYK_OPEN_ISSUE_COMMAND,
         title: SNYK_OPEN_ISSUE_COMMAND,
-        arguments: [matchedIssue.message, document.uri, matchedIssue.range, null],
+        arguments: [
+          {
+            issueType: OpenCommandIssueType.CodeIssue,
+            issue: {
+              message: matchedIssue.message,
+              uri: document.uri,
+              range: matchedIssue.range,
+            } as CodeIssueCommandArg,
+          } as OpenIssueCommandArg,
+        ],
       };
 
     return showIssueAction;
