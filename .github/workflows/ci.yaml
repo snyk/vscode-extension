@@ -1,12 +1,15 @@
 name: CI
 on:
-  push:
-    branches:
-      - master
   pull_request:
+    branches:
+      - main
+  workflow_call:
+    secrets:
+      ITERATIVELY_KEY:
+        required: true
 jobs:
-  test:
-    name: Test
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Fetch sources

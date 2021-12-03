@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const fs = require('fs');
 
-const args = process.argv.slice(2);
-if (!args || args.length == 0) {
-  throw new Error('No version parameter was provided.');
-}
+const date = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+const version = `${String(date.getFullYear())}.${date.getMonth() + 1}.${date.getDate()}${String(
+  date.getHours(),
+).padStart(2, '0')}`; // Follow GitLens extension versioning strategy
 
 // Patch README.md
 const insert = fs.readFileSync('./README.preview.md', { encoding: 'utf8' });
@@ -19,7 +19,15 @@ json = JSON.stringify({
   name: `${json.name}-preview`,
   displayName: `${json.displayName} (Preview)`,
   description: 'This is a preview release for functionality that is not yet officially released.',
-  version: `${args[0]}`, // semver is not supported
+  version: version,
   preview: true,
 });
 fs.writeFileSync('./package.json', json);
+
+let snykConfigJson = require('../snyk.config.json');
+snykConfigJson = JSON.stringify({
+  ...snykConfigJson,
+  segmentWriteKey: process.env.SNYK_VSCE_SEGMENT_WRITE_KEY,
+  amplitudeExperimentApiKey: process.env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY,
+});
+fs.writeFileSync('./snyk.config.json', snykConfigJson);
