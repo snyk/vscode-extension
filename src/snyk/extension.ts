@@ -273,7 +273,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, this.commandController.setScanMode.bind(this)),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, this.commandController.openSettings.bind(this)),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, this.commandController.createDCIgnore.bind(this)),
-      vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, this.commandController.openIssueCommand.bind(this)),
+      vscode.commands.registerCommand(
+        SNYK_OPEN_ISSUE_COMMAND,
+        this.commandController.openIssueCommand.bind(this.commandController),
+      ),
       vscode.commands.registerCommand(
         SNYK_SHOW_OUTPUT_COMMAND,
         this.commandController.showOutputChannel.bind(this.commandController),

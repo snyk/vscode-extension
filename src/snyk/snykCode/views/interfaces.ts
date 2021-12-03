@@ -1,5 +1,5 @@
-import { IExtension } from '../../base/modules/interfaces';
 import * as vscode from 'vscode';
+import { IExtension } from '../../base/modules/interfaces';
 
 export interface ICodeSuggestionWebviewProvider {
   activate(extension: IExtension): void;
@@ -13,4 +13,5 @@ export type CodeIssueCommandArg = {
   range: vscode.Range;
   openUri?: vscode.Uri;
   openRange?: vscode.Range;
+  diagnostic: vscode.Diagnostic;
 };

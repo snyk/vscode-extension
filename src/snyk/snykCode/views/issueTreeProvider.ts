@@ -159,6 +159,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
                 message: d.message,
                 uri: uri,
                 range: d.range,
+                diagnostic: d,
               } as CodeIssueCommandArg,
             } as OpenIssueCommandArg,
           ],

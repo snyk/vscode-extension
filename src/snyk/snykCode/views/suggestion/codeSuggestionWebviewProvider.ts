@@ -47,15 +47,8 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
 
   async showPanel(suggestion: completeFileSuggestionType): Promise<void> {
     try {
-      if (
-        !vscode.window.activeTextEditor?.viewColumn ||
-        !this.panel?.viewColumn ||
-        this.panel.viewColumn !== vscode.ViewColumn.Two
-      ) {
-        // workaround for: https://github.com/microsoft/vscode/issues/71608
-        // when resolved, we can set showPanel back to sync execution.
-        await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
-      }
+      await this.focusSecondEditorGroup();
+
       if (this.panel) {
         this.panel.title = this.getTitle(suggestion);
         this.panel.reveal(vscode.ViewColumn.Two, true);
