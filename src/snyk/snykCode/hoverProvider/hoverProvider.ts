@@ -3,14 +3,7 @@ import { IDE_NAME } from '../../common/constants/general';
 import { ILog } from '../../common/logger/interfaces';
 import { IHoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import {
-  DiagnosticCollection,
-  Disposable,
-  Position,
-  TextDocument,
-  Hover,
-  Diagnostic,
-} from '../../common/vscode/types';
+import { Diagnostic, DiagnosticCollection, Disposable, Hover, Position, TextDocument } from '../../common/vscode/types';
 import { IGNORE_TIP_FOR_USER } from '../constants/analysis';
 import { ISnykCodeAnalyzer } from '../interfaces';
 import { IssueUtils } from '../utils/issueUtils';
@@ -25,13 +18,14 @@ export class DisposableHoverProvider implements Disposable {
     private readonly analytics: IAnalytics,
   ) {}
 
-  register(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter): void {
+  register(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter): Disposable {
     this.hoverProvider = this.vscodeLanguages.registerHoverProvider(
       { scheme: 'file', language: '*' },
       {
         provideHover: this.getHover(snykReview, hoverAdapter),
       },
     );
+    return this;
   }
 
   getHover(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter) {
@@ -49,7 +43,7 @@ export class DisposableHoverProvider implements Disposable {
   }
 
   private logIssueHoverIsDisplayed(issue: Diagnostic): void {
-    const suggestion = this.analyzer.findSuggestion(issue.message);
+    const suggestion = this.analyzer.findSuggestion(issue);
     if (!suggestion) {
       this.logger.debug('Failed to log hover displayed analytical event.');
       return;

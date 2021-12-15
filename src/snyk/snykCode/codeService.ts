@@ -13,6 +13,7 @@ import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
+import { Disposable } from '../common/vscode/types';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
@@ -21,7 +22,7 @@ import { messages as analysisMessages } from './messages/analysis';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
-export interface ISnykCodeService extends AnalysisStatusProvider {
+export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   analyzer: ISnykCodeAnalyzer;
   analysisStatus: string;
   analysisProgress: string;
@@ -35,7 +36,6 @@ export interface ISnykCodeService extends AnalysisStatusProvider {
   checkCodeEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
-  dispose(): void;
 }
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
@@ -232,6 +232,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
   dispose(): void {
     this.progress.removeAllListeners();
+    this.analyzer.dispose();
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));

@@ -15,7 +15,6 @@ import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
-  SNYK_OPEN_LOCAL_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
@@ -48,9 +47,9 @@ export class CommandController {
     return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService, getIpFamily));
   }
 
-  openLocal(path: vscode.Uri, range?: vscode.Range): void {
+  async openLocal(path: vscode.Uri, range?: vscode.Range): Promise<void> {
     // todo: add error reporting
-    void vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range });
+    await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range });
   }
 
   openSettings(): void {
@@ -73,15 +72,10 @@ export class CommandController {
   async openIssueCommand(arg: OpenIssueCommandArg): Promise<void> {
     if (arg.issueType == OpenCommandIssueType.CodeIssue) {
       const issue = arg.issue as CodeIssueCommandArg;
-      const suggestion = this.snykCode.analyzer.findSuggestion(issue.message);
+      const suggestion = this.snykCode.analyzer.findSuggestion(issue.diagnostic);
       if (!suggestion) return;
       // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-      if (issue.openUri !== null)
-        await vscode.commands.executeCommand(
-          SNYK_OPEN_LOCAL_COMMAND,
-          issue.openUri || issue.uri,
-          issue.openRange || issue.range,
-        );
+      if (issue.openUri !== null) await this.openLocal(issue.openUri || issue.uri, issue.openRange || issue.range);
 
       this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
 

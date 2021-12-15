@@ -16,19 +16,21 @@ import {
   TextDocument,
 } from '../../common/vscode/types';
 import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { ICodeSuggestion } from '../interfaces';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
+import { CodeActionsCallbackFunctions } from './disposableCodeActionsProvider';
 
 export class SnykIssuesActionProvider implements CodeActionProvider {
   private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
 
   private issuesList: DiagnosticCollection | undefined;
-  private findSuggestion: Function;
-  private trackIgnoreSuggestion: Function;
+  private findSuggestion: (diagnostic: Diagnostic) => ICodeSuggestion | undefined;
+  private trackIgnoreSuggestion: (vscodeSeverity: number, options: { [key: string]: any }) => void;
 
   constructor(
     issuesList: DiagnosticCollection | undefined,
-    callbacks: { [key: string]: Function },
+    callbacks: CodeActionsCallbackFunctions,
     private readonly codeActionAdapter: ICodeActionAdapter,
     private readonly codeActionKindProvider: ICodeActionKindAdapter,
     private readonly analytics: IAnalytics,
@@ -56,7 +58,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
       this.providedCodeActionKinds[0],
     );
 
-    const suggestion = this.findSuggestion(matchedIssue.message);
+    const suggestion = this.findSuggestion(matchedIssue);
     if (suggestion)
       ignoreIssueAction.command = {
         command: SNYK_IGNORE_ISSUE_COMMAND,
@@ -76,7 +78,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
   }): CodeAction {
     const showIssueAction = this.codeActionAdapter.create(SHOW_ISSUE_ACTION_NAME, this.providedCodeActionKinds[0]);
 
-    const suggestion = this.findSuggestion(matchedIssue.message);
+    const suggestion = this.findSuggestion(matchedIssue);
     if (suggestion)
       showIssueAction.command = {
         command: SNYK_OPEN_ISSUE_COMMAND,
@@ -88,6 +90,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
               message: matchedIssue.message,
               uri: document.uri,
               range: matchedIssue.range,
+              diagnostic: matchedIssue,
             } as CodeIssueCommandArg,
           } as OpenIssueCommandArg,
         ],

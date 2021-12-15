@@ -18,6 +18,12 @@ export abstract class WebviewProvider {
     this.panel = panel;
   }
 
+  protected async focusSecondEditorGroup(): Promise<void> {
+    // workaround for: https://github.com/microsoft/vscode/issues/71608
+    // when resolved, we can set showPanel back to sync execution.
+    await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
+  }
+
   protected disposePanel(): void {
     if (this.panel) this.panel.dispose();
   }

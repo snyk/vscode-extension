@@ -34,15 +34,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
   }
 
   async showPanel(vulnerability: OssIssueCommandArg): Promise<void> {
-    if (
-      !vscode.window.activeTextEditor?.viewColumn ||
-      !this.panel?.viewColumn ||
-      this.panel.viewColumn !== vscode.ViewColumn.Two
-    ) {
-      // workaround for: https://github.com/microsoft/vscode/issues/71608
-      // when resolved, we can set showPanel back to sync execution.
-      await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
-    }
+    await this.focusSecondEditorGroup();
 
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Two, true);
@@ -90,7 +82,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
       ['dark-medium-severity', 'svg'],
       ['dark-low-severity', 'svg'],
     ].reduce((accumulator: Record<string, string>, [name, ext]) => {
-      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`); // todo move to media folder
+      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
       accumulator[name] = uri.toString();
       return accumulator;

@@ -2,6 +2,7 @@ import { AnalysisResultLegacy, FilePath, FileSuggestion, Suggestion } from '@sny
 import * as vscode from 'vscode';
 import { DiagnosticCollection, TextDocument } from 'vscode';
 import { IExtension } from '../base/modules/interfaces';
+import { Disposable } from '../common/vscode/types';
 
 export type completeFileSuggestionType = ICodeSuggestion &
   FileSuggestion & {
@@ -37,12 +38,12 @@ export interface ISnykCodeResult extends AnalysisResultLegacy {
   suggestions: Readonly<ICodeSuggestions>;
 }
 
-export interface ISnykCodeAnalyzer {
+export interface ISnykCodeAnalyzer extends Disposable {
   codeSecurityReview: DiagnosticCollection | undefined;
   codeQualityReview: DiagnosticCollection | undefined;
   setAnalysisResults(results: AnalysisResultLegacy): void;
   getAnalysisResults(): Readonly<ISnykCodeResult>;
-  findSuggestion(suggestionName: string): Readonly<ICodeSuggestion | undefined>;
+  findSuggestion(diagnostic: vscode.Diagnostic): Readonly<ICodeSuggestion | undefined>;
   getFullSuggestion(
     suggestionId: string,
     uri: vscode.Uri,
