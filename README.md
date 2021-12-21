@@ -6,6 +6,8 @@ Snyk’s Vulnerability Scanner provided by <a href="https://snyk.io/">Snyk.io</a
 - **Code Security** - security weaknesses identified in your own code.
 - **Code Quality** - code quality issues in your own code.
 
+**Snyk detects the critical vulnerability Log4Shell, which was found in the open source Java library log4j-core - a component of one of the most popular Java logging frameworks, Log4J. The vulnerability was categorized as Critical with a CVSS score of 10, and with a mature exploit level.**
+
 ## Table of Contents
 
 - [Introduction](#introduction)
