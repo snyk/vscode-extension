@@ -125,6 +125,11 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
           fileOptions: {
             paths,
           },
+          analysisContext: {
+            flow: this.config.source,
+            initiator: 'IDE',
+            orgDisplayName: this.config.organization,
+          },
         });
       }
 
