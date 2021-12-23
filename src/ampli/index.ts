@@ -47,6 +47,50 @@ export interface TrackOptions extends CallOptions {
 
 export interface IdentifyProperties {
   /**
+   * when a User record is an actual user or when it’s a “service account”
+   */
+  accountType?: "user" | "service" | "app-instance";
+  /**
+   * Link to access more information about the user
+   */
+  adminLink?: string;
+  /**
+   * Link to access more information about the user
+   */
+  admin_link?: string;
+  /**
+   * Auth provider (login method)
+   */
+  authProvider?: string;
+  /**
+   * Auth provider (login method)
+   */
+  auth_provider?: string;
+  /**
+   * Timestamp of user creation
+   */
+  createdAt?: number;
+  /**
+   * Timestamp of user creation
+   */
+  created_at?: number;
+  /**
+   * Email address for the user
+   */
+  email?: string;
+  /**
+   * Whether or not the user has their first integration set up
+   */
+  hasFirstIntegration?: boolean;
+  /**
+   * Whether or not the user has their first project imported
+   */
+  hasFirstProject?: boolean;
+  /**
+   * Indicates whether user has a personal or business email address
+   */
+  hasPersonalEmail?: boolean;
+  /**
    * Applies to non-user identities, such as Snyk Orgs
    */
   isNonUser?: boolean;
@@ -55,81 +99,32 @@ export interface IdentifyProperties {
    */
   is_snyk?: boolean;
   /**
-   * query utm_medium
-   */
-  utm_medium?: string;
-  /**
-   * Name of the user
-   */
-  name?: string;
-  /**
-   * query utm_medium
-   */
-  utmMedium?: string;
-  /**
-   * query utm_campaign
-   */
-  utm_campaign?: string;
-  /**
-   * Link to access more information about the user
-   */
-  adminLink?: string;
-  /**
-   * Timestamp of user creation
-   */
-  createdAt?: number;
-  /**
-   * query utm_source
-   */
-  utmSource?: string;
-  /**
-   * Email address for the user
-   */
-  email?: string;
-  /**
-   * when a User record is an actual user or when it’s a “service account”
-   */
-  accountType?: "user" | "service" | "app-instance";
-  /**
-   * Auth provider (login method)
-   */
-  authProvider?: string;
-  /**
    * Whether or not the user belongs to the Snyk org (determined by the email address ending with @snyk.io)
    */
   isSnyk?: boolean;
-  /**
-   * query utm_source
-   */
-  utm_source?: string;
-  /**
-   * Timestamp of user creation
-   */
-  created_at?: number;
-  /**
-   * Auth provider (login method)
-   */
-  auth_provider?: string;
-  /**
-   * Whether or not the user has their first project imported
-   */
-  hasFirstProject?: boolean;
   /**
    * Whether or not the user should be considered a Snyk administrator
    */
   isSnykAdmin?: boolean;
   /**
+   * Name of the user
+   */
+  name?: string;
+  /**
+   * Used by Marketo to determine whether to send product updates emails to users. We are setting this value during product updates consent flow after registration.
+   */
+  productUpdatesConsent?: boolean;
+  /**
+   * A trait for users who got redirected to `/product-updates` consent page.
+   *
+   *
+   * Will allow us to differentiate these users in Marketo and ensure they don't receive product updates emails without explicitly opting in.
+   */
+  productUpdatesConsentIsDisplayed?: boolean;
+  /**
    * Public ID of user
    */
   user_id?: string;
-  /**
-   * Whether or not the user has their first integration set up
-   */
-  hasFirstIntegration?: boolean;
-  /**
-   * Link to access more information about the user
-   */
-  admin_link?: string;
   /**
    * Username of the user
    */
@@ -137,7 +132,27 @@ export interface IdentifyProperties {
   /**
    * query utm_campaign
    */
+  utm_campaign?: string;
+  /**
+   * query utm_campaign
+   */
   utmCampaign?: string;
+  /**
+   * query utm_medium
+   */
+  utm_medium?: string;
+  /**
+   * query utm_medium
+   */
+  utmMedium?: string;
+  /**
+   * query utm_source
+   */
+  utmSource?: string;
+  /**
+   * query utm_source
+   */
+  utm_source?: string;
 }
 
 export interface GroupProperties {
@@ -146,25 +161,25 @@ export interface GroupProperties {
    */
   groupId?: string;
   /**
-   * The display name of the org
+   * The name of the group associated with the org
    */
-  name?: string;
-  /**
-   * The internal name (org.name) of the org
-   */
-  internalName?: string;
+  groupName?: string;
   /**
    * Key that is used to specify the name of the Segment Group that a groupId is being set for.
    */
   groupType?: "org" | "group" | "account";
   /**
+   * The internal name (org.name) of the org
+   */
+  internalName?: string;
+  /**
+   * The display name of the org
+   */
+  name?: string;
+  /**
    * The plan of the org
    */
   plan?: string;
-  /**
-   * The name of the group associated with the org
-   */
-  groupName?: string;
   /**
    * The types of projects in the org
    */
@@ -173,44 +188,40 @@ export interface GroupProperties {
 
 export interface PageProperties {
   /**
+   * Name of the ecosystem (npm|python|docker...)
+   */
+  ecosystem?: string;
+  /**
    * The name of the package
    */
   package?: string;
-  /**
-   * Query parameters in url.
-   */
-  search?: string;
-  /**
-   * The url of the page.
-   */
-  url?: string;
-  /**
-   * The page title.
-   */
-  title?: string;
   /**
    * The canonical path of the page
    */
   path?: string;
   /**
-   * Name of the ecosystem (npm|python|docker...)
-   */
-  ecosystem?: string;
-  /**
    * The page that linked to this page.
    */
   referrer?: string;
+  /**
+   * Query parameters in url.
+   */
+  search?: string;
+  /**
+   * The page title.
+   */
+  title?: string;
+  /**
+   * The url of the page.
+   */
+  url?: string;
+  /**
+   * Used for page views on individual vulnerability pages
+   */
+  vulnerabilityId?: string;
 }
 
 export interface AnalysisIsReadyProperties {
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
   /**
    * Analysis types selected by the user for the scan:
    *
@@ -238,6 +249,14 @@ export interface AnalysisIsReadyProperties {
     | "Snyk Container"
     | "Snyk Infrastructure as Code";
   /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
    * | Rule | Value |
    * |---|---|
    * | Enum Values | Success, Error |
@@ -246,14 +265,6 @@ export interface AnalysisIsReadyProperties {
 }
 
 export interface AnalysisIsTriggeredProperties {
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
   /**
    * Analysis types selected by the user for the scan: open source vulnerabilities, code quality issues and/or code security vulnerabilities.
    *
@@ -265,6 +276,14 @@ export interface AnalysisIsTriggeredProperties {
    */
   analysisType: [string, ...string[]];
   /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
    * * True means that the analysis was triggered by the User.
    *
    * * False means that the analysis was triggered automatically by the plugin.
@@ -273,14 +292,6 @@ export interface AnalysisIsTriggeredProperties {
 }
 
 export interface AuthenticateButtonIsClickedProperties {
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
   /**
    * Used to identify the source for multi-source events.
    *
@@ -291,6 +302,14 @@ export interface AuthenticateButtonIsClickedProperties {
    * | Enum Values | Advisor, App, Learn, IDE |
    */
   eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
 }
 
 export interface IssueHoverIsDisplayedProperties {
@@ -303,6 +322,10 @@ export interface IssueHoverIsDisplayedProperties {
    */
   ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
   /**
+   * Issue ID as received from the backend.
+   */
+  issueId?: string;
+  /**
    * Issue type
    *
    * | Rule | Value |
@@ -324,11 +347,7 @@ export interface IssueHoverIsDisplayedProperties {
    * |---|---|
    * | Enum Values | High, Medium, Low, Critical |
    */
-  severity: "High" | "Medium" | "Low" | "Critical";
-  /**
-   * Issue ID as received from the backend.
-   */
-  issueId: string;
+  severity?: "High" | "Medium" | "Low" | "Critical";
 }
 
 export interface IssueInTreeIsClickedProperties {
@@ -341,6 +360,10 @@ export interface IssueInTreeIsClickedProperties {
    */
   ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
   /**
+   * Issue ID as received from the backend.
+   */
+  issueId?: string;
+  /**
    * Issue type
    *
    * | Rule | Value |
@@ -362,11 +385,7 @@ export interface IssueInTreeIsClickedProperties {
    * |---|---|
    * | Enum Values | High, Medium, Low, Critical |
    */
-  severity: "High" | "Medium" | "Low" | "Critical";
-  /**
-   * Issue ID as received from the backend.
-   */
-  issueId: string;
+  severity?: "High" | "Medium" | "Low" | "Critical";
 }
 
 export interface PluginIsInstalledProperties {
@@ -429,14 +448,6 @@ export interface QuickFixIsDisplayedProperties {
 
 export interface WelcomeButtonIsClickedProperties {
   /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
-  /**
    * Used to identify the source for multi-source events.
    *
    * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
@@ -446,6 +457,14 @@ export interface WelcomeButtonIsClickedProperties {
    * | Enum Values | Advisor, App, Learn, IDE |
    */
   eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
 }
 
 export interface WelcomeIsViewedProperties {
@@ -462,7 +481,7 @@ export interface WelcomeIsViewedProperties {
 export class AnalysisIsReady implements Event {
   name = 'Analysis Is Ready';
   id = 'c9337edb-27a3-416e-a654-092fa4375feb';
-  version = '2.0.0';
+  version = '2.0.2';
   properties: AnalysisIsReadyProperties & {
     'itly': true;
   };
@@ -480,7 +499,7 @@ export class AnalysisIsReady implements Event {
 export class AnalysisIsTriggered implements Event {
   name = 'Analysis Is Triggered';
   id = 'dabf569e-219c-470f-8e31-6e029723f0cd';
-  version = '2.0.0';
+  version = '2.0.2';
   properties: AnalysisIsTriggeredProperties & {
     'itly': true;
   };
@@ -498,7 +517,7 @@ export class AnalysisIsTriggered implements Event {
 export class AuthenticateButtonIsClicked implements Event {
   name = 'Authenticate Button Is Clicked';
   id = '2220c25f-ba76-4d5b-92f7-6d0e1c6165be';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: AuthenticateButtonIsClickedProperties & {
     'itly': true;
   };
@@ -516,7 +535,7 @@ export class AuthenticateButtonIsClicked implements Event {
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
-  version = '2.0.0';
+  version = '2.0.3';
   properties: IssueHoverIsDisplayedProperties & {
     'itly': true;
   };
@@ -534,7 +553,7 @@ export class IssueHoverIsDisplayed implements Event {
 export class IssueInTreeIsClicked implements Event {
   name = 'Issue In Tree Is Clicked';
   id = 'fae15d02-eab9-49bb-9833-18414e26058b';
-  version = '2.0.0';
+  version = '2.0.3';
   properties: IssueInTreeIsClickedProperties & {
     'itly': true;
   };
@@ -552,7 +571,7 @@ export class IssueInTreeIsClicked implements Event {
 export class PluginIsInstalled implements Event {
   name = 'Plugin Is Installed';
   id = '7bb34693-366e-460e-8f4c-5b3f1c71888a';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: PluginIsInstalledProperties & {
     'itly': true;
   };
@@ -570,7 +589,7 @@ export class PluginIsInstalled implements Event {
 export class PluginIsUninstalled implements Event {
   name = 'Plugin Is Uninstalled';
   id = '5936cb0e-2639-4b76-baea-f0c086b860b0';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: PluginIsUninstalledProperties & {
     'itly': true;
   };
@@ -588,7 +607,7 @@ export class PluginIsUninstalled implements Event {
 export class QuickFixIsDisplayed implements Event {
   name = 'Quick Fix Is Displayed';
   id = '170c1284-9ee6-457f-aa82-6c49e49cde93';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: QuickFixIsDisplayedProperties & {
     'itly': true;
   };
@@ -606,7 +625,7 @@ export class QuickFixIsDisplayed implements Event {
 export class WelcomeButtonIsClicked implements Event {
   name = 'Welcome Button Is Clicked';
   id = 'e570e72e-4974-481a-9838-66cca471656b';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: WelcomeButtonIsClickedProperties & {
     'itly': true;
   };
@@ -624,7 +643,7 @@ export class WelcomeButtonIsClicked implements Event {
 export class WelcomeIsViewed implements Event {
   name = 'Welcome Is Viewed';
   id = '91114669-bbab-4f58-a7dd-ea7c98c79221';
-  version = '1.0.0';
+  version = '1.0.2';
   properties: WelcomeIsViewedProperties & {
     'itly': true;
   };
@@ -683,18 +702,18 @@ class Itly {
       ...options,
       plugins: [
         new SchemaValidatorPlugin({
-          'group': {"type":"object","properties":{"groupId":{"type":"string"},"name":{"type":"string"},"internalName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"groupName":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"utm_medium":{"type":"string"},"name":{"type":"string"},"utmMedium":{"type":"string"},"utm_campaign":{"type":"string"},"adminLink":{"type":"string"},"createdAt":{"type":"number"},"utmSource":{"type":"string"},"email":{"type":"string"},"accountType":{"enum":["user","service","app-instance"]},"authProvider":{"type":"string"},"isSnyk":{"type":"boolean"},"utm_source":{"type":"string"},"created_at":{"type":"number"},"auth_provider":{"type":"string"},"hasFirstProject":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"user_id":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"admin_link":{"type":"string"},"username":{"type":"string"},"utmCampaign":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'page': {"type":"object","properties":{"package":{"type":"string"},"search":{"type":"string"},"url":{"type":"string"},"title":{"type":"string"},"path":{"type":"string"},"ecosystem":{"type":"string"},"referrer":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'Analysis Is Ready': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["ide","itly","analysisType","result"]},
-          'Analysis Is Triggered': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"analysisType":{"type":"array","items":{"type":"string"},"uniqueItems":true,"minItems":1},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["ide","itly","analysisType","triggeredByUser"]},
-          'Authenticate Button Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"eventSource":{"enum":["Advisor","App","Learn","IDE"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
-          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"severity":{"enum":["High","Medium","Low","Critical"]},"issueId":{"type":"string"},"itly":{"const":true}},"additionalProperties":false,"required":["ide","issueType","severity","issueId","itly"]},
+          'group': {"type":"object","properties":{"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"internalName":{"type":"string"},"name":{"type":"string"},"plan":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance"]},"adminLink":{"type":"string"},"admin_link":{"type":"string"},"authProvider":{"type":"string"},"auth_provider":{"type":"string"},"createdAt":{"type":"number"},"created_at":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"name":{"type":"string"},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utmCampaign":{"type":"string"},"utm_medium":{"type":"string"},"utmMedium":{"type":"string"},"utmSource":{"type":"string"},"utm_source":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
+          'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
+          'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
+          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Plugin Is Uninstalled': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"uniqueItems":true,"minItems":1}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
-          'Welcome Button Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"eventSource":{"enum":["Advisor","App","Learn","IDE"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
+          'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
         }),
         ...destinationPlugins,
@@ -745,10 +764,10 @@ class Itly {
 
   /**
    * Triggered when the analysis is loaded within the IDE.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
-   * @param properties The event's properties (e.g. ide)
+   * @param properties The event's properties (e.g. analysisType)
    * @param options Options for this track call.
    */
   analysisIsReady(
@@ -761,10 +780,10 @@ class Itly {
 
   /**
    * User triggers an analysis or analysis is automatically triggered.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
-   * @param properties The event's properties (e.g. ide)
+   * @param properties The event's properties (e.g. analysisType)
    * @param options Options for this track call.
    */
   analysisIsTriggered(
@@ -777,10 +796,10 @@ class Itly {
 
   /**
    * This Event fires when the authenticate button is clicked.
-   * 
+   *
    * Owner: Bastian Doetsch
    * @param userId The user's ID.
-   * @param properties The event's properties (e.g. ide)
+   * @param properties The event's properties (e.g. eventSource)
    * @param options Options for this track call.
    */
   authenticateButtonIsClicked(
@@ -793,7 +812,7 @@ class Itly {
 
   /**
    * Triggered when issue hover is displayed in the IDE editor.
-   * 
+   *
    * Owner: Michel Kaporin
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -809,7 +828,7 @@ class Itly {
 
   /**
    * Triggered when the user selects an issue from the issues list and the issue is loaded.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -825,7 +844,7 @@ class Itly {
 
   /**
    * Triggered when the user installs the plugin.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -841,7 +860,7 @@ class Itly {
 
   /**
    * Triggered when the user uninstalls the plugin.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -857,7 +876,7 @@ class Itly {
 
   /**
    * Triggered when quick fix options are displayed to the user in IDE.
-   * 
+   *
    * Owner: Michel Kaporin
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)
@@ -873,10 +892,10 @@ class Itly {
 
   /**
    * This event fires when the "Check it out" button is clicked in welcome notification.
-   * 
+   *
    * Owner: Michel Kaporin
    * @param userId The user's ID.
-   * @param properties The event's properties (e.g. ide)
+   * @param properties The event's properties (e.g. eventSource)
    * @param options Options for this track call.
    */
   welcomeButtonIsClicked(
@@ -889,7 +908,7 @@ class Itly {
 
   /**
    * User installs the IDE plugin and see Snyk's welcome screen.
-   * 
+   *
    * Owner: Georgi Mitev
    * @param userId The user's ID.
    * @param properties The event's properties (e.g. ide)

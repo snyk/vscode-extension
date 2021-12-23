@@ -211,7 +211,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       vsCodeWindow,
       vsCodeLanguages,
-      configuration,
       new ModuleVulnerabilityCountProvider(this.ossService, npmModuleInfoFetchService),
       this.ossService,
       Logger,
