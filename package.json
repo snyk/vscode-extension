@@ -231,7 +231,7 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Welcome to Snyk for Visual Studio Code.\n• Test open source dependencies for vulnerabilities\n• Get instant suggestions for your code issues \n• Check code examples from the community\n• JavaScript, TypeScript, Java and Python supported\n• Learn more about [Snyk for Visual Studio Code](https://docs.snyk.io/features/integrations/ide-tools/visual-studio-code-extension-for-snyk-code)\n[🚀 Get started for free today](command:snyk.login '🚀 Get started for free today')",
+        "contents": "👋 Welcome to Snyk for Visual Studio Code.\n• Test open source dependencies for vulnerabilities\n• Get instant suggestions for your code issues \n• Check code examples from the community\n• JavaScript, TypeScript, Java and Python supported\n• Detects the critical vulnerability Log4Shell\n• Learn more about [Snyk for Visual Studio Code](https://docs.snyk.io/features/integrations/ide-tools/visual-studio-code-extension-for-snyk-code)\n[🚀 Get started for free today](command:snyk.login '🚀 Get started for free today')",
         "when": "!snyk:error && !snyk:loggedIn && snyk:welcomeViewExperiment == 'treatment'"
       },
       {
