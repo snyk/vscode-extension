@@ -5,7 +5,7 @@ on:
       - main
 jobs:
   build:
-    uses: snyk/vscode-extension/.github/workflows/ci.yaml@feat/release-preview-workflow
+    uses: snyk/vscode-extension/.github/workflows/ci.yaml@main
     secrets:
       ITERATIVELY_KEY: ${{ secrets.ITERATIVELY_KEY }}
 
