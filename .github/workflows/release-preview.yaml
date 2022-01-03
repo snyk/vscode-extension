@@ -1,0 +1,28 @@
+name: Build and Release "Preview"
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    uses: snyk/vscode-extension/.github/workflows/ci.yaml@feat/release-preview-workflow
+    secrets:
+      ITERATIVELY_KEY: ${{ secrets.ITERATIVELY_KEY }}
+
+  release-preview:
+    name: Release Preview
+    runs-on: ubuntu-latest
+    environment: Preview
+    needs: build
+    steps:
+      - name: Setup VSCE
+        run: npm install -g vsce@latest
+
+      - name: Fetch sources
+        uses: actions/checkout@v2
+
+      - name: Patch to preview version
+        run: npm run patch-preview
+
+      - name: Publish to Marketplace
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
