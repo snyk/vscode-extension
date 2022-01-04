@@ -26,6 +26,9 @@ jobs:
 
       - name: Patch to preview version
         run: npm run patch-preview
+        env:
+          SNYK_VSCE_SEGMENT_WRITE_KEY: ${{ secrets.SNYK_VSCE_SEGMENT_WRITE_KEY }}
+          SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY: ${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}
 
       - name: Publish to Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
