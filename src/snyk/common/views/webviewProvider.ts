@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ILog } from '../logger/interfaces';
 import { Logger } from '../logger/logger';
 import { ExtensionContext } from '../vscode/extensionContext';
 
@@ -7,7 +8,7 @@ export abstract class WebviewProvider {
 
   protected panel?: vscode.WebviewPanel;
 
-  constructor(protected readonly context: ExtensionContext) {}
+  constructor(protected readonly context: ExtensionContext, protected readonly logger: ILog) {}
 
   protected getWebViewUri(...pathSegments: string[]): vscode.Uri | undefined {
     return this.panel?.webview.asWebviewUri(vscode.Uri.joinPath(this.context.getExtensionUri(), ...pathSegments));

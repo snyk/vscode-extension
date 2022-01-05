@@ -12,11 +12,13 @@ import {
   TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
-import { errorsLogs } from '../messages/errorsServerLogMessages';
+import { ErrorHandler } from '../error/errorHandler';
+import { ILog } from '../logger/interfaces';
+import { errorsLogs } from '../messages/errors';
 import { IWatcher } from './interfaces';
 
 class SettingsWatcher implements IWatcher {
-  constructor(private readonly analytics: IAnalytics) {}
+  constructor(private readonly analytics: IAnalytics, private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
@@ -60,12 +62,11 @@ class SettingsWatcher implements IWatcher {
           try {
             await this.onChangeConfiguration(extension, change);
           } catch (error) {
-            await extension.processError(error, {
-              message: errorsLogs.configWatcher,
-              data: {
-                configurationKey: change,
-              },
-            });
+            ErrorHandler.handle(
+              error,
+              this.logger,
+              `${errorsLogs.configWatcher}. Configuration key: ${change}`,
+            );
           }
         }
       },

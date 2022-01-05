@@ -8,6 +8,7 @@ mocked_data/**
 **/*.ts
 .dccache
 .github/**
+scripts/**
 
 # Configuration
 .gitignore
@@ -16,6 +17,7 @@ tsconfig.json
 .prettierrc.js
 .editorconfig
 .itlyrc
+snyk.config.local.json
 
 # Documentation
 README.preview.md

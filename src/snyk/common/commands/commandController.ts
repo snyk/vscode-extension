@@ -18,6 +18,7 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
@@ -48,8 +49,11 @@ export class CommandController {
   }
 
   async openLocal(path: vscode.Uri, range?: vscode.Range): Promise<void> {
-    // todo: add error reporting
-    await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range });
+    try {
+      await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range });
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger);
+    }
   }
 
   openSettings(): void {
@@ -77,7 +81,11 @@ export class CommandController {
       // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
       if (issue.openUri !== null) await this.openLocal(issue.openUri || issue.uri, issue.openRange || issue.range);
 
-      this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
+      try {
+        this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
 
       this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
@@ -117,7 +125,7 @@ export class CommandController {
           try {
             return await fn(...args);
           } catch (error) {
-            // todo: add error reporting
+            ErrorHandler.handle(error, this.logger);
             return Promise.resolve();
           }
         },

@@ -6,11 +6,12 @@ import {
   SNYK_OPEN_LOCAL_COMMAND,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
-import { errorsLogs } from '../../../common/messages/errorsServerLogMessages';
+import { ErrorHandler } from '../../../common/error/errorHandler';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType } from '../../interfaces';
+import { messages as errorMessages } from '../../messages/error';
 import { createIssueCorrectRange, getVSCodeSeverity } from '../../utils/analysisUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
@@ -77,10 +78,7 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
       this.panel.webview.onDidReceiveMessage(this.handleMessage.bind(this), undefined, this.disposables);
       this.suggestion = suggestion;
     } catch (e) {
-      if (!this.extension) return;
-      void this.extension.processError(e, {
-        message: errorsLogs.suggestionView,
-      });
+      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
   }
 
@@ -126,10 +124,7 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider implements IC
         }
       }
     } catch (e) {
-      void this.extension.processError(e, {
-        message: errorsLogs.suggestionViewMessage,
-        data: { message },
-      });
+      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewMessageHandlingFailed(message));
     }
   }
 

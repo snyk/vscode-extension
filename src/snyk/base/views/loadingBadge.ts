@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
 import { SNYK_VIEW_WELCOME } from '../../common/constants/views';
-import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
-import { IBaseSnykModule } from '../modules/interfaces';
-import { PendingTask, IPendingTask } from '../pendingTask';
+import { ErrorReporter } from '../../common/error/errorReporter';
+import { IPendingTask, PendingTask } from '../pendingTask';
 
 export interface ILoadingBadge {
-  setLoadingBadge(value: boolean, reportModule: IBaseSnykModule): void;
+  setLoadingBadge(value: boolean): void;
 }
 
 export class LoadingBadge implements ILoadingBadge {
@@ -21,7 +20,7 @@ export class LoadingBadge implements ILoadingBadge {
   }
 
   // Leave viewId undefined to remove the badge from all views
-  setLoadingBadge(value: boolean, reportModule: IBaseSnykModule): void {
+  setLoadingBadge(value: boolean): void {
     this.shouldShowProgressBadge = value;
     if (value) {
       // Using closure on this to allow partial binding in arbitrary positions
@@ -31,10 +30,7 @@ export class LoadingBadge implements ILoadingBadge {
         .withProgress({ location: { viewId: SNYK_VIEW_WELCOME } }, () => self.getProgressBadgePromise())
         .then(
           () => undefined,
-          error =>
-            reportModule.processError(error, {
-              message: errorsLogs.loadingBadge,
-            }),
+          error => ErrorReporter.capture(error),
         );
     } else if (this.progressBadge && !this.progressBadge.isCompleted) {
       this.progressBadge.complete();

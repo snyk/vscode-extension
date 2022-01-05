@@ -2,6 +2,7 @@ import { checkSession, getIpFamily as getNetworkFamily, IpFamily, startSession }
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../common/constants/views';
+import { ISnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
@@ -26,6 +27,7 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly configuration: IConfiguration,
     private readonly analytics: IAnalytics,
     private readonly logger: ILog,
+    private readonly snykCodeErrorHandler: ISnykCodeErrorHandler,
   ) {}
 
   async initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void> {
@@ -57,7 +59,10 @@ export class AuthenticationService implements IAuthenticationService {
         }
       }
 
-      const { draftToken, loginURL } = startSession({ authHost: this.configuration.authHost, source: this.configuration.source });
+      const { draftToken, loginURL } = startSession({
+        authHost: this.configuration.authHost,
+        source: this.configuration.source,
+      });
 
       await this.openerService.openBrowserUrl(loginURL);
       void this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
@@ -68,7 +73,9 @@ export class AuthenticationService implements IAuthenticationService {
         this.pendingToken = draftToken;
       }
     } catch (err) {
-      this.logger.error(messages.loginFailed);
+      await this.snykCodeErrorHandler.processError(err, {
+        message: messages.loginFailed,
+      });
     } finally {
       this.pendingLogin = false;
     }
@@ -93,7 +100,7 @@ export class AuthenticationService implements IAuthenticationService {
       }
     }
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, !!token);
-    if (!token) this.baseModule.loadingBadge.setLoadingBadge(true, this.baseModule);
+    if (!token) this.baseModule.loadingBadge.setLoadingBadge(true);
     return token;
   }
 

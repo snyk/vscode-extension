@@ -7,6 +7,7 @@ import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { ISnykCodeErrorHandler } from '../../../../snyk/common/error/snykCodeErrorHandler';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -47,6 +48,10 @@ suite('AuthenticationService', () => {
       config,
       analytics,
       new LoggerMock(),
+      {
+        processError: sinon.fake(),
+        resetTransientErrors: sinon.fake(),
+      } as ISnykCodeErrorHandler,
     );
 
     await service.initiateLogin(getIpFamilyStub);

@@ -10,6 +10,7 @@ import { CliDownloadService } from './cli/services/cliDownloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { configuration } from './common/configuration/instance';
+import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_DCIGNORE_COMMAND,
@@ -34,13 +35,15 @@ import {
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
+import { ErrorHandler } from './common/error/errorHandler';
+import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { Logger } from './common/logger/logger';
-import { errorsLogs } from './common/messages/errorsServerLogMessages';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionKindAdapter } from './common/vscode/codeAction';
 import { vsCodeComands } from './common/vscode/commands';
+import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
 import { ThemeColorAdapter } from './common/vscode/theme';
@@ -65,12 +68,34 @@ class SnykExtension extends SnykLib implements IExtension {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
+    ErrorReporter.init(
+      configuration,
+      await SnykConfiguration.get(extensionContext.extensionPath, configuration.isDevelopment),
+      extensionContext.extensionPath,
+      vsCodeEnv,
+      Logger,
+    );
+
+    try {
+      await this.initializeExtension(vscodeContext);
+    } catch (e) {
+      ErrorHandler.handle(e, Logger);
+    }
+  }
+
+  private async initializeExtension(vscodeContext: vscode.ExtensionContext) {
     this.user = await User.get(this.context);
 
     this.analytics = new Iteratively(this.user, Logger, configuration.shouldReportEvents, configuration.isDevelopment);
 
-    this.settingsWatcher = new SettingsWatcher(this.analytics);
-    this.notificationService = new NotificationService(vsCodeWindow, vsCodeComands, configuration, this.analytics);
+    this.settingsWatcher = new SettingsWatcher(this.analytics, Logger);
+    this.notificationService = new NotificationService(
+      vsCodeWindow,
+      vsCodeComands,
+      configuration,
+      this.analytics,
+      Logger,
+    );
 
     this.statusBarItem.show();
 
@@ -81,6 +106,7 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
       this.analytics,
       Logger,
+      this.snykCodeErrorHandler,
     );
 
     this.snykCode = new SnykCodeService(
@@ -94,6 +120,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       this.analytics,
       new VSCodeLanguages(),
+      this.snykCodeErrorHandler,
     );
 
     this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
@@ -101,7 +128,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.context,
       Logger,
       configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow),
+      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger),
       vsCodeWorkspace,
       this.viewManagerService,
       this.cliDownloadService,
@@ -190,13 +217,9 @@ class SnykExtension extends SnykLib implements IExtension {
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
 
-    void this.notificationService.init(this.processError.bind(this));
+    void this.notificationService.init();
 
-    this.checkAdvancedMode().catch(err =>
-      this.processError(err, {
-        message: errorsLogs.checkAdvancedMode,
-      }),
-    );
+    this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
     await this.analytics.load();
     this.experimentService = new ExperimentService(this.user, this.context, Logger, configuration);
@@ -228,6 +251,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.snykCode.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.analytics.flush();
+    await ErrorReporter.flush();
   }
 
   private logPluginIsInstalled(): void {

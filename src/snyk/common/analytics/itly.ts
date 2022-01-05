@@ -77,17 +77,13 @@ export class Iteratively implements IAnalytics {
       return null;
     }
 
-    const snykConfiguration = await SnykConfiguration.get(path.join(this.configsPath));
-    let segmentWriteKey = snykConfiguration.segmentWriteKey;
-
-    if (!segmentWriteKey) {
+    const snykConfiguration = await SnykConfiguration.get(path.join(this.configsPath), this.isDevelopment);
+    if (!snykConfiguration.segmentWriteKey) {
       this.logger.debug('Segment analytics write key is empty. No analytics will be collected.');
       return this;
-    } else if (this.isDevelopment) {
-      segmentWriteKey = process.env.SNYK_VSCE_SEGMENT_WRITE_KEY ?? '';
     }
 
-    const segment = new SegmentPlugin(segmentWriteKey);
+    const segment = new SegmentPlugin(snykConfiguration.segmentWriteKey);
     const isDevelopment = this.isDevelopment;
 
     if (!this.loaded) {
