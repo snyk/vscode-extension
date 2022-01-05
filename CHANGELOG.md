@@ -1,5 +1,12 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.5]
+
+### Fixed
+
+- Authentication flow for users who have IPv6 address.
+- Snyk Code issues not opening up from the issue tree.
+
 ## [1.2.4]
 
 ### Added
