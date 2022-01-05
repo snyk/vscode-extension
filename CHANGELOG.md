@@ -5,7 +5,7 @@
 ### Fixed
 
 - Authentication flow for users who have IPv6 address.
-- Snyk Code issues not opening up from the issue tree.
+- Snyk Code issues not always opening up from the issue tree.
 
 ## [1.2.4]
 
