@@ -40,7 +40,7 @@ export default class SnykLib extends ReportModule implements ISnykLib {
       const workspacePaths = this.getWorkspacePaths();
       await this.setWorkspaceContext(workspacePaths);
 
-      await this.user.identify(this.snykApiClient);
+      await this.user.identify(this.snykApiClient, this.analytics);
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
