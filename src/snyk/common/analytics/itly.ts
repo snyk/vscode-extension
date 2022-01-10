@@ -37,7 +37,7 @@ export interface IAnalytics {
   load(): Promise<Iteratively | null>;
   flush(): Promise<void>;
   setShouldReportEvents(shouldReportEvents: boolean): Promise<void>;
-  identify(userId: string): void;
+  identify(userId: string): Promise<void>;
   logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void;
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
   logAnalysisIsTriggered(properties: AnalysisIsTriggeredProperties): void;
@@ -105,7 +105,7 @@ export class Iteratively implements IAnalytics {
 
   public flush = (): Promise<void> => itly.flush();
 
-  public identify(): void {
+  async identify(): Promise<void> {
     if (!this.canReportEvents()) {
       return;
     }
@@ -124,7 +124,7 @@ export class Iteratively implements IAnalytics {
           context: {
             app: {
               name: this.ide,
-              version: Configuration.version,
+              version: await Configuration.getVersion(),
             },
           },
         },

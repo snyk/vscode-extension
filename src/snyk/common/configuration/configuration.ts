@@ -75,10 +75,20 @@ export class Configuration implements IConfiguration {
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
-  static get version(): string {
+  static async getVersion(): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { version } = require(path.join('../../../..', 'package.json')) as { version: string };
+    const { version } = await this.getPackageJsonConfig();
     return version;
+  }
+
+  static async isPreview(): Promise<boolean> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { preview } = await this.getPackageJsonConfig();
+    return preview;
+  }
+
+  private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {
+    return (await import(path.join('../../../..', 'package.json'))) as { version: string; preview: boolean };
   }
 
   get isDevelopment(): boolean {

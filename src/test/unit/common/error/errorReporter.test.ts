@@ -13,9 +13,9 @@ suite('ErrorReporter', () => {
   } as SnykConfiguration;
   let configuration: IConfiguration;
 
-  setup(() => {
+  setup(async () => {
     configuration = {} as IConfiguration;
-    ErrorReporter.init(configuration, snykConfig, '', envMock, new LoggerMock(), sentryTransport);
+    await ErrorReporter.init(configuration, snykConfig, '', envMock, new LoggerMock(), sentryTransport);
   });
 
   teardown(async () => {

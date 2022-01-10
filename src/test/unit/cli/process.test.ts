@@ -12,24 +12,24 @@ suite('CliProcess', () => {
     logger = new LoggerMock();
   });
 
-  test('Sets DISABLE_ANALYTICS when telemetry is off ', () => {
+  test('Sets DISABLE_ANALYTICS when telemetry is off ', async () => {
     const process = new CliProcess(logger, {
       shouldReportEvents: false,
     } as IConfiguration);
-    const vars = process.getProcessEnv();
+    const vars = await process.getProcessEnv();
     strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), true);
   });
 
-  test("Doesn't set DISABLE_ANALYTICS when telemetry is on ", () => {
+  test("Doesn't set DISABLE_ANALYTICS when telemetry is on ", async () => {
     const process = new CliProcess(logger, {
       shouldReportEvents: true,
     } as IConfiguration);
-    const vars = process.getProcessEnv();
+    const vars = await process.getProcessEnv();
 
     strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), false);
   });
 
-  test('Sets correct integration name, version, token, API endpoint and organization', () => {
+  test('Sets correct integration name, version, token, API endpoint and organization', async () => {
     const token = 'fake-token';
     const snykOssApiEndpoint = 'https://snyk.io/api/';
     const organization = 'test-org';
@@ -39,10 +39,10 @@ suite('CliProcess', () => {
       organization: organization,
     } as IConfiguration);
 
-    const envVars = process.getProcessEnv();
+    const envVars = await process.getProcessEnv();
 
     strictEqual(envVars['SNYK_INTEGRATION_NAME'], CLI_INTEGRATION_NAME);
-    strictEqual(envVars['SNYK_INTEGRATION_VERSION'], Configuration.version);
+    strictEqual(envVars['SNYK_INTEGRATION_VERSION'], await Configuration.getVersion());
     strictEqual(envVars['SNYK_TOKEN'], token);
     strictEqual(envVars['SNYK_API'], snykOssApiEndpoint);
     strictEqual(envVars['SNYK_CFG_ORG'], organization);

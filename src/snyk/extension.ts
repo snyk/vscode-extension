@@ -68,7 +68,7 @@ class SnykExtension extends SnykLib implements IExtension {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
-    ErrorReporter.init(
+    await ErrorReporter.init(
       configuration,
       await SnykConfiguration.get(extensionContext.extensionPath, configuration.isDevelopment),
       extensionContext.extensionPath,

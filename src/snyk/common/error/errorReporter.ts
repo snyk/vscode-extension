@@ -7,6 +7,8 @@ import { Platform } from '../platform';
 import { IVSCodeEnv } from '../vscode/env';
 import { OnUncaughtException } from './integrations/onUncaughtException';
 
+type SentryEnvironment = 'development' | 'preview' | 'production';
+
 export class ErrorReporter {
   private static readonly eventQueueTimeoutMs = 1000;
 
@@ -25,26 +27,25 @@ export class ErrorReporter {
     Sentry.Integrations.OnUnhandledRejection.id,
   ];
 
-  static init(
+  static async init(
     userConfig: IConfiguration,
     snykConfig: SnykConfiguration,
     extensionPath: string,
     vscodeEnv: IVSCodeEnv,
     logger: ILog,
     transport?: TransportClass<Transport>,
-  ): void {
+  ): Promise<void> {
     if (!snykConfig.sentryKey) {
       logger.warn('Error reporting not initialized - key not provided.');
       return;
     }
 
-    // todo: add version number
     Sentry.init({
       dsn: snykConfig.sentryKey,
       maxBreadcrumbs: 50,
       debug: userConfig.isDevelopment,
-      environment: userConfig.isDevelopment ? 'development' : 'production',
-      release: Configuration.version,
+      environment: await ErrorReporter.getEnvironment(userConfig),
+      release: await Configuration.getVersion(),
       transport,
       integrations(integrations) {
         return [
@@ -93,5 +94,15 @@ export class ErrorReporter {
         remoteName: vscodeEnv.getRemoteName(),
       },
     };
+  }
+
+  private static async getEnvironment(userConfig: IConfiguration): Promise<SentryEnvironment> {
+    if (userConfig.isDevelopment) {
+      return 'development';
+    } else if (await Configuration.isPreview()) {
+      return 'preview';
+    }
+
+    return 'production';
   }
 }
