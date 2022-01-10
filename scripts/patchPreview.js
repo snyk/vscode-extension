@@ -29,5 +29,6 @@ snykConfigJson = JSON.stringify({
   ...snykConfigJson,
   segmentWriteKey: process.env.SNYK_VSCE_SEGMENT_WRITE_KEY,
   amplitudeExperimentApiKey: process.env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY,
+  sentryKey: process.env.SNYK_VSCE_SENTRY_DSN_KEY,
 });
 fs.writeFileSync('./snyk.config.json', snykConfigJson);
