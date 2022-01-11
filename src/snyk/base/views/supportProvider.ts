@@ -9,7 +9,7 @@ export class SupportProvider extends TreeNodeProvider {
       new TreeNode({
         text: 'Help Snyk to make a better extension',
         icon: new ThemeIcon('mortar-board'),
-        link: 'https://calendly.com/andy-gongea-snyk/50min',
+        link: 'https://calendly.com/snyk-georgi/45min',
       }),
       new TreeNode({
         text: 'Send us feedback or report a bug',
