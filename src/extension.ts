@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
   void extension.activate(context);
 
-  const serverModule = '/Users/bdoetsch/workspace/go/bin/snyk-lsp';
+  const serverModule = 'snyk-lsp';
 
   // If the extension is launched in debug mode then the debug server options are used
   // Otherwise the run options are used
@@ -56,7 +56,7 @@ export function deactivate(): void {
   if (!client) {
     return undefined;
   }
-  client.stop();
+  void client.stop();
 }
 
 export function getExtension(): SnykExtension {
