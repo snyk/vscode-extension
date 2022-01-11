@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.6]
+
+### Fixed
+
+- Correct user identification in analytics.
+
 ## [1.2.5]
 
 ### Fixed
