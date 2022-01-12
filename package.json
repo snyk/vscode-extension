@@ -156,6 +156,21 @@
             "additionalProperties": false,
             "description": "Severity issues to display.",
             "scope": "window"
+          },
+          "snyk.features.preview": {
+            "type": "object",
+            "default": {},
+            "propertyNames": true,
+            "properties": {
+              "reportFalsePositives": {
+                "type": "boolean",
+                "title": "Enable report false positives",
+                "description": "Allows reporting false positives for Snyk Code suggestions",
+                "default": false
+              }
+            },
+            "title": "Preview feature toggles",
+            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable."
           }
         }
       }

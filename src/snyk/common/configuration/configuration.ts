@@ -11,6 +11,7 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
+  FEATURES_PREVIEW_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TOKEN_SETTING,
@@ -35,6 +36,10 @@ export interface SeverityFilter {
 
   [severity: string]: boolean;
 }
+
+export type PreviewFeatures = {
+  reportFalsePositives: boolean | undefined;
+};
 
 export interface IConfiguration {
   isDevelopment: boolean;
@@ -278,6 +283,23 @@ export class Configuration implements IConfiguration {
 
   get organization(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
+  }
+
+  get previewFeatures(): PreviewFeatures {
+    const defaulSetting: PreviewFeatures = {
+      reportFalsePositives: false,
+    };
+
+    const userSetting =
+      this.workspace.getConfiguration<PreviewFeatures>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(FEATURES_PREVIEW_SETTING),
+      ) || {};
+
+    return {
+      ...defaulSetting,
+      ...userSetting,
+    };
   }
 
   getAdditionalCliParameters(): string | undefined {
