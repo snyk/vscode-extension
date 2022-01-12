@@ -160,6 +160,8 @@
           "snyk.features.preview": {
             "type": "object",
             "default": {},
+            "title": "Preview feature toggles",
+            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
             "properties": {
               "reportFalsePositives": {
@@ -168,9 +170,7 @@
                 "description": "Allows reporting false positives for Snyk Code suggestions",
                 "default": false
               }
-            },
-            "title": "Preview feature toggles",
-            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable."
+            }
           }
         }
       }
