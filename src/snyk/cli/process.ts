@@ -14,13 +14,15 @@ export class CliProcess {
   /**
    * Returns CLI output given provided arguments.
    */
-  spawn(cliPath: string, args: readonly string[]): Promise<string> {
+  async spawn(cliPath: string, args: readonly string[]): Promise<string> {
+    const processEnv = await this.getProcessEnv();
+
     return new Promise((resolve, reject) => {
       let output = '';
 
       this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
-      this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...this.getProcessEnv() } });
+      this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv } });
 
       this.runningProcess.stdout.setEncoding('utf8');
       this.runningProcess.stdout.on('data', (data: string | Buffer) => (output += data));
@@ -47,10 +49,10 @@ export class CliProcess {
     return !this.runningProcess || this.runningProcess.kill('SIGTERM');
   }
 
-  getProcessEnv(): NodeJS.ProcessEnv {
+  async getProcessEnv(): Promise<NodeJS.ProcessEnv> {
     let env = {
       SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
-      SNYK_INTEGRATION_VERSION: Configuration.version,
+      SNYK_INTEGRATION_VERSION: await Configuration.getVersion(),
       SNYK_TOKEN: this.config.token,
       SNYK_API: this.config.snykOssApiEndpoint,
       SNYK_CFG_ORG: this.config.organization,

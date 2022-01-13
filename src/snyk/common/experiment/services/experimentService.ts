@@ -25,16 +25,16 @@ export class ExperimentService {
       return false;
     }
 
-    const snykConfiguration = await SnykConfiguration.get(this.extensionContext.extensionPath);
-    let amplitudeExperimentApiKey = snykConfiguration.amplitudeExperimentApiKey;
+    const snykConfiguration = await SnykConfiguration.get(
+      this.extensionContext.extensionPath,
+      this.configuration.isDevelopment,
+    );
 
-    if (!amplitudeExperimentApiKey) {
+    if (!snykConfiguration.amplitudeExperimentApiKey) {
       this.logger.debug('Segment analytics write key is empty. No analytics will be collected.');
-    } else if (this.configuration.isDevelopment) {
-      amplitudeExperimentApiKey = process.env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY ?? '';
     }
 
-    this.client = Experiment.initialize(amplitudeExperimentApiKey);
+    this.client = Experiment.initialize(snykConfiguration.amplitudeExperimentApiKey);
     return true;
   }
 

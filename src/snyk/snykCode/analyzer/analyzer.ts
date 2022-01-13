@@ -2,8 +2,9 @@ import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-clien
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../../common/analytics/itly';
+import { ISnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
-import { errorsLogs } from '../../common/messages/errorsServerLogMessages';
+import { errorsLogs } from '../../common/messages/errors';
 import { HoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Disposable } from '../../common/vscode/types';
@@ -43,7 +44,12 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
 
   private readonly diagnosticSuggestion = new Map<vscode.Diagnostic, ICodeSuggestion>();
 
-  public constructor(readonly logger: ILog, readonly languages: IVSCodeLanguages, readonly analytics: IAnalytics) {
+  public constructor(
+    readonly logger: ILog,
+    readonly languages: IVSCodeLanguages,
+    readonly analytics: IAnalytics,
+    private readonly errorHandler: ISnykCodeErrorHandler,
+  ) {
     this.SEVERITIES = createSnykSeveritiesMap();
     this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
     this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
@@ -229,7 +235,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         this.codeQualityReview?.set(vscode.Uri.file(updatedFile.fullPath), [...qualityIssues]);
       }
     } catch (err) {
-      await extension.processError(err, {
+      await this.errorHandler.processError(err, {
         message: errorsLogs.updateReviewPositions,
         bundleId: extension.snykCode.remoteBundle.fileBundle.bundleHash,
         data: {

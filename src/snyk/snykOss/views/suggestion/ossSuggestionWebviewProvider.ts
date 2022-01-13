@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
+import { ErrorHandler } from '../../../common/error/errorHandler';
+import { ILog } from '../../../common/logger/interfaces';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
+import { messages as errorMessages } from '../../messages/error';
 
 enum SuggestionViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -23,8 +26,12 @@ export interface IOssSuggestionWebviewProvider {
 }
 
 export class OssSuggestionWebviewProvider extends WebviewProvider implements IOssSuggestionWebviewProvider {
-  constructor(protected readonly context: ExtensionContext, private readonly window: IVSCodeWindow) {
-    super(context);
+  constructor(
+    protected readonly context: ExtensionContext,
+    private readonly window: IVSCodeWindow,
+    protected readonly logger: ILog,
+  ) {
+    super(context, logger);
   }
 
   activate(): void {
@@ -34,6 +41,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
   }
 
   async showPanel(vulnerability: OssIssueCommandArg): Promise<void> {
+    try {
     await this.focusSecondEditorGroup();
 
     if (this.panel) {
@@ -72,6 +80,9 @@ export class OssSuggestionWebviewProvider extends WebviewProvider implements IOs
       this.disposables,
     );
     this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
+    }
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {

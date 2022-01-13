@@ -29,6 +29,7 @@ jobs:
         env:
           SNYK_VSCE_SEGMENT_WRITE_KEY: ${{ secrets.SNYK_VSCE_SEGMENT_WRITE_KEY }}
           SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY: ${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}
+          SNYK_VSCE_SENTRY_DSN_KEY: ${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}
 
       - name: Publish to Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}

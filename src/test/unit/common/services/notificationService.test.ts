@@ -6,6 +6,7 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { NotificationService } from '../../../../snyk/common/services/notificationService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
+import { LoggerMock } from '../../mocks/logger.mock';
 
 suite('NotificationService', () => {
   let window: IVSCodeWindow;
@@ -33,8 +34,8 @@ suite('NotificationService', () => {
       shouldShowWelcomeNotification: true,
     } as IConfiguration;
 
-    const notificationService = new NotificationService(window, commands, configuration, analytics);
-    await notificationService.init((_, __) => Promise.resolve());
+    const notificationService = new NotificationService(window, commands, configuration, analytics, new LoggerMock());
+    await notificationService.init();
 
     strictEqual(logWelcomeButtonIsClickedFake.calledOnce, true);
   });

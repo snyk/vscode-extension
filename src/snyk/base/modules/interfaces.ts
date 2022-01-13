@@ -3,7 +3,6 @@ import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge } from '../views/loadingBadge';
@@ -17,14 +16,9 @@ export interface IBaseSnykModule {
   snykCode: ISnykCodeService;
 
   // Abstract methods
-  processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
   runScan(): Promise<void>;
   runCodeScan(manual?: boolean): Promise<void>;
   runOssScan(manual?: boolean): Promise<void>;
-}
-
-export interface IReportModule {
-  resetTransientErrors(): void;
 }
 
 export interface ISnykLib {
@@ -32,7 +26,7 @@ export interface ISnykLib {
   checkAdvancedMode(): Promise<void>;
 }
 
-export interface IExtension extends IBaseSnykModule, IReportModule, ISnykLib {
+export interface IExtension extends IBaseSnykModule, ISnykLib {
   context: ExtensionContext | undefined;
   activate(context: vscode.ExtensionContext): void;
 }

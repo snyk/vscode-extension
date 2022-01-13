@@ -1,15 +1,16 @@
 import { snykMessages } from '../../base/messages/snykMessages';
-import { errorType } from '../../base/modules/interfaces';
 import { messages as ossMessages } from '../../snykOss/messages/test';
 import { IAnalytics } from '../analytics/itly';
 import { IConfiguration } from '../configuration/configuration';
 import { VSCODE_VIEW_CONTAINER_COMMAND, VSCODE_VIEW_OSS_VIEW_COMMAND } from '../constants/commands';
-import { errorsLogs } from '../messages/errorsServerLogMessages';
+import { ErrorHandler } from '../error/errorHandler';
+import { ILog } from '../logger/interfaces';
+import { errorsLogs } from '../messages/errors';
 import { IVSCodeCommands } from '../vscode/commands';
 import { IVSCodeWindow } from '../vscode/window';
 
 export interface INotificationService {
-  init(errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>): Promise<void>;
+  init(): Promise<void>;
   showErrorNotification(message: string): Promise<void>;
   showOssBackgroundScanNotification(newVulnerabilityCount: number): Promise<void>;
 }
@@ -20,13 +21,12 @@ export class NotificationService implements INotificationService {
     private readonly commands: IVSCodeCommands,
     private readonly configuration: IConfiguration,
     private readonly analytics: IAnalytics,
+    private readonly logger: ILog,
   ) {}
 
-  async init(errorHandler: (error: errorType, options: { [key: string]: any }) => Promise<void>): Promise<void> {
+  async init(): Promise<void> {
     await this.checkWelcomeNotification().catch(err =>
-      errorHandler(err, {
-        message: errorsLogs.welcomeNotification,
-      }),
+      ErrorHandler.handle(err, this.logger, errorsLogs.welcomeNotification),
     );
   }
 

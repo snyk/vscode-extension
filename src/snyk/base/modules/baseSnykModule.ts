@@ -3,7 +3,9 @@ import { IAnalytics } from '../../common/analytics/itly';
 import { ISnykApiClient, SnykApiClient } from '../../common/api/apiСlient';
 import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
+import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
+import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
@@ -19,7 +21,7 @@ import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
-import { errorType, IBaseSnykModule } from './interfaces';
+import { IBaseSnykModule } from './interfaces';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -48,6 +50,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   protected user: User;
   protected experimentService: ExperimentService;
+  protected snykCodeErrorHandler: ISnykCodeErrorHandler;
 
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
@@ -58,9 +61,8 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.loadingBadge = new LoadingBadge();
     this.snykApiClient = new SnykApiClient(configuration);
+    this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this);
   }
-
-  abstract processError(error: errorType, options?: { [key: string]: any }): Promise<void>;
 
   abstract runScan(): Promise<void>;
   abstract runCodeScan(): Promise<void>;

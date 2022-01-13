@@ -38,7 +38,7 @@ export class User {
     if (user && user.id) {
       this._authenticatedId = user.id;
 
-      analytics.identify(this._authenticatedId); // map the anonymousId onto authenticatedId
+      await analytics.identify(this._authenticatedId); // map the anonymousId onto authenticatedId
     }
   }
 

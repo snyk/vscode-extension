@@ -5,6 +5,7 @@ import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
 import { SNYK_CONTEXT } from '../common/constants/views';
+import { ISnykCodeErrorHandler } from '../common/error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { getSastSettings } from '../common/services/cliConfigService';
@@ -61,10 +62,11 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly logger: ILog,
     private readonly analytics: IAnalytics,
     readonly languages: IVSCodeLanguages,
+    private readonly errorHandler: ISnykCodeErrorHandler,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics);
-    this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext);
+    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler);
+    this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext, this.logger);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);
     this.progress.bindListeners();
@@ -161,7 +163,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         this.suggestionProvider.checkCurrentSuggestion();
       }
     } catch (err) {
-      this.errorEncountered(err);
+      await this.errorHandler.processError(err, undefined, (error: Error) => {
+        this.errorEncountered(error);
+      });
 
       if (enabledFeatures?.codeSecurityEnabled) {
         this.analytics.logAnalysisIsReady({

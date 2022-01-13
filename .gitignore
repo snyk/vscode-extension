@@ -41,3 +41,8 @@ Thumbs.db
 snyk-macos
 snyk-win.exe
 snyk-linux
+
+#################################
+# Configuration                 #
+#################################
+snyk.config.local.json
