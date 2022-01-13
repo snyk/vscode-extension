@@ -8,3 +8,5 @@ export const JAVASCRIPT = 'javascript';
 export const JAVASCRIPT_REACT = 'javascriptreact';
 export const HTML = 'html';
 export const PJSON = 'json';
+
+export const SupportedLanguageIds = [TYPESCRIPT, TYPESCRIPT_REACT, JAVASCRIPT, JAVASCRIPT_REACT, HTML, PJSON];
