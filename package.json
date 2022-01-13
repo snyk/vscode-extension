@@ -166,7 +166,7 @@
             "properties": {
               "reportFalsePositives": {
                 "type": "boolean",
-                "title": "Enable report false positives",
+                "title": "Enable \"report false positives\"",
                 "description": "Allows reporting false positives for Snyk Code suggestions",
                 "default": false
               }
