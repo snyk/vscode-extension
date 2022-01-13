@@ -13,7 +13,8 @@ export class ErrorReporter {
   private static readonly eventQueueTimeoutMs = 1000;
 
   /**
-   * 'OnUncaughException' integration must be ignored since it causes Sentry to permanently fail during runtime. Default Sentry behaviour is to call process.exit() for uncaught errors. This is being prevented by VS Code and is logged as:
+   * 'OnUncaughException' integration must be ignored since it causes Sentry to permanently fail during runtime. Default Sentry behaviour is to call process.exit() for uncaught errors.
+   * This is being prevented by VS Code and is logged as:
    * --- "An extension called process.exit() and this was prevented.".
    * As a result, Sentry shuts down and doesn't log any caught errors:
    * --- "Sentry Logger [Warn]: uncaught exception after calling fatal error shutdown callback - this is bad! forcing shutdown".
