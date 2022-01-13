@@ -21,13 +21,19 @@ suite('ErrorReporter OnUncaughtException Integration', () => {
   });
 
   test('Is not extension origin error - another extension stacktrace', () => {
-    const error = new Error();
-    error.stack = `Error: test error
+    const posixError = new Error();
+    posixError.stack = `Error: test error
     at Test.Runnable.run (/Users/snyk/.vscode/extensions/microsoft.sample-extension-1.2.4/out/extension.js:100:5)`;
 
-    const res = uncaughtExceptionIntegration.isExtensionOriginError(error);
+    const winError = new Error();
+    winError.stack = `Error: test error
+    at Test.Runnable.run (C:\\Users\\snyk\\.vscode\\extensions\\microsoft.sample-extension-1.2.4\\out\\extension.js:100:5)`;
 
-    strictEqual(res, false);
+    const posixRes = uncaughtExceptionIntegration.isExtensionOriginError(posixError);
+    const winRes = uncaughtExceptionIntegration.isExtensionOriginError(winError);
+
+    strictEqual(posixRes, false);
+    strictEqual(winRes, false);
   });
 
   test('Is not extension origin error - extension name within path', () => {
