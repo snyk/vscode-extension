@@ -5,6 +5,7 @@ export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
 export type DiagnosticSeverity = vscode.DiagnosticSeverity;
 export type DocumentSelector = vscode.DocumentSelector;
+export type DocumentFilter = vscode.DocumentFilter;
 export type HoverProvider = vscode.HoverProvider;
 export type ProviderResult<T> = vscode.ProviderResult<T>;
 export type TextEditor = vscode.TextEditor;
