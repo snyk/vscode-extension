@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { IAnalytics } from './analytics/itly';
 import { ISnykApiClient } from './api/apiСlient';
 import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
+import { ErrorReporter } from './error/errorReporter';
 import { ExtensionContext } from './vscode/extensionContext';
 
 export type UserDto = {
@@ -39,6 +40,7 @@ export class User {
       this._authenticatedId = user.id;
 
       await analytics.identify(this._authenticatedId); // map the anonymousId onto authenticatedId
+      ErrorReporter.identify(this);
     }
   }
 
