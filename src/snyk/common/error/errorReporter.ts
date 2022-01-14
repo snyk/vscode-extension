@@ -4,6 +4,7 @@ import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SnykConfiguration } from '../configuration/snykConfiguration';
 import { ILog } from '../logger/interfaces';
 import { Platform } from '../platform';
+import { User } from '../user';
 import { IVSCodeEnv } from '../vscode/env';
 import { OnUncaughtException } from './integrations/onUncaughtException';
 
@@ -77,11 +78,17 @@ export class ErrorReporter {
     }
   }
 
+  static identify(user: User): void {
+    Sentry.setUser({
+      id: user.authenticatedId,
+    });
+  }
+
   static flush(): Promise<boolean> {
     return Sentry.close(this.eventQueueTimeoutMs);
   }
 
-  private static getContexts(vscodeEnv: IVSCodeEnv, contexts?: Contexts) {
+  private static getContexts(vscodeEnv: IVSCodeEnv, contexts?: Contexts): Contexts {
     return {
       ...contexts,
       os: {
