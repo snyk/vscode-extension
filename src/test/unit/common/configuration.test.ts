@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { strictEqual } from 'assert';
+import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
-import { Configuration } from '../../../snyk/common/configuration/configuration';
-import { ADVANCED_CUSTOM_ENDPOINT } from '../../../snyk/common/constants/settings';
+import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../snyk/common/constants/settings';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Configuration', () => {
@@ -116,7 +116,29 @@ suite('Configuration', () => {
     strictEqual(configuration.snykOssApiEndpoint, customEndpoint);
   });
 
-  function stubWorkspaceConfiguration(configSetting: string, returnValue: string | undefined): IVSCodeWorkspace {
+  test('Preview features: not enabled', () => {
+    const previewFeatures = undefined;
+    const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
+
+    const configuration = new Configuration({}, workspace);
+
+    deepStrictEqual(configuration.previewFeatures, {
+      reportFalsePositives: false,
+    } as PreviewFeatures);
+  });
+
+  test('Preview features: some features enabled', () => {
+    const previewFeatures = {
+      reportFalsePositives: true,
+    } as PreviewFeatures;
+    const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
+
+    const configuration = new Configuration({}, workspace);
+
+    deepStrictEqual(configuration.previewFeatures, previewFeatures);
+  });
+
+  function stubWorkspaceConfiguration<T>(configSetting: string, returnValue: T | undefined): IVSCodeWorkspace {
     return {
       getConfiguration: (identifier: string, key: string) => {
         if (`${identifier}.${key}` === configSetting) return returnValue;
