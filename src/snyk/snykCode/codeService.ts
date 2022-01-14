@@ -66,7 +66,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler);
-    this.suggestionProvider = new CodeSuggestionWebviewProvider(extensionContext, this.logger);
+    this.suggestionProvider = new CodeSuggestionWebviewProvider(config, extensionContext, this.logger);
 
     this.progress = new Progress(this, viewManagerService, this.workspace);
     this.progress.bindListeners();

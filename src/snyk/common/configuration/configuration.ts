@@ -69,6 +69,8 @@ export interface IConfiguration {
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
 
+  getPreviewFeatures(): PreviewFeatures;
+
   severityFilter: SeverityFilter;
 }
 
@@ -295,7 +297,7 @@ export class Configuration implements IConfiguration {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
   }
 
-  get previewFeatures(): PreviewFeatures {
+  getPreviewFeatures(): PreviewFeatures {
     const defaulSetting: PreviewFeatures = {
       reportFalsePositives: false,
     };

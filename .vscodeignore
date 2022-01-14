@@ -6,6 +6,7 @@ src/**
 mocked_data/**
 **/*.map
 **/*.ts
+**/*.scss
 .dccache
 .github/**
 scripts/**

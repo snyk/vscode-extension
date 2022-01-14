@@ -122,7 +122,7 @@ suite('Configuration', () => {
 
     const configuration = new Configuration({}, workspace);
 
-    deepStrictEqual(configuration.previewFeatures, {
+    deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
     } as PreviewFeatures);
   });
@@ -135,7 +135,7 @@ suite('Configuration', () => {
 
     const configuration = new Configuration({}, workspace);
 
-    deepStrictEqual(configuration.previewFeatures, previewFeatures);
+    deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
   });
 
   function stubWorkspaceConfiguration<T>(configSetting: string, returnValue: T | undefined): IVSCodeWorkspace {
