@@ -83,6 +83,23 @@ suite('AuthenticationService', () => {
   });
 
   test('getIpFamily returns 6 when IPv6 supported', async () => {
+    sinon.stub(needle, 'request').callsFake((_, uri, data, opts, callback) => {
+      if (!callback) throw new Error();
+      callback(
+        null,
+        {
+          body: {
+            response: {
+              statusCode: 401,
+              body: {},
+            },
+          },
+        } as NeedleResponse,
+        null,
+      );
+      return needle.post(uri, data, opts);
+    });
+
     const ipFamily = await getIpFamily('https://dev.snyk.io');
     strictEqual(ipFamily, 6);
   });
