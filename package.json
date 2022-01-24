@@ -344,7 +344,7 @@
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "watch-resources": "sass media --watch",
+    "watch-resources": "sass media --no-source-map --watch",
     "watch-all": "concurrently --kill-others 'npm run watch' 'npm run watch-resources'",
     "pretest": "tsc -p ./",
     "test:unit": "mocha --ui tdd -c 'out/test/unit/**/*.test.js'",
