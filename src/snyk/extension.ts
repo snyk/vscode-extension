@@ -20,6 +20,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
+  SNYK_REPORT_FALSE_POSITIVE_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
@@ -116,6 +117,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.viewManagerService,
       this.contextService,
       vsCodeWorkspace,
+      vsCodeWindow,
       this.snykApiClient,
       Logger,
       this.analytics,
@@ -143,6 +145,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       this.ossService,
       this.scanModeService,
+      vsCodeWorkspace,
       Logger,
       this.analytics,
     );
@@ -213,7 +216,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
-    this.snykCode.suggestionProvider.activate(this); // todo: wire the same way as OSS
+    this.snykCode.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
 
@@ -272,7 +275,6 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
-    // todo: move common callbacks to the CommandController, verify if all commands work
     context.subscriptions.push(
       vscode.commands.registerCommand(
         SNYK_OPEN_BROWSER_COMMAND,
@@ -299,6 +301,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(
         SNYK_OPEN_ISSUE_COMMAND,
         this.commandController.openIssueCommand.bind(this.commandController),
+      ),
+      vscode.commands.registerCommand(
+        SNYK_REPORT_FALSE_POSITIVE_COMMAND,
+        this.commandController.reportFalsePositive.bind(this.commandController),
       ),
       vscode.commands.registerCommand(
         SNYK_SHOW_OUTPUT_COMMAND,

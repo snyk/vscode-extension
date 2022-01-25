@@ -9,11 +9,12 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
+import { IWebViewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { OssFileResult, OssResult, OssSeverity } from '../../../../snyk/snykOss/ossResult';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
-import { IOssSuggestionWebviewProvider } from '../../../../snyk/snykOss/views/suggestion/ossSuggestionWebviewProvider';
+import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from '../../../../snyk/snykOss/watchers/dailyScanJob';
 import { LoggerMock } from '../../mocks/logger.mock';
 
@@ -33,7 +34,7 @@ suite('OssService', () => {
       {
         getAdditionalCliParameters: () => '',
       } as IConfiguration,
-      {} as IOssSuggestionWebviewProvider,
+      {} as IWebViewProvider<OssIssueCommandArg>,
       {
         getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
@@ -45,9 +46,9 @@ suite('OssService', () => {
         schedule: sinon.fake(),
       } as unknown) as DailyScanJob,
       {} as INotificationService,
-      {
-        logAnalysisIsReady: sinon.fake()
-      } as unknown as IAnalytics,
+      ({
+        logAnalysisIsReady: sinon.fake(),
+      } as unknown) as IAnalytics,
     );
     sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });

@@ -7,6 +7,7 @@ export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
 export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
+export const SNYK_VIEW_FALSE_POSITIVE_CODE = 'snyk.views.suggestion.code.falsePositive';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
 
 // Having multiple boolean contexts instead of a single context

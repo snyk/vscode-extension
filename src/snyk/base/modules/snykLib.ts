@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import { firstValueFrom } from 'rxjs';
-import * as vscode from 'vscode';
 import { CliError } from '../../cli/services/cliService';
 import { SupportedAnalysisProperties } from '../../common/analytics/itly';
 import { configuration } from '../../common/configuration/instance';
@@ -9,6 +8,7 @@ import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
+import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
 import { ISnykLib } from './interfaces';
 
@@ -37,7 +37,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-      const workspacePaths = this.getWorkspacePaths();
+      const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       await this.setWorkspaceContext(workspacePaths);
 
       await this.user.identify(this.snykApiClient, this.analytics);
@@ -104,7 +104,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     }
 
     if (!paths.length) {
-      paths = this.getWorkspacePaths();
+      paths = vsCodeWorkspace.getWorkspaceFolders();
     }
 
     await this.snykCode.startAnalysis(paths, manual, reportTriggeredEvent);
@@ -125,11 +125,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
   async checkAdvancedMode(): Promise<void> {
     await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
-  }
-
-  private getWorkspacePaths(): string[] {
-    const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath); // todo: work with workspace class as abstraction
-    return paths;
   }
 
   private async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
