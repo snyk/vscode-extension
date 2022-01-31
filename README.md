@@ -210,7 +210,7 @@ After the extension is installed, you can set the following configurations for t
 - **Advanced**
   - **Advanced mode**: toggles a panel to allow the user to manually control when the analysis should be run.
   - **Auto Scan Open Source Security**: sets severity level to display in the analysis result tree.
-  - **Additional Parameters**: sets parameters to be passed to Snyk CLI for Open Source Security tests. For the full list you can consult [this reference](https://docs.snyk.io/features/snyk-cli/guides-for-our-cli/cli-reference).
+  - **Additional Parameters**: sets parameters to be passed to Snyk CLI for Open Source Security tests. For the full list you can consult [this reference](https://docs.snyk.io/features/snyk-cli/cli-reference).
 
 ### Create a .dcignore file
 
