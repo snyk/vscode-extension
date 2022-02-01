@@ -116,21 +116,22 @@ export class CommandController {
       return;
     }
 
-    let content = '';
+    let falsePositive;
     try {
-      const falsePositive = new FalsePositive(this.workspace, suggestion.uri, suggestion.markers);
-      content = await falsePositive.getContent();
+      falsePositive = new FalsePositive(this.workspace, suggestion);
+      falsePositive.content = await falsePositive.getGeneratedContent();
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
 
-    if (!content) {
+    if (!falsePositive || !falsePositive.content) {
+      this.logger.warn('Report false positive not shown, since no file content available');
       return; // don't show panel, if no content available.
     }
 
     const model: FalsePositiveWebviewModel = {
+      falsePositive: falsePositive,
       title: suggestion.title.length ? suggestion.title : suggestion.message,
-      content,
       cwe: suggestion.cwe,
       suggestionType: suggestion.isSecurityType ? 'Vulnerability' : 'Issue',
       severity: IssueUtils.severityAsText(suggestion.severity).toLowerCase(),

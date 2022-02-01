@@ -5,6 +5,7 @@ import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
 import { SNYK_CONTEXT } from '../common/constants/views';
+import { ErrorHandler } from '../common/error/errorHandler';
 import { ISnykCodeErrorHandler } from '../common/error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
@@ -12,6 +13,7 @@ import { getSastSettings } from '../common/services/cliConfigService';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
+import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
@@ -20,9 +22,15 @@ import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
+import { IFalsePositiveApi } from './falsePositive/api/falsePositiveApi';
+import { FalsePositive } from './falsePositive/falsePositive';
 import { ISnykCodeAnalyzer } from './interfaces';
 import { messages as analysisMessages } from './messages/analysis';
-import { FalsePositiveWebviewModel, FalsePositiveWebviewProvider } from './views/falsePositive/falsePositiveWebviewProvider';
+import { messages } from './messages/error';
+import {
+  FalsePositiveWebviewModel,
+  FalsePositiveWebviewProvider,
+} from './views/falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
@@ -42,6 +50,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
   activateWebviewProviders(): void;
+  reportFalsePositive(falsePositive: FalsePositive): Promise<void>;
 }
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
@@ -65,7 +74,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly contextService: IContextService,
     private readonly workspace: IVSCodeWorkspace,
     readonly window: IVSCodeWindow,
+    private readonly user: User,
     private readonly snykApiClient: ISnykApiClient,
+    private readonly falsePositiveApi: IFalsePositiveApi,
     private readonly logger: ILog,
     private readonly analytics: IAnalytics,
     readonly languages: IVSCodeLanguages,
@@ -74,8 +85,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     super();
     this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler);
 
-    this.falsePositiveProvider = new FalsePositiveWebviewProvider(this.workspace, extensionContext, this.window, this.logger);
-    this.suggestionProvider = new CodeSuggestionWebviewProvider(config, this.analyzer, window, this.falsePositiveProvider, extensionContext, this.logger);
+    this.falsePositiveProvider = new FalsePositiveWebviewProvider(this, this.window, extensionContext, this.logger);
+    this.suggestionProvider = new CodeSuggestionWebviewProvider(
+      config,
+      this.analyzer,
+      window,
+      this.falsePositiveProvider,
+      extensionContext,
+      this.logger,
+    );
 
     this.progress = new Progress(this, viewManagerService, this.workspace);
     this.progress.bindListeners();
@@ -251,6 +269,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   activateWebviewProviders(): void {
     this.suggestionProvider.activate();
     this.falsePositiveProvider.activate();
+  }
+
+  async reportFalsePositive(falsePositive: FalsePositive): Promise<void> {
+    try {
+      await this.falsePositiveApi.report(falsePositive, this.user);
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger, messages.reportFalsePositiveFailed);
+    }
   }
 
   dispose(): void {

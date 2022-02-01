@@ -1,4 +1,16 @@
+import { FileSuggestion } from '@snyk/code-client';
 import { Diagnostic, Position, Range } from '../../common/vscode/types';
+
+type IssuePlacementPosition = {
+  cols: {
+    start: number;
+    end: number;
+  };
+  rows: {
+    start: number;
+    end: number;
+  };
+};
 
 export class IssueUtils {
   static findIssueWithRange = (
@@ -24,5 +36,20 @@ export class IssueUtils {
       case 4:
         return 'Critical';
     }
+  };
+
+  static createCorrectIssuePlacement = (item: FileSuggestion): IssuePlacementPosition => {
+    const rowOffset = 1;
+    const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
+    return {
+      cols: {
+        start: createPosition(item.cols[0]),
+        end: item.cols[1],
+      },
+      rows: {
+        start: createPosition(item.rows[0]),
+        end: createPosition(item.rows[1]),
+      },
+    };
   };
 }

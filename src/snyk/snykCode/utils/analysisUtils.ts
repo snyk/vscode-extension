@@ -11,6 +11,7 @@ import {
   SNYK_SEVERITIES,
 } from '../constants/analysis';
 import { completeFileSuggestionType, ICodeSuggestion, ISnykCodeResult, openedTextEditorType } from '../interfaces';
+import { IssueUtils } from './issueUtils';
 
 export const createSnykSeveritiesMap = () => {
   const { information, error, warning } = SNYK_SEVERITIES;
@@ -50,21 +51,6 @@ export const createSnykProgress = (progress: number): number => {
   return Math.round(progress * progressOffset);
 };
 
-export const createCorrectIssuePlacement = (item: FileSuggestion): { [key: string]: { [key: string]: number } } => {
-  const rowOffset = 1;
-  const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
-  return {
-    cols: {
-      start: createPosition(item.cols[0]),
-      end: item.cols[1],
-    },
-    rows: {
-      start: createPosition(item.rows[0]),
-      end: createPosition(item.rows[1]),
-    },
-  };
-};
-
 export const createIssueRange = (position: { [key: string]: { [key: string]: number } }) => {
   return new vscode.Range(
     new vscode.Position(position.rows.start, position.cols.start),
@@ -74,7 +60,7 @@ export const createIssueRange = (position: { [key: string]: { [key: string]: num
 
 export const createIssueCorrectRange = (issuePosition: FileSuggestion): vscode.Range => {
   return createIssueRange({
-    ...createCorrectIssuePlacement(issuePosition),
+    ...IssueUtils.createCorrectIssuePlacement(issuePosition),
   });
 };
 

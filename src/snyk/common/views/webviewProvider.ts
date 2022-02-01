@@ -6,7 +6,7 @@ import { ExtensionContext } from '../vscode/extensionContext';
 export interface IWebViewProvider<ViewModel> {
   activate(): void;
   disposePanel(): void;
-  showPanel(suggestion: ViewModel): Promise<void>;
+  showPanel(suggestion: ViewModel, ...args: unknown[]): Promise<void>;
 }
 
 export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<ViewModel> {
@@ -25,7 +25,7 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
     this.panel = panel;
   }
 
-  abstract showPanel(suggestion: ViewModel): Promise<void>;
+  abstract showPanel(suggestion: ViewModel, ...args: unknown[]): Promise<void>;
 
   protected async focusSecondEditorGroup(): Promise<void> {
     // workaround for: https://github.com/microsoft/vscode/issues/71608

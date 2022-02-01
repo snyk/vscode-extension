@@ -20,7 +20,7 @@ export class User {
     this._authenticatedId = authenticatedId ?? undefined;
   }
 
-  static async get(context: ExtensionContext): Promise<User> {
+  static async getAnonymous(context: ExtensionContext): Promise<User> {
     let anonymousId = context.getGlobalStateValue<string>(MEMENTO_ANONYMOUS_ID);
     if (!anonymousId) {
       anonymousId = uuidv4();
