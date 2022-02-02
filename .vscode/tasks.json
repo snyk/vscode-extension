@@ -4,8 +4,9 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Watch TS",
       "type": "npm",
-      "script": "watch-all",
+      "script": "watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "presentation": {
@@ -17,6 +18,19 @@
       }
     },
     {
+      "label": "Watch SCSS & TS",
+      "type": "npm",
+      "script": "watch-all",
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch SCSS",
+      "type": "npm",
+      "script": "watch-resources",
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch unit tests",
       "type": "npm",
       "script": "test:unit:watch",
       "problemMatcher": []

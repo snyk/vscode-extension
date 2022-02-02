@@ -12,9 +12,6 @@
   // https://stackoverflow.com/a/56938089/1713082
   const vscode = acquireVsCodeApi();
   let exampleCount = 0;
-  let feedbackVisibility = 'close';
-  let feedbackLike = 3;
-  let feedbackEnabled = false;
   let suggestion = {} as any;
 
   function navigateToLeadURL() {
@@ -39,13 +36,6 @@
       args: { url },
     });
   }
-  function navigateToFP() {
-    const url = 'https://en.wikipedia.org/wiki/False_positives_and_false_negatives';
-    sendMessage({
-      type: 'openBrowser',
-      args: { url },
-    });
-  }
   function ignoreIssue(lineOnly: any) {
     sendMessage({
       type: 'ignoreIssue',
@@ -59,23 +49,13 @@
       },
     });
   }
-  function sendFeedback() {
-    if (!feedbackEnabled) return;
-    const feedback = (document.getElementById('feedback-textarea') as any).value;
-    const falsePositive = (!!document.getElementById('feedback-checkbox') as any).value ? 'yes' : 'no';
-    const suggestionId = suggestion.id;
+  function openFalsePositiveCode() {
     sendMessage({
-      type: 'sendFeedback',
+      type: 'openFalsePositive',
       args: {
-        feedback,
-        falsePositive,
-        suggestionId,
-        rating: feedbackLike,
-        project: suggestion.uri,
+        suggestion: suggestion,
       },
     });
-    feedbackVisibility = 'sent';
-    showCurrentFeedback();
   }
   function getSuggestionPosition(range?: { rows: any; cols: any }) {
     return {
@@ -83,43 +63,6 @@
       rows: range ? range.rows : suggestion.rows,
       cols: range ? range.cols : suggestion.cols,
     };
-  }
-  function openFeebackSection() {
-    feedbackVisibility = 'open';
-    showCurrentFeedback();
-  }
-  function closeFeebackSection() {
-    feedbackVisibility = 'close';
-    showCurrentFeedback();
-  }
-  function showCurrentFeedback() {
-    const fbClose = document.getElementById('feedback-close')!;
-    fbClose.className = feedbackVisibility === 'close' ? '' : 'hidden';
-    const fbOpen = document.getElementById('feedback-open')!;
-    fbOpen.className = feedbackVisibility === 'open' ? '' : 'hidden';
-    const fbSent = document.getElementById('feedback-sent')!;
-    fbSent.className = feedbackVisibility === 'sent' ? '' : 'hidden';
-
-    const ignore = document.getElementById('ignore-section')!;
-    ignore.className = feedbackVisibility === 'open' ? 'hidden' : '';
-  }
-  function likeFeedback(like: any) {
-    feedbackLike = like ? 5 : 1;
-    const fbLike = document.getElementById('feedback-like')!;
-    const fbDislike = document.getElementById('feedback-dislike')!;
-    if (like) {
-      fbDislike.className = 'icon arrow down';
-      fbLike.className = 'icon arrow enabled';
-    } else {
-      fbDislike.className = 'icon arrow down enabled';
-      fbLike.className = 'icon arrow';
-    }
-  }
-  function enableFeedback(content: any) {
-    feedbackEnabled = !!content;
-    const fbSend = document.getElementById('feedback-send')!;
-    if (content) fbSend.className = 'button';
-    else fbSend.className = 'button disabled';
   }
   function previousExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount <= 0) return;
@@ -279,15 +222,6 @@
       exampleTop.className = 'row between hidden';
       example.className = 'hidden';
     }
-
-    feedbackVisibility = 'close';
-  }
-
-  function toggleReportFpPanel() {
-    const panel = document.querySelector('.report-fp-panel')!;
-    const actions = document.querySelector('#actions-section')!;
-    panel.classList.toggle('visibility-hidden');
-    actions.classList.toggle('hidden');
   }
 
   function sendMessage(message: {
@@ -298,7 +232,7 @@
       | { url: any }
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
-      | { feedback: any; falsePositive: string; suggestionId: any; rating: number; project: any };
+      | { suggestion: any };
   }) {
     vscode.postMessage(message);
   }
@@ -310,10 +244,7 @@
   document.getElementById('next-example')!.addEventListener('click', nextExample);
   document.getElementById('ignore-line-issue')!.addEventListener('click', ignoreIssue.bind(true));
   document.getElementById('ignore-file-issue')!.addEventListener('click', ignoreIssue.bind(false));
-
-
-  document.getElementById('report-fp')?.addEventListener('click', toggleReportFpPanel);
-  document.querySelectorAll('.report-fp-cancel')?.forEach(cancelBtn => cancelBtn.addEventListener('click', toggleReportFpPanel));
+  document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
 
   window.addEventListener('message', event => {
     const { type, args } = event.data;

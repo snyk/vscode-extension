@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-export const createDCIgnore = async (path: string, custom: boolean) => {
+export const createDCIgnore = async (path: string, custom: boolean): Promise<void> => {
   const content: Buffer = Buffer.from(custom ? constants.DCIGNORE_DRAFTS.custom : constants.DCIGNORE_DRAFTS.default);
   const filePath = `${path}/${constants.DCIGNORE_FILENAME}`;
   const openPath = vscode.Uri.file(filePath);

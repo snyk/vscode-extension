@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { Disposable, ProgressLocation, TextEditorDecorationType, WebviewPanelSerializer } from 'vscode';
-import { TextEditor } from './types';
+import { TextDocument, TextEditor, ViewColumn } from './types';
 
 export interface IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined;
   getVisibleTextEditors(): TextEditor[];
+  showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
   withProgress<R>(
@@ -33,6 +34,15 @@ export class VSCodeWindow implements IVSCodeWindow {
 
   getVisibleTextEditors(): TextEditor[] {
     return vscode.window.visibleTextEditors;
+  }
+
+  showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor> {
+    return new Promise((resolve, reject) => {
+      vscode.window.showTextDocument(document, column, preserveFocus).then(
+        doc => resolve(doc),
+        reason => reject(reason),
+      );
+    });
   }
 
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): vscode.TextEditorDecorationType {

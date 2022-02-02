@@ -1,0 +1,46 @@
+.suggestion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.suggestion .suggestion-text {
+  margin-bottom: 1rem;
+  margin-top: 0.2em;
+  font-size: 1.6rem;
+  line-height: 1.6;
+}
+
+.severity {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  float: left;
+  margin: 0 1rem 0 0;
+  text-align: center;
+}
+
+.severity .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.icon {
+  vertical-align: middle;
+  width: 18px;
+  height: 18px;
+}
+
+.identifiers {
+  font-size: 1em;
+}
+
+.vscode-dark .light-only {
+  display: none;
+}
+
+.vscode-light .dark-only {
+  display: none;
+}

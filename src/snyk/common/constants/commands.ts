@@ -16,6 +16,7 @@ export const SNYK_COPY_AUTH_LINK_COMMAND = 'snyk.copyAuthLink';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
+export const SNYK_REPORT_FALSE_POSITIVE_COMMAND = 'snyk.reportFalsePositive';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 
 // custom Snyk constants used in commands

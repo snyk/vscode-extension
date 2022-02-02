@@ -10,4 +10,5 @@ export const windowMock = {
   onDidChangeActiveTextEditor: sinon.fake(),
   createTextEditorDecorationType: sinon.fake(),
   getVisibleTextEditors: sinon.fake(),
+  showTextDocument: sinon.fake(),
 } as IVSCodeWindow;

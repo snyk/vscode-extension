@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { TextDocumentChangeEvent } from 'vscode';
+import { TextDocument } from './types';
 
 export interface IVSCodeWorkspace {
   getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined;
@@ -13,6 +14,8 @@ export interface IVSCodeWorkspace {
   getWorkspaceFolders(): string[];
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
   onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
+  openFileTextDocument(fileName: string): Promise<TextDocument>;
+  openTextDocument(options?: { language?: string; content?: string }): Promise<TextDocument>;
 }
 
 /**
@@ -51,6 +54,24 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
 
   onDidChangeTextDocument(listener: (e: vscode.TextDocumentChangeEvent) => unknown): vscode.Disposable {
     return vscode.workspace.onDidChangeTextDocument(listener);
+  }
+
+  openFileTextDocument(fileName: string): Promise<TextDocument> {
+    return new Promise((resolve, reject) => {
+      vscode.workspace.openTextDocument(fileName).then(
+        doc => resolve(doc),
+        reason => reject(reason),
+      );
+    });
+  }
+
+  openTextDocument(options?: { language?: string; content?: string }): Promise<TextDocument> {
+    return new Promise((resolve, reject) => {
+      vscode.workspace.openTextDocument(options).then(
+        doc => resolve(doc),
+        reason => reject(reason),
+      );
+    });
   }
 }
 

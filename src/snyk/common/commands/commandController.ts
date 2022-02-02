@@ -4,8 +4,10 @@ import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
+import { FalsePositive } from '../../snykCode/falsePositive/falsePositive';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
+import { FalsePositiveWebviewModel } from '../../snykCode/views/falsePositive/falsePositiveWebviewProvider';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
@@ -21,7 +23,8 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
-import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
+import { IVSCodeWorkspace } from '../vscode/workspace';
+import { OpenCommandIssueType, OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './types';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -32,6 +35,7 @@ export class CommandController {
     private snykCode: ISnykCodeService,
     private ossService: OssService,
     private scanModeService: ScanModeService,
+    private workspace: IVSCodeWorkspace,
     private logger: ILog,
     private analytics: IAnalytics,
   ) {}
@@ -104,6 +108,35 @@ export class CommandController {
         severity: capitalizeOssSeverity(issue.severity),
       });
     }
+  }
+
+  async reportFalsePositive(arg: ReportFalsePositiveCommandArg): Promise<void> {
+    const suggestion = arg.suggestion;
+    if (!suggestion.markers || suggestion.markers.length === 0) {
+      return;
+    }
+
+    let content = '';
+    try {
+      const falsePositive = new FalsePositive(this.workspace, suggestion.uri, suggestion.markers);
+      content = await falsePositive.getContent();
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger);
+    }
+
+    if (!content) {
+      return; // don't show panel, if no content available.
+    }
+
+    const model: FalsePositiveWebviewModel = {
+      title: suggestion.title.length ? suggestion.title : suggestion.message,
+      content,
+      cwe: suggestion.cwe,
+      suggestionType: suggestion.isSecurityType ? 'Vulnerability' : 'Issue',
+      severity: IssueUtils.severityAsText(suggestion.severity).toLowerCase(),
+    };
+
+    await this.snykCode.falsePositiveProvider.showPanel(model);
   }
 
   setScanMode(mode: string): Promise<void> {

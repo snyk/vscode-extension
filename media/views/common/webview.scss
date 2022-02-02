@@ -1,0 +1,60 @@
+html {
+  height: 100%;
+  font-size: 62.5%;
+}
+
+body {
+  padding: 0;
+  font-size: 1.4rem;
+  line-height: 1.5;
+}
+
+body * {
+  box-sizing: border-box;
+}
+
+h2 {
+  font-size: 1em;
+  margin-block-start: 0;
+}
+
+a {
+  cursor: pointer;
+  color: #7c74f2;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #7c74f2;
+  text-decoration: underline;
+}
+
+.font-light {
+  opacity: 0.75;
+}
+
+.vscode-light {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.vscode-dark {
+  background-color: rgba(255, 255, 255, 0.075);
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.vscode-light .delimiter-top {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.vscode-dark .delimiter-top {
+  border-top: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+section {
+  padding: 20px;
+}
+
+.hidden {
+  display: none;
+}

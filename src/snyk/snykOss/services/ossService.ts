@@ -9,12 +9,12 @@ import { IDE_NAME } from '../../common/constants/general';
 import { ILog } from '../../common/logger/interfaces';
 import { INotificationService } from '../../common/services/notificationService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
+import { IWebViewProvider } from '../../common/views/webviewProvider';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
 import { isResultCliError, OssFileResult, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
-import { IOssSuggestionWebviewProvider } from '../views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
@@ -29,7 +29,7 @@ export class OssService extends CliService<OssResult> {
     protected readonly extensionContext: ExtensionContext,
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
-    private readonly suggestionProvider: IOssSuggestionWebviewProvider,
+    private readonly suggestionProvider: IWebViewProvider<OssIssueCommandArg>,
     protected readonly workspace: IVSCodeWorkspace,
     private readonly viewManagerService: IViewManagerService,
     protected readonly downloadService: CliDownloadService,

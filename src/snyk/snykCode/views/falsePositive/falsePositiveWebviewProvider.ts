@@ -1,27 +1,37 @@
 import * as vscode from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
+import { SNYK_VIEW_FALSE_POSITIVE_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
-import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
+import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
+import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { messages as errorMessages } from '../../messages/error';
-import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
 
-enum OssSuggestionsViewEventMessageType {
+enum FalsePositiveViewEventMessageType {
   OpenBrowser = 'openBrowser',
+  Close = 'close',
 }
 
-type OssSuggestionViewEventMessage = {
-  type: OssSuggestionsViewEventMessageType;
+type FalsePositiveViewEventMessage = {
+  type: FalsePositiveViewEventMessageType;
   value: unknown;
 };
 
-export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueCommandArg> {
+export type FalsePositiveWebviewModel = {
+  title: string;
+  severity: string;
+  suggestionType: 'Issue' | 'Vulnerability';
+  cwe: string[];
+  content: string;
+};
+
+export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveWebviewModel> {
   constructor(
+    private readonly workspace: IVSCodeWorkspace,
     protected readonly context: ExtensionContext,
     private readonly window: IVSCodeWindow,
     protected readonly logger: ILog,
@@ -31,22 +41,20 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_OSS, new WebviewPanelSerializer(this)),
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_FALSE_POSITIVE_CODE, new WebviewPanelSerializer(this)),
     );
   }
 
-  async showPanel(vulnerability: OssIssueCommandArg): Promise<void> {
+  async showPanel(model: FalsePositiveWebviewModel): Promise<void> {
     try {
-      await this.focusSecondEditorGroup();
-
       if (this.panel) {
-        this.panel.reveal(vscode.ViewColumn.Two, true);
+        this.panel.reveal(vscode.ViewColumn.One, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION_OSS,
-          'Snyk OSS Vulnerability',
+          SNYK_VIEW_FALSE_POSITIVE_CODE,
+          'Snyk Report False Positive',
           {
-            viewColumn: vscode.ViewColumn.Two,
+            viewColumn: vscode.ViewColumn.One,
             preserveFocus: true,
           },
           {
@@ -58,35 +66,44 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      void this.panel.webview.postMessage({ type: 'set', args: vulnerability });
+      await this.panel.webview.postMessage({ type: 'set', args: model });
 
-      this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
-      this.panel.webview.onDidReceiveMessage(
-        (data: OssSuggestionViewEventMessage) => {
-          switch (data.type) {
-            case OssSuggestionsViewEventMessageType.OpenBrowser:
-              void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
-              break;
-            default:
-              break;
-          }
-        },
-        null,
-        this.disposables,
-      );
-      this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
+      this.registerListeners();
     } catch (e) {
-      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
+      ErrorHandler.handle(e, this.logger, errorMessages.reportFalsePositiveViewShowFailed);
     }
+  }
+
+  private registerListeners() {
+    if (!this.panel) return;
+
+    this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
+    this.panel.webview.onDidReceiveMessage(
+      (data: FalsePositiveViewEventMessage) => {
+        switch (data.type) {
+          case FalsePositiveViewEventMessageType.OpenBrowser:
+            void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
+            break;
+          case FalsePositiveViewEventMessageType.Close:
+            this.disposePanel();
+            break;
+          default:
+            break;
+        }
+      },
+      null,
+      this.disposables,
+    );
+    this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
-      ['icon-code', 'svg'],
       ['dark-critical-severity', 'svg'],
       ['dark-high-severity', 'svg'],
       ['dark-medium-severity', 'svg'],
       ['dark-low-severity', 'svg'],
+      ['warning', 'svg'],
     ].reduce((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
@@ -97,12 +114,12 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
     const scriptUri = this.getWebViewUri(
       'out',
       'snyk',
-      'snykOss',
+      'snykCode',
       'views',
-      'suggestion',
-      'ossSuggestionWebviewScript.js',
+      'falsePositive',
+      'falsePositiveWebviewScript.js',
     );
-    const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
+    const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'falsePositive', 'falsePositive.css');
 
     const nonce = getNonce();
 
@@ -137,30 +154,21 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
             <div class="suggestion-text"></div>
             <div class="identifiers"></div>
           </section>
-          <section class="delimiter-top summary">
-            <div class="summary-item module">
-              <div class="label font-light">Vulnerable module</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item introduced-through">
-              <div class="label font-light">Introduced through</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item fixed-in">
-              <div class="label font-light">Fixed in</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item maturity">
-              <div class="label font-light">Exploit maturity</div>
-              <div class="content"></div>
-            </div>
+          <section class="delimiter-top editor-section">
+            <textarea class="editor"></textarea>
           </section>
           <section class="delimiter-top">
-            <h2>Detailed paths</h2>
-            <div class="detailed-paths"></div>
+          <div class="warning">
+            <img src="${images['warning']}" />
+            <span>Please check the code. It will be uploaded to Snyk and manually reviewed by our engineers.</span>
+          </div>
           </section>
           <section class="delimiter-top">
-            <div id="overview" class="font-light"></div>
+          <div class="actions">
+            <button id="report" class="button">Send code</button>
+            <button id="cancel" class="button secondary">Cancel <span id="line-position2"></span></button>
+          </div>
+        </div>
           </section>
         </div>
 				<script nonce="${nonce}" src="${scriptUri}"></script>
