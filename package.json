@@ -350,8 +350,8 @@
     "test:unit": "mocha --ui tdd -c 'out/test/unit/**/*.test.js'",
     "test:unit:watch": "mocha --ui tdd -w -c 'out/test/unit/**/*.test.js'",
     "test:integration": "node ./out/test/integration/runTest.js",
-    "lint": "npx eslint 'src/**/*.ts'",
-    "lint:fix": "npx eslint --fix 'src/**/*.ts'",
+    "lint": "npx eslint \"src/**/*.ts\"",
+    "lint:fix": "npx eslint --fix \"src/**/*.ts\"",
     "vscode:uninstall": "node ./out/uninstall",
     "ampli:verify": "ampli status -u --skip-update-on-default-branch",
     "patch-preview": "node ./scripts/patchPreview.js"
