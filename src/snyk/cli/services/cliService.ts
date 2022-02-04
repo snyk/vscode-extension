@@ -64,12 +64,17 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       if (!killed) this.logger.error('Failed to kill an already running CLI instance.');
     }
 
+    const foldersToTest = this.workspace.getWorkspaceFolders();
+    if (foldersToTest.length == 0) {
+      throw new Error('No workspace was opened.');
+    }
+
     this.cliProcess = new CliProcess(this.logger, this.config);
-    const args = this.buildArguments();
+    const args = this.buildArguments(foldersToTest);
 
     let output: string;
     try {
-      output = await this.cliProcess.spawn(cliPath, args);
+      output = await this.cliProcess.spawn(cliPath, foldersToTest[0], args);
     } catch (spawnError) {
       if (spawnError instanceof CliError) {
         return spawnError;
@@ -96,12 +101,8 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this._isCliDownloadSuccessful = false;
   }
 
-  private buildArguments(): string[] {
+  private buildArguments(foldersToTest: string[]): string[] {
     const args = [];
-    const foldersToTest = this.workspace.getWorkspaceFolders();
-    if (foldersToTest.length == 0) {
-      throw new Error('No workspace was opened.');
-    }
 
     args.push(...this.command);
     args.push(...foldersToTest);

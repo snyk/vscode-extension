@@ -173,7 +173,8 @@ suite('CliService', () => {
     strictEqual(getChecksumOfSpy.calledOnce, true);
   });
 
-  test('Test passes additional CLI arguments from settings', async () => {
+  test('Test passes cwd and additional CLI arguments from settings', async () => {
+    const testFolder = 'test-folder';
     const additionalParameters = `--exclude="folder with spaces" --configuration-matching="iamaRegex" --sub-project=snyk`;
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(true);
     sinon.stub(configuration, 'getAdditionalCliParameters').returns(additionalParameters);
@@ -183,12 +184,12 @@ suite('CliService', () => {
 
     const expectedArgs = [
       '',
-      'test-folder',
+      testFolder,
       '--json',
       '--exclude="folder with spaces"',
       '--configuration-matching="iamaRegex"',
       '--sub-project=snyk',
     ];
-    deepStrictEqual(spawnSpy.calledWith(sinon.match.any, expectedArgs), true);
+    deepStrictEqual(spawnSpy.calledWith(sinon.match.any, testFolder, expectedArgs), true);
   });
 });
