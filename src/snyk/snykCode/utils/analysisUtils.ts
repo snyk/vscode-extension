@@ -13,7 +13,7 @@ import {
 import { completeFileSuggestionType, ICodeSuggestion, ISnykCodeResult, openedTextEditorType } from '../interfaces';
 import { IssueUtils } from './issueUtils';
 
-export const createSnykSeveritiesMap = () => {
+export const createSnykSeveritiesMap = (): { [x: number]: { name: vscode.DiagnosticSeverity; show: boolean; }; } => {
   const { information, error, warning } = SNYK_SEVERITIES;
   return {
     [information]: {
@@ -25,7 +25,7 @@ export const createSnykSeveritiesMap = () => {
   };
 };
 
-export const getVSCodeSeverity = (snykSeverity: number) => {
+export const getVSCodeSeverity = (snykSeverity: number): vscode.DiagnosticSeverity.Warning | vscode.DiagnosticSeverity.Information | vscode.DiagnosticSeverity.Hint => {
   const { information, error, warning } = SNYK_SEVERITIES;
   return (
     {
@@ -36,7 +36,7 @@ export const getVSCodeSeverity = (snykSeverity: number) => {
   );
 };
 
-export const getSnykSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) => {
+export const getSnykSeverity = (vscodeSeverity: vscode.DiagnosticSeverity): number => {
   const { information, error, warning } = SNYK_SEVERITIES;
   return {
     [vscode.DiagnosticSeverity.Information]: information,
@@ -51,7 +51,7 @@ export const createSnykProgress = (progress: number): number => {
   return Math.round(progress * progressOffset);
 };
 
-export const createIssueRange = (position: { [key: string]: { [key: string]: number } }) => {
+export const createIssueRange = (position: { [key: string]: { [key: string]: number } }): vscode.Range => {
   return new vscode.Range(
     new vscode.Position(position.rows.start, position.cols.start),
     new vscode.Position(position.rows.end, position.cols.end),
@@ -189,7 +189,7 @@ export const findCompleteSuggestion = (
   uri: vscode.Uri,
   position: vscode.Range,
 ): completeFileSuggestionType | undefined => {
-  let filePath = uri.fsPath;
+  const filePath = uri.fsPath;
   if (!analysisResults.files[filePath]) return;
   const file: FilePath = analysisResults.files[filePath];
   let fileSuggestion: FileSuggestion | undefined;
@@ -227,10 +227,10 @@ export const checkCompleteSuggestion = (
   analysisResults: AnalysisResultLegacy,
   suggestion: completeFileSuggestionType,
 ): boolean => {
-  let filePath = vscode.Uri.parse(suggestion.uri).fsPath;
+  const filePath = vscode.Uri.parse(suggestion.uri).fsPath;
   if (!analysisResults.files[filePath]) return false;
   const file: FilePath = analysisResults.files[filePath];
-  let suggestionIndex: string | undefined = Object.keys(file).find(i => {
+  const suggestionIndex: string | undefined = Object.keys(file).find(i => {
     const index = parseInt(i, 10);
     if (
       analysisResults.suggestions[index].id !== suggestion.id ||
@@ -239,7 +239,7 @@ export const checkCompleteSuggestion = (
       return false;
     const found = file[index].find(fs => {
       let equal = true;
-      for (let dir of ['cols', 'rows']) {
+      for (const dir of ['cols', 'rows']) {
         for (const ind of [0, 1]) {
           equal = equal && fs[dir][ind] === suggestion[dir][ind];
         }
