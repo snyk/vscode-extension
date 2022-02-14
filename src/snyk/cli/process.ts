@@ -14,7 +14,7 @@ export class CliProcess {
   /**
    * Returns CLI output given provided arguments.
    */
-  async spawn(cliPath: string, args: readonly string[]): Promise<string> {
+  async spawn(cliPath: string, cwd: string, args: readonly string[]): Promise<string> {
     const processEnv = await this.getProcessEnv();
 
     return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ export class CliProcess {
 
       this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
-      this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv } });
+      this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv }, cwd });
 
       this.runningProcess.stdout.setEncoding('utf8');
       this.runningProcess.stdout.on('data', (data: string | Buffer) => (output += data));

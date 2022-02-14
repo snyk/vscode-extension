@@ -55,7 +55,12 @@ export class OssService extends CliService<OssResult> {
       throw new Error('CLI returned empty output result.');
     }
 
-    const result = JSON.parse(rawCliResult) as OssResult;
+    let result: OssResult;
+    try {
+      result = JSON.parse(rawCliResult) as OssResult;
+    } catch (err) {
+      throw new Error(`Failed to parse JSON result. Unparsed: ${rawCliResult}`);
+    }
 
     return result;
   }
