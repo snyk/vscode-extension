@@ -1,5 +1,13 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.8]
+
+### Fixed
+
+- Automatic scanning not working for Windows environments.
+- Failing Open Source Security scan for .NET projects.
+- Snyk Code suggestion view being blank periodically when opening an issue.
+
 ## [1.2.7]
 
 ### Added
