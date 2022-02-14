@@ -21,7 +21,9 @@ import { createIssueCorrectRange, getVSCodeSeverity } from '../../utils/analysis
 import { FalsePositiveWebviewModel } from '../falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
-export class CodeSuggestionWebviewProvider extends WebviewProvider<completeFileSuggestionType> implements ICodeSuggestionWebviewProvider {
+export class CodeSuggestionWebviewProvider
+  extends WebviewProvider<completeFileSuggestionType>
+  implements ICodeSuggestionWebviewProvider {
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
   private suggestion: completeFileSuggestionType | undefined;
@@ -38,7 +40,9 @@ export class CodeSuggestionWebviewProvider extends WebviewProvider<completeFileS
   }
 
   activate(): void {
-    this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE, new WebviewPanelSerializer(this));
+    this.context.addDisposables(
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE, new WebviewPanelSerializer(this)),
+    );
   }
 
   show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
