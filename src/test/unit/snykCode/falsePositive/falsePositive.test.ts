@@ -1,5 +1,6 @@
 import { Marker } from '@snyk/code-client';
 import { strictEqual, throws } from 'assert';
+import * as os from 'os';
 import path from 'path';
 import sinon from 'sinon';
 import { TextDocument } from '../../../../snyk/common/vscode/types';
@@ -71,7 +72,7 @@ suite('False Positive', () => {
 
   test('Returns correct generated content', async () => {
     // arrange
-    const filePath = '/Users/snyk/goof/test.js';
+    const filePath = os.platform() === 'win32' ? 'C:\\Users\\snyk\\goof\\test.js' : '/Users/snyk/goof/test.js';
     const marker = {
       msg: [0, 1],
       pos: [{ file: filePath, cols: [10, 20], rows: [1, 1] }],
@@ -82,7 +83,7 @@ suite('False Positive', () => {
       markers: [marker],
     } as completeFileSuggestionType;
 
-    const workspaceFolder = '/Users/snyk/goof';
+    const workspaceFolder = os.platform() === 'win32' ? 'C:\\Users\\snyk\\goof' : '/Users/snyk/goof';
     const text = 'console.log("Hello world");';
     const textDocument = ({
       getText: () => text,
