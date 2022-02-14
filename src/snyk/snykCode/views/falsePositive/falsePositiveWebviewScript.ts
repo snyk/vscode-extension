@@ -11,15 +11,29 @@
   // TODO: Redefine types until bundling is introduced into extension
   // https://stackoverflow.com/a/56938089/1713082
   type FalsePositiveWebviewModel = {
+    falsePositive: {
+      content: string;
+    };
     title: string;
     severity: string;
     suggestionType: 'Issue' | 'Vulnerability';
     cwe: string[];
-    content: string;
   };
 
   const vscode = acquireVsCodeApi();
-  let falsePositive = {} as FalsePositiveWebviewModel;
+  let model = {} as FalsePositiveWebviewModel;
+
+  function send() {
+    const editor = document.querySelector('.editor') as HTMLTextAreaElement;
+
+    vscode.postMessage({
+      type: 'send',
+      value: {
+        falsePositive: model.falsePositive,
+        content: editor.value,
+      },
+    });
+  }
 
   function navigateToUrl(url: string) {
     vscode.postMessage({
@@ -39,7 +53,7 @@
     const title = document.querySelector('.suggestion .suggestion-text')!;
 
     // Set title
-    title.innerHTML = falsePositive.title;
+    title.innerHTML = model.title;
 
     // Set severity icon
     setSeverityIcon();
@@ -51,13 +65,13 @@
     setEditorCode();
 
     function setSeverityIcon() {
-      if (falsePositive.severity) {
+      if (model.severity) {
         severity.querySelectorAll('img').forEach(n => {
           if (n.id.slice(-1) === 'l') {
-            if (n.id.includes(falsePositive.severity)) n.className = 'icon light-only';
+            if (n.id.includes(model.severity)) n.className = 'icon light-only';
             else n.className = 'icon light-only hidden';
           } else {
-            if (n.id.includes(falsePositive.severity)) n.className = 'icon dark-only';
+            if (n.id.includes(model.severity)) n.className = 'icon dark-only';
             else n.className = 'icon dark-only hidden';
           }
         });
@@ -70,11 +84,11 @@
       const identifiers = document.querySelector('.identifiers')!;
       identifiers.innerHTML = ''; // reset node
 
-      const type = falsePositive.suggestionType;
+      const type = model.suggestionType;
       const typeNode = document.createTextNode(type);
       identifiers.appendChild(typeNode);
 
-      falsePositive.cwe.forEach(cwe => appendIdentifierSpan(identifiers, cwe, getCweLink(cwe)));
+      model.cwe.forEach(cwe => appendIdentifierSpan(identifiers, cwe, getCweLink(cwe)));
     }
 
     function appendIdentifierSpan(identifiers: Element, id: string, link?: string) {
@@ -103,22 +117,23 @@
 
     function setEditorCode() {
       const editor = document.querySelector('.editor')!;
-      editor.textContent = falsePositive.content;
+      editor.textContent = model.falsePositive.content;
     }
   }
 
   document.getElementById('cancel')?.addEventListener('click', close);
+  document.getElementById('send')?.addEventListener('click', send);
 
   window.addEventListener('message', event => {
     const { type, args } = event.data;
     switch (type) {
       case 'set': {
-        falsePositive = args;
-        vscode.setState(falsePositive);
+        model = args;
+        vscode.setState(model);
         break;
       }
       case 'get': {
-        falsePositive = vscode.getState();
+        model = vscode.getState();
         break;
       }
     }

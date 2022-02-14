@@ -14,6 +14,7 @@ import { User } from '../../common/user';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
+import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
@@ -45,6 +46,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected analytics: IAnalytics;
 
   protected snykApiClient: ISnykApiClient;
+  protected falsePositiveApi: IFalsePositiveApi;
   snykCode: ISnykCodeService;
 
   readonly loadingBadge: ILoadingBadge;
@@ -61,6 +63,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.loadingBadge = new LoadingBadge();
     this.snykApiClient = new SnykApiClient(configuration);
+    this.falsePositiveApi = new FalsePositiveApi(configuration);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this);
   }
 

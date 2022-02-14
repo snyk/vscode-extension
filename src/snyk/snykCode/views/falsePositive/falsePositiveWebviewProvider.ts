@@ -8,32 +8,34 @@ import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerial
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
-import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
+import { ISnykCodeService } from '../../codeService';
+import { FalsePositive } from '../../falsePositive/falsePositive';
 import { messages as errorMessages } from '../../messages/error';
 
 enum FalsePositiveViewEventMessageType {
   OpenBrowser = 'openBrowser',
   Close = 'close',
+  Send = 'send',
 }
 
 type FalsePositiveViewEventMessage = {
   type: FalsePositiveViewEventMessageType;
-  value: unknown;
+  value: any;
 };
 
 export type FalsePositiveWebviewModel = {
+  falsePositive: FalsePositive;
   title: string;
   severity: string;
   suggestionType: 'Issue' | 'Vulnerability';
   cwe: string[];
-  content: string;
 };
 
 export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveWebviewModel> {
   constructor(
-    private readonly workspace: IVSCodeWorkspace,
-    protected readonly context: ExtensionContext,
+    private readonly codeService: ISnykCodeService,
     private readonly window: IVSCodeWindow,
+    protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
   ) {
     super(context, logger);
@@ -65,7 +67,6 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
-
       await this.panel.webview.postMessage({ type: 'set', args: model });
 
       this.registerListeners();
@@ -79,8 +80,13 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
 
     this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
-      (data: FalsePositiveViewEventMessage) => {
+      async (data: FalsePositiveViewEventMessage) => {
         switch (data.type) {
+          case FalsePositiveViewEventMessageType.Send:
+            // eslint-disable-next-line no-case-declarations
+            const { falsePositive, content } = data.value as { falsePositive: FalsePositive; content: string };
+            await this.reportFalsePositive(falsePositive, content);
+            break;
           case FalsePositiveViewEventMessageType.OpenBrowser:
             void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
             break;
@@ -95,6 +101,11 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
       this.disposables,
     );
     this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
+  }
+
+  private async reportFalsePositive(falsePositive: FalsePositive, content: string): Promise<void> {
+    falsePositive.content = content;
+    await this.codeService.reportFalsePositive(falsePositive);
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
@@ -165,7 +176,7 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
           </section>
           <section class="delimiter-top">
           <div class="actions">
-            <button id="report" class="button">Send code</button>
+            <button id="send" class="button">Send code</button>
             <button id="cancel" class="button secondary">Cancel <span id="line-position2"></span></button>
           </div>
         </div>
