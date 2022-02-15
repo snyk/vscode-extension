@@ -1,5 +1,4 @@
 import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
-import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../../common/analytics/itly';
 import { ISnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
@@ -7,7 +6,15 @@ import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errors';
 import { HoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { Disposable } from '../../common/vscode/types';
+import {
+  Diagnostic,
+  DiagnosticCollection,
+  DiagnosticSeverity,
+  Disposable,
+  Range,
+  Uri,
+} from '../../common/vscode/types';
+import { IUriAdapter } from '../../common/vscode/uri';
 import { DisposableCodeActionsProvider } from '../codeActions/disposableCodeActionsProvider';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
@@ -36,23 +43,24 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   protected disposables: Disposable[] = [];
 
   private SEVERITIES: {
-    [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
+    [key: number]: { name: DiagnosticSeverity; show: boolean };
   };
-  public readonly codeQualityReview: vscode.DiagnosticCollection | undefined;
-  public readonly codeSecurityReview: vscode.DiagnosticCollection | undefined;
+  public readonly codeQualityReview: DiagnosticCollection | undefined;
+  public readonly codeSecurityReview: DiagnosticCollection | undefined;
   private analysisResults: ISnykCodeResult;
 
-  private readonly diagnosticSuggestion = new Map<vscode.Diagnostic, ICodeSuggestion>();
+  private readonly diagnosticSuggestion = new Map<Diagnostic, ICodeSuggestion>();
 
   public constructor(
     readonly logger: ILog,
     readonly languages: IVSCodeLanguages,
     readonly analytics: IAnalytics,
     private readonly errorHandler: ISnykCodeErrorHandler,
+    private readonly uriAdapter: IUriAdapter,
   ) {
     this.SEVERITIES = createSnykSeveritiesMap();
-    this.codeSecurityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
-    this.codeQualityReview = vscode.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
+    this.codeSecurityReview = this.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
+    this.codeQualityReview = this.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
 
     this.disposables.push(
       this.codeSecurityReview,
@@ -108,11 +116,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     }
   }
 
-  public getFullSuggestion(
-    suggestionId: string,
-    uri: vscode.Uri,
-    position: vscode.Range,
-  ): completeFileSuggestionType | undefined {
+  public getFullSuggestion(suggestionId: string, uri: Uri, position: Range): completeFileSuggestionType | undefined {
     return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position);
   }
 
@@ -120,7 +124,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     return checkCompleteSuggestion(this.analysisResults, suggestion);
   }
 
-  public findSuggestion(diagnostic: vscode.Diagnostic): ICodeSuggestion | undefined {
+  public findSuggestion(diagnostic: Diagnostic): ICodeSuggestion | undefined {
     return this.diagnosticSuggestion.get(diagnostic);
   }
 
@@ -131,8 +135,8 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   }: {
     issuePositions: FileSuggestion;
     suggestion: ICodeSuggestion;
-    fileUri: vscode.Uri;
-  }): vscode.Diagnostic {
+    fileUri: Uri;
+  }): Diagnostic {
     const { message } = suggestion;
     return {
       code: '',
@@ -149,11 +153,9 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     };
   }
 
-  private createIssuesList(
-    options: IIssuesListOptions,
-  ): [securityIssues: vscode.Diagnostic[], qualityIssues: vscode.Diagnostic[]] {
-    const securityIssues: vscode.Diagnostic[] = [];
-    const qualityIssues: vscode.Diagnostic[] = [];
+  private createIssuesList(options: IIssuesListOptions): [securityIssues: Diagnostic[], qualityIssues: Diagnostic[]] {
+    const securityIssues: Diagnostic[] = [];
+    const qualityIssues: Diagnostic[] = [];
 
     const { fileIssuesList, suggestions, fileUri } = options;
 
@@ -194,7 +196,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         continue;
       }
 
-      const fileUri = vscode.Uri.file(filePath);
+      const fileUri = this.uriAdapter.file(filePath);
       if (!fileUri) {
         return;
       }
@@ -227,12 +229,12 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
       const [securityIssues, qualityIssues] = this.createIssuesList({
         fileIssuesList,
         suggestions: this.analysisResults.suggestions,
-        fileUri: vscode.Uri.file(updatedFile.fullPath),
+        fileUri: this.uriAdapter.file(updatedFile.fullPath),
       });
       if (isSecurityReviewFile) {
-        this.codeSecurityReview?.set(vscode.Uri.file(updatedFile.fullPath), [...securityIssues]);
+        this.codeSecurityReview?.set(this.uriAdapter.file(updatedFile.fullPath), [...securityIssues]);
       } else if (isQualityReviewFile) {
-        this.codeQualityReview?.set(vscode.Uri.file(updatedFile.fullPath), [...qualityIssues]);
+        this.codeQualityReview?.set(this.uriAdapter.file(updatedFile.fullPath), [...qualityIssues]);
       }
     } catch (err) {
       await this.errorHandler.processError(err, {
