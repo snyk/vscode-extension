@@ -1,17 +1,12 @@
 import { analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
-import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
-import { SNYK_CONTEXT } from '../common/constants/views';
 import { ErrorHandler } from '../common/error/errorHandler';
 import { ISnykCodeErrorHandler } from '../common/error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
-import { getSastSettings } from '../common/services/cliConfigService';
-import { IContextService } from '../common/services/contextService';
-import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
