@@ -1,4 +1,4 @@
-import { analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
+import { AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
 import { ISnykApiClient } from '../common/api/apiСlient';
@@ -27,6 +27,7 @@ import { FalsePositive } from './falsePositive/falsePositive';
 import { ISnykCodeAnalyzer } from './interfaces';
 import { messages as analysisMessages } from './messages/analysis';
 import { messages } from './messages/error';
+import { IssueUtils } from './utils/issueUtils';
 import {
   FalsePositiveWebviewModel,
   FalsePositiveWebviewProvider,
@@ -50,7 +51,11 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
   activateWebviewProviders(): void;
-  reportFalsePositive(falsePositive: FalsePositive): Promise<void>;
+  reportFalsePositive(
+    falsePositive: FalsePositive,
+    isSecurityTypeIssue: boolean,
+    issueSeverity: AnalysisSeverity,
+  ): Promise<void>;
 }
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
@@ -85,7 +90,13 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     super();
     this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler);
 
-    this.falsePositiveProvider = new FalsePositiveWebviewProvider(this, this.window, extensionContext, this.logger);
+    this.falsePositiveProvider = new FalsePositiveWebviewProvider(
+      this,
+      this.window,
+      extensionContext,
+      this.logger,
+      this.analytics,
+    );
     this.suggestionProvider = new CodeSuggestionWebviewProvider(
       config,
       this.analyzer,
@@ -271,9 +282,19 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.falsePositiveProvider.activate();
   }
 
-  async reportFalsePositive(falsePositive: FalsePositive): Promise<void> {
+  async reportFalsePositive(
+    falsePositive: FalsePositive,
+    isSecurityTypeIssue: boolean,
+    issueSeverity: AnalysisSeverity,
+  ): Promise<void> {
     try {
       await this.falsePositiveApi.report(falsePositive, this.user);
+
+      this.analytics.logFalsePositiveIsSubmitted({
+        issueId: falsePositive.id,
+        issueType: IssueUtils.getIssueType(isSecurityTypeIssue),
+        severity: IssueUtils.severityAsText(issueSeverity),
+      });
     } catch (e) {
       ErrorHandler.handle(e, this.logger, messages.reportFalsePositiveFailed);
     }

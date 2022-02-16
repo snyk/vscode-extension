@@ -21,7 +21,7 @@ export class FalsePositive {
     }
 
     this.message = suggestion.message;
-    this.id = suggestion.id;
+    this.id = decodeURIComponent(suggestion.id);
     this.rule = suggestion.rule;
     this.primaryFilePath = suggestion.uri;
 

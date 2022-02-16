@@ -3,6 +3,7 @@ import path from 'path';
 import itly, {
   AnalysisIsReadyProperties,
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
+  FalsePositiveIsSubmittedProperties,
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
   QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
@@ -48,6 +49,8 @@ export interface IAnalytics {
   logPluginIsUninstalled(userId?: string): void;
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
+  logFalsePositiveIsDisplayed(): void;
+  logFalsePositiveIsSubmitted(properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>): void;
 }
 
 /**
@@ -246,6 +249,31 @@ export class Iteratively implements IAnalytics {
     }
 
     itly.issueHoverIsDisplayed(this.user.authenticatedId, properties);
+  }
+
+  public logFalsePositiveIsDisplayed(): void {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
+      return;
+    }
+
+    itly.falsePositiveIsDisplayed(this.user.authenticatedId, {
+      ide: this.ide,
+      eventSource: 'IDE',
+    });
+  }
+
+  public logFalsePositiveIsSubmitted(
+    properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>,
+  ): void {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
+      return;
+    }
+
+    itly.falsePositiveIsSubmitted(this.user.authenticatedId, {
+      ...properties,
+      ide: this.ide,
+      eventSource: 'IDE',
+    });
   }
 
   private canReportEvents(): boolean {

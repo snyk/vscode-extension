@@ -49,23 +49,23 @@ export interface IdentifyProperties {
   /**
    * when a User record is an actual user or when it’s a “service account”
    */
-  accountType?: "user" | "service" | "app-instance";
-  /**
-   * Link to access more information about the user
-   */
-  adminLink?: string;
+  accountType?: "user" | "service" | "app-instance" | "automated-test-user";
   /**
    * Link to access more information about the user
    */
   admin_link?: string;
   /**
-   * Auth provider (login method)
+   * Link to access more information about the user
    */
-  authProvider?: string;
+  adminLink?: string;
   /**
    * Auth provider (login method)
    */
   auth_provider?: string;
+  /**
+   * Auth provider (login method)
+   */
+  authProvider?: string;
   /**
    * Timestamp of user creation
    */
@@ -106,10 +106,6 @@ export interface IdentifyProperties {
    * Whether or not the user should be considered a Snyk administrator
    */
   isSnykAdmin?: boolean;
-  /**
-   * Name of the user
-   */
-  name?: string;
   /**
    * Used by Marketo to determine whether to send product updates emails to users. We are setting this value during product updates consent flow after registration.
    */
@@ -310,6 +306,75 @@ export interface AuthenticateButtonIsClickedProperties {
    * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
    */
   ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+}
+
+export interface FalsePositiveIsDisplayedProperties {
+  /**
+   * Used to identify the source for multi-source events.
+   *
+   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, App, Learn, IDE |
+   */
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+}
+
+export interface FalsePositiveIsSubmittedProperties {
+  /**
+   * Used to identify the source for multi-source events.
+   *
+   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, App, Learn, IDE |
+   */
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
+   * Issue ID as received from the backend.
+   */
+  issueId?: string;
+  /**
+   * Issue type
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, Code Quality Issue, Code Security Vulnerability, Licence Issue, Open Source Vulnerability, Infrastructure as Code Issue, Container Vulnerability |
+   */
+  issueType:
+    | "Advisor"
+    | "Code Quality Issue"
+    | "Code Security Vulnerability"
+    | "Licence Issue"
+    | "Open Source Vulnerability"
+    | "Infrastructure as Code Issue"
+    | "Container Vulnerability";
+  /**
+   * Severity of the issue
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | High, Medium, Low, Critical |
+   */
+  severity?: "High" | "Medium" | "Low" | "Critical";
 }
 
 export interface IssueHoverIsDisplayedProperties {
@@ -532,6 +597,42 @@ export class AuthenticateButtonIsClicked implements Event {
   }
 }
 
+export class FalsePositiveIsDisplayed implements Event {
+  name = 'False Positive Is Displayed';
+  id = '73047ba4-5e6b-4472-8d4e-1923fc7117f4';
+  version = '1.0.0';
+  properties: FalsePositiveIsDisplayedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: FalsePositiveIsDisplayedProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
+export class FalsePositiveIsSubmitted implements Event {
+  name = 'False Positive Is Submitted';
+  id = '299be947-f18c-41c4-96f8-33f4c8daa5a1';
+  version = '1.0.0';
+  properties: FalsePositiveIsSubmittedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: FalsePositiveIsSubmittedProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
@@ -703,11 +804,13 @@ class Itly {
       plugins: [
         new SchemaValidatorPlugin({
           'group': {"type":"object","properties":{"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"internalName":{"type":"string"},"name":{"type":"string"},"plan":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance"]},"adminLink":{"type":"string"},"admin_link":{"type":"string"},"authProvider":{"type":"string"},"auth_provider":{"type":"string"},"createdAt":{"type":"number"},"created_at":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"name":{"type":"string"},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utmCampaign":{"type":"string"},"utm_medium":{"type":"string"},"utmMedium":{"type":"string"},"utmSource":{"type":"string"},"utm_source":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"admin_link":{"type":"string"},"adminLink":{"type":"string"},"auth_provider":{"type":"string"},"authProvider":{"type":"string"},"createdAt":{"type":"number"},"created_at":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utmCampaign":{"type":"string"},"utm_medium":{"type":"string"},"utmMedium":{"type":"string"},"utmSource":{"type":"string"},"utm_source":{"type":"string"}},"additionalProperties":false,"required":[]},
           'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
           'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
           'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
           'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
           'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
@@ -808,6 +911,38 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new AuthenticateButtonIsClicked(properties), options);
+  }
+
+  /**
+   * This event fires when the "Report false positive" view is shown in IDE.
+   *
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. eventSource)
+   * @param options Options for this track call.
+   */
+  falsePositiveIsDisplayed(
+    userId: string,
+    properties: FalsePositiveIsDisplayedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new FalsePositiveIsDisplayed(properties), options);
+  }
+
+  /**
+   * This event fires when false positive is reported from IDE.
+   *
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. eventSource)
+   * @param options Options for this track call.
+   */
+  falsePositiveIsSubmitted(
+    userId: string,
+    properties: FalsePositiveIsSubmittedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new FalsePositiveIsSubmitted(properties), options);
   }
 
   /**

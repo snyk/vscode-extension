@@ -15,9 +15,11 @@
       content: string;
     };
     title: string;
-    severity: string;
+    severity: number;
+    severityText: string;
     suggestionType: 'Issue' | 'Vulnerability';
     cwe: string[];
+    isSecurityTypeIssue: boolean;
   };
 
   const vscode = acquireVsCodeApi();
@@ -31,6 +33,8 @@
       value: {
         falsePositive: model.falsePositive,
         content: editor.value,
+        isSecurityTypeIssue: model.isSecurityTypeIssue,
+        issueSeverity: model.severity,
       },
     });
   }
@@ -65,13 +69,13 @@
     setEditorCode();
 
     function setSeverityIcon() {
-      if (model.severity) {
+      if (model.severityText) {
         severity.querySelectorAll('img').forEach(n => {
           if (n.id.slice(-1) === 'l') {
-            if (n.id.includes(model.severity)) n.className = 'icon light-only';
+            if (n.id.includes(model.severityText)) n.className = 'icon light-only';
             else n.className = 'icon light-only hidden';
           } else {
-            if (n.id.includes(model.severity)) n.className = 'icon dark-only';
+            if (n.id.includes(model.severityText)) n.className = 'icon dark-only';
             else n.className = 'icon dark-only hidden';
           }
         });
