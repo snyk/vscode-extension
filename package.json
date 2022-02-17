@@ -341,7 +341,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./",
+    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "watch-resources": "sass media --no-source-map --watch",
