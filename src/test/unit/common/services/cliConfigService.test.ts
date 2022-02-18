@@ -25,7 +25,7 @@ suite('CLI Config Service', () => {
     strictEqual(
       getFake.calledWith(sinon.match.any, {
         headers: {
-          'x-snyk-ide': `vsc-${await Configuration.getVersion()}`,
+          'x-snyk-ide': `${Configuration.source}-${await Configuration.getVersion()}`,
         },
       }),
       true,

@@ -163,8 +163,12 @@ export class Configuration implements IConfiguration {
     await this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, this.getConfigName(TOKEN_SETTING), token, true);
   }
 
+  static get source(): string {
+    return IDE_NAME_SHORT;
+  }
+
   get source(): string {
-    return this.processEnv.GITPOD_WORKSPACE_ID ? 'gitpod' : IDE_NAME_SHORT;
+    return Configuration.source;
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration | undefined {
