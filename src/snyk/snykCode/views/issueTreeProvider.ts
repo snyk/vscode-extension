@@ -7,6 +7,7 @@ import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProv
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { ISnykCodeService } from '../codeService';
 import { SNYK_SEVERITIES } from '../constants/analysis';
+import { messages } from '../messages/analysis';
 import { getSnykSeverity } from '../utils/analysisUtils';
 import { CodeIssueCommandArg } from './interfaces';
 
@@ -46,7 +47,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     let nIssues = 0;
     if (!this.contextService.shouldShowCodeAnalysis) return review;
 
-    if (this.snykCode.hasError) {
+    if (this.snykCode.hasTransientError) {
+      return this.getTransientErrorTreeNodes();
+    } else if (this.snykCode.hasError) {
       return [this.getErrorEncounteredTreeNode()];
     }
 
@@ -170,5 +173,22 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     });
 
     return [nodes, severityCounts];
+  }
+
+  private getTransientErrorTreeNodes(): TreeNode[] {
+    return [
+      new TreeNode({
+        text: messages.temporaryFailed,
+        internal: {
+          isError: true,
+        },
+      }),
+      new TreeNode({
+        text: messages.retry,
+        internal: {
+          isError: true,
+        },
+      }),
+    ];
   }
 }

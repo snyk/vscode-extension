@@ -1,10 +1,10 @@
 import { AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
-import { IConfiguration } from '../common/configuration/configuration';
+import { FeaturesConfiguration, IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
 import { ErrorHandler } from '../common/error/errorHandler';
-import { ISnykCodeErrorHandler } from '../common/error/snykCodeErrorHandler';
+import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { IViewManagerService } from '../common/services/viewManagerService';
@@ -39,6 +39,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>;
   hasError: boolean;
+  hasTransientError: boolean;
 
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
@@ -63,6 +64,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   private progress: Progress;
   private _analysisStatus = '';
   private _analysisProgress = '';
+  private temporaryFailed = false;
   private failed = false;
 
   constructor(
@@ -105,6 +107,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   get hasError(): boolean {
     return this.failed;
   }
+  get hasTransientError(): boolean {
+    return this.temporaryFailed;
+  }
 
   get analysisStatus(): string {
     return this._analysisStatus;
@@ -123,26 +128,16 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     try {
       Logger.info(analysisMessages.started);
 
-      if (reportTriggeredEvent) {
-        const analysisType: SupportedAnalysisProperties[] = [];
-        if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
-        if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
+      // reset error state
+      this.temporaryFailed = false;
+      this.failed = false;
 
-        if (analysisType) {
-          this.analytics.logAnalysisIsTriggered({
-            analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
-            ide: IDE_NAME,
-            triggeredByUser: manualTrigger,
-          });
-        }
-      }
-
+      this.reportAnalysisIsTriggered(reportTriggeredEvent, enabledFeatures, manualTrigger);
       this.analysisStarted();
 
       let result: FileAnalysis | null = null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
-        this.changedFiles.clear();
         result = await extendAnalysis({ ...this.remoteBundle, files: changedFiles });
       } else {
         result = await analyzeFolders({
@@ -191,10 +186,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
         }
 
         this.suggestionProvider.checkCurrentSuggestion();
+
+        // cleanup analysis state
+        this.changedFiles.clear();
       }
     } catch (err) {
-      await this.errorHandler.processError(err, undefined, (error: Error) => {
-        this.errorEncountered(error);
+      this.temporaryFailed = true;
+      await this.errorHandler.processError(err, undefined, () => {
+        this.errorEncountered();
       });
 
       if (enabledFeatures?.codeSecurityEnabled) {
@@ -217,14 +216,35 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     }
   }
 
+  private reportAnalysisIsTriggered(
+    reportTriggeredEvent: boolean,
+    enabledFeatures: FeaturesConfiguration | undefined,
+    manualTrigger: boolean,
+  ) {
+    if (reportTriggeredEvent) {
+      const analysisType: SupportedAnalysisProperties[] = [];
+      if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
+      if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
+
+      if (analysisType) {
+        this.analytics.logAnalysisIsTriggered({
+          analysisType: analysisType as [SupportedAnalysisProperties, ...SupportedAnalysisProperties[]],
+          ide: IDE_NAME,
+          triggeredByUser: manualTrigger,
+        });
+      }
+    }
+  }
+
   updateStatus(status: string, progress: string): void {
     this._analysisStatus = status;
     this._analysisProgress = progress;
   }
 
-  errorEncountered(error: Error): void {
+  errorEncountered(): void {
+    this.temporaryFailed = false;
     this.failed = true;
-    this.logger.error(`${analysisMessages.failed} ${JSON.stringify(error)}`);
+    this.logger.error(analysisMessages.failed);
   }
 
   addChangedFile(filePath: string): void {

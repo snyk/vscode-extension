@@ -26,7 +26,6 @@ export const SNYK_CONTEXT = {
 };
 
 export const SNYK_ERROR_CODES = {
-  TRANSIENT: 'transient',
   BLOCKING: 'blocking',
 };
 

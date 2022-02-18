@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { ExtensionContext as VSCodeExtensionContext } from '../../common/vscode/types';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge } from '../views/loadingBadge';
@@ -28,7 +28,7 @@ export interface ISnykLib {
 
 export interface IExtension extends IBaseSnykModule, ISnykLib {
   context: ExtensionContext | undefined;
-  activate(context: vscode.ExtensionContext): void;
+  activate(context: VSCodeExtensionContext): void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
