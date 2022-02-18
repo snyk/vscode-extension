@@ -1,23 +1,19 @@
 import { AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
-import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
-import { SNYK_CONTEXT } from '../common/constants/views';
 import { ErrorHandler } from '../common/error/errorHandler';
 import { ISnykCodeErrorHandler } from '../common/error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
-import { getSastSettings } from '../common/services/cliConfigService';
-import { IContextService } from '../common/services/contextService';
-import { IOpenerService } from '../common/services/openerService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
+import { IUriAdapter } from '../common/vscode/uri';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
@@ -47,8 +43,6 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
   errorEncountered(error: Error): void;
-  checkCodeEnabled(): Promise<boolean>;
-  enable(): Promise<boolean>;
   addChangedFile(filePath: string): void;
   activateWebviewProviders(): void;
   reportFalsePositive(
@@ -74,21 +68,19 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   constructor(
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
-    private readonly openerService: IOpenerService,
     private readonly viewManagerService: IViewManagerService,
-    private readonly contextService: IContextService,
     private readonly workspace: IVSCodeWorkspace,
     readonly window: IVSCodeWindow,
     private readonly user: User,
-    private readonly snykApiClient: ISnykApiClient,
     private readonly falsePositiveApi: IFalsePositiveApi,
     private readonly logger: ILog,
     private readonly analytics: IAnalytics,
     readonly languages: IVSCodeLanguages,
     private readonly errorHandler: ISnykCodeErrorHandler,
+    private readonly uriAdapter: IUriAdapter,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler);
+    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter);
 
     this.falsePositiveProvider = new FalsePositiveWebviewProvider(
       this,
@@ -235,44 +227,6 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.logger.error(`${analysisMessages.failed} ${JSON.stringify(error)}`);
   }
 
-  async checkCodeEnabled(): Promise<boolean> {
-    const enabled = await this.isEnabled();
-
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-
-    return enabled;
-  }
-
-  private async isEnabled(): Promise<boolean> {
-    const settings = await getSastSettings(this.snykApiClient);
-    return settings.sastEnabled;
-  }
-
-  async enable(): Promise<boolean> {
-    let settings = await getSastSettings(this.snykApiClient);
-    if (settings.sastEnabled) {
-      return true;
-    }
-
-    if (this.config.snykCodeUrl != null) {
-      await this.openerService.openBrowserUrl(this.config.snykCodeUrl);
-    }
-
-    // Poll for changed settings (65 sec)
-    for (let i = 2; i < 12; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.sleep(i * 1000);
-
-      // eslint-disable-next-line no-await-in-loop
-      settings = await getSastSettings(this.snykApiClient);
-      if (settings.sastEnabled) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   addChangedFile(filePath: string): void {
     this.changedFiles.add(filePath);
   }
@@ -304,6 +258,4 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.progress.removeAllListeners();
     this.analyzer.dispose();
   }
-
-  private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 }

@@ -72,9 +72,9 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   }
 
   async enableCode(): Promise<void> {
-    const wasEnabled = await this.snykCode.enable();
+    const wasEnabled = await this.codeSettings.enable();
     if (wasEnabled) {
-      await this.snykCode.checkCodeEnabled();
+      await this.codeSettings.checkCodeEnabled();
 
       Logger.info('Snyk Code was enabled.');
       try {
@@ -91,7 +91,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       return;
     }
 
-    const codeEnabled = await this.snykCode.checkCodeEnabled();
+    const codeEnabled = await this.codeSettings.checkCodeEnabled();
     if (!codeEnabled) {
       return;
     }

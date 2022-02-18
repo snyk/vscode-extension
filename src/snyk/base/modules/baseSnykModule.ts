@@ -14,6 +14,7 @@ import { User } from '../../common/user';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
+import { CodeSettings, ICodeSettings } from '../../snykCode/codeSettings';
 import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
 import { OssService } from '../../snykOss/services/ossService';
@@ -48,6 +49,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected snykApiClient: ISnykApiClient;
   protected falsePositiveApi: IFalsePositiveApi;
   snykCode: ISnykCodeService;
+  protected codeSettings: ICodeSettings;
 
   readonly loadingBadge: ILoadingBadge;
   protected user: User;
@@ -65,6 +67,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.snykApiClient = new SnykApiClient(configuration);
     this.falsePositiveApi = new FalsePositiveApi(configuration);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this);
+    this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
   }
 
   abstract runScan(): Promise<void>;
