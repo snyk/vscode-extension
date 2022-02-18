@@ -38,6 +38,10 @@ export class IssueUtils {
     }
   };
 
+  static getIssueType = (isSecurityType: boolean): 'Code Security Vulnerability' | 'Code Quality Issue' => {
+    return isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue';
+  }
+
   static createCorrectIssuePlacement = (item: FileSuggestion): IssuePlacementPosition => {
     const rowOffset = 1;
     const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);

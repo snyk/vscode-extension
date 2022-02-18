@@ -1,4 +1,6 @@
+import { AnalysisSeverity } from '@snyk/code-client';
 import * as vscode from 'vscode';
+import { IAnalytics } from '../../../common/analytics/itly';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_FALSE_POSITIVE_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -20,15 +22,17 @@ enum FalsePositiveViewEventMessageType {
 
 type FalsePositiveViewEventMessage = {
   type: FalsePositiveViewEventMessageType;
-  value: any;
+  value: unknown;
 };
 
 export type FalsePositiveWebviewModel = {
   falsePositive: FalsePositive;
   title: string;
-  severity: string;
+  severity: AnalysisSeverity;
+  severityText: string;
   suggestionType: 'Issue' | 'Vulnerability';
   cwe: string[];
+  isSecurityTypeIssue: boolean;
 };
 
 export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveWebviewModel> {
@@ -37,6 +41,7 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
     private readonly window: IVSCodeWindow,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
+    private readonly analytics: IAnalytics,
   ) {
     super(context, logger);
   }
@@ -70,6 +75,8 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
       await this.panel.webview.postMessage({ type: 'set', args: model });
 
       this.registerListeners();
+
+      this.analytics.logFalsePositiveIsDisplayed();
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.reportFalsePositiveViewShowFailed);
     }
@@ -84,8 +91,13 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
         switch (data.type) {
           case FalsePositiveViewEventMessageType.Send:
             // eslint-disable-next-line no-case-declarations
-            const { falsePositive, content } = data.value as { falsePositive: FalsePositive; content: string };
-            await this.reportFalsePositive(falsePositive, content);
+            const { falsePositive, content, isSecurityTypeIssue, issueSeverity } = data.value as {
+              falsePositive: FalsePositive;
+              content: string;
+              isSecurityTypeIssue: boolean;
+              issueSeverity: AnalysisSeverity;
+            };
+            await this.reportFalsePositive(falsePositive, content, isSecurityTypeIssue, issueSeverity);
             break;
           case FalsePositiveViewEventMessageType.OpenBrowser:
             void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
@@ -103,9 +115,14 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
     this.panel.onDidChangeViewState(this.checkVisibility.bind(this), null, this.disposables);
   }
 
-  private async reportFalsePositive(falsePositive: FalsePositive, content: string): Promise<void> {
+  private async reportFalsePositive(
+    falsePositive: FalsePositive,
+    content: string,
+    isSecurityTypeIssue: boolean,
+    issueSeverity: AnalysisSeverity,
+  ): Promise<void> {
     falsePositive.content = content;
-    await this.codeService.reportFalsePositive(falsePositive);
+    await this.codeService.reportFalsePositive(falsePositive, isSecurityTypeIssue, issueSeverity);
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {

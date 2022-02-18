@@ -94,7 +94,7 @@ export class CommandController {
       this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: decodeURIComponent(suggestion.id),
-        issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
+        issueType: IssueUtils.getIssueType(suggestion.isSecurityType),
         severity: IssueUtils.severityAsText(suggestion.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
@@ -134,7 +134,9 @@ export class CommandController {
       title: suggestion.title.length ? suggestion.title : suggestion.message,
       cwe: suggestion.cwe,
       suggestionType: suggestion.isSecurityType ? 'Vulnerability' : 'Issue',
-      severity: IssueUtils.severityAsText(suggestion.severity).toLowerCase(),
+      severity: suggestion.severity,
+      severityText: IssueUtils.severityAsText(suggestion.severity).toLowerCase(),
+      isSecurityTypeIssue: suggestion.isSecurityType,
     };
 
     await this.snykCode.falsePositiveProvider.showPanel(model);

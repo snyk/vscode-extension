@@ -51,7 +51,7 @@ export class DisposableHoverProvider implements Disposable {
 
     this.analytics.logIssueHoverIsDisplayed({
       issueId: suggestion.id,
-      issueType: suggestion.isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue',
+      issueType: IssueUtils.getIssueType(suggestion.isSecurityType),
       severity: IssueUtils.severityAsText(suggestion.severity),
       ide: IDE_NAME,
     });
