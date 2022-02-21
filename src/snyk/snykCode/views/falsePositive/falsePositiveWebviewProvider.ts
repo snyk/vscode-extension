@@ -64,10 +64,7 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
             viewColumn: vscode.ViewColumn.One,
             preserveFocus: true,
           },
-          {
-            enableScripts: true,
-            localResourceRoots: [this.context.getExtensionUri()],
-          },
+          this.getWebviewOptions(),
         );
       }
 

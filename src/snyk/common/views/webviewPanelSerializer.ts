@@ -9,7 +9,11 @@ export class WebviewPanelSerializer<Provider extends WebviewProvider<State>, Sta
       return Promise.resolve();
     }
 
+    // Reset the webview options so we use latest uri for `localResourceRoots`.
+    webviewPanel.webview.options = this.provider.getWebviewOptions();
+
     this.provider.restorePanel(webviewPanel);
+
     return this.provider.showPanel(state);
   }
 }

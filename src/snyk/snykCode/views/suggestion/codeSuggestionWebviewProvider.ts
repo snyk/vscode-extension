@@ -76,10 +76,7 @@ export class CodeSuggestionWebviewProvider
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
           },
-          {
-            localResourceRoots: [this.context.getExtensionUri()],
-            enableScripts: true,
-          },
+          this.getWebviewOptions(),
         );
       }
 
