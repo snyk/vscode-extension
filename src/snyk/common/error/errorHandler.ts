@@ -27,7 +27,8 @@ export class ErrorHandler {
    * Should be used to log locally and report error event remotely.
    */
   static handle(error: Error, logger: ILog, message?: string): void {
-    logger.error(message ? `${message} ${error}` : error.toString());
+    const errorStr = JSON.stringify(error, Object.getOwnPropertyNames(error));
+    logger.error(message ? `${message}. ${errorStr}` : errorStr);
     ErrorReporter.capture(error);
   }
 }

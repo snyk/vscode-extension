@@ -1,7 +1,7 @@
 import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../../common/analytics/itly';
-import { ISnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
+import { ISnykCodeErrorHandler } from '../error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errors';
 import { HoverAdapter } from '../../common/vscode/hover';

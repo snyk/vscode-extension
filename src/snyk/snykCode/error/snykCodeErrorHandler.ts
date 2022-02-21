@@ -1,12 +1,12 @@
 import { constants } from '@snyk/code-client';
 import { errorType, IBaseSnykModule } from '../../base/modules/interfaces';
 import { ILoadingBadge } from '../../base/views/loadingBadge';
-import { configuration } from '../configuration/instance';
-import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../constants/general';
-import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../constants/views';
-import { ILog } from '../logger/interfaces';
-import { IContextService } from '../services/contextService';
-import { ErrorHandler } from './errorHandler';
+import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../../common/constants/general';
+import { SNYK_CONTEXT } from '../../common/constants/views';
+import { ILog } from '../../common/logger/interfaces';
+import { IContextService } from '../../common/services/contextService';
+import { ErrorHandler } from '../../common/error/errorHandler';
+import { IConfiguration } from '../../common/configuration/configuration';
 
 export interface ISnykCodeErrorHandler {
   resetTransientErrors(): void;
@@ -25,6 +25,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     private loadingBadge: ILoadingBadge,
     private readonly logger: ILog,
     private readonly baseSnykModule: IBaseSnykModule,
+    private readonly configuration: IConfiguration,
   ) {
     super();
   }
@@ -50,8 +51,6 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     options: { [key: string]: unknown } = {},
     callback: (error: Error) => void,
   ): Promise<void> {
-    console.debug(options);
-
     const defaultErrorHandler = () => {
       this.generalErrorHandler(error, options, callback);
     };
@@ -88,13 +87,16 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     if (errorHandlers.hasOwnProperty(errorStatusCode)) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await errorHandlers[errorStatusCode]();
+    } else if (error instanceof Error && error.message === 'Failed to get remote bundle') {
+      // checkBundle API call returns 404 sometimes that gets propagated as an Error to us from 'code-client', treat as a transient error [ROAD-683]
+      await this.connectionErrorHandler(error, options, callback);
     } else {
       defaultErrorHandler();
     }
   }
 
   private async authenticationErrorHandler(): Promise<void> {
-    await configuration.setToken('');
+    await this.configuration.setToken('');
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
     this.loadingBadge.setLoadingBadge(true);
   }
@@ -114,11 +116,10 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     options: { [key: string]: unknown },
     callback: (error: Error) => void,
   ): Promise<void> {
-    this.logger.error('Connection error to Snyk Code service.');
+    this.logger.error(`Connection error to Snyk Code. Try count: ${this.transientErrors + 1}.`);
     if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler(error, options, callback);
 
     this.transientErrors += 1;
-    await this.contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.TRANSIENT);
     setTimeout(() => {
       this.baseSnykModule.runCodeScan().catch(err => this.capture(err, options));
     }, CONNECTION_ERROR_RETRY_INTERVAL);

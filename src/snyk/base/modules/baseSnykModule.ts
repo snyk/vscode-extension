@@ -3,7 +3,7 @@ import { IAnalytics } from '../../common/analytics/itly';
 import { ISnykApiClient, SnykApiClient } from '../../common/api/apiСlient';
 import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
-import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../common/error/snykCodeErrorHandler';
+import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
@@ -66,7 +66,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.loadingBadge = new LoadingBadge();
     this.snykApiClient = new SnykApiClient(configuration);
     this.falsePositiveApi = new FalsePositiveApi(configuration);
-    this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this);
+    this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this, configuration);
     this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
   }
 

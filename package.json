@@ -236,11 +236,6 @@
     "viewsWelcome": [
       {
         "view": "snyk.views.welcome",
-        "contents": "Snyk is temporarily unavailable\nWe are automatically retrying to connect...",
-        "when": "snyk:error == 'transient'"
-      },
-      {
-        "view": "snyk.views.welcome",
         "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc)!",
         "when": "snyk:error == 'blocking'"
       },
