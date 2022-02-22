@@ -5,7 +5,7 @@ import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
-import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
+import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { messages as errorMessages } from '../../messages/error';
@@ -49,10 +49,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
           },
-          {
-            enableScripts: true,
-            localResourceRoots: [this.context.getExtensionUri()],
-          },
+          this.getWebviewOptions(),
         );
       }
 

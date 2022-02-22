@@ -2,11 +2,13 @@ import * as vscode from 'vscode';
 import { ILog } from '../logger/interfaces';
 import { Logger } from '../logger/logger';
 import { ExtensionContext } from '../vscode/extensionContext';
+import { WebviewOptions } from '../vscode/types';
 
 export interface IWebViewProvider<ViewModel> {
   activate(): void;
   disposePanel(): void;
   showPanel(suggestion: ViewModel, ...args: unknown[]): Promise<void>;
+  getWebviewOptions(): WebviewOptions;
 }
 
 export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<ViewModel> {
@@ -31,6 +33,13 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
     // workaround for: https://github.com/microsoft/vscode/issues/71608
     // when resolved, we can set showPanel back to sync execution.
     await vscode.commands.executeCommand('workbench.action.focusSecondEditorGroup');
+  }
+
+  getWebviewOptions(): WebviewOptions {
+    return {
+      localResourceRoots: [this.context.getExtensionUri()],
+      enableScripts: true,
+    };
   }
 
   disposePanel(): void {
