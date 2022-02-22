@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ILog } from '../logger/interfaces';
 import { Logger } from '../logger/logger';
 import { ExtensionContext } from '../vscode/extensionContext';
-import { Uri, WebviewOptions } from '../vscode/types';
+import { WebviewOptions } from '../vscode/types';
 
 export interface IWebViewProvider<ViewModel> {
   activate(): void;
