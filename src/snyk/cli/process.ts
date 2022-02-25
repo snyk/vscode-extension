@@ -1,6 +1,8 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Configuration, IConfiguration } from '../common/configuration/configuration';
 import { ILog } from '../common/logger/interfaces';
+import { getVsCodeProxy } from '../common/proxy';
+import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CLI_INTEGRATION_NAME } from './contants/integration';
 import { CliError } from './services/cliService';
 
@@ -9,7 +11,11 @@ export class CliProcess {
 
   private runningProcess: ChildProcessWithoutNullStreams | null;
 
-  constructor(private readonly logger: ILog, private readonly config: IConfiguration) {}
+  constructor(
+    private readonly logger: ILog,
+    private readonly config: IConfiguration,
+    private readonly workspace: IVSCodeWorkspace,
+  ) {}
 
   /**
    * Returns CLI output given provided arguments.
@@ -61,6 +67,16 @@ export class CliProcess {
     if (!this.config.shouldReportEvents) {
       env = { ...env, SNYK_CFG_DISABLE_ANALYTICS: '1' };
     }
+
+    const vscodeProxy = getVsCodeProxy(this.workspace);
+    if (vscodeProxy && !process.env.HTTP_PROXY && !process.env.HTTPS_PROXY) {
+      env = {
+        ...env,
+        HTTP_PROXY: vscodeProxy,
+        HTTPS_PROXY: vscodeProxy,
+      };
+    }
+
     return env;
   }
 

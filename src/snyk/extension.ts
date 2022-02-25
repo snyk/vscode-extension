@@ -56,6 +56,7 @@ import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
+import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
 import { NpmModuleInfoFetchService } from './snykOss/services/vulnerabilityCount/npmModuleInfoFetchService';
@@ -126,7 +127,12 @@ class SnykExtension extends SnykLib implements IExtension {
       new UriAdapter(),
     );
 
-    this.cliDownloadService = new CliDownloadService(this.context, new StaticCliApi(), vsCodeWindow, Logger);
+    this.cliDownloadService = new CliDownloadService(
+      this.context,
+      new StaticCliApi(vsCodeWorkspace),
+      vsCodeWindow,
+      Logger,
+    );
     this.ossService = new OssService(
       this.context,
       Logger,
@@ -233,7 +239,11 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.initCliDownload();
 
-    const npmModuleInfoFetchService = new NpmModuleInfoFetchService(configuration, Logger);
+    const npmModuleInfoFetchService = new NpmModuleInfoFetchService(
+      configuration,
+      Logger,
+      new NpmTestApi(Logger, vsCodeWorkspace),
+    );
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
       vsCodeWindow,

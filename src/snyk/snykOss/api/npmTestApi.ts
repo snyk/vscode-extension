@@ -2,22 +2,24 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { DEFAULT_API_HEADERS } from '../../common/api/headers';
 import { configuration } from '../../common/configuration/instance';
 import { ILog } from '../../common/logger/interfaces';
-import { Logger } from '../../common/logger/logger';
+import { getAxiosProxyConfig } from '../../common/proxy';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 
-class NpmTestApi {
+export class NpmTestApi {
   private instance: AxiosInstance | null = null;
 
-  constructor(private readonly logger: ILog) {}
+  constructor(private readonly logger: ILog, private readonly workspace: IVSCodeWorkspace) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
   }
 
-  initHttp() {
+  initHttp(): AxiosInstance {
     const http = axios.create({
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
       baseURL: configuration.authHost + '/test',
+      ...getAxiosProxyConfig(this.workspace),
     });
 
     http.interceptors.response.use(
@@ -36,5 +38,3 @@ class NpmTestApi {
     return this.http.get<T, R>(url, config);
   }
 }
-
-export const npmTestApi = new NpmTestApi(Logger);
