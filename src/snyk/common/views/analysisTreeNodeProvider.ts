@@ -37,13 +37,12 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
   };
 
   protected getDurationTreeNode(): TreeNode {
-    const sDuration = Math.round((this.statusProvider.lastAnalysisDuration / 1000 + Number.EPSILON) * 100) / 100;
     const ts = new Date(this.statusProvider.lastAnalysisTimestamp);
     const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const day = ts.toLocaleDateString([], { year: '2-digit', month: '2-digit', day: '2-digit' });
 
     return new TreeNode({
-      text: messages.duration(sDuration, time, day),
+      text: messages.duration(time, day),
     });
   }
 
