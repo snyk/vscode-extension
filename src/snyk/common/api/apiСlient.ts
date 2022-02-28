@@ -1,5 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { IConfiguration } from '../configuration/configuration';
+import { getAxiosProxyConfig } from '../proxy';
+import { IVSCodeWorkspace } from '../vscode/workspace';
 import { DEFAULT_API_HEADERS } from './headers';
 
 export interface ISnykApiClient {
@@ -9,7 +11,7 @@ export interface ISnykApiClient {
 export class SnykApiClient implements ISnykApiClient {
   private instance: AxiosInstance | null = null;
 
-  constructor(private readonly configuration: IConfiguration) {}
+  constructor(private readonly configuration: IConfiguration, private readonly workspace: IVSCodeWorkspace) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
@@ -19,6 +21,7 @@ export class SnykApiClient implements ISnykApiClient {
     const http = axios.create({
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
+      ...getAxiosProxyConfig(this.workspace),
     });
 
     http.interceptors.response.use(

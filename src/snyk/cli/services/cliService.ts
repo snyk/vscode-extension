@@ -69,7 +69,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
       throw new Error('No workspace was opened.');
     }
 
-    this.cliProcess = new CliProcess(this.logger, this.config);
+    this.cliProcess = new CliProcess(this.logger, this.config, this.workspace);
     const args = this.buildArguments(foldersToTest);
 
     let output: string;

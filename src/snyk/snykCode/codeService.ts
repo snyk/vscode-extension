@@ -4,7 +4,6 @@ import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itl
 import { FeaturesConfiguration, IConfiguration } from '../common/configuration/configuration';
 import { IDE_NAME } from '../common/constants/general';
 import { ErrorHandler } from '../common/error/errorHandler';
-import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { IViewManagerService } from '../common/services/viewManagerService';
@@ -18,6 +17,7 @@ import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
+import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { IFalsePositiveApi } from './falsePositive/api/falsePositiveApi';
 import { FalsePositive } from './falsePositive/falsePositive';
 import { ISnykCodeAnalyzer } from './interfaces';

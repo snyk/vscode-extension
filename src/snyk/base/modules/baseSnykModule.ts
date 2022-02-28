@@ -24,6 +24,7 @@ import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
+import { vsCodeWorkspace } from '../../common/vscode/workspace';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -64,8 +65,8 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.openerService = new OpenerService();
     this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.loadingBadge = new LoadingBadge();
-    this.snykApiClient = new SnykApiClient(configuration);
-    this.falsePositiveApi = new FalsePositiveApi(configuration);
+    this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace);
+    this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(this.contextService, this.loadingBadge, Logger, this, configuration);
     this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
   }
