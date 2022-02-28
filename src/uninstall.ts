@@ -129,7 +129,7 @@ async function reportUninstall(): Promise<void> {
   const user = new User(undefined, authenticatedUserId);
 
   const analytics = new Iteratively(user, new UninstallLogger(), yesTelemetry, !!process.env.SNYK_VSCE_DEVELOPMENT);
-  await analytics.load();
+  analytics.load();
 
   // Report and flush the uninstall event
   analytics.logPluginIsUninstalled();

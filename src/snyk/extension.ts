@@ -71,25 +71,41 @@ class SnykExtension extends SnykLib implements IExtension {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
-    await ErrorReporter.init(
-      configuration,
-      await SnykConfiguration.get(extensionContext.extensionPath, configuration.isDevelopment),
-      extensionContext.extensionPath,
-      vsCodeEnv,
-      Logger,
-    );
+    const snykConfiguration = await this.getSnykConfiguration();
+    if (snykConfiguration) {
+      await ErrorReporter.init(configuration, snykConfiguration, extensionContext.extensionPath, vsCodeEnv, Logger);
+    }
 
     try {
-      await this.initializeExtension(vscodeContext);
+      await this.initializeExtension(vscodeContext, snykConfiguration);
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
   }
 
-  private async initializeExtension(vscodeContext: vscode.ExtensionContext) {
+  private async getSnykConfiguration(): Promise<SnykConfiguration | undefined> {
+    try {
+      const snykConfiguration = await SnykConfiguration.get(
+        extensionContext.extensionPath,
+        configuration.isDevelopment,
+      );
+
+      return snykConfiguration;
+    } catch (e) {
+      ErrorHandler.handle(e, Logger);
+    }
+  }
+
+  private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
     this.user = await User.getAnonymous(this.context);
 
-    this.analytics = new Iteratively(this.user, Logger, configuration.shouldReportEvents, configuration.isDevelopment);
+    this.analytics = new Iteratively(
+      this.user,
+      Logger,
+      configuration.shouldReportEvents,
+      configuration.isDevelopment,
+      snykConfiguration,
+    );
 
     this.settingsWatcher = new SettingsWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
@@ -231,9 +247,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
-    await this.analytics.load();
-    this.experimentService = new ExperimentService(this.user, this.context, Logger, configuration);
-    await this.experimentService.load();
+    this.analytics.load();
+    this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
+    this.experimentService.load();
 
     this.logPluginIsInstalled();
 
