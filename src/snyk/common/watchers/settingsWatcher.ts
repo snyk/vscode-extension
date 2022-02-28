@@ -24,7 +24,7 @@ class SettingsWatcher implements IWatcher {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === YES_TELEMETRY_SETTING) {
-      return await this.analytics.setShouldReportEvents(configuration.shouldReportEvents);
+      return this.analytics.setShouldReportEvents(configuration.shouldReportEvents);
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
@@ -62,11 +62,7 @@ class SettingsWatcher implements IWatcher {
           try {
             await this.onChangeConfiguration(extension, change);
           } catch (error) {
-            ErrorHandler.handle(
-              error,
-              this.logger,
-              `${errorsLogs.configWatcher}. Configuration key: ${change}`,
-            );
+            ErrorHandler.handle(error, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${change}`);
           }
         }
       },

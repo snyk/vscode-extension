@@ -3,7 +3,6 @@ import { IConfiguration } from '../../configuration/configuration';
 import { SnykConfiguration } from '../../configuration/snykConfiguration';
 import { ILog } from '../../logger/interfaces';
 import { User } from '../../user';
-import { ExtensionContext } from '../../vscode/extensionContext';
 
 export enum ExperimentKey {
   UpdateCopyOnWelcomeView = 'vscode-update-copy-on-welcome-view',
@@ -15,26 +14,23 @@ export class ExperimentService {
 
   constructor(
     private readonly user: User,
-    private readonly extensionContext: ExtensionContext,
     private readonly logger: ILog,
     private readonly configuration: IConfiguration,
+    private readonly snykConfiguration?: SnykConfiguration,
   ) {}
 
-  async load(): Promise<boolean> {
+  load(): boolean {
     if (!this.canExperiment) {
       return false;
     }
 
-    const snykConfiguration = await SnykConfiguration.get(
-      this.extensionContext.extensionPath,
-      this.configuration.isDevelopment,
-    );
-
-    if (!snykConfiguration.amplitudeExperimentApiKey) {
+    const amplitudeExperimentApiKey = this.snykConfiguration?.amplitudeExperimentApiKey;
+    if (!amplitudeExperimentApiKey) {
       this.logger.debug('Segment analytics write key is empty. No analytics will be collected.');
+      return false;
     }
 
-    this.client = Experiment.initialize(snykConfiguration.amplitudeExperimentApiKey);
+    this.client = Experiment.initialize(amplitudeExperimentApiKey);
     return true;
   }
 

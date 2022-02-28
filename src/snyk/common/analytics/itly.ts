@@ -1,5 +1,4 @@
 import SegmentPlugin from '@itly/plugin-segment-node';
-import path from 'path';
 import itly, {
   AnalysisIsReadyProperties,
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
@@ -35,9 +34,9 @@ export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
 };
 
 export interface IAnalytics {
-  load(): Promise<Iteratively | null>;
+  load(): Iteratively | null;
   flush(): Promise<void>;
-  setShouldReportEvents(shouldReportEvents: boolean): Promise<void>;
+  setShouldReportEvents(shouldReportEvents: boolean): void;
   identify(userId: string): Promise<void>;
   logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void;
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
@@ -61,32 +60,32 @@ export class Iteratively implements IAnalytics {
   private readonly ide = IDE_NAME;
 
   private loaded = false;
-  private configsPath = '../../../..';
 
   constructor(
     private readonly user: User,
     private logger: ILog,
     private shouldReportEvents: boolean,
     private isDevelopment: boolean,
+    private snykConfiguration?: SnykConfiguration,
   ) {}
 
-  async setShouldReportEvents(shouldReportEvents: boolean): Promise<void> {
+  setShouldReportEvents(shouldReportEvents: boolean): void {
     this.shouldReportEvents = shouldReportEvents;
-    await this.load();
+    this.load();
   }
 
-  async load(): Promise<Iteratively | null> {
+  load(): Iteratively | null {
     if (!this.shouldReportEvents) {
       return null;
     }
 
-    const snykConfiguration = await SnykConfiguration.get(path.join(this.configsPath), this.isDevelopment);
-    if (!snykConfiguration.segmentWriteKey) {
+    const segmentWriteKey = this.snykConfiguration?.segmentWriteKey;
+    if (!segmentWriteKey) {
       this.logger.debug('Segment analytics write key is empty. No analytics will be collected.');
       return this;
     }
 
-    const segment = new SegmentPlugin(snykConfiguration.segmentWriteKey);
+    const segment = new SegmentPlugin(segmentWriteKey);
     const isDevelopment = this.isDevelopment;
 
     if (!this.loaded) {
