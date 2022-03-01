@@ -1,5 +1,6 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { IConfiguration } from '../configuration/configuration';
+import { configuration } from '../configuration/instance';
 import { getAxiosProxyConfig } from '../proxy';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { DEFAULT_API_HEADERS } from './headers';
@@ -26,7 +27,12 @@ export class SnykApiClient implements ISnykApiClient {
 
     http.interceptors.response.use(
       response => response,
-      error => {
+      async (error: AxiosError) => {
+        if (error.response?.status === 401) {
+          await configuration.setToken(undefined);
+          console.log('Call to Snyk API failed - Invalid token');
+          return;
+        }
         console.error('Call to Snyk API failed: ', error);
         return Promise.reject(error);
       },

@@ -16,12 +16,8 @@ export class ErrorHandler {
     logger: ILog,
     contextService: IContextService,
     loadingBadge: ILoadingBadge,
-    isBlocking: boolean,
   ): Promise<void> {
-    if (isBlocking) {
-      await contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
-    }
-
+    await contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
     loadingBadge.setLoadingBadge(true);
     this.handle(error, logger);
   }
