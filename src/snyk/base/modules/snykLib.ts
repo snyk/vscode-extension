@@ -13,6 +13,9 @@ import BaseSnykModule from './baseSnykModule';
 import { ISnykLib } from './interfaces';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
+  // default set blocking to true
+  private isBlockingError = true;
+
   private async runFullScan_(manual = false): Promise<void> {
     Logger.info('Starting full scan');
 
@@ -28,7 +31,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       }
 
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
-      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
       if (!configuration.getFeaturesConfiguration()) {
         await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
@@ -37,10 +39,10 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
+      await this.validateUserToken();
+
       const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       await this.setWorkspaceContext(workspacePaths);
-
-      await this.user.identify(this.snykApiClient, this.analytics);
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
@@ -49,7 +51,18 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
         await this.startSnykCodeAnalysis(workspacePaths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
       }
     } catch (err) {
-      await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
+      await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge, this.isBlockingError);
+    }
+  }
+
+  private async validateUserToken(): Promise<void> {
+    try {
+      await this.user.identify(this.snykApiClient, this.analytics);
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+    } catch (err) {
+      this.isBlockingError = false;
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+      await this.contextService.setContext(SNYK_CONTEXT.WELCOME_VIEW_EXPERIMENT, 'control');
     }
   }
 
