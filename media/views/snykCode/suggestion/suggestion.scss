@@ -140,12 +140,9 @@
   color: #7754db;
 }
 
-.arrow.left {
-  transform: rotate(90deg);
-}
-
-.arrow.right {
-  transform: rotate(-90deg);
+.arrow-icon {
+  height: 14px;
+  width: 14px;
 }
 
 .arrow.down {
