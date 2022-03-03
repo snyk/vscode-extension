@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { IConfiguration } from '../configuration/configuration';
 import { configuration } from '../configuration/instance';
+import { ILog } from '../logger/interfaces';
 import { getAxiosProxyConfig } from '../proxy';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { DEFAULT_API_HEADERS } from './headers';
@@ -12,7 +13,11 @@ export interface ISnykApiClient {
 export class SnykApiClient implements ISnykApiClient {
   private instance: AxiosInstance | null = null;
 
-  constructor(private readonly configuration: IConfiguration, private readonly workspace: IVSCodeWorkspace) {}
+  constructor(
+    private readonly configuration: IConfiguration,
+    private readonly workspace: IVSCodeWorkspace,
+    private readonly logger: ILog,
+  ) {}
 
   private get http(): AxiosInstance {
     return this.instance != null ? this.instance : this.initHttp();
@@ -30,10 +35,10 @@ export class SnykApiClient implements ISnykApiClient {
       async (error: AxiosError) => {
         if (error.response?.status === 401) {
           await configuration.setToken(undefined);
-          console.log('Call to Snyk API failed - Invalid token');
+          this.logger.warn('Call to Snyk API failed - Invalid token');
           return;
         }
-        console.error('Call to Snyk API failed: ', error);
+        this.logger.error(`Call to Snyk API failed: ${error}`);
         return Promise.reject(error);
       },
     );

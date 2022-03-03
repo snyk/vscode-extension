@@ -49,7 +49,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
         await this.startSnykCodeAnalysis(workspacePaths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
       }
     } catch (err) {
-      console.log(err);
       await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
     }
   }
