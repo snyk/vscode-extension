@@ -242,15 +242,15 @@ export class CodeSuggestionWebviewProvider
             </div>
             <div>
               <div id="previous-example" class="arrow">
-                <img src=${images['arrow-left-dark']} class="icon arrow-icon dark-only"></img>
-                <img src=${images['arrow-left-light']} class="icon arrow-icon light-only"></img>
+                <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
+                <img src=${images['arrow-left-light']} class="arrow-icon light-only"></img>
               </div>
-              <span>
+              <span id="example-text">
                 Example <span id="example-counter">1</span>/<span id="example-number2"></span>
               </span>
               <div id="next-example" class="arrow">
-                <img src=${images['arrow-right-dark']} class="icon arrow-icon dark-only"></img>
-                <img src=${images['arrow-right-light']} class="icon arrow-icon light-only"></img>
+                <img src=${images['arrow-right-dark']} class="arrow-icon dark-only"></img>
+                <img src=${images['arrow-right-light']} class="arrow-icon light-only"></img>
               </div>
             </div>
           </div>
