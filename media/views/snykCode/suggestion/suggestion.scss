@@ -92,7 +92,8 @@
   margin: 0 auto 10px;
 }
 
-#severity-text {}
+#severity-text {
+}
 
 .vscode-dark .light-only {
   display: none;
@@ -140,12 +141,14 @@
   color: #7754db;
 }
 
-.arrow.left {
-  transform: rotate(90deg);
+#example-text {
+  margin-left: 2px;
+  margin-right: 2px;
 }
 
-.arrow.right {
-  transform: rotate(-90deg);
+.arrow-icon {
+  margin-bottom: 2px;
+  padding-bottom: 1px;
 }
 
 .arrow.down {
@@ -169,7 +172,7 @@
   background-color: #ffeef0;
 }
 
-.example-line.removed>code {
+.example-line.removed > code {
   font-weight: 600;
 }
 
@@ -177,11 +180,11 @@
   background-color: #e6ffed;
 }
 
-.example-line.added>code {
+.example-line.added > code {
   font-weight: 600;
 }
 
-.example-line>code {
+.example-line > code {
   padding-left: 30px;
   white-space: pre-wrap;
   color: #231f20;
@@ -203,27 +206,27 @@
   color: #fff;
 }
 
-.vscode-dark .example-line>code {
+.vscode-dark .example-line > code {
   color: $editor-font-color;
   font-weight: 400;
 }
 
-.vscode-dark .added>code {
+.vscode-dark .added > code {
   color: #fff;
 }
 
-.vscode-dark .removed>code {
+.vscode-dark .removed > code {
   color: #fff;
 }
 
 .suggestion-links {
   display: flex;
   width: 100%;
-  line-height: 1
+  line-height: 1;
 }
 
 #lead-url {
-  margin-left: auto
+  margin-left: auto;
 }
 
 .actions {

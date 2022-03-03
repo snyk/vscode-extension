@@ -171,6 +171,10 @@ export class CodeSuggestionWebviewProvider
       ['dark-medium-severity', 'svg'],
       ['light-icon-critical', 'svg'],
       ['dark-low-severity', 'svg'],
+      ['arrow-left-dark', 'svg'],
+      ['arrow-right-dark', 'svg'],
+      ['arrow-left-light', 'svg'],
+      ['arrow-right-light', 'svg'],
     ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`); // todo move to media folder
       if (!uri) throw new Error('Image missing.');
@@ -237,11 +241,17 @@ export class CodeSuggestionWebviewProvider
               <span id="example-link"></span>
             </div>
             <div>
-              <div id="previous-example" class="arrow left">▾</div>
-              <span>
+              <div id="previous-example" class="arrow">
+                <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
+                <img src=${images['arrow-left-light']} class="arrow-icon light-only"></img>
+              </div>
+              <span id="example-text">
                 Example <span id="example-counter">1</span>/<span id="example-number2"></span>
               </span>
-              <div id="next-example" class="arrow right">▾</div>
+              <div id="next-example" class="arrow">
+                <img src=${images['arrow-right-dark']} class="arrow-icon dark-only"></img>
+                <img src=${images['arrow-right-light']} class="arrow-icon light-only"></img>
+              </div>
             </div>
           </div>
           <div id="example"></div>
