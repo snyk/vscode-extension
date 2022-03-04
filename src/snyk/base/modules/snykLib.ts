@@ -28,6 +28,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       }
 
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
       if (!configuration.getFeaturesConfiguration()) {
         await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
@@ -36,11 +37,10 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
 
-      await this.user.identify(this.snykApiClient, this.analytics);
-      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
-
       const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       await this.setWorkspaceContext(workspacePaths);
+
+      await this.user.identify(this.snykApiClient, this.analytics);
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
