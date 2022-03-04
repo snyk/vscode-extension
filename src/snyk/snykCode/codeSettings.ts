@@ -20,6 +20,10 @@ export class CodeSettings implements ICodeSettings {
 
   async checkCodeEnabled(): Promise<boolean> {
     const settings = await this.getSastSettings();
+    if (!settings) {
+      return false;
+    }
+
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, settings.sastEnabled);
     await this.contextService.setContext(
       SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED,
@@ -31,7 +35,7 @@ export class CodeSettings implements ICodeSettings {
 
   async enable(): Promise<boolean> {
     let settings = await this.getSastSettings();
-    if (settings.sastEnabled) {
+    if (settings?.sastEnabled) {
       return true;
     }
 
@@ -46,7 +50,7 @@ export class CodeSettings implements ICodeSettings {
 
       // eslint-disable-next-line no-await-in-loop
       settings = await this.getSastSettings();
-      if (settings.sastEnabled) {
+      if (settings?.sastEnabled) {
         return true;
       }
     }
@@ -54,7 +58,7 @@ export class CodeSettings implements ICodeSettings {
     return false;
   }
 
-  getSastSettings(): Promise<SastSettings> {
+  getSastSettings(): Promise<SastSettings | undefined> {
     return getSastSettings(this.snykApiClient);
   }
 

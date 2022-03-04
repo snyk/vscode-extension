@@ -44,8 +44,10 @@ export class User {
     }
   }
 
-  private async userMe(api: ISnykApiClient): Promise<UserDto> {
-    const { data } = await api.get<UserDto>('/user/me');
-    return data;
+  private async userMe(api: ISnykApiClient): Promise<UserDto | undefined> {
+    const response = await api.get<UserDto>('/user/me');
+    if (!response) return;
+
+    return response.data;
   }
 }

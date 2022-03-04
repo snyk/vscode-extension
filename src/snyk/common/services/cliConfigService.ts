@@ -8,11 +8,14 @@ export type SastSettings = {
   };
 };
 
-export async function getSastSettings(api: ISnykApiClient): Promise<SastSettings> {
-  const { data } = await api.get<SastSettings>('cli-config/settings/sast', {
+export async function getSastSettings(api: ISnykApiClient): Promise<SastSettings | undefined> {
+  const response = await api.get<SastSettings>('cli-config/settings/sast', {
     headers: {
       'x-snyk-ide': `${Configuration.source}-${await Configuration.getVersion()}`,
     },
   });
-  return data;
+
+  if (!response) return;
+
+  return response.data;
 }
