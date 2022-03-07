@@ -1,5 +1,11 @@
 # Snyk Vulnerability Scanner Changelog
 
+## [1.2.9]
+
+### Added
+
+- Check Snyk Code enablement using configured organization from settings.
+
 ## [1.2.8]
 
 ### Fixed
