@@ -1,5 +1,5 @@
 import { ISnykApiClient } from '../api/apiСlient';
-import { Configuration } from '../configuration/configuration';
+import { Configuration, IConfiguration } from '../configuration/configuration';
 
 export type SastSettings = {
   sastEnabled: boolean;
@@ -8,10 +8,13 @@ export type SastSettings = {
   };
 };
 
-export async function getSastSettings(api: ISnykApiClient): Promise<SastSettings | undefined> {
+export async function getSastSettings(api: ISnykApiClient, config: IConfiguration): Promise<SastSettings | undefined> {
   const response = await api.get<SastSettings>('cli-config/settings/sast', {
     headers: {
       'x-snyk-ide': `${Configuration.source}-${await Configuration.getVersion()}`,
+    },
+    params: {
+      ...(config.organization ? { org: config.organization } : {}),
     },
   });
 

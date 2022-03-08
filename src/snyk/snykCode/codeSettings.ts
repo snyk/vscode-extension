@@ -59,7 +59,7 @@ export class CodeSettings implements ICodeSettings {
   }
 
   getSastSettings(): Promise<SastSettings | undefined> {
-    return getSastSettings(this.snykApiClient);
+    return getSastSettings(this.snykApiClient, this.config);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
