@@ -36,7 +36,7 @@ suite('CLI Config Service', () => {
           'x-snyk-ide': `${Configuration.source}-${await Configuration.getVersion()}`,
         },
         params: {
-          org: 'my-super-org',
+          org: config.organization,
         },
       }),
       true,
