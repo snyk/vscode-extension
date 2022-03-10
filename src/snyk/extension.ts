@@ -1,4 +1,3 @@
-import path from 'path';
 import * as vscode from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { IExtension } from './base/modules/interfaces';
@@ -88,7 +87,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   initializeLanguageClient(vscodeContext: vscode.ExtensionContext): void {
     // The server is implemented in node
-    const serverModule = vscodeContext.asAbsolutePath(path.join('language-server', 'snyk-ls.darwin.amd64'));
+    const serverModule = '/Users/michel/Git/go/snyk-ls/build/snyk-ls.darwin.amd64';
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
     const args = ['--reportErrors'];
