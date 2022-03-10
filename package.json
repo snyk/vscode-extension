@@ -2,7 +2,7 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Vulnerability Scanner",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "Easily find and fix vulnerabilities in both your code and open source dependencies with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
@@ -106,7 +106,7 @@
           },
           "snyk.advanced.organization": {
             "type": "string",
-            "description": "Specifies the organization name to run Snyk Open Source security tests tied to a specific organization.",
+            "description": "Specifies the organization name to run tests tied to a specific organization.",
             "scope": "window"
           },
           "snyk.features.openSourceSecurity": {
