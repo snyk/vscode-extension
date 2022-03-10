@@ -1,4 +1,6 @@
+import path from 'path';
 import * as vscode from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
@@ -77,10 +79,50 @@ class SnykExtension extends SnykLib implements IExtension {
     }
 
     try {
+      this.initializeLanguageClient(vscodeContext);
       await this.initializeExtension(vscodeContext, snykConfiguration);
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
+  }
+
+  initializeLanguageClient(vscodeContext: vscode.ExtensionContext): void {
+    // The server is implemented in node
+    const serverModule = vscodeContext.asAbsolutePath(path.join('language-server', 'snyk-ls.darwin.amd64'));
+    // The debug options for the server
+    // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+    const args = ['--reportErrors'];
+
+    // If the extension is launched in debug mode then the debug server options are used
+    // Otherwise the run options are used
+    const serverOptions: ServerOptions = {
+      command: serverModule,
+      args,
+    };
+
+    // Options to control the language client
+    const clientOptions: LanguageClientOptions = {
+      // Register the server for plain text documents
+      documentSelector: [{ scheme: 'file', language: '*' }],
+      synchronize: {
+        // Notify the server about file changes to '.clientrc files contained in the workspace
+        fileEvents: vsCodeWorkspace.createFileSystemWatcher('**/*'),
+      },
+    };
+
+    // Create the language client and start the client.
+    this.client = new LanguageClient('snykLanguageServer', 'Snyk Language Server', serverOptions, clientOptions);
+
+    // Start the client. This will also launch the server
+    this.client.start();
+
+    vscode.commands.registerCommand('snyk.launchBrowser', (uri: string) => {
+      void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri));
+    });
+
+    vscode.commands.registerCommand('snyk.showRule', (uri: string) => {
+      void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri));
+    });
   }
 
   private async getSnykConfiguration(): Promise<SnykConfiguration | undefined> {
@@ -278,6 +320,7 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public async deactivate(): Promise<void> {
+    await this.client.stop();
     this.snykCode.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.analytics.flush();

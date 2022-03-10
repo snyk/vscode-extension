@@ -2,10 +2,10 @@ import { checkSession, getIpFamily as getNetworkFamily, IpFamily, startSession }
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../common/constants/views';
-import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
+import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
 

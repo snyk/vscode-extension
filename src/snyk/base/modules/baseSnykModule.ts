@@ -25,6 +25,7 @@ import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarIte
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -56,6 +57,8 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected user: User;
   protected experimentService: ExperimentService;
   protected snykCodeErrorHandler: ISnykCodeErrorHandler;
+
+  protected client: LanguageClient;
 
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
