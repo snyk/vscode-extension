@@ -5,6 +5,18 @@
 ### Added
 
 - Check Snyk Code enablement using configured organization from settings.
+- Prevent Snyk Code Local Code Engine users from uploading the code to Snyk servers.
+
+### Changed
+
+- Increase navigation button sizes in Snyk Code example fixes.
+- Analysis duration removed from the results tree.
+
+### Fixed
+
+- Do not present the user with error view when token is invalid.
+- Proxy environments handling.
+- Transient error handling for Snyk Code.
 
 ## [1.2.8]
 
