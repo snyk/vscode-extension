@@ -1,4 +1,6 @@
 import { AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
+import { ConnectionOptions } from '@snyk/code-client/dist/http';
+import { v4 as uuidv4 } from 'uuid';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
 import { FeaturesConfiguration, IConfiguration } from '../common/configuration/configuration';
@@ -43,7 +45,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
 
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   updateStatus(status: string, progress: string): void;
-  errorEncountered(error: Error): void;
+  errorEncountered(requestId: string): void;
   addChangedFile(filePath: string): void;
   activateWebviewProviders(): void;
   reportFalsePositive(
@@ -124,6 +126,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     }
 
     const enabledFeatures = this.config.getFeaturesConfiguration();
+    const requestId = uuidv4();
 
     try {
       Logger.info(analysisMessages.started);
@@ -138,14 +141,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       let result: FileAnalysis | null = null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
-        result = await extendAnalysis({ ...this.remoteBundle, files: changedFiles });
+        result = await extendAnalysis({
+          ...this.remoteBundle,
+          files: changedFiles,
+          connection: this.getConnectionOptions(requestId),
+        });
       } else {
         result = await analyzeFolders({
-          connection: {
-            baseURL: this.config.snykCodeBaseURL,
-            sessionToken: this.config.snykCodeToken ?? '', // todo: handle the case appropriately
-            source: this.config.source,
-          },
+          connection: this.getConnectionOptions(requestId),
           analysisOptions: {
             legacy: true,
           },
@@ -193,7 +196,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     } catch (err) {
       this.temporaryFailed = true;
       await this.errorHandler.processError(err, undefined, () => {
-        this.errorEncountered();
+        this.errorEncountered(requestId);
       });
 
       if (enabledFeatures?.codeSecurityEnabled) {
@@ -241,10 +244,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this._analysisProgress = progress;
   }
 
-  errorEncountered(): void {
+  errorEncountered(requestId: string): void {
     this.temporaryFailed = false;
     this.failed = true;
-    this.logger.error(analysisMessages.failed);
+    this.logger.error(analysisMessages.failed(requestId));
   }
 
   addChangedFile(filePath: string): void {
@@ -277,5 +280,18 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   dispose(): void {
     this.progress.removeAllListeners();
     this.analyzer.dispose();
+  }
+
+  private getConnectionOptions(requestId: string): ConnectionOptions {
+    if (!this.config.snykCodeToken) {
+      throw new Error('Snyk token must be filled to obtain connection options');
+    }
+
+    return {
+      baseURL: this.config.snykCodeBaseURL,
+      sessionToken: this.config.snykCodeToken,
+      source: this.config.source,
+      requestId,
+    };
   }
 }
