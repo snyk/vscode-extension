@@ -1,4 +1,4 @@
-# Snyk Vulnerability Scanner Changelog
+# Snyk Security - Code and Open Source Dependencies Changelog
 
 ## [1.2.9]
 
