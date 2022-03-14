@@ -98,6 +98,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.falsePositiveProvider,
       extensionContext,
       this.logger,
+      languages,
     );
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

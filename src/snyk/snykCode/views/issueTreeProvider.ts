@@ -1,10 +1,11 @@
-import { Command, Diagnostic, DiagnosticCollection, DiagnosticSeverity, Range, Uri } from 'vscode';
+import { Command, Diagnostic, DiagnosticCollection, Range, Uri } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
+import { DiagnosticSeverity } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';

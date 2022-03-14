@@ -1,7 +1,6 @@
 import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../../common/analytics/itly';
-import { ISnykCodeErrorHandler } from '../error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errors';
 import { HoverAdapter } from '../../common/vscode/hover';
@@ -20,6 +19,7 @@ import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
 } from '../constants/analysis';
+import { ISnykCodeErrorHandler } from '../error/snykCodeErrorHandler';
 import { DisposableHoverProvider } from '../hoverProvider/hoverProvider';
 import {
   completeFileSuggestionType,
@@ -117,11 +117,11 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   }
 
   public getFullSuggestion(suggestionId: string, uri: Uri, position: Range): completeFileSuggestionType | undefined {
-    return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position);
+    return findCompleteSuggestion(this.analysisResults, suggestionId, uri, position, this.languages);
   }
 
   public checkFullSuggestion(suggestion: completeFileSuggestionType): boolean {
-    return checkCompleteSuggestion(this.analysisResults, suggestion);
+    return checkCompleteSuggestion(this.analysisResults, suggestion, this.uriAdapter);
   }
 
   public findSuggestion(diagnostic: Diagnostic): ICodeSuggestion | undefined {
@@ -141,14 +141,14 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     return {
       code: '',
       message,
-      range: createIssueCorrectRange(issuePositions),
+      range: createIssueCorrectRange(issuePositions, this.languages),
       severity: this.SEVERITIES[suggestion.severity].name,
       source: suggestion.isSecurityType
         ? DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME
         : DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
       // issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
-        relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message),
+        relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message, this.languages),
       }),
     };
   }

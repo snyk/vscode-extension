@@ -3,7 +3,14 @@ import * as vscode from 'vscode';
 export type Disposable = vscode.Disposable;
 export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
-export type DiagnosticSeverity = vscode.DiagnosticSeverity;
+export type DiagnosticRelatedInformation = vscode.DiagnosticRelatedInformation;
+export enum DiagnosticSeverity { // map of vscode.DiagnosticSeverity
+  Hint = 3,
+  Information = 2,
+  Warning = 1,
+  Error = 0,
+}
+
 export type DocumentSelector = vscode.DocumentSelector;
 export type DocumentFilter = vscode.DocumentFilter;
 export type HoverProvider = vscode.HoverProvider;
