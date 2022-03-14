@@ -60,7 +60,9 @@ how to fix or act upon:
 ![Suggestion example](media/images/readme/install-the-extension_suggestion-example.png)
 
 ## Configuration
+
 ### Environment
+
 To analyse projects, the plugin uses the Snyk CLI which needs some environment variables. The following variables are needed or helpful, dependent on the type of project you analyse:
 
 - `PATH` should contain the path to needed binaries, e.g. to maven, gradle, python, go.
@@ -71,8 +73,10 @@ Setting these variables only in a shell environment via e.g. `~/.bashrc` is not 
 - On **Windows**, you can set the variables, using the GUI or on the command line using the `setx` tool.
 - On **macOS**, the process `launchd` needs to be aware of the environment variables if you want to launch the IDE from Finder directly. You can set environment variables for applications launched via Finder using the `launchctl setenv` command e.g. on start-up or via a script you launch at user login. The provision of environment variables to the macOS UI is sometimes changing between operating system releases, so it might be easier to create a small shell script that launches the IDE to leverage the shell environment, that can be defined via `~/.bashrc`.
 - On **Linux**, updating the file `/etc/environment` can be used to propagate the environment variables to the windows manager and UI.
+
 ### Proxy
-If you need to use a proxy server to connect to the internet, please configure it using the vscode proxy settings.
+
+If you are behind proxy, proxy settings need to be configured either using VS Code proxy settings or set using `http_proxy` and `https_proxy` environment variables.
 
 ## Authentication
 
