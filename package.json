@@ -1,7 +1,7 @@
 {
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
-  "displayName": "Snyk Vulnerability Scanner",
+  "displayName": "Snyk Security - Code and Open Source Dependencies",
   "version": "1.2.9",
   "description": "Easily find and fix vulnerabilities in both your code and open source dependencies with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
@@ -46,7 +46,7 @@
   "contributes": {
     "configuration": [
       {
-        "title": "Snyk Vulnerability Scanner",
+        "title": "Snyk Security - Code and Open Source Dependencies",
         "properties": {
           "snyk.token": {
             "type": "string",

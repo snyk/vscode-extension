@@ -1,7 +1,8 @@
 // Changing this requires changing display name in package.json.
-export const SNYK_NAME = 'Snyk Vulnerability Scanner';
+export const SNYK_NAME = 'Snyk Security - Code and Open Source Dependencies';
+export const SNYK_UNIQUE_EXTENSION_NAME = 'Snyk Vulnerability Scanner';
 export const SNYK_PUBLISHER = 'snyk-security';
-export const SNYK_NAME_EXTENSION = SNYK_NAME.toLowerCase().replace(/[()]/g, '').replace(/\s/g, '-');
+export const SNYK_NAME_EXTENSION = SNYK_UNIQUE_EXTENSION_NAME.toLowerCase().replace(/[()]/g, '').replace(/\s/g, '-');
 export const MAX_CONNECTION_RETRIES = 5; // max number of automatic retries before showing an error
 export const IDE_NAME = 'Visual Studio Code';
 export const IDE_NAME_SHORT = 'vscode';
