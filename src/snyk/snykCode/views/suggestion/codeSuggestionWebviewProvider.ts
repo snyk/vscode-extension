@@ -13,6 +13,7 @@ import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
@@ -35,6 +36,7 @@ export class CodeSuggestionWebviewProvider
     private readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
+    private readonly languages: IVSCodeLanguages,
   ) {
     super(context, logger);
   }
@@ -111,7 +113,7 @@ export class CodeSuggestionWebviewProvider
         case 'openLocal': {
           let { uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
-          const range = createIssueCorrectRange({ cols, rows });
+          const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, range);
           break;
         }
@@ -125,7 +127,7 @@ export class CodeSuggestionWebviewProvider
           let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri);
           severity = getVSCodeSeverity(severity);
-          const range = createIssueCorrectRange({ cols, rows });
+          const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri,
             matchedIssue: { message, severity, range },

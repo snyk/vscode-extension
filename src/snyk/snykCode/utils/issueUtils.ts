@@ -1,7 +1,7 @@
 import { FileSuggestion } from '@snyk/code-client';
 import { Diagnostic, Position, Range } from '../../common/vscode/types';
 
-type IssuePlacementPosition = {
+export type IssuePlacementPosition = {
   cols: {
     start: number;
     end: number;
@@ -40,7 +40,7 @@ export class IssueUtils {
 
   static getIssueType = (isSecurityType: boolean): 'Code Security Vulnerability' | 'Code Quality Issue' => {
     return isSecurityType ? 'Code Security Vulnerability' : 'Code Quality Issue';
-  }
+  };
 
   static createCorrectIssuePlacement = (item: FileSuggestion): IssuePlacementPosition => {
     const rowOffset = 1;

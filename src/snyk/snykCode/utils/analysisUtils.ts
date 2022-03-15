@@ -3,7 +3,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { AnalysisResultLegacy, FilePath, FileSuggestion, Marker, Suggestion } from '@snyk/code-client';
-import * as vscode from 'vscode';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
+import {
+  DecorationOptions,
+  Diagnostic,
+  DiagnosticRelatedInformation,
+  DiagnosticSeverity,
+  Range,
+  Uri,
+} from '../../common/vscode/types';
+import { IUriAdapter } from '../../common/vscode/uri';
 import {
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
@@ -11,38 +20,39 @@ import {
   SNYK_SEVERITIES,
 } from '../constants/analysis';
 import { completeFileSuggestionType, ICodeSuggestion, ISnykCodeResult, openedTextEditorType } from '../interfaces';
-import { IssueUtils } from './issueUtils';
+import { IssuePlacementPosition, IssueUtils } from './issueUtils';
 
-export const createSnykSeveritiesMap = (): { [x: number]: { name: vscode.DiagnosticSeverity; show: boolean; }; } => {
+export const createSnykSeveritiesMap = (): { [x: number]: { name: DiagnosticSeverity; show: boolean } } => {
   const { information, error, warning } = SNYK_SEVERITIES;
+
   return {
     [information]: {
-      name: vscode.DiagnosticSeverity.Information,
+      name: DiagnosticSeverity.Information,
       show: true,
     },
-    [warning]: { name: vscode.DiagnosticSeverity.Warning, show: true },
-    [error]: { name: vscode.DiagnosticSeverity.Error, show: true },
+    [warning]: { name: DiagnosticSeverity.Warning, show: true },
+    [error]: { name: DiagnosticSeverity.Error, show: true },
   };
 };
 
-export const getVSCodeSeverity = (snykSeverity: number): vscode.DiagnosticSeverity.Warning | vscode.DiagnosticSeverity.Information | vscode.DiagnosticSeverity.Hint => {
+export const getVSCodeSeverity = (snykSeverity: number): DiagnosticSeverity => {
   const { information, error, warning } = SNYK_SEVERITIES;
   return (
     {
-      [information]: vscode.DiagnosticSeverity.Information,
-      [warning]: vscode.DiagnosticSeverity.Warning,
-      [error]: vscode.DiagnosticSeverity.Error,
-    }[snykSeverity] || vscode.DiagnosticSeverity.Information
+      [information]: DiagnosticSeverity.Information,
+      [warning]: DiagnosticSeverity.Warning,
+      [error]: DiagnosticSeverity.Error,
+    }[snykSeverity] || DiagnosticSeverity.Information
   );
 };
 
-export const getSnykSeverity = (vscodeSeverity: vscode.DiagnosticSeverity): number => {
+export const getSnykSeverity = (vscodeSeverity: DiagnosticSeverity): number => {
   const { information, error, warning } = SNYK_SEVERITIES;
   return {
-    [vscode.DiagnosticSeverity.Information]: information,
-    [vscode.DiagnosticSeverity.Warning]: warning,
-    [vscode.DiagnosticSeverity.Error]: error,
-    [vscode.DiagnosticSeverity.Hint]: information,
+    [DiagnosticSeverity.Information]: information,
+    [DiagnosticSeverity.Warning]: warning,
+    [DiagnosticSeverity.Error]: error,
+    [DiagnosticSeverity.Hint]: information,
   }[vscodeSeverity];
 };
 
@@ -51,17 +61,22 @@ export const createSnykProgress = (progress: number): number => {
   return Math.round(progress * progressOffset);
 };
 
-export const createIssueRange = (position: { [key: string]: { [key: string]: number } }): vscode.Range => {
-  return new vscode.Range(
-    new vscode.Position(position.rows.start, position.cols.start),
-    new vscode.Position(position.rows.end, position.cols.end),
+export const createIssueRange = (position: IssuePlacementPosition, languages: IVSCodeLanguages): Range => {
+  return languages.createRange(
+    Math.max(0, position.rows.start),
+    Math.max(0, position.cols.start),
+    Math.max(0, position.rows.end),
+    Math.max(0, position.cols.end),
   );
 };
 
-export const createIssueCorrectRange = (issuePosition: FileSuggestion): vscode.Range => {
-  return createIssueRange({
-    ...IssueUtils.createCorrectIssuePlacement(issuePosition),
-  });
+export const createIssueCorrectRange = (issuePosition: FileSuggestion, languages: IVSCodeLanguages): Range => {
+  return createIssueRange(
+    {
+      ...IssueUtils.createCorrectIssuePlacement(issuePosition),
+    },
+    languages,
+  );
 };
 
 export const updateFileReviewResultsPositions = (
@@ -144,8 +159,8 @@ export const createIssueMarkerMsg = (originalMsg: string, [markerStartIdx, marke
 };
 
 export const createIssuesMarkersDecorationOptions = (
-  currentFileReviewIssues: readonly vscode.Diagnostic[] | undefined,
-): vscode.DecorationOptions[] => {
+  currentFileReviewIssues: readonly Diagnostic[] | undefined,
+): DecorationOptions[] => {
   if (!currentFileReviewIssues) {
     return [];
   }
@@ -165,15 +180,17 @@ export const createIssuesMarkersDecorationOptions = (
 
 export const createIssueRelatedInformation = (
   markersList: Marker[],
-  fileUri: vscode.Uri,
+  fileUri: Uri,
   message: string,
-): vscode.DiagnosticRelatedInformation[] => {
+  languages: IVSCodeLanguages,
+): DiagnosticRelatedInformation[] => {
   return markersList.reduce((res, marker) => {
     const { msg: markerMsgIdxs, pos: positions } = marker;
 
     positions.forEach(position => {
-      const relatedInfo = new vscode.DiagnosticRelatedInformation(
-        new vscode.Location(fileUri, createIssueCorrectRange(position)),
+      const relatedInfo = languages.createDiagnosticRelatedInformation(
+        fileUri,
+        createIssueCorrectRange(position, languages),
         createIssueMarkerMsg(message, markerMsgIdxs),
       );
       res.push(relatedInfo);
@@ -186,8 +203,9 @@ export const createIssueRelatedInformation = (
 export const findCompleteSuggestion = (
   analysisResults: ISnykCodeResult,
   suggestionId: string,
-  uri: vscode.Uri,
-  position: vscode.Range,
+  uri: Uri,
+  position: Range,
+  languages: IVSCodeLanguages,
 ): completeFileSuggestionType | undefined => {
   const filePath = uri.fsPath;
   if (!analysisResults.files[filePath]) return;
@@ -197,7 +215,7 @@ export const findCompleteSuggestion = (
     const index = parseInt(i, 10);
     if (analysisResults.suggestions[index].id !== suggestionId) return false;
     const pos = file[index].find(fs => {
-      const r = createIssueCorrectRange(fs);
+      const r = createIssueCorrectRange(fs, languages);
       return (
         r.start.character === position.start.character &&
         r.start.line === position.start.line &&
@@ -226,8 +244,9 @@ export const findCompleteSuggestion = (
 export const checkCompleteSuggestion = (
   analysisResults: AnalysisResultLegacy,
   suggestion: completeFileSuggestionType,
+  uriAdapter: IUriAdapter,
 ): boolean => {
-  const filePath = vscode.Uri.parse(suggestion.uri).fsPath;
+  const filePath = uriAdapter.parse(suggestion.uri).fsPath;
   if (!analysisResults.files[filePath]) return false;
   const file: FilePath = analysisResults.files[filePath];
   const suggestionIndex: string | undefined = Object.keys(file).find(i => {

@@ -4,17 +4,25 @@ import {
   CodeActionProviderMetadata,
   Diagnostic,
   DiagnosticCollection,
+  DiagnosticRelatedInformation,
   DiagnosticSeverity,
   Disposable,
   DocumentSelector,
   HoverProvider,
+  Position,
   Range,
+  Uri,
 } from './types';
 
 export interface IVSCodeLanguages {
   registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
   createDiagnosticCollection(name: string): DiagnosticCollection;
   createDiagnostic(range: Range, message: string, severity?: DiagnosticSeverity): Diagnostic;
+  createDiagnosticRelatedInformation(
+    uri: Uri,
+    rangeOrPosition: Range | Position,
+    message: string,
+  ): DiagnosticRelatedInformation;
   createRange(...args: ConstructorParameters<typeof vscode.Range>): Range;
   registerCodeActionsProvider(
     selector: DocumentSelector,
@@ -34,6 +42,14 @@ export class VSCodeLanguages implements IVSCodeLanguages {
 
   createDiagnostic(range: Range, message: string, severity?: DiagnosticSeverity): Diagnostic {
     return new vscode.Diagnostic(range, message, severity);
+  }
+
+  createDiagnosticRelatedInformation(
+    uri: Uri,
+    rangeOrPosition: Range | Position,
+    message: string,
+  ): DiagnosticRelatedInformation {
+    return new vscode.DiagnosticRelatedInformation(new vscode.Location(uri, rangeOrPosition), message);
   }
 
   createRange(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
