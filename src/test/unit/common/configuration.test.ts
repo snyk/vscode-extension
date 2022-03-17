@@ -4,15 +4,30 @@ import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../snyk/common/constants/settings';
+import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
+import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
+  let extensionContext: ExtensionContext;
 
   setup(() => {
     const tokenConfigSection = 'token';
 
     let token = '';
+
+    extensionContext = ({
+      secrets: {
+        store: (_key: string, _value: string) => {
+          return Promise.resolve();
+        },
+        get: () => {
+          return Promise.resolve('snyk-token');
+        },
+      },
+    } as unknown) as ExtensionContext;
+    SecretStorageAdapter.init(extensionContext);
 
     const stub = sinon.stub().returns({
       getConfiguration(_configurationIdentifier, _section) {
@@ -81,7 +96,7 @@ suite('Configuration', () => {
     const configuration = new Configuration(process.env, workspaceStub);
     await configuration.setToken(token);
 
-    strictEqual(configuration.snykCodeToken, token);
+    strictEqual(await configuration.snykCodeToken, token);
   });
 
   test('Snyk Code: token returns Snyk Code token when in development', async () => {
@@ -96,7 +111,7 @@ suite('Configuration', () => {
     );
     await configuration.setToken(token);
 
-    strictEqual(configuration.snykCodeToken, snykCodeToken);
+    strictEqual(await configuration.snykCodeToken, snykCodeToken);
   });
 
   test('Snyk OSS: API endpoint returns default endpoint when no custom set', () => {

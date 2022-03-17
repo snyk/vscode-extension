@@ -49,7 +49,7 @@ suite('CliProcess', () => {
     const process = new CliProcess(
       logger,
       {
-        token: token,
+        token: Promise.resolve(token),
         snykOssApiEndpoint: snykOssApiEndpoint,
         organization: organization,
       } as IConfiguration,

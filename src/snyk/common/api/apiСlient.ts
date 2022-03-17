@@ -34,7 +34,7 @@ export class SnykApiClient implements ISnykApiClient {
       response => response,
       async (error: AxiosError) => {
         if (error.response?.status === 401) {
-          await configuration.setToken(undefined);
+          await configuration.clearToken();
           this.logger.warn('Call to Snyk API failed - Invalid token');
           return;
         }
@@ -48,21 +48,26 @@ export class SnykApiClient implements ISnykApiClient {
   }
 
   get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
-    this.setupRequestAuth();
-    return this.http.get<T, R>(url, config);
+    return (async () => {
+      await this.setupRequestAuth();
+      return this.http.get<T, R>(url, config);
+    })();
   }
 
   post<T = unknown, R = AxiosResponse<T>>(url: string, data: unknown, config?: AxiosRequestConfig): Promise<R> {
-    this.setupRequestAuth();
-    return this.http.post<T, R>(url, data, config);
+    return (async () => {
+      await this.setupRequestAuth();
+      return this.http.post<T, R>(url, data, config);
+    })();
   }
 
-  private setupRequestAuth() {
+  private async setupRequestAuth() {
+    const token = await this.configuration.token;
     this.http.interceptors.request.use(req => {
       req.baseURL = `${this.configuration.authHost}/api/v1/`;
       req.headers = {
         ...req.headers,
-        Authorization: `token ${this.configuration.token}`,
+        Authorization: `token ${token}`,
       } as { [header: string]: string };
 
       return req;

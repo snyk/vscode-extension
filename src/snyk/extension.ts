@@ -47,6 +47,7 @@ import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
@@ -69,6 +70,7 @@ import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
+    SecretStorageAdapter.init(vscodeContext);
     this.context = extensionContext;
 
     const snykConfiguration = await this.getSnykConfiguration();

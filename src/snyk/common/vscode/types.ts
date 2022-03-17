@@ -21,6 +21,7 @@ export type ViewColumn = vscode.ViewColumn;
 export type Position = vscode.Position;
 export type Range = vscode.Range;
 export type Selection = vscode.Selection;
+export type SecretStorage = vscode.SecretStorage;
 export type Uri = vscode.Uri;
 export type MarkedString = vscode.MarkedString;
 export type Hover = vscode.Hover;
