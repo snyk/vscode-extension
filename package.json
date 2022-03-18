@@ -326,6 +326,11 @@
         "icon": "$(log-in)"
       },
       {
+        "command": "snyk.logout",
+        "title": "Logout",
+        "category": "Snyk"
+      },
+      {
         "command": "snyk.dcignore",
         "title": "Create dcignore file",
         "category": "Snyk",

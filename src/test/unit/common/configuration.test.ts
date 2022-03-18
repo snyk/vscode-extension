@@ -3,6 +3,7 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
 import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
@@ -97,7 +98,7 @@ suite('Configuration', () => {
     await configuration.setToken(token);
 
     strictEqual(await configuration.snykCodeToken, token);
-    secretStorageStoreStub.calledWith('snyk.token', token);
+    secretStorageStoreStub.calledWith(SNYK_TOKEN_KEY, token);
     strictEqual(secretStorageGetStub.calledOnce, true);
   });
 

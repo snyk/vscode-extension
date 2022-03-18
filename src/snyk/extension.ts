@@ -17,6 +17,7 @@ import {
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_LOGIN_COMMAND,
+  SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -70,7 +71,6 @@ import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
-    SecretStorageAdapter.init(vscodeContext);
     this.context = extensionContext;
 
     const snykConfiguration = await this.getSnykConfiguration();
@@ -108,6 +108,8 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration.isDevelopment,
       snykConfiguration,
     );
+
+    SecretStorageAdapter.init(vscodeContext);
 
     this.settingsWatcher = new SettingsWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
@@ -317,6 +319,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(
         SNYK_LOGIN_COMMAND,
         this.commandController.initiateLogin.bind(this.commandController),
+      ),
+      vscode.commands.registerCommand(
+        SNYK_LOGOUT_COMMAND,
+        this.commandController.initiateLogout.bind(this.commandController),
       ),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),

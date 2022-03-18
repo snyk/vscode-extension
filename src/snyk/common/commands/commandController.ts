@@ -16,6 +16,7 @@ import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_COPY_AUTH_LINK_COMMAND,
   SNYK_LOGIN_COMMAND,
+  SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
@@ -50,6 +51,10 @@ export class CommandController {
 
   initiateLogin(): unknown {
     return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService, getIpFamily));
+  }
+
+  initiateLogout(): unknown {
+    return this.executeCommand(SNYK_LOGOUT_COMMAND, this.authService.initiateLogout.bind(this.authService));
   }
 
   async openLocal(path: vscode.Uri, range?: vscode.Range): Promise<void> {

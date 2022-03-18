@@ -11,6 +11,7 @@ import { IBaseSnykModule } from '../modules/interfaces';
 
 export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
+  initiateLogout(): Promise<void>;
   checkSession(): Promise<string>;
 }
 
@@ -79,6 +80,11 @@ export class AuthenticationService implements IAuthenticationService {
     } finally {
       this.pendingLogin = false;
     }
+  }
+
+  async initiateLogout(): Promise<void> {
+    await this.configuration.clearToken();
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
   }
 
   async checkSession(draftToken = '', ipFamily?: IpFamily): Promise<string> {
