@@ -12,7 +12,7 @@
     "url": "https://github.com/snyk/vscode-extension.git"
   },
   "engines": {
-    "vscode": "^1.48.0"
+    "vscode": "^1.58.0"
   },
   "galleryBanner": {
     "color": "#283e55",
