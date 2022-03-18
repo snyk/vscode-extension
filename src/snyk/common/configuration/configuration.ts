@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
-import { IDE_NAME_SHORT } from '../constants/general';
+import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -47,7 +47,7 @@ export interface IConfiguration {
   source: string;
 
   authHost: string;
-  token: Promise<string | undefined>;
+  getToken(): Promise<string | undefined>;
   setToken(token: string): Promise<void>;
   clearToken(): Promise<void>;
 
@@ -81,8 +81,6 @@ export class Configuration implements IConfiguration {
   private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
-
-  private readonly tokenKey = 'snyk.token';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -155,53 +153,44 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  private maskToken(token: string): string {
-    const tokenLength = token.length;
-    return new Array(tokenLength).fill('*').join('');
+  private async migrateTokenToSecretStorage(token: string) {
+    await this.setToken(token);
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(TOKEN_SETTING),
+      undefined,
+      true,
+    );
   }
 
-  get token(): Promise<string | undefined> {
-    return (async () => {
-      const existingToken: string | undefined = this.workspace.getConfiguration(
-        CONFIGURATION_IDENTIFIER,
-        this.getConfigName(TOKEN_SETTING),
-      );
+  async getToken(): Promise<string | undefined> {
+    const existingToken: string | undefined = this.workspace.getConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(TOKEN_SETTING),
+    );
 
-      if (existingToken && !existingToken.includes('*')) {
-        await this.setToken(existingToken);
-        await this.workspace.updateConfiguration(
-          CONFIGURATION_IDENTIFIER,
-          this.getConfigName(TOKEN_SETTING),
-          this.maskToken(existingToken),
-          true,
-        );
-      }
+    if (existingToken) {
+      await this.migrateTokenToSecretStorage(existingToken);
+    }
 
-      const token = await SecretStorageAdapter.instance.get(this.tokenKey);
-      return token;
-    })();
+    const token = await SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
+    return token;
   }
 
   get snykCodeToken(): Promise<string | undefined> {
     if (this.isDevelopment && this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN) {
       return Promise.resolve(this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN);
     }
-    return this.token;
+    return this.getToken();
   }
 
   async setToken(token: string | undefined): Promise<void> {
     if (!token) return;
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(TOKEN_SETTING),
-      this.maskToken(token),
-      true,
-    );
-    return await SecretStorageAdapter.instance.store(this.tokenKey, token);
+    return await SecretStorageAdapter.instance.store(SNYK_TOKEN_KEY, token);
   }
 
   async clearToken(): Promise<void> {
-    return await SecretStorageAdapter.instance.delete(this.tokenKey);
+    return await SecretStorageAdapter.instance.delete(SNYK_TOKEN_KEY);
   }
 
   static get source(): string {

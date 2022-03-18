@@ -22,6 +22,7 @@ suite('CliProcess', () => {
       logger,
       {
         shouldReportEvents: false,
+        getToken: () => Promise.resolve(),
       } as IConfiguration,
       emptyWorkspace,
     );
@@ -34,6 +35,7 @@ suite('CliProcess', () => {
       logger,
       {
         shouldReportEvents: true,
+        getToken: () => Promise.resolve(),
       } as IConfiguration,
       emptyWorkspace,
     );
@@ -49,7 +51,7 @@ suite('CliProcess', () => {
     const process = new CliProcess(
       logger,
       {
-        token: Promise.resolve(token),
+        getToken: () => Promise.resolve(token),
         snykOssApiEndpoint: snykOssApiEndpoint,
         organization: organization,
       } as IConfiguration,
@@ -75,6 +77,7 @@ suite('CliProcess', () => {
       logger,
       {
         shouldReportEvents: true,
+        getToken: () => Promise.resolve(),
       } as IConfiguration,
       ({
         getConfiguration: getConfiguration,

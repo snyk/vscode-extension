@@ -1,8 +1,9 @@
 import { ExtensionContext, SecretStorage } from './types';
 
 export interface ISecretStorageAdapter {
-  get(key: string): Thenable<string | undefined>;
-  store(key: string, value: string): Thenable<void>;
+  get(key: string): Promise<string | undefined>;
+  store(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 export default class SecretStorageAdapter implements ISecretStorageAdapter {
@@ -17,8 +18,8 @@ export default class SecretStorageAdapter implements ISecretStorageAdapter {
     return SecretStorageAdapter._instance;
   }
 
-  get(key: string): Thenable<string | undefined> {
-    return this.secretStorage.get(key);
+  get(key: string): Promise<string | undefined> {
+    return this.secretStorage.get(key) as Promise<string | undefined>;
   }
 
   store(key: string, value: string): Promise<void> {

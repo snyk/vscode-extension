@@ -220,7 +220,6 @@ OSS vulnerability tab shows information about the vulnerable module.
 
 After the extension is installed, you can set the following configurations for the extension:
 
-- **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch to another account.
 - **Features**
   - **Code Security**: configures if code security analysis should run over your code.
   - **Code Quality**: configures if code quality analysis should run over your code.

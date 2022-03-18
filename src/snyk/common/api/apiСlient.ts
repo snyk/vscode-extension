@@ -47,22 +47,18 @@ export class SnykApiClient implements ISnykApiClient {
     return http;
   }
 
-  get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
-    return (async () => {
-      await this.setupRequestAuth();
-      return this.http.get<T, R>(url, config);
-    })();
+  async get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
+    await this.setupRequestAuth();
+    return this.http.get<T, R>(url, config);
   }
 
-  post<T = unknown, R = AxiosResponse<T>>(url: string, data: unknown, config?: AxiosRequestConfig): Promise<R> {
-    return (async () => {
-      await this.setupRequestAuth();
-      return this.http.post<T, R>(url, data, config);
-    })();
+  async post<T = unknown, R = AxiosResponse<T>>(url: string, data: unknown, config?: AxiosRequestConfig): Promise<R> {
+    await this.setupRequestAuth();
+    return this.http.post<T, R>(url, data, config);
   }
 
   private async setupRequestAuth() {
-    const token = await this.configuration.token;
+    const token = await this.configuration.getToken();
     this.http.interceptors.request.use(req => {
       req.baseURL = `${this.configuration.authHost}/api/v1/`;
       req.headers = {

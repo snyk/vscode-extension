@@ -48,12 +48,6 @@
       {
         "title": "Snyk Security - Code and Open Source Dependencies",
         "properties": {
-          "snyk.token": {
-            "type": "string",
-            "default": "",
-            "description": "API key",
-            "scope": "application"
-          },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",

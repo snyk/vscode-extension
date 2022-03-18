@@ -21,7 +21,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     this.loadingBadge.setLoadingBadge(false);
 
     try {
-      if (!(await configuration.token)) {
+      if (!(await configuration.getToken())) {
         await this.initializeWelcomeViewExperiment();
         await this.authService.checkSession();
         return;
@@ -111,7 +111,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   }
 
   async onDidChangeWelcomeViewVisibility(visible: boolean): Promise<void> {
-    if (visible && !(await configuration.token)) {
+    if (visible && !(await configuration.getToken())) {
       // Track if a user is not authenticated and expanded the analysis view
       this.analytics.logWelcomeViewIsViewed();
     }

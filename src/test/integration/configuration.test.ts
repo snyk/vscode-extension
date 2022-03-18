@@ -25,7 +25,7 @@ suite('Configuration', () => {
     await configuration.setFeaturesConfiguration(featuresConfig);
     await configuration.setShouldReportEvents(false);
 
-    strictEqual(configuration.token, token);
+    strictEqual(await configuration.getToken(), token);
     deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
     strictEqual(configuration.shouldReportEvents, false);
     await configuration.setToken('');
