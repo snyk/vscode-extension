@@ -12,7 +12,7 @@
     "url": "https://github.com/snyk/vscode-extension.git"
   },
   "engines": {
-    "vscode": "^1.48.0"
+    "vscode": "^1.58.0"
   },
   "galleryBanner": {
     "color": "#283e55",
@@ -48,12 +48,6 @@
       {
         "title": "Snyk Security - Code and Open Source Dependencies",
         "properties": {
-          "snyk.token": {
-            "type": "string",
-            "default": "",
-            "description": "API key",
-            "scope": "application"
-          },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
@@ -327,9 +321,14 @@
       },
       {
         "command": "snyk.login",
-        "title": "Login",
+        "title": "Log In",
         "category": "Snyk",
         "icon": "$(log-in)"
+      },
+      {
+        "command": "snyk.logout",
+        "title": "Log Out",
+        "category": "Snyk"
       },
       {
         "command": "snyk.dcignore",

@@ -34,6 +34,10 @@ export class ExtensionContext {
     return this.acquireContext().globalState.update(key, value);
   }
 
+  secrets(): vscode.SecretStorage {
+    return this.acquireContext().secrets;
+  }
+
   private acquireContext(): vscode.ExtensionContext {
     if (!this.context) throw new Error('VS Code extension context not set.');
     return this.context;

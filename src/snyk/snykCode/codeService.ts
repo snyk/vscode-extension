@@ -139,17 +139,19 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.reportAnalysisIsTriggered(reportTriggeredEvent, enabledFeatures, manualTrigger);
       this.analysisStarted();
 
+      const snykCodeToken = await this.config.snykCodeToken;
+
       let result: FileAnalysis | null = null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
         result = await extendAnalysis({
           ...this.remoteBundle,
           files: changedFiles,
-          connection: this.getConnectionOptions(requestId),
+          connection: this.getConnectionOptions(requestId, snykCodeToken),
         });
       } else {
         result = await analyzeFolders({
-          connection: this.getConnectionOptions(requestId),
+          connection: this.getConnectionOptions(requestId, snykCodeToken),
           analysisOptions: {
             legacy: true,
           },
@@ -283,14 +285,14 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.analyzer.dispose();
   }
 
-  private getConnectionOptions(requestId: string): ConnectionOptions {
-    if (!this.config.snykCodeToken) {
+  private getConnectionOptions(requestId: string, snykCodeToken: string | undefined): ConnectionOptions {
+    if (!snykCodeToken) {
       throw new Error('Snyk token must be filled to obtain connection options');
     }
 
     return {
       baseURL: this.config.snykCodeBaseURL,
-      sessionToken: this.config.snykCodeToken,
+      sessionToken: snykCodeToken,
       source: this.config.source,
       requestId,
     };

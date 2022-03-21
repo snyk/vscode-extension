@@ -80,6 +80,8 @@ If you are behind proxy, proxy settings need to be configured either using VS Co
 
 ## Authentication
 
+### Logging in
+
 To authenticate follow the steps:
 
 1. Once the extension is installed, click on the Snyk Icon in the left navigation bar, to show the following screen:
@@ -95,6 +97,17 @@ To authenticate follow the steps:
 
 5. Close the browser window and return to VS Code.
    VS Code is now reading and saving the authentication on your local machine.
+
+### Switching accounts
+
+To re-authenticate with a different account, follow the steps below:
+
+1. Run the provided `Snyk: Log Out` command:
+
+   ![Authentication](media/images/readme/logging-out-command.png)
+
+1. Once logged out, click [**Connect VS Code with Snyk**](#logging-in) to authenticate
+   with the different account.
 
 ## Run analysis
 
@@ -220,7 +233,6 @@ OSS vulnerability tab shows information about the vulnerable module.
 
 After the extension is installed, you can set the following configurations for the extension:
 
-- **Token**: the token the extension uses to connect to Snyk. You can manually replace it, if you need to switch to another account.
 - **Features**
   - **Code Security**: configures if code security analysis should run over your code.
   - **Code Quality**: configures if code quality analysis should run over your code.

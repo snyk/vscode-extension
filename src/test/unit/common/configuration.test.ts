@@ -3,16 +3,28 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
 import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../snyk/common/constants/settings';
+import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
+import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
+  let extensionContext: ExtensionContext;
 
   setup(() => {
     const tokenConfigSection = 'token';
 
     let token = '';
+
+    extensionContext = ({
+      secrets: {
+        store: (_key: string, _value: string) => Promise.resolve(),
+        get: () => Promise.resolve(),
+      },
+    } as unknown) as ExtensionContext;
+    SecretStorageAdapter.init(extensionContext);
 
     const stub = sinon.stub().returns({
       getConfiguration(_configurationIdentifier, _section) {
@@ -78,15 +90,25 @@ suite('Configuration', () => {
 
   test('Snyk Code: token returns snyk.io token when not in development', async () => {
     const token = 'snyk-token';
+
+    const secretStorageStoreStub = sinon.stub(extensionContext.secrets, 'store').resolves();
+    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').resolves(token);
+
     const configuration = new Configuration(process.env, workspaceStub);
     await configuration.setToken(token);
 
-    strictEqual(configuration.snykCodeToken, token);
+    strictEqual(await configuration.snykCodeToken, token);
+    secretStorageStoreStub.calledWith(SNYK_TOKEN_KEY, token);
+    strictEqual(secretStorageGetStub.calledOnce, true);
   });
 
   test('Snyk Code: token returns Snyk Code token when in development', async () => {
     const token = 'test-token';
     const snykCodeToken = 'snykCode-token';
+
+    const secretStorageStoreStub = sinon.stub(extensionContext.secrets, 'store').resolves();
+    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').resolves(token);
+
     const configuration = new Configuration(
       {
         SNYK_VSCE_DEVELOPMENT: '1',
@@ -96,7 +118,9 @@ suite('Configuration', () => {
     );
     await configuration.setToken(token);
 
-    strictEqual(configuration.snykCodeToken, snykCodeToken);
+    strictEqual(await configuration.snykCodeToken, snykCodeToken);
+    secretStorageStoreStub.calledWith('snyk.token', token);
+    strictEqual(secretStorageGetStub.called, false);
   });
 
   test('Snyk OSS: API endpoint returns default endpoint when no custom set', () => {

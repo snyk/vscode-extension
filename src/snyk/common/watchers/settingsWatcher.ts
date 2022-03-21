@@ -9,7 +9,6 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
-  TOKEN_SETTING,
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -49,7 +48,6 @@ class SettingsWatcher implements IWatcher {
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
         const change = [
-          TOKEN_SETTING,
           ADVANCED_ADVANCED_MODE_SETTING,
           ADVANCED_AUTOSCAN_OSS_SETTING,
           YES_TELEMETRY_SETTING,

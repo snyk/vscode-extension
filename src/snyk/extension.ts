@@ -17,6 +17,7 @@ import {
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_LOGIN_COMMAND,
+  SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -47,6 +48,7 @@ import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
@@ -106,6 +108,8 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration.isDevelopment,
       snykConfiguration,
     );
+
+    SecretStorageAdapter.init(vscodeContext);
 
     this.settingsWatcher = new SettingsWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
@@ -315,6 +319,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(
         SNYK_LOGIN_COMMAND,
         this.commandController.initiateLogin.bind(this.commandController),
+      ),
+      vscode.commands.registerCommand(
+        SNYK_LOGOUT_COMMAND,
+        this.commandController.initiateLogout.bind(this.commandController),
       ),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
