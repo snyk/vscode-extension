@@ -1,5 +1,25 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.10]
+
+### Added
+
+- Encryption for when storing the Snyk token after successful login.
+- Surface request ID when Snyk Code analysis fail in the output channel.
+
+### Changed
+
+- Extension name to "Security - Code and Open Source Dependencies".
+
+### Fixed
+
+- "Illegal argument: character must be non-negative" error upon receiving Snyk
+  Code analysis.
+
+### Removed
+
+- The token text field from the extension configuration and will not be visible anymore.
+
 ## [1.2.9]
 
 ### Added
