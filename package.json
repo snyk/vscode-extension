@@ -321,13 +321,13 @@
       },
       {
         "command": "snyk.login",
-        "title": "Login",
+        "title": "Log In",
         "category": "Snyk",
         "icon": "$(log-in)"
       },
       {
         "command": "snyk.logout",
-        "title": "Logout",
+        "title": "Log Out",
         "category": "Snyk"
       },
       {

@@ -102,7 +102,7 @@ To authenticate follow the steps:
 
 To re-authenticate with a different account, follow the steps below:
 
-1. Run the provided `Snyk: Logout` command:
+1. Run the provided `Snyk: Log Out` command:
 
    ![Authentication](media/images/readme/logging-out-command.png)
 
