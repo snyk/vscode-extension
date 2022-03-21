@@ -104,6 +104,11 @@ export class OssService extends CliService<OssResult> {
   }
 
   showSuggestionProvider(vulnerability: OssIssueCommandArg): Promise<void> {
+    //todo: create a request to an API EP The api request should be in the API folder
+    // api example /Users/kobydamari/repos/vscode-extension/src/snyk/cli/api/staticCliApi.ts
+    // don't forget to add try/catch and fail gracefully
+    // OssIssueCommandArg should be extended with snykLearnLink
+    //const  Learnlink =  await getSnykLearnLessosn(vulnerability.idntifiers.cwe[0])
     return this.suggestionProvider.showPanel(vulnerability);
   }
 

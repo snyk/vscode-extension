@@ -230,6 +230,9 @@ export class CodeSuggestionWebviewProvider
             <div id="lead-url" class="clickable hidden">
               <img class="icon" src="${images['icon-external']}" /> More info
             </div>
+             <div id="lead-url" class="clickable">
+              <a href='https://learn.snyk.io'>Go to learn</a>
+            </div>
           </div>
         </section>
         <section class="delimiter-top" id="labels"></section>

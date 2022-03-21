@@ -35,6 +35,7 @@
 
     matchingIdVulnerabilities: Vulnerability[];
     overviewHtml: string;
+    // snykLearnLink:string;
   };
 
   type Identifiers = {
@@ -55,6 +56,7 @@
   function showCurrentSuggestion() {
     const severity = document.querySelector('.severity')!;
     const title = document.querySelector('.suggestion .suggestion-text')!;
+    // const link = document.querySelector('#snykLearnLink')!;
 
     // Set title
     title.innerHTML = vulnerability.title;
@@ -63,6 +65,7 @@
     setSeverityIcon();
 
     // Fill identifiers line
+    // OR add snykLearn to fill indentifiers
     fillIdentifiers();
 
     // Fill summary
@@ -73,6 +76,9 @@
 
     // Fill overview
     fillOverview();
+
+    // fill Snyk learn link
+    // fillLink();
 
     function setSeverityIcon() {
       if (vulnerability.severity) {
