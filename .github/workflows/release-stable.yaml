@@ -23,15 +23,6 @@ jobs:
       - name: Setup VSCE
         run: sudo npm install -g vsce@latest
 
-      - name: Bump patch version
-        id: patched-tag
-        uses: anothrnick/github-tag-action@1.35.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          RELEASE_BRANCHES: main
-          DEFAULT_BUMP: patch
-
       - name: Install dependencies
         run: npm install
 
@@ -46,9 +37,21 @@ jobs:
       - name: Package VSIX
         run: echo y | vsce package
 
+      - name: Publish to Marketplace
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
+
       - name: Extract release notes
         id: extract-release-notes
         uses: ffurrer2/extract-release-notes@v1
+
+      - name: Bump patch version
+        id: patched-tag
+        uses: anothrnick/github-tag-action@1.35.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          RELEASE_BRANCHES: main
+          DEFAULT_BUMP: patch
 
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -63,6 +66,3 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             **/*.vsix
-
-      - name: Publish to Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
