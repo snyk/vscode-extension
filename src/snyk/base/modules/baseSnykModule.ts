@@ -32,7 +32,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly statusBarItem: IStatusBarItem;
 
   protected readonly editorsWatcher: IWatcher;
-  protected settingsWatcher: IWatcher;
+  protected configurationWatcher: IWatcher;
 
   readonly contextService: IContextService;
   readonly openerService: IOpenerService;

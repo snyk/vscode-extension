@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../analytics/itly';
 import { configuration } from '../configuration/instance';
+import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
@@ -14,9 +15,10 @@ import {
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
+import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 
-class SettingsWatcher implements IWatcher {
+class ConfigurationWatcher implements IWatcher {
   constructor(private readonly analytics: IAnalytics, private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
@@ -56,6 +58,7 @@ class SettingsWatcher implements IWatcher {
           CODE_QUALITY_ENABLED_SETTING,
           SEVERITY_FILTER_SETTING,
         ].find(config => event.affectsConfiguration(config));
+
         if (change) {
           try {
             await this.onChangeConfiguration(extension, change);
@@ -65,7 +68,13 @@ class SettingsWatcher implements IWatcher {
         }
       },
     );
+
+    SecretStorageAdapter.instance.onDidChange(event => {
+      if (event.key === SNYK_TOKEN_KEY) {
+        return extension.runScan();
+      }
+    });
   }
 }
 
-export default SettingsWatcher;
+export default ConfigurationWatcher;

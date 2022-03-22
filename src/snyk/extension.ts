@@ -53,7 +53,7 @@ import { ThemeColorAdapter } from './common/vscode/theme';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
-import SettingsWatcher from './common/watchers/settingsWatcher';
+import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
@@ -111,7 +111,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
 
-    this.settingsWatcher = new SettingsWatcher(this.analytics, Logger);
+    this.configurationWatcher = new ConfigurationWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
       vsCodeWindow,
       vsCodeComands,
@@ -242,7 +242,7 @@ class SnykExtension extends SnykLib implements IExtension {
     });
 
     this.editorsWatcher.activate(this);
-    this.settingsWatcher.activate(this);
+    this.configurationWatcher.activate(this);
     this.snykCode.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);

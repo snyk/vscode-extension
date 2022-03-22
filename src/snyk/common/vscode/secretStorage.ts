@@ -1,9 +1,10 @@
-import { ExtensionContext, SecretStorage } from './types';
+import { ExtensionContext, Event, SecretStorage, SecretStorageChangeEvent } from './types';
 
 export interface ISecretStorageAdapter {
   get(key: string): Promise<string | undefined>;
   store(key: string, value: string): Promise<void>;
   delete(key: string): Promise<void>;
+  onDidChange: Event<SecretStorageChangeEvent>;
 }
 
 export default class SecretStorageAdapter implements ISecretStorageAdapter {
@@ -28,5 +29,9 @@ export default class SecretStorageAdapter implements ISecretStorageAdapter {
 
   delete(key: string): Promise<void> {
     return this.secretStorage.delete(key) as Promise<void>;
+  }
+
+  get onDidChange(): Event<SecretStorageChangeEvent> {
+    return this.secretStorage.onDidChange;
   }
 }
