@@ -22,7 +22,6 @@ export const SNYK_CONTEXT = {
   ERROR: 'error',
   MODE: 'mode',
   ADVANCED: 'advanced',
-  WELCOME_VIEW_EXPERIMENT: 'welcomeViewExperiment',
 };
 
 export const SNYK_ERROR_CODES = {
