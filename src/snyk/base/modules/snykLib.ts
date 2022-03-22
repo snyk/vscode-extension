@@ -6,7 +6,6 @@ import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
-import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
@@ -22,7 +21,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
     try {
       if (!(await configuration.getToken())) {
-        await this.initializeWelcomeViewExperiment();
         await this.authService.checkSession();
         return;
       }
@@ -62,14 +60,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   });
 
   public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
-
-  private async initializeWelcomeViewExperiment(): Promise<void> {
-    const partOfExperiment = await this.experimentService.isUserPartOfExperiment(ExperimentKey.UpdateCopyOnWelcomeView);
-    await this.contextService.setContext(
-      SNYK_CONTEXT.WELCOME_VIEW_EXPERIMENT,
-      partOfExperiment ? 'treatment' : 'control',
-    );
-  }
 
   async enableCode(): Promise<void> {
     const wasEnabled = await this.codeSettings.enable();

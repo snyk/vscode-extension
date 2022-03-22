@@ -40,7 +40,7 @@ suite('ExperimentService', () => {
 
     const service = new ExperimentService(user, new LoggerMock(), config);
 
-    const isUserPartOfExperiment = await service.isUserPartOfExperiment(ExperimentKey.UpdateCopyOnWelcomeView);
+    const isUserPartOfExperiment = await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
 
     strictEqual(isUserPartOfExperiment, false);
   });

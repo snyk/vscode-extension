@@ -5,7 +5,8 @@ import { ILog } from '../../logger/interfaces';
 import { User } from '../../user';
 
 export enum ExperimentKey {
-  UpdateCopyOnWelcomeView = 'vscode-update-copy-on-welcome-view',
+  // to be populated with running experiment keys
+  TestExperiment = 'vscode-test-experiment',
 }
 
 export class ExperimentService {
