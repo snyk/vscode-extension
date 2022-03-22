@@ -3,7 +3,7 @@ name: Build and Release
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 9 * * 2'  # every Tuesday at 9 am UTC
+    - cron: '0 9 * * 2' # every Tuesday at 9 am UTC
 
 jobs:
   build:
@@ -38,9 +38,9 @@ jobs:
       - name: Add Credentials
         run: |
           sed -i \
-              -e 's/${env.SNYK_VSCE_SEGMENT_WRITE_KEY}/${{ secrets.SNYK_VSCE_SEGMENT_WRITE_KEY }}/g' \
-              -e 's/${env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY}/${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}/g' \
-              -e 's/${env.SNYK_VSCE_SENTRY_DSN_KEY}/${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}/g' \
+              -e 's|${env.SNYK_VSCE_SEGMENT_WRITE_KEY}|${{ secrets.SNYK_VSCE_SEGMENT_WRITE_KEY }}|g' \
+              -e 's|${env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY}|${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}|g' \
+              -e 's|${env.SNYK_VSCE_SENTRY_DSN_KEY}|${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}|g' \
               snyk.config.json
 
       - name: Package VSIX
