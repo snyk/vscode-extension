@@ -2,8 +2,6 @@
 // Ensure consistency with package.json when changing these constants
 export const CONFIGURATION_IDENTIFIER = 'snyk';
 
-export const TOKEN_SETTING = `${CONFIGURATION_IDENTIFIER}.token`;
-
 export const OSS_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.openSourceSecurity`;
 export const CODE_SECURITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeSecurity`;
 export const CODE_QUALITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeQuality`;
