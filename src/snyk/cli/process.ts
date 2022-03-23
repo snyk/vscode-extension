@@ -56,7 +56,6 @@ export class CliProcess {
   }
 
   async getProcessEnv(): Promise<NodeJS.ProcessEnv> {
-    console.log(this.config);
     let env = {
       SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
       SNYK_INTEGRATION_VERSION: await Configuration.getVersion(),
