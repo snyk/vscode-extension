@@ -14,7 +14,6 @@ import {
   FEATURES_PREVIEW_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
-  TOKEN_SETTING,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
@@ -153,28 +152,8 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  private async migrateTokenToSecretStorage(token: string) {
-    await this.setToken(token);
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(TOKEN_SETTING),
-      undefined,
-      true,
-    );
-  }
-
   async getToken(): Promise<string | undefined> {
-    const existingToken: string | undefined = this.workspace.getConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(TOKEN_SETTING),
-    );
-
-    if (existingToken) {
-      await this.migrateTokenToSecretStorage(existingToken);
-    }
-
-    const token = await SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
-    return token;
+    return SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
   }
 
   get snykCodeToken(): Promise<string | undefined> {
