@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.11]
+
+### Fixed
+
+- "Error: Unable to write to User Settings because snyk.token is not a registered configuration." appearing during token migration to secret storage.
+
 ## [1.2.10]
 
 ### Added
