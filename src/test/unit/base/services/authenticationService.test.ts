@@ -18,6 +18,17 @@ suite('AuthenticationService', () => {
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
 
+  const NEEDLE_DEFAULT_TIMEOUT = 1000;
+
+  const overrideNeedleTimeoutOptions = {
+    // eslint-disable-next-line camelcase
+    open_timeout: NEEDLE_DEFAULT_TIMEOUT,
+    // eslint-disable-next-line camelcase
+    response_timeout: NEEDLE_DEFAULT_TIMEOUT,
+    // eslint-disable-next-line camelcase
+    read_timeout: NEEDLE_DEFAULT_TIMEOUT,
+  };
+
   setup(() => {
     contextService = ({
       setContext: sinon.fake(),
@@ -74,7 +85,8 @@ suite('AuthenticationService', () => {
         ({} as unknown) as NeedleResponse,
         null,
       );
-      return needle.post(uri, data, opts);
+      // eslint-disable-next-line camelcase
+      return needle.post(uri, data, { ...opts, ...overrideNeedleTimeoutOptions });
     });
 
     const ipFamily = await getIpFamily('https://dev.snyk.io');
@@ -97,7 +109,7 @@ suite('AuthenticationService', () => {
         } as NeedleResponse,
         null,
       );
-      return needle.post(uri, data, opts);
+      return needle.post(uri, data, { ...opts, ...overrideNeedleTimeoutOptions });
     });
 
     const ipFamily = await getIpFamily('https://dev.snyk.io');
