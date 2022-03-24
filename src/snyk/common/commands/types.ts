@@ -15,3 +15,17 @@ export type OpenIssueCommandArg = {
 export type ReportFalsePositiveCommandArg = {
   suggestion: Readonly<completeFileSuggestionType>;
 };
+
+export const isCodeIssue = (
+  _issue: completeFileSuggestionType | OssIssueCommandArg,
+  issueType: OpenCommandIssueType,
+): _issue is completeFileSuggestionType => {
+  return issueType === OpenCommandIssueType.CodeIssue;
+};
+
+export const isOssIssue = (
+  _issue: completeFileSuggestionType | OssIssueCommandArg,
+  issueType: OpenCommandIssueType,
+): _issue is OssIssueCommandArg => {
+  return issueType === OpenCommandIssueType.OssVulnerability;
+};
