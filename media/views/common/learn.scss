@@ -1,0 +1,23 @@
+.learn {
+  opacity: 0;
+  height: 0;
+  margin-top: 0;
+
+  &.show {
+    margin-top: 6px;
+    opacity: 1;
+    height: auto;
+    transition-duration: 500ms;
+    transition-property: height, opacity, margin-top;
+  }
+
+  &--link {
+    margin-left: 3px;
+  }
+
+  &__code {
+    .learn--link {
+      color: var(--vscode-foreground);
+    }
+  }
+}

@@ -49,7 +49,7 @@
   const vscode = acquireVsCodeApi();
   let vulnerability = {} as Vulnerability;
 
-  let lesson = {} as Lesson;
+  let lesson: Lesson | null;
 
   function navigateToUrl(url: string) {
     vscode.postMessage({
@@ -58,20 +58,17 @@
     });
   }
 
-  function clearLearnLink() {
-    const learnWrapper = document.querySelector('.learn')!;
-    learnWrapper.className = 'learn';
-  }
-
   function fillLearnLink() {
     const learnWrapper = document.querySelector('.learn')!;
     learnWrapper.className = 'learn';
 
-    const learnLink = document.querySelector<HTMLAnchorElement>('.learn--link')!;
-    learnLink.innerText = lesson.title;
-    learnLink.onclick = () => navigateToUrl(lesson.url);
-
-    learnWrapper.className = 'learn opacity-show';
+    if (lesson) {
+      const learnLink = document.querySelector<HTMLAnchorElement>('.learn--link')!;
+      learnLink.innerText = lesson.title;
+      const lessonUrl = lesson.url;
+      learnLink.onclick = () => navigateToUrl(lessonUrl);
+      learnWrapper.className = 'learn show';
+    }
   }
 
   function showCurrentSuggestion() {
@@ -261,37 +258,31 @@
     }`;
   }
 
-  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
-  const vulnerabilityEventTypes = ['set', 'get'];
   window.addEventListener('message', event => {
     const { type, args } = event.data;
-    if (vulnerabilityEventTypes.includes(type)) {
-      switch (type) {
-        case 'set': {
-          vulnerability = args;
-          vscode.setState(vulnerability);
-          break;
-        }
-        case 'get': {
-          vulnerability = vscode.getState();
-          break;
-        }
-        case 'setLesson': {
-          lesson = args;
-          break;
-        }
+    switch (type) {
+      case 'set': {
+        vulnerability = args;
+        vscode.setState({ ...vscode.getState(), vulnerability });
+        showCurrentSuggestion();
+        break;
       }
-      showCurrentSuggestion();
-    }
-  });
-
-  window.addEventListener('message', event => {
-    const { type, args } = event.data;
-    if (type === 'setLesson') {
-      lesson = args;
-      fillLearnLink();
-    } else if (vulnerabilityEventTypes.includes(type)) {
-      clearLearnLink();
+      case 'get': {
+        vulnerability = vscode.getState()?.vulnerability || {};
+        showCurrentSuggestion();
+        break;
+      }
+      case 'setLesson': {
+        lesson = args;
+        vscode.setState({ ...vscode.getState(), lesson });
+        fillLearnLink();
+        break;
+      }
+      case 'getLesson': {
+        lesson = vscode.getState()?.lesson || null;
+        fillLearnLink();
+        break;
+      }
     }
   });
 })();

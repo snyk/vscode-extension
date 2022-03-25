@@ -11,18 +11,27 @@
 (function () {
   // TODO: Redefine types until bundling is introduced into extension
   // https://stackoverflow.com/a/56938089/1713082
+  type Lesson = {
+    url: string;
+    title: string;
+  };
+
+  let lesson: Lesson | null;
+
   const vscode = acquireVsCodeApi();
+  function navigateToUrl(url: string) {
+    sendMessage({
+      type: 'openBrowser',
+      args: { url },
+    });
+  }
+
   let exampleCount = 0;
   let suggestion = {} as any;
 
   function navigateToLeadURL() {
     if (!suggestion.leadURL) return;
-    sendMessage({
-      type: 'openBrowser',
-      args: {
-        url: suggestion.leadURL,
-      },
-    });
+    navigateToUrl(suggestion.leadURL);
   }
   function navigateToIssue(_e: any, range: any) {
     sendMessage({
@@ -116,6 +125,20 @@
         }
       : undefined;
   }
+
+  function fillLearnLink() {
+    const learnWrapper = document.querySelector('.learn')!;
+    learnWrapper.className = 'learn learn__code';
+
+    if (lesson) {
+      const learnLink = document.querySelector<HTMLAnchorElement>('.learn--link')!;
+      learnLink.innerText = lesson.title;
+      const lessonUrl = lesson.url;
+      learnLink.onclick = () => navigateToUrl(lessonUrl);
+      learnWrapper.className = 'learn learn__code show';
+    }
+  }
+
   function showCurrentSuggestion() {
     exampleCount = 0;
     const currentSeverity = getCurrentSeverity();
@@ -253,14 +276,26 @@
     switch (type) {
       case 'set': {
         suggestion = args;
-        vscode.setState(suggestion);
+        vscode.setState({ ...vscode.getState(), suggestion });
+        showCurrentSuggestion();
         break;
       }
       case 'get': {
-        suggestion = vscode.getState();
+        suggestion = vscode.getState()?.suggestion || {};
+        showCurrentSuggestion();
+        break;
+      }
+      case 'setLesson': {
+        lesson = args;
+        vscode.setState({ ...vscode.getState(), lesson });
+        fillLearnLink();
+        break;
+      }
+      case 'getLesson': {
+        lesson = vscode.getState()?.lesson || null;
+        fillLearnLink();
         break;
       }
     }
-    showCurrentSuggestion();
   });
 })();

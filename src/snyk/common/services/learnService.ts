@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { isCodeIssue, isOssIssue, OpenCommandIssueType } from '../../common/commands/types';
+import { SNYK_LEARN_API_CACHE_DURATION_IN_MS } from '../../common/constants/general';
 import type { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 
 const ecosystems = [
@@ -36,33 +38,32 @@ type PackageMapper = {
   [key in LessonEcosystem]?: string[];
 };
 
-export interface ILearnService {
-  getLesson(options: { ecosystem: LessonEcosystem; cwes?: string[]; rules?: string[] }): Promise<Lesson | null>;
-}
-
-export class LearnService implements ILearnService {
-  private ecosystem: LessonEcosystem;
-  private cwes: string[] = [];
-
-  constructor(
-    private readonly issue: OssIssueCommandArg | completeFileSuggestionType,
-    private readonly issueType: OpenCommandIssueType,
-    private readonly logger: ILog,
-  ) {
-    this.logger = logger;
-    if (isCodeIssue(issue, issueType)) {
-      this.cwes = issue?.cwe || [];
-      this.ecosystem = LearnService.convertCodeIdToEcosystem(issue.id);
-    } else if (isOssIssue(issue, issueType)) {
-      this.cwes = issue?.identifiers?.CWE || [];
-      this.ecosystem = LearnService.convertOSSProjectTypeToEcosystem(issue.packageManager);
-    } else {
-      logger.error(`Issue type "${issueType}" not supported`);
+export class LearnService {
+  private lessonsCache = new Map<
+    string,
+    {
+      data: Lesson[];
+      expiry: number;
     }
+  >();
+
+  constructor(private readonly logger: ILog, private readonly shouldCacheRequests = true) {}
+
+  static getCodeIssueParams(issue: completeFileSuggestionType) {
+    const cwes = issue?.cwe || [];
+    const ecosystem = LearnService.convertCodeIdToEcosystem(issue.id);
+    return { cwes, ecosystem };
+  }
+
+  static getOSSIssueParams(issue: OssIssueCommandArg) {
+    const cwes = issue?.identifiers?.CWE || [];
+    const ecosystem = LearnService.convertOSSProjectTypeToEcosystem(issue.packageManager);
+    return { cwes, ecosystem };
   }
 
   static convertCodeIdToEcosystem(issueId: string): LessonEcosystem {
-    const ecosystem = (issueId || '').split(/\/|%2F/g)[0]; // %2F is the url encoding for /
+    if (!issueId) return 'all';
+    const ecosystem = issueId.split(/\/|%2F/g)[0]; // %2F is the url encoding for /
     if (isValidEcosystem(ecosystem)) {
       return ecosystem;
     } else {
@@ -89,24 +90,61 @@ export class LearnService implements ILearnService {
     return 'all';
   }
 
-  async getLesson(): Promise<Lesson | null> {
+  async requestLessons(cwe: string) {
+    const cacheResult = this.lessonsCache.get(cwe);
+    if (this.shouldCacheRequests && cacheResult && cacheResult?.expiry > Date.now()) {
+      return cacheResult.data;
+    } else {
+      const res = await axios.get<Lesson[]>('/lessons', {
+        baseURL: 'https://api.snyk.io/v1/learn',
+        params: {
+          cwe,
+        },
+      });
+
+      this.lessonsCache.set(cwe, {
+        data: res.data,
+        expiry: Date.now() + SNYK_LEARN_API_CACHE_DURATION_IN_MS,
+      });
+      return res.data;
+    }
+  }
+
+  async getLesson(
+    issue: OssIssueCommandArg | completeFileSuggestionType,
+    issueType: OpenCommandIssueType,
+  ): Promise<Lesson | null> {
     try {
-      const cwe = this.cwes?.[0];
-      if (!cwe || !this.ecosystem) {
+      let cwe: string;
+      let ecosystem: string;
+
+      if (isCodeIssue(issue, issueType)) {
+        if (!issue.isSecurityType) return null;
+        const params = LearnService.getCodeIssueParams(issue);
+        cwe = params.cwes?.[0];
+        ecosystem = params.ecosystem;
+      } else if (isOssIssue(issue, issueType)) {
+        if (issue.license) return null;
+        const params = LearnService.getOSSIssueParams(issue);
+        cwe = params.cwes?.[0];
+        ecosystem = params.ecosystem;
+      } else {
+        ErrorHandler.handle(new Error(`Issue type "${issueType}" not supported`), this.logger);
         return null;
       }
-      const snykLearnUrl = `https://api.snyk.io/v1/learn/lessons?cwe=${cwe}`;
 
-      const res = await axios.get<Lesson[]>(snykLearnUrl);
-
-      const lessons = res.data;
+      if (!cwe || !ecosystem) {
+        return null;
+      }
+      const lessons = await this.requestLessons(cwe);
       if (lessons.length) {
-        return lessons.sort(a => (a.ecosystem === this.ecosystem ? -1 : 0))[0];
+        const lessonWithClosestEcosystemMatch = lessons.sort(a => (a.ecosystem === ecosystem ? -1 : 0))[0];
+        return lessonWithClosestEcosystemMatch;
       } else {
         return null;
       }
-    } catch (_err) {
-      this.logger.error('error getting snyk learn lesson');
+    } catch (err) {
+      ErrorHandler.handle(err, this.logger, 'Error getting Snyk Learn Lesson');
       return null;
     }
   }

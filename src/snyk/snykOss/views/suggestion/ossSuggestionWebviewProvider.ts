@@ -4,6 +4,7 @@ import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
+import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
@@ -27,6 +28,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
     protected readonly context: ExtensionContext,
     private readonly window: IVSCodeWindow,
     protected readonly logger: ILog,
+    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -38,20 +40,23 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
   }
 
   async postLearnLessonMessage(vulnerability: OssIssueCommandArg): Promise<void> {
-    if (this.panel) {
-      const learnService = new LearnService(vulnerability, OpenCommandIssueType.OssVulnerability, this.logger);
-      const lesson = await learnService.getLesson();
-      if (lesson) {
-        void this.panel.webview.postMessage({
-          type: 'setLesson',
-          args: { url: `${lesson.url}?loc=ide`, title: 'Learn about this vulnerability' },
-        });
-      } else {
-        void this.panel.webview.postMessage({
-          type: 'setLesson',
-          args: { url: 'https://learn.snyk.io?loc=ide', title: 'Security education with Snyk Learn' },
-        });
+    try {
+      if (this.panel) {
+        const lesson = await this.learnService.getLesson(vulnerability, OpenCommandIssueType.OssVulnerability);
+        if (lesson) {
+          void this.panel.webview.postMessage({
+            type: 'setLesson',
+            args: { url: `${lesson.url}?loc=ide`, title: learnMessages.lessonButtonTitle },
+          });
+        } else {
+          void this.panel.webview.postMessage({
+            type: 'setLesson',
+            args: null,
+          });
+        }
       }
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger, learnMessages.getLessonError);
     }
   }
 
@@ -123,6 +128,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
       'ossSuggestionWebviewScript.js',
     );
     const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
+    const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
 
     const nonce = getNonce();
 
@@ -139,6 +145,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
 				<link href="${styleUri}" rel="stylesheet">
+				<link href="${learnStyleUri}" rel="stylesheet">
 			</head>
 			<body>
         <div class="suggestion">

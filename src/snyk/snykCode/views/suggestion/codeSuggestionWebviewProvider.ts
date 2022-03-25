@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { OpenCommandIssueType } from '../../../common/commands/types';
 import { IConfiguration } from '../../../common/configuration/configuration';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -9,6 +10,8 @@ import {
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
+import { messages as learnMessages } from '../../../common/messages/learn';
+import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
@@ -40,6 +43,7 @@ export class CodeSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly codeSettings: ICodeSettings,
+    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -66,6 +70,27 @@ export class CodeSuggestionWebviewProvider
     if (!found) this.disposePanel();
   }
 
+  async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
+    try {
+      if (this.panel) {
+        const lesson = await this.learnService.getLesson(suggestion, OpenCommandIssueType.CodeIssue);
+        if (lesson) {
+          void this.panel.webview.postMessage({
+            type: 'setLesson',
+            args: { url: `${lesson.url}?loc=ide`, title: learnMessages.lessonButtonTitle },
+          });
+        } else {
+          void this.panel.webview.postMessage({
+            type: 'setLesson',
+            args: null,
+          });
+        }
+      }
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger, learnMessages.getLessonError);
+    }
+  }
+
   async showPanel(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       await this.focusSecondEditorGroup();
@@ -88,6 +113,7 @@ export class CodeSuggestionWebviewProvider
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
       await this.panel.webview.postMessage({ type: 'set', args: suggestion });
+      void this.postLearnLessonMessage(suggestion);
 
       this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
       this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
@@ -186,6 +212,7 @@ export class CodeSuggestionWebviewProvider
       ['arrow-right-dark', 'svg'],
       ['arrow-left-light', 'svg'],
       ['arrow-right-light', 'svg'],
+      ['learn-icon', 'svg'],
     ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
@@ -203,6 +230,8 @@ export class CodeSuggestionWebviewProvider
     );
     const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
     const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
+    const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
+
     const nonce = getNonce();
     return `
   <!DOCTYPE html>
@@ -216,6 +245,7 @@ export class CodeSuggestionWebviewProvider
 
       <link href="${styleUri}" rel="stylesheet">
       <link href="${styleVSCodeUri}" rel="stylesheet">
+      <link href="${learnStyleUri}" rel="stylesheet">
   </head>
   <body>
       <div class="suggestion">
@@ -239,6 +269,10 @@ export class CodeSuggestionWebviewProvider
             <div id="lead-url" class="clickable hidden">
               <img class="icon" src="${images['icon-external']}" /> More info
             </div>
+          </div>
+          <div class="learn learn__code">
+            <img class="icon" src="${images['learn-icon']}" />
+            <a class="learn--link"></a>
           </div>
         </section>
         <section class="delimiter-top" id="labels"></section>

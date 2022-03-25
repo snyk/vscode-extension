@@ -154,6 +154,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCodeErrorHandler,
       new UriAdapter(),
       this.codeSettings,
+      this.learnService,
     );
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
@@ -167,7 +168,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.context,
       Logger,
       configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger),
+      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
       vsCodeWorkspace,
       this.viewManagerService,
       this.cliDownloadService,

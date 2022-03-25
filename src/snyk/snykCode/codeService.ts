@@ -8,6 +8,7 @@ import { IDE_NAME } from '../common/constants/general';
 import { ErrorHandler } from '../common/error/errorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
+import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
@@ -86,6 +87,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly errorHandler: ISnykCodeErrorHandler,
     private readonly uriAdapter: IUriAdapter,
     codeSettings: ICodeSettings,
+    private readonly learnService: LearnService,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter, this.config);
@@ -107,6 +109,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.logger,
       languages,
       codeSettings,
+      this.learnService,
     );
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

@@ -9,6 +9,7 @@ import { LoggerMock } from '../../mocks/logger.mock';
 
 const ossIssueCommandArgFixture = { identifiers: { CWE: ['CWE-1'] }, packageManager: 'npm' } as OssIssueCommandArg;
 const codeIssueCommandArgFixture = {
+  isSecurityType: true,
   cwe: ['CWE-2'],
   id: 'javascript%2Fdc_interfile_project%2FSqli',
 } as completeFileSuggestionType;
@@ -23,90 +24,151 @@ teardown(() => {
   sinon.restore();
 });
 
-suite('OSS functionality', () => {
-  suite('convertOSSProjectTypeToEcosystem', () => {
-    test('will return the ecosystem of a package manager', () => {
+const loggerMock = new LoggerMock();
+const learnService = new LearnService(loggerMock, false);
+
+suite('LearnService', () => {
+  suite('OSS specific functionality', () => {
+    test('convertOSSProjectTypeToEcosystem - will return the ecosystem of a package manager', () => {
       strictEqual(LearnService.convertOSSProjectTypeToEcosystem('npm'), 'javascript');
       strictEqual(LearnService.convertOSSProjectTypeToEcosystem('maven'), 'java');
     });
 
-    test('returns "all" if package manager is not recognized', () => {
+    test('convertOSSProjectTypeToEcosystem - returns "all" if package manager is not recognized', () => {
       strictEqual(LearnService.convertOSSProjectTypeToEcosystem('not-a-real-package-manager'), 'all');
     });
-  });
 
-  suite('getLesson', () => {
-    test('resolves a lesson', async () => {
-      const service = new LearnService(
-        ossIssueCommandArgFixture,
-        OpenCommandIssueType.OssVulnerability,
-        new LoggerMock(),
-      );
+    test('getOSSIssueParams - returns ecosystem & cwes', () => {
+      deepStrictEqual(LearnService.getOSSIssueParams(ossIssueCommandArgFixture), {
+        ecosystem: 'javascript',
+        cwes: ['CWE-1'],
+      });
+    });
+
+    test('getLesson - resolves a lesson', async () => {
       const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
-      const lesson = await service.getLesson();
+      const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
       deepStrictEqual(lesson, lessonFixture);
-      deepStrictEqual(stub.calledOnceWith('https://api.snyk.io/v1/learn/lessons?cwe=CWE-1'), true);
+      deepStrictEqual(
+        stub.calledOnceWith('/lessons', {
+          baseURL: 'https://api.snyk.io/v1/learn',
+          params: {
+            cwe: ossIssueCommandArgFixture.identifiers?.CWE[0],
+          },
+        }),
+        true,
+      );
+    });
+
+    test('getLesson - returns null if issue license is truthy', async () => {
+      sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const lesson = await learnService.getLesson(
+        { ...ossIssueCommandArgFixture, license: 'AGPL' },
+        OpenCommandIssueType.OssVulnerability,
+      );
+      deepStrictEqual(lesson, null);
     });
   });
-});
 
-suite('CODE functionality', () => {
-  suite('convertCodeIdToEcosystem', () => {
-    test('gets the ecosystem from the id after / or url encoded slack (%2F)', () => {
+  suite('CODE specific functionality', () => {
+    test('convertCodeIdToEcosystem - gets the ecosystem from the id after / or url encoded slack (%2F)', () => {
       strictEqual(LearnService.convertCodeIdToEcosystem('javascript%2Fdc_interfile_project%2FSqli'), 'javascript');
       strictEqual(LearnService.convertCodeIdToEcosystem('javascript/dc_interfile_project/Sqli'), 'javascript');
     });
 
-    test('invalid ecosystems returns all', () => {
+    test('convertCodeIdToEcosystem - invalid ecosystems returns all', () => {
       strictEqual(LearnService.convertCodeIdToEcosystem('notvalidecosystem/test'), 'all');
       strictEqual(LearnService.convertCodeIdToEcosystem(''), 'all');
-      strictEqual(LearnService.convertCodeIdToEcosystem((undefined as unknown) as string), 'all');
+      // @ts-expect-error - testing in case no string is given
+      strictEqual(LearnService.convertCodeIdToEcosystem(undefined), 'all');
+    });
+
+    test('getCodeIssueParams - returns ecosystem & cwes', () => {
+      deepStrictEqual(LearnService.getCodeIssueParams(codeIssueCommandArgFixture), {
+        ecosystem: 'javascript',
+        cwes: ['CWE-2'],
+      });
+    });
+
+    test('getLesson - resolves a lesson', async () => {
+      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue);
+      deepStrictEqual(lesson, lessonFixture);
+      deepStrictEqual(
+        stub.calledOnceWith('/lessons', {
+          baseURL: 'https://api.snyk.io/v1/learn',
+          params: {
+            cwe: codeIssueCommandArgFixture.cwe[0],
+          },
+        }),
+        true,
+      );
+    });
+
+    test('getLesson - returns null if issue isSecurityType is false', async () => {
+      sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const lesson = await learnService.getLesson(
+        { ...codeIssueCommandArgFixture, isSecurityType: false },
+        OpenCommandIssueType.CodeIssue,
+      );
+      deepStrictEqual(lesson, null);
     });
   });
 
   suite('getLesson', () => {
-    test('resolves a lesson', async () => {
-      const service = new LearnService(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue, new LoggerMock());
-      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
-      const lesson = await service.getLesson();
-      deepStrictEqual(lesson, lessonFixture);
-      deepStrictEqual(stub.calledOnceWith('https://api.snyk.io/v1/learn/lessons?cwe=CWE-2'), true);
+    test('returns null if issueType is not known', async () => {
+      const lesson = await learnService.getLesson(
+        ossIssueCommandArgFixture,
+        'not known' as unknown as OpenCommandIssueType,
+      );
+      deepStrictEqual(lesson, null);
     });
-  });
-});
 
-suite('getLesson', () => {
-  test('sorts lessons by ecosystem', async () => {
-    const javascriptFixture = { ...ossIssueCommandArgFixture, packageManager: 'npm' };
-    const service = new LearnService(javascriptFixture, OpenCommandIssueType.OssVulnerability, new LoggerMock());
+    test('returns null if the issue has no ecosystem or identifiers', async () => {
+      const lessonNoCWE = await learnService.getLesson(
+        { ...codeIssueCommandArgFixture, cwe: [] },
+        OpenCommandIssueType.CodeIssue,
+      );
+      deepStrictEqual(lessonNoCWE, null);
+      const lessonNoEcosystem = await learnService.getLesson(
+        { ...codeIssueCommandArgFixture, id: '' },
+        OpenCommandIssueType.CodeIssue,
+      );
+      deepStrictEqual(lessonNoEcosystem, null);
+    });
 
-    const pythonLesson = { ...lessonFixture, ecosystem: 'python' };
-    const javascriptLesson = { ...lessonFixture, ecosystem: 'javascript' };
+    test('returns null if no lessons are returned', async () => {
+      sinon.stub(axios, 'get').resolves({ data: [] });
+      const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(lesson, null);
+    });
 
-    sinon.stub(axios, 'get').resolves({ data: [pythonLesson, javascriptLesson] });
-    const lesson = await service.getLesson();
-    deepStrictEqual(lesson?.ecosystem, 'javascript');
-  });
+    test('logs an error and returns null something goes wrong', async () => {
+      sinon.stub(axios, 'get').rejects({ message: 'test error' });
+      const loggerStub = sinon.stub(loggerMock, 'error').returns(undefined);
 
-  test('returns null if no lessons are returned', async () => {
-    const service = new LearnService(
-      ossIssueCommandArgFixture,
-      OpenCommandIssueType.OssVulnerability,
-      new LoggerMock(),
-    );
-    sinon.stub(axios, 'get').resolves({ data: [] });
-    const lesson = await service.getLesson();
-    deepStrictEqual(lesson, null);
-  });
+      const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(lesson, null);
+      deepStrictEqual(loggerStub.getCall(0).args, ['Error getting Snyk Learn Lesson. {"message":"test error"}']);
+    });
 
-  test('logs an error and returns null something goes wrong', async () => {
-    const loggerMock = new LoggerMock();
-    const service = new LearnService(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability, loggerMock);
-    sinon.stub(axios, 'get').rejects({ message: 'test error' });
-    const loggerStub = sinon.stub(loggerMock, 'error').returns(undefined);
+    test('sorts lessons by ecosystem', async () => {
+      const javascriptFixture = { ...ossIssueCommandArgFixture, packageManager: 'npm' };
+      const pythonLesson = { ...lessonFixture, ecosystem: 'python' };
+      const javascriptLesson = { ...lessonFixture, ecosystem: 'javascript' };
 
-    const lesson = await service.getLesson();
-    deepStrictEqual(lesson, null);
-    deepStrictEqual(loggerStub.calledOnceWith('error getting snyk learn lesson'), true);
+      sinon.stub(axios, 'get').resolves({ data: [pythonLesson, javascriptLesson] });
+      const lesson = await learnService.getLesson(javascriptFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(lesson?.ecosystem, 'javascript');
+    });
+
+    test('caches lesson requests', async () => {
+      const learnService = new LearnService(loggerMock, true);
+      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(stub.calledOnce, true);
+      await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(stub.calledOnce, true);
+    });
   });
 });
