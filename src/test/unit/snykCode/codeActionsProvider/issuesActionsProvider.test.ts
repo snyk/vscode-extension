@@ -18,14 +18,14 @@ suite('Snyk Code actions provider', () => {
   const logQuickFixIsDisplayed = sinon.fake();
 
   setup(() => {
-    const snykReview = ({
+    const snykReview = {
       has: (_: Uri): boolean => true,
       get: sinon.fake(),
-    } as unknown) as DiagnosticCollection;
+    } as unknown as DiagnosticCollection;
 
-    const analytics = ({
+    const analytics = {
       logQuickFixIsDisplayed,
-    } as unknown) as IAnalytics;
+    } as unknown as IAnalytics;
 
     const fakeCodeAction = {
       command: {},
@@ -58,9 +58,9 @@ suite('Snyk Code actions provider', () => {
   test("Logs 'Quick Fix is Displayed' analytical event", () => {
     // prepare objects
     sinon.stub(IssueUtils, 'findIssueWithRange').returns({} as Diagnostic);
-    const document = ({
+    const document = {
       uri: 'test.js',
-    } as unknown) as TextDocument;
+    } as unknown as TextDocument;
 
     // act
     issuesActionsProvider.provideCodeActions(document, {} as Range);

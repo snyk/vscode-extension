@@ -12,7 +12,7 @@ export class ErrorHandler {
    * Should be used only if the affected error breaks the whole extension.
    */
   static async handleGlobal(
-    error: Error,
+    error: Error | unknown,
     logger: ILog,
     contextService: IContextService,
     loadingBadge: ILoadingBadge,
@@ -25,9 +25,13 @@ export class ErrorHandler {
   /**
    * Should be used to log locally and report error event remotely.
    */
-  static handle(error: Error, logger: ILog, message?: string): void {
-    const errorStr = JSON.stringify(error, Object.getOwnPropertyNames(error));
+  static handle(error: Error | unknown, logger: ILog, message?: string): void {
+    const errorStr = this.stringifyError(error);
     logger.error(message ? `${message}. ${errorStr}` : errorStr);
     ErrorReporter.capture(error);
+  }
+
+  static stringifyError(error: Error | unknown) {
+    return JSON.stringify(error, Object.getOwnPropertyNames(error));
   }
 }

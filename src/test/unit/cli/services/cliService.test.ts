@@ -41,19 +41,19 @@ suite('CliService', () => {
   setup(() => {
     logger = new LoggerMock();
 
-    extensionContext = ({
+    extensionContext = {
       extensionPath: extensionPath,
       getGlobalStateValue: () => undefined,
-    } as unknown) as ExtensionContext;
+    } as unknown as ExtensionContext;
 
-    configuration = ({
+    configuration = {
       getAdditionalCliParameters: () => '',
-    } as unknown) as IConfiguration;
+    } as unknown as IConfiguration;
 
-    cliDownloadService = ({
+    cliDownloadService = {
       downloadCli: () => false,
       isInstalled: () => true,
-    } as unknown) as CliDownloadService;
+    } as unknown as CliDownloadService;
 
     testCliService = new TestCliService(
       extensionContext,
@@ -145,7 +145,7 @@ suite('CliService', () => {
     notStrictEqual(result, false);
   });
 
-  test("isChecksumCorrect returns true when CLI file is installed and checksum correct", async () => {
+  test('isChecksumCorrect returns true when CLI file is installed and checksum correct', async () => {
     const checksumStr = 'e06fa5f8d963e8a3e2f9d1bfcf5f66d412ce4d5ad60e24512cfe8a65e7077d88';
     sinon.stub(extensionContext, 'getGlobalStateValue').returns(checksumStr);
     sinon.stub(Checksum, 'getChecksumOf').resolves(Checksum.fromDigest(checksumStr, checksumStr));
@@ -155,7 +155,7 @@ suite('CliService', () => {
     strictEqual(result, true);
   });
 
-  test("isChecksumCorrect returns false when CLI file is not installed", async () => {
+  test('isChecksumCorrect returns false when CLI file is not installed', async () => {
     sinon.stub(cliDownloadService, 'isInstalled').resolves(false);
     const result = await testCliService.isChecksumCorrect('test/path');
     strictEqual(result, false);

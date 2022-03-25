@@ -71,7 +71,7 @@ export class ErrorReporter {
     });
   }
 
-  static capture(e: Error): string | undefined {
+  static capture(e: Error | unknown): string | undefined {
     const isInitialized = Sentry.getCurrentHub().getClient();
     if (isInitialized) {
       return Sentry.captureException(e);

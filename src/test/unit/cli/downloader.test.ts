@@ -7,7 +7,6 @@ import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { CliDownloader } from '../../../snyk/cli/downloader';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { Platform } from '../../../snyk/common/platform';
-import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
 import { LoggerMock } from '../mocks/logger.mock';
 import { windowMock } from '../mocks/window.mock';
 

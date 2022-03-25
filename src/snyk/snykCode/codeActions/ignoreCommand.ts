@@ -42,8 +42,9 @@ export class IgnoreCommand {
       if (!editor || !issueText || !matchedIssue) {
         return;
       }
-      const symbolIndexToInsert = editor.document.lineAt(matchedIssue.range.start.line)
-        .firstNonWhitespaceCharacterIndex;
+      const symbolIndexToInsert = editor.document.lineAt(
+        matchedIssue.range.start.line,
+      ).firstNonWhitespaceCharacterIndex;
       let issuePosition = new vscode.Position(matchedIssue.range.start.line, symbolIndexToInsert);
 
       let snykCommentPostition: vscode.Position | undefined;

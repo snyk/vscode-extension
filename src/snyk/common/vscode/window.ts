@@ -5,7 +5,7 @@ import { TextDocument, TextEditor, ViewColumn } from './types';
 export interface IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined;
   getVisibleTextEditors(): TextEditor[];
-  showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>
+  showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>;
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
   withProgress<R>(

@@ -37,7 +37,7 @@ export class OnUncaughtException implements Integration {
    * @inheritDoc
    */
   setupOnce(): void {
-    global.process.on('uncaughtException', this.handler.bind(this));
+    global.process.on('uncaughtException', (error: Error) => this.handler(error));
   }
 
   isExtensionOriginError(error: Error): boolean {

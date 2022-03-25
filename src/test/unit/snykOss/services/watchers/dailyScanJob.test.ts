@@ -10,9 +10,9 @@ suite('OSS DailyScanJob', () => {
 
   setup(() => {
     ossScanSpy = sinon.fake();
-    extension = ({
+    extension = {
       runOssScan: ossScanSpy,
-    } as unknown) as IExtension;
+    } as unknown as IExtension;
     clock = sinon.useFakeTimers();
   });
 

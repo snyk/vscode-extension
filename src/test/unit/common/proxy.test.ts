@@ -22,9 +22,9 @@ suite('Proxy', () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(undefined);
 
-    const workspace = ({
+    const workspace = {
       getConfiguration,
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     const agent = getHttpsProxyAgent(workspace);
 
@@ -36,9 +36,9 @@ suite('Proxy', () => {
     getConfiguration.withArgs('http', 'proxy').returns(proxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
 
-    const workspace = ({
+    const workspace = {
       getConfiguration,
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     const agent = getHttpsProxyAgent(workspace);
 
@@ -57,9 +57,9 @@ suite('Proxy', () => {
     getConfiguration.withArgs('http', 'proxy').returns(undefined);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
 
-    const workspace = ({
+    const workspace = {
       getConfiguration,
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     const agent = getHttpsProxyAgent(workspace, {
       https_proxy: proxy,

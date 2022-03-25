@@ -77,10 +77,8 @@ export class CliDownloader {
     const hash = new Checksum(expectedChecksum);
 
     return this.window.withProgress(messages.progressTitle, async (progress, token) => {
-      const [request, requestToken]: [
-        response: Promise<CliDownloadAxiosResponse>,
-        cancelToken: CancelTokenSource,
-      ] = this.api.getExecutable(platform);
+      const [request, requestToken]: [response: Promise<CliDownloadAxiosResponse>, cancelToken: CancelTokenSource] =
+        this.api.getExecutable(platform);
 
       token.onCancellationRequested(async () => {
         requestToken.cancel();

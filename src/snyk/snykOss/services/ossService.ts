@@ -94,7 +94,7 @@ export class OssService extends CliService<OssResult> {
     this.viewManagerService.refreshOssView();
   }
 
-  override handleCliDownloadFailure(error: Error): void {
+  override handleCliDownloadFailure(error: Error | unknown): void {
     this.viewManagerService.refreshOssView();
     super.handleCliDownloadFailure(error);
   }

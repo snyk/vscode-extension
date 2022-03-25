@@ -14,14 +14,14 @@ suite('Snyk Code hover provider', () => {
   const logIssueHoverIsDisplayed = sinon.fake();
 
   setup(() => {
-    const analyzer = ({
+    const analyzer = {
       findSuggestion: (_: string) => true,
-    } as unknown) as ISnykCodeAnalyzer;
-    const vscodeLanguagesMock = (sinon.fake() as unknown) as IVSCodeLanguages;
+    } as unknown as ISnykCodeAnalyzer;
+    const vscodeLanguagesMock = sinon.fake() as unknown as IVSCodeLanguages;
 
-    const analytics = ({
+    const analytics = {
       logIssueHoverIsDisplayed,
-    } as unknown) as IAnalytics;
+    } as unknown as IAnalytics;
 
     provider = new DisposableHoverProvider(analyzer, new LoggerMock(), vscodeLanguagesMock, analytics);
   });
@@ -32,10 +32,10 @@ suite('Snyk Code hover provider', () => {
 
   test("Logs 'Issue Hover is Displayed' analytical event", () => {
     // prepare objects
-    const snykReview = ({
+    const snykReview = {
       has: (_: Uri): boolean => true,
       get: sinon.fake(),
-    } as unknown) as DiagnosticCollection;
+    } as unknown as DiagnosticCollection;
 
     sinon.stub(IssueUtils, 'findIssueWithRange').returns({} as Diagnostic);
 
@@ -43,9 +43,9 @@ suite('Snyk Code hover provider', () => {
       create: sinon.fake() as unknown,
     } as IHoverAdapter);
 
-    const document = ({
+    const document = {
       uri: 'test.js',
-    } as unknown) as TextDocument;
+    } as unknown as TextDocument;
 
     // act
     hoverProvider(document, {} as Position);

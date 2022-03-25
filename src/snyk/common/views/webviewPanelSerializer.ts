@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { WebviewProvider } from './webviewProvider';
 
-export class WebviewPanelSerializer<Provider extends WebviewProvider<State>, State> implements vscode.WebviewPanelSerializer {
+export class WebviewPanelSerializer<Provider extends WebviewProvider<State>, State>
+  implements vscode.WebviewPanelSerializer
+{
   constructor(private readonly provider: Provider) {}
   async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: State): Promise<void> {
     if (!state) {

@@ -20,13 +20,21 @@ export class Progress {
   ) {}
 
   bindListeners(): void {
-    this.emitter.on(this.emitter.events.supportedFilesLoaded, this.onSupportedFilesLoaded.bind(this));
-    this.emitter.on(this.emitter.events.scanFilesProgress, this.onScanFilesProgress.bind(this));
-    this.emitter.on(this.emitter.events.createBundleProgress, this.onCreateBundleProgress.bind(this));
-    this.emitter.on(this.emitter.events.uploadBundleProgress, this.onUploadBundleProgress.bind(this));
-    this.emitter.on(this.emitter.events.analyseProgress, this.onAnalyseProgress.bind(this));
-    this.emitter.on(this.emitter.events.apiRequestLog, Progress.onAPIRequestLog.bind(this));
-    this.emitter.on(this.emitter.events.error, this.snykCode.errorEncountered.bind(this));
+    this.emitter.on(this.emitter.events.supportedFilesLoaded, (data: SupportedFiles | null) =>
+      this.onSupportedFilesLoaded(data),
+    );
+    this.emitter.on(this.emitter.events.scanFilesProgress, (value: number) => this.onScanFilesProgress(value));
+    this.emitter.on(this.emitter.events.createBundleProgress, (processed: number, total: number) =>
+      this.onCreateBundleProgress(processed, total),
+    );
+    this.emitter.on(this.emitter.events.uploadBundleProgress, (processed: number, total: number) =>
+      this.onUploadBundleProgress(processed, total),
+    );
+    this.emitter.on(this.emitter.events.analyseProgress, (data: { status: string; progress: number }) =>
+      this.onAnalyseProgress(data),
+    );
+    this.emitter.on(this.emitter.events.apiRequestLog, (message: string) => Progress.onAPIRequestLog(message));
+    this.emitter.on(this.emitter.events.error, (requestId: string) => this.snykCode.errorEncountered(requestId));
   }
 
   updateStatus(status: string, progress: string): void {

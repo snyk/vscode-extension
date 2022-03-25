@@ -1,12 +1,12 @@
 import { constants } from '@snyk/code-client';
 import { errorType, IBaseSnykModule } from '../../base/modules/interfaces';
 import { ILoadingBadge } from '../../base/views/loadingBadge';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
+import { ErrorHandler } from '../../common/error/errorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
-import { ErrorHandler } from '../../common/error/errorHandler';
-import { IConfiguration } from '../../common/configuration/configuration';
 
 export interface ISnykCodeErrorHandler {
   resetTransientErrors(): void;
@@ -84,7 +84,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const errorStatusCode = error?.statusCode;
-    if (errorHandlers.hasOwnProperty(errorStatusCode)) {
+    if (errorHandlers.hasOwnProperty(errorStatusCode as PropertyKey)) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await errorHandlers[errorStatusCode]();
     } else if (error instanceof Error && error.message === 'Failed to get remote bundle') {
@@ -104,7 +104,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
   private generalErrorHandler(
     error: errorType,
     options: { [key: string]: unknown },
-    callback: (error: Error) => void,
+    callback: (error: errorType) => void,
   ): void {
     this.transientErrors = 0;
     callback(error);
@@ -126,11 +126,12 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     return Promise.resolve();
   }
 
-  capture(error: Error, options: { [key: string]: unknown }): void {
-    ErrorHandler.handle(
-      error,
-      this.logger,
-      Object.keys(options).length > 0 ? `${error.message}. ${options}` : error.message,
-    );
+  capture(error: errorType, options: { [key: string]: unknown }): void {
+    let msg = error instanceof Error ? error?.message : '';
+    if (Object.keys(options).length > 0) {
+      msg += `. ${options}`;
+    }
+
+    ErrorHandler.handle(error, this.logger, msg);
   }
 }

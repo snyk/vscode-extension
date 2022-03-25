@@ -10,9 +10,9 @@ suite('OSS Editor Decorator', () => {
   let decorator: EditorDecorator;
 
   setup(() => {
-    const window = ({
+    const window = {
       createTextEditorDecorationType: sinon.fake(),
-    } as unknown) as IVSCodeWindow;
+    } as unknown as IVSCodeWindow;
     const languages = {
       createRange: (startLine: number, startCharacter: number, endLine: number, endCharacter: number) => ({
         start: { line: startLine, character: startCharacter },

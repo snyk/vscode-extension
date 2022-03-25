@@ -24,7 +24,8 @@ import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
 export class CodeSuggestionWebviewProvider
   extends WebviewProvider<completeFileSuggestionType>
-  implements ICodeSuggestionWebviewProvider {
+  implements ICodeSuggestionWebviewProvider
+{
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
   private suggestion: completeFileSuggestionType | undefined;
@@ -86,10 +87,10 @@ export class CodeSuggestionWebviewProvider
 
       await this.panel.webview.postMessage({ type: 'set', args: suggestion });
 
-      this.panel.onDidDispose(this.onPanelDispose.bind(this), null, this.disposables);
-      this.panel.onDidChangeViewState(this.checkVisibility.bind(this), undefined, this.disposables);
+      this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
+      this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
       // Handle messages from the webview
-      this.panel.webview.onDidReceiveMessage(this.handleMessage.bind(this), undefined, this.disposables);
+      this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
       this.suggestion = suggestion;
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
@@ -112,7 +113,7 @@ export class CodeSuggestionWebviewProvider
       switch (type) {
         case 'openLocal': {
           let { uri, cols, rows } = args;
-          uri = vscode.Uri.parse(uri);
+          uri = vscode.Uri.parse(uri as string);
           const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, range);
           break;
@@ -125,8 +126,8 @@ export class CodeSuggestionWebviewProvider
         case 'ignoreIssue': {
           // eslint-disable-next-line no-shadow
           let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
-          uri = vscode.Uri.parse(uri);
-          severity = getVSCodeSeverity(severity);
+          uri = vscode.Uri.parse(uri as string);
+          severity = getVSCodeSeverity(severity as number);
           const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri,
@@ -148,7 +149,7 @@ export class CodeSuggestionWebviewProvider
         }
       }
     } catch (e) {
-      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewMessageHandlingFailed(message));
+      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewMessageHandlingFailed(JSON.stringify(message)));
     }
   }
 

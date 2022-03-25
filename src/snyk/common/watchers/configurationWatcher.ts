@@ -47,27 +47,25 @@ class ConfigurationWatcher implements IWatcher {
   }
 
   public activate(extension: IExtension): void {
-    vscode.workspace.onDidChangeConfiguration(
-      async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
-        const change = [
-          ADVANCED_ADVANCED_MODE_SETTING,
-          ADVANCED_AUTOSCAN_OSS_SETTING,
-          YES_TELEMETRY_SETTING,
-          OSS_ENABLED_SETTING,
-          CODE_SECURITY_ENABLED_SETTING,
-          CODE_QUALITY_ENABLED_SETTING,
-          SEVERITY_FILTER_SETTING,
-        ].find(config => event.affectsConfiguration(config));
+    vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
+      const change = [
+        ADVANCED_ADVANCED_MODE_SETTING,
+        ADVANCED_AUTOSCAN_OSS_SETTING,
+        YES_TELEMETRY_SETTING,
+        OSS_ENABLED_SETTING,
+        CODE_SECURITY_ENABLED_SETTING,
+        CODE_QUALITY_ENABLED_SETTING,
+        SEVERITY_FILTER_SETTING,
+      ].find(config => event.affectsConfiguration(config));
 
-        if (change) {
-          try {
-            await this.onChangeConfiguration(extension, change);
-          } catch (error) {
-            ErrorHandler.handle(error, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${change}`);
-          }
+      if (change) {
+        try {
+          await this.onChangeConfiguration(extension, change);
+        } catch (error) {
+          ErrorHandler.handle(error, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${change}`);
         }
-      },
-    );
+      }
+    });
 
     SecretStorageAdapter.instance.onDidChange(event => {
       if (event.key === SNYK_TOKEN_KEY) {
