@@ -4,6 +4,10 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+
+  &--header {
+    padding-bottom: 8px;
+  }
 }
 
 .suggestion .suggestion-text {
@@ -35,6 +39,21 @@
 
 .identifiers {
   font-size: 1em;
+}
+
+.learn {
+  min-height: 5px;
+  opacity: 0;
+
+  &--link {
+    margin-left: 3px;
+  }
+
+  &.opacity-show {
+    opacity: 1;
+    transition-duration: 500ms;
+    transition-property: opacity;
+  }
 }
 
 .vscode-dark .light-only {

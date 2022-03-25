@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
+import { OpenCommandIssueType } from '../../../common/commands/types';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
+import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -35,6 +37,24 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
     );
   }
 
+  async postLearnLessonMessage(vulnerability: OssIssueCommandArg): Promise<void> {
+    if (this.panel) {
+      const learnService = new LearnService(vulnerability, OpenCommandIssueType.OssVulnerability, this.logger);
+      const lesson = await learnService.getLesson();
+      if (lesson) {
+        void this.panel.webview.postMessage({
+          type: 'setLesson',
+          args: { url: `${lesson.url}?loc=ide`, title: 'Learn about this vulnerability' },
+        });
+      } else {
+        void this.panel.webview.postMessage({
+          type: 'setLesson',
+          args: { url: 'https://learn.snyk.io?loc=ide', title: 'Security education with Snyk Learn' },
+        });
+      }
+    }
+  }
+
   async showPanel(vulnerability: OssIssueCommandArg): Promise<void> {
     try {
       await this.focusSecondEditorGroup();
@@ -56,8 +76,10 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
       void this.panel.webview.postMessage({ type: 'set', args: vulnerability });
+      void this.postLearnLessonMessage(vulnerability);
 
       this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
+
       this.panel.webview.onDidReceiveMessage(
         (data: OssSuggestionViewEventMessage) => {
           switch (data.type) {
@@ -84,6 +106,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
       ['dark-high-severity', 'svg'],
       ['dark-medium-severity', 'svg'],
       ['dark-low-severity', 'svg'],
+      ['learn-icon', 'svg'],
     ].reduce((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
@@ -119,7 +142,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
 			</head>
 			<body>
         <div class="suggestion">
-          <section>
+          <section class="suggestion--header">
             <div class="severity">
               <img id="lowl" class="icon light-only hidden" src="${images['dark-low-severity']}" />
               <img id="lowd" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
@@ -133,6 +156,10 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
             </div>
             <div class="suggestion-text"></div>
             <div class="identifiers"></div>
+            <div class="learn">
+              <img class="icon" src="${images['learn-icon']}" />
+              <a class="learn--link"></a>
+            </div>
           </section>
           <section class="delimiter-top summary">
             <div class="summary-item module">
