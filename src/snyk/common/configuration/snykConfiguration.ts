@@ -1,4 +1,4 @@
-import path from 'path';
+import pJson from '../../../../snyk.config.local.json';
 
 export class SnykConfiguration {
   private static readonly configFileName = 'snyk.config.json';
@@ -10,6 +10,6 @@ export class SnykConfiguration {
 
   static get(extensionPath: string, isDevelopment: boolean): Promise<SnykConfiguration> {
     const configFilename = isDevelopment ? this.localConfigFileName : this.configFileName;
-    return import(path.join(extensionPath, configFilename)) as Promise<SnykConfiguration>;
+    return Promise.resolve(pJson) as Promise<SnykConfiguration>;
   }
 }

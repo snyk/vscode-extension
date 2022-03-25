@@ -21,6 +21,7 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import pJson from '../../../../package.json';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
@@ -96,7 +97,7 @@ export class Configuration implements IConfiguration {
   }
 
   private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {
-    return (await import(path.join('../../../..', 'package.json'))) as { version: string; preview: boolean };
+    return Promise.resolve(pJson as { version: string; preview: boolean });
   }
 
   get isDevelopment(): boolean {

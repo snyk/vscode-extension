@@ -11,24 +11,24 @@ type NODE_ICON_TYPE = 'critical' | 'high' | 'medium' | 'low' | 'error';
 
 export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
   critical: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
+    light: path.join(__filename, '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
+    dark: path.join(__filename, '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
   },
   high: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
+    light: path.join(__filename, '..', '..', 'media', 'images', 'dark-high-severity.svg'),
+    dark: path.join(__filename, '..', '..', 'media', 'images', 'dark-high-severity.svg'),
   },
   medium: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
+    light: path.join(__filename, '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
+    dark: path.join(__filename, '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
   },
   low: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
+    light: path.join(__filename, '..', '..', 'media', 'images', 'dark-low-severity.svg'),
+    dark: path.join(__filename, '..', '..', 'media', 'images', 'dark-low-severity.svg'),
   },
   error: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
+    light: path.join(__filename, '..', '..', 'media', 'images', 'warning.svg'),
+    dark: path.join(__filename, '..', '..', 'media', 'images', 'warning.svg'),
   },
 };
 

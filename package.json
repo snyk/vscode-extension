@@ -339,7 +339,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
+    "vscode:prepublish": "npm run esbuild-base -- --minify && sass media --no-source-map",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "watch-resources": "sass media --no-source-map --watch",
@@ -372,6 +375,7 @@
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "concurrently": "^7.0.0",
+    "esbuild": "^0.14.27",
     "eslint": "^7.8.1",
     "eslint-config-prettier": "^6.11.0",
     "eslint-import-resolver-typescript": "^2.4.0",
