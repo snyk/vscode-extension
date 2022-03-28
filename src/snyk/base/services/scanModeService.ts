@@ -17,10 +17,7 @@ export class ScanModeService {
   }
 
   isCodeAutoScanAllowed(): boolean {
-    if (
-      [CODE_SCAN_MODE.MANUAL, CODE_SCAN_MODE.PAUSED].includes(this._mode) ||
-      this.shouldCodeBeThrottled()
-    ) {
+    if ([CODE_SCAN_MODE.MANUAL, CODE_SCAN_MODE.PAUSED].includes(this._mode) || this.shouldCodeBeThrottled()) {
       return false;
     }
 

@@ -3,6 +3,7 @@ import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM } from '../../common/constants/globalState';
+import { ErrorHandler } from '../../common/error/errorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
@@ -13,7 +14,7 @@ import { CliProcess } from '../process';
 import { CliDownloadService } from './cliDownloadService';
 
 export class CliError {
-  constructor(public error: string | Error, public path?: string, public isCancellation = false) {}
+  constructor(public error: string | Error | unknown, public path?: string, public isCancellation = false) {}
 }
 
 export abstract class CliService<CliResult> extends AnalysisStatusProvider {
@@ -96,8 +97,8 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  handleCliDownloadFailure(error: Error): void {
-    this.logger.error(`${messages.cliDownloadFailed} ${error}`);
+  handleCliDownloadFailure(error: Error | unknown): void {
+    this.logger.error(`${messages.cliDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
     this._isCliDownloadSuccessful = false;
   }
 

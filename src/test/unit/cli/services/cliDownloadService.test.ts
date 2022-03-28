@@ -34,7 +34,7 @@ suite('CliDownloaderService', () => {
     };
     logger = new LoggerMock();
 
-    context = ({
+    context = {
       extensionPath: 'test/path',
       getGlobalStateValue: contextGetGlobalStateValue,
       updateGlobalStateValue: sinon.fake(),
@@ -42,7 +42,7 @@ suite('CliDownloaderService', () => {
       subscriptions: [],
       addDisposables: sinon.fake(),
       getExtensionUri: sinon.fake(),
-    } as unknown) as ExtensionContext;
+    } as unknown as ExtensionContext;
 
     downloader = new CliDownloader(api, context.extensionPath, windowMock, logger);
   });

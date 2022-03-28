@@ -9,6 +9,7 @@ import { StaticCliApi } from './cli/api/staticCliApi';
 import { CliDownloadService } from './cli/services/cliDownloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
+import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
@@ -50,6 +51,7 @@ import { extensionContext } from './common/vscode/extensionContext';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
+import { Range, Uri } from './common/vscode/types';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
@@ -307,44 +309,34 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
-      vscode.commands.registerCommand(
-        SNYK_OPEN_BROWSER_COMMAND,
-        this.commandController.openBrowser.bind(this.commandController),
+      vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
+        this.commandController.openBrowser(url),
       ),
-      vscode.commands.registerCommand(
-        SNYK_COPY_AUTH_LINK_COMMAND,
-        this.commandController.copyAuthLink.bind(this.commandController),
+      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_COMMAND, () => this.commandController.copyAuthLink()),
+      vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
+        this.commandController.openLocal(path, range),
       ),
-      vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, this.commandController.openLocal.bind(this)),
-      vscode.commands.registerCommand(
-        SNYK_LOGIN_COMMAND,
-        this.commandController.initiateLogin.bind(this.commandController),
-      ),
-      vscode.commands.registerCommand(
-        SNYK_LOGOUT_COMMAND,
-        this.commandController.initiateLogout.bind(this.commandController),
-      ),
+      vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_LOGOUT_COMMAND, () => this.commandController.initiateLogout()),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
-        this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, this.enableCode.bind(this)),
+        this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, () =>
-        this.commandController.executeCommand(SNYK_START_COMMAND, this.runScan.bind(this), true),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)),
       ),
-      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, this.commandController.setScanMode.bind(this)),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, this.commandController.openSettings.bind(this)),
-      vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, this.commandController.createDCIgnore.bind(this)),
-      vscode.commands.registerCommand(
-        SNYK_OPEN_ISSUE_COMMAND,
-        this.commandController.openIssueCommand.bind(this.commandController),
+      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: string) => this.commandController.setScanMode(mode)),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
+      vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
+        this.commandController.createDCIgnore(custom, path),
       ),
-      vscode.commands.registerCommand(
-        SNYK_REPORT_FALSE_POSITIVE_COMMAND,
-        this.commandController.reportFalsePositive.bind(this.commandController),
+      vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, (arg: OpenIssueCommandArg) =>
+        this.commandController.openIssueCommand(arg),
       ),
-      vscode.commands.registerCommand(
-        SNYK_SHOW_OUTPUT_COMMAND,
-        this.commandController.showOutputChannel.bind(this.commandController),
+      vscode.commands.registerCommand(SNYK_REPORT_FALSE_POSITIVE_COMMAND, (arg: ReportFalsePositiveCommandArg) =>
+        this.commandController.reportFalsePositive(arg),
       ),
+      vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
     );
   }

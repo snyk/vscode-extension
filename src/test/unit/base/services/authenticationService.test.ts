@@ -30,17 +30,17 @@ suite('AuthenticationService', () => {
   };
 
   setup(() => {
-    contextService = ({
+    contextService = {
       setContext: sinon.fake(),
-    } as unknown) as IContextService;
+    } as unknown as IContextService;
     openerService = {
       openBrowserUrl: sinon.fake(),
       copyOpenedUrl: sinon.fake(),
     };
     baseModule = {} as IBaseSnykModule;
-    config = ({
+    config = {
       authHost: '',
-    } as unknown) as IConfiguration;
+    } as unknown as IConfiguration;
   });
 
   teardown(() => sinon.restore());
@@ -49,9 +49,9 @@ suite('AuthenticationService', () => {
     const getIpFamilyStub = sinon.stub(codeClient, 'getIpFamily').resolves(undefined);
 
     const logAuthenticateButtonIsClickedFake = sinon.fake();
-    const analytics = ({
+    const analytics = {
       logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
-    } as unknown) as IAnalytics;
+    } as unknown as IAnalytics;
     const service = new AuthenticationService(
       contextService,
       openerService,
@@ -78,11 +78,11 @@ suite('AuthenticationService', () => {
     sinon.stub(needle, 'request').callsFake((_, uri, data, opts, callback) => {
       if (!callback) throw new Error();
       callback(
-        ({
+        {
           code: ipv6ErrorCode,
           errno: ipv6ErrorCode,
-        } as unknown) as Error,
-        ({} as unknown) as NeedleResponse,
+        } as unknown as Error,
+        {} as unknown as NeedleResponse,
         null,
       );
       // eslint-disable-next-line camelcase

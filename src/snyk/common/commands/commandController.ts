@@ -43,19 +43,19 @@ export class CommandController {
   ) {}
 
   openBrowser(url: string): unknown {
-    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
+    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, () => this.openerService.openBrowserUrl(url));
   }
 
   copyAuthLink(): unknown {
-    return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.openerService.copyOpenedUrl.bind(this.openerService));
+    return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, () => this.openerService.copyOpenedUrl());
   }
 
   initiateLogin(): unknown {
-    return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService, getIpFamily));
+    return this.executeCommand(SNYK_LOGIN_COMMAND, () => this.authService.initiateLogin(getIpFamily));
   }
 
   async initiateLogout(): Promise<void> {
-    await this.executeCommand(SNYK_LOGOUT_COMMAND, this.authService.initiateLogout.bind(this.authService));
+    await this.executeCommand(SNYK_LOGOUT_COMMAND, () => this.authService.initiateLogout());
     await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
   }
 

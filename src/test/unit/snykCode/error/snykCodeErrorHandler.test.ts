@@ -19,9 +19,9 @@ suite('Snyk Code Error Handler', () => {
     this.timeout(CONNECTION_ERROR_RETRY_INTERVAL + 2000);
 
     const runCodeScanFake = sinon.stub().resolves();
-    const baseSnykModule = ({
+    const baseSnykModule = {
       runCodeScan: runCodeScanFake,
-    } as unknown) as IBaseSnykModule;
+    } as unknown as IBaseSnykModule;
     const handler = new SnykCodeErrorHandler(
       {} as IContextService,
       {} as ILoadingBadge,

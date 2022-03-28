@@ -8,9 +8,9 @@ suite('Snyk Code Analysis Utils', () => {
   let languages: IVSCodeLanguages;
 
   setup(() => {
-    languages = ({
+    languages = {
       createRange: createRangeMock,
-    } as unknown) as IVSCodeLanguages;
+    } as unknown as IVSCodeLanguages;
   });
 
   teardown(() => createRangeMock.reset());

@@ -18,12 +18,12 @@ suite('Configuration', () => {
 
     let token = '';
 
-    extensionContext = ({
+    extensionContext = {
       secrets: {
         store: (_key: string, _value: string) => Promise.resolve(),
         get: () => Promise.resolve(),
       },
-    } as unknown) as ExtensionContext;
+    } as unknown as ExtensionContext;
     SecretStorageAdapter.init(extensionContext);
 
     const stub = sinon.stub().returns({

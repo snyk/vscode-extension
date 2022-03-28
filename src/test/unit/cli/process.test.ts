@@ -9,9 +9,9 @@ import { LoggerMock } from '../mocks/logger.mock';
 
 suite('CliProcess', () => {
   let logger: ILog;
-  const emptyWorkspace = ({
+  const emptyWorkspace = {
     getConfiguration: () => undefined,
-  } as unknown) as IVSCodeWorkspace;
+  } as unknown as IVSCodeWorkspace;
 
   setup(() => {
     logger = new LoggerMock();
@@ -79,9 +79,9 @@ suite('CliProcess', () => {
         shouldReportEvents: true,
         getToken: () => Promise.resolve(),
       } as IConfiguration,
-      ({
+      {
         getConfiguration: getConfiguration,
-      } as unknown) as IVSCodeWorkspace,
+      } as unknown as IVSCodeWorkspace,
     );
 
     // act

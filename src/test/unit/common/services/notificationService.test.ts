@@ -13,9 +13,9 @@ suite('NotificationService', () => {
   let commands: IVSCodeCommands;
 
   setup(() => {
-    window = ({
+    window = {
       showInformationMessage: () => Promise.resolve(snykMessages.welcome.button),
-    } as unknown) as IVSCodeWindow;
+    } as unknown as IVSCodeWindow;
     commands = {
       executeCommand: sinon.fake(),
     } as IVSCodeCommands;
@@ -27,9 +27,9 @@ suite('NotificationService', () => {
 
   test('"Welcome Button Is Clicked" analytical event is logged', async () => {
     const logWelcomeButtonIsClickedFake = sinon.fake();
-    const analytics = ({
+    const analytics = {
       logWelcomeButtonIsClicked: logWelcomeButtonIsClickedFake,
-    } as unknown) as IAnalytics;
+    } as unknown as IAnalytics;
     const configuration = {
       shouldShowWelcomeNotification: true,
     } as IConfiguration;

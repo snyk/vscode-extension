@@ -23,9 +23,9 @@ suite('ExperimentService', () => {
   });
 
   test("Doesn't load when event reporting is off", () => {
-    const config = ({
+    const config = {
       shouldReportEvents: false,
-    } as unknown) as IConfiguration;
+    } as unknown as IConfiguration;
 
     const service = new ExperimentService(user, new LoggerMock(), config);
     const loaded = service.load();
@@ -34,9 +34,9 @@ suite('ExperimentService', () => {
   });
 
   test('User is not part of experiment when event reporting is off', async () => {
-    const config = ({
+    const config = {
       shouldReportEvents: false,
-    } as unknown) as IConfiguration;
+    } as unknown as IConfiguration;
 
     const service = new ExperimentService(user, new LoggerMock(), config);
 

@@ -1,6 +1,7 @@
 import open from 'open';
 import { Logger } from '../logger/logger';
 import * as vscode from 'vscode';
+import { ErrorHandler } from '../error/errorHandler';
 
 export interface IOpenerService {
   openBrowserUrl(url: string): Promise<void>;
@@ -16,7 +17,7 @@ export class OpenerService {
     try {
       await open(url);
     } catch (err) {
-      Logger.error(err);
+      ErrorHandler.handle(err, Logger);
     }
   }
 

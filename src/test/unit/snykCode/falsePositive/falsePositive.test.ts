@@ -39,9 +39,9 @@ suite('False Positive', () => {
     // arrange
     const suggestionFilePath = '/Users/snyk/goof/test.js';
     const markerFilePath = '/Users/snyk/goof/test2.js';
-    workspace = ({
+    workspace = {
       getWorkspaceFolders: () => ['/Users/snyk/goof1', '/Users/snyk/goof2'],
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     // act
     const absoluteFilePath = FalsePositive.getAbsoluteMarkerFilePath(workspace, markerFilePath, suggestionFilePath);
@@ -55,9 +55,9 @@ suite('False Positive', () => {
     const suggestionFilePath = '/Users/snyk/goof/test.js';
     const relativeMarkerFilePath = 'test2.js';
     const workspaceFolder = '/Users/snyk/goof1';
-    workspace = ({
+    workspace = {
       getWorkspaceFolders: () => [workspaceFolder],
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     // act
     const absoluteFilePath = FalsePositive.getAbsoluteMarkerFilePath(
@@ -85,14 +85,14 @@ suite('False Positive', () => {
 
     const workspaceFolder = os.platform() === 'win32' ? 'C:\\Users\\snyk\\goof' : '/Users/snyk/goof';
     const text = 'console.log("Hello world");';
-    const textDocument = ({
+    const textDocument = {
       getText: () => text,
-    } as unknown) as TextDocument;
+    } as unknown as TextDocument;
 
-    workspace = ({
+    workspace = {
       getWorkspaceFolders: () => [workspaceFolder],
       openFileTextDocument: () => Promise.resolve(textDocument),
-    } as unknown) as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
 
     const fp = new FalsePositive(workspace, suggestion);
 

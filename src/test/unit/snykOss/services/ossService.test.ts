@@ -42,13 +42,13 @@ suite('OssService', () => {
         refreshOssView: () => undefined,
       } as IViewManagerService,
       {} as CliDownloadService,
-      ({
+      {
         schedule: sinon.fake(),
-      } as unknown) as DailyScanJob,
+      } as unknown as DailyScanJob,
       {} as INotificationService,
-      ({
+      {
         logAnalysisIsReady: sinon.fake(),
-      } as unknown) as IAnalytics,
+      } as unknown as IAnalytics,
     );
     sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });

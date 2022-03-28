@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -93,7 +94,7 @@
     }
     const example = document.getElementById('example')!;
     example.querySelectorAll('*').forEach(n => n.remove());
-    for (let l of suggestion.exampleCommitFixes[exampleCount].lines) {
+    for (const l of suggestion.exampleCommitFixes[exampleCount].lines) {
       const line = document.createElement('div');
       line.className = `example-line ${l.lineChange}`;
       example.appendChild(line);
@@ -149,7 +150,7 @@
     title.innerHTML = '';
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
-      for (let m of suggestion.markers) {
+      for (const m of suggestion.markers) {
         const preText = suggestion.message.substring(i, m.msg[0]);
         const preMark = document.createTextNode(preText);
         title.appendChild(preMark);
@@ -164,7 +165,7 @@
         mark.appendChild(markMsg);
         let markLineText = ' [';
         let first = true;
-        for (let p of m.pos) {
+        for (const p of m.pos) {
           markLineText += (first ? '' : ', ') + ':' + (p.rows[0] as string);
           first = false;
         }
@@ -192,7 +193,7 @@
 
     const labels = document.getElementById('labels')!;
     labels.querySelectorAll('*').forEach(n => n.remove());
-    for (let l of [...suggestion.categories, ...suggestion.tags]) {
+    for (const l of [...suggestion.categories, ...suggestion.tags]) {
       const chip = document.createElement('div');
       chip.className = 'chip';
       chip.innerHTML = l;
