@@ -103,6 +103,14 @@
             "description": "Specifies the organization name to run tests tied to a specific organization.",
             "scope": "window"
           },
+          "snyk.advanced.tokenStorage": {
+            "type": "string",
+            "enum": [
+              "secret storage"
+            ],
+            "default": "secret storage",
+            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
+          },
           "snyk.features.openSourceSecurity": {
             "type": "boolean",
             "title": "Snyk Open Source security issues",
@@ -293,10 +301,6 @@
       "commandPalette": [
         {
           "command": "snyk.login",
-          "when": "!snyk:loggedIn"
-        },
-        {
-          "command": "snyk.setToken",
           "when": "!snyk:loggedIn"
         },
         {
