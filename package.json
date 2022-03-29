@@ -296,6 +296,14 @@
           "when": "!snyk:loggedIn"
         },
         {
+          "command": "snyk.setToken",
+          "when": "!snyk:loggedIn"
+        },
+        {
+          "command": "snyk.logout",
+          "when": "snyk:loggedIn"
+        },
+        {
           "command": "snyk.dcignore",
           "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound"
         }
@@ -321,13 +329,18 @@
         "icon": "$(log-in)"
       },
       {
+        "command": "snyk.setToken",
+        "title": "Set Token",
+        "category": "Snyk"
+      },
+      {
         "command": "snyk.logout",
         "title": "Log Out",
         "category": "Snyk"
       },
       {
         "command": "snyk.dcignore",
-        "title": "Create dcignore file",
+        "title": "Create dcignore File",
         "category": "Snyk",
         "icon": "$(new-file)"
       },
