@@ -106,9 +106,9 @@
           "snyk.advanced.tokenStorage": {
             "type": "string",
             "enum": [
-              "secret storage"
+              "Always use VS Code's secret storage"
             ],
-            "default": "secret storage",
+            "default": "Always use VS Code's secret storage",
             "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
           },
           "snyk.features.openSourceSecurity": {
