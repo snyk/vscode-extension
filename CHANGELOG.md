@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.12]
+
+### Added
+
+- Command to set API token manually together with a placeholder setting for users to find the command.
+
 ## [1.2.11]
 
 ### Fixed

@@ -2,7 +2,7 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Security - Code and Open Source Dependencies",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "description": "Easily find and fix vulnerabilities in both your code and open source dependencies with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
@@ -102,6 +102,14 @@
             "type": "string",
             "description": "Specifies the organization name to run tests tied to a specific organization.",
             "scope": "window"
+          },
+          "snyk.advanced.tokenStorage": {
+            "type": "string",
+            "enum": [
+              "Always use VS Code's secret storage"
+            ],
+            "default": "Always use VS Code's secret storage",
+            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
           },
           "snyk.features.openSourceSecurity": {
             "type": "boolean",
@@ -296,6 +304,10 @@
           "when": "!snyk:loggedIn"
         },
         {
+          "command": "snyk.logout",
+          "when": "snyk:loggedIn"
+        },
+        {
           "command": "snyk.dcignore",
           "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound"
         }
@@ -321,13 +333,18 @@
         "icon": "$(log-in)"
       },
       {
+        "command": "snyk.setToken",
+        "title": "Set Token",
+        "category": "Snyk"
+      },
+      {
         "command": "snyk.logout",
         "title": "Log Out",
         "category": "Snyk"
       },
       {
         "command": "snyk.dcignore",
-        "title": "Create dcignore file",
+        "title": "Create dcignore File",
         "category": "Snyk",
         "icon": "$(new-file)"
       },

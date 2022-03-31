@@ -25,6 +25,7 @@ import {
   SNYK_REPORT_FALSE_POSITIVE_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
@@ -129,6 +130,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.openerService,
       this,
       configuration,
+      vsCodeWindow,
       this.analytics,
       Logger,
       this.snykCodeErrorHandler,
@@ -317,6 +319,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.openLocal(path, range),
       ),
       vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
       vscode.commands.registerCommand(SNYK_LOGOUT_COMMAND, () => this.commandController.initiateLogout()),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),

@@ -18,6 +18,7 @@ import {
   SNYK_LOGIN_COMMAND,
   SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
   VSCODE_VIEW_CONTAINER_COMMAND,
 } from '../constants/commands';
@@ -57,6 +58,10 @@ export class CommandController {
   async initiateLogout(): Promise<void> {
     await this.executeCommand(SNYK_LOGOUT_COMMAND, () => this.authService.initiateLogout());
     await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
+  }
+
+  async setToken(): Promise<void> {
+    await this.executeCommand(SNYK_SET_TOKEN_COMMAND, () => this.authService.setToken());
   }
 
   async openLocal(path: vscode.Uri, range?: vscode.Range): Promise<void> {

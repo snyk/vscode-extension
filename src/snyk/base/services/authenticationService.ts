@@ -1,11 +1,13 @@
 import { checkSession, getIpFamily as getNetworkFamily, IpFamily, startSession } from '@snyk/code-client';
+import { validate as uuidValidate } from 'uuid';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../common/constants/views';
-import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
+import { IVSCodeWindow } from '../../common/vscode/window';
+import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
 
@@ -13,6 +15,7 @@ export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
   initiateLogout(): Promise<void>;
   checkSession(): Promise<string>;
+  setToken(): Promise<void>;
 }
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
@@ -26,6 +29,7 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly openerService: IOpenerService,
     private readonly baseModule: IBaseSnykModule,
     private readonly configuration: IConfiguration,
+    private readonly window: IVSCodeWindow,
     private readonly analytics: IAnalytics,
     private readonly logger: ILog,
     private readonly snykCodeErrorHandler: ISnykCodeErrorHandler,
@@ -85,6 +89,22 @@ export class AuthenticationService implements IAuthenticationService {
   async initiateLogout(): Promise<void> {
     await this.configuration.clearToken();
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+  }
+
+  async setToken(): Promise<void> {
+    const token = await this.window.showInputBox({
+      placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      password: true,
+      validateInput: token => {
+        const valid = uuidValidate(token);
+        if (!valid) {
+          return 'The entered token has an invalid format.';
+        }
+      },
+    });
+
+    if (!token) return;
+    await this.configuration.setToken(token);
   }
 
   async checkSession(draftToken = '', ipFamily?: IpFamily): Promise<string> {

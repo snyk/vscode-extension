@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
-import { Disposable, ProgressLocation, TextEditorDecorationType, WebviewPanelSerializer } from 'vscode';
-import { TextDocument, TextEditor, ViewColumn } from './types';
+import {
+  CancellationToken,
+  Disposable,
+  ProgressLocation,
+  TextEditorDecorationType,
+  WebviewPanelSerializer,
+} from 'vscode';
+import { InputBoxOptions, TextDocument, TextEditor, ViewColumn } from './types';
 
 export interface IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined;
@@ -20,6 +26,8 @@ export interface IVSCodeWindow {
 
   showInformationMessage(message: string, ...items: string[]): Promise<string | undefined>;
   showErrorMessage(message: string, ...items: string[]): Promise<string | undefined>;
+
+  showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined>;
 
   onDidChangeActiveTextEditor(listener: (e: vscode.TextEditor | undefined) => unknown): vscode.Disposable;
 }
@@ -100,6 +108,10 @@ export class VSCodeWindow implements IVSCodeWindow {
         reason => reject(reason),
       );
     });
+  }
+
+  showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined> {
+    return vscode.window.showInputBox(options, token) as Promise<string | undefined>;
   }
 
   onDidChangeActiveTextEditor(listener: (e: vscode.TextEditor | undefined) => unknown): vscode.Disposable {
