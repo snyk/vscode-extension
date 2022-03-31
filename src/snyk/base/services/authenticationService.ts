@@ -6,7 +6,6 @@ import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
-import { User } from '../../common/user';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
