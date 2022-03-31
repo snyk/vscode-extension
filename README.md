@@ -106,8 +106,11 @@ To re-authenticate with a different account, follow the steps below:
 
    ![Authentication](media/images/readme/logging-out-command.png)
 
-1. Once logged out, click [**Connect VS Code with Snyk**](#logging-in) to authenticate
+2. Once logged out, click [**Connect VS Code with Snyk**](#logging-in) to authenticate
    with the different account.
+3. Or you run `Snyk: Set Token` command and set your token in the text field manually.
+
+   ![Authentication](media/images/readme/setting-token-command.png)
 
 ## Run analysis
 
