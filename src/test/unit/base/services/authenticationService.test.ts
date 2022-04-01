@@ -122,17 +122,13 @@ suite('AuthenticationService', () => {
   });
 
   test("Doesn't call setToken when token is empty", async () => {
-    const logAuthenticateButtonIsClickedFake = sinon.fake();
-    const analytics = {
-      logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
-    } as unknown as IAnalytics;
     const service = new AuthenticationService(
       contextService,
       openerService,
       baseModule,
       config,
       windowMock,
-      analytics,
+      {} as IAnalytics,
       new LoggerMock(),
       {
         processError: sinon.fake(),
@@ -147,17 +143,13 @@ suite('AuthenticationService', () => {
   });
 
   test('Call setToken when token is not empty', async () => {
-    const logAuthenticateButtonIsClickedFake = sinon.fake();
-    const analytics = {
-      logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
-    } as unknown as IAnalytics;
     const service = new AuthenticationService(
       contextService,
       openerService,
       baseModule,
       config,
       windowMock,
-      analytics,
+      {} as IAnalytics,
       new LoggerMock(),
       {
         processError: sinon.fake(),
