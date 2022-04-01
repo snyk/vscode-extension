@@ -18,6 +18,7 @@ suite('AuthenticationService', () => {
   let openerService: IOpenerService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
+  let setTokenSpy: sinon.SinonSpy;
 
   const NEEDLE_DEFAULT_TIMEOUT = 1000;
 
@@ -39,8 +40,10 @@ suite('AuthenticationService', () => {
       copyOpenedUrl: sinon.fake(),
     };
     baseModule = {} as IBaseSnykModule;
+    setTokenSpy = sinon.fake();
     config = {
       authHost: '',
+      setToken: setTokenSpy,
     } as unknown as IConfiguration;
   });
 
@@ -116,5 +119,55 @@ suite('AuthenticationService', () => {
 
     const ipFamily = await getIpFamily('https://dev.snyk.io');
     strictEqual(ipFamily, 6);
+  });
+
+  test("Doesn't call setToken when token is empty", async () => {
+    const logAuthenticateButtonIsClickedFake = sinon.fake();
+    const analytics = {
+      logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
+    } as unknown as IAnalytics;
+    const service = new AuthenticationService(
+      contextService,
+      openerService,
+      baseModule,
+      config,
+      windowMock,
+      analytics,
+      new LoggerMock(),
+      {
+        processError: sinon.fake(),
+        resetTransientErrors: sinon.fake(),
+      } as ISnykCodeErrorHandler,
+    );
+    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
+
+    await service.setToken();
+
+    sinon.assert.notCalled(setTokenSpy);
+  });
+
+  test('Call setToken when token is not empty', async () => {
+    const logAuthenticateButtonIsClickedFake = sinon.fake();
+    const analytics = {
+      logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
+    } as unknown as IAnalytics;
+    const service = new AuthenticationService(
+      contextService,
+      openerService,
+      baseModule,
+      config,
+      windowMock,
+      analytics,
+      new LoggerMock(),
+      {
+        processError: sinon.fake(),
+        resetTransientErrors: sinon.fake(),
+      } as ISnykCodeErrorHandler,
+    );
+    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns('token-value'));
+
+    await service.setToken();
+
+    sinon.assert.calledOnce(setTokenSpy);
   });
 });
