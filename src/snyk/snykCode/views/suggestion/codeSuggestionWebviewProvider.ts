@@ -179,7 +179,7 @@ export class CodeSuggestionWebviewProvider
       ['arrow-left-light', 'svg'],
       ['arrow-right-light', 'svg'],
     ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
-      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`); // todo move to media folder
+      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
       accumulator[name] = uri.toString();
       return accumulator;

@@ -72,5 +72,5 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
     });
   }
 
-  protected abstract getFilteredIssues(issues: readonly unknown[]): unknown[];
+  protected abstract getFilteredIssues(issues: readonly unknown[]): readonly unknown[];
 }

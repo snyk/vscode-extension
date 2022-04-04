@@ -1,9 +1,10 @@
-import { AnalysisResultLegacy, FilePath, FileSuggestion } from '@snyk/code-client';
+import { AnalysisResultLegacy, AnalysisSeverity, FilePath, FileSuggestion } from '@snyk/code-client';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../../common/analytics/itly';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errors';
-import { HoverAdapter } from '../../common/vscode/hover';
+import { IHoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import {
   Diagnostic,
@@ -14,7 +15,6 @@ import {
   Uri,
 } from '../../common/vscode/types';
 import { IUriAdapter } from '../../common/vscode/uri';
-import { DisposableCodeActionsProvider } from '../codeActions/disposableCodeActionsProvider';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
@@ -43,7 +43,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   protected disposables: Disposable[] = [];
 
   private SEVERITIES: {
-    [key: number]: { name: DiagnosticSeverity; show: boolean };
+    [key: number]: { name: DiagnosticSeverity };
   };
   public readonly codeQualityReview: DiagnosticCollection | undefined;
   public readonly codeSecurityReview: DiagnosticCollection | undefined;
@@ -57,38 +57,31 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     readonly analytics: IAnalytics,
     private readonly errorHandler: ISnykCodeErrorHandler,
     private readonly uriAdapter: IUriAdapter,
+    private readonly configuration: IConfiguration,
   ) {
     this.SEVERITIES = createSnykSeveritiesMap();
     this.codeSecurityReview = this.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME);
     this.codeQualityReview = this.languages.createDiagnosticCollection(DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME);
 
-    this.disposables.push(
-      this.codeSecurityReview,
-      this.codeQualityReview,
+    this.disposables.push(this.codeSecurityReview, this.codeQualityReview);
+  }
 
-      new DisposableCodeActionsProvider(
+  public registerCodeActionProviders(
+    codeSecurityCodeActionsProvider: Disposable,
+    codeQualityCodeActionsProvider: Disposable,
+  ) {
+    this.disposables.push(codeSecurityCodeActionsProvider, codeQualityCodeActionsProvider);
+  }
+
+  public registerHoverProviders(codeSecurityHoverAdapter: IHoverAdapter, codeQualityHoverAdapter: IHoverAdapter): void {
+    this.disposables.push(
+      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics).register(
         this.codeSecurityReview,
-        {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          findSuggestion: this.findSuggestion.bind(this),
-        },
-        analytics,
+        codeSecurityHoverAdapter,
       ),
-      new DisposableCodeActionsProvider(
+      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics).register(
         this.codeQualityReview,
-        {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          findSuggestion: this.findSuggestion.bind(this),
-        },
-        analytics,
-      ),
-      new DisposableHoverProvider(this, logger, languages, analytics).register(
-        this.codeSecurityReview,
-        new HoverAdapter(),
-      ),
-      new DisposableHoverProvider(this, logger, languages, analytics).register(
-        this.codeQualityReview,
-        new HoverAdapter(),
+        codeQualityHoverAdapter,
       ),
     );
   }
@@ -153,18 +146,19 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     };
   }
 
-  private createIssuesList(options: IIssuesListOptions): [securityIssues: Diagnostic[], qualityIssues: Diagnostic[]] {
+  private createDiagnostics(options: IIssuesListOptions): [securityIssues: Diagnostic[], qualityIssues: Diagnostic[]] {
     const securityIssues: Diagnostic[] = [];
     const qualityIssues: Diagnostic[] = [];
 
     const { fileIssuesList, suggestions, fileUri } = options;
 
     for (const issue in fileIssuesList) {
-      if (!this.SEVERITIES[suggestions[issue].severity].show) {
+      const isSecurityType = suggestions[issue].isSecurityType;
+
+      if (!SnykCodeAnalyzer.isIssueVisible(this.configuration, isSecurityType, suggestions[issue].severity)) {
         continue;
       }
 
-      const isSecurityType = suggestions[issue].isSecurityType;
       const issueList = isSecurityType ? securityIssues : qualityIssues;
       for (const issuePositions of fileIssuesList[issue]) {
         const suggestion = suggestions[issue];
@@ -201,7 +195,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         return;
       }
       const fileIssuesList = files[filePath];
-      const [securityIssues, qualityIssues] = this.createIssuesList({
+      const [securityIssues, qualityIssues] = this.createDiagnostics({
         fileIssuesList,
         suggestions,
         fileUri,
@@ -226,7 +220,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         return;
       }
       const fileIssuesList: FilePath = updateFileReviewResultsPositions(this.analysisResults, updatedFile);
-      const [securityIssues, qualityIssues] = this.createIssuesList({
+      const [securityIssues, qualityIssues] = this.createDiagnostics({
         fileIssuesList,
         suggestions: this.analysisResults.suggestions,
         fileUri: this.uriAdapter.file(updatedFile.fullPath),
@@ -246,6 +240,28 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
       });
     }
   }
+
+  static isIssueVisible(configuration: IConfiguration, isSecurityType: boolean, severity: AnalysisSeverity): boolean {
+    if (isSecurityType && !configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
+      return false;
+    } else if (!isSecurityType && !configuration.getFeaturesConfiguration()?.codeQualityEnabled) {
+      return false;
+    }
+
+    switch (severity) {
+      case AnalysisSeverity.critical:
+        return configuration.severityFilter.high;
+      case AnalysisSeverity.warning:
+        return configuration.severityFilter.medium;
+      case AnalysisSeverity.info:
+        return configuration.severityFilter.low;
+      default:
+        return false;
+    }
+  }
+
+  // Refreshes reported diagnostic
+  public refreshDiagnostics = () => this.createReviewResults();
 }
 
 export default SnykCodeAnalyzer;

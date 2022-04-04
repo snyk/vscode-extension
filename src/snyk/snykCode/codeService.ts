@@ -12,13 +12,15 @@ import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
 import { ExtensionContext } from '../common/vscode/extensionContext';
+import { HoverAdapter } from '../common/vscode/hover';
 import { IVSCodeLanguages } from '../common/vscode/languages';
-import { Disposable } from '../common/vscode/types';
+import { Diagnostic, Disposable } from '../common/vscode/types';
 import { IUriAdapter } from '../common/vscode/uri';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
+import { DisposableCodeActionsProvider } from './codeActions/disposableCodeActionsProvider';
 import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { IFalsePositiveApi } from './falsePositive/api/falsePositiveApi';
 import { FalsePositive } from './falsePositive/falsePositive';
@@ -84,7 +86,8 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly uriAdapter: IUriAdapter,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter);
+    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter, this.config);
+    this.registerAnalyzerProviders(this.analyzer);
 
     this.falsePositiveProvider = new FalsePositiveWebviewProvider(
       this,
@@ -296,5 +299,25 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       source: this.config.source,
       requestId,
     };
+  }
+
+  private registerAnalyzerProviders(analyzer: ISnykCodeAnalyzer) {
+    analyzer.registerHoverProviders(new HoverAdapter(), new HoverAdapter());
+    analyzer.registerCodeActionProviders(
+      new DisposableCodeActionsProvider(
+        analyzer.codeSecurityReview,
+        {
+          findSuggestion: (diagnostic: Diagnostic) => analyzer.findSuggestion(diagnostic),
+        },
+        this.analytics,
+      ),
+      new DisposableCodeActionsProvider(
+        analyzer.codeQualityReview,
+        {
+          findSuggestion: (diagnostic: Diagnostic) => analyzer.findSuggestion(diagnostic),
+        },
+        this.analytics,
+      ),
+    );
   }
 }

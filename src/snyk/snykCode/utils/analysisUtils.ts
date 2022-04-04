@@ -22,16 +22,15 @@ import {
 import { completeFileSuggestionType, ICodeSuggestion, ISnykCodeResult, openedTextEditorType } from '../interfaces';
 import { IssuePlacementPosition, IssueUtils } from './issueUtils';
 
-export const createSnykSeveritiesMap = (): { [x: number]: { name: DiagnosticSeverity; show: boolean } } => {
+export const createSnykSeveritiesMap = (): { [x: number]: { name: DiagnosticSeverity } } => {
   const { information, error, warning } = SNYK_SEVERITIES;
 
   return {
     [information]: {
       name: DiagnosticSeverity.Information,
-      show: true,
     },
-    [warning]: { name: DiagnosticSeverity.Warning, show: true },
-    [error]: { name: DiagnosticSeverity.Error, show: true },
+    [warning]: { name: DiagnosticSeverity.Warning },
+    [error]: { name: DiagnosticSeverity.Error },
   };
 };
 

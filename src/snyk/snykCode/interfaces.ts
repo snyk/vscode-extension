@@ -2,6 +2,7 @@ import { AnalysisResultLegacy, FilePath, FileSuggestion, Suggestion } from '@sny
 import * as vscode from 'vscode';
 import { DiagnosticCollection, TextDocument } from 'vscode';
 import { IExtension } from '../base/modules/interfaces';
+import { IHoverAdapter } from '../common/vscode/hover';
 import { Disposable } from '../common/vscode/types';
 
 export type completeFileSuggestionType = ICodeSuggestion &
@@ -41,6 +42,13 @@ export interface ISnykCodeResult extends AnalysisResultLegacy {
 export interface ISnykCodeAnalyzer extends Disposable {
   codeSecurityReview: DiagnosticCollection | undefined;
   codeQualityReview: DiagnosticCollection | undefined;
+
+  registerHoverProviders(codeSecurityHoverAdapter: IHoverAdapter, codeQualityHoverAdapter: IHoverAdapter): void;
+  registerCodeActionProviders(
+    codeSecurityCodeActionsProvider: Disposable,
+    codeQualityCodeActionsProvider: Disposable,
+  ): void;
+
   setAnalysisResults(results: AnalysisResultLegacy): void;
   getAnalysisResults(): Readonly<ISnykCodeResult>;
   findSuggestion(diagnostic: vscode.Diagnostic): Readonly<ICodeSuggestion | undefined>;
@@ -52,4 +60,5 @@ export interface ISnykCodeAnalyzer extends Disposable {
   checkFullSuggestion(suggestion: completeFileSuggestionType): boolean;
   createReviewResults(): void;
   updateReviewResultsPositions(extension: IExtension, updatedFile: openedTextEditorType): Promise<void>;
+  refreshDiagnostics(): void;
 }

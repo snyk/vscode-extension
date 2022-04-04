@@ -5,7 +5,6 @@ import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
-import { DiagnosticSeverity } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';
@@ -62,10 +61,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
         nIssues += diagnostics.length;
 
-        const fileVulnerabilities = this.getFilteredIssues(diagnostics);
-        if (fileVulnerabilities.length == 0) return;
+        if (diagnostics.length == 0) return;
 
-        const [issues, severityCounts] = this.getVulnerabilityTreeNodes(fileVulnerabilities, uri);
+        const [issues, severityCounts] = this.getVulnerabilityTreeNodes(diagnostics, uri);
         issues.sort(this.compareNodes);
         const fileSeverity = IssueTreeProvider.getFileSeverity(severityCounts);
         const file = new TreeNode({
@@ -110,23 +108,15 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     return `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`;
   }
 
-  protected getFilteredIssues(diagnostics: readonly Diagnostic[]): Diagnostic[] {
-    return diagnostics.filter(issue => {
-      switch (issue.severity) {
-        case DiagnosticSeverity.Error:
-          return this.configuration.severityFilter.high;
-        case DiagnosticSeverity.Warning:
-          return this.configuration.severityFilter.medium;
-        case DiagnosticSeverity.Information:
-        case DiagnosticSeverity.Hint:
-          return this.configuration.severityFilter.low;
-        default:
-          return true;
-      }
-    });
+  protected getFilteredIssues(diagnostics: readonly Diagnostic[]): readonly Diagnostic[] {
+    // Diagnostics are already filtered by the analyzer
+    return diagnostics;
   }
 
-  private getVulnerabilityTreeNodes(fileVulnerabilities: Diagnostic[], uri: Uri): [TreeNode[], ISeverityCounts] {
+  private getVulnerabilityTreeNodes(
+    fileVulnerabilities: readonly Diagnostic[],
+    uri: Uri,
+  ): [TreeNode[], ISeverityCounts] {
     const severityCounts: ISeverityCounts = {
       [SNYK_SEVERITIES.information]: 0,
       [SNYK_SEVERITIES.warning]: 0,
