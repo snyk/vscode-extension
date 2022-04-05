@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Reported Snyk Code diagnostics not respecting `snyk.features.codeSecurity`, `snyk.features.codeQuality` and `snyk.severity` settings.
 - Reported diagnostics not opening files from Problems view, when operating in workspace mode with whitespace in paths to workspace folders.
 
 ## [1.2.12]
