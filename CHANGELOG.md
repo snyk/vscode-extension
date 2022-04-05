@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.13]
+
+### Fixed
+
+- Reported diagnostics not opening files from Problems view, when operating in workspace mode with whitespace in paths to workspace folders.
+
 ## [1.2.12]
 
 ### Added
