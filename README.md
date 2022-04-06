@@ -80,6 +80,8 @@ If you are behind proxy, proxy settings need to be configured either using VS Co
 
 ## Authentication
 
+The extension uses your Snyk API token for authentication. To store the token securely, we utilize [Secret Storage API](https://code.visualstudio.com/api/references/vscode-api#SecretStorage), which uses the system's keychain to manage the token.
+
 ### Logging in
 
 To authenticate follow the steps:
