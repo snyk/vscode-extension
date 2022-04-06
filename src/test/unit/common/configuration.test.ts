@@ -148,12 +148,14 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
+      advisor: false,
     } as PreviewFeatures);
   });
 
   test('Preview features: some features enabled', () => {
     const previewFeatures = {
       reportFalsePositives: true,
+      advisor: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 

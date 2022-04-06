@@ -39,6 +39,7 @@ export interface SeverityFilter {
 
 export type PreviewFeatures = {
   reportFalsePositives: boolean | undefined;
+  advisor: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -46,6 +47,7 @@ export interface IConfiguration {
   source: string;
 
   authHost: string;
+  baseApiUrl: string;
   getToken(): Promise<string | undefined>;
   setToken(token: string): Promise<void>;
   clearToken(): Promise<void>;
@@ -80,6 +82,8 @@ export class Configuration implements IConfiguration {
   private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
+  private readonly defaultBaseApiHost = 'https://api.snyk.io';
+  private readonly devBaseApiHost = 'https://api.dev.snyk.io';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -178,6 +182,13 @@ export class Configuration implements IConfiguration {
 
   get source(): string {
     return Configuration.source;
+  }
+
+  get baseApiUrl(): string {
+    if (this.isDevelopment) {
+      return this.devBaseApiHost;
+    }
+    return this.defaultBaseApiHost;
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration | undefined {
@@ -313,6 +324,7 @@ export class Configuration implements IConfiguration {
   getPreviewFeatures(): PreviewFeatures {
     const defaulSetting: PreviewFeatures = {
       reportFalsePositives: false,
+      advisor: false,
     };
 
     const userSetting =

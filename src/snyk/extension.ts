@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import AdvisorProvider from './advisor/services/advisorProvider';
+import { AdvisorService } from './advisor/services/advisorService';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
@@ -49,7 +51,9 @@ import { CodeActionKindAdapter } from './common/vscode/codeAction';
 import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
+import { HoverAdapter } from './common/vscode/hover';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
@@ -151,6 +155,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new UriAdapter(),
     );
 
+    this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.cliDownloadService = new CliDownloadService(
       this.context,
       new StaticCliApi(vsCodeWorkspace),
@@ -280,6 +285,20 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
     );
     this.ossVulnerabilityCountService.activate();
+
+    this.advisorScoreDisposable = new AdvisorService(
+      vsCodeWindow,
+      vsCodeLanguages,
+      this.advisorService,
+      Logger,
+      vsCodeWorkspace,
+      this.advisorApiClient,
+      new ThemeColorAdapter(),
+      new HoverAdapter(),
+      new MarkdownStringAdapter(),
+      configuration,
+    );
+    void this.advisorScoreDisposable.activate();
 
     // Actually start analysis
     this.runScan();
