@@ -1,16 +1,11 @@
 import _ from 'lodash';
+import { getRenderOptions, LineDecorations, updateDecorations } from '../../common/editor/editorDecorator';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IThemeColorAdapter } from '../../common/vscode/theme';
-import {
-  DecorationOptions,
-  TextEditorDecorationType,
-  ThemableDecorationInstanceRenderOptions,
-} from '../../common/vscode/types';
+import { TextEditorDecorationType } from '../../common/vscode/types';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { messages } from '../messages/vulnerabilityCount';
 import { ImportedModule, ModuleVulnerabilityCount } from '../services/vulnerabilityCount/importedModule';
-
-type LineDecorations = DecorationOptions[]; // array index is a line number
 
 export class EditorDecorator {
   private readonly decorationType: TextEditorDecorationType;
@@ -42,7 +37,7 @@ export class EditorDecorator {
 
     const emptyDecorations = decorations.map(d => ({
       ...d,
-      renderOptions: this.getRenderOptions(''),
+      renderOptions: getRenderOptions('', this.themeColorAdapter),
     }));
     this.fileDecorationMap.set(filePath, emptyDecorations);
     this.triggerUpdateDecorations(filePath);
@@ -63,7 +58,7 @@ export class EditorDecorator {
           module.line - 1,
           this.editorLastCharacterIndex,
         ),
-        renderOptions: this.getRenderOptions(messages.fetchingVulnerabilities),
+        renderOptions: getRenderOptions(messages.fetchingVulnerabilities, this.themeColorAdapter),
       };
     }
 
@@ -106,26 +101,11 @@ export class EditorDecorator {
         vulnerabilityCount.line - 1,
         this.editorLastCharacterIndex,
       ),
-      renderOptions: this.getRenderOptions(text),
+      renderOptions: getRenderOptions(text, this.themeColorAdapter),
     };
 
     if (triggerUpdate) {
       this.triggerUpdateDecorations(filePath, 500);
-    }
-  }
-
-  updateDecorations(filePath: string): void {
-    const visibleEditors = this.window.getVisibleTextEditors().filter(editor => editor.document.fileName === filePath);
-
-    for (const editor of visibleEditors) {
-      const decorations = this.fileDecorationMap.get(filePath);
-
-      if (decorations && decorations.length) {
-        editor.setDecorations(
-          this.decorationType,
-          decorations.filter(d => !!d),
-        );
-      }
     }
   }
 
@@ -135,19 +115,10 @@ export class EditorDecorator {
       this.updateTimeout = undefined;
     }
 
-    this.updateTimeout = setTimeout(() => this.updateDecorations(filePath), updateTimeoutInMs);
-  }
-
-  private getRenderOptions(contentText: string): ThemableDecorationInstanceRenderOptions {
-    const color = this.themeColorAdapter.create('descriptionForeground');
-    const fontWeight = 'normal';
-
-    return {
-      after: {
-        contentText,
-        color,
-        fontWeight,
-      },
-    };
+    const lineDecorations = this.fileDecorationMap.get(filePath) || [];
+    this.updateTimeout = setTimeout(
+      () => updateDecorations(this.window, filePath, lineDecorations, this.decorationType),
+      updateTimeoutInMs,
+    );
   }
 }
