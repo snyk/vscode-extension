@@ -9,6 +9,7 @@ import {
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
+import * as cliConfigService from '../../../common/services/cliConfigService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
@@ -163,6 +164,10 @@ export class CodeSuggestionWebviewProvider
     return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
   }
 
+  private isReportFalsePositivesEnabled() {
+    return cliConfigService.reportFalsePositivesEnabled && this.configuration.getPreviewFeatures().reportFalsePositives;
+  }
+
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
       ['icon-lines', 'svg'],
@@ -263,7 +268,7 @@ export class CodeSuggestionWebviewProvider
           <div id="actions-section">
             <div class="actions row">
               ${
-                this.configuration.getPreviewFeatures().reportFalsePositives
+                this.isReportFalsePositivesEnabled()
                   ? `
               <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
               <button id="ignore-file-issue" class="button">Ignore in this file</button>
