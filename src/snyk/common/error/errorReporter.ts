@@ -10,6 +10,11 @@ import { OnUncaughtException } from './integrations/onUncaughtException';
 
 type SentryEnvironment = 'development' | 'preview' | 'production';
 
+export enum TagKeys {
+  CodeRequestId = 'code_request_id',
+}
+export type Tags = { [key in TagKeys]?: string };
+
 export class ErrorReporter {
   private static readonly eventQueueTimeoutMs = 1000;
 
@@ -71,9 +76,15 @@ export class ErrorReporter {
     });
   }
 
-  static capture(e: Error | unknown): string | undefined {
+  static capture(e: Error | unknown, tags?: Tags): string | undefined {
     const isInitialized = Sentry.getCurrentHub().getClient();
     if (isInitialized) {
+      if (tags && Object.keys(tags).length > 0) {
+        Sentry.withScope(scope => {
+          Object.keys(tags).forEach(tag => scope.setTag(tag, tags[tag] as string));
+          return Sentry.captureException(e);
+        });
+      }
       return Sentry.captureException(e);
     }
   }

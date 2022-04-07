@@ -5,20 +5,25 @@ import { IConfiguration } from '../../common/configuration/configuration';
 import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
+import { TagKeys, Tags } from '../../common/error/errorReporter';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 
 export interface ISnykCodeErrorHandler {
   resetTransientErrors(): void;
+  get connectionRetryLimitExhausted(): boolean;
   processError(
     error: errorType,
     options?: { [key: string]: unknown },
+    requestId?: string,
     callback?: (error: Error) => void,
   ): Promise<void>;
 }
 
 export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeErrorHandler {
   private transientErrors = 0;
+  private _requestId: string | undefined;
+  private _connectionRetryLimitExhausted = false;
 
   constructor(
     private contextService: IContextService,
@@ -34,15 +39,25 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     this.transientErrors = 0;
   }
 
+  get connectionRetryLimitExhausted(): boolean {
+    return this._connectionRetryLimitExhausted;
+  }
+
   async processError(
     error: errorType,
     options: { [key: string]: unknown } = {},
+    requestId: string,
     callback: (error: Error) => void,
   ): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
     // happens in the error handler we just log it
+
+    this._requestId = requestId;
+
     return this.processErrorInternal(error, options, callback).catch(err =>
-      ErrorHandler.handle(err, this.logger, 'Snyk Code error handler failed with error.'),
+      ErrorHandler.handle(err, this.logger, 'Snyk Code error handler failed with error.', {
+        [TagKeys.CodeRequestId]: this._requestId,
+      }),
     );
   }
 
@@ -52,6 +67,8 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     callback: (error: Error) => void,
   ): Promise<void> {
     const defaultErrorHandler = () => {
+      // no need to retry in the case of serverError
+      this._connectionRetryLimitExhausted = true;
       this.generalErrorHandler(error, options, callback);
     };
 
@@ -107,8 +124,10 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     callback: (error: errorType) => void,
   ): void {
     this.transientErrors = 0;
+    this._requestId = undefined;
+
     callback(error);
-    this.capture(error, options);
+    this.capture(error, options, { [TagKeys.CodeRequestId]: this._requestId });
   }
 
   private async connectionErrorHandler(
@@ -117,7 +136,10 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     callback: (error: Error) => void,
   ): Promise<void> {
     this.logger.error(`Connection error to Snyk Code. Try count: ${this.transientErrors + 1}.`);
-    if (this.transientErrors > MAX_CONNECTION_RETRIES) return this.generalErrorHandler(error, options, callback);
+    if (this.transientErrors > MAX_CONNECTION_RETRIES) {
+      this._connectionRetryLimitExhausted = true;
+      return this.generalErrorHandler(error, options, callback);
+    }
 
     this.transientErrors += 1;
     setTimeout(() => {
@@ -126,12 +148,12 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     return Promise.resolve();
   }
 
-  capture(error: errorType, options: { [key: string]: unknown }): void {
+  capture(error: errorType, options: { [key: string]: unknown }, tags?: Tags): void {
     let msg = error instanceof Error ? error?.message : '';
     if (Object.keys(options).length > 0) {
-      msg += `. ${options}`;
+      msg += `. ${JSON.stringify(options)}`;
     }
 
-    ErrorHandler.handle(error, this.logger, msg);
+    ErrorHandler.handle(error, this.logger, msg, tags);
   }
 }

@@ -198,18 +198,18 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       }
     } catch (err) {
       this.temporaryFailed = true;
-      await this.errorHandler.processError(err, undefined, () => {
+      await this.errorHandler.processError(err, undefined, requestId, () => {
         this.errorEncountered(requestId);
       });
 
-      if (enabledFeatures?.codeSecurityEnabled) {
+      if (enabledFeatures?.codeSecurityEnabled && this.errorHandler.connectionRetryLimitExhausted) {
         this.analytics.logAnalysisIsReady({
           ide: IDE_NAME,
           analysisType: 'Snyk Code Security',
           result: 'Error',
         });
       }
-      if (enabledFeatures?.codeQualityEnabled) {
+      if (enabledFeatures?.codeQualityEnabled && this.errorHandler.connectionRetryLimitExhausted) {
         this.analytics.logAnalysisIsReady({
           ide: IDE_NAME,
           analysisType: 'Snyk Code Quality',

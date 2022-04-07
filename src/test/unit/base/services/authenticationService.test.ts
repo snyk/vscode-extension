@@ -67,6 +67,7 @@ suite('AuthenticationService', () => {
       {
         processError: sinon.fake(),
         resetTransientErrors: sinon.fake(),
+        connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
     );
 
@@ -133,6 +134,7 @@ suite('AuthenticationService', () => {
       {
         processError: sinon.fake(),
         resetTransientErrors: sinon.fake(),
+        connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
@@ -154,6 +156,7 @@ suite('AuthenticationService', () => {
       {
         processError: sinon.fake(),
         resetTransientErrors: sinon.fake(),
+        connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns('token-value'));
