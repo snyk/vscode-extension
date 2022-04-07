@@ -21,6 +21,7 @@ import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
 import { DisposableCodeActionsProvider } from './codeActions/disposableCodeActionsProvider';
+import { ICodeSettings } from './codeSettings';
 import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { IFalsePositiveApi } from './falsePositive/api/falsePositiveApi';
 import { FalsePositive } from './falsePositive/falsePositive';
@@ -84,6 +85,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly languages: IVSCodeLanguages,
     private readonly errorHandler: ISnykCodeErrorHandler,
     private readonly uriAdapter: IUriAdapter,
+    codeSettings: ICodeSettings,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter, this.config);
@@ -104,6 +106,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       extensionContext,
       this.logger,
       languages,
+      codeSettings,
     );
 
     this.progress = new Progress(this, viewManagerService, this.workspace);

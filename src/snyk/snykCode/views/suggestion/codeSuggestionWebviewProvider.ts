@@ -9,13 +9,13 @@ import {
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
-import * as cliConfigService from '../../../common/services/cliConfigService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
+import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
@@ -39,6 +39,7 @@ export class CodeSuggestionWebviewProvider
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
+    private readonly codeSettings: ICodeSettings,
   ) {
     super(context, logger);
   }
@@ -165,7 +166,9 @@ export class CodeSuggestionWebviewProvider
   }
 
   private isReportFalsePositivesEnabled() {
-    return cliConfigService.reportFalsePositivesEnabled && this.configuration.getPreviewFeatures().reportFalsePositives;
+    return (
+      this.codeSettings.reportFalsePositivesEnabled && this.configuration.getPreviewFeatures().reportFalsePositives
+    );
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {

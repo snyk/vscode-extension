@@ -9,8 +9,6 @@ export type SastSettings = {
   reportFalsePositivesEnabled: boolean;
 };
 
-export let reportFalsePositivesEnabled = false;
-
 export async function getSastSettings(api: ISnykApiClient, config: IConfiguration): Promise<SastSettings | undefined> {
   const response = await api.get<SastSettings>('cli-config/settings/sast', {
     headers: {
@@ -22,9 +20,6 @@ export async function getSastSettings(api: ISnykApiClient, config: IConfiguratio
   });
 
   if (!response) return;
-
-  // cache if false positive reports are enabled.
-  reportFalsePositivesEnabled = response.data.reportFalsePositivesEnabled;
 
   return response.data;
 }

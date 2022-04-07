@@ -2,7 +2,7 @@ import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { ISnykApiClient } from '../../../../snyk/common/api/apiСlient';
 import { Configuration, IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { getSastSettings, reportFalsePositivesEnabled } from '../../../../snyk/common/services/cliConfigService';
+import { getSastSettings } from '../../../../snyk/common/services/cliConfigService';
 
 suite('CLI Config Service', () => {
   let config: IConfiguration;
@@ -41,23 +41,5 @@ suite('CLI Config Service', () => {
       }),
       true,
     );
-  });
-
-  test('Report false positives flag gets cached', async () => {
-    // arrange
-    const getFake = sinon.stub().returns({
-      data: {
-        reportFalsePositivesEnabled: true,
-      },
-    });
-    const apiClient: ISnykApiClient = {
-      get: getFake,
-    };
-
-    // act
-    await getSastSettings(apiClient, config);
-
-    // assert
-    strictEqual(reportFalsePositivesEnabled, true);
   });
 });
