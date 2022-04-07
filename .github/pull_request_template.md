@@ -4,7 +4,8 @@ _Provide description of this PR and changes, if linked Jira ticket doesn't cover
 
 ### Checklist
 
-- [ ] Tests added
+- [ ] Tests added and all succeed
+- [ ] Linted
 - [ ] CHANGELOG.md updated
 - [ ] README.md updated, if user-facing
 
