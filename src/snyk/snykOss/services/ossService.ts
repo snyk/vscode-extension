@@ -1,4 +1,4 @@
-import marked from 'marked';
+import * as marked from 'marked';
 import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
 import { CliDownloadService } from '../../cli/services/cliDownloadService';
@@ -175,7 +175,7 @@ export class OssService extends CliService<OssResult> {
   ): Promise<OssIssueCommandArg> {
     return new Promise((resolve, reject) => {
       const matchingIdVulnerabilities = allVulnerabilities.filter(v => v.id === vulnerability.id);
-      marked(vulnerability.description, (err, overviewHtml) => {
+      marked.parse(vulnerability.description, (err, overviewHtml) => {
         if (err) {
           return reject(err);
         }
