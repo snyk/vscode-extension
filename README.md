@@ -19,9 +19,10 @@ Snyk Security - Code and Open Source Dependencies extension provided by <a href=
   - [Snyk Code advanced mode](#snyk-code-advanced-mode)
 - [View analysis results](#view-analysis-results)
   - [Snyk panel](#snyk-panel)
-  - [Editor window](#editor-window)
+  - [Snyk Code editor window](#snyk-code-editor-window)
   - [Snyk Code vulnerability window](#snyk-code-vulnerability-window)
-  - [Snyk OSS vulnerability window](#snyk-oss-vulnerability-window)
+  - [Snyk OSS editor window](#snyk-open-source-editor-window)
+  - [Snyk OSS vulnerability window](#snyk-open-source-vulnerability-window)
 - [Extension Configuration](#extension-configuration)
   - [Create a .dcignore file](#create-a-dcignore-file)
 
@@ -244,9 +245,17 @@ After the extension is installed, you can set the following configurations for t
   - **Open Source Security**: configures if security analysis should run over your open source dependencies.
 - **Severity**: sets severity level to display in the analysis result tree.
 - **Advanced**
+  - **Additional Parameters**: sets parameters to be passed to Snyk CLI for Open Source Security tests. For the full list you can consult [this reference](https://docs.snyk.io/features/snyk-cli/cli-reference).
   - **Advanced mode**: toggles a panel to allow the user to manually control when the analysis should be run.
   - **Auto Scan Open Source Security**: sets severity level to display in the analysis result tree.
-  - **Additional Parameters**: sets parameters to be passed to Snyk CLI for Open Source Security tests. For the full list you can consult [this reference](https://docs.snyk.io/features/snyk-cli/cli-reference).
+  - **Custom endpoint**: sets API endpoint to use for Snyk requests.
+  - **Organization**: specifies an organization slug name to run tests for that organization.
+
+### Organization setting
+
+The value of organization setting `snyk.advanced.organization` must match the URL slug as displayed in the URL of your org in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`.
+
+If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.
 
 ### Create a .dcignore file
 
