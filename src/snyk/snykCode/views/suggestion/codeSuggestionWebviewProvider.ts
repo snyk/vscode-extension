@@ -15,6 +15,7 @@ import { IWebViewProvider, WebviewProvider } from '../../../common/views/webview
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
+import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
@@ -38,6 +39,7 @@ export class CodeSuggestionWebviewProvider
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
+    private readonly codeSettings: ICodeSettings,
   ) {
     super(context, logger);
   }
@@ -163,6 +165,12 @@ export class CodeSuggestionWebviewProvider
     return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
   }
 
+  private isReportFalsePositivesEnabled() {
+    return (
+      this.codeSettings.reportFalsePositivesEnabled && this.configuration.getPreviewFeatures().reportFalsePositives
+    );
+  }
+
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
       ['icon-lines', 'svg'],
@@ -263,7 +271,7 @@ export class CodeSuggestionWebviewProvider
           <div id="actions-section">
             <div class="actions row">
               ${
-                this.configuration.getPreviewFeatures().reportFalsePositives
+                this.isReportFalsePositivesEnabled()
                   ? `
               <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
               <button id="ignore-file-issue" class="button">Ignore in this file</button>

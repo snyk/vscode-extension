@@ -6,11 +6,20 @@ import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 
 export interface ICodeSettings {
+  reportFalsePositivesEnabled: boolean;
+
   checkCodeEnabled(): Promise<boolean>;
   enable(): Promise<boolean>;
+  getSastSettings(): Promise<SastSettings | undefined>;
 }
 
 export class CodeSettings implements ICodeSettings {
+  private _reportFalsePositivesEnabled: boolean;
+
+  get reportFalsePositivesEnabled(): boolean {
+    return this._reportFalsePositivesEnabled;
+  }
+
   constructor(
     private readonly snykApiClient: ISnykApiClient,
     private readonly contextService: IContextService,
@@ -58,8 +67,14 @@ export class CodeSettings implements ICodeSettings {
     return false;
   }
 
-  getSastSettings(): Promise<SastSettings | undefined> {
-    return getSastSettings(this.snykApiClient, this.config);
+  async getSastSettings(): Promise<SastSettings | undefined> {
+    const settings = await getSastSettings(this.snykApiClient, this.config);
+    if (settings) {
+      // cache if false positive reports are enabled.
+      this._reportFalsePositivesEnabled = settings.reportFalsePositivesEnabled;
+    }
+
+    return settings;
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));

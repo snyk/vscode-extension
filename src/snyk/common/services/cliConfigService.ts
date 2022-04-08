@@ -6,6 +6,7 @@ export type SastSettings = {
   localCodeEngine: {
     enabled: boolean;
   };
+  reportFalsePositivesEnabled: boolean;
 };
 
 export async function getSastSettings(api: ISnykApiClient, config: IConfiguration): Promise<SastSettings | undefined> {

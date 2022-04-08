@@ -153,6 +153,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new VSCodeLanguages(),
       this.snykCodeErrorHandler,
       new UriAdapter(),
+      this.codeSettings,
     );
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
