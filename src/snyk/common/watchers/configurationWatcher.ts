@@ -29,9 +29,11 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
+      extension.snykCode.analyzer.refreshDiagnostics();
       // If two settings are changed simultaneously, only one will be applied, thus refresh all views
-      extension.viewManagerService.refreshAllCodeAnalysisViews();
+      return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === SEVERITY_FILTER_SETTING) {
+      extension.snykCode.analyzer.refreshDiagnostics();
       return extension.viewManagerService.refreshAllViews();
     }
 

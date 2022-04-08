@@ -8,6 +8,7 @@ import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../sny
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
+import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
@@ -163,13 +164,4 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
   });
-
-  function stubWorkspaceConfiguration<T>(configSetting: string, returnValue: T | undefined): IVSCodeWorkspace {
-    return {
-      getConfiguration: (identifier: string, key: string) => {
-        if (`${identifier}.${key}` === configSetting) return returnValue;
-        return undefined;
-      },
-    } as IVSCodeWorkspace;
-  }
 });
