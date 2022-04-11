@@ -128,7 +128,9 @@
   document.getElementById('cancel')?.addEventListener('click', close);
   document.getElementById('send')?.addEventListener('click', send);
 
+  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {
+    console.log('origin' + origin);
     const { type, args } = event.data;
     switch (type) {
       case 'set': {

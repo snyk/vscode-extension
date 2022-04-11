@@ -138,7 +138,8 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     this.logger.error(`Connection error to Snyk Code. Try count: ${this.transientErrors + 1}.`);
     if (this.transientErrors > MAX_CONNECTION_RETRIES) {
       this._connectionRetryLimitExhausted = true;
-      return this.generalErrorHandler(error, options, callback);
+      this.generalErrorHandler(error, options, callback);
+      return;
     }
 
     this.transientErrors += 1;

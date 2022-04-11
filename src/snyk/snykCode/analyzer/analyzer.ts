@@ -244,6 +244,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   static isIssueVisible(configuration: IConfiguration, isSecurityType: boolean, severity: AnalysisSeverity): boolean {
     if (isSecurityType && !configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
       return false;
+      // deepcode ignore DuplicateIfBody: readability
     } else if (!isSecurityType && !configuration.getFeaturesConfiguration()?.codeQualityEnabled) {
       return false;
     }

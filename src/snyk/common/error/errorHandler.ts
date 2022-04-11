@@ -19,14 +19,14 @@ export class ErrorHandler {
   ): Promise<void> {
     await contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
     loadingBadge.setLoadingBadge(true);
-    this.handle(error, logger);
+    ErrorHandler.handle(error, logger);
   }
 
   /**
    * Should be used to log locally and report error event remotely.
    */
   static handle(error: Error | unknown, logger: ILog, message?: string, tags?: Tags): void {
-    const errorStr = this.stringifyError(error);
+    const errorStr = ErrorHandler.stringifyError(error);
     logger.error(message ? `${message}. ${errorStr}` : errorStr);
     ErrorReporter.capture(error, tags);
   }
