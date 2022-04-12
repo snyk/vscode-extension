@@ -2,7 +2,7 @@ import { strictEqual } from 'assert';
 import sentryTestkit from 'sentry-testkit';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { SnykConfiguration } from '../../../../snyk/common/configuration/snykConfiguration';
-import { ErrorReporter } from '../../../../snyk/common/error/errorReporter';
+import { ErrorReporter, TagKeys } from '../../../../snyk/common/error/errorReporter';
 import { envMock } from '../../mocks/env.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 
@@ -31,6 +31,22 @@ suite('ErrorReporter', () => {
 
     setTimeout(() => {
       strictEqual(testkit.reports().length, 1);
+      strictEqual(testkit.reports()[0].tags.code_request_id, undefined);
+      strictEqual(testkit.isExist(error), true);
+      done();
+    }, 10);
+  });
+
+  test('Reports error with local scope', done => {
+    configuration.shouldReportErrors = true;
+    const error = new Error('test error');
+    const requestId = '123456789';
+
+    ErrorReporter.capture(error, { [TagKeys.CodeRequestId]: requestId });
+
+    setTimeout(() => {
+      strictEqual(testkit.reports().length, 1);
+      strictEqual(testkit.reports()[0].tags.code_request_id, requestId);
       strictEqual(testkit.isExist(error), true);
       done();
     }, 10);
