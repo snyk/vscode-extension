@@ -247,6 +247,7 @@
   document.getElementById('ignore-file-issue')!.addEventListener('click', ignoreIssue.bind(false));
   document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
 
+  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {
     const { type, args } = event.data;
     switch (type) {

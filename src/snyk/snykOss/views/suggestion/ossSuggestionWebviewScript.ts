@@ -240,6 +240,7 @@
     }`;
   }
 
+  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {
     const { type, args } = event.data;
     switch (type) {
