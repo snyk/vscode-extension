@@ -421,7 +421,7 @@
     "@itly/plugin-segment-node": "^2.4.0",
     "@itly/sdk": "^2.3.1",
     "@sentry/node": "^6.16.1",
-    "@sentry/tracing": "^6.16.1",
+    "@sentry/tracing": "^6.19.1",
     "@snyk/code-client": "^4.9.1",
     "analytics-node": "^4.0.1",
     "axios": "^0.21.1",
