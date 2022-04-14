@@ -112,7 +112,12 @@ export class Configuration implements IConfiguration {
       return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL ?? 'https://deeproxy.dev.snyk.io';
     } else if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
-      url.host = `deeproxy.${url.host}`;
+
+      if (Configuration.isSingleTenant(url)) {
+        url.host = url.host.replace('app', 'deeproxy');
+      } else {
+        url.host = `deeproxy.${url.host}`;
+      }
       url.pathname = url.pathname.replace('api', '');
 
       return this.removeTrailingSlash(url.toString());
@@ -151,7 +156,12 @@ export class Configuration implements IConfiguration {
 
   get snykCodeUrl(): string {
     const authUrl = new URL(this.authHost);
-    authUrl.host = `app.${authUrl.host}`;
+
+    if (Configuration.isSingleTenant(authUrl)) {
+      authUrl.pathname = authUrl.pathname.replace('api', '');
+    } else {
+      authUrl.host = `app.${authUrl.host}`;
+    }
 
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
@@ -347,6 +357,10 @@ export class Configuration implements IConfiguration {
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
+
+  private static isSingleTenant(url: URL): boolean {
+    return url.host.startsWith('app') && url.host.endsWith('snyk.io');
+  }
 
   private removeTrailingSlash(str: string) {
     return str.replace(/\/$/, '');
