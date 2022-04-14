@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.14]
+
+### Added
+
+- Snyk Code: add support for Single Tenant setups
+
 ## [1.2.13]
 
 ### Fixed
