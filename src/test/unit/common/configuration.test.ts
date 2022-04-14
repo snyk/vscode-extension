@@ -77,6 +77,27 @@ suite('Configuration', () => {
     strictEqual(configuration.snykCodeBaseURL, 'http://deeproxy.custom.endpoint.com');
   });
 
+  test('Snyk Code: base url respects single tenant endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://app.custom.snyk.io/api');
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.custom.snyk.io');
+  });
+
+  test('Snyk Code: code url respects custom endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://custom.endpoint.com/api');
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykCodeUrl, 'https://app.custom.endpoint.com/manage/snyk-code?from=vscode');
+  });
+
+  test('Snyk Code: code url respects single tenant endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://app.custom.snyk.io/api');
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykCodeUrl, 'https://app.custom.snyk.io/manage/snyk-code?from=vscode');
+  });
+
   test('Snyk Code: Custom base url is returned when in development and custom url specified', () => {
     const customUrl = 'https://custom.url';
     const configuration = new Configuration(
