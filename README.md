@@ -195,6 +195,7 @@ example variable names of your code and the line numbers in red. You can also se
 - Code from open source repositories that might be of help to see how others fixed the issue.
 - You can add ignore comments that would make Snyk ignore this particular suggestion, or all of these suggestions for
   the whole file, by using the two buttons on the lower end of the panel.
+- If available, provides a link to an interactive lesson explaining the vulnerability on Snyk Learn.
 
 We also include a feedback mechanism to report false positives so that others do not see the same issue.
 
@@ -234,6 +235,7 @@ OSS vulnerability tab shows information about the vulnerable module.
 - Displays CVSS score and [exploit maturity](https://docs.snyk.io/features/fixing-and-prioritizing-issues/issue-management/evaluating-and-prioritizing-vulnerabilities).
 - Provides a detailed path on how vulnerability is introduced to the system.
 - Shows summary of the vulnerability together with the remediation advice to fix it.
+- If available, provides a link to an interactive lesson explaining the vulnerability on Snyk Learn.
 
 ## Extension Configuration
 

@@ -3,110 +3,83 @@ import { isCodeIssue, isOssIssue, OpenCommandIssueType } from '../../common/comm
 import { SNYK_LEARN_API_CACHE_DURATION_IN_MS } from '../../common/constants/general';
 import type { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { IConfiguration } from '../configuration/configuration';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
-
-const ecosystems = [
-  'all',
-  'java',
-  'javascript',
-  'python',
-  'golang',
-  'php',
-  'cpp',
-  'csharp',
-  'kubernetes',
-  'ruby',
-  'elixir',
-  'docker',
-  'npm',
-] as const;
-type LessonEcosystem = typeof ecosystems[number];
-
-const isValidEcosystem = (potentialEcosystem: string | null | undefined): potentialEcosystem is LessonEcosystem => {
-  return ecosystems.includes(potentialEcosystem as LessonEcosystem);
-};
 
 export type Lesson = {
   title: string;
   lessonId: string;
-  ecosystem: LessonEcosystem;
+  ecosystem: string;
   url: string;
 };
 
-type PackageMapper = {
-  [key in LessonEcosystem]?: string[];
-};
+interface LessonLookupParams {
+  rule: string;
+  ecosystem: string;
+  cwes?: string[];
+  cves?: string[];
+}
 
 export class LearnService {
   private lessonsCache = new Map<
     string,
     {
-      data: Lesson[];
+      lessons: Lesson[];
       expiry: number;
     }
   >();
 
-  constructor(private readonly logger: ILog, private readonly shouldCacheRequests = true) {}
+  constructor(
+    private readonly configuration: IConfiguration,
+    private readonly logger: ILog,
+    private readonly shouldCacheRequests = true,
+  ) {}
 
-  static getCodeIssueParams(issue: completeFileSuggestionType) {
-    const cwes = issue?.cwe || [];
-    const ecosystem = LearnService.convertCodeIdToEcosystem(issue.id);
-    return { cwes, ecosystem };
-  }
+  static getCodeIssueParams(issue: completeFileSuggestionType): LessonLookupParams {
+    const idParts = issue.id.split(/\/|%2F/g);
 
-  static getOSSIssueParams(issue: OssIssueCommandArg) {
-    const cwes = issue?.identifiers?.CWE || [];
-    const ecosystem = LearnService.convertOSSProjectTypeToEcosystem(issue.packageManager);
-    return { cwes, ecosystem };
-  }
-
-  static convertCodeIdToEcosystem(issueId: string): LessonEcosystem {
-    if (!issueId) return 'all';
-    const ecosystem = issueId.split(/\/|%2F/g)[0]; // %2F is the url encoding for /
-    if (isValidEcosystem(ecosystem)) {
-      return ecosystem;
-    } else {
-      return 'all';
-    }
-  }
-
-  static convertOSSProjectTypeToEcosystem(pkgManager: string): LessonEcosystem {
-    const snykLearnEcosystemToProjectTypeMapping: PackageMapper = {
-      javascript: ['npm', 'yarn', 'yarn-workspace'],
-      java: ['maven', 'gradle'],
-      python: ['pip', 'poetry', 'pipenv'],
-      csharp: ['nuget', 'paket'],
-      php: ['composer'],
-      ruby: ['rubygems'],
-      golang: ['golangdep', 'govendor', 'gomodules'],
-      elixir: ['hex'],
+    return {
+      rule: idParts[idParts.length - 1],
+      ecosystem: idParts[0],
+      cwes: issue.cwe,
     };
-    for (const [ecosystem, pkgManagers] of Object.entries(snykLearnEcosystemToProjectTypeMapping)) {
-      if (pkgManagers.includes(pkgManager) && isValidEcosystem(ecosystem)) {
-        return ecosystem;
-      }
-    }
-    return 'all';
   }
 
-  async requestLessons(cwe: string) {
-    const cacheResult = this.lessonsCache.get(cwe);
+  static getOSSIssueParams(issue: OssIssueCommandArg): LessonLookupParams {
+    return {
+      rule: issue.id,
+      ecosystem: issue.packageManager,
+      cwes: issue.identifiers?.CWE,
+      cves: issue.identifiers?.CVE,
+    };
+  }
+
+  async requestLessons(params: LessonLookupParams) {
+    const cacheResult = this.lessonsCache.get(params.rule);
+
     if (this.shouldCacheRequests && cacheResult && cacheResult?.expiry > Date.now()) {
-      return cacheResult.data;
+      return cacheResult.lessons;
     } else {
-      const res = await axios.get<Lesson[]>('/lessons', {
-        baseURL: 'https://api.snyk.io/v1/learn',
+      const res = await axios.get<{ lessons: Lesson[] }>('/lessons/lookup-for-cta', {
+        baseURL: this.configuration.snykLearnEndpoint,
         params: {
-          cwe,
+          source: 'ide',
+          rule: params.rule,
+          ecosystem: params.ecosystem,
+          cwe: params.cwes?.[0],
+          cve: params.cves?.[0],
         },
       });
 
-      this.lessonsCache.set(cwe, {
-        data: res.data,
+      const lessons = res.data.lessons;
+
+      this.lessonsCache.set(params.rule, {
+        lessons,
         expiry: Date.now() + SNYK_LEARN_API_CACHE_DURATION_IN_MS,
       });
-      return res.data;
+
+      return lessons;
     }
   }
 
@@ -115,34 +88,31 @@ export class LearnService {
     issueType: OpenCommandIssueType,
   ): Promise<Lesson | null> {
     try {
-      let cwe: string;
-      let ecosystem: string;
+      let params: LessonLookupParams | null = null;
 
       if (isCodeIssue(issue, issueType)) {
         if (!issue.isSecurityType) return null;
-        const params = LearnService.getCodeIssueParams(issue);
-        cwe = params.cwes?.[0];
-        ecosystem = params.ecosystem;
+
+        params = LearnService.getCodeIssueParams(issue);
       } else if (isOssIssue(issue, issueType)) {
+        // Snyk Learn does not currently deal with licensing issues.
         if (issue.license) return null;
-        const params = LearnService.getOSSIssueParams(issue);
-        cwe = params.cwes?.[0];
-        ecosystem = params.ecosystem;
+
+        params = LearnService.getOSSIssueParams(issue);
       } else {
         ErrorHandler.handle(new Error(`Issue type "${issueType}" not supported`), this.logger);
         return null;
       }
 
-      if (!cwe || !ecosystem) {
+      console.log(params);
+
+      if (!params) {
         return null;
       }
-      const lessons = await this.requestLessons(cwe);
-      if (lessons.length) {
-        const lessonWithClosestEcosystemMatch = lessons.sort(a => (a.ecosystem === ecosystem ? -1 : 0))[0];
-        return lessonWithClosestEcosystemMatch;
-      } else {
-        return null;
-      }
+
+      const lessons = await this.requestLessons(params);
+
+      return lessons.length > 0 ? lessons[0] : null;
     } catch (err) {
       ErrorHandler.handle(err, this.logger, 'Error getting Snyk Learn Lesson');
       return null;

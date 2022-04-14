@@ -1,63 +1,66 @@
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual } from 'assert';
 import axios from 'axios';
 import sinon from 'sinon';
 import { OpenCommandIssueType } from '../../../../snyk/common/commands/types';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LearnService } from '../../../../snyk/common/services/learnService';
 import type { completeFileSuggestionType } from '../../../../snyk/snykCode/interfaces';
 import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 import { LoggerMock } from '../../mocks/logger.mock';
 
-const ossIssueCommandArgFixture = { identifiers: { CWE: ['CWE-1'] }, packageManager: 'npm' } as OssIssueCommandArg;
-const codeIssueCommandArgFixture = {
-  isSecurityType: true,
-  cwe: ['CWE-2'],
-  id: 'javascript%2Fdc_interfile_project%2FSqli',
-} as completeFileSuggestionType;
-const lessonFixture = {
-  title: 'lesson title',
-  lessonId: 'id',
-  ecosystem: 'javascript',
-  url: 'https://example.com',
-};
-
-teardown(() => {
-  sinon.restore();
-});
-
-const loggerMock = new LoggerMock();
-const learnService = new LearnService(loggerMock, false);
-
 suite('LearnService', () => {
+  const ossIssueCommandArgFixture = { identifiers: { CWE: ['CWE-1'] }, packageManager: 'npm' } as OssIssueCommandArg;
+  const codeIssueCommandArgFixture = {
+    isSecurityType: true,
+    cwe: ['CWE-2'],
+    id: 'javascript%2Fdc_interfile_project%2FSqli',
+  } as completeFileSuggestionType;
+
+  const lessonFixture = {
+    title: 'lesson title',
+    lessonId: 'id',
+    ecosystem: 'javascript',
+    url: 'https://example.com',
+  };
+
+  const config = {
+    snykLearnEndpoint: 'https://snyk.example.com/',
+  } as unknown as IConfiguration;
+
+  const loggerMock = new LoggerMock();
+  const learnService = new LearnService(config, loggerMock, false);
+
+  teardown(() => {
+    sinon.restore();
+  });
+
   suite('OSS specific functionality', () => {
-    test('convertOSSProjectTypeToEcosystem - will return the ecosystem of a package manager', () => {
-      strictEqual(LearnService.convertOSSProjectTypeToEcosystem('npm'), 'javascript');
-      strictEqual(LearnService.convertOSSProjectTypeToEcosystem('maven'), 'java');
-    });
-
-    test('convertOSSProjectTypeToEcosystem - returns "all" if package manager is not recognized', () => {
-      strictEqual(LearnService.convertOSSProjectTypeToEcosystem('not-a-real-package-manager'), 'all');
-    });
-
     test('getOSSIssueParams - returns ecosystem & cwes', () => {
       deepStrictEqual(LearnService.getOSSIssueParams(ossIssueCommandArgFixture), {
-        ecosystem: 'javascript',
-        cwes: ['CWE-1'],
+        rule: ossIssueCommandArgFixture.id,
+        ecosystem: ossIssueCommandArgFixture.packageManager,
+        cwes: ossIssueCommandArgFixture.identifiers?.CWE,
+        cves: ossIssueCommandArgFixture.identifiers?.CVE,
       });
     });
 
     test('getLesson - resolves a lesson', async () => {
-      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
       deepStrictEqual(lesson, lessonFixture);
-      deepStrictEqual(
-        stub.calledOnceWith('/lessons', {
-          baseURL: 'https://api.snyk.io/v1/learn',
+      deepStrictEqual(stub.getCall(0).args, [
+        '/lessons/lookup-for-cta',
+        {
+          baseURL: config.snykLearnEndpoint,
           params: {
-            cwe: ossIssueCommandArgFixture.identifiers?.CWE[0],
+            source: 'ide',
+            rule: ossIssueCommandArgFixture.id,
+            ecosystem: ossIssueCommandArgFixture.packageManager,
+            cwe: 'CWE-1',
+            cve: undefined,
           },
-        }),
-        true,
-      );
+        },
+      ]);
     });
 
     test('getLesson - returns null if issue license is truthy', async () => {
@@ -71,42 +74,35 @@ suite('LearnService', () => {
   });
 
   suite('CODE specific functionality', () => {
-    test('convertCodeIdToEcosystem - gets the ecosystem from the id after / or url encoded slack (%2F)', () => {
-      strictEqual(LearnService.convertCodeIdToEcosystem('javascript%2Fdc_interfile_project%2FSqli'), 'javascript');
-      strictEqual(LearnService.convertCodeIdToEcosystem('javascript/dc_interfile_project/Sqli'), 'javascript');
-    });
-
-    test('convertCodeIdToEcosystem - invalid ecosystems returns all', () => {
-      strictEqual(LearnService.convertCodeIdToEcosystem('notvalidecosystem/test'), 'all');
-      strictEqual(LearnService.convertCodeIdToEcosystem(''), 'all');
-      // @ts-expect-error - testing in case no string is given
-      strictEqual(LearnService.convertCodeIdToEcosystem(undefined), 'all');
-    });
-
     test('getCodeIssueParams - returns ecosystem & cwes', () => {
       deepStrictEqual(LearnService.getCodeIssueParams(codeIssueCommandArgFixture), {
         ecosystem: 'javascript',
+        rule: 'Sqli',
         cwes: ['CWE-2'],
       });
     });
 
     test('getLesson - resolves a lesson', async () => {
-      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue);
       deepStrictEqual(lesson, lessonFixture);
-      deepStrictEqual(
-        stub.calledOnceWith('/lessons', {
-          baseURL: 'https://api.snyk.io/v1/learn',
+      deepStrictEqual(stub.getCall(0).args, [
+        '/lessons/lookup-for-cta',
+        {
+          baseURL: config.snykLearnEndpoint,
           params: {
+            source: 'ide',
             cwe: codeIssueCommandArgFixture.cwe[0],
+            rule: 'Sqli',
+            ecosystem: 'javascript',
+            cve: undefined,
           },
-        }),
-        true,
-      );
+        },
+      ]);
     });
 
     test('getLesson - returns null if issue isSecurityType is false', async () => {
-      sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, isSecurityType: false },
         OpenCommandIssueType.CodeIssue,
@@ -124,7 +120,7 @@ suite('LearnService', () => {
       deepStrictEqual(lesson, null);
     });
 
-    test('returns null if the issue has no ecosystem or identifiers', async () => {
+    test('returns null if the issue has no params', async () => {
       const lessonNoCWE = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, cwe: [] },
         OpenCommandIssueType.CodeIssue,
@@ -138,7 +134,7 @@ suite('LearnService', () => {
     });
 
     test('returns null if no lessons are returned', async () => {
-      sinon.stub(axios, 'get').resolves({ data: [] });
+      sinon.stub(axios, 'get').resolves({ data: { lessons: [] } });
       const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
       deepStrictEqual(lesson, null);
     });
@@ -152,19 +148,9 @@ suite('LearnService', () => {
       deepStrictEqual(loggerStub.getCall(0).args, ['Error getting Snyk Learn Lesson. {"message":"test error"}']);
     });
 
-    test('sorts lessons by ecosystem', async () => {
-      const javascriptFixture = { ...ossIssueCommandArgFixture, packageManager: 'npm' };
-      const pythonLesson = { ...lessonFixture, ecosystem: 'python' };
-      const javascriptLesson = { ...lessonFixture, ecosystem: 'javascript' };
-
-      sinon.stub(axios, 'get').resolves({ data: [pythonLesson, javascriptLesson] });
-      const lesson = await learnService.getLesson(javascriptFixture, OpenCommandIssueType.OssVulnerability);
-      deepStrictEqual(lesson?.ecosystem, 'javascript');
-    });
-
     test('caches lesson requests', async () => {
-      const learnService = new LearnService(loggerMock, true);
-      const stub = sinon.stub(axios, 'get').resolves({ data: [lessonFixture] });
+      const learnService = new LearnService(config, loggerMock, true);
+      const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [] } });
       await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
       deepStrictEqual(stub.calledOnce, true);
       await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);

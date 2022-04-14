@@ -73,7 +73,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.openerService = new OpenerService();
     this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.loadingBadge = new LoadingBadge();
-    this.learnService = new LearnService(Logger);
+    this.learnService = new LearnService(configuration, Logger);
     this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace, Logger);
     this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace, Logger);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(
