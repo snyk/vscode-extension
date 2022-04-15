@@ -5,7 +5,6 @@ import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../../../../snyk/common/constants/general';
-import { ErrorReporter } from '../../../../snyk/common/error/errorReporter';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { SnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -34,6 +33,28 @@ suite('Snyk Code Error Handler', () => {
 
     const error = new Error('Failed to get remote bundle');
     // act
+    await handler.processError(error, undefined, '123456789', () => null);
+
+    strictEqual(handler.connectionRetryLimitExhausted, false);
+    // assert
+    return new Promise((resolve, _) => {
+      setTimeout(() => {
+        strictEqual(runCodeScanFake.called, true);
+        resolve();
+      }, CONNECTION_ERROR_RETRY_INTERVAL);
+    });
+  });
+
+  test('Handles Snyk Code api error response and retries appropriately', async function () {
+    this.timeout(CONNECTION_ERROR_RETRY_INTERVAL + 2000);
+    const error = {
+      apiName: 'getAnalysis',
+      messages: {
+        500: 'Unexpected server error',
+      },
+      errorCode: 500,
+    };
+
     await handler.processError(error, undefined, '123456789', () => null);
 
     strictEqual(handler.connectionRetryLimitExhausted, false);

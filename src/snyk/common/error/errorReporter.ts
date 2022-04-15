@@ -84,8 +84,9 @@ export class ErrorReporter {
           Object.keys(tags).forEach(tag => scope.setTag(tag, tags[tag] as string));
           return Sentry.captureException(e);
         });
+      } else {
+        return Sentry.captureException(e);
       }
-      return Sentry.captureException(e);
     }
   }
 
