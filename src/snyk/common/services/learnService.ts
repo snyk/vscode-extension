@@ -104,8 +104,6 @@ export class LearnService {
         return null;
       }
 
-      console.log(params);
-
       if (!params) {
         return null;
       }
