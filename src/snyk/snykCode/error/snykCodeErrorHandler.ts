@@ -9,6 +9,16 @@ import { TagKeys, Tags } from '../../common/error/errorReporter';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 
+type SnykCodeErrorResponseType = {
+  apiName: string;
+  errorCode: string;
+  messages: { [key: number]: unknown };
+};
+
+class SnykCodeErrorResponse {
+  constructor(public error: SnykCodeErrorResponseType) {}
+}
+
 export interface ISnykCodeErrorHandler {
   resetTransientErrors(): void;
   get connectionRetryLimitExhausted(): boolean;
@@ -39,8 +49,50 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     this.transientErrors = 0;
   }
 
+  resetRequestId(): void {
+    this._requestId = undefined;
+  }
+
   get connectionRetryLimitExhausted(): boolean {
     return this._connectionRetryLimitExhausted;
+  }
+
+  private isAuthenticationError(errorStatusCode: PropertyKey): boolean {
+    return errorStatusCode === constants.ErrorCodes.unauthorizedUser;
+  }
+
+  private isBundleError(error: errorType): boolean {
+    // checkBundle API call returns 404 sometimes that gets propagated as an Error to us from 'code-client', treat as a transient error [ROAD-683]
+    return error instanceof Error && error.message === 'Failed to get remote bundle';
+  }
+
+  private async authenticationErrorHandler(): Promise<void> {
+    await this.configuration.setToken('');
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+    this.loadingBadge.setLoadingBadge(true);
+  }
+
+  private isErrorRetryable(errorStatusCode: PropertyKey): boolean {
+    switch (errorStatusCode) {
+      case constants.ErrorCodes.badGateway:
+      case constants.ErrorCodes.serviceUnavailable:
+      case constants.ErrorCodes.serverError:
+      case constants.ErrorCodes.timeout:
+      case constants.ErrorCodes.dnsNotFound:
+      case constants.ErrorCodes.connectionRefused:
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  private extractErrorResponse(error: errorType) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (!(error instanceof Error) && error?.apiName) {
+      const { apiName, errorCode, messages } = error as { [key: string]: string };
+      return new SnykCodeErrorResponse({ apiName, errorCode, messages });
+    }
   }
 
   async processError(
@@ -53,8 +105,12 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     // happens in the error handler we just log it
 
     this._requestId = requestId;
+    const errorResponse = this.extractErrorResponse(error);
 
-    return this.processErrorInternal(error, options, callback).catch(err =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const updatedError = errorResponse ? errorResponse : error;
+
+    return this.processErrorInternal(updatedError, options, callback).catch(err =>
       ErrorHandler.handle(err, this.logger, 'Snyk Code error handler failed with error.', {
         [TagKeys.CodeRequestId]: this._requestId,
       }),
@@ -66,56 +122,21 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     options: { [key: string]: unknown } = {},
     callback: (error: Error) => void,
   ): Promise<void> {
-    const defaultErrorHandler = () => {
-      // no need to retry in the case of serverError
-      this._connectionRetryLimitExhausted = true;
-      this.generalErrorHandler(error, options, callback);
-    };
-
-    const errorHandlers: { [P in constants.ErrorCodes]: () => Promise<void> | void } = {
-      [constants.ErrorCodes.serverError]: defaultErrorHandler,
-      [constants.ErrorCodes.badGateway]: async () => {
-        return this.connectionErrorHandler(error, options, callback);
-      },
-      [constants.ErrorCodes.serviceUnavailable]: async () => {
-        return this.connectionErrorHandler(error, options, callback);
-      },
-      [constants.ErrorCodes.timeout]: async () => {
-        return this.connectionErrorHandler(error, options, callback);
-      },
-      [constants.ErrorCodes.dnsNotFound]: async () => {
-        return this.connectionErrorHandler(error, options, callback);
-      },
-      [constants.ErrorCodes.connectionRefused]: async () => {
-        return this.connectionErrorHandler(error, options, callback);
-      },
-      [constants.ErrorCodes.loginInProgress]: async () => Promise.resolve(),
-      [constants.ErrorCodes.badRequest]: async () => Promise.resolve(),
-      [constants.ErrorCodes.unauthorizedUser]: async () => {
-        return this.authenticationErrorHandler();
-      },
-      [constants.ErrorCodes.unauthorizedBundleAccess]: async () => Promise.resolve(),
-      [constants.ErrorCodes.notFound]: async () => Promise.resolve(),
-      [constants.ErrorCodes.bigPayload]: async () => Promise.resolve(),
-    };
-
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const errorStatusCode = error?.statusCode;
-    if (errorHandlers.hasOwnProperty(errorStatusCode as PropertyKey)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await errorHandlers[errorStatusCode]();
-    } else if (error instanceof Error && error.message === 'Failed to get remote bundle') {
-      // checkBundle API call returns 404 sometimes that gets propagated as an Error to us from 'code-client', treat as a transient error [ROAD-683]
-      await this.connectionErrorHandler(error, options, callback);
-    } else {
-      defaultErrorHandler();
-    }
-  }
+    const errorStatusCode = (error?.statusCode as PropertyKey) || (error?.error?.errorCode as PropertyKey);
 
-  private async authenticationErrorHandler(): Promise<void> {
-    await this.configuration.setToken('');
-    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    this.loadingBadge.setLoadingBadge(true);
+    if (this.isAuthenticationError(errorStatusCode)) {
+      return await this.authenticationErrorHandler();
+    }
+
+    if (this.isErrorRetryable(errorStatusCode) || this.isBundleError(error)) {
+      return await this.retryHandler(error, options, callback);
+    }
+
+    this._connectionRetryLimitExhausted = true;
+    this.generalErrorHandler(error, options, callback);
+
+    return Promise.resolve();
   }
 
   private generalErrorHandler(
@@ -124,18 +145,19 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     callback: (error: errorType) => void,
   ): void {
     this.transientErrors = 0;
-    this._requestId = undefined;
-
     callback(error);
+
     this.capture(error, options, { [TagKeys.CodeRequestId]: this._requestId });
+    this.resetRequestId();
   }
 
-  private async connectionErrorHandler(
+  private async retryHandler(
     error: errorType,
     options: { [key: string]: unknown },
     callback: (error: Error) => void,
   ): Promise<void> {
     this.logger.error(`Connection error to Snyk Code. Try count: ${this.transientErrors + 1}.`);
+
     if (this.transientErrors > MAX_CONNECTION_RETRIES) {
       this._connectionRetryLimitExhausted = true;
       this.generalErrorHandler(error, options, callback);
@@ -143,13 +165,19 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     }
 
     this.transientErrors += 1;
+
     setTimeout(() => {
       this.baseSnykModule.runCodeScan().catch(err => this.capture(err, options));
     }, CONNECTION_ERROR_RETRY_INTERVAL);
+
     return Promise.resolve();
   }
 
   capture(error: errorType, options: { [key: string]: unknown }, tags?: Tags): void {
+    if (error instanceof SnykCodeErrorResponse) {
+      error = new Error(JSON.stringify(error?.error));
+    }
+
     let msg = error instanceof Error ? error?.message : '';
     if (Object.keys(options).length > 0) {
       msg += `. ${JSON.stringify(options)}`;
