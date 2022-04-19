@@ -75,8 +75,6 @@ export interface IConfiguration {
   getPreviewFeatures(): PreviewFeatures;
 
   severityFilter: SeverityFilter;
-
-  snykLearnEndpoint: string;
 }
 
 export class Configuration implements IConfiguration {
@@ -154,10 +152,6 @@ export class Configuration implements IConfiguration {
     }
 
     return this.defaultOssApiEndpoint;
-  }
-
-  get snykLearnEndpoint(): string {
-    return `${this.baseApiUrl}/v1/learn`;
   }
 
   get snykCodeUrl(): string {

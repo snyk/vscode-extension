@@ -24,7 +24,7 @@ suite('LearnService', () => {
   };
 
   const config = {
-    snykLearnEndpoint: 'https://snyk.example.com/',
+    baseApiUrl: 'https://snyk.example.com/',
   } as unknown as IConfiguration;
 
   const loggerMock = new LoggerMock();
@@ -51,7 +51,7 @@ suite('LearnService', () => {
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
         {
-          baseURL: config.snykLearnEndpoint,
+          baseURL: `${config.baseApiUrl}/v1/learn`,
           params: {
             source: 'ide',
             rule: ossIssueCommandArgFixture.id,
@@ -89,7 +89,7 @@ suite('LearnService', () => {
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
         {
-          baseURL: config.snykLearnEndpoint,
+          baseURL: `${config.baseApiUrl}/v1/learn`,
           params: {
             source: 'ide',
             cwe: codeIssueCommandArgFixture.cwe[0],

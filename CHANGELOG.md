@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.15]
+
+### Added
+
+- Vulnerability detail views now have links to Snyk Learn when we have an appropriate lesson available.
+
 ## [1.2.14]
 
 ### Added

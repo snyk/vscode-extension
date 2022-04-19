@@ -62,7 +62,7 @@ export class LearnService {
       return cacheResult.lessons;
     } else {
       const res = await axios.get<{ lessons: Lesson[] }>('/lessons/lookup-for-cta', {
-        baseURL: this.configuration.snykLearnEndpoint,
+        baseURL: this.snykLearnEndpoint,
         params: {
           source: 'ide',
           rule: params.rule,
@@ -117,5 +117,9 @@ export class LearnService {
       ErrorHandler.handle(err, this.logger, 'Error getting Snyk Learn Lesson');
       return null;
     }
+  }
+
+  get snykLearnEndpoint(): string {
+    return `${this.configuration.baseApiUrl}/v1/learn`;
   }
 }
