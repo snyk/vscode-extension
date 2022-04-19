@@ -15,3 +15,5 @@ export const EXECUTION_PAUSE_INTERVAL = 1000 * 60 * 30; // 30 minutes
 export const REFRESH_VIEW_DEBOUNCE_INTERVAL = 200; // 200 milliseconds
 // If CONNECTION_ERROR_RETRY_INTERVAL is smaller than EXECUTION_DEBOUNCE_INTERVAL it might get swallowed by the debouncer
 export const CONNECTION_ERROR_RETRY_INTERVAL = DEFAULT_SCAN_DEBOUNCE_INTERVAL * 2 + 1000 * 3;
+
+export const SNYK_LEARN_API_CACHE_DURATION_IN_MS = 1000 * 60 * 60 * 24; // 1 day

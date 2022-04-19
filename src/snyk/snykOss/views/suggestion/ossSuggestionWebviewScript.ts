@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
-
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
 (function () {
@@ -37,6 +36,11 @@
     overviewHtml: string;
   };
 
+  type Lesson = {
+    url: string;
+    title: string;
+  };
+
   type Identifiers = {
     CWE: string[];
     CVE: string[];
@@ -45,11 +49,26 @@
   const vscode = acquireVsCodeApi();
   let vulnerability = {} as Vulnerability;
 
+  let lesson: Lesson | null;
+
   function navigateToUrl(url: string) {
     vscode.postMessage({
       type: 'openBrowser',
       value: url,
     });
+  }
+
+  function fillLearnLink() {
+    const learnWrapper = document.querySelector('.learn')!;
+    learnWrapper.className = 'learn';
+
+    if (lesson) {
+      const learnLink = document.querySelector<HTMLAnchorElement>('.learn--link')!;
+      learnLink.innerText = lesson.title;
+      const lessonUrl = lesson.url;
+      learnLink.onclick = () => navigateToUrl(lessonUrl);
+      learnWrapper.className = 'learn show';
+    }
   }
 
   function showCurrentSuggestion() {
@@ -93,7 +112,6 @@
     function fillIdentifiers() {
       const identifiers = document.querySelector('.identifiers')!;
       identifiers.innerHTML = ''; // reset node
-
       const type = vulnerability.license ? 'License' : 'Vulnerability';
       const typeNode = document.createTextNode(type);
       identifiers.appendChild(typeNode);
@@ -240,20 +258,31 @@
     }`;
   }
 
-  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {
     const { type, args } = event.data;
     switch (type) {
       case 'set': {
         vulnerability = args;
-        vscode.setState(vulnerability);
+        vscode.setState({ ...vscode.getState(), vulnerability });
+        showCurrentSuggestion();
         break;
       }
       case 'get': {
-        vulnerability = vscode.getState();
+        vulnerability = vscode.getState()?.vulnerability || {};
+        showCurrentSuggestion();
+        break;
+      }
+      case 'setLesson': {
+        lesson = args;
+        vscode.setState({ ...vscode.getState(), lesson });
+        fillLearnLink();
+        break;
+      }
+      case 'getLesson': {
+        lesson = vscode.getState()?.lesson || null;
+        fillLearnLink();
         break;
       }
     }
-    showCurrentSuggestion();
   });
 })();

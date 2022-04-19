@@ -9,6 +9,7 @@ import { configuration } from '../../common/configuration/instance';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
+import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
@@ -44,6 +45,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected cliDownloadService: CliDownloadService;
   protected ossService?: OssService;
   protected advisorService?: AdvisorProvider;
+  protected learnService: LearnService;
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
   protected ossVulnerabilityCountService: OssVulnerabilityCountService;
@@ -71,6 +73,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.openerService = new OpenerService();
     this.scanModeService = new ScanModeService(this.contextService, configuration);
     this.loadingBadge = new LoadingBadge();
+    this.learnService = new LearnService(configuration, Logger);
     this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace, Logger);
     this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace, Logger);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(

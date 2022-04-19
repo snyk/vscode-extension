@@ -1,1 +1,3 @@
 * @snyk/road-runner
+src/snyk/common/services/learnService.ts @snyk/owl
+src/test/unit/common/services/learnService.test.ts @snyk/owl
