@@ -1,11 +1,5 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.2.15]
-
-### Added
-
-- Vulnerability detail views now have links to Snyk Learn when we have an appropriate lesson available.
-
 ## [1.2.14]
 
 ### Added
@@ -13,6 +7,7 @@
 - Snyk Code: add support for Single Tenant setups
 - Update organization setting description to clarify expected value.
 - Snyk Open Source: vulnerability count is shown in NPM `devDependencies` when `--dev` flag is passed to Snyk CLI via additional arguments.
+- Vulnerability detail views now have links to Snyk Learn when we have an appropriate lesson available.
 
 ## [1.2.13]
 
