@@ -6,6 +6,7 @@
 
 - Snyk Code: add support for Single Tenant setups
 - Update organization setting description to clarify expected value.
+- Snyk Open Source: issues are shown in NPM `devDependencies` when `--dev` flag is passed to Snyk CLI via additional arguments.
 
 ## [1.2.13]
 
