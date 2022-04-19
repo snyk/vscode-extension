@@ -100,7 +100,7 @@
           },
           "snyk.advanced.organization": {
             "type": "string",
-            "description": "Specifies the organization name to run tests tied to a specific organization.",
+            "markdownDescription": "Specifies an organization slug name to run tests for that organization. \n\nNote: the value must match the URL slug as displayed in the URL of your org in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`. If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
             "scope": "window"
           },
           "snyk.advanced.tokenStorage": {

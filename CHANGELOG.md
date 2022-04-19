@@ -5,6 +5,7 @@
 ### Added
 
 - Snyk Code: add support for Single Tenant setups
+- Update organization setting description to clarify expected value.
 
 ## [1.2.13]
 
