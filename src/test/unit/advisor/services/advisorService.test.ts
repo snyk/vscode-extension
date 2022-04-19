@@ -31,6 +31,7 @@ suite('Advisor AdvisorService', () => {
       {} as HoverAdapter,
       {} as IMarkdownStringAdapter,
       {
+        getAdditionalCliParameters: () => undefined,
         getPreviewFeatures: () => {
           return {
             advisor: true,

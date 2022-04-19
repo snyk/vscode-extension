@@ -284,6 +284,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
       new CodeActionKindAdapter(),
       this.analytics,
+      configuration,
     );
     this.ossVulnerabilityCountService.activate();
 

@@ -113,7 +113,7 @@ export class AdvisorService implements Disposable {
   }
 
   private getModules(fileName: string, source: string, language: Language, logger: ILog): ImportedModule[] {
-    const parser = ModuleParserProvider.getInstance(language, logger);
+    const parser = ModuleParserProvider.getInstance(language, logger, this.configuration);
     if (!parser) {
       return [];
     }
