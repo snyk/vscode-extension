@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import { TextDocumentChangeEvent } from 'vscode';
-import { TextDocument } from './types';
+import { TextDocument, Uri } from './types';
 
 export interface IVSCodeWorkspace {
+  fs: vscode.FileSystem;
+
   getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined;
   updateConfiguration(
     configurationIdentifier: string,
@@ -16,6 +18,7 @@ export interface IVSCodeWorkspace {
   onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
   openFileTextDocument(fileName: string): Promise<TextDocument>;
   openTextDocument(options?: { language?: string; content?: string }): Promise<TextDocument>;
+  openTextDocumentViaUri(uri: Uri): Promise<TextDocument>;
 }
 
 /**
@@ -65,6 +68,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
     });
   }
 
+  openTextDocumentViaUri(uri: Uri): Promise<TextDocument> {
+    return vscode.workspace.openTextDocument(uri) as Promise<TextDocument>;
+  }
+
   openTextDocument(options?: { language?: string; content?: string }): Promise<TextDocument> {
     return new Promise((resolve, reject) => {
       vscode.workspace.openTextDocument(options).then(
@@ -73,6 +80,8 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
       );
     });
   }
+
+  fs = vscode.workspace.fs;
 }
 
 export const vsCodeWorkspace = new VSCodeWorkspace();

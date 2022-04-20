@@ -17,6 +17,7 @@ export type HoverProvider = vscode.HoverProvider;
 export type ProviderResult<T> = vscode.ProviderResult<T>;
 export type TextEditor = vscode.TextEditor;
 export type TextDocument = vscode.TextDocument;
+export type TextDocumentShowOptions = vscode.TextDocumentShowOptions;
 export type ViewColumn = vscode.ViewColumn;
 export type Position = vscode.Position;
 export type Range = vscode.Range;

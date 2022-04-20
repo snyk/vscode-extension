@@ -6,6 +6,7 @@
 
 - "Error: Cannot get password" appearing during retrieval of the token from secret
   storage.
+- Cached Snyk Learn links being opened when clicking on "Learn about this vulnerability".
 
 ## [1.2.15]
 
