@@ -167,7 +167,12 @@ export class Configuration implements IConfiguration {
   }
 
   async getToken(): Promise<string | undefined> {
-    return SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
+    try {
+      return SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
+    } catch (e) {
+      // if the token cannot be parsed then clear the token
+      await this.clearToken();
+    }
   }
 
   get snykCodeToken(): Promise<string | undefined> {

@@ -1,5 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.16]
+
+### Fixed
+
+- "Error: Cannot get password" appearing during retrieval of the token from secret
+  storage.
+
 ## [1.2.15]
 
 ### Added
