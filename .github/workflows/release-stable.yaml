@@ -46,6 +46,9 @@ jobs:
     environment: Stable
     name: Release
     steps:
+      - name: Setup VSCE
+        run: sudo npm install -g vsce@latest
+
       - name: Package VSIX
         run: echo y | vsce package
 
