@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { getIpFamily } from '@snyk/code-client';
 import _ from 'lodash';
-import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
@@ -26,6 +26,10 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
+import { IVSCodeCommands } from '../vscode/commands';
+import { Range, Uri } from '../vscode/types';
+import { IUriAdapter } from '../vscode/uri';
+import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './types';
 
@@ -39,53 +43,55 @@ export class CommandController {
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
+    private commands: IVSCodeCommands,
+    private window: IVSCodeWindow,
     private logger: ILog,
     private analytics: IAnalytics,
   ) {}
 
   openBrowser(url: string): unknown {
-    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, () => this.openerService.openBrowserUrl(url));
+    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
   }
 
   copyAuthLink(): unknown {
-    return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, () => this.openerService.copyOpenedUrl());
+    return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.openerService.copyOpenedUrl.bind(this.openerService));
   }
 
   initiateLogin(): unknown {
-    return this.executeCommand(SNYK_LOGIN_COMMAND, () => this.authService.initiateLogin(getIpFamily));
+    return this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService, getIpFamily));
   }
 
   async initiateLogout(): Promise<void> {
-    await this.executeCommand(SNYK_LOGOUT_COMMAND, () => this.authService.initiateLogout());
-    await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
+    await this.executeCommand(SNYK_LOGOUT_COMMAND, this.authService.initiateLogout.bind(this.authService));
+    await this.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
   }
 
   async setToken(): Promise<void> {
-    await this.executeCommand(SNYK_SET_TOKEN_COMMAND, () => this.authService.setToken());
+    await this.executeCommand(SNYK_SET_TOKEN_COMMAND, this.authService.setToken.bind(this));
   }
 
-  async openLocal(path: vscode.Uri, range?: vscode.Range): Promise<void> {
+  async openLocal(path: Uri, range?: Range): Promise<void> {
     try {
-      await vscode.window.showTextDocument(path, { viewColumn: vscode.ViewColumn.One, selection: range });
+      await this.window.showTextDocumentViaUri(path, { viewColumn: 1, selection: range });
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
   }
 
   openSettings(): void {
-    void vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`);
+    void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`);
   }
 
-  async createDCIgnore(custom = false, path?: string): Promise<void> {
+  async createDCIgnore(custom = false, uriAdapter: IUriAdapter, path?: string): Promise<void> {
     if (!path) {
-      const paths = (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+      const paths = this.workspace.getWorkspaceFolders();
       const promises = [];
       for (const p of paths) {
-        promises.push(createDCIgnore(p, custom));
+        promises.push(createDCIgnore(p, custom, this.workspace, this.window, uriAdapter));
       }
       await Promise.all(promises);
     } else {
-      await createDCIgnore(path, custom);
+      await createDCIgnore(path, custom, this.workspace, this.window, uriAdapter);
     }
   }
 

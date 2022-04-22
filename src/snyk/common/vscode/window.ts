@@ -6,12 +6,13 @@ import {
   TextEditorDecorationType,
   WebviewPanelSerializer,
 } from 'vscode';
-import { InputBoxOptions, TextDocument, TextEditor, ViewColumn } from './types';
+import { InputBoxOptions, TextDocument, TextDocumentShowOptions, TextEditor, Uri, ViewColumn } from './types';
 
 export interface IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined;
   getVisibleTextEditors(): TextEditor[];
   showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>;
+  showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
   withProgress<R>(
@@ -51,6 +52,10 @@ export class VSCodeWindow implements IVSCodeWindow {
         reason => reject(reason),
       );
     });
+  }
+
+  showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor> {
+    return vscode.window.showTextDocument(uri, options);
   }
 
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): vscode.TextEditorDecorationType {

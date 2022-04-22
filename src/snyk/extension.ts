@@ -184,6 +184,8 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
+      vsCodeComands,
+      vsCodeWindow,
       Logger,
       this.analytics,
     );
@@ -353,7 +355,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: string) => this.commandController.setScanMode(mode)),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
-        this.commandController.createDCIgnore(custom, path),
+        this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),
       vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, (arg: OpenIssueCommandArg) =>
         this.commandController.openIssueCommand(arg),
