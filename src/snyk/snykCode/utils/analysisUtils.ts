@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { AnalysisResultLegacy, FilePath, FileSuggestion, Marker, Suggestion } from '@snyk/code-client';
+import path from 'path';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import {
   DecorationOptions,
@@ -13,6 +14,7 @@ import {
   Uri,
 } from '../../common/vscode/types';
 import { IUriAdapter } from '../../common/vscode/uri';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import {
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
@@ -179,16 +181,19 @@ export const createIssuesMarkersDecorationOptions = (
 
 export const createIssueRelatedInformation = (
   markersList: Marker[],
-  fileUri: Uri,
+  fileUriPath: string,
   message: string,
   languages: IVSCodeLanguages,
+  workspace: IVSCodeWorkspace,
+  uriAdapter: IUriAdapter,
 ): DiagnosticRelatedInformation[] => {
   return markersList.reduce((res, marker) => {
     const { msg: markerMsgIdxs, pos: positions } = marker;
 
     positions.forEach(position => {
+      const positionUri = getAbsoluteMarkerFilePath(workspace, position.file, fileUriPath);
       const relatedInfo = languages.createDiagnosticRelatedInformation(
-        fileUri,
+        uriAdapter.file(positionUri),
         createIssueCorrectRange(position, languages),
         createIssueMarkerMsg(message, markerMsgIdxs),
       );
@@ -285,4 +290,23 @@ export const ignoreIssueCommentText = (issueId: string, isFileIgnore?: boolean):
 
 export const isSecurityTypeSuggestion = (suggestion: Suggestion): boolean => {
   return suggestion.categories.includes('Security');
+};
+
+export const getAbsoluteMarkerFilePath = (
+  workspace: IVSCodeWorkspace,
+  markerFilePath: string,
+  suggestionFilePath: string,
+): string => {
+  if (!markerFilePath) {
+    // If no filePath reported, use suggestion file path as marker's path. Suggestion path is always absolute.
+    return suggestionFilePath;
+  }
+
+  const workspaceFolders = workspace.getWorkspaceFolders();
+  if (workspaceFolders.length > 1) {
+    return markerFilePath;
+  }
+
+  // The Snyk Code analysis reported marker path is relative when in workspace with a single folder, thus need to convert to an absolute
+  return path.resolve(workspaceFolders[0], markerFilePath);
 };

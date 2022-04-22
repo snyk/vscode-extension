@@ -23,53 +23,6 @@ suite('False Positive', () => {
     throws(() => new FalsePositive(workspace, {} as completeFileSuggestionType));
   });
 
-  test('Returns correct absolute path if no marker file path provided', () => {
-    // arrange
-    const suggestionFilePath = '/Users/snyk/goof/test.js';
-    const markerFilePath = '';
-
-    // act
-    const absoluteFilePath = FalsePositive.getAbsoluteMarkerFilePath(workspace, markerFilePath, suggestionFilePath);
-
-    // assert
-    strictEqual(absoluteFilePath, suggestionFilePath);
-  });
-
-  test('Returns correct absolute path if in multi-folder workspace', () => {
-    // arrange
-    const suggestionFilePath = '/Users/snyk/goof/test.js';
-    const markerFilePath = '/Users/snyk/goof/test2.js';
-    workspace = {
-      getWorkspaceFolders: () => ['/Users/snyk/goof1', '/Users/snyk/goof2'],
-    } as unknown as IVSCodeWorkspace;
-
-    // act
-    const absoluteFilePath = FalsePositive.getAbsoluteMarkerFilePath(workspace, markerFilePath, suggestionFilePath);
-
-    // assert
-    strictEqual(absoluteFilePath, markerFilePath);
-  });
-
-  test('Returns correct absolute path if in single-folder workspace', () => {
-    // arrange
-    const suggestionFilePath = '/Users/snyk/goof/test.js';
-    const relativeMarkerFilePath = 'test2.js';
-    const workspaceFolder = '/Users/snyk/goof1';
-    workspace = {
-      getWorkspaceFolders: () => [workspaceFolder],
-    } as unknown as IVSCodeWorkspace;
-
-    // act
-    const absoluteFilePath = FalsePositive.getAbsoluteMarkerFilePath(
-      workspace,
-      relativeMarkerFilePath,
-      suggestionFilePath,
-    );
-
-    // assert
-    strictEqual(absoluteFilePath, path.resolve(workspaceFolder, relativeMarkerFilePath));
-  });
-
   test('Returns correct generated content', async () => {
     // arrange
     const filePath = os.platform() === 'win32' ? 'C:\\Users\\snyk\\goof\\test.js' : '/Users/snyk/goof/test.js';
