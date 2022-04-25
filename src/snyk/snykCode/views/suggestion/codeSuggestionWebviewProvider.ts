@@ -18,11 +18,12 @@ import { IWebViewProvider, WebviewProvider } from '../../../common/views/webview
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
+import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
-import { createIssueCorrectRange, getVSCodeSeverity } from '../../utils/analysisUtils';
+import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
 import { FalsePositiveWebviewModel } from '../falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
@@ -42,6 +43,7 @@ export class CodeSuggestionWebviewProvider
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
+    private readonly workspace: IVSCodeWorkspace,
     private readonly codeSettings: ICodeSettings,
     private readonly learnService: LearnService,
   ) {
@@ -140,10 +142,16 @@ export class CodeSuggestionWebviewProvider
       const { type, args } = message;
       switch (type) {
         case 'openLocal': {
-          let { uri, cols, rows } = args;
-          uri = vscode.Uri.parse(uri as string);
+          const { uri, cols, rows, suggestionUri } = args as {
+            uri: string;
+            cols: [number, number];
+            rows: [number, number];
+            suggestionUri: string;
+          };
+          const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
+          const localUri = vscode.Uri.parse(localUriPath);
           const range = createIssueCorrectRange({ cols, rows }, this.languages);
-          await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, range);
+          await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
           break;
         }
         case 'openBrowser': {

@@ -15,6 +15,7 @@ import {
   Uri,
 } from '../../common/vscode/types';
 import { IUriAdapter } from '../../common/vscode/uri';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import {
   DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
   DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME,
@@ -52,9 +53,10 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
   private readonly diagnosticSuggestion = new Map<Diagnostic, ICodeSuggestion>();
 
   public constructor(
-    readonly logger: ILog,
-    readonly languages: IVSCodeLanguages,
-    readonly analytics: IAnalytics,
+    private readonly logger: ILog,
+    private readonly languages: IVSCodeLanguages,
+    private readonly workspace: IVSCodeWorkspace,
+    private readonly analytics: IAnalytics,
     private readonly errorHandler: ISnykCodeErrorHandler,
     private readonly uriAdapter: IUriAdapter,
     private readonly configuration: IConfiguration,
@@ -141,7 +143,14 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
         : DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME,
       // issues markers can be in issuesPositions as prop 'markers',
       ...(issuePositions.markers && {
-        relatedInformation: createIssueRelatedInformation(issuePositions.markers, fileUri, message, this.languages),
+        relatedInformation: createIssueRelatedInformation(
+          issuePositions.markers,
+          fileUri.path,
+          message,
+          this.languages,
+          this.workspace,
+          this.uriAdapter,
+        ),
       }),
     };
   }

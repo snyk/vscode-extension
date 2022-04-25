@@ -67,11 +67,12 @@
       },
     });
   }
-  function getSuggestionPosition(range?: { rows: any; cols: any }) {
+  function getSuggestionPosition(position?: { file: string; rows: any; cols: any }) {
     return {
-      uri: suggestion.uri,
-      rows: range ? range.rows : suggestion.rows,
-      cols: range ? range.cols : suggestion.cols,
+      uri: position?.file ?? suggestion.uri,
+      rows: position ? position.rows : suggestion.rows,
+      cols: position ? position.cols : suggestion.cols,
+      suggestionUri: suggestion.uri,
     };
   }
   function previousExample() {

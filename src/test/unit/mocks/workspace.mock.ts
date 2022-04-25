@@ -1,3 +1,5 @@
+import * as os from 'os';
+import path from 'path';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 export function stubWorkspaceConfiguration<T>(configSetting: string, returnValue: T | undefined): IVSCodeWorkspace {
@@ -8,3 +10,11 @@ export function stubWorkspaceConfiguration<T>(configSetting: string, returnValue
     },
   } as IVSCodeWorkspace;
 }
+
+export const workspaceMock = {
+  getWorkspaceFolders() {
+    return [workspaceFolder];
+  },
+} as IVSCodeWorkspace;
+
+export const workspaceFolder = path.join(os.homedir(), 'snyk/project');

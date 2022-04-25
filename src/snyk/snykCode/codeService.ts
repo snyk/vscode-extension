@@ -90,7 +90,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly learnService: LearnService,
   ) {
     super();
-    this.analyzer = new SnykCodeAnalyzer(logger, languages, analytics, errorHandler, this.uriAdapter, this.config);
+    this.analyzer = new SnykCodeAnalyzer(
+      logger,
+      languages,
+      workspace,
+      analytics,
+      errorHandler,
+      this.uriAdapter,
+      this.config,
+    );
     this.registerAnalyzerProviders(this.analyzer);
 
     this.falsePositiveProvider = new FalsePositiveWebviewProvider(
@@ -108,6 +116,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       extensionContext,
       this.logger,
       languages,
+      workspace,
       codeSettings,
       this.learnService,
     );

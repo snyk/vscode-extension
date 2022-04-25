@@ -1,7 +1,7 @@
 import { Marker } from '@snyk/code-client';
-import path from 'path';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { completeFileSuggestionType } from '../interfaces';
+import { getAbsoluteMarkerFilePath } from '../utils/analysisUtils';
 import { IssueUtils } from '../utils/issueUtils';
 
 export class FalsePositive {
@@ -35,29 +35,10 @@ export class FalsePositive {
   private getFiles(markers: Marker[], uri: string): Set<string> {
     const markerPositions = markers.flatMap(marker => marker.pos);
     const filesArray = markerPositions.map(markerPosition =>
-      FalsePositive.getAbsoluteMarkerFilePath(this.workspace, markerPosition.file, uri),
+      getAbsoluteMarkerFilePath(this.workspace, markerPosition.file, uri),
     );
 
     return new Set(filesArray);
-  }
-
-  static getAbsoluteMarkerFilePath(
-    workspace: IVSCodeWorkspace,
-    markerFilePath: string,
-    suggestionFilePath: string,
-  ): string {
-    if (!markerFilePath) {
-      // If no filePath reported, use suggestion file path as marker's path. Suggestion path is always absolute.
-      return suggestionFilePath;
-    }
-
-    const workspaceFolders = workspace.getWorkspaceFolders();
-    if (workspaceFolders.length > 1) {
-      return markerFilePath;
-    }
-
-    // The Snyk Code analysis reported marker path is relative when in workspace with a single folder, thus need to convert to an absolute
-    return path.resolve(workspaceFolders[0], markerFilePath);
   }
 
   /**
