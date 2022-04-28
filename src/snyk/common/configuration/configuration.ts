@@ -167,12 +167,16 @@ export class Configuration implements IConfiguration {
   }
 
   async getToken(): Promise<string | undefined> {
-    try {
-      return SecretStorageAdapter.instance.get(SNYK_TOKEN_KEY);
-    } catch (e) {
-      // if the token cannot be parsed then clear the token
-      await this.clearToken();
-    }
+    return new Promise(resolve => {
+      SecretStorageAdapter.instance
+        .get(SNYK_TOKEN_KEY)
+        .then(token => resolve(token))
+        .catch(async _ => {
+          // clear the token and return empty string
+          await this.clearToken();
+          resolve('');
+        });
+    });
   }
 
   get snykCodeToken(): Promise<string | undefined> {
@@ -188,7 +192,11 @@ export class Configuration implements IConfiguration {
   }
 
   async clearToken(): Promise<void> {
-    return await SecretStorageAdapter.instance.delete(SNYK_TOKEN_KEY);
+    return new Promise<void>((_, reject) => {
+      SecretStorageAdapter.instance.delete(SNYK_TOKEN_KEY).catch(error => {
+        reject(error);
+      });
+    });
   }
 
   static get source(): string {
