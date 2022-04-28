@@ -192,10 +192,13 @@ export class Configuration implements IConfiguration {
   }
 
   async clearToken(): Promise<void> {
-    return new Promise<void>((_, reject) => {
-      SecretStorageAdapter.instance.delete(SNYK_TOKEN_KEY).catch(error => {
-        reject(error);
-      });
+    return new Promise<void>((resolve, reject) => {
+      SecretStorageAdapter.instance
+        .delete(SNYK_TOKEN_KEY)
+        .then(() => resolve())
+        .catch(error => {
+          reject(error);
+        });
     });
   }
 
