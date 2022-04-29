@@ -23,6 +23,7 @@ suite('Configuration', () => {
       secrets: {
         store: (_key: string, _value: string) => Promise.resolve(),
         get: () => Promise.resolve(),
+        delete: () => Promise.resolve(),
       },
     } as unknown as ExtensionContext;
     SecretStorageAdapter.init(extensionContext);
@@ -122,6 +123,21 @@ suite('Configuration', () => {
     strictEqual(await configuration.snykCodeToken, token);
     secretStorageStoreStub.calledWith(SNYK_TOKEN_KEY, token);
     strictEqual(secretStorageGetStub.calledOnce, true);
+  });
+
+  test('Snyk Code: token should be cleared if the retrieval method throws', async () => {
+    const token = 'snyk-token';
+
+    sinon.stub(extensionContext.secrets, 'store').resolves();
+    const secretStorageDeleteStub = sinon.stub(extensionContext.secrets, 'delete').resolves();
+    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').rejects('cannot get token');
+
+    const configuration = new Configuration(process.env, workspaceStub);
+    await configuration.setToken(token);
+
+    strictEqual(await configuration.snykCodeToken, '');
+    strictEqual(secretStorageGetStub.calledOnce, true);
+    strictEqual(secretStorageDeleteStub.calledOnce, true);
   });
 
   test('Snyk Code: token returns Snyk Code token when in development', async () => {

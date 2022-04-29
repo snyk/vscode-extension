@@ -46,6 +46,9 @@ jobs:
     environment: Stable
     name: Release
     steps:
+      - name: Fetch sources
+        uses: actions/checkout@v2
+
       - name: Setup VSCE
         run: sudo npm install -g vsce@latest
 
