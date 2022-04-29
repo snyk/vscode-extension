@@ -67,7 +67,7 @@ export class CommandController {
   }
 
   async setToken(): Promise<void> {
-    await this.executeCommand(SNYK_SET_TOKEN_COMMAND, this.authService.setToken.bind(this));
+    await this.executeCommand(SNYK_SET_TOKEN_COMMAND, this.authService.setToken.bind(this.authService));
   }
 
   async openLocal(path: Uri, range?: Range): Promise<void> {
