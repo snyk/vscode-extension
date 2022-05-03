@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.17]
+
+### Fixed
+
+- "Set Token" command reporting "Cannot read properties of undefined" error.
+
 ## [1.2.16]
 
 ### Fixed
