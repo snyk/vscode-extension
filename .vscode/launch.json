@@ -10,15 +10,14 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "runtimeArgs": [
-        "--preserve-symlinks"
-      ],
+      "runtimeArgs": ["--preserve-symlinks"],
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
         "SNYK_VSCE_DEVELOPMENT": "1"
-      }
+      },
+      "trace": true
     },
     {
       "name": "Extension Integration Tests",

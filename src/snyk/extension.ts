@@ -62,6 +62,7 @@ import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
+    
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
