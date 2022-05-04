@@ -52,6 +52,9 @@ jobs:
       - name: Setup VSCE
         run: sudo npm install -g vsce@latest
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Package VSIX
         run: echo y | vsce package
 
