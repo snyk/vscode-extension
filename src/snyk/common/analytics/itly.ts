@@ -117,7 +117,7 @@ export class Iteratively implements IAnalytics {
       return;
     }
 
-    // Calling identify again is the preferred way to merge authenticated user with anonymous one,
+    // Calling identify is the preferred way to merge authenticated user with anonymous one,
     // see https://snyk.slack.com/archives/C01U2SPRB3Q/p1624276750134700?thread_ts=1624030602.128900&cid=C01U2SPRB3Q
     itly.identify(this.user.authenticatedId, undefined, {
       segment: {
