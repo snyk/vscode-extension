@@ -19,6 +19,12 @@ jobs:
           git -C ./vscode-extension checkout -b docs/automatic-gitbook-update
 
           cp ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code.md ./vscode-extension/README.md
+          sed -i \
+              -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/$(git -C ./docs rev-parse HEAD)/docs/.gitbook/assets/|g" \
+              ./vscode-extension/README.md
+          sed -i \
+              -E 's|(\{%.*%\})||g' \
+              ./vscode-extension/README.md
 
           if [[ $(git -C ./vscode-extension status --porcelain) ]]; then
             echo "Documentation changes detected"
@@ -29,7 +35,7 @@ jobs:
             git push --force --set-upstream origin docs/automatic-gitbook-update
             if [[ ! $(gh pr view docs/automatic-gitbook-update 2>&1 | grep -q "no open pull requests";) ]]; then
               echo "Creating PR"
-              gh pr create --title="Synchronizing README from user-docs" --body="Automatic PR controlled by GitHub Action" --head docs/automatic-gitbook-update
+              gh pr create --title="Synchronizing README from user-docs" --body="Automatic PR controlled by GitHub Action. Please sign the commit before merging." --head docs/automatic-gitbook-update
             fi
             echo "PR exists, pushed changes to it."
           else
