@@ -1,4 +1,4 @@
-name: Synchronize Help # Copied from: https://github.com/snyk/cli/blob/95f7e1021c817a44d4018c4f518061d69f6dbb5b/.github/workflows/sync-cli-help-to-user-docs.yml
+name: Synchronize Readme # Copied from: https://github.com/snyk/cli/blob/95f7e1021c817a44d4018c4f518061d69f6dbb5b/.github/workflows/sync-cli-help-to-user-docs.yml
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: synchronize-help
+    name: synchronize-readme
     runs-on: ubuntu-latest
     steps:
       - run: |
