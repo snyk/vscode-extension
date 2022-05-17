@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.18]
+
+### Added
+
+- Base64 encoding for Snyk Code analysis file content payloads.
+
 ## [1.2.17]
 
 ### Fixed
