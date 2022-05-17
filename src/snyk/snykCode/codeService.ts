@@ -313,6 +313,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       sessionToken: snykCodeToken,
       source: this.config.source,
       requestId,
+      base64Encoding: true,
     };
   }
 
