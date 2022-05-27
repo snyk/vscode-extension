@@ -6,6 +6,10 @@
 
 - Base64 encoding for Snyk Code analysis file content payloads.
 
+### Changed
+
+- Anonymize user IDs before reporting to Sentry.
+
 ## [1.2.17]
 
 ### Fixed
