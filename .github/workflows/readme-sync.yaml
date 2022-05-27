@@ -20,7 +20,7 @@ jobs:
 
           cp ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code.md ./vscode-extension/README.md
           sed -i \
-              -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/$(git -C ./docs rev-parse HEAD)/docs/.gitbook/assets/|g" \
+              -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
               ./vscode-extension/README.md
           sed -i \
               -E 's|(\{%.*%\})||g' \
