@@ -249,7 +249,7 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.login 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.login 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
         "when": "!snyk:error && !snyk:loggedIn"
       },
       {
