@@ -5,6 +5,7 @@
 ### Added
 
 - Base64 encoding for Snyk Code analysis file content payloads.
+- Links to privacy policy and terms of service.
 
 ## [1.2.17]
 
