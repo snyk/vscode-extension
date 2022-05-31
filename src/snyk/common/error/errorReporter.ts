@@ -92,7 +92,7 @@ export class ErrorReporter {
 
   static identify(user: User): void {
     Sentry.setUser({
-      id: user.authenticatedId,
+      id: user.hashedAuthenticatedId,
     });
   }
 

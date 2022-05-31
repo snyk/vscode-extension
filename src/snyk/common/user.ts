@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { IAnalytics } from './analytics/itly';
 import { ISnykApiClient } from './api/apiСlient';
@@ -32,6 +33,14 @@ export class User {
 
   get authenticatedId(): string | undefined {
     return this._authenticatedId;
+  }
+
+  get hashedAuthenticatedId(): string | undefined {
+    if (!this._authenticatedId) {
+      return undefined;
+    }
+
+    return crypto.createHash('sha256').update(this._authenticatedId).digest('hex');
   }
 
   async identify(apiClient: ISnykApiClient, analytics: IAnalytics): Promise<void> {
