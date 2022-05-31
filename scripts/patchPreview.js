@@ -17,7 +17,7 @@ let json = require('../package.json');
 json = JSON.stringify({
   ...json,
   name: `${json.name}-preview`,
-  displayName: `${json.displayName} (Preview)`,
+  displayName: `(Preview) ${json.displayName}`,
   description: 'This is a preview release for functionality that is not yet officially released.',
   version: version,
   preview: true,
