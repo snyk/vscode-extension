@@ -430,7 +430,7 @@
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
     "lodash": "^4.17.21",
-    "marked": "^4.0.13",
+    "marked": "^4.0.16",
     "open": "^7.4.2",
     "rxjs": "^7.5.5",
     "string-argv": "^0.3.1",
