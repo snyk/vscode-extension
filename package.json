@@ -2,7 +2,7 @@
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Security - Code and Open Source Dependencies",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "description": "Easily find and fix vulnerabilities in both your code and open source dependencies with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
@@ -95,7 +95,7 @@
           },
           "snyk.advanced.customEndpoint": {
             "type": "string",
-            "description": "Sets API endpoint to use for Snyk requests. Useful for on-premise instances and configuring proxies.",
+            "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://app.eu.snyk.io/api`.",
             "scope": "window"
           },
           "snyk.advanced.organization": {
@@ -422,7 +422,7 @@
     "@itly/sdk": "^2.3.1",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
-    "@snyk/code-client": "^4.12.2",
+    "@snyk/code-client": "^4.12.3",
     "analytics-node": "^4.0.1",
     "axios": "^0.27.2",
     "glob": "^7.2.0",

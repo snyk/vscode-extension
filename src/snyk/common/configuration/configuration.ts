@@ -148,7 +148,7 @@ export class Configuration implements IConfiguration {
     if (this.isDevelopment) {
       return `${this.authHost}/api/v1`;
     } else if (this.customEndpoint) {
-      return this.customEndpoint;
+      return this.customEndpoint; // E.g. https://app.eu.snyk.io/api
     }
 
     return this.defaultOssApiEndpoint;

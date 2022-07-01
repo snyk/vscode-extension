@@ -2,6 +2,10 @@
 
 ## [1.2.19]
 
+### Added
+
+- Support for multi-tenant Snyk deployments.
+
 ### Changed
 
 - Updated severity icons
@@ -9,6 +13,7 @@
 ### Fixed
 
 - Snyk Code: don't show example fixes if there are none.
+- Opening extension settings.
 
 ## [1.2.18]
 

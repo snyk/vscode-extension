@@ -53,27 +53,27 @@ export interface IdentifyProperties {
   /**
    * Link to access more information about the user
    */
-  admin_link?: string;
+  adminLink?: string;
   /**
    * Link to access more information about the user
    */
-  adminLink?: string;
-  /**
-   * Auth provider (login method)
-   */
-  auth_provider?: string;
+  admin_link?: string;
   /**
    * Auth provider (login method)
    */
   authProvider?: string;
   /**
-   * Timestamp of user creation
+   * Auth provider (login method)
    */
-  createdAt?: number;
+  auth_provider?: string;
   /**
    * Timestamp of user creation
    */
   created_at?: number;
+  /**
+   * Timestamp of user creation
+   */
+  createdAt?: number;
   /**
    * Email address for the user
    */
@@ -107,6 +107,10 @@ export interface IdentifyProperties {
    */
   isSnykAdmin?: boolean;
   /**
+   * An array of the ecosystems(eg: javascript, java, docker, kubernetes) that the user selects as their favorites on the snyk learn app.
+   */
+  learnPreferredEcosystems?: string[];
+  /**
    * Used by Marketo to determine whether to send product updates emails to users. We are setting this value during product updates consent flow after registration.
    */
   productUpdatesConsent?: boolean;
@@ -126,29 +130,25 @@ export interface IdentifyProperties {
    */
   username?: string;
   /**
-   * query utm_campaign
+   * Query utmcampaign. All UTM properties must be in snake\_case.
    */
   utm_campaign?: string;
   /**
-   * query utm_campaign
+   * Query utm\_content. All UTM properties must be in snake\_case.
    */
-  utmCampaign?: string;
+  utm_content?: string;
   /**
-   * query utm_medium
+   * Query utm\_medium. All UTM properties must be in snake\_case.
    */
   utm_medium?: string;
   /**
-   * query utm_medium
-   */
-  utmMedium?: string;
-  /**
-   * query utm_source
-   */
-  utmSource?: string;
-  /**
-   * query utm_source
+   * Query utm\_source. All UTM properties must be in snake\_case.
    */
   utm_source?: string;
+  /**
+   * Query utm\_term. All UTM properties must be in snake\_case.
+   */
+  utm_term?: string;
 }
 
 export interface GroupProperties {
@@ -164,14 +164,6 @@ export interface GroupProperties {
    * Key that is used to specify the name of the Segment Group that a groupId is being set for.
    */
   groupType?: "org" | "group" | "account";
-  /**
-   * The internal name (org.name) of the org
-   */
-  internalName?: string;
-  /**
-   * The display name of the org
-   */
-  name?: string;
   /**
    * The plan of the org
    */
@@ -359,7 +351,7 @@ export interface FalsePositiveIsSubmittedProperties {
    * |---|---|
    * | Enum Values | Advisor, Code Quality Issue, Code Security Vulnerability, Licence Issue, Open Source Vulnerability, Infrastructure as Code Issue, Container Vulnerability |
    */
-  issueType:
+  issueType?:
     | "Advisor"
     | "Code Quality Issue"
     | "Code Security Vulnerability"
@@ -397,7 +389,7 @@ export interface IssueHoverIsDisplayedProperties {
    * |---|---|
    * | Enum Values | Advisor, Code Quality Issue, Code Security Vulnerability, Licence Issue, Open Source Vulnerability, Infrastructure as Code Issue, Container Vulnerability |
    */
-  issueType:
+  issueType?:
     | "Advisor"
     | "Code Quality Issue"
     | "Code Security Vulnerability"
@@ -435,7 +427,7 @@ export interface IssueInTreeIsClickedProperties {
    * |---|---|
    * | Enum Values | Advisor, Code Quality Issue, Code Security Vulnerability, Licence Issue, Open Source Vulnerability, Infrastructure as Code Issue, Container Vulnerability |
    */
-  issueType:
+  issueType?:
     | "Advisor"
     | "Code Quality Issue"
     | "Code Security Vulnerability"
@@ -454,17 +446,6 @@ export interface IssueInTreeIsClickedProperties {
 }
 
 export interface PluginIsInstalledProperties {
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
-}
-
-export interface PluginIsUninstalledProperties {
   /**
    * Ide family.
    *
@@ -546,7 +527,7 @@ export interface WelcomeIsViewedProperties {
 export class AnalysisIsReady implements Event {
   name = 'Analysis Is Ready';
   id = 'c9337edb-27a3-416e-a654-092fa4375feb';
-  version = '2.0.2';
+  version = '2.0.3';
   properties: AnalysisIsReadyProperties & {
     'itly': true;
   };
@@ -564,7 +545,7 @@ export class AnalysisIsReady implements Event {
 export class AnalysisIsTriggered implements Event {
   name = 'Analysis Is Triggered';
   id = 'dabf569e-219c-470f-8e31-6e029723f0cd';
-  version = '2.0.2';
+  version = '2.0.3';
   properties: AnalysisIsTriggeredProperties & {
     'itly': true;
   };
@@ -582,7 +563,7 @@ export class AnalysisIsTriggered implements Event {
 export class AuthenticateButtonIsClicked implements Event {
   name = 'Authenticate Button Is Clicked';
   id = '2220c25f-ba76-4d5b-92f7-6d0e1c6165be';
-  version = '1.0.2';
+  version = '1.0.3';
   properties: AuthenticateButtonIsClickedProperties & {
     'itly': true;
   };
@@ -618,7 +599,7 @@ export class FalsePositiveIsDisplayed implements Event {
 export class FalsePositiveIsSubmitted implements Event {
   name = 'False Positive Is Submitted';
   id = '299be947-f18c-41c4-96f8-33f4c8daa5a1';
-  version = '1.0.0';
+  version = '1.0.1';
   properties: FalsePositiveIsSubmittedProperties & {
     'itly': true;
   };
@@ -636,7 +617,7 @@ export class FalsePositiveIsSubmitted implements Event {
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
-  version = '2.0.3';
+  version = '2.0.4';
   properties: IssueHoverIsDisplayedProperties & {
     'itly': true;
   };
@@ -654,7 +635,7 @@ export class IssueHoverIsDisplayed implements Event {
 export class IssueInTreeIsClicked implements Event {
   name = 'Issue In Tree Is Clicked';
   id = 'fae15d02-eab9-49bb-9833-18414e26058b';
-  version = '2.0.3';
+  version = '2.0.4';
   properties: IssueInTreeIsClickedProperties & {
     'itly': true;
   };
@@ -672,31 +653,13 @@ export class IssueInTreeIsClicked implements Event {
 export class PluginIsInstalled implements Event {
   name = 'Plugin Is Installed';
   id = '7bb34693-366e-460e-8f4c-5b3f1c71888a';
-  version = '1.0.2';
+  version = '1.0.3';
   properties: PluginIsInstalledProperties & {
     'itly': true;
   };
 
   constructor(
     properties: PluginIsInstalledProperties,
-  ) {
-    this.properties = {
-        ...properties,
-        'itly': true,
-      };
-  }
-}
-
-export class PluginIsUninstalled implements Event {
-  name = 'Plugin Is Uninstalled';
-  id = '5936cb0e-2639-4b76-baea-f0c086b860b0';
-  version = '1.0.2';
-  properties: PluginIsUninstalledProperties & {
-    'itly': true;
-  };
-
-  constructor(
-    properties: PluginIsUninstalledProperties,
   ) {
     this.properties = {
         ...properties,
@@ -744,7 +707,7 @@ export class WelcomeButtonIsClicked implements Event {
 export class WelcomeIsViewed implements Event {
   name = 'Welcome Is Viewed';
   id = '91114669-bbab-4f58-a7dd-ea7c98c79221';
-  version = '1.0.2';
+  version = '1.0.3';
   properties: WelcomeIsViewedProperties & {
     'itly': true;
   };
@@ -803,18 +766,17 @@ class Itly {
       ...options,
       plugins: [
         new SchemaValidatorPlugin({
-          'group': {"type":"object","properties":{"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"internalName":{"type":"string"},"name":{"type":"string"},"plan":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"admin_link":{"type":"string"},"adminLink":{"type":"string"},"auth_provider":{"type":"string"},"authProvider":{"type":"string"},"createdAt":{"type":"number"},"created_at":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utmCampaign":{"type":"string"},"utm_medium":{"type":"string"},"utmMedium":{"type":"string"},"utmSource":{"type":"string"},"utm_source":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'group': {"type":"object","properties":{"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"adminLink":{"type":"string"},"admin_link":{"type":"string"},"authProvider":{"type":"string"},"auth_provider":{"type":"string"},"created_at":{"type":"number"},"createdAt":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"learnPreferredEcosystems":{"type":"array","items":{"type":"string"},"uniqueItems":true},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utm_content":{"type":"string"},"utm_medium":{"type":"string"},"utm_source":{"type":"string"},"utm_term":{"type":"string"}},"additionalProperties":false,"required":[]},
           'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
           'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
           'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
-          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
-          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","issueType","itly"]},
+          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'Plugin Is Uninstalled': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
           'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
@@ -991,22 +953,6 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new PluginIsInstalled(properties), options);
-  }
-
-  /**
-   * Triggered when the user uninstalls the plugin.
-   *
-   * Owner: Georgi Mitev
-   * @param userId The user's ID.
-   * @param properties The event's properties (e.g. ide)
-   * @param options Options for this track call.
-   */
-  pluginIsUninstalled(
-    userId: string,
-    properties: PluginIsUninstalledProperties,
-    options?: TrackOptions,
-  ) {
-    this.itly.track(userId, new PluginIsUninstalled(properties), options);
   }
 
   /**
