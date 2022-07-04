@@ -2,6 +2,10 @@
 
 ## [1.2.19]
 
+### Changed
+
+- Updated severity icons
+
 ### Fixed
 
 - Snyk Code: don't show example fixes if there are none.
