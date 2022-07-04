@@ -288,6 +288,9 @@ export class CodeSuggestionWebviewProvider
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
           </div>
+          <div id="info-no-examples" class="font-light">
+            There are no example fixes for this issue.
+          </div>
           <div id="example-top" class="row between">
             <div id="current-example" class="clickable">
               <img class="icon" src="${images['icon-github']}"></img>
