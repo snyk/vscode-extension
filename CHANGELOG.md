@@ -10,6 +10,7 @@
 
 - Snyk Code: don't show example fixes if there are none.
 - Snyk Code: prevent fix examples panel from crashing in rare cases.
+- Snyk Code: properly render/restore panel on refresh.
 
 ## [1.2.18]
 
