@@ -110,11 +110,7 @@ export class CodeSuggestionWebviewProvider
           },
           this.getWebviewOptions(),
         );
-
-        this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
-        this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
-        // Handle messages from the webview
-        this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
+        this.registerListeners();
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
@@ -126,6 +122,15 @@ export class CodeSuggestionWebviewProvider
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
+  }
+
+  protected registerListeners(): void {
+    if (!this.panel) return;
+
+    this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
+    this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
+    // Handle messages from the webview
+    this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
   }
 
   disposePanel(): void {
