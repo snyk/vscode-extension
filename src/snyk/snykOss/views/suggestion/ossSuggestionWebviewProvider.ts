@@ -76,14 +76,14 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
           },
           this.getWebviewOptions(),
         );
+
+        this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
       void this.panel.webview.postMessage({ type: 'set', args: vulnerability });
       void this.postLearnLessonMessage(vulnerability);
-
-      this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
 
       this.panel.webview.onDidReceiveMessage(
         (data: OssSuggestionViewEventMessage) => {

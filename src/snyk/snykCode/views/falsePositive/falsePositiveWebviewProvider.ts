@@ -66,6 +66,8 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
           },
           this.getWebviewOptions(),
         );
+
+        this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
@@ -82,7 +84,6 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
   private registerListeners() {
     if (!this.panel) return;
 
-    this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
       async (data: FalsePositiveViewEventMessage) => {
         switch (data.type) {

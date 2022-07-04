@@ -5,6 +5,7 @@
 ### Fixed
 
 - Snyk Code: don't show example fixes if there are none.
+- Snyk Code: prevent fix examples panel from crashing in rare cases.
 
 ## [1.2.18]
 
