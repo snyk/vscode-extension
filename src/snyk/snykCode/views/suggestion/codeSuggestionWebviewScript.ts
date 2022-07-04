@@ -235,6 +235,7 @@
 
     const exampleTop = document.getElementById('example-top')!;
     const example = document.getElementById('example')!;
+    const noExamples = document.getElementById('info-no-examples')!;
     if (suggestion.exampleCommitFixes.length) {
       exampleTop.className = 'row between';
       example.className = '';
@@ -242,10 +243,12 @@
       exNum.innerHTML = suggestion.exampleCommitFixes.length;
       const exNum2 = document.getElementById('example-number2')!;
       exNum2.innerHTML = suggestion.exampleCommitFixes.length;
+      noExamples.className = 'hidden';
       showCurrentExample();
     } else {
       exampleTop.className = 'row between hidden';
       example.className = 'hidden';
+      noExamples.className = 'font-light';
     }
   }
 
