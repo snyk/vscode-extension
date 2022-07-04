@@ -1,7 +1,4 @@
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="16" height="16" rx="2" fill="#CE5019"/>
-<path d="M3 3H6V7H10V3H13V13H10V9H6V13H3V3Z" fill="white"/>
-<path d="M3 3H6V7H10V3H13V13H10V9H6V13H3V3Z" fill="white"/>
-<path d="M3 3H6V7H10V3H13V13H10V9H6V13H3V3Z" fill="white"/>
-<path d="M3 3H6V7H10V3H13V13H10V9H6V13H3V3Z" fill="white"/>
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+  <rect width="16" height="16" rx="2" fill="#CE5019"/>
+  <path d="M10.5 7v2h-5V7h5ZM6 3v10H4V3h2Zm6 0v10h-2V3h2Z" fill="#fff"/>
 </svg>
