@@ -1,61 +1,104 @@
-This Contributor Licence Agreement (“Agreement”) sets out the terms under which contributions are made to open source projects of Snyk Ltd (“Snyk”) by or on behalf of the Contributor. This Agreement is legally binding on the Contributor.
+## Run extension and debug
 
-Who the “Contributor” is depends on whether the person submitting the contribution is a private individual acting on their own behalf, or is acting on behalf of someone else (for example, their employer). The “Contributor” in this Agreement is therefore either: (i) if the individual who Submits a Contribution does so on behalf of their employer or another Legal Entity, any Legal Entity on behalf of whom a Contribution has been received by Snyk; or in all other cases (ii) the individual who Submits a Contribution to Snyk. "Legal Entity" means an entity which is not a natural person (for example, a limited company or corporation).
+Clone the repository, then run `npm install` in the directory.
 
-** 1. Interpretation**
+- Open repository directory in VS Code and press `F5` to run extension in a new VS Code window.
+- This allows extension debugging within VS Code.
+- You can find output from your extension in the debug console and output channel.
 
-The following definitions and rules of interpretation apply in this Agreement.
+Please install all recommended extension that are suggested by VS Code when first opening the cloned directory. You can also do install them manually with the list of extensions defined in `.vscode/extensions.json`. This will ensure consistent formatting with the current codebase.
 
-1.1 Definitions:
+## Make changes
 
-**Affiliates**: means, in respect of a Legal Entity, any other Legal Entities that control, are controlled by, or under common control with that Legal Entity.
+Code changes require extension reload when run in debug.
 
-**Contribution**: means any software or code that is Submitted by the Contributor to Snyk for inclusion in a Project.
+- You can relaunch the extension from the debug toolbar after changing code.
+- You can also reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes.
 
-**Copyright**: all copyright and rights in the nature of copyright subsisting in the Contribution in any part of the world, to which the Contributor is, or may become, entitled.
+## Watching changes
 
-**Effective Date**: the earlier of the date on which the Contributor Submits the Contribution, or the date of the Contributor’s acceptance of this Agreement.
+- When run in debug, VS Code runs watch for TS files automatically for you.
+- If not in debug, run `npm run watch-all` to track changes in both TS and SCSS files.
+  - If you want to track changes to TS files only, use `npm run watch`.
+  - If you want to track changes to SCSS files only, use `npm run watch-resources`.
 
-**Patent Rights**: any patent claims which the Contributor or its Affiliates owns, controls or has the right to grant, now or in the future, to the extent infringed by the exercise of the rights licensed under this Agreement.
+## Run tests and debug
 
-**Project**: a software project to which the Contribution is Submitted.
+- Unit tests
 
-**Submit**: means to submit or send to Snyk or its representatives by any form of electronic, verbal, or written communication, for example, by means of code repositories or control systems, and issue tracking systems, that are managed by or on behalf of Snyk.
+  - Run `npm run test:unit` for a single execution, `npm run test:unit:watch` to watch for changes.
+  - Make sure to re-run the command to pick up new files, if new `**.test.ts` is added.
 
-**2. Licence Grant**
+- Integration tests
+  - Run `npm run test:integration`.
 
-2.1 Copyright: The Contributor grants to Snyk a perpetual, irrevocable, worldwide, transferable, fully sublicenseable through multiple tiers, fee-free, non-exclusive licence under the Copyright to do the following acts, subject to, and in accordance with, the terms of this Agreement: to reproduce, prepare derivative works of, publicly display, publicly perform, communicate to the public, and distribute by any means Contributions and such derivative works.
+You can debug tests via VS Code debugger, selecting "Extension Unit Tests" or "Extension Integration Tests" respectively.
 
-2.2. Patent Rights: The Contributor grants to Snyk a perpetual, irrevocable, worldwide, transferable, fully sublicenseable through multiple tiers, fee-free, non-exclusive licence under the Patent Rights to do the following acts, subject to, and in accordance with, the terms of this Agreement: to make, have made, use, sell, offer for sale, import and otherwise transfer the Contribution and the Contribution in combination with a Project (and portions of such combination).
+## Analytics, experimentation and error reporting
 
-2.3 The Contributor acknowledges that Snyk is not obliged to include the Contribution in any Project.
+To test for analytics, experimentation and error reporting integrations, create `snyk.config.local.json` file in the root folder and copy the contents from `snyk.config.json`, replacing config values with API keys for relevant integrations.
 
-2.4 If Snyk includes the Contribution in a Project, Snyk may license the Contribution under any licence terms, including copyleft, permissive, commercial, or proprietary licenses, provided that it shall also license the Contribution under the terms of any licenses which are approved by the Open Source Initiative on or after the Effective Date, including both permissive and copyleft licenses, whether or not such licenses are subsequently disapproved (including any right to adopt any future version of a license if permitted).
+## Source code organization
 
-2.5 In the event that any moral rights apply in respect of the Contribution, the Contributor, being the sole author of the Contribution, waives all moral rights in respect of the use to be made of the Contribution under this Agreement to which the Contributor may now or at any future time be entitled.
+The code is organized in folders grouped by [feature](https://phauer.com/2020/package-by-feature/), unless it's product unrelated code. The overall layering tree loks like that:
 
-**3. Warranties and Disclaimers**
+```
+├── ampli
+│   └── Amplitude CLI generated code.
+├── snyk
+│   ├── common
+│   │   ├── Common code that is shared between different products.
+│   ├── base
+│   │   ├── Provides general utilities and basic extension building blocks.
+│   ├── cli
+│   │   ├── Code responsible for interaction with Snyk CLI.
+│   ├── snykCode
+│   │   ├── Snyk Code product specific code.
+│   ├── snykOss
+│   │   ├── Snyk Open Source product specific code.
+├── test
+│   ├── integration
+│   │   ├── Integration tests.
+│   ├── unit
+│   │   ├── Unit tests.
+```
 
-3.1 The Contributor warrants and represents that:
+## Additional info
 
-(a) it is the sole owner of the Copyright and any Patent Rights and legally entitled to grant the licence in section 2;
+### Explore the VS Code API
 
-(b) the Contribution is its own original creation;
+You can open the full set of our API when you open the file `node_modules/@types/vscode/index.d.ts`.
 
-(c) the licence in section 2 does not conflict with or infringe any rights granted by the Contributor or (if applicable) its Affiliates; and
+### Usage with local package `@snyk/code-client`
 
-(d) it is not aware of any claims, suits, or actions in respect of the Contribution.
+In order to test plugin with local package `@snyk/code-client` you should make the following steps.
 
-3.2 All other conditions, warranties or other terms which might have effect between the parties in respect of the Contribution or be implied or incorporated into this Agreement are excluded.
+1. Clone package repository:
 
-3.3 The Contributor is not required to provide any support for the Contribution.
+```shell script
+$ git clone https://github.com/snyk/code-client.git
+```
 
-**4. Other important terms**
+2. Go to the package folder, install dependencies, build package and create symlink:
 
-4.1 Assignment/Transfer: Snyk may assign and transfer all of its rights and obligations under this Agreement to any person.
+```shell script
+$ cd tsc
+$ npm install
+$ npm run build
+$ npm link
+```
 
-4.2 Further Assurance: The Contributor shall at Snyk’s expense execute and deliver such documents and perform such acts as may reasonably be required by Snyk for the purpose of giving full effect to this Agreement.
+3. Go to the extension folder and install package from local symlink:
 
-4.3 Agreement: This Agreement constitutes the entire Agreement between the parties and supersedes and extinguishes all previous Agreements, promises, assurances, warranties, representations and understandings between them, whether written or oral, relating to its subject matter.
+```shell script
+$ cd vscode-extension
+$ npm link @snyk/code-client
+```
 
-4.4 Governing law: This Agreement and any dispute or claim (including non-contractual disputes or claims) arising out of or in connection with it or its subject matter or formation shall be governed by and construed in accordance with the law of England and Wales.
+After that you can add package to your `package.json`:
+
+```json
+"dependencies": {
+ "@snyk/code-client": "^2.4.1"
+}
+```

@@ -23,7 +23,7 @@ jobs:
               -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
               ./vscode-extension/README.md
           sed -i \
-              -E "s|^\!\\[([[:alnum:][:space:][:punct:]]+)\]\(<([[:alnum:][:punct:]\-\.\/:[:space:]\(\)]+)>\)|<img src=\"\2\" alt=\"\1\" />|g" \
+              -E "s|\!\\[([[:alnum:][:space:][:punct:]]*)\]\(<([[:alnum:][:punct:]\-\.\/:[:space:]\(\)]+)>\)|<img src=\"\2\" alt=\"\1\" />|g" \
               ./vscode-extension/README.md
           sed -i \
               -E 's|(\{%.*%\})||g' \
