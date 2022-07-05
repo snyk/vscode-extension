@@ -66,12 +66,12 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
           },
           this.getWebviewOptions(),
         );
+
+        this.registerListeners();
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
       await this.panel.webview.postMessage({ type: 'set', args: model });
-
-      this.registerListeners();
 
       this.analytics.logFalsePositiveIsDisplayed();
     } catch (e) {
