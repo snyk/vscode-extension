@@ -1,14 +1,15 @@
 export const messages = {
-  progressTitle: 'Downloading Snyk CLI...',
-  startingDownload: 'Starting Snyk CLI download...',
-  startingUpdate: 'Starting Snyk CLI update...',
-  isLatest: 'Snyk CLI version is up-to-date.',
-  notSupported: 'Snyk CLI cannot be downloaded because OS platform is not supported.',
-  integrityCheckFailed: 'The downloaded Snyk CLI integrity check failed.',
-  couldNotDeleteExecutable: 'Could not delete existing CLI executable.',
-  downloadCanceled: 'CLI download has been canceled.',
-  cliDownloadFailed: 'Failed to download or update Snyk CLI.',
+  progressTitle: 'Downloading Snyk dependencies...',
+  startingDownload: 'Starting Snyk dependencies download...',
+  startingUpdate: 'Starting Snyk dependencies update...',
+  isLatest: 'Snyk dependencies are up-to-date.',
+  notSupported: 'Snyk CLI (dependency of this extension) cannot be downloaded because OS platform is not supported.',
+  integrityCheckFailed: 'The downloaded Snyk CLI (dependency of this extension) integrity check failed.',
+  couldNotDeleteExecutable: 'Could not delete existing Snyk CLI (dependency of this extension) executable.',
+  downloadCanceled: 'Download of Snyk dependencies has been canceled.',
+  cliDownloadFailed: 'Failed to download or update Snyk dependencies.',
 
-  downloadFinished: (version: string): string => `Snyk CLI v${version} has been successfully downloaded.`,
-  updateFinished: (version: string): string => `Snyk CLI has been updated to v${version}.`,
+  downloadFinished: (version: string): string =>
+    `Snyk dependencies (CLI v${version}) have been successfully downloaded.`,
+  updateFinished: (version: string): string => `Snyk dependencies have been updated (CLI to v${version}).`,
 };
