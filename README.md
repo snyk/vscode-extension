@@ -79,7 +79,7 @@ To re-authenticate with a different account, follow the steps below:
 
 Or you run `Snyk: Set Token` command and set your token in the text field manually.
 
-![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (80) (1).png>)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (80) (1).png" alt="" />
 
 \\
 
@@ -132,11 +132,11 @@ The Snyk analysis panel on the left of the preceding code screen shows how much 
 
 The icons have the following meaning:
 
-| ![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (75) (2).png>) Critical severity                                                                                                       | May allow attackers to access sensitive data and run code on your application.                                                               |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (75) (2).png" alt="" /> Critical severity                                                                                                       | May allow attackers to access sensitive data and run code on your application.                                                               |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (64) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png>) High severity       | May allow attackers to access sensitive data on your application.                                                                            |
-| ![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (63) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (6).png>) Medium severity | May allow attackers under some conditions to access sensitive data on your application.                                                      |
-| ![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (114) (1).png>) Low severity                                                                                                           | The application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application. |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (64) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="" /> High severity       | May allow attackers to access sensitive data on your application.                                                                            |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (63) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (6).png" alt="" /> Medium severity | May allow attackers under some conditions to access sensitive data on your application.                                                      |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (114) (1).png" alt="" /> Low severity                                                                                                           | The application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application. |
 
 You can filter the issues by setting the severities you want to see using the `snyk.severity` setting. For example, set `"snyk.severity": { "critical": true, "high": true, "medium": true, "low": false }` to hide low severity issues. You can also apply the setting in the Settings UI.
 
