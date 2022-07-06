@@ -25,9 +25,12 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
   restorePanel(panel: vscode.WebviewPanel): void {
     if (this.panel) this.panel.dispose();
     this.panel = panel;
+    this.registerListeners();
+    this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
   }
 
   abstract showPanel(suggestion: ViewModel, ...args: unknown[]): Promise<void>;
+  protected abstract registerListeners(): void;
 
   protected async focusSecondEditorGroup(): Promise<void> {
     // workaround for: https://github.com/microsoft/vscode/issues/71608

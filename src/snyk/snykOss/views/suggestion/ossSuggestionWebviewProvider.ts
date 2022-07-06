@@ -76,22 +76,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
           },
           this.getWebviewOptions(),
         );
-
-        this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
-        this.panel.webview.onDidReceiveMessage(
-          (data: OssSuggestionViewEventMessage) => {
-            switch (data.type) {
-              case OssSuggestionsViewEventMessageType.OpenBrowser:
-                void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
-                break;
-              default:
-                break;
-            }
-          },
-          null,
-          this.disposables,
-        );
-        this.panel.onDidChangeViewState(() => this.checkVisibility(), null, this.disposables);
+        this.registerListeners();
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
@@ -101,6 +86,26 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
+  }
+
+  protected registerListeners(): void {
+    if (!this.panel) return;
+
+    this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
+    this.panel.webview.onDidReceiveMessage(
+      (data: OssSuggestionViewEventMessage) => {
+        switch (data.type) {
+          case OssSuggestionsViewEventMessageType.OpenBrowser:
+            void vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, data.value);
+            break;
+          default:
+            break;
+        }
+      },
+      null,
+      this.disposables,
+    );
+    this.panel.onDidChangeViewState(() => this.checkVisibility(), null, this.disposables);
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {

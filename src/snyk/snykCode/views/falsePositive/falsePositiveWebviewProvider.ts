@@ -66,7 +66,6 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
           },
           this.getWebviewOptions(),
         );
-
         this.registerListeners();
       }
 
@@ -79,7 +78,7 @@ export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveW
     }
   }
 
-  private registerListeners() {
+  protected registerListeners() {
     if (!this.panel) return;
 
     this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);

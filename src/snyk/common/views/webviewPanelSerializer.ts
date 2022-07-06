@@ -15,7 +15,5 @@ export class WebviewPanelSerializer<Provider extends WebviewProvider<State>, Sta
     webviewPanel.webview.options = this.provider.getWebviewOptions();
 
     this.provider.restorePanel(webviewPanel);
-
-    return this.provider.showPanel(state);
   }
 }
