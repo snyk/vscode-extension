@@ -6,6 +6,7 @@ import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
+  ADVANCED_CUSTOM_ENDPOINT,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
@@ -35,6 +36,8 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === SEVERITY_FILTER_SETTING) {
       extension.snykCode.analyzer.refreshDiagnostics();
       return extension.viewManagerService.refreshAllViews();
+    } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
+      return configuration.clearToken();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -58,6 +61,7 @@ class ConfigurationWatcher implements IWatcher {
         CODE_SECURITY_ENABLED_SETTING,
         CODE_QUALITY_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
+        ADVANCED_CUSTOM_ENDPOINT,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

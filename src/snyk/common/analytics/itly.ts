@@ -45,7 +45,6 @@ export interface IAnalytics {
   logAuthenticateButtonIsClicked(): void;
   logWelcomeButtonIsClicked(): void;
   logPluginIsInstalled(): void;
-  logPluginIsUninstalled(userId?: string): void;
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
   logFalsePositiveIsDisplayed(): void;
@@ -220,18 +219,6 @@ export class Iteratively implements IAnalytics {
         },
       },
     );
-  }
-
-  public logPluginIsUninstalled(): void {
-    const userId = this.user.authenticatedId ?? this.user.anonymousId;
-
-    if (!this.canReportEvents() || !userId) {
-      return;
-    }
-
-    itly.pluginIsUninstalled(userId, {
-      ide: this.ide,
-    });
   }
 
   public logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void {
