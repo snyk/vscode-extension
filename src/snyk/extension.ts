@@ -160,6 +160,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.cliDownloadService = new CliDownloadService(
       this.context,
+      configuration,
       new StaticCliApi(vsCodeWorkspace),
       vsCodeWindow,
       Logger,

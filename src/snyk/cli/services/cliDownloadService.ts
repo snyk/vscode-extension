@@ -1,4 +1,5 @@
 import { ReplaySubject } from 'rxjs';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
 import { ILog } from '../../common/logger/interfaces';
 import { Platform } from '../../common/platform';
@@ -17,6 +18,7 @@ export class CliDownloadService {
 
   constructor(
     private readonly extensionContext: ExtensionContext,
+    private readonly configuration: IConfiguration,
     private readonly api: IStaticCliApi,
     readonly window: IVSCodeWindow,
     private readonly logger: ILog,
@@ -27,6 +29,11 @@ export class CliDownloadService {
 
   async downloadOrUpdateCli(): Promise<boolean> {
     const installed = await this.isInstalled();
+
+    if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
+      return false;
+    }
+
     if (!installed) {
       const downloaded = await this.downloadCli();
       this.downloadFinished$.next();
