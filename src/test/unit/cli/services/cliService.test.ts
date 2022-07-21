@@ -48,6 +48,8 @@ suite('CliService', () => {
 
     configuration = {
       getAdditionalCliParameters: () => '',
+      isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
     } as unknown as IConfiguration;
 
     cliDownloadService = {
@@ -171,6 +173,12 @@ suite('CliService', () => {
 
     strictEqual(getGlobalStateValueSpy.calledOnce, true);
     strictEqual(getChecksumOfSpy.calledOnce, true);
+  });
+
+  test('isChecksumCorrect returns true when automatic dependency management is disabled', async () => {
+    sinon.stub(configuration, 'isAutomaticDependencyManagementEnabled').returns(false);
+    const checksumCorrect = await testCliService.isChecksumCorrect('test/path');
+    strictEqual(checksumCorrect, true);
   });
 
   test('Test passes cwd and additional CLI arguments from settings', async () => {

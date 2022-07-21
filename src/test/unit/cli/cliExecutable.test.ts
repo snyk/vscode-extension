@@ -31,4 +31,9 @@ suite('CliExecutable', () => {
     expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
     strictEqual(CliExecutable.getPath(winExtensionDir), expectedCliPath);
   });
+
+  test('Return custom path, if provided', () => {
+    const customPath = '/path/to/cli';
+    strictEqual(CliExecutable.getPath('', customPath), customPath);
+  });
 });

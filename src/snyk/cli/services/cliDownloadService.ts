@@ -24,7 +24,8 @@ export class CliDownloadService {
     private readonly logger: ILog,
     downloader?: CliDownloader,
   ) {
-    this.downloader = downloader ?? new CliDownloader(api, extensionContext.extensionPath, window, logger);
+    this.downloader =
+      downloader ?? new CliDownloader(configuration, api, extensionContext.extensionPath, window, logger);
   }
 
   async downloadOrUpdateCli(): Promise<boolean> {
@@ -96,7 +97,7 @@ export class CliDownloadService {
 
   private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const latestChecksum = await this.api.getSha256Checksum(platform);
-    const path = CliExecutable.getPath(this.extensionContext.extensionPath);
+    const path = CliExecutable.getPath(this.extensionContext.extensionPath, this.configuration.getCustomCliPath());
 
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);

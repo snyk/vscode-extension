@@ -44,7 +44,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this.beforeTest(manualTrigger, reportTriggeredEvent);
     this.result = undefined;
 
-    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath);
+    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCustomCliPath());
     const checksumCorrect = await this.isChecksumCorrect(cliPath);
     if (!checksumCorrect) {
       // Redownload CLI if corrupt,
@@ -118,6 +118,10 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   public async isChecksumCorrect(cliPath: string): Promise<boolean> {
+    if (!this.config.isAutomaticDependencyManagementEnabled()) {
+      return true; // assume correct checksum if auto dependency management is disabled
+    }
+
     if (!(await this.downloadService.isInstalled())) {
       return false;
     }
