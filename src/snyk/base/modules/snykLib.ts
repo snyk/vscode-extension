@@ -127,7 +127,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     if (!this.ossService) throw new Error('OSS service is not initialized.');
 
     // wait until Snyk CLI is downloaded
-    await firstValueFrom(this.cliDownloadService.downloadFinished$);
+    await firstValueFrom(this.cliDownloadService.cliIsReady);
 
     try {
       const oldResult = this.ossService.getResult();

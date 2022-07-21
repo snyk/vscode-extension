@@ -114,10 +114,12 @@
           "snyk.advanced.automaticDependencyManagement": {
             "type": "boolean",
             "default": true,
+            "scope": "machine",
             "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
           },
           "snyk.advanced.cliPath": {
             "type": "string",
+            "scope": "machine",
             "markdownDescription": "Sets path to Snyk CLI extension dependency."
           },
           "snyk.features.openSourceSecurity": {
