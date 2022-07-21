@@ -27,6 +27,7 @@ suite('CLI Downloader', () => {
     logger = new LoggerMock();
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
     } as IConfiguration;
   });
 

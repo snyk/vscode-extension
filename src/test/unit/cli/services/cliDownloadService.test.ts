@@ -48,6 +48,7 @@ suite('CliDownloadService', () => {
 
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
     } as IConfiguration;
 
     downloader = new CliDownloader(configuration, api, context.extensionPath, windowMock, logger);
