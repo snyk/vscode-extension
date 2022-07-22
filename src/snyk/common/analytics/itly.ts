@@ -6,6 +6,7 @@ import itly, {
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
   QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
+  ScanModeIsSelectedProperties,
   TrackOptions,
 } from '../../../ampli';
 import { Configuration } from '../configuration/configuration';
@@ -47,6 +48,7 @@ export interface IAnalytics {
   logPluginIsInstalled(): void;
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
+  logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void;
   logFalsePositiveIsDisplayed(): void;
   logFalsePositiveIsSubmitted(properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>): void;
 }
@@ -235,6 +237,18 @@ export class Iteratively implements IAnalytics {
     }
 
     itly.issueHoverIsDisplayed(this.user.authenticatedId, properties);
+  }
+
+  public logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void {
+    if (!this.canReportEvents() || !this.user.authenticatedId) {
+      return;
+    }
+
+    itly.scanModeIsSelected(this.user.authenticatedId, {
+      ...properties,
+      ide: this.ide,
+      eventSource: 'IDE',
+    });
   }
 
   public logFalsePositiveIsDisplayed(): void {

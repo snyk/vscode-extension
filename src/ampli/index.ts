@@ -261,6 +261,8 @@ export interface AnalysisIsTriggeredProperties {
    * | Min Items | 1 |
    * | Unique Items | true |
    * | Item Type | string |
+   *
+   * @minItems 1
    */
   analysisType: [string, ...string[]];
   /**
@@ -488,8 +490,37 @@ export interface QuickFixIsDisplayedProperties {
    * | Min Items | 1 |
    * | Unique Items | true |
    * | Item Type | string |
+   *
+   * @minItems 1
    */
   quickFixType: [string, ...string[]];
+}
+
+export interface ScanModeIsSelectedProperties {
+  /**
+   * Used to identify the source for multi-source events.
+   *
+   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, App, Learn, IDE |
+   */
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | paused, auto, manual, throttled |
+   */
+  scanMode: "paused" | "auto" | "manual" | "throttled";
 }
 
 export interface WelcomeButtonIsClickedProperties {
@@ -686,6 +717,24 @@ export class QuickFixIsDisplayed implements Event {
   }
 }
 
+export class ScanModeIsSelected implements Event {
+  name = 'Scan Mode Is Selected';
+  id = '41d49045-d336-46ac-b4c2-1a3ebb5c688a';
+  version = '1.0.0';
+  properties: ScanModeIsSelectedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: ScanModeIsSelectedProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
 export class WelcomeButtonIsClicked implements Event {
   name = 'Welcome Button Is Clicked';
   id = 'e570e72e-4974-481a-9838-66cca471656b';
@@ -778,6 +827,7 @@ class Itly {
           'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
           'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
+          'Scan Mode Is Selected': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"scanMode":{"enum":["paused","auto","manual","throttled"]}},"additionalProperties":false,"required":["ide","itly","scanMode"]},
           'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
         }),
@@ -969,6 +1019,20 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new QuickFixIsDisplayed(properties), options);
+  }
+
+  /**
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. eventSource)
+   * @param options Options for this track call.
+   */
+  scanModeIsSelected(
+    userId: string,
+    properties: ScanModeIsSelectedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new ScanModeIsSelected(properties), options);
   }
 
   /**

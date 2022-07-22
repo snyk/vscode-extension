@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
+import { CodeScanMode } from '../../snykCode/constants/modes';
 import { FalsePositive } from '../../snykCode/falsePositive/falsePositive';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
@@ -160,7 +161,7 @@ export class CommandController {
     await this.snykCode.falsePositiveProvider.showPanel(model);
   }
 
-  setScanMode(mode: string): Promise<void> {
+  setScanMode(mode: CodeScanMode): Promise<void> {
     return this.scanModeService.setCodeMode(mode);
   }
 

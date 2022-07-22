@@ -298,7 +298,7 @@
       },
       {
         "view": "snyk.views.actions",
-        "contents": "You are currently running code security and quality in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled%22%5D)",
+        "contents": "You are currently running code security and quality in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled1%22%5D)",
         "when": "snyk:mode != 'manual' && snyk:mode != 'paused' && snyk:mode != 'throttled'"
       }
     ],
