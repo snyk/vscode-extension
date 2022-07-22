@@ -34,6 +34,7 @@ suite('OssService', () => {
       {
         getAdditionalCliParameters: () => '',
         getCustomCliPath: () => undefined,
+        isAutomaticDependencyManagementEnabled: () => true,
       } as IConfiguration,
       {} as IWebViewProvider<OssIssueCommandArg>,
       {
