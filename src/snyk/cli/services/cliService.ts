@@ -44,19 +44,13 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this.beforeTest(manualTrigger, reportTriggeredEvent);
     this.result = undefined;
 
-    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath);
-    const checksumCorrect = await this.isChecksumCorrect(cliPath);
-    if (!checksumCorrect) {
-      // Redownload CLI if corrupt,
-      const downloaded = await this.downloadService.downloadCli();
+    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCustomCliPath());
 
-      if (!downloaded) {
-        const error = new CliError(
-          'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
-          cliPath,
-        );
-        this.finalizeTest(error);
-        return error;
+    if (this.config.isAutomaticDependencyManagementEnabled()) {
+      const err = await this.verifyChecksum(cliPath);
+      if (err) {
+        this.finalizeTest(err);
+        return err;
       }
     }
 
@@ -143,5 +137,22 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
     this.analysisFinished();
     this.afterTest(result);
+  }
+
+  private async verifyChecksum(cliPath: string): Promise<CliError | undefined> {
+    const checksumCorrect = await this.isChecksumCorrect(cliPath);
+    if (checksumCorrect) {
+      return;
+    }
+
+    // Redownload CLI if corrupt,
+    const downloaded = await this.downloadService.downloadCli();
+    if (!downloaded) {
+      const error = new CliError(
+        'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
+        cliPath,
+      );
+      return error;
+    }
   }
 }

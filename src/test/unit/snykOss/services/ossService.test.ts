@@ -33,6 +33,8 @@ suite('OssService', () => {
       logger,
       {
         getAdditionalCliParameters: () => '',
+        getCustomCliPath: () => undefined,
+        isAutomaticDependencyManagementEnabled: () => true,
       } as IConfiguration,
       {} as IWebViewProvider<OssIssueCommandArg>,
       {

@@ -18,7 +18,11 @@ export class CliExecutable {
     return this.filenameSuffixes[platform];
   }
 
-  static getPath(extensionDir: string): string {
+  static getPath(extensionDir: string, customPath?: string): string {
+    if (customPath) {
+      return customPath;
+    }
+
     const platform = Platform.getCurrent();
     const fileName = CliExecutable.getFilename(platform as CliSupportedPlatform);
     const cliPath = path.join(extensionDir, fileName);
@@ -26,9 +30,9 @@ export class CliExecutable {
     return cliPath;
   }
 
-  static exists(extensionDir: string): Promise<boolean> {
+  static exists(extensionDir: string, customPath?: string): Promise<boolean> {
     return fs
-      .access(CliExecutable.getPath(extensionDir))
+      .access(CliExecutable.getPath(extensionDir, customPath))
       .then(() => true)
       .catch(() => false);
   }

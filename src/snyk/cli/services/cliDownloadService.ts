@@ -1,4 +1,5 @@
 import { ReplaySubject } from 'rxjs';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../common/constants/globalState';
 import { ILog } from '../../common/logger/interfaces';
 import { Platform } from '../../common/platform';
@@ -12,29 +13,37 @@ import { messages } from '../messages/messages';
 import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 
 export class CliDownloadService {
-  readonly downloadFinished$ = new ReplaySubject<void>(1);
+  readonly cliIsReady$ = new ReplaySubject<void>(1);
   private readonly downloader: CliDownloader;
 
   constructor(
     private readonly extensionContext: ExtensionContext,
+    private readonly configuration: IConfiguration,
     private readonly api: IStaticCliApi,
     readonly window: IVSCodeWindow,
     private readonly logger: ILog,
     downloader?: CliDownloader,
   ) {
-    this.downloader = downloader ?? new CliDownloader(api, extensionContext.extensionPath, window, logger);
+    this.downloader =
+      downloader ?? new CliDownloader(configuration, api, extensionContext.extensionPath, window, logger);
   }
 
   async downloadOrUpdateCli(): Promise<boolean> {
     const installed = await this.isInstalled();
+
+    if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
+      this.cliIsReady$.next();
+      return false;
+    }
+
     if (!installed) {
       const downloaded = await this.downloadCli();
-      this.downloadFinished$.next();
+      this.cliIsReady$.next();
       return downloaded;
     }
 
     const updated = await this.updateCli();
-    this.downloadFinished$.next();
+    this.cliIsReady$.next();
 
     return updated;
   }
@@ -89,7 +98,7 @@ export class CliDownloadService {
 
   private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const latestChecksum = await this.api.getSha256Checksum(platform);
-    const path = CliExecutable.getPath(this.extensionContext.extensionPath);
+    const path = CliExecutable.getPath(this.extensionContext.extensionPath, this.configuration.getCustomCliPath());
 
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);

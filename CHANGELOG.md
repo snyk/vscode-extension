@@ -1,5 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.21]
+
+### Added
+
+- Setting to disable extension's automatic dependency management (i.e. Snyk CLI updates).
+- Setting to provide path to Snyk CLI executable.
+
 ## [1.2.20]
 
 ### Fixed

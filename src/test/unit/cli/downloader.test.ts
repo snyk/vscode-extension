@@ -5,6 +5,7 @@ import { IStaticCliApi } from '../../../snyk/cli/api/staticCliApi';
 import { Checksum } from '../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { CliDownloader } from '../../../snyk/cli/downloader';
+import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { Platform } from '../../../snyk/common/platform';
 import { LoggerMock } from '../mocks/logger.mock';
@@ -13,6 +14,7 @@ import { windowMock } from '../mocks/window.mock';
 suite('CLI Downloader', () => {
   let logger: ILog;
   let api: IStaticCliApi;
+  let configuration: IConfiguration;
   const extensionDir = '/.vscode/extensions/snyk-security';
 
   setup(() => {
@@ -23,6 +25,10 @@ suite('CLI Downloader', () => {
       getSha256Checksum: sinon.fake(),
     };
     logger = new LoggerMock();
+    configuration = {
+      isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
+    } as IConfiguration;
   });
 
   teardown(() => {
@@ -30,13 +36,13 @@ suite('CLI Downloader', () => {
   });
 
   test('Download fails if platform is not supported', async () => {
-    const downloader = new CliDownloader(api, extensionDir, windowMock, logger);
+    const downloader = new CliDownloader(configuration, api, extensionDir, windowMock, logger);
     sinon.stub(Platform, 'getCurrent').returns('freebsd');
     await rejects(() => downloader.download());
   });
 
   test('Download removes executable, if it exists', async () => {
-    const downloader = new CliDownloader(api, extensionDir, windowMock, logger);
+    const downloader = new CliDownloader(configuration, api, extensionDir, windowMock, logger);
 
     sinon.stub(Platform, 'getCurrent').returns('darwin');
     sinon.stub(fs, 'access').returns(Promise.resolve());
@@ -49,7 +55,7 @@ suite('CLI Downloader', () => {
   });
 
   test('Rejects when integrity check fails', async () => {
-    const downloader = new CliDownloader(api, extensionDir, windowMock, logger);
+    const downloader = new CliDownloader(configuration, api, extensionDir, windowMock, logger);
     sinon.stub(Platform, 'getCurrent').returns('darwin');
     sinon.stub(fs);
 

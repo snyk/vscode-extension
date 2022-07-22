@@ -48,6 +48,8 @@ suite('CliService', () => {
 
     configuration = {
       getAdditionalCliParameters: () => '',
+      isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
     } as unknown as IConfiguration;
 
     cliDownloadService = {
@@ -77,6 +79,17 @@ suite('CliService', () => {
     const result = await testCliService.test(false, false);
 
     deepStrictEqual(result, cliOutput);
+  });
+
+  test("Test doesn't verify checksum if auto dependency management disabled", async () => {
+    const cliOutput = { success: true } as TestCliResult;
+    sinon.stub(CliProcess.prototype, 'spawn').resolves(JSON.stringify(cliOutput));
+    sinon.stub(configuration, 'isAutomaticDependencyManagementEnabled').returns(false);
+    const isChecksumCorrectSpy = sinon.spy(testCliService, 'isChecksumCorrect');
+
+    await testCliService.test(false, false);
+
+    deepStrictEqual(isChecksumCorrectSpy.called, false);
   });
 
   test('Test returns error when CLI execution fails with error JSON', async () => {

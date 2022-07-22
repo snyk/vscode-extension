@@ -1,18 +1,20 @@
+import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
-import axios, { CancelTokenSource } from 'axios';
 import * as stream from 'stream';
-import { Platform } from '../common/platform';
-import { CliExecutable } from './cliExecutable';
-import { CliDownloadAxiosResponse, IStaticCliApi } from './api/staticCliApi';
+import { IConfiguration } from '../common/configuration/configuration';
 import { ILog } from '../common/logger/interfaces';
+import { Platform } from '../common/platform';
 import { IVSCodeWindow } from '../common/vscode/window';
+import { CliDownloadAxiosResponse, IStaticCliApi } from './api/staticCliApi';
 import { Checksum } from './checksum';
+import { CliExecutable } from './cliExecutable';
 import { messages } from './messages/messages';
-import { isPlatformSupported, CliSupportedPlatform } from './supportedPlatforms';
+import { CliSupportedPlatform, isPlatformSupported } from './supportedPlatforms';
 
 export class CliDownloader {
   constructor(
+    private readonly configuration: IConfiguration,
     private readonly api: IStaticCliApi,
     private readonly extensionDir: string,
     private readonly window: IVSCodeWindow,
@@ -31,7 +33,7 @@ export class CliDownloader {
 
     platform = platform as CliSupportedPlatform;
 
-    const cliPath = CliExecutable.getPath(this.extensionDir);
+    const cliPath = CliExecutable.getPath(this.extensionDir, this.configuration.getCustomCliPath());
     if (await this.cliExists(cliPath)) {
       await this.deleteCli(cliPath);
     }

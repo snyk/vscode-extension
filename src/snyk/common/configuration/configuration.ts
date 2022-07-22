@@ -5,7 +5,9 @@ import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
+  ADVANCED_CLI_PATH,
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
@@ -73,6 +75,9 @@ export interface IConfiguration {
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
 
   getPreviewFeatures(): PreviewFeatures;
+
+  isAutomaticDependencyManagementEnabled(): boolean;
+  getCustomCliPath(): string | undefined;
 
   severityFilter: SeverityFilter;
 }
@@ -370,6 +375,17 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING),
     );
+  }
+
+  isAutomaticDependencyManagementEnabled(): boolean {
+    return !!this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT),
+    );
+  }
+
+  getCustomCliPath(): string | undefined {
+    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH));
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');

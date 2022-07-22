@@ -5,6 +5,7 @@ import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { CliDownloader } from '../../../../snyk/cli/downloader';
 import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { Platform } from '../../../../snyk/common/platform';
@@ -12,11 +13,12 @@ import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContex
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
-suite('CliDownloaderService', () => {
+suite('CliDownloadService', () => {
   let logger: ILog;
   let api: IStaticCliApi;
   let context: ExtensionContext;
   let downloader: CliDownloader;
+  let configuration: IConfiguration;
 
   // Stubbed functions to re-wrap
   let contextGetGlobalStateValue: sinon.SinonStub;
@@ -44,7 +46,12 @@ suite('CliDownloaderService', () => {
       getExtensionUri: sinon.fake(),
     } as unknown as ExtensionContext;
 
-    downloader = new CliDownloader(api, context.extensionPath, windowMock, logger);
+    configuration = {
+      isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => undefined,
+    } as IConfiguration;
+
+    downloader = new CliDownloader(configuration, api, context.extensionPath, windowMock, logger);
   });
 
   teardown(() => {
@@ -52,11 +59,10 @@ suite('CliDownloaderService', () => {
   });
 
   test('Tries to download if not installed', async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(false);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
-
     await service.downloadOrUpdateCli();
 
     strictEqual(downloadSpy.calledOnce, true);
@@ -64,7 +70,7 @@ suite('CliDownloaderService', () => {
   });
 
   test('Tries to update if installed', async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
     const downloadSpy = stub(service, 'downloadCli');
     const updateSpy = stub(service, 'updateCli');
@@ -76,7 +82,7 @@ suite('CliDownloaderService', () => {
   });
 
   test('Updates if >4 days passed since last update and new version available', async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -98,7 +104,7 @@ suite('CliDownloaderService', () => {
   });
 
   test("Doesn't update if >4 days passed since last update but no new version available", async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -120,7 +126,7 @@ suite('CliDownloaderService', () => {
   });
 
   test("Doesn't update if 3 days passed since last update", async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     stub(service, 'isInstalled').resolves(true);
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;
@@ -134,7 +140,7 @@ suite('CliDownloaderService', () => {
   });
 
   test("Doesn't try to update if last cli update date was not set", async () => {
-    const service = new CliDownloadService(context, api, windowMock, logger, downloader);
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns(undefined);
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(undefined);
 
@@ -147,5 +153,35 @@ suite('CliDownloaderService', () => {
 
     strictEqual(downloadSpy.called, true);
     strictEqual(updateSpy.calledOnce, false);
+  });
+
+  test("Doesn't try to update if last cli update date was not set", async () => {
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns(undefined);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(undefined);
+
+    stub(CliExecutable, 'exists').resolves(true);
+
+    const downloadSpy = stub(service, 'downloadCli');
+    const updateSpy = stub(service, 'updateCli');
+
+    await service.downloadOrUpdateCli();
+
+    strictEqual(downloadSpy.called, true);
+    strictEqual(updateSpy.calledOnce, false);
+  });
+
+  test("Doesn't download if automatic dependency management disabled", async () => {
+    const service = new CliDownloadService(context, configuration, api, windowMock, logger, downloader);
+    configuration.isAutomaticDependencyManagementEnabled = () => false;
+    stub(service, 'isInstalled').resolves(false);
+    const downloadSpy = stub(service, 'downloadCli');
+    const updateSpy = stub(service, 'updateCli');
+
+    const downloaded = await service.downloadOrUpdateCli();
+
+    strictEqual(downloaded, false);
+    strictEqual(downloadSpy.called, false);
+    strictEqual(updateSpy.called, false);
   });
 });
