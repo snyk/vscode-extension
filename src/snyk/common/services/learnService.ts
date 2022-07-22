@@ -109,7 +109,14 @@ export class LearnService {
       }
 
       const lessons = await this.requestLessons(params);
-
+      if (!lessons.length) {
+        return null;
+      } else {
+        const lesson = lessons[0];
+        const lessonURL = new URL(lesson.url);
+        lessonURL.searchParams.set('loc', 'ide');
+        return { ...lesson, url: lessonURL.toString() };
+      }
       return lessons.length > 0 ? lessons[0] : null;
     } catch (err) {
       ErrorHandler.handle(err, this.logger, 'Error getting Snyk Learn Lesson');
