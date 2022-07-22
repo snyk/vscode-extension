@@ -81,6 +81,17 @@ suite('CliService', () => {
     deepStrictEqual(result, cliOutput);
   });
 
+  test("Test doesn't verify checksum if auto dependency management disabled", async () => {
+    const cliOutput = { success: true } as TestCliResult;
+    sinon.stub(CliProcess.prototype, 'spawn').resolves(JSON.stringify(cliOutput));
+    sinon.stub(configuration, 'isAutomaticDependencyManagementEnabled').returns(false);
+    const isChecksumCorrectSpy = sinon.spy(testCliService, 'isChecksumCorrect');
+
+    await testCliService.test(false, false);
+
+    deepStrictEqual(isChecksumCorrectSpy.called, false);
+  });
+
   test('Test returns error when CLI execution fails with error JSON', async () => {
     const cliError = {
       ok: false,
@@ -173,12 +184,6 @@ suite('CliService', () => {
 
     strictEqual(getGlobalStateValueSpy.calledOnce, true);
     strictEqual(getChecksumOfSpy.calledOnce, true);
-  });
-
-  test('isChecksumCorrect returns true when automatic dependency management is disabled', async () => {
-    sinon.stub(configuration, 'isAutomaticDependencyManagementEnabled').returns(false);
-    const checksumCorrect = await testCliService.isChecksumCorrect('test/path');
-    strictEqual(checksumCorrect, true);
   });
 
   test('Test passes cwd and additional CLI arguments from settings', async () => {

@@ -13,7 +13,7 @@ import { messages } from '../messages/messages';
 import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 
 export class CliDownloadService {
-  readonly cliIsReady = new ReplaySubject<void>(1);
+  readonly cliIsReady$ = new ReplaySubject<void>(1);
   private readonly downloader: CliDownloader;
 
   constructor(
@@ -32,18 +32,18 @@ export class CliDownloadService {
     const installed = await this.isInstalled();
 
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
-      this.cliIsReady.next();
+      this.cliIsReady$.next();
       return false;
     }
 
     if (!installed) {
       const downloaded = await this.downloadCli();
-      this.cliIsReady.next();
+      this.cliIsReady$.next();
       return downloaded;
     }
 
     const updated = await this.updateCli();
-    this.cliIsReady.next();
+    this.cliIsReady$.next();
 
     return updated;
   }
