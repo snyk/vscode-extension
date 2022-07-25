@@ -47,7 +47,7 @@ suite('LearnService', () => {
     test('getLesson - resolves a lesson', async () => {
       const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
-      deepStrictEqual(lesson, lessonFixture);
+      deepStrictEqual(lesson?.lessonId, lessonFixture.lessonId);
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
         {
@@ -85,7 +85,7 @@ suite('LearnService', () => {
     test('getLesson - resolves a lesson', async () => {
       const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue);
-      deepStrictEqual(lesson, lessonFixture);
+      deepStrictEqual(lesson?.lessonId, lessonFixture.lessonId);
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
         {
@@ -112,6 +112,16 @@ suite('LearnService', () => {
   });
 
   suite('getLesson', () => {
+    test('adds loc=ide query parameter to lesson url', async () => {
+      const lessonFixtureWithQueryParams = {
+        ...lessonFixture,
+        url: 'https://example.com/?test=true',
+      };
+      sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixtureWithQueryParams] } });
+      const lesson = await learnService.getLesson(ossIssueCommandArgFixture, OpenCommandIssueType.OssVulnerability);
+      deepStrictEqual(lesson?.url, `${lessonFixtureWithQueryParams.url}&loc=ide`);
+    });
+
     test('returns null if issueType is not known', async () => {
       const lesson = await learnService.getLesson(
         ossIssueCommandArgFixture,

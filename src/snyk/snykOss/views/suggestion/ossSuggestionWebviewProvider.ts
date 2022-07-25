@@ -46,7 +46,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',
-            args: { url: `${lesson.url}?loc=ide`, title: learnMessages.lessonButtonTitle },
+            args: { url: lesson.url, title: learnMessages.lessonButtonTitle },
           });
         } else {
           void this.panel.webview.postMessage({
