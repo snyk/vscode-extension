@@ -3,8 +3,6 @@
 
 The Snyk Visual Studio Code extension is available for installation on the [Visual Studio code marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner).
 
-The Visual Studio Code extension requires the Snyk CLI; see [Install the Snyk CLI](../snyk-cli/install-the-snyk-cli/).
-
 
 ## **Capabilities**
 
@@ -58,14 +56,14 @@ To authenticate follow these steps:
 
 1.  Once the extension is installed, click on the Snyk Icon in the left navigation bar:
 
-    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (62) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (6).png" alt="" data-size="original">
+    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (62) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (7).png" alt="" data-size="original">
 2.  Click **Connect VS Code with Snyk**. The extension relies on the Snyk authentication API and asks you to authenticate your machine against the Snyk web application:
 
-    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (71) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2).png" alt="" data-size="original">
+    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (71) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2).png" alt="" data-size="original">
 3. Click **Authenticate**.
 4.  After successful authentication, view the confirmation message.
 
-    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (85) (1) (1) (2).png" alt="" data-size="original">
+    <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (85) (1) (1) (1).png" alt="" data-size="original">
 5. Close the browser window and return to VS Code. VS Code is now reading and saving the authentication on your local machine.
 
 ### Switching accounts
@@ -75,7 +73,7 @@ To re-authenticate with a different account, follow the steps below:
 1. Run the provided `Snyk: Log Out` command.
 2. Once logged out, click **Connect VS Code with Snyk** to authenticate with the different account.
 
-![Snyk: Log Out](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/logging-out-command.png)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/logging-out-command (1).png" alt="Snyk: Log Out" />
 
 Or you run `Snyk: Set Token` command and set your token in the text field manually.
 
@@ -91,14 +89,14 @@ Snyk Open Source requires the Snyk CLI, so it downloads in the background.
 
 Snyk Code analysis runs quickly without the CLI, so results may already be available. Otherwise, you see the following screen while Snyk scans your workspace for vulnerabilities:
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (80) (1) (1) (1) (1) (1).png" alt="Snyk Code scan" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (80) (1) (1) (1) (1).png" alt="Snyk Code scan" />
 
 Snyk analysis runs automatically when you open a folder or workspace.
 
 * Snyk Code performs scans automatically on file saves.
 * Snyk Open Source does not automatically run on save by default, but you can enable it in settings:
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (73) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Snyk Open Source settings" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (73) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Snyk Open Source settings" />
 
 **Tip**: if you do not like to manually save while working, enable [AutoSave](https://code.visualstudio.com/docs/editor/codebasics#\_save-auto-save).
 
@@ -106,7 +104,7 @@ Snyk analysis runs automatically when you open a folder or workspace.
 
 To manually trigger a scan, either Save or manually rescan using the rescan icon:
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (61) (1) (1).png" alt="Rescan icon" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (61) (1) (1) (1).png" alt="Rescan icon" />
 
 If you only need the Code Quality, Code Security, or Open Source Security portion of the findings, you can easily disable the feature with the results you do not want to see or collapse the view:
 
@@ -118,13 +116,13 @@ Snyk Code has "Advanced" mode that allows you to control how scan is performed.
 
 To manually perform the analysis, in the configuration of the extension you can enable Advanced Mode which enables you to control the scanning process:
 
-![Advanced Mode](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/run-analysis\_advanced-mode.png)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/run-analysis\_advanced-mode (1).png" alt="Advanced Mode" />
 
 ## View analysis results
 
 Snyk analysis shows a list of security vulnerabilities and code issues found in the application code. For more details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Snyk suggestion information for the issue selected appears in a panel on the right side:
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2).png" alt="Snyk suggestion information" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (3).png" alt="Snyk suggestion information" />
 
 ### Snyk analysis panel
 
@@ -132,15 +130,15 @@ The Snyk analysis panel on the left of the preceding code screen shows how much 
 
 The icons have the following meaning:
 
-| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (75) (2).png" alt="" /> Critical severity                                                                                                       | May allow attackers to access sensitive data and run code on your application.                                                               |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (64) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="" /> High severity       | May allow attackers to access sensitive data on your application.                                                                            |
-| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (63) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (6).png" alt="" /> Medium severity | May allow attackers under some conditions to access sensitive data on your application.                                                      |
-| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (114) (1).png" alt="" /> Low severity                                                                                                           | The application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application. |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (75) (1) (1) (1).png" alt="" /> Critical severity                                                                                                                   | May allow attackers to access sensitive data and run code on your application.                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (64) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="" /> High severity       | May allow attackers to access sensitive data on your application.                                                                            |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (63) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (7).png" alt="" /> Medium severity | May allow attackers under some conditions to access sensitive data on your application.                                                      |
+| <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (114).png" alt="" /> Low severity                                                                                                                                   | The application may expose some data allowing vulnerability mapping, which can be used with other vulnerabilities to attack the application. |
 
 You can filter the issues by setting the severities you want to see using the `snyk.severity` setting. For example, set `"snyk.severity": { "critical": true, "high": true, "medium": true, "low": false }` to hide low severity issues. You can also apply the setting in the Settings UI.
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (65) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Severity settings" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (65) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Severity settings" />
 
 ### Snyk Code editor window
 
@@ -148,7 +146,7 @@ The editor window in the middle of the results screen shows the code that is ins
 
 ### Snyk Code vulnerability window
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Snyk Suggestion panel" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Snyk Suggestion panel" />
 
 The Snyk Suggestion panel on the right of the results screen shows the recommendation of the Snyk engine using, for example, variable names of your code and the line numbers in red. You can also see the following:
 
@@ -169,7 +167,7 @@ You can find security vulnerabilities in the npm packages you import and see the
 
 Code inline vulnerability counts are also shown in your `package.json` file:
 
-![package.json file](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-pjson.png)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-pjson (1).png" alt="package.json file" />
 
 Find security vulnerabilities in your JavaScript packages from well-known CDNs. The extension scans any HTML files in your projects and displays vulnerability information about the modules you include from your favorite CDN.
 
@@ -183,11 +181,11 @@ Find security vulnerabilities in your JavaScript packages from well-known CDNs. 
   * yastatic.net
   * ajax.aspnetcdn.com
 
-![Vulnerability from a CDN](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-html.png)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-html (1).png" alt="Vulnerability from a CDN" />
 
 You can navigate to the most severe vulnerability by triggering the provided code actions. This opens a vulnerability window to show more details:
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-show-vulnerability (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2).png" alt="Code action" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/oss-editor-show-vulnerability (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (3).png" alt="Code action" />
 
 ### Snyk Open Source vulnerability window
 
