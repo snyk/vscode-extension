@@ -3,8 +3,8 @@
   "SourceId": "4be0392d-f232-4850-943e-edab84cc8ccd",
   "Path": "./src/ampli",
   "Branch": "main",
-  "Version": "177.0.0",
+  "Version": "190.0.0",
   "OrgId": "114775",
   "Runtime": "node.js:typescript-v3",
-  "VersionId": "303dc167-6f68-4382-88ae-cc466f5b47e8"
+  "VersionId": "24fa80f1-3bb0-4058-912b-979323a6fe64"
 }

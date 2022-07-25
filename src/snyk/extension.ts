@@ -4,6 +4,7 @@ import { AdvisorService } from './advisor/services/advisorService';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
+import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
@@ -63,6 +64,7 @@ import { vsCodeWorkspace } from './common/vscode/workspace';
 import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
+import { CodeScanMode } from './snykCode/constants/modes';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeSecurityIssueTreeProvider } from './snykCode/views/securityIssueTreeProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
@@ -156,6 +158,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.codeSettings,
       this.learnService,
     );
+    this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.cliDownloadService = new CliDownloadService(
@@ -353,7 +356,9 @@ class SnykExtension extends SnykLib implements IExtension {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)),
       ),
-      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: string) => this.commandController.setScanMode(mode)),
+      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: CodeScanMode) =>
+        this.commandController.setScanMode(mode),
+      ),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),

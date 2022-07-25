@@ -6,6 +6,7 @@
 
 - Setting to disable extension's automatic dependency management (i.e. Snyk CLI updates).
 - Setting to provide path to Snyk CLI executable.
+- Analytics around Snyk Code scanning modes.
 
 ## [1.2.20]
 
