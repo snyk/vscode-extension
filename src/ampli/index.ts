@@ -302,6 +302,82 @@ export interface AuthenticateButtonIsClickedProperties {
   ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
 }
 
+export interface BackgroundAnalysisNotificationButtonIsClickedProperties {
+  /**
+   * Used to identify the source for multi-source events.
+   *
+   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, App, Learn, IDE |
+   */
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  /**
+   * A button type presented in background analysis notification in VS Code extension.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | View results, Don’t show again |
+   */
+  type: "View results" | "Don’t show again";
+}
+
+export interface BackgroundAnalysisNotificationIsDisplayedProperties {
+  /**
+   * Analysis types selected by the user for the scan:
+   *
+   * * open source vulnerabilities
+   *
+   * * code quality issues
+   *
+   * * code security vulnerabilities
+   *
+   * * advisor issues
+   *
+   * * infrastructure as code issues
+   *
+   * * container vulnerabilities
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Snyk Advisor, Snyk Code Quality, Snyk Code Security, Snyk Open Source, Snyk Container, Snyk Infrastructure as Code |
+   */
+  analysisType:
+    | "Snyk Advisor"
+    | "Snyk Code Quality"
+    | "Snyk Code Security"
+    | "Snyk Open Source"
+    | "Snyk Container"
+    | "Snyk Infrastructure as Code";
+  /**
+   * Used to identify the source for multi-source events.
+   *
+   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Advisor, App, Learn, IDE |
+   */
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  /**
+   * Ide family.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   */
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+}
+
 export interface FalsePositiveIsDisplayedProperties {
   /**
    * Used to identify the source for multi-source events.
@@ -609,6 +685,42 @@ export class AuthenticateButtonIsClicked implements Event {
   }
 }
 
+export class BackgroundAnalysisNotificationButtonIsClicked implements Event {
+  name = 'Background Analysis Notification Button Is Clicked';
+  id = '1cafd0e1-7697-43e1-aeed-7b37acdea858';
+  version = '1.0.0';
+  properties: BackgroundAnalysisNotificationButtonIsClickedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: BackgroundAnalysisNotificationButtonIsClickedProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
+export class BackgroundAnalysisNotificationIsDisplayed implements Event {
+  name = 'Background Analysis Notification Is Displayed';
+  id = 'd0c70048-b19b-4cb4-b097-8a5371446546';
+  version = '1.0.0';
+  properties: BackgroundAnalysisNotificationIsDisplayedProperties & {
+    'itly': true;
+  };
+
+  constructor(
+    properties: BackgroundAnalysisNotificationIsDisplayedProperties,
+  ) {
+    this.properties = {
+        ...properties,
+        'itly': true,
+      };
+  }
+}
+
 export class FalsePositiveIsDisplayed implements Event {
   name = 'False Positive Is Displayed';
   id = '73047ba4-5e6b-4472-8d4e-1923fc7117f4';
@@ -648,7 +760,7 @@ export class FalsePositiveIsSubmitted implements Event {
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
-  version = '2.0.4';
+  version = '2.0.5';
   properties: IssueHoverIsDisplayedProperties & {
     'itly': true;
   };
@@ -821,6 +933,8 @@ class Itly {
           'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
           'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
           'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'Background Analysis Notification Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"type":{"enum":["View results","Don’t show again"]}},"additionalProperties":false,"required":["ide","itly","type"]},
+          'Background Analysis Notification Is Displayed': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["analysisType","ide","itly"]},
           'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
           'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
           'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
@@ -923,6 +1037,34 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new AuthenticateButtonIsClicked(properties), options);
+  }
+
+  /**
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. eventSource)
+   * @param options Options for this track call.
+   */
+  backgroundAnalysisNotificationButtonIsClicked(
+    userId: string,
+    properties: BackgroundAnalysisNotificationButtonIsClickedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new BackgroundAnalysisNotificationButtonIsClicked(properties), options);
+  }
+
+  /**
+   * Owner: Michel Kaporin
+   * @param userId The user's ID.
+   * @param properties The event's properties (e.g. analysisType)
+   * @param options Options for this track call.
+   */
+  backgroundAnalysisNotificationIsDisplayed(
+    userId: string,
+    properties: BackgroundAnalysisNotificationIsDisplayedProperties,
+    options?: TrackOptions,
+  ) {
+    this.itly.track(userId, new BackgroundAnalysisNotificationIsDisplayed(properties), options);
   }
 
   /**

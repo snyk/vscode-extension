@@ -2,6 +2,10 @@
 
 ## [1.2.22]
 
+### Added
+
+- Analytics around Open Source scan notification.
+
 ### Fixed
 
 - Snyk Code: failing when analysis bundle gets expired after its validity period.
