@@ -32,10 +32,16 @@ jobs:
           if [[ $(git -C ./vscode-extension status --porcelain) ]]; then
             echo "Documentation changes detected"
             cd ./vscode-extension
-            git --no-pager diff --name-only
-            git add .
-            git commit -m "docs: synchronizing README from snyk/user-docs"
-            git push --force --set-upstream origin docs/automatic-gitbook-update
+
+            export SHA=$( git rev-parse $DESTINATION_BRANCH:$FILE_TO_COMMIT )
+            export CONTENT=$( base64 -i $FILE_TO_COMMIT )
+            gh api --method PUT /repos/:owner/:repo/contents/$FILE_TO_COMMIT \
+              --field message="$MESSAGE" \
+              --field content="$CONTENT" \
+              --field encoding="base64" \
+              --field branch="$DESTINATION_BRANCH" \
+              --field sha="$SHA"
+
             if [[ ! $(gh pr view docs/automatic-gitbook-update 2>&1 | grep -q "no open pull requests";) ]]; then
               echo "Creating PR"
               gh pr create --title="Synchronizing README from user-docs" --body="Automatic PR controlled by GitHub Action. Please sign the commit before merging." --head docs/automatic-gitbook-update
@@ -45,4 +51,7 @@ jobs:
             echo "No documentation changes detected, exiting."
           fi
         env:
+          FILE_TO_COMMIT: README.md
+          DESTINATION_BRANCH: docs/automatic-gitbook-update
+          MESSAGE: 'docs: synchronizing README from snyk/user-docs'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
