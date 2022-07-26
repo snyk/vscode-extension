@@ -14,24 +14,24 @@ jobs:
           gh auth setup-git
           git config --global user.email "noreply@snyk.io"
           git config --global user.name "$GITHUB_ACTOR"
-          gh repo clone snyk/vscode-extension vscode-extension -- --depth=1 --quiet
+          gh repo clone snyk/$DESTINATION_REPOSITORY $DESTINATION_REPOSITORY -- --depth=1 --quiet
           gh repo clone snyk/user-docs docs -- --depth=1 --quiet
-          git -C ./vscode-extension checkout -b $DESTINATION_BRANCH
+          git -C ./$DESTINATION_REPOSITORY checkout -b $DESTINATION_BRANCH
 
-          cp ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code.md ./vscode-extension/$FILE_TO_COMMIT
+          cp $SOURCE_PATH ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
               -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
-              ./vscode-extension/$FILE_TO_COMMIT
+              ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
               -E "s|\!\\[([[:alnum:][:space:][:punct:]]*)\]\(<([[:alnum:][:punct:]\-\.\/:[:space:]\(\)]+)>\)|<img src=\"\2\" alt=\"\1\" />|g" \
-              ./vscode-extension/$FILE_TO_COMMIT
+              ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
               -E 's|(\{%.*%\})||g' \
-              ./vscode-extension/$FILE_TO_COMMIT
+              ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
 
-          if [[ $(git -C ./vscode-extension status --porcelain) ]]; then
+          if [[ $(git -C ./$DESTINATION_REPOSITORY status --porcelain) ]]; then
             echo "Documentation changes detected"
-            cd ./vscode-extension
+            cd ./$DESTINATION_REPOSITORY
 
             export SHA=$( git rev-parse $DESTINATION_BRANCH:$FILE_TO_COMMIT )
             export CONTENT=$( base64 -i $FILE_TO_COMMIT )
@@ -51,7 +51,9 @@ jobs:
             echo "No documentation changes detected, exiting."
           fi
         env:
+          SOURCE_PATH: ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code.md
           FILE_TO_COMMIT: README.md
+          DESTINATION_REPOSITORY: vscode-extension
           DESTINATION_BRANCH: docs/automatic-gitbook-update
           MESSAGE: 'docs: synchronizing README from snyk/user-docs'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
