@@ -44,7 +44,7 @@ jobs:
 
             if [[ ! $(gh pr view $DESTINATION_BRANCH 2>&1 | grep -q "no open pull requests";) ]]; then
               echo "Creating PR"
-              gh pr create --title=$MESSAGE --body="Automatic PR controlled by GitHub Action." --head $DESTINATION_BRANCH
+              gh pr create --title="$MESSAGE" --body="Automatic PR controlled by GitHub Action." --head $DESTINATION_BRANCH
             fi
             echo "PR exists, pushed changes to it."
           else
