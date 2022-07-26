@@ -130,7 +130,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     }
 
     if (this.isErrorRetryable(errorStatusCode) || this.isBundleError(error)) {
-      return await this.retryHandler(error, options, callback);
+      return await this.retryHandler(error, errorStatusCode, options, callback);
     }
 
     this._connectionRetryLimitExhausted = true;
@@ -153,6 +153,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
 
   private async retryHandler(
     error: errorType,
+    errorStatusCode: PropertyKey,
     options: { [key: string]: unknown },
     callback: (error: Error) => void,
   ): Promise<void> {
@@ -165,6 +166,10 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     }
 
     this.transientErrors += 1;
+
+    if (errorStatusCode === constants.ErrorCodes.notFound) {
+      this.baseSnykModule.snykCode.clearBundle(); // bundle has expired, trigger complete new analysis
+    }
 
     setTimeout(() => {
       this.baseSnykModule.runCodeScan().catch(err => this.capture(err, options));

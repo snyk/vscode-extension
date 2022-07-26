@@ -41,13 +41,14 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   analyzer: ISnykCodeAnalyzer;
   analysisStatus: string;
   analysisProgress: string;
-  remoteBundle: FileAnalysis;
+  readonly remoteBundle: FileAnalysis | null;
   readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>;
   hasError: boolean;
   hasTransientError: boolean;
 
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
+  clearBundle(): void;
   updateStatus(status: string, progress: string): void;
   errorEncountered(requestId: string): void;
   addChangedFile(filePath: string): void;
@@ -60,7 +61,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
 }
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
-  remoteBundle: FileAnalysis;
+  remoteBundle: FileAnalysis | null;
   analyzer: ISnykCodeAnalyzer;
   readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>;
@@ -238,6 +239,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.analysisFinished();
       this.viewManagerService.refreshCodeAnalysisViews(enabledFeatures);
     }
+  }
+
+  clearBundle() {
+    this.remoteBundle = null;
   }
 
   private reportAnalysisIsTriggered(
