@@ -79,7 +79,7 @@ Or you run `Snyk: Set Token` command and set your token in the text field manual
 
 <img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (80) (1).png" alt="" />
 
-\\
+
 
 ## Run analysis
 
@@ -224,6 +224,12 @@ To ignore certain files and directories (for example, **node\_modules**), create
 
 * Snyk recommends adding the file when there is no `.gitignore` file. Adding the file significantly reduces the files that need to be uploaded and speed up the analysis.
 * To quickly add the default **`.dcignore`** file, use the command provided by VS Code and the Snyk extension **Snyk create `.dcignore` file** and save the newly created `.dcignore` file.
+
+## Troubleshooting
+
+To obtain extension logs, navigate to **Snyk:  Show Output Channel** in the VS Code command palette.&#x20;
+
+Additional logs can be obtained by navigating to **Help** > **Toggle Developer Tools**, and opening the **Console** tab for more verbose output.
 
 ## Support and contact information
 
