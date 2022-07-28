@@ -2,6 +2,8 @@ import SegmentPlugin from '@itly/plugin-segment-node';
 import itly, {
   AnalysisIsReadyProperties,
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
+  BackgroundAnalysisNotificationButtonIsClickedProperties,
+  BackgroundAnalysisNotificationIsDisplayedProperties,
   FalsePositiveIsSubmittedProperties,
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
@@ -12,6 +14,7 @@ import itly, {
 import { Configuration } from '../configuration/configuration';
 import { SnykConfiguration } from '../configuration/snykConfiguration';
 import { IDE_NAME } from '../constants/general';
+import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { User } from '../user';
 import { ItlyErrorPlugin } from './itlyErrorPlugin';
@@ -49,6 +52,12 @@ export interface IAnalytics {
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
   logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void;
+  logBackgroundAnalysisNotificationIsDisplayed(
+    properties: Omit<BackgroundAnalysisNotificationIsDisplayedProperties, 'eventSource' | 'ide'>,
+  ): void;
+  logBackgroundAnalysisNotificationButtonIsClicked(
+    properties: Omit<BackgroundAnalysisNotificationButtonIsClickedProperties, 'eventSource' | 'ide'>,
+  ): void;
   logFalsePositiveIsDisplayed(): void;
   logFalsePositiveIsSubmitted(properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>): void;
 }
@@ -136,144 +145,155 @@ export class Iteratively implements IAnalytics {
   }
 
   public logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.issueInTreeIsClicked(this.user.authenticatedId, properties);
+    this.enqueueEvent(() => {
+      itly.issueInTreeIsClicked(this.getAuthenticatedUserId(), properties);
+    });
   }
 
   public logAnalysisIsReady(properties: AnalysisIsReadyProperties): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.analysisIsReady(this.user.authenticatedId, properties);
+    this.enqueueEvent(() => {
+      itly.analysisIsReady(this.getAuthenticatedUserId(), properties);
+    });
   }
 
   public logAnalysisIsTriggered(properties: AnalysisIsTriggeredProperties): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.analysisIsTriggered(this.user.authenticatedId, properties);
+    this.enqueueEvent(() => {
+      itly.analysisIsTriggered(this.getAuthenticatedUserId(), properties);
+    });
   }
 
   public logWelcomeViewIsViewed(): void {
-    if (!this.canReportEvents()) {
-      return;
-    }
-
-    itly.welcomeIsViewed(
-      '',
-      {
-        ide: this.ide,
-      },
-      this.getAnonymousSegmentOptions(),
-    );
+    this.enqueueEvent(() => {
+      itly.welcomeIsViewed(
+        '',
+        {
+          ide: this.ide,
+        },
+        this.getAnonymousSegmentOptions(),
+      );
+    }, false);
   }
 
   public logAuthenticateButtonIsClicked(): void {
-    if (!this.canReportEvents()) {
-      return;
-    }
-
-    itly.authenticateButtonIsClicked(
-      '',
-      {
-        ide: this.ide,
-        eventSource: 'IDE',
-      },
-      this.getAnonymousSegmentOptions(),
-    );
+    this.enqueueEvent(() => {
+      itly.authenticateButtonIsClicked(
+        '',
+        {
+          ide: this.ide,
+          eventSource: 'IDE',
+        },
+        this.getAnonymousSegmentOptions(),
+      );
+    }, false);
   }
 
   public logWelcomeButtonIsClicked(): void {
-    if (!this.canReportEvents()) {
-      return;
-    }
-
-    itly.welcomeButtonIsClicked(
-      this.user.authenticatedId ?? '',
-      {
-        ide: this.ide,
-        eventSource: 'IDE',
-      },
-      this.getAnonymousSegmentOptions(),
-    );
+    this.enqueueEvent(() => {
+      itly.welcomeButtonIsClicked(
+        this.user.authenticatedId ?? '',
+        {
+          ide: this.ide,
+          eventSource: 'IDE',
+        },
+        this.getAnonymousSegmentOptions(),
+      );
+    }, false);
   }
 
   public logPluginIsInstalled(): void {
-    if (!this.canReportEvents()) {
-      return;
-    }
-
-    itly.pluginIsInstalled(
-      '',
-      {
-        ide: this.ide,
-      },
-      {
-        segment: {
-          options: {
-            anonymousId: this.user.anonymousId,
+    this.enqueueEvent(() => {
+      itly.pluginIsInstalled(
+        '',
+        {
+          ide: this.ide,
+        },
+        {
+          segment: {
+            options: {
+              anonymousId: this.user.anonymousId,
+            },
           },
         },
-      },
-    );
+      );
+    });
   }
 
   public logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.quickFixIsDisplayed(this.user.authenticatedId, properties);
+    this.enqueueEvent(() => {
+      itly.quickFixIsDisplayed(this.getAuthenticatedUserId(), properties);
+    });
   }
 
   public logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.issueHoverIsDisplayed(this.user.authenticatedId, properties);
+    this.enqueueEvent(() => {
+      itly.issueHoverIsDisplayed(this.getAuthenticatedUserId(), properties);
+    });
   }
 
   public logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
+    this.enqueueEvent(() => {
+      itly.scanModeIsSelected(this.getAuthenticatedUserId(), {
+        ...properties,
+        ide: this.ide,
+        eventSource: 'IDE',
+      });
+    });
+  }
 
-    itly.scanModeIsSelected(this.user.authenticatedId, {
-      ...properties,
-      ide: this.ide,
-      eventSource: 'IDE',
+  public logBackgroundAnalysisNotificationIsDisplayed(
+    properties: Omit<BackgroundAnalysisNotificationIsDisplayedProperties, 'eventSource' | 'ide'>,
+  ): void {
+    this.enqueueEvent(() => {
+      itly.backgroundAnalysisNotificationIsDisplayed(this.getAuthenticatedUserId(), {
+        ...properties,
+        ide: this.ide,
+        eventSource: 'IDE',
+      });
+    });
+  }
+
+  public logBackgroundAnalysisNotificationButtonIsClicked(
+    properties: Omit<BackgroundAnalysisNotificationButtonIsClickedProperties, 'eventSource' | 'ide'>,
+  ): void {
+    this.enqueueEvent(() => {
+      itly.backgroundAnalysisNotificationButtonIsClicked(this.getAuthenticatedUserId(), {
+        ...properties,
+        ide: this.ide,
+        eventSource: 'IDE',
+      });
     });
   }
 
   public logFalsePositiveIsDisplayed(): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
-      return;
-    }
-
-    itly.falsePositiveIsDisplayed(this.user.authenticatedId, {
-      ide: this.ide,
-      eventSource: 'IDE',
+    this.enqueueEvent(() => {
+      itly.falsePositiveIsDisplayed(this.getAuthenticatedUserId(), {
+        ide: this.ide,
+        eventSource: 'IDE',
+      });
     });
   }
 
   public logFalsePositiveIsSubmitted(
     properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>,
   ): void {
-    if (!this.canReportEvents() || !this.user.authenticatedId) {
+    this.enqueueEvent(() => {
+      itly.falsePositiveIsSubmitted(this.getAuthenticatedUserId(), {
+        ...properties,
+        ide: this.ide,
+        eventSource: 'IDE',
+      });
+    });
+  }
+
+  private enqueueEvent(eventFunction: () => void, mustBeAuthenticated = true): void {
+    if (!this.canReportEvents()) {
+      return;
+    }
+    if (mustBeAuthenticated && !this.user.authenticatedId) {
       return;
     }
 
-    itly.falsePositiveIsSubmitted(this.user.authenticatedId, {
-      ...properties,
-      ide: this.ide,
-      eventSource: 'IDE',
-    });
+    eventFunction();
   }
 
   private canReportEvents(): boolean {
@@ -297,5 +317,15 @@ export class Iteratively implements IAnalytics {
         },
       },
     };
+  }
+
+  private getAuthenticatedUserId(): string {
+    if (!this.user.authenticatedId) {
+      const err = new Error('User must be authenticated for analytics');
+      ErrorHandler.handle(err, this.logger);
+      throw err;
+    }
+
+    return this.user.authenticatedId;
   }
 }

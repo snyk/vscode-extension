@@ -53,15 +53,27 @@ export class NotificationService implements INotificationService {
   }
 
   async showOssBackgroundScanNotification(newVulnerabilityCount: number): Promise<void> {
-    const pressedButton = await this.window.showInformationMessage(
+    const notification = this.window.showInformationMessage(
       ossMessages.newCriticalVulnerabilitiesFound(newVulnerabilityCount),
       ossMessages.viewResults,
       ossMessages.hide,
     );
 
+    this.analytics.logBackgroundAnalysisNotificationIsDisplayed({
+      analysisType: 'Snyk Open Source',
+    });
+
+    const pressedButton = await notification;
+
     if (pressedButton === ossMessages.viewResults) {
+      this.analytics.logBackgroundAnalysisNotificationButtonIsClicked({
+        type: 'View results',
+      });
       await this.commands.executeCommand(VSCODE_VIEW_OSS_VIEW_COMMAND);
     } else if (pressedButton === ossMessages.hide) {
+      this.analytics.logBackgroundAnalysisNotificationButtonIsClicked({
+        type: 'Don’t show again',
+      });
       await this.configuration.hideOssBackgroundScanNotification();
     }
   }
