@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.22]
+
+### Fixed
+
+- Snyk Code: failing when analysis bundle gets expired after its validity period.
+
 ## [1.2.21]
 
 ### Added
