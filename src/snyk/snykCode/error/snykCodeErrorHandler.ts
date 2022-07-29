@@ -80,6 +80,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
       case constants.ErrorCodes.timeout:
       case constants.ErrorCodes.dnsNotFound:
       case constants.ErrorCodes.connectionRefused:
+      case constants.ErrorCodes.notFound:
         return true;
 
       default:
