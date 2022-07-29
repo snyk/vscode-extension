@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { constants } from '@snyk/code-client';
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
@@ -79,5 +80,9 @@ suite('Snyk Code Error Handler', () => {
     await Promise.all(mockedRetries);
 
     strictEqual(handler.connectionRetryLimitExhausted, true);
+  });
+
+  test('404 is retryable error', function () {
+    strictEqual(SnykCodeErrorHandler.isErrorRetryable(constants.ErrorCodes.notFound), true);
   });
 });
