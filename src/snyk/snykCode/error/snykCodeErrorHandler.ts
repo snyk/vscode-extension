@@ -72,7 +72,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     this.loadingBadge.setLoadingBadge(true);
   }
 
-  private isErrorRetryable(errorStatusCode: PropertyKey): boolean {
+  static isErrorRetryable(errorStatusCode: PropertyKey): boolean {
     switch (errorStatusCode) {
       case constants.ErrorCodes.badGateway:
       case constants.ErrorCodes.serviceUnavailable:
@@ -80,6 +80,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
       case constants.ErrorCodes.timeout:
       case constants.ErrorCodes.dnsNotFound:
       case constants.ErrorCodes.connectionRefused:
+      case constants.ErrorCodes.notFound:
         return true;
 
       default:
@@ -129,7 +130,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
       return await this.authenticationErrorHandler();
     }
 
-    if (this.isErrorRetryable(errorStatusCode) || this.isBundleError(error)) {
+    if (SnykCodeErrorHandler.isErrorRetryable(errorStatusCode) || this.isBundleError(error)) {
       return await this.retryHandler(error, errorStatusCode, options, callback);
     }
 
