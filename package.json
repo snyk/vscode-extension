@@ -52,14 +52,14 @@
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow crash reports to be reported to Snyk.",
+            "markdownDescription": "Send error reports to Snyk",
             "scope": "application"
           },
           "snyk.yesTelemetry": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Allow extension's telemetry to be sent to Snyk.",
+            "markdownDescription": "Send usage statistics to Snyk",
             "scope": "application"
           },
           "snyk.yesWelcomeNotification": {
