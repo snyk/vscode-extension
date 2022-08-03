@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
   void extension.activate(context);
 
-  const serverModule = '/Users/michel/Git/go/bin/snyk-ls';
+  const serverModule = '/Users/michel/Git/go/src/github.com/snyk/snyk-ls/build/snyk-ls';
 
   // If the extension is launched in debug mode then the debug server options are used
   // Otherwise the run options are used
