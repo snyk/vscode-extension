@@ -91,8 +91,13 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
   private extractErrorResponse(error: errorType) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!(error instanceof Error) && error?.apiName) {
-      const { apiName, errorCode, messages } = error as { [key: string]: string };
-      return new SnykCodeErrorResponse({ apiName, errorCode, messages });
+      // Error can come in different shapes, see https://github.com/snyk/code-client/blob/b5eb140e1400049caf8cbb133a951ab007b031d0/src/http.ts#L43. Extract all.
+      const { apiName, statusCode, statusText, errorCode, messages } = error as { [key: string]: string };
+      if (errorCode) {
+        return new SnykCodeErrorResponse({ apiName, errorCode, messages });
+      }
+
+      return new SnykCodeErrorResponse({ apiName, errorCode: statusCode, messages: statusText });
     }
   }
 
