@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { commands, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { configuration } from './snyk/common/configuration/instance';
 import SnykExtension from './snyk/extension';
 
 let client: LanguageClient;
@@ -29,6 +30,11 @@ export function activate(context: vscode.ExtensionContext): void {
     synchronize: {
       // Notify the server about file changes to '.clientrc files contained in the workspace
       fileEvents: workspace.createFileSystemWatcher('**/*'),
+      // Synchronize the setting section to the server.
+      configurationSection: ['snyk'],
+    },
+    initializationOptions: {
+      token: configuration.token,
     },
     // outputChannel: vscode.window.createOutputChannel('Language Server Client Example'),
   };
@@ -39,9 +45,9 @@ export function activate(context: vscode.ExtensionContext): void {
   client = new LanguageClient('snykLsp', 'LanguageServerExample', serverOptions, clientOptions);
 
   // Start the client. This will also launch the server
+  client.start();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  client.start();
   commands.registerCommand('snyk.launchBrowser', (uri: string) => {
     void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri));
   });
