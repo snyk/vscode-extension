@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as vscode from 'vscode';
-import SnykExtension from './snyk/extension';
-
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { commands, workspace } from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import SnykExtension from './snyk/extension';
 
 let client: LanguageClient;
 
@@ -14,12 +13,13 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('Activating SnykExtension');
   void extension.activate(context);
 
-  const serverModule = 'snyk-lsp';
+  const serverModule = '/Users/bdoetsch/workspace/go/src/github.com/snyk/snyk-ls/build/snyk-ls';
 
   // If the extension is launched in debug mode then the debug server options are used
   // Otherwise the run options are used
   const serverOptions: ServerOptions = {
     command: serverModule,
+    args: ['-l', 'debug', '-f', '/Users/bdoetsch/.snyk/snyk-ls-vscode.log'],
   };
 
   // Options to control the language client
@@ -30,25 +30,28 @@ export function activate(context: vscode.ExtensionContext): void {
       // Notify the server about file changes to '.clientrc files contained in the workspace
       fileEvents: workspace.createFileSystemWatcher('**/*'),
     },
+    initializationOptions: {
+      activateSnykCode: 'true',
+      token: '',
+    },
   };
 
   // Create the language client and start the client.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  client = new LanguageClient('Snyk LSP', 'Language Server Example', serverOptions, clientOptions);
+  client = new LanguageClient('Snyk LS', 'Snyk LS', serverOptions, clientOptions);
 
   // Start the client. This will also launch the server
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   client.start();
-  commands.registerCommand("snyk.launchBrowser", (uri: string) => {
-    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri))
+  commands.registerCommand('snyk.launchBrowser', (uri: string) => {
+    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri));
   });
-  commands.registerCommand("snyk.showRule", (uri: string) => {
-    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri))
+  commands.registerCommand('snyk.showRule', (uri: string) => {
+    void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(uri));
   });
 }
-
 
 export function deactivate(): void {
   console.log('Deactivating SnykExtension');
