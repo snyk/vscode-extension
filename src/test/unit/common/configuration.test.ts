@@ -187,6 +187,7 @@ suite('Configuration', () => {
     deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
       advisor: false,
+      lsAuthenticate: false,
     } as PreviewFeatures);
   });
 
@@ -194,6 +195,7 @@ suite('Configuration', () => {
     const previewFeatures = {
       reportFalsePositives: true,
       advisor: false,
+      lsAuthenticate: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 
@@ -206,12 +208,12 @@ suite('Configuration', () => {
     const SNYK_LS_PATH = '/path/to/language/server';
     const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
 
-    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
+    strictEqual(configuration.getSnykLanguageServerPath(), SNYK_LS_PATH);
   });
 
   test('Snyk LS: Throws when Language Server path is not set', () => {
     const configuration = new Configuration({}, workspaceStub);
 
-    throws(() => configuration.snykLanguageServerPath);
+    throws(() => configuration.getSnykLanguageServerPath());
   });
 });

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Integrated Snyk LS - it's deactivated right now.
 - Snyk LS: Adds functionality for setting a path to a custom LS binary
 
 ## [1.2.24]

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import assert from 'assert';
 import sinon from 'sinon';
-import { getHttpsProxyAgent } from '../../../snyk/common/proxy';
+import { getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Proxy', () => {
@@ -74,5 +74,20 @@ suite('Proxy', () => {
     assert.deepStrictEqual(agent?.proxy.auth, auth);
     // @ts-ignore: cannot test options otherwise
     assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
+  });
+
+  test('getProxyEnvVariable should return the proxy as env var', () => {
+    const getConfiguration = sinon.stub();
+    getConfiguration.withArgs('http', 'proxy').returns(proxy);
+    getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
+
+    const workspace = {
+      getConfiguration,
+    } as unknown as IVSCodeWorkspace;
+
+    const envVariable = getProxyEnvVariable(getProxyOptions(workspace));
+
+    // noinspection HttpUrlsUsage
+    assert.deepStrictEqual(envVariable, `http://${host}:${port}`);
   });
 });

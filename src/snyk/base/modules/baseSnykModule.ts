@@ -30,6 +30,7 @@ import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
+import { ILanguageServer } from '../../common/languageserver/languageserver';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -51,6 +52,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected scanModeService: ScanModeService;
   protected ossVulnerabilityCountService: OssVulnerabilityCountService;
   protected advisorScoreDisposable: AdvisorService;
+  protected languageServer: ILanguageServer;
 
   protected notificationService: INotificationService;
   protected analytics: IAnalytics;
@@ -91,6 +93,8 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   }
 
   abstract runScan(): Promise<void>;
+
   abstract runCodeScan(): Promise<void>;
+
   abstract runOssScan(): Promise<void>;
 }

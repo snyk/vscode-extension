@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as lsc from 'vscode-languageclient/node';
 
 export type Disposable = vscode.Disposable;
 export type DiagnosticCollection = vscode.DiagnosticCollection;
@@ -43,3 +44,6 @@ export type ExtensionContext = vscode.ExtensionContext;
 export type WebviewOptions = vscode.WebviewOptions;
 export type TextDocumentChangeEvent = vscode.TextDocumentChangeEvent;
 export type InputBoxOptions = vscode.InputBoxOptions;
+export type LanguageClient = lsc.LanguageClient;
+export type LanguageClientOptions = lsc.LanguageClientOptions;
+export type ServerOptions = lsc.ServerOptions;

@@ -26,9 +26,9 @@ import {
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_REPORT_FALSE_POSITIVE_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
-  SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
@@ -75,6 +75,8 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
+import { LanguageServer } from './common/languageserver/languageserver';
+import { LanguageClientAdapter } from './common/vscode/languageClient';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -95,12 +97,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private async getSnykConfiguration(): Promise<SnykConfiguration | undefined> {
     try {
-      const snykConfiguration = await SnykConfiguration.get(
-        extensionContext.extensionPath,
-        configuration.isDevelopment,
-      );
-
-      return snykConfiguration;
+      return await SnykConfiguration.get(extensionContext.extensionPath, configuration.isDevelopment);
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
@@ -129,6 +126,14 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     this.statusBarItem.show();
+
+    this.languageServer = new LanguageServer(
+      vscodeContext,
+      configuration,
+      new LanguageClientAdapter(),
+      vsCodeWorkspace,
+    );
+    await this.languageServer.start();
 
     this.authService = new AuthenticationService(
       this.contextService,
@@ -264,7 +269,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
 
-    void this.notificationService.init();
+    void (await this.notificationService.init());
 
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
@@ -307,7 +312,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.markdownStringAdapter,
       configuration,
     );
-    void this.advisorScoreDisposable.activate();
+    void (await this.advisorScoreDisposable.activate());
 
     // Actually start analysis
     this.runScan();
