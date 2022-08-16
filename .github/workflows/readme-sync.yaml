@@ -1,4 +1,4 @@
-name: Synchronize Readme # Copied from: https://github.com/snyk/cli/blob/95f7e1021c817a44d4018c4f518061d69f6dbb5b/.github/workflows/sync-cli-help-to-user-docs.yml
+name: Synchronize Readme
 
 on:
   workflow_dispatch:
@@ -16,11 +16,11 @@ jobs:
           git config --global user.name "$GITHUB_ACTOR"
           gh repo clone snyk/$DESTINATION_REPOSITORY $DESTINATION_REPOSITORY -- --depth=1 --quiet
           gh repo clone snyk/user-docs docs -- --depth=1 --quiet
-          git -C ./$DESTINATION_REPOSITORY checkout -b $DESTINATION_BRANCH
+          git -C ./$DESTINATION_REPOSITORY checkout -B $DESTINATION_BRANCH
 
           cp $SOURCE_PATH ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
-              -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
+              -e "s|../../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
               ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
               -E "s|\!\\[([[:alnum:][:space:][:punct:]]*)\]\(<([[:alnum:][:punct:]\-\.\/:[:space:]\(\)]+)>\)|<img src=\"\2\" alt=\"\1\" />|g" \
@@ -32,6 +32,7 @@ jobs:
           if [[ $(git -C ./$DESTINATION_REPOSITORY status --porcelain) ]]; then
             echo "Documentation changes detected"
             cd ./$DESTINATION_REPOSITORY
+            git push -f -u origin $DESTINATION_BRANCH
 
             export SHA=$( git rev-parse $DESTINATION_BRANCH:$FILE_TO_COMMIT )
             export CONTENT=$( base64 -i $FILE_TO_COMMIT )
@@ -42,7 +43,7 @@ jobs:
               --field branch="$DESTINATION_BRANCH" \
               --field sha="$SHA"
 
-            if [[ ! $(gh pr view $DESTINATION_BRANCH 2>&1 | grep -q "no open pull requests";) ]]; then
+            if [[ ! $(gh pr list --search "$MESSAGE" 2>&1 | grep -e "$MESSAGE";) ]]; then
               echo "Creating PR"
               gh pr create --title="$MESSAGE" --body="Automatic PR controlled by GitHub Action." --head $DESTINATION_BRANCH
             fi
@@ -51,7 +52,7 @@ jobs:
             echo "No documentation changes detected, exiting."
           fi
         env:
-          SOURCE_PATH: ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code.md
+          SOURCE_PATH: ./docs/docs/ide-tools/visual-studio-code-extension-for-snyk-code/README.md
           FILE_TO_COMMIT: README.md
           DESTINATION_REPOSITORY: vscode-extension
           DESTINATION_BRANCH: docs/automatic-gitbook-update
