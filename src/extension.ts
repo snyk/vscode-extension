@@ -21,6 +21,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const serverOptions: ServerOptions = {
     command: serverModule,
     args: ['-l', 'debug'],
+    options: {
+      env: {
+        ...process.env,
+        ACTIVATE_SNYK_CODE: '1',
+      },
+    },
   };
 
   // Options to control the language client
