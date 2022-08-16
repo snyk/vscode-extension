@@ -27,7 +27,7 @@ jobs:
         run: sudo npm install -g vsce@latest
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Verify analytics events
         run: npm run ampli:verify -- -t ${{ secrets.ITERATIVELY_KEY }}
@@ -67,7 +67,7 @@ jobs:
         run: sudo npm install -g vsce@latest
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Package VSIX
         run: echo y | vsce package
