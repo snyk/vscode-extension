@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual, strictEqual, throws } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
@@ -109,6 +109,19 @@ suite('Configuration', () => {
       workspaceStub,
     );
     strictEqual(configuration.snykCodeBaseURL, customUrl);
+  });
+
+  test('Snyk Code: Language Server path is returned when set', async () => {
+    const SNYK_LS_PATH = '/path/to/language/server';
+    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
+
+    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
+  });
+
+  test('Snyk Code: throws when Language Server path is not set', async () => {
+    const configuration = new Configuration({}, workspaceStub);
+
+    throws(() => configuration.snykLanguageServerPath);
   });
 
   test('Snyk Code: token returns snyk.io token when not in development', async () => {

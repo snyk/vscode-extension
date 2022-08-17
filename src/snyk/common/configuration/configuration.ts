@@ -171,6 +171,11 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
+  get snykLanguageServerPath(): string {
+    if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
+    return this.processEnv.SNYK_LS_PATH;
+  }
+
   async getToken(): Promise<string | undefined> {
     return new Promise(resolve => {
       SecretStorageAdapter.instance
