@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { DiagnosticCollection, TextDocument } from 'vscode';
 import { IExtension } from '../base/modules/interfaces';
 import { IHoverAdapter } from '../common/vscode/hover';
+import { IMarkdownStringAdapter } from '../common/vscode/markdownString';
 import { Disposable } from '../common/vscode/types';
 
 export type completeFileSuggestionType = ICodeSuggestion &
@@ -43,7 +44,11 @@ export interface ISnykCodeAnalyzer extends Disposable {
   codeSecurityReview: DiagnosticCollection | undefined;
   codeQualityReview: DiagnosticCollection | undefined;
 
-  registerHoverProviders(codeSecurityHoverAdapter: IHoverAdapter, codeQualityHoverAdapter: IHoverAdapter): void;
+  registerHoverProviders(
+    codeSecurityHoverAdapter: IHoverAdapter,
+    codeQualityHoverAdapter: IHoverAdapter,
+    markdownStringAdapter: IMarkdownStringAdapter,
+  ): void;
   registerCodeActionProviders(
     codeSecurityCodeActionsProvider: Disposable,
     codeQualityCodeActionsProvider: Disposable,

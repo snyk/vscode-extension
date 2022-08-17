@@ -3,6 +3,7 @@ import { IDE_NAME } from '../../common/constants/general';
 import { ILog } from '../../common/logger/interfaces';
 import { IHoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
+import { IMarkdownStringAdapter } from '../../common/vscode/markdownString';
 import { Diagnostic, DiagnosticCollection, Disposable, Hover, Position, TextDocument } from '../../common/vscode/types';
 import { IGNORE_TIP_FOR_USER } from '../constants/analysis';
 import { ISnykCodeAnalyzer } from '../interfaces';
@@ -16,6 +17,7 @@ export class DisposableHoverProvider implements Disposable {
     private readonly logger: ILog,
     private readonly vscodeLanguages: IVSCodeLanguages,
     private readonly analytics: IAnalytics,
+    private readonly markdownStringAdapter: IMarkdownStringAdapter,
   ) {}
 
   register(snykReview: DiagnosticCollection | undefined, hoverAdapter: IHoverAdapter): Disposable {
@@ -37,7 +39,8 @@ export class DisposableHoverProvider implements Disposable {
       const issue = IssueUtils.findIssueWithRange(position, currentFileReviewIssues);
       if (issue) {
         this.logIssueHoverIsDisplayed(issue);
-        return hoverAdapter.create(IGNORE_TIP_FOR_USER);
+        const ignoreMarkdown = this.markdownStringAdapter.get(IGNORE_TIP_FOR_USER);
+        return hoverAdapter.create(ignoreMarkdown);
       }
     };
   }

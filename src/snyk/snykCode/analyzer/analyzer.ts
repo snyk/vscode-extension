@@ -6,6 +6,7 @@ import { ILog } from '../../common/logger/interfaces';
 import { errorsLogs } from '../../common/messages/errors';
 import { IHoverAdapter } from '../../common/vscode/hover';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
+import { IMarkdownStringAdapter } from '../../common/vscode/markdownString';
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -75,13 +76,17 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     this.disposables.push(codeSecurityCodeActionsProvider, codeQualityCodeActionsProvider);
   }
 
-  public registerHoverProviders(codeSecurityHoverAdapter: IHoverAdapter, codeQualityHoverAdapter: IHoverAdapter): void {
+  public registerHoverProviders(
+    codeSecurityHoverAdapter: IHoverAdapter,
+    codeQualityHoverAdapter: IHoverAdapter,
+    markdownStringAdapter: IMarkdownStringAdapter,
+  ): void {
     this.disposables.push(
-      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics).register(
+      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics, markdownStringAdapter).register(
         this.codeSecurityReview,
         codeSecurityHoverAdapter,
       ),
-      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics).register(
+      new DisposableHoverProvider(this, this.logger, this.languages, this.analytics, markdownStringAdapter).register(
         this.codeQualityReview,
         codeQualityHoverAdapter,
       ),

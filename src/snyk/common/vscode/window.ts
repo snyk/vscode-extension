@@ -10,7 +10,7 @@ import { InputBoxOptions, TextDocument, TextDocumentShowOptions, TextEditor, Uri
 
 export interface IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined;
-  getVisibleTextEditors(): TextEditor[];
+  getVisibleTextEditors(): readonly TextEditor[];
   showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>;
   showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
@@ -41,7 +41,7 @@ export class VSCodeWindow implements IVSCodeWindow {
     return vscode.window.activeTextEditor;
   }
 
-  getVisibleTextEditors(): TextEditor[] {
+  getVisibleTextEditors(): readonly TextEditor[] {
     return vscode.window.visibleTextEditors;
   }
 

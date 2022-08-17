@@ -15,6 +15,7 @@ import { IWebViewProvider } from '../common/views/webviewProvider';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { HoverAdapter } from '../common/vscode/hover';
 import { IVSCodeLanguages } from '../common/vscode/languages';
+import { IMarkdownStringAdapter } from '../common/vscode/markdownString';
 import { Diagnostic, Disposable } from '../common/vscode/types';
 import { IUriAdapter } from '../common/vscode/uri';
 import { IVSCodeWindow } from '../common/vscode/window';
@@ -89,6 +90,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly uriAdapter: IUriAdapter,
     codeSettings: ICodeSettings,
     private readonly learnService: LearnService,
+    private readonly markdownStringAdapter: IMarkdownStringAdapter,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(
@@ -323,7 +325,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   }
 
   private registerAnalyzerProviders(analyzer: ISnykCodeAnalyzer) {
-    analyzer.registerHoverProviders(new HoverAdapter(), new HoverAdapter());
+    analyzer.registerHoverProviders(new HoverAdapter(), new HoverAdapter(), this.markdownStringAdapter);
     analyzer.registerCodeActionProviders(
       new DisposableCodeActionsProvider(
         analyzer.codeSecurityReview,

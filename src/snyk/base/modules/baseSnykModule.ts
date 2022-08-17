@@ -15,6 +15,7 @@ import { IOpenerService, OpenerService } from '../../common/services/openerServi
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import { User } from '../../common/user';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vscode/markdownString';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeService } from '../../snykCode/codeService';
@@ -65,6 +66,8 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected experimentService: ExperimentService;
   protected snykCodeErrorHandler: ISnykCodeErrorHandler;
 
+  protected markdownStringAdapter: IMarkdownStringAdapter;
+
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
     this.editorsWatcher = new SnykEditorsWatcher();
@@ -84,6 +87,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     );
     this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
     this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
+    this.markdownStringAdapter = new MarkdownStringAdapter();
   }
 
   abstract runScan(): Promise<void>;

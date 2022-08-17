@@ -96,6 +96,7 @@ suite('Advisor AdvisorService', () => {
     const ev: TextDocumentChangeEvent = {
       document,
       contentChanges: [],
+      reason: undefined,
     };
 
     const processFileSpy = sinon.spy(advisorService, 'processScores');

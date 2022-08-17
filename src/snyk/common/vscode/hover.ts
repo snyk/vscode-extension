@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { Hover, MarkedString, Range } from './types';
+import { Hover, MarkdownString, Range } from './types';
 
 export interface IHoverAdapter {
-  create(contents: MarkedString | MarkedString[], range?: Range): Hover;
+  create(contents: MarkdownString | MarkdownString[], range?: Range): Hover;
 }
 
 export class HoverAdapter implements IHoverAdapter {
-  create(contents: MarkedString | MarkedString[], range?: Range): Hover {
+  create(contents: vscode.MarkdownString | MarkdownString[], range?: Range): Hover {
     return new vscode.Hover(contents, range);
   }
 }

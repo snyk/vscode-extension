@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IHoverAdapter } from '../../../../snyk/common/vscode/hover';
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
+import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
 import { Diagnostic, DiagnosticCollection, Position, TextDocument, Uri } from '../../../../snyk/common/vscode/types';
 import { DisposableHoverProvider } from '../../../../snyk/snykCode/hoverProvider/hoverProvider';
 import { ISnykCodeAnalyzer } from '../../../../snyk/snykCode/interfaces';
@@ -23,7 +24,9 @@ suite('Snyk Code hover provider', () => {
       logIssueHoverIsDisplayed,
     } as unknown as IAnalytics;
 
-    provider = new DisposableHoverProvider(analyzer, new LoggerMock(), vscodeLanguagesMock, analytics);
+    provider = new DisposableHoverProvider(analyzer, new LoggerMock(), vscodeLanguagesMock, analytics, {
+      get: sinon.fake(),
+    } as IMarkdownStringAdapter);
   });
 
   teardown(() => {
