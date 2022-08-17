@@ -4,7 +4,7 @@
 
 ### Added
 
-- Snyk Code: Adds setting a path for a custom LS binary
+- Snyk LS: Adds functionality for setting a path to a custom LS binary
 
 ## [1.2.24]
 
