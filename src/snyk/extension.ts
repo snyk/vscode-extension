@@ -54,7 +54,6 @@ import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
-import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
@@ -157,6 +156,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new UriAdapter(),
       this.codeSettings,
       this.learnService,
+      this.markdownStringAdapter,
     );
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
@@ -304,7 +304,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.advisorApiClient,
       new ThemeColorAdapter(),
       new HoverAdapter(),
-      new MarkdownStringAdapter(),
+      this.markdownStringAdapter,
       configuration,
     );
     void this.advisorScoreDisposable.activate();
