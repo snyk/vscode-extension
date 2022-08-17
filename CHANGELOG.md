@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.2.25]
+
+### Feat
+
+- Snyk Code: Adds setting a path for a custom LS binary
+
 ## [1.2.24]
 
 ### Fixed
