@@ -111,19 +111,6 @@ suite('Configuration', () => {
     strictEqual(configuration.snykCodeBaseURL, customUrl);
   });
 
-  test('Snyk Code: Language Server path is returned when set', () => {
-    const SNYK_LS_PATH = '/path/to/language/server';
-    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
-
-    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
-  });
-
-  test('Snyk Code: throws when Language Server path is not set', () => {
-    const configuration = new Configuration({}, workspaceStub);
-
-    throws(() => configuration.snykLanguageServerPath);
-  });
-
   test('Snyk Code: token returns snyk.io token when not in development', async () => {
     const token = 'snyk-token';
 
@@ -213,5 +200,18 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
+  });
+
+  test('Snyk LS: Language Server path is returned when set', () => {
+    const SNYK_LS_PATH = '/path/to/language/server';
+    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
+
+    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
+  });
+
+  test('Snyk LS: Throws when Language Server path is not set', () => {
+    const configuration = new Configuration({}, workspaceStub);
+
+    throws(() => configuration.snykLanguageServerPath);
   });
 });

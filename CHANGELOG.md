@@ -2,7 +2,7 @@
 
 ## [1.2.25]
 
-### Feat
+### Added
 
 - Snyk Code: Adds setting a path for a custom LS binary
 
