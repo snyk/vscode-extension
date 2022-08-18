@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual, strictEqual, throws } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
@@ -200,5 +200,18 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
+  });
+
+  test('Snyk LS: Language Server path is returned when set', () => {
+    const SNYK_LS_PATH = '/path/to/language/server';
+    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
+
+    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
+  });
+
+  test('Snyk LS: Throws when Language Server path is not set', () => {
+    const configuration = new Configuration({}, workspaceStub);
+
+    throws(() => configuration.snykLanguageServerPath);
   });
 });
