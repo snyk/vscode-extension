@@ -14,8 +14,6 @@ Snyk scans for the following types of issues:
 
 [**Code Security and Code Quality**](https://snyk.io/product/snyk-code/) - security vulnerabilities and quality issues in your own code. See also the Snyk Code docs (https://docs.snyk.io/products/snyk-code).
 
-The plugin also provides the [**Open Source Advisor**](https://snyk.io/advisor/) to help you find the best package for your next project. Information is provided on the package health of the direct dependencies you are using including popularity, maintenance, risk, and community insights.
-
 This page explains installation of the Visual Studio Code extension. **After you complete the steps on this page**, you will continue by following the instructions in the other Visual studio Code extension docs:
 
 * [Visual Studio Code extension configuration](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-configuration)
