@@ -88,6 +88,6 @@ suite('Proxy', () => {
     const envVariable = getProxyEnvVariable(getProxyOptions(workspace));
 
     // noinspection HttpUrlsUsage
-    assert.deepStrictEqual(envVariable, `http://${host}:${port}`);
+    assert.deepStrictEqual(envVariable, `http://${auth}@${host}:${port}`);
   });
 });

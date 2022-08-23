@@ -67,14 +67,9 @@ export function getProxyEnvVariable(
   if (!proxyOptions) {
     return;
   }
-  const { host, port } = proxyOptions;
+  const { host, port, auth } = proxyOptions;
   if (!host) return;
 
-  // TODO: add auth to proxy env variable
   // noinspection HttpUrlsUsage
-  let proxyString = `http://${host}`;
-  if (port) {
-    proxyString += `:${port}`;
-  }
-  return proxyString;
+  return `http://${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
 }
