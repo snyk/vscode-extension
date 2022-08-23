@@ -32,15 +32,18 @@ export function getProxyOptions(
     return undefined;
   }
 
-  if (proxyUrl.hostname == null || proxyUrl.hostname === '' || proxyUrl.port == null || proxyUrl.port === '') {
+  if (proxyUrl.hostname == null || proxyUrl.hostname === '') {
     return undefined;
   }
 
   const strictProxy = workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
-
+  let port;
+  if (proxyUrl.port && proxyUrl.port !== '') {
+    port = parseInt(proxyUrl.port, 10);
+  }
   return {
     host: proxyUrl.hostname,
-    port: parseInt(proxyUrl.port, 10),
+    port: port,
     auth: proxyUrl.auth,
     rejectUnauthorized: strictProxy,
   };
