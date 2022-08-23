@@ -188,6 +188,12 @@
                 "title": "Enable \"Snyk Advisor\"",
                 "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
                 "default": false
+              },
+              "lsAuthenticate": {
+                "type": "boolean",
+                "title": "Authenticate using Snyk Language Server",
+                "description": "Authenticate using Snyk Language Server.",
+                "default": false
               }
             }
           }
@@ -446,6 +452,7 @@
     "rxjs": "^7.5.5",
     "string-argv": "^0.3.1",
     "uuid": "^8.3.2",
-    "validate-npm-package-name": "^3.0.0"
+    "validate-npm-package-name": "^3.0.0",
+    "vscode-languageclient": "^8.0.2"
   }
 }

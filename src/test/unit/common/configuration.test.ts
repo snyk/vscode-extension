@@ -9,6 +9,7 @@ import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
+import { extensionContextMock } from '../mocks/extensionContext.mock';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
@@ -19,13 +20,7 @@ suite('Configuration', () => {
 
     let token = '';
 
-    extensionContext = {
-      secrets: {
-        store: (_key: string, _value: string) => Promise.resolve(),
-        get: () => Promise.resolve(),
-        delete: () => Promise.resolve(),
-      },
-    } as unknown as ExtensionContext;
+    extensionContext = extensionContextMock;
     SecretStorageAdapter.init(extensionContext);
 
     const stub = sinon.stub().returns({
@@ -187,6 +182,7 @@ suite('Configuration', () => {
     deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
       advisor: false,
+      lsAuthenticate: false,
     } as PreviewFeatures);
   });
 
@@ -194,6 +190,7 @@ suite('Configuration', () => {
     const previewFeatures = {
       reportFalsePositives: true,
       advisor: false,
+      lsAuthenticate: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 
@@ -206,12 +203,12 @@ suite('Configuration', () => {
     const SNYK_LS_PATH = '/path/to/language/server';
     const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
 
-    strictEqual(configuration.snykLanguageServerPath, SNYK_LS_PATH);
+    strictEqual(configuration.getSnykLanguageServerPath(), SNYK_LS_PATH);
   });
 
   test('Snyk LS: Throws when Language Server path is not set', () => {
     const configuration = new Configuration({}, workspaceStub);
 
-    throws(() => configuration.snykLanguageServerPath);
+    throws(() => configuration.getSnykLanguageServerPath());
   });
 });

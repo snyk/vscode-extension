@@ -42,6 +42,8 @@ export interface SeverityFilter {
 export type PreviewFeatures = {
   reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
+  // feature flag to enable language server with authentication
+  lsAuthenticate: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -50,8 +52,11 @@ export interface IConfiguration {
 
   authHost: string;
   baseApiUrl: string;
+
   getToken(): Promise<string | undefined>;
+
   setToken(token: string): Promise<void>;
+
   clearToken(): Promise<void>;
 
   snykCodeToken: Promise<string | undefined>;
@@ -59,27 +64,35 @@ export interface IConfiguration {
   snykCodeUrl: string;
 
   organization: string | undefined;
+
   getAdditionalCliParameters(): string | undefined;
 
   snykOssApiEndpoint: string;
   shouldShowOssBackgroundScanNotification: boolean;
+
   hideOssBackgroundScanNotification(): Promise<void>;
+
   shouldAutoScanOss: boolean;
 
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
   shouldShowWelcomeNotification: boolean;
+
   hideWelcomeNotification(): Promise<void>;
 
   getFeaturesConfiguration(): FeaturesConfiguration | undefined;
+
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
 
   getPreviewFeatures(): PreviewFeatures;
 
   isAutomaticDependencyManagementEnabled(): boolean;
+
   getCustomCliPath(): string | undefined;
 
   severityFilter: SeverityFilter;
+
+  getSnykLanguageServerPath(): string;
 }
 
 export class Configuration implements IConfiguration {
@@ -171,7 +184,7 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  get snykLanguageServerPath(): string {
+  getSnykLanguageServerPath(): string {
     if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
     return this.processEnv.SNYK_LS_PATH;
   }
@@ -358,9 +371,10 @@ export class Configuration implements IConfiguration {
   }
 
   getPreviewFeatures(): PreviewFeatures {
-    const defaulSetting: PreviewFeatures = {
+    const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
+      lsAuthenticate: false,
     };
 
     const userSetting =
@@ -370,7 +384,7 @@ export class Configuration implements IConfiguration {
       ) || {};
 
     return {
-      ...defaulSetting,
+      ...defaultSetting,
       ...userSetting,
     };
   }

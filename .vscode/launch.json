@@ -9,9 +9,7 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "runtimeArgs": [
-        "--preserve-symlinks"
-      ],
+      "runtimeArgs": ["--preserve-symlinks"],
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
