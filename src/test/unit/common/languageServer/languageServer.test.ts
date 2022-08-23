@@ -1,33 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import {
-  ExtensionContext,
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-} from '../../../../snyk/common/vscode/types';
-import SecretStorageAdapter from '../../../../snyk/common/vscode/secretStorage';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import sinon from 'sinon';
 import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import assert, { deepStrictEqual } from 'assert';
-import { LanguageServer } from '../../../../snyk/common/languageserver/languageserver';
+import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
+import { extensionContextMock } from '../../mocks/extensionContext.mock';
 
-suite('languageserver', () => {
-  let extensionContext: ExtensionContext;
+suite('languageServer', () => {
+  const extensionContext = extensionContextMock;
   let configuration: IConfiguration;
   let languageServer: LanguageServer;
   setup(() => {
-    extensionContext = {
-      secrets: {
-        store: (_key: string, _value: string) => Promise.resolve(),
-        get: () => Promise.resolve(),
-        delete: () => Promise.resolve(),
-      },
-    } as unknown as ExtensionContext;
-
-    SecretStorageAdapter.init(extensionContext);
     configuration = {
       getCustomCliPath(): string | undefined {
         return 'testPath';
@@ -98,7 +84,6 @@ suite('languageserver', () => {
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.assert.called(lc.start);
-    sinon.verify();
   });
 
   test('LanguageServer does not start language client if preview not enabled', async () => {
@@ -117,10 +102,10 @@ suite('languageserver', () => {
     );
     await languageServer.start();
     sinon.assert.notCalled(lca);
-    sinon.verify();
   });
 
   test('LanguageServer adds proxy settings to env of started binary', async () => {
+    const expectedProxy = 'http://localhost:8080';
     const lca = sinon.spy({
       create(
         id: string,
@@ -132,19 +117,21 @@ suite('languageserver', () => {
           start(): Promise<void> {
             assert.strictEqual(id, 'Snyk LS');
             assert.strictEqual(name, 'Snyk Language Server');
-            assert.strictEqual('options' in serverOptions ? serverOptions?.options?.env?.http_proxy : undefined, '');
+            assert.strictEqual(
+              'options' in serverOptions ? serverOptions?.options?.env?.http_proxy : undefined,
+              expectedProxy,
+            );
             assert.strictEqual(clientOptions.initializationOptions.token, 'testToken');
             return Promise.resolve();
           },
         } as LanguageClient;
       },
     });
-
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
       lca as unknown as ILanguageClientAdapter,
-      stubWorkspaceConfiguration('http.proxy', undefined),
+      stubWorkspaceConfiguration('http.proxy', expectedProxy),
     );
     await languageServer.start();
     sinon.assert.called(lca.create);

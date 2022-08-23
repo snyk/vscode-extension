@@ -75,7 +75,7 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
-import { LanguageServer } from './common/languageserver/languageserver';
+import { LanguageServer } from './common/languageServer/languageServer';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -269,7 +269,8 @@ class SnykExtension extends SnykLib implements IExtension {
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
 
-    void (await this.notificationService.init());
+    // noinspection ES6MissingAwait
+    void this.notificationService.init();
 
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
@@ -312,7 +313,9 @@ class SnykExtension extends SnykLib implements IExtension {
       this.markdownStringAdapter,
       configuration,
     );
-    void (await this.advisorScoreDisposable.activate());
+
+    // noinspection ES6MissingAwait
+    void this.advisorScoreDisposable.activate();
 
     // Actually start analysis
     this.runScan();
@@ -321,6 +324,7 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.snykCode.dispose();
     this.ossVulnerabilityCountService.dispose();
+    await this.languageServer.stop();
     await this.analytics.flush();
     await ErrorReporter.flush();
   }

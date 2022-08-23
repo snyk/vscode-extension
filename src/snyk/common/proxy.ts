@@ -58,12 +58,20 @@ export function getAxiosProxyConfig(workspace: IVSCodeWorkspace): AxiosRequestCo
   };
 }
 
-export function getProxyEnvVariable(proxyOptions: createHttpsProxyAgent.HttpsProxyAgentOptions | undefined): string {
+export function getProxyEnvVariable(
+  proxyOptions: createHttpsProxyAgent.HttpsProxyAgentOptions | undefined,
+): string | undefined {
   if (!proxyOptions) {
-    return '';
+    return;
   }
   const { host, port } = proxyOptions;
+  if (!host) return;
+
   // TODO: add auth to proxy env variable
   // noinspection HttpUrlsUsage
-  return `http://${host}:${port}`;
+  let proxyString = `http://${host}`;
+  if (port) {
+    proxyString += `:${port}`;
+  }
+  return proxyString;
 }

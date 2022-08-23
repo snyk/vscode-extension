@@ -30,7 +30,7 @@ import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
-import { ILanguageServer } from '../../common/languageserver/languageserver';
+import { ILanguageServer } from '../../common/languageServer/languageServer';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;

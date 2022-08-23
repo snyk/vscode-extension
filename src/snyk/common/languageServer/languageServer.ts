@@ -5,13 +5,12 @@ import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { CliExecutable } from '../../cli/cliExecutable';
 
 export interface ILanguageServer {
   start(): Promise<void>;
 
   stop(): Promise<void>;
-
-  setConfig(config: IConfiguration): void;
 }
 
 export class LanguageServer implements ILanguageServer {
@@ -34,10 +33,6 @@ export class LanguageServer implements ILanguageServer {
   private configuration: IConfiguration;
   private client: LanguageClient;
 
-  setConfig(config: IConfiguration): void {
-    this.configuration = config;
-  }
-
   async start(): Promise<void> {
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
@@ -48,24 +43,30 @@ export class LanguageServer implements ILanguageServer {
     const proxyOptions = getProxyOptions(this.workspace);
     const proxyEnvVariable = getProxyEnvVariable(proxyOptions);
 
-    // until a path can be configured
+    let processEnv = process.env;
+
+    if (proxyEnvVariable) {
+      processEnv = {
+        ...processEnv,
+        // eslint-disable-next-line camelcase
+        https_proxy: proxyEnvVariable,
+        // eslint-disable-next-line camelcase
+        http_proxy: proxyEnvVariable,
+      };
+    }
+
     const serverOptions: ServerOptions = {
       command: this.configuration.getSnykLanguageServerPath(),
       args: ['-l', 'info'], // TODO file logging?
       options: {
-        env: {
-          ...process.env,
-          // eslint-disable-next-line camelcase
-          https_proxy: proxyEnvVariable,
-          // eslint-disable-next-line camelcase
-          http_proxy: proxyEnvVariable,
-        },
+        env: processEnv,
       },
     };
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initializationOptions: await this.getInitializationOptions(),
     };
     // Create the language client and start the client.
@@ -76,17 +77,42 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async getInitializationOptions() {
-    return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let initOptions: any = {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'false',
       enableTelemetry: `${this.configuration.shouldReportEvents}`,
       sendErrorReports: `${this.configuration.shouldReportErrors}`,
+      cliPath: CliExecutable.getPath(this.context.extensionPath, this.configuration.getCustomCliPath()),
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
-      token: await this.configuration.getToken(),
-      cliPath: this.configuration.getCustomCliPath(),
     };
+
+    if (this.configuration.snykOssApiEndpoint) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      initOptions = {
+        ...initOptions,
+        endpoint: this.configuration.snykOssApiEndpoint,
+      };
+    }
+    if (this.configuration.organization) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      initOptions = {
+        ...initOptions,
+        organization: this.configuration.organization,
+      };
+    }
+    const token = await this.configuration.getToken();
+    if (token) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      initOptions = {
+        ...initOptions,
+        token: token,
+      };
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return initOptions;
   }
 
   stop(): Promise<void> {

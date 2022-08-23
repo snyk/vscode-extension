@@ -14,8 +14,7 @@
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
-        "SNYK_VSCE_DEVELOPMENT": "1",
-        "SNYK_LS_PATH": "snyk-ls"
+        "SNYK_VSCE_DEVELOPMENT": "1"
       }
     },
     {
