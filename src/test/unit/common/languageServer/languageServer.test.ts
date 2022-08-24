@@ -9,6 +9,7 @@ import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
+import { LoggerMock } from '../../mocks/logger.mock';
 
 suite('languageServer', () => {
   const extensionContext = extensionContextMock;
@@ -50,6 +51,7 @@ suite('languageServer', () => {
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
       authService,
+      new LoggerMock(),
     );
     const expectedInitializationOptions = {
       activateSnykCode: 'false',
@@ -88,6 +90,7 @@ suite('languageServer', () => {
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
+      new LoggerMock(),
     );
     await languageServer.start();
     sinon.assert.called(lca.create);
@@ -108,6 +111,7 @@ suite('languageServer', () => {
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
+      new LoggerMock(),
     );
     await languageServer.start();
     sinon.assert.notCalled(lca);
@@ -146,6 +150,7 @@ suite('languageServer', () => {
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
       authService,
+      new LoggerMock(),
     );
 
     await languageServer.start();

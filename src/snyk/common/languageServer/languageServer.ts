@@ -3,6 +3,8 @@ import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SNYK_LANGUAGE_SERVER_NAME } from '../constants/general';
+import { ErrorHandler } from '../error/errorHandler';
+import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
@@ -23,6 +25,7 @@ export class LanguageServer implements ILanguageServer {
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
     private authenticationService: IAuthenticationService,
+    private readonly logger: ILog,
   ) {}
 
   async start(): Promise<void> {
@@ -65,8 +68,8 @@ export class LanguageServer implements ILanguageServer {
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     this.client.onNotification('hasAuthenticated', ({ token }: { token: string }) => {
-      this.authenticationService.updateToken(token).catch(error => {
-        throw error;
+      this.authenticationService.updateToken(token).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
       });
     });
 

@@ -193,24 +193,7 @@ suite('AuthenticationService', () => {
       sinon.assert.calledWith(setTokenSpy, token);
     });
 
-    test('logs out when a new token is set', async () => {
-      const service = new AuthenticationService(
-        contextService,
-        openerService,
-        baseModule,
-        config,
-        windowMock,
-        {} as IAnalytics,
-        new LoggerMock(),
-        {} as ISnykCodeErrorHandler,
-      );
-      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
-      await service.updateToken(token);
-
-      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
-    });
-
-    test('logs out when provided token is empty', async () => {
+    test('logsout if token is empty', async () => {
       const service = new AuthenticationService(
         contextService,
         openerService,
@@ -224,6 +207,25 @@ suite('AuthenticationService', () => {
       await service.updateToken('');
 
       sinon.assert.called(clearTokenSpy);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
+    });
+
+    test('logs out before setting new token', async () => {
+      const service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.called(clearTokenSpy);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
     });
 
     test('errors when invalid token is provided', async () => {

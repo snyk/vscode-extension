@@ -144,6 +144,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new LanguageClientAdapter(),
       vsCodeWorkspace,
       this.authService,
+      Logger,
     );
     await this.languageServer.start();
 

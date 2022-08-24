@@ -92,31 +92,31 @@ export class AuthenticationService implements IAuthenticationService {
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
   }
 
-  async setToken(passedToken?: string): Promise<void> {
-    const invlaidTokenMsg = 'The entered token has an invalid format.';
+  async setToken(): Promise<void> {
+    const token = await this.window.showInputBox({
+      placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      password: true,
+      validateInput: token => {
+        const valid = uuidValidate(token);
+        if (!valid) {
+          return 'The entered token has an invalid format.';
+        }
+      },
+    });
 
-    let token;
-    if (passedToken) {
-      token = passedToken;
-      if (!uuidValidate(token)) return Promise.reject(new Error(invlaidTokenMsg));
-      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    } else {
-      token = await this.window.showInputBox({
-        placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        password: true,
-        validateInput: token => {
-          if (!uuidValidate(token)) return invlaidTokenMsg;
-        },
-      });
-
-      if (!token) return;
-    }
+    if (!token) return;
     await this.configuration.setToken(token);
   }
 
   async updateToken(token: string): Promise<void> {
-    if (!token) await this.initiateLogout();
-    else await this.setToken(token);
+    if (!token) {
+      await this.initiateLogout();
+    } else {
+      if (!uuidValidate(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
+
+      await this.initiateLogout();
+      await this.configuration.setToken(token);
+    }
   }
 
   async checkSession(draftToken = '', ipFamily?: IpFamily): Promise<string> {
