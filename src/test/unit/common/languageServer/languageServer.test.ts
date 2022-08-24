@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
-import sinon from 'sinon';
-import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import assert, { deepStrictEqual } from 'assert';
-import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
-import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import { extensionContextMock } from '../../mocks/extensionContext.mock';
+import sinon from 'sinon';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
+import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
+import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
+import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
+import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
+import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 
-suite('languageServer', () => {
+suite('Language Server', () => {
   const extensionContext = extensionContextMock;
   const authService = {} as IAuthenticationService;
 
@@ -53,7 +54,7 @@ suite('languageServer', () => {
       authService,
       new LoggerMock(),
     );
-    const expectedInitializationOptions = {
+    const expectedInitializationOptions: InitializationOptions = {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'false',
@@ -63,6 +64,8 @@ suite('languageServer', () => {
       sendErrorReports: 'true',
       integrationName: 'VS_CODE',
       integrationVersion: '0.0.0',
+      endpoint: undefined,
+      organization: undefined,
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

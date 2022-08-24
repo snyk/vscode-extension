@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as lsc from 'vscode-languageclient/node';
 
+// VS Code core type mappings
 export type Disposable = vscode.Disposable;
 export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
@@ -44,6 +45,14 @@ export type ExtensionContext = vscode.ExtensionContext;
 export type WebviewOptions = vscode.WebviewOptions;
 export type TextDocumentChangeEvent = vscode.TextDocumentChangeEvent;
 export type InputBoxOptions = vscode.InputBoxOptions;
+
+// Language client type mappings
 export type LanguageClient = lsc.LanguageClient;
 export type LanguageClientOptions = lsc.LanguageClientOptions;
 export type ServerOptions = lsc.ServerOptions;
+export type Middleware = lsc.Middleware;
+export type WorkspaceMiddleware = lsc.WorkspaceMiddleware;
+export type ConfigurationParams = lsc.ConfigurationParams;
+export type CancellationToken = lsc.CancellationToken;
+export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.HandlerSignature;
+export type ResponseError<D = void> = lsc.ResponseError<D>;

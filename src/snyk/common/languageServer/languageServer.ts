@@ -3,12 +3,15 @@ import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SNYK_LANGUAGE_SERVER_NAME } from '../constants/general';
+import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { LanguageClientMiddleware } from './middleware';
+import { InitializationOptions } from './settings';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -63,7 +66,12 @@ export class LanguageServer implements ILanguageServer {
       documentSelector: [{ scheme: 'file', language: '' }],
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initializationOptions: await this.getInitializationOptions(),
+      synchronize: {
+        configurationSection: CONFIGURATION_IDENTIFIER,
+      },
+      middleware: new LanguageClientMiddleware(),
     };
+
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
@@ -77,42 +85,21 @@ export class LanguageServer implements ILanguageServer {
     return this.client.start();
   }
 
-  async getInitializationOptions() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let initOptions: any = {
+  async getInitializationOptions(): Promise<InitializationOptions> {
+    const initOptions: InitializationOptions = {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'false',
       enableTelemetry: `${this.configuration.shouldReportEvents}`,
       sendErrorReports: `${this.configuration.shouldReportErrors}`,
       cliPath: CliExecutable.getPath(this.context.extensionPath, this.configuration.getCustomCliPath()),
+      endpoint: this.configuration.snykOssApiEndpoint,
+      organization: this.configuration.organization,
+      token: await this.configuration.getToken(),
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
     };
 
-    if (this.configuration.snykOssApiEndpoint) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      initOptions = {
-        ...initOptions,
-        endpoint: this.configuration.snykOssApiEndpoint,
-      };
-    }
-    if (this.configuration.organization) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      initOptions = {
-        ...initOptions,
-        organization: this.configuration.organization,
-      };
-    }
-    const token = await this.configuration.getToken();
-    if (token) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      initOptions = {
-        ...initOptions,
-        token: token,
-      };
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return initOptions;
   }
 

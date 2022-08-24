@@ -5,6 +5,12 @@
 ### Added
 
 - Snyk LS: Handling of hasAuthenticated notification from LS
+- Snyk LS: Setting keys translation for language server.
+
+## [1.3.0]
+
+### Added
+
 - Snyk LS: Integrated language server - it's deactivated by default
 - Snyk LS: Adds functionality for setting a path to a custom LS binary
 
