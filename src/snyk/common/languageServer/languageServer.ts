@@ -64,9 +64,10 @@ export class LanguageServer implements ILanguageServer {
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
-    this.client.onNotification('test', (token: string) => {
-      // TODO: Better error handling required
-      void this.authenticationService.updateToken(token).catch(console.error);
+    this.client.onNotification('hasAuthenticated', (token: string) => {
+      this.authenticationService.updateToken(token).catch(error => {
+        throw error;
+      });
     });
 
     // Start the client. This will also launch the server
