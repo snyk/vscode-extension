@@ -19,6 +19,7 @@ suite('AuthenticationService', () => {
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
   let setTokenSpy: sinon.SinonSpy;
+  let clearTokenSpy: sinon.SinonSpy;
 
   const NEEDLE_DEFAULT_TIMEOUT = 1000;
 
@@ -41,9 +42,11 @@ suite('AuthenticationService', () => {
     };
     baseModule = {} as IBaseSnykModule;
     setTokenSpy = sinon.fake();
+    clearTokenSpy = sinon.fake();
     config = {
       authHost: '',
       setToken: setTokenSpy,
+      clearToken: clearTokenSpy,
     } as unknown as IConfiguration;
   });
 
@@ -164,5 +167,56 @@ suite('AuthenticationService', () => {
     await service.setToken();
 
     sinon.assert.calledOnce(setTokenSpy);
+  });
+
+  suite('.updateToken()', () => {
+    test('sets the token when a valid token is provided', async () => {
+      const service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setTokenSpy, token);
+    });
+
+    test('logs out when provided token is empty', async () => {
+      const service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+      await service.updateToken('');
+
+      sinon.assert.called(clearTokenSpy);
+    });
+
+    test('errors when invalid token is provided', async () => {
+      const service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+      const invalidToken = 'thisTokenIsNotValid';
+      await service.updateToken(invalidToken);
+      sinon.assert.fail('some failure message');
+    });
   });
 });

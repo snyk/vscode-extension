@@ -8,9 +8,12 @@ import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageC
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
+import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 
 suite('languageServer', () => {
   const extensionContext = extensionContextMock;
+  const authService = {} as IAuthenticationService;
+
   let configuration: IConfiguration;
   let languageServer: LanguageServer;
   setup(() => {
@@ -44,8 +47,9 @@ suite('languageServer', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
-      {} as unknown as ILanguageClientAdapter,
-      {} as unknown as IVSCodeWorkspace,
+      {} as ILanguageClientAdapter,
+      {} as IVSCodeWorkspace,
+      authService,
     );
     const expectedInitializationOptions = {
       activateSnykCode: 'false',
@@ -67,6 +71,9 @@ suite('languageServer', () => {
       start(): Promise<void> {
         return Promise.resolve();
       },
+      onNotification(): void {
+        return;
+      },
     } as unknown as LanguageClient);
 
     const lca = sinon.spy({
@@ -80,6 +87,7 @@ suite('languageServer', () => {
       configuration,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
+      authService,
     );
     await languageServer.start();
     sinon.assert.called(lca.create);
@@ -99,6 +107,7 @@ suite('languageServer', () => {
       configuration,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
+      authService,
     );
     await languageServer.start();
     sinon.assert.notCalled(lca);
@@ -124,15 +133,21 @@ suite('languageServer', () => {
             assert.strictEqual(clientOptions.initializationOptions.token, 'testToken');
             return Promise.resolve();
           },
-        } as LanguageClient;
+          onNotification(): void {
+            return;
+          },
+        } as unknown as LanguageClient;
       },
     });
+
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
+      authService,
     );
+
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.verify();
