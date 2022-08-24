@@ -93,18 +93,18 @@ export class AuthenticationService implements IAuthenticationService {
   }
 
   async setToken(passedToken?: string): Promise<void> {
+    const invlaidTokenMsg = 'The entered token has an invalid format.';
+
     let token;
     if (passedToken) {
       token = passedToken;
+      if (!uuidValidate(token)) return Promise.reject(new Error(invlaidTokenMsg));
     } else {
       token = await this.window.showInputBox({
         placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
         password: true,
         validateInput: token => {
-          const valid = uuidValidate(token);
-          if (!valid) {
-            return 'The entered token has an invalid format.';
-          }
+          if (!uuidValidate(token)) return invlaidTokenMsg;
         },
       });
 

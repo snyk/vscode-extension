@@ -1,3 +1,4 @@
+import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
@@ -6,7 +7,6 @@ import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { IAuthenticationService } from '../../base/services/authenticationService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -65,7 +65,8 @@ export class LanguageServer implements ILanguageServer {
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     this.client.onNotification('test', (token: string) => {
-      void this.authenticationService.updateToken(token);
+      // TODO: Better error handling required
+      void this.authenticationService.updateToken(token).catch(console.error);
     });
 
     // Start the client. This will also launch the server

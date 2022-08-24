@@ -1,6 +1,6 @@
 import * as codeClient from '@snyk/code-client';
 import { getIpFamily } from '@snyk/code-client';
-import { strictEqual } from 'assert';
+import { strictEqual, rejects } from 'assert';
 import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
@@ -215,8 +215,9 @@ suite('AuthenticationService', () => {
         {} as ISnykCodeErrorHandler,
       );
       const invalidToken = 'thisTokenIsNotValid';
-      await service.updateToken(invalidToken);
-      sinon.assert.fail('some failure message');
+
+      await rejects(service.updateToken(invalidToken));
+      sinon.assert.notCalled(setTokenSpy);
     });
   });
 });
