@@ -1,12 +1,13 @@
 import * as codeClient from '@snyk/code-client';
 import { getIpFamily } from '@snyk/code-client';
-import { strictEqual, rejects } from 'assert';
+import { rejects, strictEqual } from 'assert';
 import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
@@ -18,6 +19,7 @@ suite('AuthenticationService', () => {
   let openerService: IOpenerService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
+  let setContextSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
 
@@ -33,16 +35,20 @@ suite('AuthenticationService', () => {
   };
 
   setup(() => {
+    baseModule = {} as IBaseSnykModule;
+    setContextSpy = sinon.fake();
+    setTokenSpy = sinon.fake();
+    clearTokenSpy = sinon.fake();
+
     contextService = {
-      setContext: sinon.fake(),
+      setContext: setContextSpy,
     } as unknown as IContextService;
+
     openerService = {
       openBrowserUrl: sinon.fake(),
       copyOpenedUrl: sinon.fake(),
     };
-    baseModule = {} as IBaseSnykModule;
-    setTokenSpy = sinon.fake();
-    clearTokenSpy = sinon.fake();
+
     config = {
       authHost: '',
       setToken: setTokenSpy,
@@ -185,6 +191,23 @@ suite('AuthenticationService', () => {
       await service.updateToken(token);
 
       sinon.assert.calledWith(setTokenSpy, token);
+    });
+
+    test('logs out when a new token is set', async () => {
+      const service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
     });
 
     test('logs out when provided token is empty', async () => {

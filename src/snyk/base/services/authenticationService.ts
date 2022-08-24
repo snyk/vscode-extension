@@ -99,6 +99,7 @@ export class AuthenticationService implements IAuthenticationService {
     if (passedToken) {
       token = passedToken;
       if (!uuidValidate(token)) return Promise.reject(new Error(invlaidTokenMsg));
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
     } else {
       token = await this.window.showInputBox({
         placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
