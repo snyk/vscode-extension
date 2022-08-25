@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.3.1]
+
+### Added
+
+- Snyk LS: Handling of hasAuthenticated notification from LS
+
 ## [1.2.25]
 
 ### Added
