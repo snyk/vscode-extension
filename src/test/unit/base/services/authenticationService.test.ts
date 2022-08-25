@@ -5,6 +5,7 @@ import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
+import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
@@ -176,8 +177,17 @@ suite('AuthenticationService', () => {
   });
 
   suite('.updateToken()', () => {
-    test('sets the token when a valid token is provided', async () => {
-      const service = new AuthenticationService(
+    let service: AuthenticationService;
+    const setLoadingBadgeFake = sinon.fake();
+
+    setup(() => {
+      baseModule = {
+        loadingBadge: {
+          setLoadingBadge: setLoadingBadgeFake,
+        } as ILoadingBadge,
+      } as IBaseSnykModule;
+
+      service = new AuthenticationService(
         contextService,
         openerService,
         baseModule,
@@ -187,58 +197,38 @@ suite('AuthenticationService', () => {
         new LoggerMock(),
         {} as ISnykCodeErrorHandler,
       );
+    });
+
+    test('sets the token when a valid token is provided', async () => {
       const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
       await service.updateToken(token);
 
       sinon.assert.calledWith(setTokenSpy, token);
     });
 
-    test('logsout if token is empty', async () => {
-      const service = new AuthenticationService(
-        contextService,
-        openerService,
-        baseModule,
-        config,
-        windowMock,
-        {} as IAnalytics,
-        new LoggerMock(),
-        {} as ISnykCodeErrorHandler,
-      );
+    test('logs out if token is empty', async () => {
       await service.updateToken('');
 
       sinon.assert.called(clearTokenSpy);
       sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
     });
 
-    test('logs out before setting new token', async () => {
-      const service = new AuthenticationService(
-        contextService,
-        openerService,
-        baseModule,
-        config,
-        windowMock,
-        {} as IAnalytics,
-        new LoggerMock(),
-        {} as ISnykCodeErrorHandler,
-      );
+    test('sets the proper contexts when setting new token', async () => {
       const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
       await service.updateToken(token);
 
-      sinon.assert.called(clearTokenSpy);
-      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, true);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
+    });
+
+    test('sets the loading badge status when setting new token', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setLoadingBadgeFake, false);
     });
 
     test('errors when invalid token is provided', async () => {
-      const service = new AuthenticationService(
-        contextService,
-        openerService,
-        baseModule,
-        config,
-        windowMock,
-        {} as IAnalytics,
-        new LoggerMock(),
-        {} as ISnykCodeErrorHandler,
-      );
       const invalidToken = 'thisTokenIsNotValid';
 
       await rejects(service.updateToken(invalidToken));

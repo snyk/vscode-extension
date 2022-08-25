@@ -114,8 +114,11 @@ export class AuthenticationService implements IAuthenticationService {
     } else {
       if (!uuidValidate(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
 
-      await this.initiateLogout();
       await this.configuration.setToken(token);
+      await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+
+      this.baseModule.loadingBadge.setLoadingBadge(false);
     }
   }
 
