@@ -1,12 +1,14 @@
 import * as codeClient from '@snyk/code-client';
 import { getIpFamily } from '@snyk/code-client';
-import { strictEqual } from 'assert';
+import { rejects, strictEqual } from 'assert';
 import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
+import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
@@ -18,7 +20,9 @@ suite('AuthenticationService', () => {
   let openerService: IOpenerService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
+  let setContextSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
+  let clearTokenSpy: sinon.SinonSpy;
 
   const NEEDLE_DEFAULT_TIMEOUT = 1000;
 
@@ -32,18 +36,24 @@ suite('AuthenticationService', () => {
   };
 
   setup(() => {
+    baseModule = {} as IBaseSnykModule;
+    setContextSpy = sinon.fake();
+    setTokenSpy = sinon.fake();
+    clearTokenSpy = sinon.fake();
+
     contextService = {
-      setContext: sinon.fake(),
+      setContext: setContextSpy,
     } as unknown as IContextService;
+
     openerService = {
       openBrowserUrl: sinon.fake(),
       copyOpenedUrl: sinon.fake(),
     };
-    baseModule = {} as IBaseSnykModule;
-    setTokenSpy = sinon.fake();
+
     config = {
       authHost: '',
       setToken: setTokenSpy,
+      clearToken: clearTokenSpy,
     } as unknown as IConfiguration;
   });
 
@@ -164,5 +174,65 @@ suite('AuthenticationService', () => {
     await service.setToken();
 
     sinon.assert.calledOnce(setTokenSpy);
+  });
+
+  suite('.updateToken()', () => {
+    let service: AuthenticationService;
+    const setLoadingBadgeFake = sinon.fake();
+
+    setup(() => {
+      baseModule = {
+        loadingBadge: {
+          setLoadingBadge: setLoadingBadgeFake,
+        } as ILoadingBadge,
+      } as IBaseSnykModule;
+
+      service = new AuthenticationService(
+        contextService,
+        openerService,
+        baseModule,
+        config,
+        windowMock,
+        {} as IAnalytics,
+        new LoggerMock(),
+        {} as ISnykCodeErrorHandler,
+      );
+    });
+
+    test('sets the token when a valid token is provided', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setTokenSpy, token);
+    });
+
+    test('logs out if token is empty', async () => {
+      await service.updateToken('');
+
+      sinon.assert.called(clearTokenSpy);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
+    });
+
+    test('sets the proper contexts when setting new token', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, true);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
+    });
+
+    test('sets the loading badge status when setting new token', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      await service.updateToken(token);
+
+      sinon.assert.calledWith(setLoadingBadgeFake, false);
+    });
+
+    test('errors when invalid token is provided', async () => {
+      const invalidToken = 'thisTokenIsNotValid';
+
+      await rejects(service.updateToken(invalidToken));
+      sinon.assert.notCalled(setTokenSpy);
+    });
   });
 });

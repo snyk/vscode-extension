@@ -16,6 +16,7 @@ export interface IAuthenticationService {
   initiateLogout(): Promise<void>;
   checkSession(): Promise<string>;
   setToken(): Promise<void>;
+  updateToken(token: string): Promise<void>;
 }
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
@@ -105,6 +106,20 @@ export class AuthenticationService implements IAuthenticationService {
 
     if (!token) return;
     await this.configuration.setToken(token);
+  }
+
+  async updateToken(token: string): Promise<void> {
+    if (!token) {
+      await this.initiateLogout();
+    } else {
+      if (!uuidValidate(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
+
+      await this.configuration.setToken(token);
+      await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+
+      this.baseModule.loadingBadge.setLoadingBadge(false);
+    }
   }
 
   async checkSession(draftToken = '', ipFamily?: IpFamily): Promise<string> {

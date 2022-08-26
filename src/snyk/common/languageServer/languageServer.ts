@@ -1,11 +1,14 @@
+import { IAuthenticationService } from '../../base/services/authenticationService';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SNYK_LANGUAGE_SERVER_NAME } from '../constants/general';
+import { ErrorHandler } from '../error/errorHandler';
+import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -14,24 +17,16 @@ export interface ILanguageServer {
 }
 
 export class LanguageServer implements ILanguageServer {
-  private context: ExtensionContext;
-  private languageClientAdapter: ILanguageClientAdapter;
-  private readonly workspace: IVSCodeWorkspace;
+  private client: LanguageClient;
 
   constructor(
-    context: ExtensionContext,
-    configuration: IConfiguration,
-    languageClientAdapter: ILanguageClientAdapter,
-    workspace: IVSCodeWorkspace,
-  ) {
-    this.configuration = configuration;
-    this.context = context;
-    this.languageClientAdapter = languageClientAdapter;
-    this.workspace = workspace;
-  }
-
-  private configuration: IConfiguration;
-  private client: LanguageClient;
+    private context: ExtensionContext,
+    private configuration: IConfiguration,
+    private languageClientAdapter: ILanguageClientAdapter,
+    private workspace: IVSCodeWorkspace,
+    private authenticationService: IAuthenticationService,
+    private readonly logger: ILog,
+  ) {}
 
   async start(): Promise<void> {
     // TODO remove feature flag when ready
@@ -71,6 +66,12 @@ export class LanguageServer implements ILanguageServer {
     };
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
+
+    this.client.onNotification('$/snyk.hasAuthenticated', ({ token }: { token: string }) => {
+      this.authenticationService.updateToken(token).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
+    });
 
     // Start the client. This will also launch the server
     return this.client.start();

@@ -127,14 +127,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.statusBarItem.show();
 
-    this.languageServer = new LanguageServer(
-      vscodeContext,
-      configuration,
-      new LanguageClientAdapter(),
-      vsCodeWorkspace,
-    );
-    await this.languageServer.start();
-
     this.authService = new AuthenticationService(
       this.contextService,
       this.openerService,
@@ -145,6 +137,16 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       this.snykCodeErrorHandler,
     );
+
+    this.languageServer = new LanguageServer(
+      vscodeContext,
+      configuration,
+      new LanguageClientAdapter(),
+      vsCodeWorkspace,
+      this.authService,
+      Logger,
+    );
+    await this.languageServer.start();
 
     this.snykCode = new SnykCodeService(
       this.context,

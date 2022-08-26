@@ -1,9 +1,10 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.2.25]
+## [1.3.1]
 
 ### Added
 
+- Snyk LS: Handling of hasAuthenticated notification from LS
 - Snyk LS: Integrated language server - it's deactivated by default
 - Snyk LS: Adds functionality for setting a path to a custom LS binary
 
