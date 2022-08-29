@@ -90,6 +90,7 @@ export class LanguageServer implements ILanguageServer {
       ...settings,
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
+      automaticAuthentication: 'false',
     };
   }
 

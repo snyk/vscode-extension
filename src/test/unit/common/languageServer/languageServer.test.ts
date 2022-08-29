@@ -70,6 +70,7 @@ suite('Language Server', () => {
       sendErrorReports: 'true',
       integrationName: 'VS_CODE',
       integrationVersion: '0.0.0',
+      automaticAuthentication: 'false',
       endpoint: undefined,
       organization: undefined,
       additionalParams: '--all-projects',
