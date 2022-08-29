@@ -4,6 +4,7 @@ import { IConfiguration } from '../configuration/configuration';
 export type InitializationOptions = ServerSettings & {
   integrationName?: string;
   integrationVersion?: string;
+  automaticAuthentication?: string;
 };
 
 export type ServerSettings = {
