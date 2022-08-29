@@ -77,6 +77,7 @@ import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSugg
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -127,6 +128,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.statusBarItem.show();
 
+    const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
       this.contextService,
       this.openerService,
@@ -136,12 +138,13 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       this.snykCodeErrorHandler,
+      languageClientAdapter.getLanguageClient(),
     );
 
     this.languageServer = new LanguageServer(
       vscodeContext,
       configuration,
-      new LanguageClientAdapter(),
+      languageClientAdapter,
       vsCodeWorkspace,
       this.authService,
       Logger,

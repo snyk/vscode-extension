@@ -6,6 +6,7 @@ export type Disposable = vscode.Disposable;
 export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
 export type DiagnosticRelatedInformation = vscode.DiagnosticRelatedInformation;
+
 export enum DiagnosticSeverity { // map of vscode.DiagnosticSeverity
   Hint = 3,
   Information = 2,
@@ -56,3 +57,5 @@ export type ConfigurationParams = lsc.ConfigurationParams;
 export type CancellationToken = lsc.CancellationToken;
 export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.HandlerSignature;
 export type ResponseError<D = void> = lsc.ResponseError<D>;
+export type DidChangeConfigurationParams = lsc.DidChangeConfigurationParams;
+export const DID_CHANGE_CONFIGURATION_METHOD = 'workspace/didChangeConfiguration'; //lsc.DidChangeConfigurationNotification.method;

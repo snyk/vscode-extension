@@ -7,22 +7,30 @@ import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
-import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
+import {
+  DID_CHANGE_CONFIGURATION_METHOD,
+  DidChangeConfigurationParams,
+  LanguageClient,
+} from '../../../../snyk/common/vscode/types';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;
   let openerService: IOpenerService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
+  let languageClient: LanguageClient;
+  let languageClientSendNotification: sinon.SinonSpy;
   let setContextSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
+  let previewFeaturesSpy: sinon.SinonSpy;
 
   const NEEDLE_DEFAULT_TIMEOUT = 1000;
 
@@ -40,6 +48,12 @@ suite('AuthenticationService', () => {
     setContextSpy = sinon.fake();
     setTokenSpy = sinon.fake();
     clearTokenSpy = sinon.fake();
+    languageClientSendNotification = sinon.fake();
+    previewFeaturesSpy = sinon.fake.returns({ lsAuthenticate: true } as PreviewFeatures);
+
+    languageClient = {
+      sendNotification: languageClientSendNotification,
+    } as unknown as LanguageClient;
 
     contextService = {
       setContext: setContextSpy,
@@ -54,6 +68,7 @@ suite('AuthenticationService', () => {
       authHost: '',
       setToken: setTokenSpy,
       clearToken: clearTokenSpy,
+      getPreviewFeatures: previewFeaturesSpy,
     } as unknown as IConfiguration;
   });
 
@@ -79,6 +94,7 @@ suite('AuthenticationService', () => {
         resetTransientErrors: sinon.fake(),
         connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
+      languageClient as unknown as LanguageClient,
     );
 
     await service.initiateLogin(getIpFamilyStub);
@@ -146,12 +162,14 @@ suite('AuthenticationService', () => {
         resetTransientErrors: sinon.fake(),
         connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
+      languageClient as unknown as LanguageClient,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
 
     await service.setToken();
 
     sinon.assert.notCalled(setTokenSpy);
+    sinon.assert.notCalled(languageClientSendNotification);
   });
 
   test('Call setToken when token is not empty', async () => {
@@ -168,12 +186,17 @@ suite('AuthenticationService', () => {
         resetTransientErrors: sinon.fake(),
         connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
+      languageClient as unknown as LanguageClient,
     );
-    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns('token-value'));
+    const tokenValue = 'token-value';
+    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(tokenValue));
 
     await service.setToken();
 
     sinon.assert.calledOnce(setTokenSpy);
+    sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {
+      settings: { token: tokenValue },
+    });
   });
 
   suite('.updateToken()', () => {
@@ -196,6 +219,7 @@ suite('AuthenticationService', () => {
         {} as IAnalytics,
         new LoggerMock(),
         {} as ISnykCodeErrorHandler,
+        languageClient as unknown as LanguageClient,
       );
     });
 
