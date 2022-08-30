@@ -6,6 +6,7 @@
 
 - Snyk LS: Handling of hasAuthenticated notification from LS
 - Snyk LS: Setting keys translation for language server.
+- Snyk-LS: Transmit Snyk Token to language server on manually entering it.
 
 ## [1.3.0]
 

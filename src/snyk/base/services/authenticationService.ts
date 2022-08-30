@@ -10,12 +10,18 @@ import { IVSCodeWindow } from '../../common/vscode/window';
 import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
+import { LanguageClient } from '../../common/vscode/types';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 
 export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
+
   initiateLogout(): Promise<void>;
+
   checkSession(): Promise<string>;
+
   setToken(): Promise<void>;
+
   updateToken(token: string): Promise<void>;
 }
 
@@ -34,6 +40,7 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly analytics: IAnalytics,
     private readonly logger: ILog,
     private readonly snykCodeErrorHandler: ISnykCodeErrorHandler,
+    private readonly client: LanguageClient,
   ) {}
 
   async initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void> {
@@ -106,6 +113,16 @@ export class AuthenticationService implements IAuthenticationService {
 
     if (!token) return;
     await this.configuration.setToken(token);
+    // TODO remove feature flag when ready
+    if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
+      return Promise.resolve();
+    }
+
+    return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
+      settings: {
+        token: token,
+      },
+    });
   }
 
   async updateToken(token: string): Promise<void> {

@@ -6,6 +6,7 @@ export type Disposable = vscode.Disposable;
 export type DiagnosticCollection = vscode.DiagnosticCollection;
 export type Diagnostic = vscode.Diagnostic;
 export type DiagnosticRelatedInformation = vscode.DiagnosticRelatedInformation;
+
 export enum DiagnosticSeverity { // map of vscode.DiagnosticSeverity
   Hint = 3,
   Information = 2,

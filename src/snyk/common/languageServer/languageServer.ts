@@ -2,7 +2,6 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
-import { SNYK_LANGUAGE_SERVER_NAME } from '../constants/general';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -12,6 +11,7 @@ import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions 
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions } from './settings';
+import { SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -75,7 +75,7 @@ export class LanguageServer implements ILanguageServer {
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
-    this.client.onNotification('$/snyk.hasAuthenticated', ({ token }: { token: string }) => {
+    this.client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token }: { token: string }) => {
       this.authenticationService.updateToken(token).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
       });
@@ -86,7 +86,7 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
-    const initOptions: InitializationOptions = {
+    return {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'false',
@@ -99,8 +99,6 @@ export class LanguageServer implements ILanguageServer {
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
     };
-
-    return initOptions;
   }
 
   stop(): Promise<void> {
