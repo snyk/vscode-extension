@@ -117,7 +117,7 @@ export class AuthenticationService implements IAuthenticationService {
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       return Promise.resolve();
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
       settings: {
         token: token,
