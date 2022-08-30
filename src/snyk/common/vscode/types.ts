@@ -57,5 +57,3 @@ export type ConfigurationParams = lsc.ConfigurationParams;
 export type CancellationToken = lsc.CancellationToken;
 export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.HandlerSignature;
 export type ResponseError<D = void> = lsc.ResponseError<D>;
-export type DidChangeConfigurationParams = lsc.DidChangeConfigurationParams;
-export const DidChangeConfigurationType = lsc.DidChangeConfigurationNotification.type;
