@@ -10,7 +10,8 @@ import { IVSCodeWindow } from '../../common/vscode/window';
 import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
-import { DID_CHANGE_CONFIGURATION_METHOD, LanguageClient } from '../../common/vscode/types';
+import { LanguageClient } from '../../common/vscode/types';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/general';
 
 export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
@@ -116,6 +117,7 @@ export class AuthenticationService implements IAuthenticationService {
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       return Promise.resolve();
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
       settings: {
         token: token,

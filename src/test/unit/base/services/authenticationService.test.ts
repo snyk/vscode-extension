@@ -14,11 +14,8 @@ import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
-import {
-  DID_CHANGE_CONFIGURATION_METHOD,
-  DidChangeConfigurationParams,
-  LanguageClient,
-} from '../../../../snyk/common/vscode/types';
+import { LanguageClient } from '../../../../snyk/common/vscode/types';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/general';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;
@@ -94,7 +91,7 @@ suite('AuthenticationService', () => {
         resetTransientErrors: sinon.fake(),
         connectionRetryLimitExhausted: false,
       } as ISnykCodeErrorHandler,
-      languageClient as unknown as LanguageClient,
+      languageClient,
     );
 
     await service.initiateLogin(getIpFamilyStub);
