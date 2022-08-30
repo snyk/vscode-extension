@@ -11,7 +11,7 @@ import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
 import { LanguageClient } from '../../common/vscode/types';
-import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/general';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 
 export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;

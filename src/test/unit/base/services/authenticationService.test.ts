@@ -15,7 +15,7 @@ import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeE
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
-import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/general';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;

@@ -1,6 +1,5 @@
 // Changing this requires changing display name in package.json.
 export const SNYK_NAME = 'Snyk Security - Code and Open Source Dependencies';
-export const SNYK_LANGUAGE_SERVER_NAME = 'Snyk Language Server';
 export const SNYK_TOKEN_KEY = 'snyk.token';
 export const SNYK_UNIQUE_EXTENSION_NAME = 'Snyk Vulnerability Scanner';
 export const SNYK_PUBLISHER = 'snyk-security';
@@ -18,6 +17,3 @@ export const REFRESH_VIEW_DEBOUNCE_INTERVAL = 200; // 200 milliseconds
 export const CONNECTION_ERROR_RETRY_INTERVAL = DEFAULT_SCAN_DEBOUNCE_INTERVAL * 2 + 1000 * 3;
 
 export const SNYK_LEARN_API_CACHE_DURATION_IN_MS = 1000 * 60 * 60 * 24; // 1 day
-
-// Language Server constants
-export const DID_CHANGE_CONFIGURATION_METHOD = 'workspace/didChangeConfiguration';
