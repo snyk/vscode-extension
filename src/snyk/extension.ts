@@ -77,7 +77,6 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
-import { LanguageClient } from 'vscode-languageclient/node';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
