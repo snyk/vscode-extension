@@ -21,7 +21,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
-  VSCODE_VIEW_CONTAINER_COMMAND
+  VSCODE_VIEW_CONTAINER_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
@@ -56,7 +56,10 @@ export class CommandController {
 
   // TODO: to be removed when VSCode-LS is enabled
   copyAuthLink(): unknown {
-    return this.executeCommand(SNYK_COPY_AUTH_LINK_OLD_COMMAND, this.openerService.copyOpenedUrl.bind(this.openerService));
+    return this.executeCommand(
+      SNYK_COPY_AUTH_LINK_OLD_COMMAND,
+      this.openerService.copyOpenedUrl.bind(this.openerService),
+    );
   }
 
   initiateLogin(): unknown {
