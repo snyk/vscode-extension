@@ -1,6 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.3.1]
+## [1.5.0]
+
+### Added
+
+- Snyk LS: Prepare copyAuthLink for deprecation
+
+## [1.4.0]
 
 ### Added
 
