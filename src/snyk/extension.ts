@@ -26,9 +26,9 @@ import {
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_REPORT_FALSE_POSITIVE_COMMAND,
-  SNYK_SET_TOKEN_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
@@ -45,6 +45,7 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
+import { LanguageServer } from './common/languageServer/languageServer';
 import { Logger } from './common/logger/logger';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
@@ -53,6 +54,7 @@ import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
+import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
@@ -72,9 +74,6 @@ import { OssService } from './snykOss/services/ossService';
 import { NpmModuleInfoFetchService } from './snykOss/services/vulnerabilityCount/npmModuleInfoFetchService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
-import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
-import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
-import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
@@ -356,6 +355,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
         this.commandController.openBrowser(url),
       ),
+      // TODO: to be removed when VSCode
       vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_OLD_COMMAND, () => this.commandController.copyAuthLink()),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
