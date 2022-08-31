@@ -1,48 +1,30 @@
 import assert from 'assert';
 import sinon from 'sinon';
+import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
-import { ClientSettings, ServerSettings } from '../../../../snyk/common/languageServer/settings';
+import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
   ResponseError,
 } from '../../../../snyk/common/vscode/types';
+import { extensionContextMock } from '../../mocks/extensionContext.mock';
 
 suite('Language Server: Middleware', () => {
-  let clientSettings: ClientSettings;
+  let configuration: IConfiguration;
   setup(() => {
-    clientSettings = {
-      yesCrashReport: true,
-      yesTelemetry: true,
-      yesWelcomeNotification: false,
-      yesBackgroundOssNotification: true,
-      advanced: {
-        advancedMode: false,
-        autoScanOpenSourceSecurity: true,
-        additionalParameters: '',
-        customEndpoint: '',
-        organization: '',
-        tokenStorage: "Always use VS Code's secret storage",
-        automaticDependencyManagement: false,
-        cliPath: '',
-      },
-      features: {
-        openSourceSecurity: false,
-        codeSecurity: true,
-        codeQuality: false,
-        preview: {
-          reportFalsePositives: true,
-          lsAuthenticate: true,
-        },
-      },
-      severity: {
-        critical: true,
-        high: true,
-        medium: true,
-        low: true,
-      },
-    };
+    configuration = {
+      shouldReportEvents: false,
+      shouldReportErrors: false,
+      snykOssApiEndpoint: 'https://dev.snyk.io/api',
+      getAdditionalCliParameters: () => '',
+      organization: 'org',
+      getToken: () => Promise.resolve('token'),
+      isAutomaticDependencyManagementEnabled: () => true,
+      getCustomCliPath: () => '/path/to/cli',
+    } as IConfiguration;
   });
 
   teardown(() => {
@@ -50,7 +32,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware();
+    const middleware = new LanguageClientMiddleware(extensionContextMock, configuration);
     const params: ConfigurationParams = {
       items: [
         {
@@ -59,7 +41,7 @@ suite('Language Server: Middleware', () => {
       ],
     };
     const handler: ConfigurationRequestHandlerSignature = (_params, _token) => {
-      return [clientSettings];
+      return [{}];
     };
 
     const token: CancellationToken = {
@@ -76,20 +58,23 @@ suite('Language Server: Middleware', () => {
     assert.strictEqual(serverResult.activateSnykCode, 'false');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
     assert.strictEqual(serverResult.activateSnykIac, 'false');
-    assert.strictEqual(serverResult.endpoint, clientSettings.advanced.customEndpoint);
-    assert.strictEqual(serverResult.additionalParams, clientSettings.advanced.additionalParameters);
-    assert.strictEqual(serverResult.sendErrorReports, `${clientSettings.yesCrashReport}`);
-    assert.strictEqual(serverResult.organization, `${clientSettings.advanced.organization}`);
-    assert.strictEqual(serverResult.enableTelemetry, `${clientSettings.yesTelemetry}`);
+    assert.strictEqual(serverResult.endpoint, configuration.snykOssApiEndpoint);
+    assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
+    assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
+    assert.strictEqual(serverResult.organization, `${configuration.organization}`);
+    assert.strictEqual(serverResult.enableTelemetry, `${configuration.shouldReportEvents}`);
     assert.strictEqual(
       serverResult.manageBinariesAutomatically,
-      `${clientSettings.advanced.automaticDependencyManagement}`,
+      `${configuration.isAutomaticDependencyManagementEnabled()}`,
     );
-    assert.strictEqual(serverResult.cliPath, `${clientSettings.advanced.cliPath}`);
+    assert.strictEqual(
+      serverResult.cliPath,
+      CliExecutable.getPath(extensionContextMock.extensionPath, configuration.getCustomCliPath()),
+    );
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware();
+    const middleware = new LanguageClientMiddleware(extensionContextMock, configuration);
     const params: ConfigurationParams = {
       items: [
         {

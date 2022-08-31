@@ -1,7 +1,7 @@
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { CliExecutable } from '../../cli/cliExecutable';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
+import { SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -10,8 +10,7 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
-import { InitializationOptions } from './settings';
-import { SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
+import { InitializationOptions, LanguageServerSettings } from './settings';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -69,7 +68,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(),
+      middleware: new LanguageClientMiddleware(this.context, this.configuration),
     };
 
     // Create the language client and start the client.
@@ -86,16 +85,9 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.context.extensionPath);
     return {
-      activateSnykCode: 'false',
-      activateSnykOpenSource: 'false',
-      activateSnykIac: 'false',
-      enableTelemetry: `${this.configuration.shouldReportEvents}`,
-      sendErrorReports: `${this.configuration.shouldReportErrors}`,
-      cliPath: CliExecutable.getPath(this.context.extensionPath, this.configuration.getCustomCliPath()),
-      endpoint: this.configuration.snykOssApiEndpoint,
-      organization: this.configuration.organization,
-      token: await this.configuration.getToken(),
+      ...settings,
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
     };

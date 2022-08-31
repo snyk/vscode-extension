@@ -26,9 +26,9 @@ import {
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_REPORT_FALSE_POSITIVE_COMMAND,
-  SNYK_SET_TOKEN_COMMAND,
   SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
 } from './common/constants/commands';
@@ -45,6 +45,7 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
+import { LanguageServer } from './common/languageServer/languageServer';
 import { Logger } from './common/logger/logger';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
@@ -53,6 +54,7 @@ import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
+import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
@@ -75,9 +77,6 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
-import { LanguageServer } from './common/languageServer/languageServer';
-import { LanguageClientAdapter } from './common/vscode/languageClient';
-import { LanguageClient } from 'vscode-languageclient/node';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
