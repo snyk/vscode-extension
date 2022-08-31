@@ -16,7 +16,7 @@ import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/com
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
-  SNYK_COPY_AUTH_LINK_COMMAND,
+  SNYK_COPY_AUTH_LINK_OLD_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -75,9 +75,9 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
-import { LanguageServer } from './common/languageServer/languageServer';
-import { LanguageClientAdapter } from './common/vscode/languageClient';
-import { LanguageClient } from 'vscode-languageclient/node';
+import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
+import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
+import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -356,7 +356,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
         this.commandController.openBrowser(url),
       ),
-      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_COMMAND, () => this.commandController.copyAuthLink()),
+      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_OLD_COMMAND, () => this.commandController.copyAuthLink()),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
