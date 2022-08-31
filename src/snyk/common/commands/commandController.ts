@@ -17,7 +17,7 @@ import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_COPY_AUTH_LINK_OLD_COMMAND,
   SNYK_LOGIN_OLD_COMMAND,
-  SNYK_LOGOUT_COMMAND,
+  SNYK_LOGOUT_OLD_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
@@ -69,8 +69,9 @@ export class CommandController {
     );
   }
 
+  // TODO: to be removed when "lsAuthenticate" feature flag is dropped
   async initiateLogout(): Promise<void> {
-    await this.executeCommand(SNYK_LOGOUT_COMMAND, this.authService.initiateLogout.bind(this.authService));
+    await this.executeCommand(SNYK_LOGOUT_OLD_COMMAND, this.authService.initiateLogout.bind(this.authService));
     await this.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
   }
 
