@@ -15,7 +15,7 @@ import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { IAnalytics } from '../analytics/itly';
 import {
-  SNYK_COPY_AUTH_LINK_COMMAND,
+  SNYK_COPY_AUTH_LINK_OLD_COMMAND,
   SNYK_LOGIN_COMMAND,
   SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
@@ -54,8 +54,12 @@ export class CommandController {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
   }
 
+  // TODO: to be removed when VSCode-LS is enabled
   copyAuthLink(): unknown {
-    return this.executeCommand(SNYK_COPY_AUTH_LINK_COMMAND, this.openerService.copyOpenedUrl.bind(this.openerService));
+    return this.executeCommand(
+      SNYK_COPY_AUTH_LINK_OLD_COMMAND,
+      this.openerService.copyOpenedUrl.bind(this.openerService),
+    );
   }
 
   initiateLogin(): unknown {
