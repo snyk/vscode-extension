@@ -55,6 +55,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
+      null,
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
       authService,
@@ -99,6 +100,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
+      null,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
@@ -120,6 +122,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
+      null,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
@@ -159,6 +162,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
+      null,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
       authService,

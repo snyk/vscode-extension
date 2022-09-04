@@ -143,6 +143,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.languageServer = new LanguageServer(
       vscodeContext,
       configuration,
+      this.contextService,
       languageClientAdapter,
       vsCodeWorkspace,
       this.authService,

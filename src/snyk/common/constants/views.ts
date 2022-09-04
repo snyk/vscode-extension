@@ -22,6 +22,7 @@ export const SNYK_CONTEXT = {
   ERROR: 'error',
   MODE: 'mode',
   ADVANCED: 'advanced',
+  PREVIEW_LS_AUTH: 'previewLsAuthentication',
 };
 
 export const SNYK_ERROR_CODES = {
