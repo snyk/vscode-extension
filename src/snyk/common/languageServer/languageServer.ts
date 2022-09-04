@@ -36,11 +36,14 @@ export class LanguageServer implements ILanguageServer {
   async start(): Promise<void> {
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
-      this.contextService?.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
+      if (this.contextService != null) {
+        await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
+      }
       return Promise.resolve(undefined);
     }
-    this.contextService?.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
-
+    if (this.contextService != null) {
+      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
+    }
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
     const proxyEnvVariable = getProxyEnvVariable(proxyOptions);
