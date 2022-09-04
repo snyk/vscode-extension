@@ -323,7 +323,7 @@
       ],
       "commandPalette": [
         {
-          "command": "snyk.login",
+          "command": "snyk.login.old",
           "when": "!snyk:loggedIn"
         },
         {
@@ -350,7 +350,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "snyk.login",
+        "command": "snyk.login.old",
         "title": "Log In",
         "category": "Snyk",
         "icon": "$(log-in)"

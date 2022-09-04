@@ -6,7 +6,7 @@ export const VSCODE_VIEW_OSS_VIEW_COMMAND = 'snyk.views.analysis.oss.focus';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
-export const SNYK_LOGIN_COMMAND = 'snyk.login';
+export const SNYK_LOGIN_OLD_COMMAND = 'snyk.login.old';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
 export const SNYK_LOGOUT_COMMAND = 'snyk.logout';
 export const SNYK_ENABLE_CODE_COMMAND = 'snyk.enableCode';
