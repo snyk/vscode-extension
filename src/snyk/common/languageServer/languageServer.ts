@@ -26,7 +26,7 @@ export class LanguageServer implements ILanguageServer {
   constructor(
     private context: ExtensionContext,
     private configuration: IConfiguration,
-    private contextService: IContextService | null,
+    private contextService: IContextService,
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
     private authenticationService: IAuthenticationService,
@@ -36,14 +36,11 @@ export class LanguageServer implements ILanguageServer {
   async start(): Promise<void> {
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
-      if (this.contextService != null) {
-        await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
-      }
+      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
       return Promise.resolve(undefined);
     }
-    if (this.contextService != null) {
-      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
-    }
+    await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
+
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
     const proxyEnvVariable = getProxyEnvVariable(proxyOptions);

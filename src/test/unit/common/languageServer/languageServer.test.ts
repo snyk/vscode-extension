@@ -5,6 +5,7 @@ import { IAuthenticationService } from '../../../../snyk/base/services/authentic
 import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
+import { IContextService } from '../../../../snyk/common/services/contextService';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
@@ -17,6 +18,7 @@ suite('Language Server', () => {
   const authService = {} as IAuthenticationService;
 
   let configuration: IConfiguration;
+  let contextService: IContextService;
   let languageServer: LanguageServer;
   setup(() => {
     configuration = {
@@ -45,6 +47,12 @@ suite('Language Server', () => {
         return true;
       },
     } as IConfiguration;
+
+    contextService = {
+      setContext(_key, _value): Promise<void> {
+        return Promise.resolve(undefined);
+      },
+    } as IContextService;
   });
 
   teardown(() => {
@@ -55,7 +63,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
-      null,
+      contextService,
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
       authService,
@@ -100,7 +108,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
-      null,
+      contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
@@ -122,7 +130,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
-      null,
+      contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
       authService,
@@ -162,7 +170,7 @@ suite('Language Server', () => {
     languageServer = new LanguageServer(
       extensionContext,
       configuration,
-      null,
+      contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
       authService,
