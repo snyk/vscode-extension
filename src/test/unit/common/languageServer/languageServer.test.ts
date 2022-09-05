@@ -38,7 +38,13 @@ suite('Language Server', () => {
       getSnykLanguageServerPath(): string {
         return 'testPath';
       },
-    } as unknown as IConfiguration;
+      getAdditionalCliParameters() {
+        return '--all-projects';
+      },
+      isAutomaticDependencyManagementEnabled() {
+        return true;
+      },
+    } as IConfiguration;
   });
 
   teardown(() => {
@@ -66,6 +72,8 @@ suite('Language Server', () => {
       integrationVersion: '0.0.0',
       endpoint: undefined,
       organization: undefined,
+      additionalParams: '--all-projects',
+      manageBinariesAutomatically: 'true',
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

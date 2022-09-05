@@ -1,12 +1,14 @@
+import { IConfiguration } from '../configuration/configuration';
 import {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
+  ExtensionContext,
   Middleware,
   ResponseError,
   WorkspaceMiddleware,
 } from '../vscode/types';
-import { ClientSettings, ServerSettings } from './settings';
+import { LanguageServerSettings, ServerSettings } from './settings';
 
 export type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
@@ -17,6 +19,8 @@ export type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
+  constructor(private context: ExtensionContext, private configuration: IConfiguration) {}
+
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
       params: ConfigurationParams,
@@ -36,26 +40,11 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const clientSettings = settings[0] as ClientSettings;
-      // We should ideally have no setting translation and deliver LS-relevant only.
-      const serverSettings = [
-        {
-          activateSnykCode: 'false', // TODO: split into security and quality
-          activateSnykOpenSource: 'false',
-          activateSnykIac: 'false',
-          endpoint: clientSettings.advanced.customEndpoint,
-          additionalParams: clientSettings.advanced.additionalParameters,
-          sendErrorReports: `${clientSettings.yesCrashReport}`,
-          organization: `${clientSettings.advanced.organization}`,
-          enableTelemetry: `${clientSettings.yesTelemetry}`,
-          manageBinariesAutomatically: `${clientSettings.advanced.automaticDependencyManagement}`,
-          cliPath: `${clientSettings.advanced.cliPath}`,
-          // TODO: path,
-          // TODO: autoScanOpenSourceSecurity
-        } as ServerSettings,
-      ];
-
-      return serverSettings;
+      const serverSettings = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        this.context.extensionPath,
+      );
+      return [serverSettings];
     },
   };
 
