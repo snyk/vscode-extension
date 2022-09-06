@@ -3,9 +3,11 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
+import { SNYK_CONTEXT } from '../constants/views';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
+import { IContextService } from '../services/contextService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -24,6 +26,7 @@ export class LanguageServer implements ILanguageServer {
   constructor(
     private context: ExtensionContext,
     private configuration: IConfiguration,
+    private contextService: IContextService,
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
     private authenticationService: IAuthenticationService,
@@ -33,8 +36,10 @@ export class LanguageServer implements ILanguageServer {
   async start(): Promise<void> {
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
+      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
       return Promise.resolve(undefined);
     }
+    await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
 
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
@@ -90,6 +95,7 @@ export class LanguageServer implements ILanguageServer {
       ...settings,
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
+      automaticAuthentication: 'false',
     };
   }
 
