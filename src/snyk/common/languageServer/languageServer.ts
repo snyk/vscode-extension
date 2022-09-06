@@ -1,3 +1,4 @@
+import { ILanguageServer } from '../../base/modules/interfaces';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
@@ -13,12 +14,6 @@ import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions 
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-
-export interface ILanguageServer {
-  start(): Promise<void>;
-
-  stop(): Promise<void>;
-}
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
