@@ -122,6 +122,11 @@
             "scope": "machine",
             "markdownDescription": "Sets path to Snyk CLI extension dependency."
           },
+          "snyk.advanced.languageServerPath": {
+            "type": "string",
+            "scope": "machine",
+            "markdownDescription": "Sets path to Snyk Language Server."
+          },
           "snyk.features.openSourceSecurity": {
             "type": "boolean",
             "title": "Snyk Open Source security issues",
