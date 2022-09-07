@@ -188,45 +188,45 @@ export class Configuration implements IConfiguration {
   }
 
   getSnykLanguageServerPath(): string {
-    // if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
-    // return this.processEnv.SNYK_LS_PATH;
+    if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
+    return this.processEnv.SNYK_LS_PATH;
 
-    // check platform
-    const platform = Platform.getCurrent();
-    if (!isPlatformSupported) {
-      throw new Error(`Platform ${platform} is not supported`);
-    }
+    // // check platform
+    // const platform = Platform.getCurrent();
+    // if (!isPlatformSupported) {
+    //   throw new Error(`Platform ${platform} is not supported`);
+    // }
 
-    // set default LS filepath
-    const homeDir = Platform.getHomeDir();
-    // TODO: Automate filename generation when downloading LS (ROAD-1054 related)
-    const lsFilename: Record<CliSupportedPlatform, string> = {
-      win32: 'snyk-ls-win.exe',
-      darwin: 'snyk-ls-mac',
-      linux: 'snyk-ls-linux',
-    };
-    /* eslint-disable no-useless-escape */
-    const defaultPaths: Record<CliSupportedPlatform, string> = {
-      win32: process.env.XDG_DATA_HOME
-        ? `${process.env.XDG_DATA_HOME}\/${lsFilename[platform]}`
-        : `${homeDir}\/AppData\/Local\/snyk\/${lsFilename[platform]}`,
-      darwin: process.env.XDG_DATA_HOME
-        ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
-        : `${homeDir}/Library/Application Support/${lsFilename[platform]}`,
-      linux: process.env.XDG_DATA_HOME
-        ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
-        : `${homeDir}/.local/share/${lsFilename[platform]}`,
-    };
-    /* eslint-enable no-useless-escape */
-    const defaultLSPath = defaultPaths[platform] as string;
+    // // set default LS filepath
+    // const homeDir = Platform.getHomeDir();
+    // // TODO: Automate filename generation when downloading LS (ROAD-1054 related)
+    // const lsFilename: Record<CliSupportedPlatform, string> = {
+    //   win32: 'snyk-ls-win.exe',
+    //   darwin: 'snyk-ls-mac',
+    //   linux: 'snyk-ls-linux',
+    // };
+    // /* eslint-disable no-useless-escape */
+    // const defaultPaths: Record<CliSupportedPlatform, string> = {
+    //   win32: process.env.XDG_DATA_HOME
+    //     ? `${process.env.XDG_DATA_HOME}\/${lsFilename[platform]}`
+    //     : `${homeDir}\/AppData\/Local\/snyk\/${lsFilename[platform]}`,
+    //   darwin: process.env.XDG_DATA_HOME
+    //     ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
+    //     : `${homeDir}/Library/Application Support/${lsFilename[platform]}`,
+    //   linux: process.env.XDG_DATA_HOME
+    //     ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
+    //     : `${homeDir}/.local/share/${lsFilename[platform]}`,
+    // };
+    // /* eslint-enable no-useless-escape */
+    // const defaultLSPath = defaultPaths[platform] as string;
 
-    // use custom or default LS path
-    const customLSPath = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
-    );
+    // // use custom or default LS path
+    // const customLSPath = this.workspace.getConfiguration<string>(
+    //   CONFIGURATION_IDENTIFIER,
+    //   this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    // );
 
-    return customLSPath ?? defaultLSPath;
+    // return customLSPath ?? defaultLSPath;
   }
 
   async getToken(): Promise<string | undefined> {

@@ -40,9 +40,7 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_CUSTOM_LS_PATH) {
-      // TODO: restart Language Server while respecting current interfaces
-      // await extension.languageServer.stop();
-      // return extension.languageServer.start();
+      return extension.restartLanguageServer();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');

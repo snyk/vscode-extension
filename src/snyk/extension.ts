@@ -334,6 +334,11 @@ class SnykExtension extends SnykLib implements IExtension {
     await ErrorReporter.flush();
   }
 
+  public async restartLanguageServer(): Promise<void> {
+    await this.languageServer.stop();
+    await this.languageServer.start();
+  }
+
   private logPluginIsInstalled(): void {
     // Use memento until lifecycle hooks are implemented
     // https://github.com/microsoft/vscode/issues/98732

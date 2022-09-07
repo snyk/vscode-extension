@@ -29,6 +29,7 @@ export interface ISnykLib {
 export interface IExtension extends IBaseSnykModule, ISnykLib {
   context: ExtensionContext | undefined;
   activate(context: VSCodeExtensionContext): void;
+  restartLanguageServer(): Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
