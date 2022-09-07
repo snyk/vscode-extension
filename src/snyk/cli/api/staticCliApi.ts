@@ -3,15 +3,15 @@ import stream from 'stream';
 import { getAxiosProxyConfig } from '../../common/proxy';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { CliExecutable } from '../cliExecutable';
-import { CliSupportedPlatform } from '../supportedPlatforms';
+import { SupportedPlatform } from '../supportedPlatforms';
 
 export type CliDownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
 export interface IStaticCliApi {
-  getDownloadUrl(platform: CliSupportedPlatform): string;
-  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource];
+  getDownloadUrl(platform: SupportedPlatform): string;
+  getExecutable(platform: SupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource];
   getLatestVersion(): Promise<string>;
-  getSha256Checksum(platform: CliSupportedPlatform): Promise<string>;
+  getSha256Checksum(platform: SupportedPlatform): Promise<string>;
 }
 
 export class StaticCliApi implements IStaticCliApi {
@@ -19,11 +19,11 @@ export class StaticCliApi implements IStaticCliApi {
 
   constructor(private readonly workspace: IVSCodeWorkspace) {}
 
-  getDownloadUrl(platform: CliSupportedPlatform): string {
+  getDownloadUrl(platform: SupportedPlatform): string {
     return `${this.baseUrl}/cli/latest/${CliExecutable.getFilename(platform)}`;
   }
 
-  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource] {
+  getExecutable(platform: SupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource] {
     const axiosCancelToken = axios.CancelToken.source();
     const downloadUrl = this.getDownloadUrl(platform);
 
@@ -44,7 +44,7 @@ export class StaticCliApi implements IStaticCliApi {
     return data;
   }
 
-  async getSha256Checksum(platform: CliSupportedPlatform): Promise<string> {
+  async getSha256Checksum(platform: SupportedPlatform): Promise<string> {
     // https://static.snyk.io/cli/latest/snyk-macos.sha256
     let { data } = await axios.get<string>(
       `${this.baseUrl}/cli/latest/${CliExecutable.getFilename(platform)}.sha256`,

@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
-import { CliSupportedPlatform, isPlatformSupported } from '../../cli/supportedPlatforms';
 import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
@@ -10,7 +9,6 @@ import {
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_PATH,
   ADVANCED_CUSTOM_ENDPOINT,
-  ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -23,7 +21,6 @@ import {
   YES_TELEMETRY_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
-import { Platform } from '../platform';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
