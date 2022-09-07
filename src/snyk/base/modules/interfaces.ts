@@ -26,12 +26,7 @@ export interface ISnykLib {
   checkAdvancedMode(): Promise<void>;
 }
 
-export interface ILanguageServer {
-  start(): Promise<void>;
-  stop(): Promise<void>;
-}
-
-export interface IExtension extends IBaseSnykModule, ISnykLib, ILanguageServer {
+export interface IExtension extends IBaseSnykModule, ISnykLib {
   context: ExtensionContext | undefined;
   activate(context: VSCodeExtensionContext): void;
 }
