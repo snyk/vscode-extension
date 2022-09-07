@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
 import { Platform } from '../../../../snyk/common/platform';
 
-suite.only('CliExecutable', () => {
+suite('CliExecutable', () => {
   teardown(() => {
     sinon.restore();
   });
