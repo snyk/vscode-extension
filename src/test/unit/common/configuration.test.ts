@@ -198,33 +198,4 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
   });
-
-  test('Snyk LS: Language Server path is returned when set', () => {
-    const SNYK_LS_PATH = '/path/to/language/server';
-    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
-
-    strictEqual(configuration.getSnykLanguageServerPath(), SNYK_LS_PATH);
-  });
-
-  test('Snyk LS: Throws when Language Server path is not set', () => {
-    const configuration = new Configuration({}, workspaceStub);
-
-    throws(() => configuration.getSnykLanguageServerPath());
-  });
-
-  // SupportedPlatformsList.forEach((platform: CliSupportedPlatform) => {
-  //   test.only('Snyk LS: Returns default path if path is not set', () => {
-  //     sinon.stub(Platform, 'getCurrent').returns(platform);
-  //     const expectedPath: Record<CliSupportedPlatform, string> = {
-  //       win32: '%LOCALAPPDATA%snyksnyk-ls.exe',
-  //       darwin: `${process.env.HOME}/Library/Application Support/snyk-ls_darwin_arm64`,
-  //       linux: `${process.env.HOME}/.local/share/snyk-ls_linux_amd64`,
-  //     };
-  //     console.log('****', 'expectedPath ****\n', expectedPath, '\n');
-
-  //     const configuration = new Configuration({}, workspaceStub);
-
-  //     strictEqual(configuration.getSnykLanguageServerPath(), expectedPath[platform]);
-  //   });
-  // });
 });

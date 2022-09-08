@@ -9,6 +9,7 @@ import {
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_PATH,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -92,7 +93,7 @@ export interface IConfiguration {
 
   severityFilter: SeverityFilter;
 
-  getSnykLanguageServerPath(): string;
+  getSnykLanguageServerPath(): string | undefined;
 }
 
 export class Configuration implements IConfiguration {
@@ -184,46 +185,11 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  getSnykLanguageServerPath(): string {
-    if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
-    return this.processEnv.SNYK_LS_PATH;
-
-    // // check platform
-    // const platform = Platform.getCurrent();
-    // if (!isPlatformSupported) {
-    //   throw new Error(`Platform ${platform} is not supported`);
-    // }
-
-    // // set default LS filepath
-    // const homeDir = Platform.getHomeDir();
-    // // TODO: Automate filename generation when downloading LS (ROAD-1054 related)
-    // const lsFilename: Record<CliSupportedPlatform, string> = {
-    //   win32: 'snyk-ls-win.exe',
-    //   darwin: 'snyk-ls-mac',
-    //   linux: 'snyk-ls-linux',
-    // };
-    // /* eslint-disable no-useless-escape */
-    // const defaultPaths: Record<CliSupportedPlatform, string> = {
-    //   win32: process.env.XDG_DATA_HOME
-    //     ? `${process.env.XDG_DATA_HOME}\/${lsFilename[platform]}`
-    //     : `${homeDir}\/AppData\/Local\/snyk\/${lsFilename[platform]}`,
-    //   darwin: process.env.XDG_DATA_HOME
-    //     ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
-    //     : `${homeDir}/Library/Application Support/${lsFilename[platform]}`,
-    //   linux: process.env.XDG_DATA_HOME
-    //     ? `${process.env.XDG_DATA_HOME}/${lsFilename[platform]}`
-    //     : `${homeDir}/.local/share/${lsFilename[platform]}`,
-    // };
-    // /* eslint-enable no-useless-escape */
-    // const defaultLSPath = defaultPaths[platform] as string;
-
-    // // use custom or default LS path
-    // const customLSPath = this.workspace.getConfiguration<string>(
-    //   CONFIGURATION_IDENTIFIER,
-    //   this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
-    // );
-
-    // return customLSPath ?? defaultLSPath;
+  getSnykLanguageServerPath(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    );
   }
 
   async getToken(): Promise<string | undefined> {

@@ -11,6 +11,7 @@ import { IContextService } from '../services/contextService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
 
@@ -55,8 +56,13 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
+    const lsBinaryPath = LsExecutable.getPath(
+      this.context.extensionPath,
+      this.configuration.getSnykLanguageServerPath(),
+    );
+
     const serverOptions: ServerOptions = {
-      command: this.configuration.getSnykLanguageServerPath(),
+      command: lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
       options: {
         env: processEnv,
