@@ -21,6 +21,7 @@ export interface ILanguageServer {
 }
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
+  private lsBinaryPath: string;
 
   constructor(
     private context: ExtensionContext,
@@ -56,13 +57,13 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    const lsBinaryPath = LsExecutable.getPath(
+    this.lsBinaryPath = LsExecutable.getPath(
       this.context.extensionPath,
       this.configuration.getSnykLanguageServerPath(),
     );
 
     const serverOptions: ServerOptions = {
-      command: lsBinaryPath,
+      command: this.lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
       options: {
         env: processEnv,
@@ -103,9 +104,9 @@ export class LanguageServer implements ILanguageServer {
     };
   }
 
-  stop(): Promise<void> {
-    if (!this.client) {
-      return Promise.resolve(undefined);
+  async stop(): Promise<void> {
+    if (!this.client || !this.client.isRunning()) {
+      return Promise.resolve();
     }
     return this.client.stop();
   }
