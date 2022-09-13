@@ -2,11 +2,11 @@ import * as fs from 'fs/promises';
 import path from 'path';
 import { Platform } from '../common/platform';
 import { Checksum } from './checksum';
-import { SupportedPlatform } from './supportedPlatforms';
+import { CliSupportedPlatform } from './supportedPlatforms';
 
 export class CliExecutable {
   // If values updated, `.vscodeignore` to be changed.
-  public static filenameSuffixes: Record<SupportedPlatform, string> = {
+  public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
     linux: 'snyk-linux',
     win32: 'snyk-win.exe',
     darwin: 'snyk-macos',
@@ -14,7 +14,7 @@ export class CliExecutable {
 
   constructor(public readonly version: string, public readonly checksum: Checksum) {}
 
-  static getFilename(platform: SupportedPlatform): string {
+  static getFilename(platform: CliSupportedPlatform): string {
     return this.filenameSuffixes[platform];
   }
 
@@ -24,7 +24,7 @@ export class CliExecutable {
     }
 
     const platform = Platform.getCurrent();
-    const fileName = CliExecutable.getFilename(platform as SupportedPlatform);
+    const fileName = CliExecutable.getFilename(platform as CliSupportedPlatform);
     const cliPath = path.join(extensionDir, fileName);
 
     return cliPath;

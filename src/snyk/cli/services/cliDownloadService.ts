@@ -10,7 +10,7 @@ import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { CliDownloader } from '../downloader';
 import { messages } from '../messages/messages';
-import { isPlatformSupported, SupportedPlatform } from '../supportedPlatforms';
+import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 
 export class CliDownloadService {
   readonly cliIsReady$ = new ReplaySubject<void>(1);
@@ -67,7 +67,7 @@ export class CliDownloadService {
         return Promise.reject(messages.notSupported);
       }
 
-      const updateAvailable = await this.isUpdateAvailable(platform as SupportedPlatform);
+      const updateAvailable = await this.isUpdateAvailable(platform as CliSupportedPlatform);
       if (!updateAvailable) {
         return false;
       }
@@ -96,7 +96,7 @@ export class CliDownloadService {
     return executableExists && lastUpdateDateWritten && cliChecksumWritten;
   }
 
-  private async isUpdateAvailable(platform: SupportedPlatform): Promise<boolean> {
+  private async isUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const latestChecksum = await this.api.getSha256Checksum(platform);
     const path = CliExecutable.getPath(this.extensionContext.extensionPath, this.configuration.getCustomCliPath());
 

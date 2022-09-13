@@ -10,7 +10,7 @@ import { CliDownloadAxiosResponse, IStaticCliApi } from './api/staticCliApi';
 import { Checksum } from './checksum';
 import { CliExecutable } from './cliExecutable';
 import { messages } from './messages/messages';
-import { isPlatformSupported, SupportedPlatform } from './supportedPlatforms';
+import { CliSupportedPlatform, isPlatformSupported } from './supportedPlatforms';
 
 export class CliDownloader {
   constructor(
@@ -31,7 +31,7 @@ export class CliDownloader {
       return Promise.reject(messages.notSupported);
     }
 
-    platform = platform as SupportedPlatform;
+    platform = platform as CliSupportedPlatform;
 
     const cliPath = CliExecutable.getPath(this.extensionDir, this.configuration.getCustomCliPath());
     if (await this.cliExists(cliPath)) {
@@ -73,7 +73,7 @@ export class CliDownloader {
 
   public async downloadCli(
     cliPath: string,
-    platform: SupportedPlatform,
+    platform: CliSupportedPlatform,
     expectedChecksum: string,
   ): Promise<Checksum | null> {
     const hash = new Checksum(expectedChecksum);
