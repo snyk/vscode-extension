@@ -27,7 +27,7 @@ export class LsExecutable {
     }
 
     const platform = Platform.getCurrentWithArch();
-    const fileName = LsExecutable.getFilename(platform as LsSupportedPlatform);
+    const fileName = LsExecutable.getFilename(platform);
     const lsPath = path.join(extensionDir, fileName);
 
     return lsPath;
