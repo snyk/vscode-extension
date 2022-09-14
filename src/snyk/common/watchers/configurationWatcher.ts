@@ -7,7 +7,6 @@ import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
-  ADVANCED_CUSTOM_LS_PATH,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
@@ -39,8 +38,6 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
-    } else if (key === ADVANCED_CUSTOM_LS_PATH) {
-      return extension.restartLanguageServer();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -65,7 +62,6 @@ class ConfigurationWatcher implements IWatcher {
         CODE_QUALITY_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
-        ADVANCED_CUSTOM_LS_PATH,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

@@ -125,7 +125,7 @@
           "snyk.advanced.languageServerPath": {
             "type": "string",
             "scope": "machine",
-            "markdownDescription": "Sets path to Snyk Language Server."
+            "markdownDescription": "Sets path to Snyk Language Server (requires restart)."
           },
           "snyk.features.openSourceSecurity": {
             "type": "boolean",
