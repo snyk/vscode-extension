@@ -19,9 +19,12 @@ export class Platform {
     if (opSys === 'win32') {
       opSys = 'windows';
     }
-    let opArch = os.arch().toString();
+    let opArch = os.arch();
     if (opArch === 'x64') {
       opArch = 'amd64';
+    }
+    if (opArch === 'ia32') {
+      opArch = '386';
     }
 
     return `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}` as LsSupportedPlatform;

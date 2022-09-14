@@ -336,7 +336,7 @@
           "when": "!snyk:loggedIn && snyk:previewLsAuthentication"
         },
         {
-          "command": "snyk.logout",
+          "command": "snyk.logout.old",
           "when": "snyk:loggedIn"
         },
         {
@@ -376,7 +376,7 @@
         "category": "Snyk"
       },
       {
-        "command": "snyk.logout",
+        "command": "snyk.logout.old",
         "title": "Log Out",
         "category": "Snyk"
       },
