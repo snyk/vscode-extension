@@ -10,6 +10,7 @@ import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { IContextService } from '../services/contextService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
+import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
@@ -29,6 +30,7 @@ export class LanguageServer implements ILanguageServer {
     private contextService: IContextService,
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
+    private window: IVSCodeWindow,
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
   ) {}
