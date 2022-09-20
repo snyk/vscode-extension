@@ -36,6 +36,7 @@ export class LanguageServer implements ILanguageServer {
   ) {}
 
   async start(): Promise<void> {
+    this.logger.info('Starting Snyk Language Server...');
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
@@ -64,6 +65,8 @@ export class LanguageServer implements ILanguageServer {
       this.configuration.getSnykLanguageServerPath(),
     );
 
+    this.logger.info(`Snyk Language Server binary path: ${this.lsBinaryPath}`);
+
     const serverOptions: ServerOptions = {
       command: this.lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
@@ -81,6 +84,7 @@ export class LanguageServer implements ILanguageServer {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
       middleware: new LanguageClientMiddleware(this.context, this.configuration),
+      outputChannel: this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
 
     // Create the language client and start the client.
@@ -93,7 +97,8 @@ export class LanguageServer implements ILanguageServer {
     });
 
     // Start the client. This will also launch the server
-    return this.client.start();
+    await this.client.start();
+    this.logger.info('Snyk Language Server started');
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
@@ -107,9 +112,16 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async stop(): Promise<void> {
-    if (!this.client || !this.client.isRunning()) {
+    this.logger.info('Stopping Snyk Language Server...');
+    if (!this.client) {
       return Promise.resolve();
     }
-    return this.client.stop();
+
+    if (this.client?.isRunning()) {
+      await this.client.stop();
+    }
+    // cleanup output channel explicitly
+    this.client.outputChannel.dispose();
+    this.logger.info('Snyk Language Server stopped');
   }
 }
