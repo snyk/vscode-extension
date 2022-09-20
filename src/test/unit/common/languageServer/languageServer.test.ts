@@ -8,9 +8,11 @@ import { InitializationOptions } from '../../../../snyk/common/languageServer/se
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
+import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
+import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 
 suite('Language Server', () => {
@@ -66,6 +68,7 @@ suite('Language Server', () => {
       contextService,
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
+      windowMock,
       authService,
       new LoggerMock(),
     );
@@ -111,6 +114,7 @@ suite('Language Server', () => {
       contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
+      windowMock,
       authService,
       new LoggerMock(),
     );
@@ -133,6 +137,7 @@ suite('Language Server', () => {
       contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', undefined),
+      windowMock,
       authService,
       new LoggerMock(),
     );
@@ -173,6 +178,7 @@ suite('Language Server', () => {
       contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
+      windowMock,
       authService,
       new LoggerMock(),
     );
