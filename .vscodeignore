@@ -28,12 +28,3 @@ development.md
 snyk-macos
 snyk-linux
 snyk-win.exe
-
-# Snyk LS
-linux_386
-linux_amd64
-linux_arm64
-windows_386.exe
-windows_amd64.exe
-darwin_amd64
-darwin_arm64
