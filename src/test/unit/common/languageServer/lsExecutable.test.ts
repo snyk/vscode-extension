@@ -1,8 +1,8 @@
 import { strictEqual } from 'assert';
+import os from 'os';
 import path from 'path';
 import sinon from 'sinon';
 import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
-import { Platform } from '../../../../snyk/common/platform';
 
 suite('LsExecutable', () => {
   teardown(() => {
@@ -20,7 +20,7 @@ suite('LsExecutable', () => {
   });
   test('Returns correct extension paths', () => {
     const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
-    const getCurrentWithArchStub = sinon.stub(Platform, 'getCurrentWithArch');
+    const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
 
     // OSX
     getCurrentWithArchStub.returns('darwinAmd64');
@@ -59,5 +59,37 @@ suite('LsExecutable', () => {
   test('Return custom path, if provided', () => {
     const customPath = '/path/to/cli';
     strictEqual(LsExecutable.getPath('', customPath), customPath);
+  });
+
+  test('Returns correct platform architecture', () => {
+    const platformStub = sinon.stub(os, 'platform');
+    const archStub = sinon.stub(os, 'arch');
+
+    // OSX
+    platformStub.returns('darwin');
+    archStub.returns('x64');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'darwinAmd64');
+
+    archStub.returns('arm64');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'darwinArm64');
+
+    // Linux
+    platformStub.returns('linux');
+    archStub.returns('x64');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'linuxAmd64');
+
+    archStub.returns('arm64');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'linuxArm64');
+
+    archStub.returns('ia32');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'linux386');
+
+    // Windows
+    platformStub.returns('win32');
+    archStub.returns('x64');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'windowsAmd64');
+
+    archStub.returns('ia32');
+    strictEqual(LsExecutable.getCurrentWithArch(), 'windows386');
   });
 });

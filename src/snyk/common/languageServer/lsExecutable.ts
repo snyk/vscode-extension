@@ -1,10 +1,9 @@
 import path from 'path';
+import os from 'os';
 import { Checksum } from '../../cli/checksum';
-import { Platform } from '../../common/platform';
 import { LsSupportedPlatform } from './supportedPlatforms';
 
 export class LsExecutable {
-  // If values updated, `.vscodeignore` to be changed.
   public static filenameSuffixes: Record<LsSupportedPlatform, string> = {
     linux386: 'linux_386',
     linuxAmd64: 'linux_amd64',
@@ -26,10 +25,26 @@ export class LsExecutable {
       return customPath;
     }
 
-    const platform = Platform.getCurrentWithArch();
+    const platform = this.getCurrentWithArch();
     const fileName = LsExecutable.getFilename(platform);
     const lsPath = path.join(extensionDir, fileName);
 
     return lsPath;
+  }
+
+  static getCurrentWithArch(): LsSupportedPlatform {
+    let opSys = os.platform().toString();
+    if (opSys === 'win32') {
+      opSys = 'windows';
+    }
+    let opArch = os.arch();
+    if (opArch === 'x64') {
+      opArch = 'amd64';
+    }
+    if (opArch === 'ia32') {
+      opArch = '386';
+    }
+
+    return `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}` as LsSupportedPlatform;
   }
 }
