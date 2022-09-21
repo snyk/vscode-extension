@@ -4,7 +4,7 @@
 
 ### Added
 
-- Snyk LS: Configure custom Language Server binary in settings
+- Snyk LS: Configure custom Language Server binary path in settings
 
 ## [1.5.0]
 
