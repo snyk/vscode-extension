@@ -22,9 +22,6 @@ import {
   YES_TELEMETRY_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
-import { LsExecutable } from '../languageServer/lsExecutable';
-import { isPlatformSupported, LsSupportedPlatform } from '../languageServer/supportedPlatforms';
-import { Platform } from '../platform';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
@@ -193,57 +190,6 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
     );
-  }
-
-  getSnykLanguageServerPath2(): string {
-    // check and set platform
-    const platform = Platform.getCurrent();
-    if (!isPlatformSupported) {
-      throw new Error(`Platform ${platform} is not supported`);
-    }
-
-    // set default home directory
-    const homeDir = Platform.getHomeDir();
-
-    const lsPlatform = LsExecutable.getCurrentWithArch();
-
-    // set Language Server filename
-    const lsFilename = LsExecutable.filenameSuffixes[lsPlatform];
-
-    // set default Language Server path
-    const defaultPaths: Record<LsSupportedPlatform, string> = {
-      windows386: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}\\${lsFilename}`
-        : `${homeDir}\\AppData\\Local\\snyk\\${lsFilename}`,
-      windowsAmd64: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}\\${lsFilename}`
-        : `${homeDir}\\AppData\\Local\\snyk\\${lsFilename}`,
-      darwinAmd64: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}/${lsFilename}`
-        : `${homeDir}/Library/Application Support/${lsFilename}`,
-      darwinArm64: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}/${lsFilename}`
-        : `${homeDir}/Library/Application Support/${lsFilename}`,
-      linux386: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}/${lsFilename}`
-        : `${homeDir}/.local/share/${lsFilename}`,
-      linuxAmd64: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}/${lsFilename}`
-        : `${homeDir}/.local/share/${lsFilename}`,
-      linuxArm64: this.processEnv.XDG_DATA_HOME
-        ? `${this.processEnv.XDG_DATA_HOME}/${lsFilename}`
-        : `${homeDir}/.local/share/${lsFilename}`,
-    };
-
-    const defaultLSPath = defaultPaths[lsPlatform];
-
-    // get custom Language Server path
-    const customLSPath = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
-    );
-
-    return customLSPath ?? defaultLSPath;
   }
 
   async getToken(): Promise<string | undefined> {

@@ -1,8 +1,9 @@
-import { strictEqual } from 'assert';
+import { strictEqual, throws } from 'assert';
 import os from 'os';
 import path from 'path';
 import sinon from 'sinon';
 import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
+import { LsSupportedPlatform } from '../../../../snyk/common/languageServer/supportedPlatforms';
 
 suite('LsExecutable', () => {
   teardown(() => {
@@ -10,55 +11,84 @@ suite('LsExecutable', () => {
   });
 
   test('Returns correct filename for different platforms', () => {
-    strictEqual(LsExecutable.getFilename('darwinAmd64'), 'darwin_amd64');
-    strictEqual(LsExecutable.getFilename('darwinArm64'), 'darwin_arm64');
-    strictEqual(LsExecutable.getFilename('linux386'), 'linux_386');
-    strictEqual(LsExecutable.getFilename('linuxAmd64'), 'linux_amd64');
-    strictEqual(LsExecutable.getFilename('linuxArm64'), 'linux_arm64');
-    strictEqual(LsExecutable.getFilename('windows386'), 'windows_386.exe');
-    strictEqual(LsExecutable.getFilename('windowsAmd64'), 'windows_amd64.exe');
+    strictEqual(LsExecutable.getFilename('darwinAmd64'), 'snyk-ls_darwin_amd64');
+    strictEqual(LsExecutable.getFilename('darwinArm64'), 'snyk-ls_darwin_arm64');
+    strictEqual(LsExecutable.getFilename('linux386'), 'snyk-ls_linux_386');
+    strictEqual(LsExecutable.getFilename('linuxAmd64'), 'snyk-ls_linux_amd64');
+    strictEqual(LsExecutable.getFilename('linuxArm64'), 'snyk-ls_linux_arm64');
+    strictEqual(LsExecutable.getFilename('windows386'), 'snyk-ls_windows_386.exe');
+    strictEqual(LsExecutable.getFilename('windowsAmd64'), 'snyk-ls_windows_amd64.exe');
   });
   test('Returns correct extension paths', () => {
-    const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
+    const homedirStub = sinon.stub(os, 'homedir');
     const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
 
-    // OSX
-    getCurrentWithArchStub.returns('darwinAmd64');
-    let expectedCliPath = path.join(unixExtensionDir, 'darwin_amd64');
-    strictEqual(LsExecutable.getPath(unixExtensionDir), expectedCliPath);
+    // DarwinAmd64
+    let osxPlatform: LsSupportedPlatform = 'darwinAmd64';
+    let homedir = '/Users/user';
+    getCurrentWithArchStub.returns(osxPlatform);
+    homedirStub.returns(homedir);
 
-    getCurrentWithArchStub.returns('darwinArm64');
-    expectedCliPath = path.join(unixExtensionDir, 'darwin_arm64');
-    strictEqual(LsExecutable.getPath(unixExtensionDir), expectedCliPath);
+    let expectedFilename = LsExecutable.getFilename(osxPlatform);
+    let expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
 
-    // Linux
-    getCurrentWithArchStub.returns('linux386');
-    expectedCliPath = path.join(unixExtensionDir, 'linux_386');
-    strictEqual(LsExecutable.getPath(unixExtensionDir), expectedCliPath);
+    // DarwinArm64
+    osxPlatform = 'darwinArm64';
+    getCurrentWithArchStub.returns(osxPlatform);
 
-    getCurrentWithArchStub.returns('linuxAmd64');
-    expectedCliPath = path.join(unixExtensionDir, 'linux_amd64');
-    strictEqual(LsExecutable.getPath(unixExtensionDir), expectedCliPath);
+    expectedFilename = LsExecutable.getFilename(osxPlatform);
+    expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
 
-    getCurrentWithArchStub.returns('linuxArm64');
-    expectedCliPath = path.join(unixExtensionDir, 'linux_arm64');
-    strictEqual(LsExecutable.getPath(unixExtensionDir), expectedCliPath);
+    // Linux386
+    let linuxPlatform: LsSupportedPlatform = 'linux386';
+    homedir = '/home/user';
+    getCurrentWithArchStub.returns(linuxPlatform);
+    homedirStub.returns(homedir);
 
-    // Windows
-    const winExtensionDir = `C:\\Users\\user\\.vscode\\extensions`;
+    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
 
-    getCurrentWithArchStub.returns('windows386');
-    expectedCliPath = path.join(winExtensionDir, 'windows_386.exe');
-    strictEqual(LsExecutable.getPath(winExtensionDir), expectedCliPath);
+    // LinuxAmd64
+    linuxPlatform = 'linuxAmd64';
+    getCurrentWithArchStub.returns(linuxPlatform);
 
-    getCurrentWithArchStub.returns('windowsAmd64');
-    expectedCliPath = path.join(winExtensionDir, 'windows_amd64.exe');
-    strictEqual(LsExecutable.getPath(winExtensionDir), expectedCliPath);
+    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
+
+    // LinuxArm64
+    linuxPlatform = 'linuxArm64';
+    getCurrentWithArchStub.returns(linuxPlatform);
+
+    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
+
+    // Windows386
+    let windowsPlatform: LsSupportedPlatform = 'windows386';
+    homedir = 'C:\\Users\\user';
+    getCurrentWithArchStub.returns(windowsPlatform);
+    homedirStub.returns(homedir);
+
+    expectedFilename = LsExecutable.getFilename(windowsPlatform);
+    expectedCliPath = path.join(homedir, '\\AppData\\Local\\snyk\\', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
+
+    // WindowsAmd64
+    windowsPlatform = 'windowsAmd64';
+    getCurrentWithArchStub.returns(windowsPlatform);
+
+    expectedFilename = LsExecutable.getFilename(windowsPlatform);
+    expectedCliPath = path.join(homedir, '\\AppData\\Local\\snyk\\', expectedFilename);
+    strictEqual(LsExecutable.getPath(), expectedCliPath);
   });
 
   test('Return custom path, if provided', () => {
     const customPath = '/path/to/cli';
-    strictEqual(LsExecutable.getPath('', customPath), customPath);
+    strictEqual(LsExecutable.getPath(customPath), customPath);
   });
 
   test('Returns correct platform architecture', () => {

@@ -60,10 +60,7 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    this.lsBinaryPath = LsExecutable.getPath(
-      this.context.extensionPath,
-      this.configuration.getSnykLanguageServerPath(),
-    );
+    this.lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
 
     this.logger.info(`Snyk Language Server binary path: ${this.lsBinaryPath}`);
 
