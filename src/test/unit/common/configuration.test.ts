@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { deepStrictEqual, strictEqual, throws } from 'assert';
+import os from 'os';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
@@ -8,8 +9,8 @@ import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../sny
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
+import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
@@ -197,5 +198,79 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
+  });
+
+  test('Snyk LS: Throws when platform is not supported', () => {
+    sinon.stub(os, 'platform').returns('sunos');
+    const configuration = new Configuration({}, workspaceStub);
+
+    throws(() => configuration.getSnykLanguageServerPath2());
+  });
+
+  test('Snyk LS: Language Server path custom path when set', () => {
+    const customPath = '/path/to/language/server/binary/darwin_arm64';
+    sinon.stub(workspaceStub, 'getConfiguration').returns(customPath);
+
+    const configuration = new Configuration({}, workspaceStub);
+    strictEqual(configuration.getSnykLanguageServerPath2(), customPath);
+  });
+
+  test('Snyk LS: Language Server path uses XDG_DATA_HOME when set', () => {
+    sinon.stub(os, 'platform').returns('darwin');
+    sinon.stub(os, 'arch').returns('arm64');
+    sinon.stub(workspaceStub, 'getConfiguration').returns(null);
+
+    const XDG_DATA_HOME = '/path/to/language/server/binary';
+    const configuration = new Configuration({ XDG_DATA_HOME }, workspaceStub);
+    const expectedPath = `${XDG_DATA_HOME}/darwin_arm64`;
+
+    strictEqual(configuration.getSnykLanguageServerPath2(), expectedPath);
+  });
+
+  test('Snyk LS: Language Server path is returned when set', () => {
+    const platformStub = sinon.stub(os, 'platform');
+    const archStub = sinon.stub(os, 'arch');
+    const homedirStub = sinon.stub(os, 'homedir');
+    sinon.stub(workspaceStub, 'getConfiguration').returns(null);
+
+    // OSX
+    const osxHome = '/Users/snyk.user';
+    let expectedPath = `${osxHome}/Library/Application Support`;
+    const configuration = new Configuration({}, workspaceStub);
+
+    platformStub.returns('darwin');
+    archStub.returns('arm64');
+    homedirStub.returns(osxHome);
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}/darwin_arm64`);
+
+    archStub.returns('amd64');
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}/darwin_amd64`);
+
+    // Linux
+    const linuxHome = '/home/snyk.user';
+    expectedPath = `${linuxHome}/.local/share`;
+
+    platformStub.returns('linux');
+    archStub.returns('ia32');
+    homedirStub.returns(linuxHome);
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}/linux_386`);
+
+    archStub.returns('x64');
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}/linux_amd64`);
+
+    archStub.returns('arm64');
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}/linux_arm64`);
+
+    // Windows
+    const windowsHome = 'C:\\Users\\snyk.user';
+    expectedPath = `${windowsHome}\\AppData\\Local\\snyk`;
+
+    platformStub.returns('win32');
+    archStub.returns('ia32');
+    homedirStub.returns(windowsHome);
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}\\windows_386.exe`);
+
+    archStub.returns('x64');
+    strictEqual(configuration.getSnykLanguageServerPath2(), `${expectedPath}\\windows_amd64.exe`);
   });
 });

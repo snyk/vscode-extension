@@ -8,4 +8,8 @@ export class Platform {
   static getVersion(): string {
     return `${os.release()}-${os.arch}`;
   }
+
+  static getHomeDir(): string {
+    return os.homedir();
+  }
 }

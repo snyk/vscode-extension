@@ -8,4 +8,12 @@ export const SupportedLsPlatformsList = [
   'windowsAmd64',
 ] as const;
 
+export function isPlatformSupported(platform: string): boolean {
+  if (SupportedLsPlatformsList.find(p => p === platform) !== undefined) {
+    return true;
+  }
+
+  return false;
+}
+
 export type LsSupportedPlatform = typeof SupportedLsPlatformsList[number];
