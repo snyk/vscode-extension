@@ -36,13 +36,13 @@ export class LanguageServer implements ILanguageServer {
   ) {}
 
   async start(): Promise<void> {
-    this.logger.info('Starting Snyk Language Server...');
     // TODO remove feature flag when ready
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
       return Promise.resolve(undefined);
     }
     await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
+    this.logger.info('Starting Snyk Language Server...');
 
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
