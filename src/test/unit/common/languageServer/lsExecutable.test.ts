@@ -1,4 +1,4 @@
-import { strictEqual, throws } from 'assert';
+import { strictEqual } from 'assert';
 import os from 'os';
 import path from 'path';
 import sinon from 'sinon';

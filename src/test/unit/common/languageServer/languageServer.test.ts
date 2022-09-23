@@ -8,7 +8,6 @@ import { InitializationOptions } from '../../../../snyk/common/languageServer/se
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
-import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { LoggerMock } from '../../mocks/logger.mock';

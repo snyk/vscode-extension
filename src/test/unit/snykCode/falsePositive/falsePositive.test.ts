@@ -1,7 +1,6 @@
 import { Marker } from '@snyk/code-client';
 import { strictEqual, throws } from 'assert';
 import * as os from 'os';
-import path from 'path';
 import sinon from 'sinon';
 import { TextDocument } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';

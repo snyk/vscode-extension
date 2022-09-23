@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import { Checksum } from '../../cli/checksum';
 import { Platform } from '../platform';
-import { isPlatformSupported, LsSupportedPlatform } from './supportedPlatforms';
+import { LsSupportedPlatform } from './supportedPlatforms';
 
 export class LsExecutable {
   public static filenameSuffixes: Record<LsSupportedPlatform, string> = {
