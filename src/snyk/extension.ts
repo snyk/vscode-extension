@@ -9,7 +9,7 @@ import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { StaticCliApi } from './cli/api/staticCliApi';
-import { StaticLsApi } from './cli/api/staticLsApi';
+import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { DownloadService } from './cli/services/downloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';

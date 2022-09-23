@@ -9,11 +9,7 @@ export const SupportedLsPlatformsList = [
 ] as const;
 
 export function isPlatformSupported(platform: string): boolean {
-  if (SupportedLsPlatformsList.find(p => p === platform) !== undefined) {
-    return true;
-  }
-
-  return false;
+  return SupportedLsPlatformsList.find(p => p === platform) !== undefined;
 }
 
 export type LsSupportedPlatform = typeof SupportedLsPlatformsList[number];

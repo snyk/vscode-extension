@@ -1,11 +1,11 @@
 import axios, { CancelTokenSource } from 'axios';
 import stream from 'stream';
-import { PROTOCOL_VERSION } from '../../common/constants/languageServer';
-import { LsExecutable } from '../../common/languageServer/lsExecutable';
-import { getAxiosProxyConfig } from '../../common/proxy';
-import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { LsSupportedPlatform } from '../supportedPlatforms';
-import { DownloadAxiosResponse } from '../downloader';
+import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { LsExecutable } from './lsExecutable';
+import { LsSupportedPlatform } from './supportedPlatforms';
+import { getAxiosProxyConfig } from '../proxy';
+import { IVSCodeWorkspace } from '../vscode/workspace';
+import { DownloadAxiosResponse } from '../download/downloader';
 
 export type LsMetadata = {
   tag: string;
@@ -38,8 +38,7 @@ export class StaticLsApi implements IStaticLsApi {
   }
 
   async getFileName(platform: LsSupportedPlatform): Promise<string> {
-    const version = await this.getLatestVersion();
-    return `snyk-ls_${version}_${LsExecutable.getFilenameSuffix(platform)}`;
+    return LsExecutable.getVersionedFilename(platform, await this.getLatestVersion());
   }
 
   async downloadBinary(platform: LsSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]> {

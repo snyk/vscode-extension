@@ -2,19 +2,20 @@ import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as stream from 'stream';
-import { IConfiguration } from '../common/configuration/configuration';
-import { LsExecutable } from '../common/languageServer/lsExecutable';
-import { ILog } from '../common/logger/interfaces';
-import { Platform } from '../common/platform';
-import { IVSCodeWindow } from '../common/vscode/window';
-import { IStaticCliApi } from './api/staticCliApi';
-import { IStaticLsApi } from './api/staticLsApi';
-import { Checksum } from './checksum';
-import { CliExecutable } from './cliExecutable';
-import { messages } from './messages/messages';
-import { CliSupportedPlatform, isPlatformSupported, LsSupportedPlatform } from './supportedPlatforms';
+import { IConfiguration } from '../configuration/configuration';
+import { LsExecutable } from '../languageServer/lsExecutable';
+import { ILog } from '../logger/interfaces';
+import { Platform } from '../platform';
+import { IVSCodeWindow } from '../vscode/window';
+import { IStaticCliApi } from '../../cli/api/staticCliApi';
+import { IStaticLsApi } from '../languageServer/staticLsApi';
+import { Checksum } from '../../cli/checksum';
+import { CliExecutable } from '../../cli/cliExecutable';
+import { messages } from '../../cli/messages/messages';
 import { Progress } from 'vscode';
-import { CancellationToken } from '../common/vscode/types';
+import { CancellationToken } from '../vscode/types';
+import { CliSupportedPlatform, isPlatformSupported } from '../../cli/supportedPlatforms';
+import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
@@ -32,22 +33,24 @@ export class Downloader {
    * Downloads CLI or LS to the extension folder. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | LsExecutable | null> {
-    let platform = Platform.getCurrent();
-    if (!isPlatformSupported(platform)) {
-      return Promise.reject(messages.notSupported);
-    }
-
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
+      let platform = Platform.getCurrent();
+      if (!isPlatformSupported(platform)) {
+        return Promise.reject(messages.notSupported);
+      }
       platform = platform as CliSupportedPlatform;
       return await this.getCliExecutable(platform);
     } else {
       const lsPlatform = Platform.getCurrentWithArch();
+      if (lsPlatform === null) {
+        return Promise.reject(!messages.notSupported);
+      }
       return await this.getLsExecutable(lsPlatform);
     }
   }
 
   private async getLsExecutable(lsPlatform: LsSupportedPlatform) {
-    const lsPath = LsExecutable.getPath(this.extensionDir, this.configuration.getCustomLsPath());
+    const lsPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
     if (await this.binaryExists(lsPath)) {
       await this.deleteFileAtPath(lsPath);
     }

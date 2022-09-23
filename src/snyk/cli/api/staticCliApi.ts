@@ -4,7 +4,7 @@ import { getAxiosProxyConfig } from '../../common/proxy';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { CliExecutable } from '../cliExecutable';
 import { CliSupportedPlatform } from '../supportedPlatforms';
-import { DownloadAxiosResponse } from '../downloader';
+import { DownloadAxiosResponse } from '../../common/download/downloader';
 
 export interface IStaticCliApi {
   getDownloadUrl(platform: CliSupportedPlatform): string;

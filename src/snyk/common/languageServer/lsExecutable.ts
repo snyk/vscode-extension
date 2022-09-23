@@ -5,14 +5,15 @@ import { Platform } from '../platform';
 import { LsSupportedPlatform } from './supportedPlatforms';
 
 export class LsExecutable {
+  private static filenamePrefix = 'snyk-ls';
   public static filenameSuffixes: Record<LsSupportedPlatform, string> = {
-    linux386: 'snyk-ls_linux_386',
-    linuxAmd64: 'snyk-ls_linux_amd64',
-    linuxArm64: 'snyk-ls_linux_arm64',
-    windows386: 'snyk-ls_windows_386.exe',
-    windowsAmd64: 'snyk-ls_windows_amd64.exe',
-    darwinAmd64: 'snyk-ls_darwin_amd64',
-    darwinArm64: 'snyk-ls_darwin_arm64',
+    linux386: 'linux_386',
+    linuxAmd64: 'linux_amd64',
+    linuxArm64: 'linux_arm64',
+    windows386: 'windows_386.exe',
+    windowsAmd64: 'windows_amd64.exe',
+    darwinAmd64: 'darwin_amd64',
+    darwinArm64: 'darwin_arm64',
   };
 
   public static defaultPaths: Record<LsSupportedPlatform, string> = {
@@ -28,7 +29,11 @@ export class LsExecutable {
   constructor(public readonly version: string, public readonly checksum: Checksum) {}
 
   static getFilename(platform: LsSupportedPlatform): string {
-    return this.filenameSuffixes[platform];
+    return `${this.filenamePrefix}_${this.filenameSuffixes[platform]}`;
+  }
+
+  static getVersionedFilename(platform: LsSupportedPlatform, version: string) {
+    return `${this.filenamePrefix}_${version}_${this.filenameSuffixes[platform]}`;
   }
 
   static getPath(customPath?: string): string {

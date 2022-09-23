@@ -3,7 +3,7 @@ import sinon, { stub } from 'sinon';
 import { IStaticCliApi } from '../../../../snyk/cli/api/staticCliApi';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
-import { Downloader } from '../../../../snyk/cli/downloader';
+import { Downloader } from '../../../../snyk/common/download/downloader';
 import { DownloadService } from '../../../../snyk/cli/services/downloadService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
@@ -12,7 +12,7 @@ import { Platform } from '../../../../snyk/common/platform';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
-import { IStaticLsApi } from '../../../../snyk/cli/api/staticLsApi';
+import { IStaticLsApi } from '../../../../snyk/common/languageServer/staticLsApi';
 
 suite('DownloadService', () => {
   let logger: ILog;

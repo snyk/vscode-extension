@@ -13,11 +13,11 @@ import { IVSCodeWindow } from '../../common/vscode/window';
 import { IStaticCliApi } from '../api/staticCliApi';
 import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
-import { Downloader } from '../downloader';
+import { Downloader } from '../../common/download/downloader';
 import { messages } from '../messages/messages';
 import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
 import { LsExecutable } from '../../common/languageServer/lsExecutable';
-import { IStaticLsApi } from '../api/staticLsApi';
+import { IStaticLsApi } from '../../common/languageServer/staticLsApi';
 
 export class DownloadService {
   readonly fourDaysInMs = 4 * 24 * 3600 * 1000;

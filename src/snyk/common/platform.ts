@@ -1,12 +1,12 @@
 import * as os from 'os';
-import { LsSupportedPlatform } from '../cli/supportedPlatforms';
+import { LsSupportedPlatform, SupportedLsPlatformsList } from './languageServer/supportedPlatforms';
 
 export class Platform {
   static getCurrent(): NodeJS.Platform {
     return os.platform();
   }
 
-  static getCurrentWithArch(): LsSupportedPlatform {
+  static getCurrentWithArch(): LsSupportedPlatform | null {
     let opSys = os.platform().toString();
     if (opSys === 'win32') {
       opSys = 'windows';
@@ -15,8 +15,11 @@ export class Platform {
     if (opArch === 'x64') {
       opArch = 'amd64';
     }
-
-    return `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}` as LsSupportedPlatform;
+    let supportPlatform = `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}`;
+    if (SupportedLsPlatformsList[supportPlatform] === undefined) {
+      return null;
+    }
+    return supportPlatform as LsSupportedPlatform;
   }
 
   static getVersion(): string {

@@ -19,6 +19,18 @@ suite('LsExecutable', () => {
     strictEqual(LsExecutable.getFilename('windows386'), 'snyk-ls_windows_386.exe');
     strictEqual(LsExecutable.getFilename('windowsAmd64'), 'snyk-ls_windows_amd64.exe');
   });
+
+  test('Returns correct versioned filename for different platforms', () => {
+    const version = '20220101.101010';
+    strictEqual(LsExecutable.getVersionedFilename('darwinAmd64', version), `snyk-ls_${version}_darwin_amd64`);
+    strictEqual(LsExecutable.getVersionedFilename('darwinArm64', version), `snyk-ls_${version}_darwin_arm64`);
+    strictEqual(LsExecutable.getVersionedFilename('linux386', version), `snyk-ls_${version}_linux_386`);
+    strictEqual(LsExecutable.getVersionedFilename('linuxAmd64', version), `snyk-ls_${version}_linux_amd64`);
+    strictEqual(LsExecutable.getVersionedFilename('linuxArm64', version), `snyk-ls_${version}_linux_arm64`);
+    strictEqual(LsExecutable.getVersionedFilename('windows386', version), `snyk-ls_${version}_windows_386.exe`);
+    strictEqual(LsExecutable.getVersionedFilename('windowsAmd64', version), `snyk-ls_${version}_windows_amd64.exe`);
+  });
+
   test('Returns correct extension paths', () => {
     const homedirStub = sinon.stub(os, 'homedir');
     const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
