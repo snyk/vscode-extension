@@ -1,7 +1,6 @@
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
-import { SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { SNYK_CONTEXT } from '../constants/views';
 import { ErrorHandler } from '../error/errorHandler';
@@ -15,6 +14,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
+import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -91,6 +91,10 @@ export class LanguageServer implements ILanguageServer {
       this.authenticationService.updateToken(token).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
       });
+    });
+
+    this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
+      void this.configuration.setCliPath(cliPath);
     });
 
     // Start the client. This will also launch the server

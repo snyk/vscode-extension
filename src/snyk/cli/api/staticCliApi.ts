@@ -4,12 +4,11 @@ import { getAxiosProxyConfig } from '../../common/proxy';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { CliExecutable } from '../cliExecutable';
 import { CliSupportedPlatform } from '../supportedPlatforms';
-
-export type CliDownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
+import { DownloadAxiosResponse } from '../downloader';
 
 export interface IStaticCliApi {
   getDownloadUrl(platform: CliSupportedPlatform): string;
-  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource];
+  getExecutable(platform: CliSupportedPlatform): [Promise<DownloadAxiosResponse>, CancelTokenSource];
   getLatestVersion(): Promise<string>;
   getSha256Checksum(platform: CliSupportedPlatform): Promise<string>;
 }
@@ -23,7 +22,7 @@ export class StaticCliApi implements IStaticCliApi {
     return `${this.baseUrl}/cli/latest/${CliExecutable.getFilename(platform)}`;
   }
 
-  getExecutable(platform: CliSupportedPlatform): [Promise<CliDownloadAxiosResponse>, CancelTokenSource] {
+  getExecutable(platform: CliSupportedPlatform): [Promise<DownloadAxiosResponse>, CancelTokenSource] {
     const axiosCancelToken = axios.CancelToken.source();
     const downloadUrl = this.getDownloadUrl(platform);
 
@@ -33,7 +32,7 @@ export class StaticCliApi implements IStaticCliApi {
       ...getAxiosProxyConfig(this.workspace),
     });
 
-    return [response as Promise<CliDownloadAxiosResponse>, axiosCancelToken];
+    return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
   }
 
   async getLatestVersion(): Promise<string> {

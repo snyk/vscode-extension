@@ -3,7 +3,7 @@ import * as fs from 'fs/promises';
 import _ from 'lodash';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
+import { DownloadService } from '../../../../snyk/cli/services/downloadService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
@@ -43,7 +43,7 @@ suite('OssService', () => {
       {
         refreshOssView: () => undefined,
       } as IViewManagerService,
-      {} as CliDownloadService,
+      {} as DownloadService,
       {
         schedule: sinon.fake(),
       } as unknown as DailyScanJob,

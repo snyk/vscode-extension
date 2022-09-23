@@ -58,6 +58,8 @@ export interface IConfiguration {
 
   setToken(token: string): Promise<void>;
 
+  setCliPath(cliPath: string): Promise<void>;
+
   clearToken(): Promise<void>;
 
   snykCodeToken: Promise<string | undefined>;
@@ -215,6 +217,11 @@ export class Configuration implements IConfiguration {
   async setToken(token: string | undefined): Promise<void> {
     if (!token) return;
     return await SecretStorageAdapter.instance.store(SNYK_TOKEN_KEY, token);
+  }
+
+  async setCliPath(cliPath: string | undefined): Promise<void> {
+    if (!cliPath) return;
+    return this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH), cliPath);
   }
 
   async clearToken(): Promise<void> {
@@ -377,7 +384,7 @@ export class Configuration implements IConfiguration {
     const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
-      lsAuthenticate: false,
+      lsAuthenticate: true,
     };
 
     const userSetting =
@@ -418,5 +425,9 @@ export class Configuration implements IConfiguration {
 
   private removeTrailingSlash(str: string) {
     return str.replace(/\/$/, '');
+  }
+
+  getCustomLsPath(): string {
+    return '';
   }
 }

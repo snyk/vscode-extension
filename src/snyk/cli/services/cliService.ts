@@ -11,7 +11,7 @@ import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
-import { CliDownloadService } from './cliDownloadService';
+import { DownloadService } from './downloadService';
 
 export class CliError {
   constructor(public error: string | Error | unknown, public path?: string, public isCancellation = false) {}
@@ -30,7 +30,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly logger: ILog,
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
-    protected readonly downloadService: CliDownloadService,
+    protected readonly downloadService: DownloadService,
   ) {
     super();
   }
@@ -112,7 +112,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   }
 
   public async isChecksumCorrect(cliPath: string): Promise<boolean> {
-    if (!(await this.downloadService.isInstalled())) {
+    if (!(await this.downloadService.isCliInstalled())) {
       return false;
     }
 
@@ -146,7 +146,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     }
 
     // Redownload CLI if corrupt,
-    const downloaded = await this.downloadService.downloadCli();
+    const downloaded = await this.downloadService.download();
     if (!downloaded) {
       const error = new CliError(
         'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',

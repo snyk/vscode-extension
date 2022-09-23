@@ -3,7 +3,7 @@ import { deepStrictEqual, notStrictEqual, ok, rejects, strictEqual } from 'asser
 import sinon from 'sinon';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { CliDownloadService } from '../../../../snyk/cli/services/cliDownloadService';
+import { DownloadService } from '../../../../snyk/cli/services/downloadService';
 import { CliError, CliService } from '../../../../snyk/cli/services/cliService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
@@ -35,7 +35,7 @@ suite('CliService', () => {
   let logger: ILog;
   let testCliService: TestCliService;
   let extensionContext: ExtensionContext;
-  let cliDownloadService: CliDownloadService;
+  let downloadService: DownloadService;
   let configuration: IConfiguration;
 
   setup(() => {
@@ -52,10 +52,10 @@ suite('CliService', () => {
       getCustomCliPath: () => undefined,
     } as unknown as IConfiguration;
 
-    cliDownloadService = {
-      downloadCli: () => false,
-      isInstalled: () => true,
-    } as unknown as CliDownloadService;
+    downloadService = {
+      download: () => false,
+      isCliInstalled: () => true,
+    } as unknown as DownloadService;
 
     testCliService = new TestCliService(
       extensionContext,
@@ -64,7 +64,7 @@ suite('CliService', () => {
       {
         getWorkspaceFolders: () => ['test-folder'],
       } as IVSCodeWorkspace,
-      cliDownloadService,
+      downloadService,
     );
   });
 
@@ -120,14 +120,14 @@ suite('CliService', () => {
 
   test('Test tries redownloading CLI when checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
-    const download = sinon.stub(cliDownloadService, 'downloadCli').resolves(true);
+    const download = sinon.stub(downloadService, 'download').resolves(true);
     await testCliService.test(false, false);
     deepStrictEqual(download.calledOnce, true);
   });
 
   test('Test returns error when CLI checksum verification fails', async () => {
     sinon.stub(testCliService, 'isChecksumCorrect').resolves(false);
-    sinon.stub(cliDownloadService, 'downloadCli').resolves(false);
+    sinon.stub(downloadService, 'download').resolves(false);
     const result = await testCliService.test(false, false);
 
     ok(result instanceof CliError);
@@ -169,7 +169,7 @@ suite('CliService', () => {
   });
 
   test('isChecksumCorrect returns false when CLI file is not installed', async () => {
-    sinon.stub(cliDownloadService, 'isInstalled').resolves(false);
+    sinon.stub(downloadService, 'isCliInstalled').resolves(false);
     const result = await testCliService.isChecksumCorrect('test/path');
     strictEqual(result, false);
   });
