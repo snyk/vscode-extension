@@ -9,6 +9,7 @@ export const IDE_NAME = 'Visual Studio Code';
 export const IDE_NAME_SHORT = 'vscode';
 export const COMMAND_DEBOUNCE_INTERVAL = 200; // 200 milliseconds
 export const DEFAULT_SCAN_DEBOUNCE_INTERVAL = 1000; // 1 second
+export const DEFAULT_LS_DEBOUNCE_INTERVAL = 1000; // 1 second
 export const OSS_SCAN_DEBOUNCE_INTERVAL = 10000; // 10 seconds
 export const EXECUTION_THROTTLING_INTERVAL = 1000 * 10; // * 60 * 30; // 30 minutes
 export const EXECUTION_PAUSE_INTERVAL = 1000 * 60 * 30; // 30 minutes

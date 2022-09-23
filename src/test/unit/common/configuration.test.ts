@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { deepStrictEqual, strictEqual, throws } from 'assert';
+import os from 'os';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
@@ -8,8 +9,8 @@ import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../sny
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
+import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
@@ -197,18 +198,5 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
-  });
-
-  test('Snyk LS: Language Server path is returned when set', () => {
-    const SNYK_LS_PATH = '/path/to/language/server';
-    const configuration = new Configuration({ SNYK_LS_PATH }, workspaceStub);
-
-    strictEqual(configuration.getSnykLanguageServerPath(), SNYK_LS_PATH);
-  });
-
-  test('Snyk LS: Throws when Language Server path is not set', () => {
-    const configuration = new Configuration({}, workspaceStub);
-
-    throws(() => configuration.getSnykLanguageServerPath());
   });
 });

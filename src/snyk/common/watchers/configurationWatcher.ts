@@ -1,12 +1,14 @@
+import * as _ from 'lodash';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
 import { IAnalytics } from '../analytics/itly';
 import { configuration } from '../configuration/instance';
-import { SNYK_TOKEN_KEY } from '../constants/general';
+import { DEFAULT_LS_DEBOUNCE_INTERVAL, SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_CUSTOM_LS_PATH,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
@@ -38,6 +40,9 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
+    } else if (key === ADVANCED_CUSTOM_LS_PATH) {
+      // Language Server client must sync config changes before we can restart
+      return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -62,6 +67,7 @@ class ConfigurationWatcher implements IWatcher {
         CODE_QUALITY_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
+        ADVANCED_CUSTOM_LS_PATH,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

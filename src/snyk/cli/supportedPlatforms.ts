@@ -1,8 +1,8 @@
-export const SupportedPlatformsList = ['linux', 'win32', 'darwin'] as const;
-export type CliSupportedPlatform = typeof SupportedPlatformsList[number];
+export const SupportedCliPlatformsList = ['linux', 'win32', 'darwin'] as const;
+export type CliSupportedPlatform = typeof SupportedCliPlatformsList[number];
 
 export function isPlatformSupported(platform: NodeJS.Platform): boolean {
-  if (SupportedPlatformsList.find(p => p === platform) !== undefined) {
+  if (SupportedCliPlatformsList.find(p => p === platform) !== undefined) {
     return true;
   }
 

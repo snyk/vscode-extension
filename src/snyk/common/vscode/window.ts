@@ -13,6 +13,7 @@ export interface IVSCodeWindow {
   getVisibleTextEditors(): readonly TextEditor[];
   showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>;
   showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
+  createOutputChannel(channelName: string): vscode.OutputChannel;
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
   withProgress<R>(
@@ -60,6 +61,10 @@ export class VSCodeWindow implements IVSCodeWindow {
 
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): vscode.TextEditorDecorationType {
     return vscode.window.createTextEditorDecorationType(options);
+  }
+
+  createOutputChannel(channelName: string): vscode.OutputChannel {
+    return vscode.window.createOutputChannel(channelName);
   }
 
   registerWebviewPanelSerializer(viewType: string, serializer: vscode.WebviewPanelSerializer): vscode.Disposable {

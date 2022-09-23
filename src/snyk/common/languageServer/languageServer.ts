@@ -10,18 +10,19 @@ import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { IContextService } from '../services/contextService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
+import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
 
 export interface ILanguageServer {
   start(): Promise<void>;
-
   stop(): Promise<void>;
 }
-
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
+  private lsBinaryPath: string;
 
   constructor(
     private context: ExtensionContext,
@@ -29,6 +30,7 @@ export class LanguageServer implements ILanguageServer {
     private contextService: IContextService,
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
+    private window: IVSCodeWindow,
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
   ) {}
@@ -40,6 +42,7 @@ export class LanguageServer implements ILanguageServer {
       return Promise.resolve(undefined);
     }
     await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
+    this.logger.info('Starting Snyk Language Server...');
 
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
@@ -57,8 +60,12 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
+    this.lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
+
+    this.logger.info(`Snyk Language Server binary path: ${this.lsBinaryPath}`);
+
     const serverOptions: ServerOptions = {
-      command: this.configuration.getSnykLanguageServerPath(),
+      command: this.lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
       options: {
         env: processEnv,
@@ -74,6 +81,7 @@ export class LanguageServer implements ILanguageServer {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
       middleware: new LanguageClientMiddleware(this.context, this.configuration),
+      outputChannel: this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
 
     // Create the language client and start the client.
@@ -86,7 +94,8 @@ export class LanguageServer implements ILanguageServer {
     });
 
     // Start the client. This will also launch the server
-    return this.client.start();
+    await this.client.start();
+    this.logger.info('Snyk Language Server started');
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
@@ -99,10 +108,17 @@ export class LanguageServer implements ILanguageServer {
     };
   }
 
-  stop(): Promise<void> {
+  async stop(): Promise<void> {
+    this.logger.info('Stopping Snyk Language Server...');
     if (!this.client) {
-      return Promise.resolve(undefined);
+      return Promise.resolve();
     }
-    return this.client.stop();
+
+    if (this.client?.isRunning()) {
+      await this.client.stop();
+    }
+    // cleanup output channel explicitly
+    this.client.outputChannel.dispose();
+    this.logger.info('Snyk Language Server stopped');
   }
 }

@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.6.0]
+
+### Added
+
+- Snyk LS: Configure custom Language Server binary path in settings
+
 ## [1.5.0]
 
 ### Added

@@ -146,6 +146,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.contextService,
       languageClientAdapter,
       vsCodeWorkspace,
+      vsCodeWindow,
       this.authService,
       Logger,
     );
@@ -332,6 +333,11 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.stop();
     await this.analytics.flush();
     await ErrorReporter.flush();
+  }
+
+  public async restartLanguageServer(): Promise<void> {
+    await this.languageServer.stop();
+    await this.languageServer.start();
   }
 
   private logPluginIsInstalled(): void {

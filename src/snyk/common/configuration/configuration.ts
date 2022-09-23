@@ -9,6 +9,7 @@ import {
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_PATH,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -92,7 +93,7 @@ export interface IConfiguration {
 
   severityFilter: SeverityFilter;
 
-  getSnykLanguageServerPath(): string;
+  getSnykLanguageServerPath(): string | undefined;
 }
 
 export class Configuration implements IConfiguration {
@@ -184,9 +185,11 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  getSnykLanguageServerPath(): string {
-    if (!this.processEnv.SNYK_LS_PATH) throw new Error('SNYK_LS_PATH environment variable is not set.');
-    return this.processEnv.SNYK_LS_PATH;
+  getSnykLanguageServerPath(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    );
   }
 
   async getToken(): Promise<string | undefined> {

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { IExtension } from '../../base/modules/interfaces';
 import { IWebViewProvider } from '../../common/views/webviewProvider';
 import { completeFileSuggestionType } from '../interfaces';
 
