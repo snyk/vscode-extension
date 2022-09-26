@@ -5,6 +5,7 @@
 ### Added
 
 - Snyk LS: Configure custom Language Server binary path in settings
+- Snyk LS: Automatically download and update language server binary
 
 ## [1.5.0]
 
