@@ -1,5 +1,4 @@
 import axios, { CancelTokenSource } from 'axios';
-import stream from 'stream';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 import { LsExecutable } from './lsExecutable';
 import { LsSupportedPlatform } from './supportedPlatforms';
@@ -14,7 +13,7 @@ export type LsMetadata = {
   date: string;
   previous_tag: string;
   project_name: string;
-  runtime: any;
+  runtime: string;
 };
 
 export interface IStaticLsApi {
@@ -29,7 +28,6 @@ export interface IStaticLsApi {
 
 export class StaticLsApi implements IStaticLsApi {
   private readonly baseUrl = `https://static.snyk.io/snyk-ls/${PROTOCOL_VERSION}`;
-  private metadata: LsMetadata;
 
   constructor(private readonly workspace: IVSCodeWorkspace) {}
 
