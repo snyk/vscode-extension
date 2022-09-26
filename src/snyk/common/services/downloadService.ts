@@ -1,23 +1,24 @@
 import { ReplaySubject } from 'rxjs';
-import { IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import {
   MEMENTO_CLI_CHECKSUM,
   MEMENTO_CLI_LAST_UPDATE_DATE,
   MEMENTO_LS_CHECKSUM,
   MEMENTO_LS_LAST_UPDATE_DATE,
-} from '../../common/constants/globalState';
-import { ILog } from '../../common/logger/interfaces';
-import { Platform } from '../../common/platform';
-import { ExtensionContext } from '../../common/vscode/extensionContext';
-import { IVSCodeWindow } from '../../common/vscode/window';
-import { IStaticCliApi } from '../api/staticCliApi';
-import { Checksum } from '../checksum';
-import { CliExecutable } from '../cliExecutable';
-import { Downloader } from '../../common/download/downloader';
-import { messages } from '../messages/messages';
-import { CliSupportedPlatform, isPlatformSupported } from '../supportedPlatforms';
-import { LsExecutable } from '../../common/languageServer/lsExecutable';
-import { IStaticLsApi } from '../../common/languageServer/staticLsApi';
+} from '../constants/globalState';
+import { ILog } from '../logger/interfaces';
+import { Platform } from '../platform';
+import { ExtensionContext } from '../vscode/extensionContext';
+import { IVSCodeWindow } from '../vscode/window';
+import { IStaticCliApi } from '../../cli/api/staticCliApi';
+import { Checksum } from '../../cli/checksum';
+import { CliExecutable } from '../../cli/cliExecutable';
+import { Downloader } from '../download/downloader';
+import { messages } from '../../cli/messages/messages';
+import { CliSupportedPlatform, isPlatformSupported } from '../../cli/supportedPlatforms';
+import { LsExecutable } from '../languageServer/lsExecutable';
+import { IStaticLsApi } from '../languageServer/staticLsApi';
+import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
 
 export class DownloadService {
   readonly fourDaysInMs = 4 * 24 * 3600 * 1000;
@@ -82,12 +83,11 @@ export class DownloadService {
   }
 
   async update(): Promise<boolean> {
-    const platform = Platform.getCurrent();
-    if (!isPlatformSupported(platform)) {
-      return Promise.reject(messages.notSupported);
-    }
-
     if (!this.featureFlagLsAuthenticateActive) {
+      const platform = Platform.getCurrent();
+      if (!isPlatformSupported(platform)) {
+        return Promise.reject(messages.notSupported);
+      }
       if (this.isFourDaysPassedSinceLastCliUpdate()) {
         const updateAvailable = await this.isCliUpdateAvailable(platform as CliSupportedPlatform);
         if (!updateAvailable) {
@@ -110,8 +110,13 @@ export class DownloadService {
       }
     } else {
       // let language server manage CLI downloads, but download LS here
+      const platform = Platform.getCurrentWithArch();
       const lsInstalled = await this.isLsInstalled();
       if (!lsInstalled || this.isFourDaysPassedSinceLastLsUpdate()) {
+        const updateAvailable = await this.isLsUpdateAvailable(platform as LsSupportedPlatform);
+        if (!updateAvailable) {
+          return false;
+        }
         const executable = await this.downloader.download();
         if (!executable) {
           return false;
@@ -133,8 +138,8 @@ export class DownloadService {
     return executableExists && lastUpdateDateWritten && cliChecksumWritten;
   }
 
-  private async isLsInstalled() {
-    const lsExecutableExists = await LsExecutable.exists(this.extensionContext.extensionPath);
+  async isLsInstalled() {
+    const lsExecutableExists = await LsExecutable.exists(this.configuration);
     const lastUpdateDateWritten = !!this.getLastLsUpdateDate();
     const lsChecksumWritten = !!this.getLsChecksum();
 
@@ -144,6 +149,20 @@ export class DownloadService {
   private async isCliUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const latestChecksum = await this.cliApi.getSha256Checksum(platform);
     const path = CliExecutable.getPath(this.extensionContext.extensionPath, this.configuration.getCustomCliPath());
+
+    // Update is available if fetched checksum not matching the current one
+    const checksum = await Checksum.getChecksumOf(path, latestChecksum);
+    if (checksum.verify()) {
+      this.logger.info(messages.isLatest);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async isLsUpdateAvailable(platform: LsSupportedPlatform): Promise<boolean> {
+    const latestChecksum = await this.lsApi.getSha256Checksum(platform);
+    const path = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
 
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);

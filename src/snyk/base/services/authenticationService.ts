@@ -114,7 +114,7 @@ export class AuthenticationService implements IAuthenticationService {
     if (!token) return;
     await this.configuration.setToken(token);
     // TODO remove feature flag when ready
-    if (this.configuration.getPreviewFeatures().lsAuthenticate) {
+    if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       return Promise.resolve();
     }
     return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {

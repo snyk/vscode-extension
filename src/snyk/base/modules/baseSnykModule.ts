@@ -1,7 +1,7 @@
 import { AdvisorApiClient, IAdvisorApiClient } from '../../advisor/services/advisorApiClient';
 import AdvisorProvider from '../../advisor/services/advisorProvider';
 import { AdvisorService } from '../../advisor/services/advisorService';
-import { DownloadService } from '../../cli/services/downloadService';
+import { DownloadService } from '../../common/services/downloadService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { ISnykApiClient, SnykApiClient } from '../../common/api/apiСlient';
 import { CommandController } from '../../common/commands/commandController';

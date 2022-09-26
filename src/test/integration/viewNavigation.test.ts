@@ -8,12 +8,12 @@ import { configuration } from '../../snyk/common/configuration/instance';
 
 suite('View Navigation', () => {
   setup(async () => {
-    await configuration.setToken(undefined);
+    await configuration.setToken('');
     await configuration.setFeaturesConfiguration(undefined);
   });
 
   teardown(async () => {
-    await configuration.setToken(undefined);
+    await configuration.setToken('');
   });
 
   test('"Feature view is seen after user authenticates within welcome view', async () => {

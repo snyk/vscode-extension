@@ -11,7 +11,7 @@ import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
-import { DownloadService } from './downloadService';
+import { DownloadService } from '../../common/services/downloadService';
 
 export class CliError {
   constructor(public error: string | Error | unknown, public path?: string, public isCancellation = false) {}

@@ -36,20 +36,20 @@ suite('LsExecutable', () => {
     const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
 
     // DarwinAmd64
-    let osxPlatform: LsSupportedPlatform = 'darwinAmd64';
+    let macOSPlatform: LsSupportedPlatform = 'darwinAmd64';
     let homedir = '/Users/user';
-    getCurrentWithArchStub.returns(osxPlatform);
+    getCurrentWithArchStub.returns(macOSPlatform);
     homedirStub.returns(homedir);
 
-    let expectedFilename = LsExecutable.getFilename(osxPlatform);
+    let expectedFilename = LsExecutable.getFilename(macOSPlatform);
     let expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // DarwinArm64
-    osxPlatform = 'darwinArm64';
-    getCurrentWithArchStub.returns(osxPlatform);
+    macOSPlatform = 'darwinArm64';
+    getCurrentWithArchStub.returns(macOSPlatform);
 
-    expectedFilename = LsExecutable.getFilename(osxPlatform);
+    expectedFilename = LsExecutable.getFilename(macOSPlatform);
     expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 

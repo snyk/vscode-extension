@@ -1,7 +1,7 @@
 import * as marked from 'marked';
 import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
-import { DownloadService } from '../../cli/services/downloadService';
+import { DownloadService } from '../../common/services/downloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';

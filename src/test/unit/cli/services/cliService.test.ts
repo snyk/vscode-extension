@@ -3,7 +3,7 @@ import { deepStrictEqual, notStrictEqual, ok, rejects, strictEqual } from 'asser
 import sinon from 'sinon';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { DownloadService } from '../../../../snyk/cli/services/downloadService';
+import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { CliError, CliService } from '../../../../snyk/cli/services/cliService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';

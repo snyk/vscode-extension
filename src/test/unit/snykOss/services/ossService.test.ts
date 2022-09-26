@@ -3,7 +3,7 @@ import * as fs from 'fs/promises';
 import _ from 'lodash';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { DownloadService } from '../../../../snyk/cli/services/downloadService';
+import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';

@@ -49,7 +49,7 @@ export class Downloader {
     }
   }
 
-  private async getLsExecutable(lsPlatform: LsSupportedPlatform) {
+  private async getLsExecutable(lsPlatform: LsSupportedPlatform): Promise<LsExecutable | null> {
     const lsPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
     if (await this.binaryExists(lsPath)) {
       await this.deleteFileAtPath(lsPath);

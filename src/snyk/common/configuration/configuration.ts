@@ -48,6 +48,7 @@ export type PreviewFeatures = {
 };
 
 export interface IConfiguration {
+  shouldShowAdvancedView: boolean;
   isDevelopment: boolean;
   source: string;
 
@@ -56,7 +57,7 @@ export interface IConfiguration {
 
   getToken(): Promise<string | undefined>;
 
-  setToken(token: string): Promise<void>;
+  setToken(token: string | undefined): Promise<void>;
 
   setCliPath(cliPath: string): Promise<void>;
 
@@ -96,6 +97,8 @@ export interface IConfiguration {
   severityFilter: SeverityFilter;
 
   getSnykLanguageServerPath(): string | undefined;
+
+  setShouldReportEvents(b: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -215,7 +218,7 @@ export class Configuration implements IConfiguration {
   }
 
   async setToken(token: string | undefined): Promise<void> {
-    if (!token) return;
+    if (!token || token === '') return;
     return await SecretStorageAdapter.instance.store(SNYK_TOKEN_KEY, token);
   }
 
@@ -384,7 +387,7 @@ export class Configuration implements IConfiguration {
     const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
-      lsAuthenticate: true,
+      lsAuthenticate: false,
     };
 
     const userSetting =

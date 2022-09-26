@@ -3,6 +3,8 @@ import path from 'path';
 import { Checksum } from '../../cli/checksum';
 import { Platform } from '../platform';
 import { LsSupportedPlatform } from './supportedPlatforms';
+import fs from 'fs/promises';
+import { IConfiguration } from '../configuration/configuration';
 
 export class LsExecutable {
   private static filenamePrefix = 'snyk-ls';
@@ -43,7 +45,7 @@ export class LsExecutable {
 
     const platform = this.getCurrentWithArch();
     const homeDir = Platform.getHomeDir();
-    const lsFilename = this.filenameSuffixes[platform];
+    const lsFilename = this.getFilename(platform);
     const defaultPath = this.defaultPaths[platform];
 
     return path.join(homeDir, defaultPath, lsFilename);
@@ -63,5 +65,12 @@ export class LsExecutable {
     }
 
     return `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}` as LsSupportedPlatform;
+  }
+
+  static exists(configuration: IConfiguration): Promise<boolean> {
+    return fs
+      .access(LsExecutable.getPath(configuration.getSnykLanguageServerPath()))
+      .then(() => true)
+      .catch(() => false);
   }
 }

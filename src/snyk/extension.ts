@@ -10,7 +10,7 @@ import { FeaturesViewProvider } from './base/views/featureSelection/featuresView
 import { SupportProvider } from './base/views/supportProvider';
 import { StaticCliApi } from './cli/api/staticCliApi';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
-import { DownloadService } from './cli/services/downloadService';
+import { DownloadService } from './common/services/downloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/commands/types';
