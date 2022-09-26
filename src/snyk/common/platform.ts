@@ -15,7 +15,7 @@ export class Platform {
     if (opArch === 'x64') {
       opArch = 'amd64';
     }
-    let supportPlatform = `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}`;
+    const supportPlatform = `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}`;
     if (SupportedLsPlatformsList[supportPlatform] === undefined) {
       return null;
     }
