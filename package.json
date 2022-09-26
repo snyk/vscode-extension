@@ -463,7 +463,7 @@
     "@itly/sdk": "^2.3.1",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
-    "@snyk/code-client": "^4.12.3",
+    "@snyk/code-client": "^4.12.4",
     "analytics-node": "^4.0.1",
     "axios": "^0.27.2",
     "glob": "^7.2.0",
