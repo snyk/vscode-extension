@@ -10,7 +10,8 @@
 
 ### Added
 
-- Snyk LS: Prepare copyAuthLink for deprecation
+- Snyk LS: Deprecate copyAuthLink command.
+- Snyk LS: Deprecate snyk.logout command.
 
 ## [1.4.0]
 
