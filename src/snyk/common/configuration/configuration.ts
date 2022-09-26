@@ -429,8 +429,4 @@ export class Configuration implements IConfiguration {
   private removeTrailingSlash(str: string) {
     return str.replace(/\/$/, '');
   }
-
-  getCustomLsPath(): string {
-    return '';
-  }
 }
