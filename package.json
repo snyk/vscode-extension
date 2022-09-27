@@ -198,7 +198,7 @@
                 "type": "boolean",
                 "title": "Authenticate using Snyk Language Server",
                 "description": "Authenticate using Snyk Language Server.",
-                "default": true
+                "default": false
               }
             }
           }
