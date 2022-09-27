@@ -1,7 +1,7 @@
 import * as marked from 'marked';
 import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
-import { CliDownloadService } from '../../cli/services/cliDownloadService';
+import { DownloadService } from '../../common/services/downloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
@@ -32,7 +32,7 @@ export class OssService extends CliService<OssResult> {
     private readonly suggestionProvider: IWebViewProvider<OssIssueCommandArg>,
     protected readonly workspace: IVSCodeWorkspace,
     private readonly viewManagerService: IViewManagerService,
-    protected readonly downloadService: CliDownloadService,
+    protected readonly downloadService: DownloadService,
     private readonly dailyScanJob: DailyScanJob,
     private readonly notificationService: INotificationService,
     private readonly analytics: IAnalytics,

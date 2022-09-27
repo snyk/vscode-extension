@@ -2,16 +2,16 @@ import { checkSession, getIpFamily as getNetworkFamily, IpFamily, startSession }
 import { validate as uuidValidate } from 'uuid';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
+import { LanguageClient } from '../../common/vscode/types';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { ISnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { messages } from '../messages/loginMessages';
 import { IBaseSnykModule } from '../modules/interfaces';
-import { LanguageClient } from '../../common/vscode/types';
-import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 
 export interface IAuthenticationService {
   initiateLogin(getIpFamily: typeof getNetworkFamily): Promise<void>;
@@ -117,7 +117,6 @@ export class AuthenticationService implements IAuthenticationService {
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       return Promise.resolve();
     }
-
     return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
       settings: {
         token: token,

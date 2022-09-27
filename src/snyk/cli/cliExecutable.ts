@@ -25,9 +25,7 @@ export class CliExecutable {
 
     const platform = Platform.getCurrent();
     const fileName = CliExecutable.getFilename(platform as CliSupportedPlatform);
-    const cliPath = path.join(extensionDir, fileName);
-
-    return cliPath;
+    return path.join(extensionDir, fileName);
   }
 
   static exists(extensionDir: string, customPath?: string): Promise<boolean> {

@@ -48,6 +48,7 @@ export type PreviewFeatures = {
 };
 
 export interface IConfiguration {
+  shouldShowAdvancedView: boolean;
   isDevelopment: boolean;
   source: string;
 
@@ -56,7 +57,9 @@ export interface IConfiguration {
 
   getToken(): Promise<string | undefined>;
 
-  setToken(token: string): Promise<void>;
+  setToken(token: string | undefined): Promise<void>;
+
+  setCliPath(cliPath: string): Promise<void>;
 
   clearToken(): Promise<void>;
 
@@ -94,6 +97,8 @@ export interface IConfiguration {
   severityFilter: SeverityFilter;
 
   getSnykLanguageServerPath(): string | undefined;
+
+  setShouldReportEvents(b: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -215,6 +220,11 @@ export class Configuration implements IConfiguration {
   async setToken(token: string | undefined): Promise<void> {
     if (!token) return;
     return await SecretStorageAdapter.instance.store(SNYK_TOKEN_KEY, token);
+  }
+
+  async setCliPath(cliPath: string | undefined): Promise<void> {
+    if (!cliPath) return;
+    return this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH), cliPath);
   }
 
   async clearToken(): Promise<void> {

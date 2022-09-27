@@ -9,7 +9,7 @@ suite('Analytics', () => {
   let welcomeIsViewed: sinon.SinonSpy;
 
   setup(async () => {
-    await configuration.setToken(''); // ensures user is not authenticated
+    await configuration.clearToken();
     await configuration.setShouldReportEvents(true);
 
     welcomeIsViewed = sinon.spy(itly, 'welcomeIsViewed');

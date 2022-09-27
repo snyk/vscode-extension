@@ -1,4 +1,4 @@
-import { Configuration } from './configuration';
+import { Configuration, IConfiguration } from './configuration';
 import { VSCodeWorkspace } from '../vscode/workspace';
 
-export const configuration = new Configuration(process.env, new VSCodeWorkspace());
+export const configuration: IConfiguration = new Configuration(process.env, new VSCodeWorkspace());

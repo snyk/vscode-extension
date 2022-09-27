@@ -6,6 +6,7 @@
 
 - Snyk LS: Configure custom Language Server binary path in settings.
 - Snyk LS: Deprecate snyk.logout command.
+- Snyk LS: Automatically download and update language server binary
 
 ### Fixed
 

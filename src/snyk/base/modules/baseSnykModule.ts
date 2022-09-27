@@ -1,7 +1,7 @@
 import { AdvisorApiClient, IAdvisorApiClient } from '../../advisor/services/advisorApiClient';
 import AdvisorProvider from '../../advisor/services/advisorProvider';
 import { AdvisorService } from '../../advisor/services/advisorService';
-import { CliDownloadService } from '../../cli/services/cliDownloadService';
+import { DownloadService } from '../../common/services/downloadService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { ISnykApiClient, SnykApiClient } from '../../common/api/apiСlient';
 import { CommandController } from '../../common/commands/commandController';
@@ -44,7 +44,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly openerService: IOpenerService;
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
-  protected cliDownloadService: CliDownloadService;
+  protected downloadService: DownloadService;
   protected ossService?: OssService;
   protected advisorService?: AdvisorProvider;
   protected learnService: LearnService;

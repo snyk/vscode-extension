@@ -9,7 +9,8 @@ import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { StaticCliApi } from './cli/api/staticCliApi';
-import { CliDownloadService } from './cli/services/cliDownloadService';
+import { StaticLsApi } from './common/languageServer/staticLsApi';
+import { DownloadService } from './common/services/downloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/commands/types';
@@ -149,8 +150,8 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWindow,
       this.authService,
       Logger,
+      this.downloadService,
     );
-    await this.languageServer.start();
 
     this.snykCode = new SnykCodeService(
       this.context,
@@ -172,10 +173,11 @@ class SnykExtension extends SnykLib implements IExtension {
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
-    this.cliDownloadService = new CliDownloadService(
+    this.downloadService = new DownloadService(
       this.context,
       configuration,
       new StaticCliApi(vsCodeWorkspace),
+      new StaticLsApi(vsCodeWorkspace),
       vsCodeWindow,
       Logger,
     );
@@ -186,7 +188,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
       vsCodeWorkspace,
       this.viewManagerService,
-      this.cliDownloadService,
+      this.downloadService,
       new DailyScanJob(this),
       this.notificationService,
       this.analytics,
@@ -320,6 +322,8 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
 
+    await this.languageServer.start();
+
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
 
@@ -349,12 +353,12 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  private initCliDownload(): CliDownloadService {
-    this.cliDownloadService.downloadOrUpdateCli().catch(err => {
+  private initCliDownload(): DownloadService {
+    this.downloadService.downloadOrUpdate().catch(err => {
       this.ossService?.handleCliDownloadFailure(err);
     });
 
-    return this.cliDownloadService;
+    return this.downloadService;
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
