@@ -58,7 +58,7 @@ suite('Language Server', () => {
       },
     } as IContextService;
     downloadService = {
-      downloadReady: new ReplaySubject<void>(1),
+      downloadReady$: new ReplaySubject<void>(1),
     } as DownloadService;
   });
 
@@ -125,7 +125,7 @@ suite('Language Server', () => {
       new LoggerMock(),
       downloadService,
     );
-    downloadService.downloadReady.next();
+    downloadService.downloadReady$.next();
 
     await languageServer.start();
     sinon.assert.called(lca.create);
@@ -194,7 +194,7 @@ suite('Language Server', () => {
       new LoggerMock(),
       downloadService,
     );
-    downloadService.downloadReady.next();
+    downloadService.downloadReady$.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.verify();

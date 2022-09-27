@@ -22,7 +22,7 @@ import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
 
 export class DownloadService {
   readonly fourDaysInMs = 4 * 24 * 3600 * 1000;
-  readonly downloadReady = new ReplaySubject<void>(1);
+  readonly downloadReady$ = new ReplaySubject<void>(1);
 
   private readonly downloader: Downloader;
 
@@ -46,7 +46,7 @@ export class DownloadService {
     const lsInstalled = await this.isLsInstalled();
 
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
-      this.downloadReady.next();
+      this.downloadReady$.next();
       return false;
     }
 
@@ -56,12 +56,12 @@ export class DownloadService {
 
     if (download) {
       const downloaded = await this.download();
-      this.downloadReady.next();
+      this.downloadReady$.next();
       return downloaded;
     }
 
     const updated = await this.update();
-    this.downloadReady.next();
+    this.downloadReady$.next();
 
     return updated;
   }

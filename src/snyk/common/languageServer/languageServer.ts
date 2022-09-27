@@ -48,7 +48,7 @@ export class LanguageServer implements ILanguageServer {
     }
 
     // wait until Snyk LS is downloaded
-    await firstValueFrom(this.downloadService.downloadReady);
+    await firstValueFrom(this.downloadService.downloadReady$);
     await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
     this.logger.info('Starting Snyk Language Server...');
 

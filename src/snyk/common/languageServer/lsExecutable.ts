@@ -5,7 +5,6 @@ import { Platform } from '../platform';
 import { LsSupportedPlatform, SupportedLsPlatformsList } from './supportedPlatforms';
 import fs from 'fs/promises';
 import { IConfiguration } from '../configuration/configuration';
-import { mkdir, mkdirSync } from 'fs';
 
 export class LsExecutable {
   private static filenamePrefix = 'snyk-ls';
