@@ -1,12 +1,15 @@
+import { firstValueFrom } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
+import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { SNYK_CONTEXT } from '../constants/views';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { IContextService } from '../services/contextService';
+import { DownloadService } from '../services/downloadService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
@@ -14,14 +17,12 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
-import { firstValueFrom } from 'rxjs';
-import { DownloadService } from '../services/downloadService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
   stop(): Promise<void>;
 }
+
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   private lsBinaryPath: string;
@@ -48,7 +49,7 @@ export class LanguageServer implements ILanguageServer {
     }
 
     // wait until Snyk LS is downloaded
-    await firstValueFrom(this.downloadService.downloadReady$);
+    await firstValueFrom(this.downloadService.downloadReady$); // todo: cover case when it doesn't exist
     await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
     this.logger.info('Starting Snyk Language Server...');
 
