@@ -5,6 +5,7 @@ import { Platform } from '../platform';
 import { LsSupportedPlatform, SupportedLsPlatformsList } from './supportedPlatforms';
 import fs from 'fs/promises';
 import { IConfiguration } from '../configuration/configuration';
+import { mkdir, mkdirSync } from 'fs';
 
 export class LsExecutable {
   private static filenamePrefix = 'snyk-ls';
@@ -22,8 +23,8 @@ export class LsExecutable {
     linux386: process.env.XDG_DATA_HOME ?? '/.local/share/',
     linuxAmd64: process.env.XDG_DATA_HOME ?? '/.local/share/',
     linuxArm64: process.env.XDG_DATA_HOME ?? '/.local/share/',
-    windows386: process.env.XDG_DATA_HOME ?? '\\AppData\\Local\\snyk\\',
-    windowsAmd64: process.env.XDG_DATA_HOME ?? '\\AppData\\Local\\snyk\\',
+    windows386: process.env.XDG_DATA_HOME ?? '\\AppData\\Local\\',
+    windowsAmd64: process.env.XDG_DATA_HOME ?? '\\AppData\\Local\\',
     darwinAmd64: process.env.XDG_DATA_HOME ?? '/Library/Application Support/',
     darwinArm64: process.env.XDG_DATA_HOME ?? '/Library/Application Support/',
   };
@@ -48,8 +49,8 @@ export class LsExecutable {
     const homeDir = Platform.getHomeDir();
     const lsFilename = this.getFilename(platform);
     const defaultPath = this.defaultPaths[platform];
-
-    return path.join(homeDir, defaultPath, lsFilename);
+    const lsDir = path.join(homeDir, defaultPath, 'snyk-ls');
+    return path.join(lsDir, lsFilename);
   }
 
   static getCurrentWithArch(): LsSupportedPlatform {

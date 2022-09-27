@@ -16,6 +16,8 @@ import { Progress } from 'vscode';
 import { CancellationToken } from '../vscode/types';
 import { CliSupportedPlatform, isPlatformSupported } from '../../cli/supportedPlatforms';
 import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
+import { mkdirSync } from 'fs';
+import path from 'path';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
@@ -52,6 +54,8 @@ export class Downloader {
 
   private async getLsExecutable(lsPlatform: LsSupportedPlatform): Promise<LsExecutable | null> {
     const lsPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
+    const lsDir = path.dirname(lsPath);
+    mkdirSync(lsDir, { recursive: true });
     if (await this.binaryExists(lsPath)) {
       await this.deleteFileAtPath(lsPath);
     }

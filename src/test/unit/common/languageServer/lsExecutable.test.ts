@@ -31,7 +31,7 @@ suite('LsExecutable', () => {
     strictEqual(LsExecutable.getVersionedFilename('windowsAmd64', version), `snyk-ls_${version}_windows_amd64.exe`);
   });
 
-  test('Returns correct extension paths', () => {
+  test('Returns correct paths', () => {
     const homedirStub = sinon.stub(os, 'homedir');
     const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
 
@@ -42,7 +42,7 @@ suite('LsExecutable', () => {
     homedirStub.returns(homedir);
 
     let expectedFilename = LsExecutable.getFilename(macOSPlatform);
-    let expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
+    let expectedCliPath = path.join(homedir, '/Library/Application Support/', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // DarwinArm64
@@ -50,7 +50,7 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(macOSPlatform);
 
     expectedFilename = LsExecutable.getFilename(macOSPlatform);
-    expectedCliPath = path.join(homedir, '/Library/Application Support/', expectedFilename);
+    expectedCliPath = path.join(homedir, '/Library/Application Support/', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // Linux386
@@ -60,7 +60,7 @@ suite('LsExecutable', () => {
     homedirStub.returns(homedir);
 
     expectedFilename = LsExecutable.getFilename(linuxPlatform);
-    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // LinuxAmd64
@@ -68,7 +68,7 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(linuxPlatform);
 
     expectedFilename = LsExecutable.getFilename(linuxPlatform);
-    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // LinuxArm64
@@ -76,7 +76,7 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(linuxPlatform);
 
     expectedFilename = LsExecutable.getFilename(linuxPlatform);
-    expectedCliPath = path.join(homedir, '/.local/share/', expectedFilename);
+    expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // Windows386
@@ -86,7 +86,7 @@ suite('LsExecutable', () => {
     homedirStub.returns(homedir);
 
     expectedFilename = LsExecutable.getFilename(windowsPlatform);
-    expectedCliPath = path.join(homedir, '\\AppData\\Local\\snyk\\', expectedFilename);
+    expectedCliPath = path.join(homedir, '\\AppData\\Local\\', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
 
     // WindowsAmd64
@@ -94,7 +94,7 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(windowsPlatform);
 
     expectedFilename = LsExecutable.getFilename(windowsPlatform);
-    expectedCliPath = path.join(homedir, '\\AppData\\Local\\snyk\\', expectedFilename);
+    expectedCliPath = path.join(homedir, '\\AppData\\Local\\', 'snyk-ls', expectedFilename);
     strictEqual(LsExecutable.getPath(), expectedCliPath);
   });
 
