@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { deepStrictEqual, strictEqual, throws } from 'assert';
-import os from 'os';
+import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
@@ -183,7 +182,6 @@ suite('Configuration', () => {
     deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
       advisor: false,
-      lsAuthenticate: false,
     } as PreviewFeatures);
   });
 
@@ -191,7 +189,6 @@ suite('Configuration', () => {
     const previewFeatures = {
       reportFalsePositives: true,
       advisor: false,
-      lsAuthenticate: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 

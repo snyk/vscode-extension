@@ -7,15 +7,15 @@ import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
-import { IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
+import { LanguageClient } from '../../../../snyk/common/vscode/types';
 import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
-import { LanguageClient } from '../../../../snyk/common/vscode/types';
-import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;
@@ -46,7 +46,6 @@ suite('AuthenticationService', () => {
     setTokenSpy = sinon.fake();
     clearTokenSpy = sinon.fake();
     languageClientSendNotification = sinon.fake();
-    previewFeaturesSpy = sinon.fake.returns({ lsAuthenticate: true } as PreviewFeatures);
 
     languageClient = {
       sendNotification: languageClientSendNotification,

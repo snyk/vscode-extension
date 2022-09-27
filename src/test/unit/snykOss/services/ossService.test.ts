@@ -3,10 +3,10 @@ import * as fs from 'fs/promises';
 import _ from 'lodash';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
+import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
 import { IWebViewProvider } from '../../../../snyk/common/views/webviewProvider';
@@ -52,7 +52,6 @@ suite('OssService', () => {
         logAnalysisIsReady: sinon.fake(),
       } as unknown as IAnalytics,
     );
-    sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });
 
   teardown(() => {

@@ -1,23 +1,21 @@
 import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
+import { mkdirSync } from 'fs';
 import * as fsPromises from 'fs/promises';
+import path from 'path';
 import * as stream from 'stream';
-import { IConfiguration } from '../configuration/configuration';
-import { LsExecutable } from '../languageServer/lsExecutable';
-import { ILog } from '../logger/interfaces';
-import { Platform } from '../platform';
-import { IVSCodeWindow } from '../vscode/window';
+import { Progress } from 'vscode';
 import { IStaticCliApi } from '../../cli/api/staticCliApi';
-import { IStaticLsApi } from '../languageServer/staticLsApi';
 import { Checksum } from '../../cli/checksum';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { messages } from '../../cli/messages/messages';
-import { Progress } from 'vscode';
-import { CancellationToken } from '../vscode/types';
-import { CliSupportedPlatform, isPlatformSupported } from '../../cli/supportedPlatforms';
+import { IConfiguration } from '../configuration/configuration';
+import { LsExecutable } from '../languageServer/lsExecutable';
+import { IStaticLsApi } from '../languageServer/staticLsApi';
 import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
-import { mkdirSync } from 'fs';
-import path from 'path';
+import { ILog } from '../logger/interfaces';
+import { CancellationToken } from '../vscode/types';
+import { IVSCodeWindow } from '../vscode/window';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
@@ -36,20 +34,11 @@ export class Downloader {
    */
   async download(): Promise<CliExecutable | LsExecutable | null> {
     // TODO remove when feature flag is removed
-    if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
-      let platform = Platform.getCurrent();
-      if (!isPlatformSupported(platform)) {
-        return Promise.reject(messages.notSupported);
-      }
-      platform = platform as CliSupportedPlatform;
-      return await this.getCliExecutable(platform);
-    } else {
-      const lsPlatform = LsExecutable.getCurrentWithArch();
-      if (lsPlatform === null) {
-        return Promise.reject(!messages.notSupported);
-      }
-      return await this.getLsExecutable(lsPlatform);
+    const lsPlatform = LsExecutable.getCurrentWithArch();
+    if (lsPlatform === null) {
+      return Promise.reject(!messages.notSupported);
     }
+    return await this.getLsExecutable(lsPlatform);
   }
 
   private async getLsExecutable(lsPlatform: LsSupportedPlatform): Promise<LsExecutable | null> {
@@ -74,28 +63,6 @@ export class Downloader {
     }
 
     return new LsExecutable(lsVersion, checksum);
-  }
-
-  private async getCliExecutable(platform: 'darwin' | 'linux' | 'win32') {
-    const cliPath = CliExecutable.getPath(this.extensionDir, this.configuration.getCustomCliPath());
-    if (await this.binaryExists(cliPath)) {
-      await this.deleteFileAtPath(cliPath);
-    }
-
-    const cliVersion = await this.cliApi.getLatestVersion();
-    const sha256 = await this.cliApi.getSha256Checksum(platform);
-    const checksum = await this.downloadCli(cliPath, platform, sha256);
-
-    if (!checksum) {
-      return null;
-    }
-
-    const checksumCorrect = checksum.verify();
-    if (!checksumCorrect) {
-      return Promise.reject(messages.integrityCheckFailed);
-    }
-
-    return new CliExecutable(cliVersion, checksum);
   }
 
   private async binaryExists(filePath: string): Promise<boolean> {
@@ -195,20 +162,5 @@ export class Downloader {
 
       throw err;
     }
-  }
-
-  // TODO: remove after feature flag is removed
-  public async downloadCli(
-    cliPath: string,
-    platform: CliSupportedPlatform,
-    expectedChecksum: string,
-  ): Promise<Checksum | null> {
-    const hash = new Checksum(expectedChecksum);
-
-    return this.window.withProgress(messages.progressTitle, async (progress, token) => {
-      const [request, requestToken]: [response: Promise<DownloadAxiosResponse>, cancelToken: CancelTokenSource] =
-        this.cliApi.getExecutable(platform);
-      return await this.doDownload(requestToken, token, cliPath, request, hash, progress);
-    });
   }
 }

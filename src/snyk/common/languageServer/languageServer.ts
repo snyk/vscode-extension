@@ -4,7 +4,6 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
-import { SNYK_CONTEXT } from '../constants/views';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
@@ -25,7 +24,6 @@ export interface ILanguageServer {
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
-  private lsBinaryPath: string;
 
   constructor(
     private context: ExtensionContext,
@@ -42,16 +40,9 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async start(): Promise<void> {
-    // TODO remove feature flag when ready
-    if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
-      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
-      return Promise.resolve(undefined);
-    }
-
     // wait until Snyk LS is downloaded
     await firstValueFrom(this.downloadService.downloadReady$); // todo: cover case when it doesn't exist
-    await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
-    this.logger.info('Starting Snyk Language Server...');
+    this.logger.info('Starting Snyk Language Server');
 
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
@@ -69,12 +60,12 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    this.lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
+    const lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
 
-    this.logger.info(`Snyk Language Server binary path: ${this.lsBinaryPath}`);
+    this.logger.info(`Snyk Language Server path: ${lsBinaryPath}`);
 
     const serverOptions: ServerOptions = {
-      command: this.lsBinaryPath,
+      command: lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
       options: {
         env: processEnv,
@@ -102,6 +93,7 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
+    // todo: wait for this notification before allowing OSS scans, to. completely rely on LS management of the CLI.
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
       void this.configuration.setCliPath(cliPath).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);

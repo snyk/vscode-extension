@@ -1,17 +1,14 @@
-import _ from 'lodash';
 import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { MEMENTO_CLI_CHECKSUM } from '../../common/constants/globalState';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { ILog } from '../../common/logger/interfaces';
+import { DownloadService } from '../../common/services/downloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
-import { DownloadService } from '../../common/services/downloadService';
 
 export class CliError {
   constructor(public error: string | Error | unknown, public path?: string, public isCancellation = false) {}
@@ -45,14 +42,6 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this.result = undefined;
 
     const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCustomCliPath());
-
-    if (this.config.isAutomaticDependencyManagementEnabled()) {
-      const err = await this.verifyChecksum(cliPath);
-      if (err) {
-        this.finalizeTest(err);
-        return err;
-      }
-    }
 
     if (this.cliProcess) {
       const killed = this.cliProcess.kill();
@@ -111,48 +100,11 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     return args;
   }
 
-  public async isChecksumCorrect(cliPath: string): Promise<boolean> {
-    if (!(await this.downloadService.isCliInstalled())) {
-      return false;
-    }
-
-    if (!_.isUndefined(this.verifiedChecksumCorrect)) {
-      return this.verifiedChecksumCorrect;
-    }
-
-    const downloadedChecksum = this.extensionContext.getGlobalStateValue<string>(MEMENTO_CLI_CHECKSUM);
-    if (!downloadedChecksum) {
-      throw new Error('Checksum not found in the global storage.');
-    }
-
-    const checksum = await Checksum.getChecksumOf(cliPath, downloadedChecksum);
-    this.verifiedChecksumCorrect = checksum.verify();
-
-    return this.verifiedChecksumCorrect;
-  }
-
   // To be called to finalise the analysis
   public finalizeTest(result: CliResult | CliError): void {
     this.result = result;
 
     this.analysisFinished();
     this.afterTest(result);
-  }
-
-  private async verifyChecksum(cliPath: string): Promise<CliError | undefined> {
-    const checksumCorrect = await this.isChecksumCorrect(cliPath);
-    if (checksumCorrect) {
-      return;
-    }
-
-    // Redownload CLI if corrupt,
-    const downloaded = await this.downloadService.download();
-    if (!downloaded) {
-      const error = new CliError(
-        'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
-        cliPath,
-      );
-      return error;
-    }
   }
 }

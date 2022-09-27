@@ -193,12 +193,6 @@
                 "title": "Enable \"Snyk Advisor\"",
                 "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
                 "default": false
-              },
-              "lsAuthenticate": {
-                "type": "boolean",
-                "title": "Authenticate using Snyk Language Server",
-                "description": "Authenticate using Snyk Language Server.",
-                "default": false
               }
             }
           }
