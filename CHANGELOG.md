@@ -4,14 +4,19 @@
 
 ### Added
 
-- Snyk LS: Configure custom Language Server binary path in settings
+- Snyk LS: Configure custom Language Server binary path in settings.
+- Snyk LS: Deprecate snyk.logout command.
 - Snyk LS: Automatically download and update language server binary
+
+### Fixed
+
+-- Performance issues on some machines due to outdated dependency.
 
 ## [1.5.0]
 
 ### Added
 
-- Snyk LS: Prepare copyAuthLink for deprecation
+- Snyk LS: Deprecate copyAuthLink command.
 
 ## [1.4.0]
 
