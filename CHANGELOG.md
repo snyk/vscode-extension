@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.0]
+
+### Changed
+
+- Snyk LS: Remove feature flag for authentication using Language Server.
+
 ## [1.6.0]
 
 ### Added
