@@ -113,7 +113,7 @@ export class DownloadService {
       const platform = LsExecutable.getCurrentWithArch();
       const lsInstalled = await this.isLsInstalled();
       if (!lsInstalled || this.isFourDaysPassedSinceLastLsUpdate()) {
-        const updateAvailable = await this.isLsUpdateAvailable(platform as LsSupportedPlatform);
+        const updateAvailable = await this.isLsUpdateAvailable(platform);
         if (!updateAvailable) {
           return false;
         }
