@@ -218,7 +218,7 @@ export class Configuration implements IConfiguration {
   }
 
   async setToken(token: string | undefined): Promise<void> {
-    if (!token || token === '') return;
+    if (!token) return;
     return await SecretStorageAdapter.instance.store(SNYK_TOKEN_KEY, token);
   }
 

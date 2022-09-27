@@ -150,6 +150,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWindow,
       this.authService,
       Logger,
+      this.downloadService,
     );
 
     this.snykCode = new SnykCodeService(

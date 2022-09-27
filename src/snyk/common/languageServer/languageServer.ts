@@ -15,6 +15,8 @@ import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
 import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
+import { firstValueFrom } from 'rxjs';
+import { DownloadService } from '../services/downloadService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -33,7 +35,10 @@ export class LanguageServer implements ILanguageServer {
     private window: IVSCodeWindow,
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
-  ) {}
+    private downloadService: DownloadService,
+  ) {
+    this.downloadService = downloadService;
+  }
 
   async start(): Promise<void> {
     // TODO remove feature flag when ready
@@ -41,6 +46,9 @@ export class LanguageServer implements ILanguageServer {
       await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
       return Promise.resolve(undefined);
     }
+
+    // wait until Snyk LS is downloaded
+    await firstValueFrom(this.downloadService.downloadReady);
     await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
     this.logger.info('Starting Snyk Language Server...');
 
@@ -94,7 +102,9 @@ export class LanguageServer implements ILanguageServer {
     });
 
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-      void this.configuration.setCliPath(cliPath);
+      void this.configuration.setCliPath(cliPath).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
     });
 
     // Start the client. This will also launch the server

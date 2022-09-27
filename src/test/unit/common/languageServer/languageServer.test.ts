@@ -13,6 +13,8 @@ import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
+import { DownloadService } from '../../../../snyk/common/services/downloadService';
+import { ReplaySubject } from 'rxjs';
 
 suite('Language Server', () => {
   const extensionContext = extensionContextMock;
@@ -21,6 +23,7 @@ suite('Language Server', () => {
   let configuration: IConfiguration;
   let contextService: IContextService;
   let languageServer: LanguageServer;
+  let downloadService: DownloadService;
   setup(() => {
     configuration = {
       getCustomCliPath(): string | undefined {
@@ -54,6 +57,9 @@ suite('Language Server', () => {
         return Promise.resolve(undefined);
       },
     } as IContextService;
+    downloadService = {
+      downloadReady: new ReplaySubject<void>(1),
+    } as DownloadService;
   });
 
   teardown(() => {
@@ -70,6 +76,7 @@ suite('Language Server', () => {
       windowMock,
       authService,
       new LoggerMock(),
+      downloadService,
     );
     const expectedInitializationOptions: InitializationOptions = {
       activateSnykCode: 'false',
@@ -116,7 +123,10 @@ suite('Language Server', () => {
       windowMock,
       authService,
       new LoggerMock(),
+      downloadService,
     );
+    downloadService.downloadReady.next();
+
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.assert.called(lc.start);
@@ -139,7 +149,9 @@ suite('Language Server', () => {
       windowMock,
       authService,
       new LoggerMock(),
+      downloadService,
     );
+
     await languageServer.start();
     sinon.assert.notCalled(lca);
   });
@@ -180,8 +192,9 @@ suite('Language Server', () => {
       windowMock,
       authService,
       new LoggerMock(),
+      downloadService,
     );
-
+    downloadService.downloadReady.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.verify();

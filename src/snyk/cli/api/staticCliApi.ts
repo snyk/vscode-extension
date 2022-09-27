@@ -1,5 +1,4 @@
 import axios, { CancelTokenSource } from 'axios';
-import stream from 'stream';
 import { getAxiosProxyConfig } from '../../common/proxy';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { CliExecutable } from '../cliExecutable';

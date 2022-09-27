@@ -6,22 +6,6 @@ export class Platform {
     return os.platform();
   }
 
-  static getCurrentWithArch(): LsSupportedPlatform | null {
-    let opSys = os.platform().toString();
-    if (opSys === 'win32') {
-      opSys = 'windows';
-    }
-    let opArch = os.arch().toString();
-    if (opArch === 'x64') {
-      opArch = 'amd64';
-    }
-    const supportPlatform = `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}`;
-    if (SupportedLsPlatformsList[supportPlatform] === undefined) {
-      return null;
-    }
-    return supportPlatform as LsSupportedPlatform;
-  }
-
   static getVersion(): string {
     return `${os.release()}-${os.arch}`;
   }

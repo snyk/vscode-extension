@@ -1,4 +1,4 @@
-import axios, { CancelTokenSource } from 'axios';
+import axios, { AxiosResponse, CancelTokenSource } from 'axios';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 import { LsExecutable } from './lsExecutable';
 import { LsSupportedPlatform } from './supportedPlatforms';
@@ -75,7 +75,7 @@ export class StaticLsApi implements IStaticLsApi {
   }
 
   async getMetadata(): Promise<LsMetadata> {
-    const response = await axios.get<string>(`${this.baseUrl}/metadata.json`, getAxiosProxyConfig(this.workspace));
-    return response.data as unknown as LsMetadata;
+    const response = await axios.get<LsMetadata>(`${this.baseUrl}/metadata.json`, getAxiosProxyConfig(this.workspace));
+    return response.data as LsMetadata;
   }
 }

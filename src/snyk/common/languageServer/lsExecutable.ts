@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import { Checksum } from '../../cli/checksum';
 import { Platform } from '../platform';
-import { LsSupportedPlatform } from './supportedPlatforms';
+import { LsSupportedPlatform, SupportedLsPlatformsList } from './supportedPlatforms';
 import fs from 'fs/promises';
 import { IConfiguration } from '../configuration/configuration';
 
@@ -44,6 +44,7 @@ export class LsExecutable {
     }
 
     const platform = this.getCurrentWithArch();
+
     const homeDir = Platform.getHomeDir();
     const lsFilename = this.getFilename(platform);
     const defaultPath = this.defaultPaths[platform];
@@ -63,8 +64,11 @@ export class LsExecutable {
     if (opArch === 'ia32') {
       opArch = '386';
     }
-
-    return `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}` as LsSupportedPlatform;
+    const supportPlatform = `${opSys}${opArch.charAt(0).toUpperCase()}${opArch.slice(1)}`;
+    if (SupportedLsPlatformsList.find(p => p === supportPlatform) !== undefined) {
+      return supportPlatform as LsSupportedPlatform;
+    }
+    throw new Error(`Unsupported platform: ${supportPlatform}`);
   }
 
   static exists(configuration: IConfiguration): Promise<boolean> {

@@ -136,14 +136,14 @@ suite('LS Downloader (LS)', () => {
 
   test('Download of LS fails if platform is not supported', async () => {
     const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
-    sinon.stub(Platform, 'getCurrentWithArch').returns(null);
+    sinon.stub(LsExecutable, 'getCurrentWithArch').throws(new Error());
     await rejects(() => downloader.download());
   });
 
-  test('Download of LS  removes executable, if it exists', async () => {
+  test('Download of LS removes executable, if it exists', async () => {
     const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
 
-    sinon.stub(Platform, 'getCurrentWithArch').returns('darwinArm64');
+    sinon.stub(LsExecutable, 'getCurrentWithArch').returns('darwinArm64');
     sinon.stub(fs, 'access').returns(Promise.resolve());
     const unlink = sinon.stub(fs, 'unlink');
 
@@ -155,7 +155,7 @@ suite('LS Downloader (LS)', () => {
 
   test('Rejects downloaded LS when integrity check fails', async () => {
     const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
-    sinon.stub(Platform, 'getCurrentWithArch').returns('darwinAmd64');
+    sinon.stub(LsExecutable, 'getCurrentWithArch').returns('darwinAmd64');
     sinon.stub(fs);
 
     sinon.stub(downloader, 'downloadLs').resolves(new Checksum('test'));

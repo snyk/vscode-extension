@@ -9,6 +9,7 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import {
   MEMENTO_CLI_CHECKSUM,
   MEMENTO_CLI_LAST_UPDATE_DATE,
+  MEMENTO_LS_CHECKSUM,
   MEMENTO_LS_LAST_UPDATE_DATE,
 } from '../../../../snyk/common/constants/globalState';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
@@ -297,7 +298,7 @@ suite('DownloadService', () => {
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
 
-    sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.0', new Checksum('test')));
+    sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.0', new Checksum('test')));
 
     const updated = await service.update();
 
@@ -332,8 +333,8 @@ suite('DownloadService', () => {
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
-    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns(undefined);
-    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_LAST_UPDATE_DATE).returns(undefined);
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_CHECKSUM).returns(undefined);
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(undefined);
 
     stub(CliExecutable, 'exists').resolves(true);
 

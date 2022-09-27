@@ -33,6 +33,7 @@ export class Downloader {
    * Downloads CLI or LS to the extension folder. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | LsExecutable | null> {
+    // TODO remove when feature flag is removed
     if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
       let platform = Platform.getCurrent();
       if (!isPlatformSupported(platform)) {
@@ -41,7 +42,7 @@ export class Downloader {
       platform = platform as CliSupportedPlatform;
       return await this.getCliExecutable(platform);
     } else {
-      const lsPlatform = Platform.getCurrentWithArch();
+      const lsPlatform = LsExecutable.getCurrentWithArch();
       if (lsPlatform === null) {
         return Promise.reject(!messages.notSupported);
       }
@@ -55,7 +56,7 @@ export class Downloader {
       await this.deleteFileAtPath(lsPath);
     }
 
-    const lsVersion = await this.lsApi.getMetadata().then(metadata => metadata.version);
+    const lsVersion = (await this.lsApi.getMetadata()).version;
     const sha256 = await this.lsApi.getSha256Checksum(lsPlatform);
     const checksum = await this.downloadLs(lsPath, lsPlatform, sha256);
 

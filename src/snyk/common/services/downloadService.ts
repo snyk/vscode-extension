@@ -110,7 +110,7 @@ export class DownloadService {
       }
     } else {
       // let language server manage CLI downloads, but download LS here
-      const platform = Platform.getCurrentWithArch();
+      const platform = LsExecutable.getCurrentWithArch();
       const lsInstalled = await this.isLsInstalled();
       if (!lsInstalled || this.isFourDaysPassedSinceLastLsUpdate()) {
         const updateAvailable = await this.isLsUpdateAvailable(platform as LsSupportedPlatform);
