@@ -1,4 +1,3 @@
-import * as codeClient from '@snyk/code-client';
 import { getIpFamily } from '@snyk/code-client';
 import { rejects, strictEqual } from 'assert';
 import needle, { NeedleResponse } from 'needle';
@@ -11,15 +10,12 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
-import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
-import { ISnykCodeErrorHandler } from '../../../../snyk/snykCode/error/snykCodeErrorHandler';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;
-  let openerService: IOpenerService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
   let languageClient: LanguageClient;
@@ -55,11 +51,6 @@ suite('AuthenticationService', () => {
       setContext: setContextSpy,
     } as unknown as IContextService;
 
-    openerService = {
-      openBrowserUrl: sinon.fake(),
-      copyOpenedUrl: sinon.fake(),
-    };
-
     config = {
       authHost: '',
       setToken: setTokenSpy,
@@ -71,29 +62,21 @@ suite('AuthenticationService', () => {
   teardown(() => sinon.restore());
 
   test("Logs 'Authentication Button is Clicked' analytical event", async () => {
-    const getIpFamilyStub = sinon.stub(codeClient, 'getIpFamily').resolves(undefined);
-
     const logAuthenticateButtonIsClickedFake = sinon.fake();
     const analytics = {
       logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
     } as unknown as IAnalytics;
     const service = new AuthenticationService(
       contextService,
-      openerService,
       baseModule,
       config,
       windowMock,
       analytics,
       new LoggerMock(),
-      {
-        processError: sinon.fake(),
-        resetTransientErrors: sinon.fake(),
-        connectionRetryLimitExhausted: false,
-      } as ISnykCodeErrorHandler,
       languageClient,
     );
 
-    await service.initiateLogin(getIpFamilyStub);
+    await service.initiateLogin();
 
     strictEqual(logAuthenticateButtonIsClickedFake.calledOnce, true);
   });
@@ -147,17 +130,11 @@ suite('AuthenticationService', () => {
   test("Doesn't call setToken when token is empty", async () => {
     const service = new AuthenticationService(
       contextService,
-      openerService,
       baseModule,
       config,
       windowMock,
       {} as IAnalytics,
       new LoggerMock(),
-      {
-        processError: sinon.fake(),
-        resetTransientErrors: sinon.fake(),
-        connectionRetryLimitExhausted: false,
-      } as ISnykCodeErrorHandler,
       languageClient as unknown as LanguageClient,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
@@ -171,17 +148,11 @@ suite('AuthenticationService', () => {
   test('Call setToken when token is not empty', async () => {
     const service = new AuthenticationService(
       contextService,
-      openerService,
       baseModule,
       config,
       windowMock,
       {} as IAnalytics,
       new LoggerMock(),
-      {
-        processError: sinon.fake(),
-        resetTransientErrors: sinon.fake(),
-        connectionRetryLimitExhausted: false,
-      } as ISnykCodeErrorHandler,
       languageClient as unknown as LanguageClient,
     );
     const tokenValue = 'token-value';
@@ -208,13 +179,11 @@ suite('AuthenticationService', () => {
 
       service = new AuthenticationService(
         contextService,
-        openerService,
         baseModule,
         config,
         windowMock,
         {} as IAnalytics,
         new LoggerMock(),
-        {} as ISnykCodeErrorHandler,
         languageClient as unknown as LanguageClient,
       );
     });

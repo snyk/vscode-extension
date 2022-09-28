@@ -1,13 +1,14 @@
 import open from 'open';
-import { Logger } from '../logger/logger';
 import * as vscode from 'vscode';
 import { ErrorHandler } from '../error/errorHandler';
+import { Logger } from '../logger/logger';
 
 export interface IOpenerService {
   openBrowserUrl(url: string): Promise<void>;
   copyOpenedUrl(): Promise<void>;
 }
 
+// TODO: consider removing
 export class OpenerService {
   private lastOpenedUrl?: string;
 

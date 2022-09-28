@@ -6,15 +6,13 @@ export const VSCODE_VIEW_OSS_VIEW_COMMAND = 'snyk.views.analysis.oss.focus';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
-export const SNYK_LOGIN_OLD_COMMAND = 'snyk.login.old';
+export const SNYK_INITIATE_LOGIN_COMMAND = 'snyk.initiateLogin';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
-export const SNYK_LOGOUT_OLD_COMMAND = 'snyk.logout.old'; // TODO: this, registration & handling to be cleaned up when "lsAuthenticate" feature flag is dropped
 export const SNYK_ENABLE_CODE_COMMAND = 'snyk.enableCode';
 export const SNYK_SETMODE_COMMAND = 'snyk.setmode';
 export const SNYK_SETTINGS_COMMAND = 'snyk.settings';
 export const SNYK_DCIGNORE_COMMAND = 'snyk.dcignore';
 export const SNYK_OPEN_BROWSER_COMMAND = 'snyk.open';
-export const SNYK_COPY_AUTH_LINK_OLD_COMMAND = 'snyk.copyAuthLink.old';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';

@@ -15,12 +15,10 @@ import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/com
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
-  SNYK_COPY_AUTH_LINK_OLD_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_LOGIN_OLD_COMMAND,
-  SNYK_LOGOUT_OLD_COMMAND,
+  SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -131,13 +129,11 @@ class SnykExtension extends SnykLib implements IExtension {
     const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
       this.contextService,
-      this.openerService,
       this,
       configuration,
       vsCodeWindow,
       this.analytics,
       Logger,
-      this.snykCodeErrorHandler,
       languageClientAdapter.getLanguageClient(),
     );
 
@@ -367,14 +363,11 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
         this.commandController.openBrowser(url),
       ),
-      // TODO: to be removed when VSCode
-      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_OLD_COMMAND, () => this.commandController.copyAuthLink()),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
-      vscode.commands.registerCommand(SNYK_LOGIN_OLD_COMMAND, () => this.commandController.initiateLogin()), // TODO: remove when "lsAuthenticate" feature flag is dropped
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
-      vscode.commands.registerCommand(SNYK_LOGOUT_OLD_COMMAND, () => this.commandController.initiateLogout()), // TODO: remove when "lsAuthenticate" feature flag is dropped
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
