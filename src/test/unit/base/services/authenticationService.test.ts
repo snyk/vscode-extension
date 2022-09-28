@@ -10,6 +10,7 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
+import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
@@ -18,7 +19,7 @@ suite('AuthenticationService', () => {
   let contextService: IContextService;
   let baseModule: IBaseSnykModule;
   let config: IConfiguration;
-  let languageClient: LanguageClient;
+  let languageClientAdapter: ILanguageClientAdapter;
   let languageClientSendNotification: sinon.SinonSpy;
   let setContextSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
@@ -43,9 +44,14 @@ suite('AuthenticationService', () => {
     clearTokenSpy = sinon.fake();
     languageClientSendNotification = sinon.fake();
 
-    languageClient = {
+    const languageClient = {
       sendNotification: languageClientSendNotification,
     } as unknown as LanguageClient;
+
+    languageClientAdapter = {
+      getLanguageClient: () => languageClient,
+      create: sinon.fake(),
+    };
 
     contextService = {
       setContext: setContextSpy,
@@ -73,7 +79,7 @@ suite('AuthenticationService', () => {
       windowMock,
       analytics,
       new LoggerMock(),
-      languageClient,
+      languageClientAdapter,
     );
 
     await service.initiateLogin();
@@ -135,7 +141,7 @@ suite('AuthenticationService', () => {
       windowMock,
       {} as IAnalytics,
       new LoggerMock(),
-      languageClient as unknown as LanguageClient,
+      languageClientAdapter,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
 
@@ -153,7 +159,7 @@ suite('AuthenticationService', () => {
       windowMock,
       {} as IAnalytics,
       new LoggerMock(),
-      languageClient as unknown as LanguageClient,
+      languageClientAdapter,
     );
     const tokenValue = 'token-value';
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(tokenValue));
@@ -184,7 +190,7 @@ suite('AuthenticationService', () => {
         windowMock,
         {} as IAnalytics,
         new LoggerMock(),
-        languageClient as unknown as LanguageClient,
+        languageClientAdapter,
       );
     });
 

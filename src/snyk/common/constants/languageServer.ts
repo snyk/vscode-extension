@@ -10,3 +10,6 @@ export const DID_CHANGE_CONFIGURATION_METHOD = 'workspace/didChangeConfiguration
 // custom methods
 export const SNYK_HAS_AUTHENTICATED = '$/snyk.hasAuthenticated';
 export const SNYK_CLI_PATH = '$/snyk.isAvailableCli';
+
+// commands
+export const SNYK_LOGIN_COMMAND = 'snyk.login';

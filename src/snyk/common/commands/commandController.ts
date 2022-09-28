@@ -20,8 +20,8 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { SNYK_LOGIN_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
-import { SNYK_LOGIN_COMMAND } from '../languageServer/constants/commands';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IVSCodeCommands } from '../vscode/commands';

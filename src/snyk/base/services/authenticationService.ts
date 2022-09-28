@@ -5,7 +5,7 @@ import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/language
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
-import { LanguageClient } from '../../common/vscode/types';
+import { ILanguageClientAdapter } from '../../common/vscode/languageClient';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { IBaseSnykModule } from '../modules/interfaces';
 
@@ -24,7 +24,7 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly window: IVSCodeWindow,
     private readonly analytics: IAnalytics,
     private readonly logger: ILog,
-    private readonly client: LanguageClient,
+    private readonly clientAdapter: ILanguageClientAdapter,
   ) {}
 
   async initiateLogin(): Promise<void> {
@@ -52,7 +52,7 @@ export class AuthenticationService implements IAuthenticationService {
 
     if (!token) return;
     await this.configuration.setToken(token);
-    return await this.client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
+    return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
       settings: {
         token: token,
       },
