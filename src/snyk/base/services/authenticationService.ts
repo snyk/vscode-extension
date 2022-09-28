@@ -52,11 +52,7 @@ export class AuthenticationService implements IAuthenticationService {
 
     if (!token) return;
     await this.configuration.setToken(token);
-    return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {
-      settings: {
-        token: token,
-      },
-    });
+    return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
   }
 
   async updateToken(token: string): Promise<void> {
