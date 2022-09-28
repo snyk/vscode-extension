@@ -106,7 +106,7 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.context.extensionPath);
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration);
     return {
       ...settings,
       integrationName: CLI_INTEGRATION_NAME,

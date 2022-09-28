@@ -26,7 +26,7 @@ suite('Language Server', () => {
   let downloadService: DownloadService;
   setup(() => {
     configuration = {
-      getCustomCliPath(): string | undefined {
+      getCliPath(): string | undefined {
         return 'testPath';
       },
       getToken(): Promise<string | undefined> {

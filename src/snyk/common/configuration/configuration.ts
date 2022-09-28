@@ -90,7 +90,7 @@ export interface IConfiguration {
 
   isAutomaticDependencyManagementEnabled(): boolean;
 
-  getCustomCliPath(): string | undefined;
+  getCliPath(): string | undefined;
 
   severityFilter: SeverityFilter;
 
@@ -418,7 +418,7 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getCustomCliPath(): string | undefined {
+  getCliPath(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH));
   }
 

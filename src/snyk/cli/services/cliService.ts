@@ -41,7 +41,7 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this.beforeTest(manualTrigger, reportTriggeredEvent);
     this.result = undefined;
 
-    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCustomCliPath());
+    const cliPath = await this.synchronizeCliPathIfNeeded();
 
     if (this.cliProcess) {
       const killed = this.cliProcess.kill();
@@ -73,6 +73,24 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     this.finalizeTest(mappedResult);
 
     return mappedResult;
+  }
+
+  // Synchronizes user configuration with CLI path passed to the CLI.
+  // TODO: Remove in VS Code + Language Server feature cleanup.
+  private async synchronizeCliPathIfNeeded() {
+    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCliPath());
+    const cliPathExists = await CliExecutable.exists(this.extensionContext.extensionPath, this.config.getCliPath());
+
+    if (!this.config.getCliPath() && cliPathExists) {
+      this.logger.info("Synchronising extension's CLI path with Language Server");
+      try {
+        await this.config.setCliPath(cliPath);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger, "Failed to synchronize extension's CLI path with Language Server");
+      }
+    }
+
+    return cliPath;
   }
 
   protected abstract mapToResultType(rawCliResult: string): CliResult;

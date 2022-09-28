@@ -1,4 +1,3 @@
-import { CliExecutable } from '../../cli/cliExecutable';
 import { IConfiguration } from '../configuration/configuration';
 
 export type InitializationOptions = ServerSettings & {
@@ -23,14 +22,14 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, extensionPath: string): Promise<ServerSettings> {
+  static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
     return {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'false',
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
-      cliPath: CliExecutable.getPath(extensionPath, configuration.getCustomCliPath()),
+      cliPath: configuration.getCliPath(),
       endpoint: configuration.snykOssApiEndpoint,
       additionalParams: configuration.getAdditionalCliParameters(),
       organization: configuration.organization,

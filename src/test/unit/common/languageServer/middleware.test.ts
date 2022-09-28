@@ -23,7 +23,7 @@ suite('Language Server: Middleware', () => {
       organization: 'org',
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
-      getCustomCliPath: () => '/path/to/cli',
+      getCliPath: () => '/path/to/cli',
     } as IConfiguration;
   });
 
@@ -69,7 +69,7 @@ suite('Language Server: Middleware', () => {
     );
     assert.strictEqual(
       serverResult.cliPath,
-      CliExecutable.getPath(extensionContextMock.extensionPath, configuration.getCustomCliPath()),
+      CliExecutable.getPath(extensionContextMock.extensionPath, configuration.getCliPath()),
     );
   });
 
