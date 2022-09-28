@@ -22,9 +22,9 @@ export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header:
 export class Downloader {
   constructor(
     private readonly configuration: IConfiguration,
-    private readonly cliApi: IStaticCliApi,
+    private readonly cliApi: IStaticCliApi, // todo: clean up
     private readonly lsApi: IStaticLsApi,
-    private readonly extensionDir: string,
+    private readonly extensionDir: string, // todo: clean up
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
   ) {}

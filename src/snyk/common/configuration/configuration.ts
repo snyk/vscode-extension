@@ -222,7 +222,12 @@ export class Configuration implements IConfiguration {
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
     if (!cliPath) return;
-    return this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH), cliPath);
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_PATH),
+      cliPath,
+      true,
+    );
   }
 
   async clearToken(): Promise<void> {

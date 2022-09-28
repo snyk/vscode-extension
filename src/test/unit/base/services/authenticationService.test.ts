@@ -167,9 +167,7 @@ suite('AuthenticationService', () => {
     await service.setToken();
 
     sinon.assert.calledOnce(setTokenSpy);
-    sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {
-      settings: { token: tokenValue },
-    });
+    sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
   suite('.updateToken()', () => {
