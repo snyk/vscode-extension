@@ -1,10 +1,12 @@
 import { deepStrictEqual, rejects, strictEqual } from 'assert';
 import * as fs from 'fs/promises';
 import _ from 'lodash';
+import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
@@ -25,6 +27,11 @@ suite('OssService', () => {
 
   setup(() => {
     logger = new LoggerMock();
+
+    const ls = {
+      cliReady$: new ReplaySubject<void>(1),
+    } as unknown as ILanguageServer;
+    ls.cliReady$.next('');
 
     ossService = new OssService(
       {
@@ -51,6 +58,7 @@ suite('OssService', () => {
       {
         logAnalysisIsReady: sinon.fake(),
       } as unknown as IAnalytics,
+      ls,
     );
   });
 

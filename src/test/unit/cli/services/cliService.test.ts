@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { deepStrictEqual, ok } from 'assert';
+import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
 import { CliError, CliService } from '../../../../snyk/cli/services/cliService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
@@ -27,6 +29,9 @@ class TestCliService extends CliService<TestCliResult> {
   protected afterTest(_result: TestCliResult): void {
     return;
   }
+  protected ensureDependencies(): void {
+    return;
+  }
 }
 
 suite('CliService', () => {
@@ -48,13 +53,18 @@ suite('CliService', () => {
     configuration = {
       getAdditionalCliParameters: () => '',
       isAutomaticDependencyManagementEnabled: () => true,
-      getCustomCliPath: () => undefined,
+      getCliPath: () => undefined,
     } as unknown as IConfiguration;
 
     downloadService = {
       download: () => false,
       isCliInstalled: () => true,
     } as unknown as DownloadService;
+
+    const ls = {
+      cliReady$: new ReplaySubject<void>(1),
+    } as unknown as ILanguageServer;
+    ls.cliReady$.next('');
 
     testCliService = new TestCliService(
       extensionContext,
@@ -64,6 +74,7 @@ suite('CliService', () => {
         getWorkspaceFolders: () => ['test-folder'],
       } as IVSCodeWorkspace,
       downloadService,
+      ls,
     );
   });
 
