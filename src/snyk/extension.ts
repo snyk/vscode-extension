@@ -189,6 +189,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new DailyScanJob(this),
       this.notificationService,
       this.analytics,
+      this.languageServer,
     );
 
     this.commandController = new CommandController(
@@ -352,7 +353,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      this.ossService?.handleCliDownloadFailure(err);
+      this.ossService?.handleLsDownloadFailure(err);
     });
 
     return this.downloadService;

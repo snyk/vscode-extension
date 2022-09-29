@@ -1,7 +1,9 @@
+import { firstValueFrom } from 'rxjs';
 import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ErrorHandler } from '../../common/error/errorHandler';
+import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { ILog } from '../../common/logger/interfaces';
 import { DownloadService } from '../../common/services/downloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
@@ -19,8 +21,8 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected result: CliResult | CliError | undefined;
 
   private cliProcess?: CliProcess;
-  private verifiedChecksumCorrect?: boolean;
-  private _isCliDownloadSuccessful = true;
+  private _isLsDownloadSuccessful = true;
+  private _isCliReady: boolean;
 
   constructor(
     protected readonly extensionContext: ExtensionContext,
@@ -28,20 +30,46 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
     protected readonly downloadService: DownloadService,
+    protected readonly languageServer: ILanguageServer,
   ) {
     super();
   }
 
-  get isCliDownloadSuccessful(): boolean {
-    return this._isCliDownloadSuccessful;
+  get isLsDownloadSuccessful(): boolean {
+    return this._isLsDownloadSuccessful;
+  }
+
+  get isCliReady(): boolean {
+    return this._isCliReady;
   }
 
   async test(manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<CliResult | CliError> {
+    this.ensureDependencies();
+
+    const currentCliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCliPath());
+    const currentCliPathExists = await CliExecutable.exists(
+      this.extensionContext.extensionPath,
+      this.config.getCliPath(),
+    );
+    await this.synchronizeCliPathIfNeeded(currentCliPath, currentCliPathExists);
+    if (currentCliPathExists) {
+      const cliPath = this.config.getCliPath();
+      if (!cliPath) {
+        throw new Error('CLI path is not set, probably failed migration.');
+      }
+
+      this.logger.info(`Using CLI path ${cliPath}`);
+      this.languageServer.cliReady$.next(cliPath);
+    }
+
+    // Prevent from CLI scan until Language Server downloads the CLI.
+    const cliPath = await firstValueFrom(this.languageServer.cliReady$);
+    this._isCliReady = true;
+
+    // Start test
     this.analysisStarted();
     this.beforeTest(manualTrigger, reportTriggeredEvent);
     this.result = undefined;
-
-    const cliPath = await this.synchronizeCliPathIfNeeded();
 
     if (this.cliProcess) {
       const killed = this.cliProcess.kill();
@@ -75,12 +103,9 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     return mappedResult;
   }
 
-  // Synchronizes user configuration with CLI path passed to the CLI.
+  // Synchronizes user configuration with CLI path passed to the Snyk LS.
   // TODO: Remove in VS Code + Language Server feature cleanup.
-  private async synchronizeCliPathIfNeeded() {
-    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCliPath());
-    const cliPathExists = await CliExecutable.exists(this.extensionContext.extensionPath, this.config.getCliPath());
-
+  private async synchronizeCliPathIfNeeded(cliPath: string, cliPathExists: boolean) {
     if (!this.config.getCliPath() && cliPathExists) {
       this.logger.info("Synchronising extension's CLI path with Language Server");
       try {
@@ -95,12 +120,14 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
 
   protected abstract mapToResultType(rawCliResult: string): CliResult;
 
+  protected abstract ensureDependencies(): void;
+
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  handleCliDownloadFailure(error: Error | unknown): void {
-    this.logger.error(`${messages.cliDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
-    this._isCliDownloadSuccessful = false;
+  handleLsDownloadFailure(error: Error | unknown): void {
+    this.logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
+    this._isLsDownloadSuccessful = false;
   }
 
   private buildArguments(foldersToTest: string[]): string[] {

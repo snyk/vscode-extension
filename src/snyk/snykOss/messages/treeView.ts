@@ -1,4 +1,6 @@
 export const messages = {
+  cookingDependencies: 'Getting ready Snyk dependencies...',
+
   runTest: 'Run scan for Open Source security vulnerabilities.',
   testRunning: 'Scanning project for vulnerabilities...',
   noVulnerabilitiesFound: 'Snyk found no vulnerabilities ✅',

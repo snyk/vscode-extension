@@ -1,4 +1,4 @@
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, ReplaySubject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
@@ -20,10 +20,12 @@ import { InitializationOptions, LanguageServerSettings } from './settings';
 export interface ILanguageServer {
   start(): Promise<void>;
   stop(): Promise<void>;
+  cliReady$: ReplaySubject<string>;
 }
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
+  readonly cliReady$ = new ReplaySubject<string>(1);
 
   constructor(
     private context: ExtensionContext,
@@ -95,9 +97,23 @@ export class LanguageServer implements ILanguageServer {
 
     // todo: wait for this notification before allowing OSS scans, to. completely rely on LS management of the CLI.
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-      void this.configuration.setCliPath(cliPath).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
-      });
+      if (!cliPath) {
+        ErrorHandler.handle(
+          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification"),
+          this.logger,
+          "CLI path wasn't provided by language server on notification",
+        );
+        return;
+      }
+
+      void this.configuration
+        .setCliPath(cliPath)
+        .then(() => {
+          this.cliReady$.next(cliPath);
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     // Start the client. This will also launch the server

@@ -1,12 +1,13 @@
 import * as marked from 'marked';
 import { Subject } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
-import { DownloadService } from '../../common/services/downloadService';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { IDE_NAME } from '../../common/constants/general';
+import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { ILog } from '../../common/logger/interfaces';
+import { DownloadService } from '../../common/services/downloadService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IWebViewProvider } from '../../common/views/webviewProvider';
@@ -36,8 +37,9 @@ export class OssService extends CliService<OssResult> {
     private readonly dailyScanJob: DailyScanJob,
     private readonly notificationService: INotificationService,
     private readonly analytics: IAnalytics,
+    protected readonly languageServer: ILanguageServer,
   ) {
-    super(extensionContext, logger, config, workspace, downloadService);
+    super(extensionContext, logger, config, workspace, downloadService, languageServer);
   }
 
   public getResult = (): OssResult | undefined => this.result;
@@ -63,6 +65,11 @@ export class OssService extends CliService<OssResult> {
     }
 
     return result;
+  }
+
+  protected ensureDependencies(): void {
+    this.viewManagerService.refreshOssView();
+    this.logger.info('Waiting for Open Source scan CLI readiness');
   }
 
   protected beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void {
@@ -94,9 +101,9 @@ export class OssService extends CliService<OssResult> {
     this.viewManagerService.refreshOssView();
   }
 
-  override handleCliDownloadFailure(error: Error | unknown): void {
+  override handleLsDownloadFailure(error: Error | unknown): void {
     this.viewManagerService.refreshOssView();
-    super.handleCliDownloadFailure(error);
+    super.handleLsDownloadFailure(error);
   }
 
   activateSuggestionProvider(): void {
