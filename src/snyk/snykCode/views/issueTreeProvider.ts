@@ -51,6 +51,8 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       return this.getTransientErrorTreeNodes();
     } else if (this.snykCode.hasError) {
       return [this.getErrorEncounteredTreeNode()];
+    } else if (!this.snykCode.isAnyWorkspaceFolderTrusted) {
+      return [this.getNoWorkspaceTrustTreeNode()];
     }
 
     if (this.diagnosticCollection) {

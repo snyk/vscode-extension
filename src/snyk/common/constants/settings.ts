@@ -22,3 +22,4 @@ export const ADVANCED_CLI_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.cliPath`;
 export const ADVANCED_CUSTOM_LS_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.languageServerPath`;
 
 export const SEVERITY_FILTER_SETTING = `${CONFIGURATION_IDENTIFIER}.severity`;
+export const TRUSTED_FOLDERS = `${CONFIGURATION_IDENTIFIER}.trustedFolders`;
