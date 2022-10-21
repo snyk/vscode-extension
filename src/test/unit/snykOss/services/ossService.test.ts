@@ -1,12 +1,14 @@
 import { deepStrictEqual, rejects, strictEqual } from 'assert';
 import * as fs from 'fs/promises';
 import _ from 'lodash';
+import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
-import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
+import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
 import { IWebViewProvider } from '../../../../snyk/common/views/webviewProvider';
@@ -26,6 +28,11 @@ suite('OssService', () => {
   setup(() => {
     logger = new LoggerMock();
 
+    const ls = {
+      cliReady$: new ReplaySubject<void>(1),
+    } as unknown as ILanguageServer;
+    ls.cliReady$.next('');
+
     ossService = new OssService(
       {
         extensionPath,
@@ -33,7 +40,7 @@ suite('OssService', () => {
       logger,
       {
         getAdditionalCliParameters: () => '',
-        getCustomCliPath: () => undefined,
+        getCliPath: () => undefined,
         isAutomaticDependencyManagementEnabled: () => true,
       } as IConfiguration,
       {} as IWebViewProvider<OssIssueCommandArg>,
@@ -51,8 +58,8 @@ suite('OssService', () => {
       {
         logAnalysisIsReady: sinon.fake(),
       } as unknown as IAnalytics,
+      ls,
     );
-    sinon.stub(ossService, 'isChecksumCorrect').resolves(true);
   });
 
   teardown(() => {

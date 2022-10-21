@@ -40,10 +40,7 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        this.context.extensionPath,
-      );
+      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration);
       return [serverSettings];
     },
   };

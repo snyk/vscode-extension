@@ -193,12 +193,6 @@
                 "title": "Enable \"Snyk Advisor\"",
                 "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
                 "default": false
-              },
-              "lsAuthenticate": {
-                "type": "boolean",
-                "title": "Authenticate using Snyk Language Server",
-                "description": "Authenticate using Snyk Language Server.",
-                "default": false
               }
             }
           }
@@ -271,12 +265,12 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.login.old 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.initiateLogin 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
         "when": "!snyk:error && !snyk:loggedIn"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "We are now redirecting you to our auth page, go ahead and log in. If a browser window doesn't open after a few seconds, please copy the url below and manually paste it in a browser.\n[Copy URL to clipboard](command:snyk.copyAuthLink.old 'Copy URL to clipboard')",
+        "contents": "We are now redirecting you to our auth page, go ahead and log in. If a browser window doesn't open after a few seconds, please copy the url below and manually paste it in a browser.\n[Copy URL to clipboard](command:snyk.copyAuthLink 'Copy URL to clipboard')",
         "when": "!snyk:error && !snyk:loggedIn && snyk:authenticating"
       },
       {
@@ -328,19 +322,11 @@
       ],
       "commandPalette": [
         {
-          "command": "snyk.login.old",
+          "command": "snyk.login",
           "when": "!snyk:loggedIn"
         },
         {
-          "command": "snyk.login",
-          "when": "!snyk:loggedIn && snyk:previewLsAuthentication"
-        },
-        {
           "command": "snyk.logout",
-          "when": "snyk:previewLsAuthentication"
-        },
-        {
-          "command": "snyk.logout.old",
           "when": "snyk:loggedIn"
         },
         {
@@ -366,28 +352,19 @@
         "command": "snyk.login",
         "title": "Log In",
         "category": "Snyk",
-        "icon": "$(log-in)"
-      },
-      {
-        "command": "snyk.login.old",
-        "title": "Log In",
-        "category": "Snyk",
-        "icon": "$(log-in)"
+        "icon": "$(sign-in)"
       },
       {
         "command": "snyk.setToken",
         "title": "Set Token",
-        "category": "Snyk"
+        "category": "Snyk",
+        "icon": "$(sign-in)"
       },
       {
         "command": "snyk.logout",
         "title": "Log Out",
-        "category": "Snyk"
-      },
-      {
-        "command": "snyk.logout.old",
-        "title": "Log Out",
-        "category": "Snyk"
+        "category": "Snyk",
+        "icon": "$(sign-out)"
       },
       {
         "command": "snyk.dcignore",

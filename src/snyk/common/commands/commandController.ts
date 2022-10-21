@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { getIpFamily } from '@snyk/code-client';
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
@@ -15,15 +14,13 @@ import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { IAnalytics } from '../analytics/itly';
 import {
-  SNYK_COPY_AUTH_LINK_OLD_COMMAND,
-  SNYK_LOGIN_OLD_COMMAND,
-  SNYK_LOGOUT_OLD_COMMAND,
+  SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
-  VSCODE_VIEW_CONTAINER_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { SNYK_LOGIN_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
@@ -54,25 +51,10 @@ export class CommandController {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
   }
 
-  // TODO: to be removed when VSCode-LS is enabled
-  copyAuthLink(): unknown {
-    return this.executeCommand(
-      SNYK_COPY_AUTH_LINK_OLD_COMMAND,
-      this.openerService.copyOpenedUrl.bind(this.openerService),
-    );
-  }
-
-  initiateLogin(): unknown {
-    return this.executeCommand(
-      SNYK_LOGIN_OLD_COMMAND,
-      this.authService.initiateLogin.bind(this.authService, getIpFamily),
-    );
-  }
-
-  // TODO: to be removed when "lsAuthenticate" feature flag is dropped
-  async initiateLogout(): Promise<void> {
-    await this.executeCommand(SNYK_LOGOUT_OLD_COMMAND, this.authService.initiateLogout.bind(this.authService));
-    await this.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
+  async initiateLogin(): Promise<void> {
+    this.logger.info('Initiating login');
+    await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
+    await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
   }
 
   async setToken(): Promise<void> {

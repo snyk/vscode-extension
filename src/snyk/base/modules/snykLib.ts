@@ -19,9 +19,9 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     this.snykCodeErrorHandler.resetTransientErrors();
     this.loadingBadge.setLoadingBadge(false);
 
+    const token = await configuration.getToken();
     try {
-      if (!(await configuration.getToken())) {
-        await this.authService.checkSession();
+      if (!token) {
         return;
       }
 

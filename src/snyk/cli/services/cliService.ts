@@ -1,17 +1,16 @@
-import _ from 'lodash';
+import { firstValueFrom } from 'rxjs';
 import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { MEMENTO_CLI_CHECKSUM } from '../../common/constants/globalState';
 import { ErrorHandler } from '../../common/error/errorHandler';
+import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { ILog } from '../../common/logger/interfaces';
+import { DownloadService } from '../../common/services/downloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { Checksum } from '../checksum';
 import { CliExecutable } from '../cliExecutable';
 import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
-import { DownloadService } from '../../common/services/downloadService';
 
 export class CliError {
   constructor(public error: string | Error | unknown, public path?: string, public isCancellation = false) {}
@@ -22,8 +21,8 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected result: CliResult | CliError | undefined;
 
   private cliProcess?: CliProcess;
-  private verifiedChecksumCorrect?: boolean;
-  private _isCliDownloadSuccessful = true;
+  private _isLsDownloadSuccessful = true;
+  private _isCliReady: boolean;
 
   constructor(
     protected readonly extensionContext: ExtensionContext,
@@ -31,28 +30,46 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly config: IConfiguration,
     protected readonly workspace: IVSCodeWorkspace,
     protected readonly downloadService: DownloadService,
+    protected readonly languageServer: ILanguageServer,
   ) {
     super();
   }
 
-  get isCliDownloadSuccessful(): boolean {
-    return this._isCliDownloadSuccessful;
+  get isLsDownloadSuccessful(): boolean {
+    return this._isLsDownloadSuccessful;
+  }
+
+  get isCliReady(): boolean {
+    return this._isCliReady;
   }
 
   async test(manualTrigger: boolean, reportTriggeredEvent: boolean): Promise<CliResult | CliError> {
+    this.ensureDependencies();
+
+    const currentCliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCliPath());
+    const currentCliPathExists = await CliExecutable.exists(
+      this.extensionContext.extensionPath,
+      this.config.getCliPath(),
+    );
+    await this.synchronizeCliPathIfNeeded(currentCliPath, currentCliPathExists);
+    if (currentCliPathExists) {
+      const cliPath = this.config.getCliPath();
+      if (!cliPath) {
+        throw new Error('CLI path is not set, probably failed migration.');
+      }
+
+      this.logger.info(`Using CLI path ${cliPath}`);
+      this.languageServer.cliReady$.next(cliPath);
+    }
+
+    // Prevent from CLI scan until Language Server downloads the CLI.
+    const cliPath = await firstValueFrom(this.languageServer.cliReady$);
+    this._isCliReady = true;
+
+    // Start test
     this.analysisStarted();
     this.beforeTest(manualTrigger, reportTriggeredEvent);
     this.result = undefined;
-
-    const cliPath = CliExecutable.getPath(this.extensionContext.extensionPath, this.config.getCustomCliPath());
-
-    if (this.config.isAutomaticDependencyManagementEnabled()) {
-      const err = await this.verifyChecksum(cliPath);
-      if (err) {
-        this.finalizeTest(err);
-        return err;
-      }
-    }
 
     if (this.cliProcess) {
       const killed = this.cliProcess.kill();
@@ -86,14 +103,31 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     return mappedResult;
   }
 
+  // Synchronizes user configuration with CLI path passed to the Snyk LS.
+  // TODO: Remove in VS Code + Language Server feature cleanup.
+  private async synchronizeCliPathIfNeeded(cliPath: string, cliPathExists: boolean) {
+    if (!this.config.getCliPath() && cliPathExists) {
+      this.logger.info("Synchronising extension's CLI path with Language Server");
+      try {
+        await this.config.setCliPath(cliPath);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger, "Failed to synchronize extension's CLI path with Language Server");
+      }
+    }
+
+    return cliPath;
+  }
+
   protected abstract mapToResultType(rawCliResult: string): CliResult;
+
+  protected abstract ensureDependencies(): void;
 
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  handleCliDownloadFailure(error: Error | unknown): void {
-    this.logger.error(`${messages.cliDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
-    this._isCliDownloadSuccessful = false;
+  handleLsDownloadFailure(error: Error | unknown): void {
+    this.logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
+    this._isLsDownloadSuccessful = false;
   }
 
   private buildArguments(foldersToTest: string[]): string[] {
@@ -111,48 +145,11 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     return args;
   }
 
-  public async isChecksumCorrect(cliPath: string): Promise<boolean> {
-    if (!(await this.downloadService.isCliInstalled())) {
-      return false;
-    }
-
-    if (!_.isUndefined(this.verifiedChecksumCorrect)) {
-      return this.verifiedChecksumCorrect;
-    }
-
-    const downloadedChecksum = this.extensionContext.getGlobalStateValue<string>(MEMENTO_CLI_CHECKSUM);
-    if (!downloadedChecksum) {
-      throw new Error('Checksum not found in the global storage.');
-    }
-
-    const checksum = await Checksum.getChecksumOf(cliPath, downloadedChecksum);
-    this.verifiedChecksumCorrect = checksum.verify();
-
-    return this.verifiedChecksumCorrect;
-  }
-
   // To be called to finalise the analysis
   public finalizeTest(result: CliResult | CliError): void {
     this.result = result;
 
     this.analysisFinished();
     this.afterTest(result);
-  }
-
-  private async verifyChecksum(cliPath: string): Promise<CliError | undefined> {
-    const checksumCorrect = await this.isChecksumCorrect(cliPath);
-    if (checksumCorrect) {
-      return;
-    }
-
-    // Redownload CLI if corrupt,
-    const downloaded = await this.downloadService.download();
-    if (!downloaded) {
-      const error = new CliError(
-        'Snyk CLI is corrupt and cannot be redownloaded. Please reinstall the extension or check you have access to the Internet.',
-        cliPath,
-      );
-      return error;
-    }
   }
 }

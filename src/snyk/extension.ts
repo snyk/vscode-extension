@@ -8,21 +8,16 @@ import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
-import { StaticCliApi } from './cli/api/staticCliApi';
-import { StaticLsApi } from './common/languageServer/staticLsApi';
-import { DownloadService } from './common/services/downloadService';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
-  SNYK_COPY_AUTH_LINK_OLD_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_LOGIN_OLD_COMMAND,
-  SNYK_LOGOUT_OLD_COMMAND,
+  SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -47,7 +42,9 @@ import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
+import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
+import { DownloadService } from './common/services/downloadService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionKindAdapter } from './common/vscode/codeAction';
@@ -131,26 +128,12 @@ class SnykExtension extends SnykLib implements IExtension {
     const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
       this.contextService,
-      this.openerService,
       this,
       configuration,
       vsCodeWindow,
       this.analytics,
       Logger,
-      this.snykCodeErrorHandler,
-      languageClientAdapter.getLanguageClient(),
-    );
-
-    this.languageServer = new LanguageServer(
-      vscodeContext,
-      configuration,
-      this.contextService,
       languageClientAdapter,
-      vsCodeWorkspace,
-      vsCodeWindow,
-      this.authService,
-      Logger,
-      this.downloadService,
     );
 
     this.snykCode = new SnykCodeService(
@@ -176,11 +159,23 @@ class SnykExtension extends SnykLib implements IExtension {
     this.downloadService = new DownloadService(
       this.context,
       configuration,
-      new StaticCliApi(vsCodeWorkspace),
       new StaticLsApi(vsCodeWorkspace),
       vsCodeWindow,
       Logger,
     );
+
+    this.languageServer = new LanguageServer(
+      vscodeContext,
+      configuration,
+      this.contextService,
+      languageClientAdapter,
+      vsCodeWorkspace,
+      vsCodeWindow,
+      this.authService,
+      Logger,
+      this.downloadService,
+    );
+
     this.ossService = new OssService(
       this.context,
       Logger,
@@ -192,6 +187,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new DailyScanJob(this),
       this.notificationService,
       this.analytics,
+      this.languageServer,
     );
 
     this.commandController = new CommandController(
@@ -288,7 +284,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.logPluginIsInstalled();
 
-    this.initCliDownload();
+    this.initDependencyDownload();
 
     const npmModuleInfoFetchService = new NpmModuleInfoFetchService(
       configuration,
@@ -353,9 +349,9 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  private initCliDownload(): DownloadService {
+  private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      this.ossService?.handleCliDownloadFailure(err);
+      this.ossService?.handleLsDownloadFailure(err);
     });
 
     return this.downloadService;
@@ -366,14 +362,11 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
         this.commandController.openBrowser(url),
       ),
-      // TODO: to be removed when VSCode
-      vscode.commands.registerCommand(SNYK_COPY_AUTH_LINK_OLD_COMMAND, () => this.commandController.copyAuthLink()),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
-      vscode.commands.registerCommand(SNYK_LOGIN_OLD_COMMAND, () => this.commandController.initiateLogin()), // TODO: remove when "lsAuthenticate" feature flag is dropped
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
-      vscode.commands.registerCommand(SNYK_LOGOUT_OLD_COMMAND, () => this.commandController.initiateLogout()), // TODO: remove when "lsAuthenticate" feature flag is dropped
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),

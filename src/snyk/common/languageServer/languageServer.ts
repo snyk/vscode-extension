@@ -1,12 +1,14 @@
+import { firstValueFrom, ReplaySubject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
+import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
-import { SNYK_CONTEXT } from '../constants/views';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { IContextService } from '../services/contextService';
+import { DownloadService } from '../services/downloadService';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
@@ -14,17 +16,16 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
-import { firstValueFrom } from 'rxjs';
-import { DownloadService } from '../services/downloadService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
   stop(): Promise<void>;
+  cliReady$: ReplaySubject<string>;
 }
+
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
-  private lsBinaryPath: string;
+  readonly cliReady$ = new ReplaySubject<string>(1);
 
   constructor(
     private context: ExtensionContext,
@@ -41,16 +42,9 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async start(): Promise<void> {
-    // TODO remove feature flag when ready
-    if (!this.configuration.getPreviewFeatures().lsAuthenticate) {
-      await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, false);
-      return Promise.resolve(undefined);
-    }
-
     // wait until Snyk LS is downloaded
     await firstValueFrom(this.downloadService.downloadReady$);
-    await this.contextService.setContext(SNYK_CONTEXT.PREVIEW_LS_AUTH, true);
-    this.logger.info('Starting Snyk Language Server...');
+    this.logger.info('Starting Snyk Language Server');
 
     // proxy settings
     const proxyOptions = getProxyOptions(this.workspace);
@@ -68,12 +62,12 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    this.lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
+    const lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
 
-    this.logger.info(`Snyk Language Server binary path: ${this.lsBinaryPath}`);
+    this.logger.info(`Snyk Language Server path: ${lsBinaryPath}`);
 
     const serverOptions: ServerOptions = {
-      command: this.lsBinaryPath,
+      command: lsBinaryPath,
       args: ['-l', 'info'], // TODO file logging?
       options: {
         env: processEnv,
@@ -102,9 +96,23 @@ export class LanguageServer implements ILanguageServer {
     });
 
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-      void this.configuration.setCliPath(cliPath).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
-      });
+      if (!cliPath) {
+        ErrorHandler.handle(
+          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification"),
+          this.logger,
+          "CLI path wasn't provided by language server on notification",
+        );
+        return;
+      }
+
+      void this.configuration
+        .setCliPath(cliPath)
+        .then(() => {
+          this.cliReady$.next(cliPath);
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     // Start the client. This will also launch the server
@@ -113,7 +121,7 @@ export class LanguageServer implements ILanguageServer {
   }
 
   async getInitializationOptions(): Promise<InitializationOptions> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.context.extensionPath);
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration);
     return {
       ...settings,
       integrationName: CLI_INTEGRATION_NAME,

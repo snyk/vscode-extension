@@ -43,8 +43,6 @@ export interface SeverityFilter {
 export type PreviewFeatures = {
   reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
-  // feature flag to enable language server with authentication
-  lsAuthenticate: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -92,7 +90,7 @@ export interface IConfiguration {
 
   isAutomaticDependencyManagementEnabled(): boolean;
 
-  getCustomCliPath(): string | undefined;
+  getCliPath(): string | undefined;
 
   severityFilter: SeverityFilter;
 
@@ -224,7 +222,12 @@ export class Configuration implements IConfiguration {
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
     if (!cliPath) return;
-    return this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH), cliPath);
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_PATH),
+      cliPath,
+      true,
+    );
   }
 
   async clearToken(): Promise<void> {
@@ -387,7 +390,6 @@ export class Configuration implements IConfiguration {
     const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
-      lsAuthenticate: false,
     };
 
     const userSetting =
@@ -416,7 +418,7 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getCustomCliPath(): string | undefined {
+  getCliPath(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH));
   }
 

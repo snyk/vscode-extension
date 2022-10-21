@@ -4,6 +4,7 @@ import { Platform } from '../common/platform';
 import { Checksum } from './checksum';
 import { CliSupportedPlatform } from './supportedPlatforms';
 
+// TODO: This file is to be removed in VS Code + Language Server feature cleanup. We need to ensure all users have migrated to use CLI path that's set by the language server.
 export class CliExecutable {
   // If values updated, `.vscodeignore` to be changed.
   public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
