@@ -7,10 +7,10 @@ import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
-import { IContextService } from '../services/contextService';
 import { DownloadService } from '../services/downloadService';
+import { User } from '../user';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
-import { ExtensionContext, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
@@ -28,9 +28,8 @@ export class LanguageServer implements ILanguageServer {
   readonly cliReady$ = new ReplaySubject<string>(1);
 
   constructor(
-    private context: ExtensionContext,
+    private user: User,
     private configuration: IConfiguration,
-    private contextService: IContextService,
     private languageClientAdapter: ILanguageClientAdapter,
     private workspace: IVSCodeWorkspace,
     private window: IVSCodeWindow,
@@ -82,7 +81,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.context, this.configuration),
+      middleware: new LanguageClientMiddleware(this.configuration),
       outputChannel: this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
 
@@ -126,6 +125,7 @@ export class LanguageServer implements ILanguageServer {
       ...settings,
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
+      deviceId: this.user.anonymousId,
       automaticAuthentication: 'false',
     };
   }

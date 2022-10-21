@@ -4,6 +4,7 @@ export type InitializationOptions = ServerSettings & {
   integrationName?: string;
   integrationVersion?: string;
   automaticAuthentication?: string;
+  deviceId?: string;
 };
 
 export type ServerSettings = {

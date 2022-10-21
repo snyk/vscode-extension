@@ -32,7 +32,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware(extensionContextMock, configuration);
+    const middleware = new LanguageClientMiddleware(configuration);
     const params: ConfigurationParams = {
       items: [
         {
@@ -74,7 +74,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware(extensionContextMock, configuration);
+    const middleware = new LanguageClientMiddleware(configuration);
     const params: ConfigurationParams = {
       items: [
         {
