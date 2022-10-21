@@ -1,5 +1,4 @@
 import { ReplaySubject } from 'rxjs';
-import { IStaticCliApi } from '../../cli/api/staticCliApi';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
@@ -21,14 +20,12 @@ export class DownloadService {
   constructor(
     private readonly extensionContext: ExtensionContext,
     private readonly configuration: IConfiguration,
-    private readonly cliApi: IStaticCliApi,
     private readonly lsApi: IStaticLsApi,
     readonly window: IVSCodeWindow,
     private readonly logger: ILog,
     downloader?: Downloader,
   ) {
-    this.downloader =
-      downloader ?? new Downloader(configuration, cliApi, lsApi, extensionContext.extensionPath, window, logger);
+    this.downloader = downloader ?? new Downloader(configuration, lsApi, window, logger);
   }
 
   async downloadOrUpdate(): Promise<boolean> {

@@ -43,7 +43,7 @@ export class LanguageServer implements ILanguageServer {
 
   async start(): Promise<void> {
     // wait until Snyk LS is downloaded
-    await firstValueFrom(this.downloadService.downloadReady$); // todo: cover case when it doesn't exist
+    await firstValueFrom(this.downloadService.downloadReady$);
     this.logger.info('Starting Snyk Language Server');
 
     // proxy settings
@@ -95,7 +95,6 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    // todo: wait for this notification before allowing OSS scans, to. completely rely on LS management of the CLI.
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
       if (!cliPath) {
         ErrorHandler.handle(

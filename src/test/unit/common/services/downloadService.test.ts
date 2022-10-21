@@ -1,6 +1,5 @@
 import { strictEqual } from 'assert';
 import sinon, { stub } from 'sinon';
-import { IStaticCliApi } from '../../../../snyk/cli/api/staticCliApi';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
@@ -17,7 +16,6 @@ import { windowMock } from '../../mocks/window.mock';
 
 suite('DownloadService', () => {
   let logger: ILog;
-  let cliApi: IStaticCliApi;
   let lsApi: IStaticLsApi;
   let context: ExtensionContext;
   let downloader: Downloader;
@@ -30,13 +28,6 @@ suite('DownloadService', () => {
   setup(() => {
     contextGetGlobalStateValue = sinon.stub();
     apigetSha256Checksum = sinon.stub();
-
-    cliApi = {
-      getDownloadUrl: sinon.fake(),
-      getExecutable: sinon.fake(),
-      getLatestVersion: sinon.fake(),
-      getSha256Checksum: apigetSha256Checksum,
-    };
 
     lsApi = {
       getDownloadUrl: sinon.fake(),
@@ -63,7 +54,7 @@ suite('DownloadService', () => {
       getSnykLanguageServerPath: () => 'ab/c',
     } as unknown as IConfiguration;
 
-    downloader = new Downloader(configuration, cliApi, lsApi, context.extensionPath, windowMock, logger);
+    downloader = new Downloader(configuration, lsApi, windowMock, logger);
   });
 
   teardown(() => {
@@ -76,7 +67,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
     await service.downloadOrUpdate();
@@ -91,7 +82,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(true);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
@@ -108,7 +99,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -135,7 +126,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(true);
 
     const fiveDaysInMs = 5 * 24 * 3600 * 1000;
@@ -157,7 +148,7 @@ suite('DownloadService', () => {
   });
 
   test("Doesn't update LS if 3 days passed since last update", async () => {
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(true);
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;
@@ -176,7 +167,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_CHECKSUM).returns(undefined);
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(undefined);
 
@@ -197,7 +188,7 @@ suite('DownloadService', () => {
       getCustomCliPath: () => undefined,
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
-    const service = new DownloadService(context, configuration, cliApi, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(false);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');

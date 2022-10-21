@@ -5,7 +5,6 @@ import * as fsPromises from 'fs/promises';
 import path from 'path';
 import * as stream from 'stream';
 import { Progress } from 'vscode';
-import { IStaticCliApi } from '../../cli/api/staticCliApi';
 import { Checksum } from '../../cli/checksum';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { messages } from '../../cli/messages/messages';
@@ -22,18 +21,15 @@ export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header:
 export class Downloader {
   constructor(
     private readonly configuration: IConfiguration,
-    private readonly cliApi: IStaticCliApi, // todo: clean up
     private readonly lsApi: IStaticLsApi,
-    private readonly extensionDir: string, // todo: clean up
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
   ) {}
 
   /**
-   * Downloads CLI or LS to the extension folder. Existing executable is deleted.
+   * Downloads LS. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | LsExecutable | null> {
-    // TODO remove when feature flag is removed
     const lsPlatform = LsExecutable.getCurrentWithArch();
     if (lsPlatform === null) {
       return Promise.reject(!messages.notSupported);

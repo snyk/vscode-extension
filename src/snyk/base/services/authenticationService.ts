@@ -28,7 +28,7 @@ export class AuthenticationService implements IAuthenticationService {
   ) {}
 
   async initiateLogin(): Promise<void> {
-    this.analytics.logAuthenticateButtonIsClicked();
+    this.analytics.logAuthenticateButtonIsClicked(); // TODO: see if that can be moved to the LS
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
     await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
   }

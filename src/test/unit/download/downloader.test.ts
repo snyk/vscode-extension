@@ -1,7 +1,6 @@
 import { rejects, strictEqual } from 'assert';
 import fs from 'fs/promises';
 import sinon from 'sinon';
-import { IStaticCliApi } from '../../../snyk/cli/api/staticCliApi';
 import { Checksum } from '../../../snyk/cli/checksum';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { Downloader } from '../../../snyk/common/download/downloader';
@@ -13,18 +12,10 @@ import { windowMock } from '../mocks/window.mock';
 
 suite('LS Downloader (LS)', () => {
   let logger: ILog;
-  let cliApi: IStaticCliApi;
   let lsApi: IStaticLsApi;
   let configuration: IConfiguration;
-  const extensionDir = '/.vscode/extensions/snyk-security';
 
   setup(() => {
-    cliApi = {
-      getDownloadUrl: sinon.fake(),
-      getExecutable: sinon.fake(),
-      getLatestVersion: sinon.fake(),
-      getSha256Checksum: sinon.fake(),
-    };
     lsApi = {
       getDownloadUrl: sinon.fake(),
       downloadBinary: sinon.fake(),
@@ -58,13 +49,13 @@ suite('LS Downloader (LS)', () => {
   });
 
   test('Download of LS fails if platform is not supported', async () => {
-    const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
+    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
     sinon.stub(LsExecutable, 'getCurrentWithArch').throws(new Error());
     await rejects(() => downloader.download());
   });
 
   test('Download of LS removes executable, if it exists', async () => {
-    const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
+    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
 
     sinon.stub(LsExecutable, 'getCurrentWithArch').returns('darwinArm64');
     sinon.stub(fs, 'access').returns(Promise.resolve());
@@ -77,7 +68,7 @@ suite('LS Downloader (LS)', () => {
   });
 
   test('Rejects downloaded LS when integrity check fails', async () => {
-    const downloader = new Downloader(configuration, cliApi, lsApi, extensionDir, windowMock, logger);
+    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
     sinon.stub(LsExecutable, 'getCurrentWithArch').returns('darwinAmd64');
     sinon.stub(fs);
 

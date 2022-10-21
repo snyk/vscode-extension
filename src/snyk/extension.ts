@@ -8,7 +8,6 @@ import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
-import { StaticCliApi } from './cli/api/staticCliApi';
 import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/commands/types';
@@ -160,7 +159,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.downloadService = new DownloadService(
       this.context,
       configuration,
-      new StaticCliApi(vsCodeWorkspace),
       new StaticLsApi(vsCodeWorkspace),
       vsCodeWindow,
       Logger,
