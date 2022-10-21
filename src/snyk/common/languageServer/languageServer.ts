@@ -119,6 +119,8 @@ export class LanguageServer implements ILanguageServer {
     this.logger.info('Snyk Language Server started');
   }
 
+  // Initialization options are not semantically equal to server settings, thus separated here
+  // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<InitializationOptions> {
     const settings = await LanguageServerSettings.fromConfiguration(this.configuration);
     return {
