@@ -3,7 +3,6 @@ import {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
-  ExtensionContext,
   Middleware,
   ResponseError,
   WorkspaceMiddleware,
@@ -19,7 +18,7 @@ export type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private context: ExtensionContext, private configuration: IConfiguration) {}
+  constructor(private configuration: IConfiguration) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (

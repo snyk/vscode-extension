@@ -2,26 +2,25 @@
 import assert, { deepStrictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
+import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
-import { IContextService } from '../../../../snyk/common/services/contextService';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
+import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { extensionContextMock } from '../../mocks/extensionContext.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 
 suite('Language Server', () => {
-  const extensionContext = extensionContextMock;
   const authService = {} as IAuthenticationService;
+  const user = new User(v4(), undefined);
 
   let configuration: IConfiguration;
-  let contextService: IContextService;
   let languageServer: LanguageServer;
   let downloadService: DownloadService;
   setup(() => {
@@ -45,11 +44,6 @@ suite('Language Server', () => {
       },
     } as IConfiguration;
 
-    contextService = {
-      setContext(_key, _value): Promise<void> {
-        return Promise.resolve(undefined);
-      },
-    } as IContextService;
     downloadService = {
       downloadReady$: new ReplaySubject<void>(1),
     } as DownloadService;
@@ -61,9 +55,8 @@ suite('Language Server', () => {
 
   test('LanguageServer should provide correct initialization options', async () => {
     languageServer = new LanguageServer(
-      extensionContext,
+      user,
       configuration,
-      contextService,
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
       windowMock,
@@ -86,6 +79,7 @@ suite('Language Server', () => {
       organization: undefined,
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
+      deviceId: user.anonymousId,
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
@@ -119,9 +113,8 @@ suite('Language Server', () => {
     });
 
     languageServer = new LanguageServer(
-      extensionContext,
+      user,
       configuration,
-      contextService,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
       windowMock,
