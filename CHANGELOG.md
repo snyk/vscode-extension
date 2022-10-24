@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.2]
+
+### Fixed
+
+- "Language client is not ready yet when handling" error.
+
 ## [1.7.0]
 
 ### Changed
