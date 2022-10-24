@@ -97,28 +97,25 @@ export class LanguageServer implements ILanguageServer {
     this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
       if (!cliPath) {
         ErrorHandler.handle(
-          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
+          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification"),
           this.logger,
           "CLI path wasn't provided by language server on notification",
         );
         return;
       }
 
-      const currentCliPath = this.configuration.getCliPath();
-      if (currentCliPath != cliPath) {
-        void this.configuration
-          .setCliPath(cliPath)
-          .then(() => {
-            this.cliReady$.next(cliPath);
-          })
-          .catch((error: Error) => {
-            ErrorHandler.handle(error, this.logger, error.message);
-          });
-      }
+      void this.configuration
+        .setCliPath(cliPath)
+        .then(() => {
+          this.cliReady$.next(cliPath);
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     // Start the client. This will also launch the server
-    this.client.start();
+    await this.client.start();
     this.logger.info('Snyk Language Server started');
   }
 
@@ -141,7 +138,7 @@ export class LanguageServer implements ILanguageServer {
       return Promise.resolve();
     }
 
-    if (this.client?.needsStop()) {
+    if (this.client?.isRunning()) {
       await this.client.stop();
     }
     // cleanup output channel explicitly
