@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.4]
+
+### Fixed
+
+- "The language client requires VS Code version ^1.67.0 but received version 1.x.y" error.
+
 ## [1.7.2]
 
 ### Fixed

@@ -108,6 +108,9 @@ suite('Language Server', () => {
           onNotification(): void {
             return;
           },
+          onReady(): Promise<void> {
+            return Promise.resolve();
+          },
         } as unknown as LanguageClient;
       },
     });
