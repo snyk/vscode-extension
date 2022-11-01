@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.6]
+
+### Fixed
+
+- `http:proxyStrictSSL` option always respected.
+
 ## [1.7.4]
 
 ### Fixed
