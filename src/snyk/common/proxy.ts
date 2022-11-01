@@ -47,6 +47,7 @@ export function getProxyOptions(
     port: port,
     auth: proxyUrl.auth,
     rejectUnauthorized: strictProxy,
+    protocol: proxyUrl.protocol,
   };
 }
 
@@ -68,9 +69,9 @@ export function getProxyEnvVariable(
   if (!proxyOptions) {
     return;
   }
-  const { host, port, auth } = proxyOptions;
+  const { host, port, auth, protocol } = proxyOptions;
   if (!host) return;
 
   // noinspection HttpUrlsUsage
-  return `http://${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
+  return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
 }

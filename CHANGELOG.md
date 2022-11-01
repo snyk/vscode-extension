@@ -5,6 +5,7 @@
 ### Fixed
 
 - `http:proxyStrictSSL` option always respected.
+- Language client respects proxy protocol when proxy is used.
 
 ## [1.7.4]
 
