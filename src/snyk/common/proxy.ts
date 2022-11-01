@@ -6,37 +6,38 @@ import { IVSCodeWorkspace } from './vscode/workspace';
 export function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,
   processEnv: NodeJS.ProcessEnv = process.env,
-): HttpsProxyAgent | undefined {
-  const proxyOptions = getProxyOptions(workspace, processEnv);
-  if (proxyOptions == undefined) {
-    return undefined;
-  }
-  return new HttpsProxyAgent(proxyOptions);
+): HttpsProxyAgent {
+  return new HttpsProxyAgent(getProxyOptions(workspace, processEnv));
 }
 
 export function getProxyOptions(
   workspace: IVSCodeWorkspace,
   processEnv: NodeJS.ProcessEnv = process.env,
-): HttpsProxyAgentOptions | undefined {
+): HttpsProxyAgentOptions {
   let proxy: string | undefined = getVsCodeProxy(workspace);
+
+  const strictProxy = workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+  const defaultOptions: HttpsProxyAgentOptions = {
+    rejectUnauthorized: strictProxy,
+  };
+
   if (!proxy) {
     proxy = processEnv.HTTPS_PROXY || processEnv.https_proxy || processEnv.HTTP_PROXY || processEnv.http_proxy;
     if (!proxy) {
-      return undefined; // No proxy
+      return defaultOptions; // No proxy
     }
   }
 
   // Basic sanity checking on proxy url
   const proxyUrl = url.parse(proxy);
   if (proxyUrl.protocol !== 'https:' && proxyUrl.protocol !== 'http:') {
-    return undefined;
+    return defaultOptions;
   }
 
   if (proxyUrl.hostname == null || proxyUrl.hostname === '') {
-    return undefined;
+    return defaultOptions;
   }
 
-  const strictProxy = workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
   let port;
   if (proxyUrl.port && proxyUrl.port !== '') {
     port = parseInt(proxyUrl.port, 10);
