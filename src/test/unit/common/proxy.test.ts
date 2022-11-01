@@ -20,7 +20,7 @@ suite('Proxy', () => {
 
   test('No proxy set', () => {
     const getConfiguration = sinon.stub();
-    getConfiguration.withArgs('http', 'proxy').returns(undefined);
+    getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
 
     const workspace = {
       getConfiguration,
@@ -28,7 +28,8 @@ suite('Proxy', () => {
 
     const agent = getHttpsProxyAgent(workspace);
 
-    assert.strictEqual(agent, undefined);
+    // @ts-ignore: cannot test options otherwise
+    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
   });
 
   test('Proxy is set in VS Code settings', () => {
