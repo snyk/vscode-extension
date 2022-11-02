@@ -11,7 +11,8 @@ suite('Proxy', () => {
   const host = 'my.proxy.com';
   const port = 8080;
   const auth = 'user:password';
-  const proxy = `https://${auth}@${host}:${port}`;
+  const protocol = 'https:';
+  const proxy = `${protocol}//${auth}@${host}:${port}`;
   const proxyStrictSSL = true;
 
   teardown(() => {
@@ -28,7 +29,34 @@ suite('Proxy', () => {
 
     const agent = getHttpsProxyAgent(workspace);
 
-    assert.strictEqual(agent, undefined);
+    // @ts-ignore: cannot test options otherwise
+    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
+  });
+
+  suite('.getProxyOptions()', () => {
+    suite('when proxyStrictSsl is set', () => {
+      const getConfiguration = sinon.stub();
+      const workspace = {
+        getConfiguration,
+      } as unknown as IVSCodeWorkspace;
+      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(true);
+      test('should return rejectUnauthorized true', () => {
+        const options = getProxyOptions(workspace);
+        assert.deepStrictEqual(options.rejectUnauthorized, true);
+      });
+    });
+
+    suite('when proxyStrictSsl is not set', () => {
+      const getConfiguration = sinon.stub();
+      const workspace = {
+        getConfiguration,
+      } as unknown as IVSCodeWorkspace;
+      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(false);
+      test('should return rejectUnauthorized false', () => {
+        const options = getProxyOptions(workspace);
+        assert.deepStrictEqual(options.rejectUnauthorized, false);
+      });
+    });
   });
 
   test('Proxy is set in VS Code settings', () => {
@@ -76,7 +104,7 @@ suite('Proxy', () => {
     assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
   });
 
-  test('getProxyEnvVariable should return the proxy as env var', () => {
+  test('getProxyEnvVariable should return the https proxy as env var', () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(proxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
@@ -88,6 +116,6 @@ suite('Proxy', () => {
     const envVariable = getProxyEnvVariable(getProxyOptions(workspace));
 
     // noinspection HttpUrlsUsage
-    assert.deepStrictEqual(envVariable, `http://${auth}@${host}:${port}`);
+    assert.deepStrictEqual(envVariable, `${protocol}//${auth}@${host}:${port}`);
   });
 });

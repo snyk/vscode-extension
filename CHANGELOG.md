@@ -1,5 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.6]
+
+### Fixed
+
+- `http:proxyStrictSSL` option always respected.
+- Language client respects proxy protocol when proxy is used.
+
 ## [1.7.4]
 
 ### Fixed
