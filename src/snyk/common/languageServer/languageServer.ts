@@ -82,7 +82,11 @@ export class LanguageServer implements ILanguageServer {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
       middleware: new LanguageClientMiddleware(this.configuration),
-      outputChannel: this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
+      /**
+       * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
+       * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
+       */
+      outputChannel: this.client?.outputChannel ?? this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
 
     // Create the language client and start the client.
@@ -150,8 +154,7 @@ export class LanguageServer implements ILanguageServer {
     if (this.client?.needsStop()) {
       await this.client.stop();
     }
-    // cleanup output channel explicitly
-    this.client.outputChannel.dispose();
+
     this.logger.info('Snyk Language Server stopped');
   }
 }

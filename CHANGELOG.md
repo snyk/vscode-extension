@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.7]
+
+### Fixed
+
+- `Error: Channel has been closed` exception.
+
 ## [1.7.6]
 
 ### Fixed
