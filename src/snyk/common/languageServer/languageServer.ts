@@ -82,6 +82,10 @@ export class LanguageServer implements ILanguageServer {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
       middleware: new LanguageClientMiddleware(this.configuration),
+      /**
+       * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
+       * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
+       */
       outputChannel: this.client?.outputChannel ?? this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
 
