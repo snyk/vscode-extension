@@ -29,6 +29,7 @@ import {
   SNYK_START_COMMAND,
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
+import { SNYK_WORKSPACE_SCAN_COMMAND } from './common/constants/languageServer';
 import {
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
@@ -369,10 +370,11 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
-      vscode.commands.registerCommand(SNYK_START_COMMAND, () =>
+      vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)),
-      ),
+        await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS and Code scans replaced with LS
+        await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
+      }),
       vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: CodeScanMode) =>
         this.commandController.setScanMode(mode),
       ),
