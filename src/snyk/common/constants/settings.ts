@@ -5,6 +5,7 @@ export const CONFIGURATION_IDENTIFIER = 'snyk';
 export const OSS_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.openSourceSecurity`;
 export const CODE_SECURITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeSecurity`;
 export const CODE_QUALITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeQuality`;
+export const IAC_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.infrastructureAsCode`;
 export const FEATURES_PREVIEW_SETTING = `${CONFIGURATION_IDENTIFIER}.features.preview`;
 
 export const YES_CRASH_REPORT_SETTING = `${CONFIGURATION_IDENTIFIER}.yesCrashReport`;

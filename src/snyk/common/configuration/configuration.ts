@@ -15,6 +15,7 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   FEATURES_PREVIEW_SETTING,
+  IAC_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
@@ -30,6 +31,7 @@ export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
   codeQualityEnabled: boolean | undefined;
+  iacEnabled: boolean | undefined;
 };
 
 export interface SeverityFilter {
@@ -275,16 +277,26 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
     );
+    const iacEnabled = this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(IAC_ENABLED_SETTING),
+    );
 
-    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(codeQualityEnabled)) {
+    if (
+      _.isUndefined(ossEnabled) &&
+      _.isUndefined(codeSecurityEnabled) &&
+      _.isUndefined(codeQualityEnabled) &&
+      _.isUndefined(iacEnabled)
+    ) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true, iacEnabled: true };
     }
 
     return {
       ossEnabled,
       codeSecurityEnabled,
       codeQualityEnabled,
+      iacEnabled,
     };
   }
 

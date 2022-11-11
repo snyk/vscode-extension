@@ -26,10 +26,12 @@ export type ServerSettings = {
 
 export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
+    const iacEnabled =
+      configuration.getPreviewFeatures().lsIacScan && configuration.getFeaturesConfiguration()?.iacEnabled;
     return {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
-      activateSnykIac: `${configuration.getPreviewFeatures().lsIacScan}`,
+      activateSnykIac: `${iacEnabled ?? false}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
