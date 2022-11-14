@@ -391,6 +391,7 @@ export class Configuration implements IConfiguration {
     const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
+      lsIacScan: false,
     };
 
     const userSetting =
