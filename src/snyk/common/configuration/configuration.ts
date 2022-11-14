@@ -43,6 +43,7 @@ export interface SeverityFilter {
 export type PreviewFeatures = {
   reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
+  lsIacScan: boolean | undefined;
 };
 
 export interface IConfiguration {
