@@ -49,6 +49,12 @@ suite('Language Server', () => {
           reportFalsePositives: false,
         };
       },
+      severityFilter: {
+        critical: true,
+        high: true,
+        medium: true,
+        low: true,
+      },
     } as IConfiguration;
 
     downloadService = {
@@ -87,6 +93,10 @@ suite('Language Server', () => {
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
       deviceId: user.anonymousId,
+      filterCriticalSeverity: 'true',
+      filterHighSeverity: 'true',
+      filterMediumSeverity: 'true',
+      filterLowSeverity: 'true',
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
