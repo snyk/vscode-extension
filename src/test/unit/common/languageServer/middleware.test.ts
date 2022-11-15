@@ -24,6 +24,13 @@ suite('Language Server: Middleware', () => {
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
       getCliPath: () => '/path/to/cli',
+      getPreviewFeatures: () => {
+        return {
+          lsIacScan: false,
+          advisor: false,
+          reportFalsePositives: false,
+        };
+      },
     } as IConfiguration;
   });
 
