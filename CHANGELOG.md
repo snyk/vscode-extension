@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.8]
+
+### Added
+
+- Snyk LS: (Preview) Added IaC scans enabled by feature flag (`lsIacScan`).
+
 ## [1.7.7]
 
 ### Fixed

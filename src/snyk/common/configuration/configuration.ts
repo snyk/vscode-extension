@@ -43,6 +43,7 @@ export interface SeverityFilter {
 export type PreviewFeatures = {
   reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
+  lsIacScan: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -390,6 +391,7 @@ export class Configuration implements IConfiguration {
     const defaultSetting: PreviewFeatures = {
       reportFalsePositives: false,
       advisor: false,
+      lsIacScan: false,
     };
 
     const userSetting =

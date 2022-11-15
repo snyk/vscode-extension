@@ -42,6 +42,13 @@ suite('Language Server', () => {
       isAutomaticDependencyManagementEnabled() {
         return true;
       },
+      getPreviewFeatures() {
+        return {
+          lsIacScan: false,
+          advisor: false,
+          reportFalsePositives: false,
+        };
+      },
     } as IConfiguration;
 
     downloadService = {

@@ -27,7 +27,7 @@ export class LanguageServerSettings {
     return {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
-      activateSnykIac: 'false',
+      activateSnykIac: `${configuration.getPreviewFeatures().lsIacScan}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
