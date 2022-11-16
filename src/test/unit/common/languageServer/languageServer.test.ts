@@ -93,13 +93,12 @@ suite('Language Server', () => {
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
       deviceId: user.anonymousId,
-      filterCriticalSeverity: 'true',
-      filterHighSeverity: 'true',
-      filterMediumSeverity: 'true',
-      filterLowSeverity: 'true',
+      filterSeverity: '{"critical":true,"high":true,"medium":true,"low":true}',
     };
 
-    deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
+    const actualInitializationOptions = await languageServer.getInitializationOptions();
+    console.log(JSON.stringify(actualInitializationOptions, null, 2));
+    deepStrictEqual(actualInitializationOptions, expectedInitializationOptions);
   });
 
   test('LanguageServer adds proxy settings to env of started binary', async () => {

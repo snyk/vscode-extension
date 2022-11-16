@@ -20,10 +20,7 @@ export type ServerSettings = {
   manageBinariesAutomatically?: string;
   cliPath?: string;
   token?: string;
-  filterCriticalSeverity?: string;
-  filterHighSeverity?: string;
-  filterMediumSeverity?: string;
-  filterLowSeverity?: string;
+  filterSeverity?: string;
 };
 
 export class LanguageServerSettings {
@@ -40,10 +37,7 @@ export class LanguageServerSettings {
       organization: configuration.organization,
       token: await configuration.getToken(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-      filterCriticalSeverity: `${configuration.severityFilter.critical}`,
-      filterHighSeverity: `${configuration.severityFilter.high}`,
-      filterMediumSeverity: `${configuration.severityFilter.medium}`,
-      filterLowSeverity: `${configuration.severityFilter.low}`,
+      filterSeverity: JSON.stringify(configuration.severityFilter),
     };
   }
 }
