@@ -1,4 +1,4 @@
-import { IConfiguration } from '../configuration/configuration';
+import { IConfiguration, SeverityFilter } from '../configuration/configuration';
 
 export type InitializationOptions = ServerSettings & {
   integrationName?: string;
@@ -20,7 +20,7 @@ export type ServerSettings = {
   manageBinariesAutomatically?: string;
   cliPath?: string;
   token?: string;
-  filterSeverity?: string;
+  filterSeverity?: SeverityFilter;
 };
 
 export class LanguageServerSettings {
@@ -37,7 +37,7 @@ export class LanguageServerSettings {
       organization: configuration.organization,
       token: await configuration.getToken(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-      filterSeverity: JSON.stringify(configuration.severityFilter),
+      filterSeverity: configuration.severityFilter,
     };
   }
 }

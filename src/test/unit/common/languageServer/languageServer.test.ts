@@ -93,7 +93,7 @@ suite('Language Server', () => {
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
       deviceId: user.anonymousId,
-      filterSeverity: '{"critical":true,"high":true,"medium":true,"low":true}',
+      filterSeverity: { critical: true, high: true, medium: true, low: true },
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
