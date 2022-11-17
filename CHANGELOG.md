@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.7.9]
+
+### Added
+
+- Snyk LS: Passing severity filter settings to LS on initialisation.
+
 ## [1.7.8]
 
 ### Added
