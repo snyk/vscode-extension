@@ -13,3 +13,4 @@ export const SNYK_CLI_PATH = '$/snyk.isAvailableCli';
 
 // commands
 export const SNYK_LOGIN_COMMAND = 'snyk.login';
+export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
