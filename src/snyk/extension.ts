@@ -288,7 +288,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const npmModuleInfoFetchService = new NpmModuleInfoFetchService(
       configuration,
       Logger,
-      new NpmTestApi(Logger, vsCodeWorkspace),
+      new NpmTestApi(Logger, vsCodeWorkspace, this.user),
     );
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
