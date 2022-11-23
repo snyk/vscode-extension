@@ -6,15 +6,21 @@ import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
 import { ErrorReporter } from './error/errorReporter';
 import { ExtensionContext } from './vscode/extensionContext';
 
+type OrgsDto = {
+  id: string;
+};
+
 export type UserDto = {
   id: string;
   username: string;
+  orgs: Array<OrgsDto>;
 };
 
 export class User {
   private _authenticatedId?: string;
 
   readonly anonymousId: string;
+  private _orgId: string;
 
   constructor(anonymousId?: string, authenticatedId?: string) {
     this.anonymousId = anonymousId ?? uuidv4();
@@ -35,6 +41,10 @@ export class User {
     return this._authenticatedId;
   }
 
+  get orgId(): string | undefined {
+    return this._orgId;
+  }
+
   get hashedAuthenticatedId(): string | undefined {
     if (!this._authenticatedId) {
       return undefined;
@@ -47,6 +57,9 @@ export class User {
     const user = await this.userMe(apiClient);
     if (user && user.id) {
       this._authenticatedId = user.id;
+      if (user.orgs && user.orgs.length > 0) {
+        this._orgId = user.orgs[0].id;
+      }
 
       await analytics.identify(this._authenticatedId); // map the anonymousId onto authenticatedId
       ErrorReporter.identify(this);
