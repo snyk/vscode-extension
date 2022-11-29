@@ -1,12 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.8.0]
+## [1.9.0]
 
 ### Added
 
 - Added workspace trust feature.
 
-## [1.7.8]
+## [1.8.0]
 
 ### Added
 
