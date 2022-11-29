@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { DEFAULT_API_HEADERS } from '../../common/api/headers';
 import { configuration } from '../../common/configuration/instance';
 import { ILog } from '../../common/logger/interfaces';
-import { getAxiosProxyConfig } from '../../common/proxy';
+import { getAxiosConfig } from '../../common/proxy';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 
 export class NpmTestApi {
@@ -19,7 +19,7 @@ export class NpmTestApi {
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
       baseURL: configuration.authHost + '/test',
-      ...getAxiosProxyConfig(this.workspace),
+      ...getAxiosConfig(this.workspace),
     });
 
     http.interceptors.response.use(

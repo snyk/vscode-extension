@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
+import https, { AgentOptions } from 'https';
 import createHttpsProxyAgent, { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
 import { IVSCodeWorkspace } from './vscode/workspace';
@@ -44,24 +45,38 @@ export function getProxyOptions(
   if (proxyUrl.port && proxyUrl.port !== '') {
     port = parseInt(proxyUrl.port, 10);
   }
-  return {
+
+  const proxyOptions: HttpsProxyAgentOptions = {
     host: proxyUrl.hostname,
     port: port,
     auth: proxyUrl.auth,
     protocol: proxyUrl.protocol,
     ...defaultOptions,
   };
+
+  return proxyOptions;
 }
 
 export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 
-export function getAxiosProxyConfig(workspace: IVSCodeWorkspace): AxiosRequestConfig {
+export function getAxiosConfig(workspace: IVSCodeWorkspace): AxiosRequestConfig {
+  // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
+  let agentOptions: HttpsProxyAgent | https.Agent | undefined = getHttpsProxyAgent(workspace);
+  if (!agentOptions) {
+    agentOptions = getHttpsAgent(workspace);
+  }
+
   return {
+    // proxy false as we're using https-proxy-agent library for proxying
     proxy: false,
-    httpAgent: getHttpsProxyAgent(workspace),
-    httpsAgent: getHttpsProxyAgent(workspace),
+    httpAgent: {
+      ...agentOptions,
+    },
+    httpsAgent: {
+      ...agentOptions,
+    },
   };
 }
 
@@ -76,4 +91,30 @@ export function getProxyEnvVariable(
 
   // noinspection HttpUrlsUsage
   return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
+}
+
+function getVSCodeStrictProxy(workspace: IVSCodeWorkspace): boolean {
+  return workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+}
+
+function getHttpsAgent(workspace: IVSCodeWorkspace): https.Agent {
+  return new https.Agent({
+    ...getDefaultAgentOptions(workspace),
+  });
+}
+
+function getDefaultAgentOptions(
+  workspace: IVSCodeWorkspace,
+  processEnv: NodeJS.ProcessEnv = process.env,
+): AgentOptions {
+  const defaultOptions: AgentOptions = {
+    rejectUnauthorized: getVSCodeStrictProxy(workspace),
+  };
+
+  // use custom certs if provided
+  if (processEnv.NODE_EXTRA_CA_CERTS) {
+    defaultOptions.ca = process.env.NODE_EXTRA_CA_CERTS;
+  }
+
+  return defaultOptions;
 }
