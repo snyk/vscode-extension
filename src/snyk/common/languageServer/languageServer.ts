@@ -2,7 +2,12 @@ import { firstValueFrom, ReplaySubject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
-import { SNYK_CLI_PATH, SNYK_HAS_AUTHENTICATED, SNYK_LANGUAGE_SERVER_NAME } from '../constants/languageServer';
+import {
+  SNYK_ADD_TRUSTED_FOLDERS,
+  SNYK_CLI_PATH,
+  SNYK_HAS_AUTHENTICATED,
+  SNYK_LANGUAGE_SERVER_NAME,
+} from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -91,45 +96,54 @@ export class LanguageServer implements ILanguageServer {
 
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
-
     this.client
       .onReady()
       .then(() => {
-        this.client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token }: { token: string }) => {
-          this.authenticationService.updateToken(token).catch((error: Error) => {
-            ErrorHandler.handle(error, this.logger, error.message);
-          });
-        });
-
-        this.client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-          if (!cliPath) {
-            ErrorHandler.handle(
-              new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
-              this.logger,
-              "CLI path wasn't provided by language server on notification",
-            );
-            return;
-          }
-
-          const currentCliPath = this.configuration.getCliPath();
-          if (currentCliPath != cliPath) {
-            this.logger.info('Setting Snyk CLI path to: ' + cliPath);
-            void this.configuration
-              .setCliPath(cliPath)
-              .then(() => {
-                this.cliReady$.next(cliPath);
-              })
-              .catch((error: Error) => {
-                ErrorHandler.handle(error, this.logger, error.message);
-              });
-          }
-        });
+        this.registerListeners(this.client);
       })
       .catch((error: Error) => ErrorHandler.handle(error, this.logger, error.message));
 
     // Start the client. This will also launch the server
     this.client.start();
     this.logger.info('Snyk Language Server started');
+  }
+
+  private registerListeners(client: LanguageClient): void {
+    client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token }: { token: string }) => {
+      this.authenticationService.updateToken(token).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
+    });
+
+    client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
+      if (!cliPath) {
+        ErrorHandler.handle(
+          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
+          this.logger,
+          "CLI path wasn't provided by language server on notification",
+        );
+        return;
+      }
+
+      const currentCliPath = this.configuration.getCliPath();
+      if (currentCliPath != cliPath) {
+        this.logger.info('Setting Snyk CLI path to: ' + cliPath);
+        void this.configuration
+          .setCliPath(cliPath)
+          .then(() => {
+            this.cliReady$.next(cliPath);
+          })
+          .catch((error: Error) => {
+            ErrorHandler.handle(error, this.logger, error.message);
+          });
+      }
+    });
+
+    client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
+      this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

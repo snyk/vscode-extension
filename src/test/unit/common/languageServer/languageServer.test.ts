@@ -49,6 +49,9 @@ suite('Language Server', () => {
           reportFalsePositives: false,
         };
       },
+      getTrustedFolders(): string[] {
+        return ['/trusted/test/folder'];
+      },
     } as IConfiguration;
 
     downloadService = {
@@ -87,6 +90,8 @@ suite('Language Server', () => {
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
       deviceId: user.anonymousId,
+      enableTrustedFoldersFeature: 'true',
+      trustedFolders: ['/trusted/test/folder'],
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

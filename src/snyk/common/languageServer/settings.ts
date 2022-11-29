@@ -20,6 +20,8 @@ export type ServerSettings = {
   manageBinariesAutomatically?: string;
   cliPath?: string;
   token?: string;
+  enableTrustedFoldersFeature?: string;
+  trustedFolders?: string[];
 };
 
 export class LanguageServerSettings {
@@ -36,6 +38,8 @@ export class LanguageServerSettings {
       organization: configuration.organization,
       token: await configuration.getToken(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
+      enableTrustedFoldersFeature: 'true',
+      trustedFolders: configuration.getTrustedFolders(),
     };
   }
 }
