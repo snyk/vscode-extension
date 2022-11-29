@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } f
 import { IConfiguration } from '../configuration/configuration';
 import { configuration } from '../configuration/instance';
 import { ILog } from '../logger/interfaces';
-import { getAxiosProxyConfig } from '../proxy';
+import { getAxiosConfig } from '../proxy';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { DEFAULT_API_HEADERS } from './headers';
 
@@ -24,11 +24,15 @@ export class SnykApiClient implements ISnykApiClient {
   }
 
   initHttp(): AxiosInstance {
-    const http = axios.create({
+    const axiosRequestConfig: AxiosRequestConfig = {
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
-      ...getAxiosProxyConfig(this.workspace),
-    });
+      ...getAxiosConfig(this.workspace),
+    };
+
+    // TODO: remove this log
+    this.logger.info(`Initialising HTTP client with config: ${JSON.stringify(axiosRequestConfig, null, 2)}`);
+    const http = axios.create(axiosRequestConfig);
 
     http.interceptors.response.use(
       response => response,

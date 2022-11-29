@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import assert from 'assert';
 import sinon from 'sinon';
-import { getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
+import { getAxiosConfig, getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 
 suite('Proxy', () => {
@@ -27,13 +27,15 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const agent = getHttpsProxyAgent(workspace);
+    const configOptions = getAxiosConfig(workspace);
 
+    // should still set rejectUnauthorized flag
     // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
+    assert.deepStrictEqual(configOptions.httpAgent?.options.rejectUnauthorized, proxyStrictSSL);
+    assert.deepStrictEqual(configOptions.httpsAgent?.options.rejectUnauthorized, proxyStrictSSL);
   });
 
-  suite('.getProxyOptions()', () => {
+  suite('.getAxiosConfig()', () => {
     suite('when proxyStrictSsl is set', () => {
       const getConfiguration = sinon.stub();
       const workspace = {
@@ -41,8 +43,8 @@ suite('Proxy', () => {
       } as unknown as IVSCodeWorkspace;
       getConfiguration.withArgs('http', 'proxyStrictSSL').returns(true);
       test('should return rejectUnauthorized true', () => {
-        const options = getProxyOptions(workspace);
-        assert.deepStrictEqual(options.rejectUnauthorized, true);
+        const config = getAxiosConfig(workspace);
+        assert.deepStrictEqual(config.httpAgent?.options.rejectUnauthorized, true);
       });
     });
 
@@ -53,8 +55,8 @@ suite('Proxy', () => {
       } as unknown as IVSCodeWorkspace;
       getConfiguration.withArgs('http', 'proxyStrictSSL').returns(false);
       test('should return rejectUnauthorized false', () => {
-        const options = getProxyOptions(workspace);
-        assert.deepStrictEqual(options.rejectUnauthorized, false);
+        const config = getAxiosConfig(workspace);
+        assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
       });
     });
   });

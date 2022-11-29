@@ -1,10 +1,10 @@
 import axios, { CancelTokenSource } from 'axios';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { DownloadAxiosResponse } from '../download/downloader';
+import { getAxiosConfig } from '../proxy';
+import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LsSupportedPlatform } from './supportedPlatforms';
-import { getAxiosProxyConfig } from '../proxy';
-import { IVSCodeWorkspace } from '../vscode/workspace';
-import { DownloadAxiosResponse } from '../download/downloader';
 
 export type LsMetadata = {
   tag: string;
@@ -46,7 +46,7 @@ export class StaticLsApi implements IStaticLsApi {
     const response = axios.get(downloadUrl, {
       responseType: 'stream',
       cancelToken: axiosCancelToken.token,
-      ...getAxiosProxyConfig(this.workspace),
+      ...getAxiosConfig(this.workspace),
     });
 
     return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
@@ -60,7 +60,7 @@ export class StaticLsApi implements IStaticLsApi {
     const fileName = await this.getFileName(platform);
     const { data } = await axios.get<string>(
       `${this.baseUrl}/snyk-ls_${await this.getLatestVersion()}_SHA256SUMS`,
-      getAxiosProxyConfig(this.workspace),
+      getAxiosConfig(this.workspace),
     );
 
     let checksum = '';
@@ -75,7 +75,7 @@ export class StaticLsApi implements IStaticLsApi {
   }
 
   async getMetadata(): Promise<LsMetadata> {
-    const response = await axios.get<LsMetadata>(`${this.baseUrl}/metadata.json`, getAxiosProxyConfig(this.workspace));
+    const response = await axios.get<LsMetadata>(`${this.baseUrl}/metadata.json`, getAxiosConfig(this.workspace));
     return response.data;
   }
 }
