@@ -1,7 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
-import https, { AgentOptions } from 'https';
+import fs from 'fs';
+import https from 'https';
 import createHttpsProxyAgent, { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
+import { Logger } from './logger/logger';
 import { IVSCodeWorkspace } from './vscode/workspace';
 
 export function getHttpsProxyAgent(
@@ -106,14 +108,20 @@ function getHttpsAgent(workspace: IVSCodeWorkspace): https.Agent {
 function getDefaultAgentOptions(
   workspace: IVSCodeWorkspace,
   processEnv: NodeJS.ProcessEnv = process.env,
-): AgentOptions {
-  const defaultOptions: AgentOptions = {
+): https.AgentOptions {
+  const defaultOptions: https.AgentOptions = {
     rejectUnauthorized: getVSCodeStrictProxy(workspace),
   };
 
   // use custom certs if provided
   if (processEnv.NODE_EXTRA_CA_CERTS) {
-    defaultOptions.ca = process.env.NODE_EXTRA_CA_CERTS;
+    try {
+      fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
+      const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
+      defaultOptions.ca = [certs];
+    } catch (error) {
+      Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
+    }
   }
 
   return defaultOptions;
