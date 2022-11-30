@@ -106,6 +106,11 @@ export class OssService extends CliService<OssResult> {
     super.handleLsDownloadFailure(error);
   }
 
+  override handleNoTrustedFolders(): void {
+    super.handleNoTrustedFolders();
+    this.viewManagerService.refreshOssView();
+  }
+
   activateSuggestionProvider(): void {
     this.suggestionProvider.activate();
   }

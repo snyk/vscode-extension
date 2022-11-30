@@ -17,6 +17,7 @@ import {
   FEATURES_PREVIEW_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
+  TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
@@ -98,6 +99,10 @@ export interface IConfiguration {
   getSnykLanguageServerPath(): string | undefined;
 
   setShouldReportEvents(b: boolean): Promise<void>;
+
+  getTrustedFolders(): string[];
+
+  setTrustedFolders(trustedFolders: string[]): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -424,6 +429,20 @@ export class Configuration implements IConfiguration {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH));
   }
 
+  getTrustedFolders(): string[] {
+    return (
+      this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []
+    );
+  }
+
+  async setTrustedFolders(trustedFolders: string[]): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(TRUSTED_FOLDERS),
+      trustedFolders,
+      true,
+    );
+  }
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
 
   private static isSingleTenant(url: URL): boolean {

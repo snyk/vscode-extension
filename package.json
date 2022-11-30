@@ -175,6 +175,11 @@
             "description": "Severity issues to display.",
             "scope": "window"
           },
+          "snyk.trustedFolders": {
+            "type": "array",
+            "default": [],
+            "description": "Folders to trust for Snyk scans."
+          },
           "snyk.features.preview": {
             "type": "object",
             "default": {},
@@ -271,7 +276,7 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\nLet's start by connecting VS Code with Snyk:\n[Connect VS Code with Snyk](command:snyk.initiateLogin 'Connect with Snyk')\n👉 Snyk's mission is to finds bugs, fast. Connect with Snyk to start your first analysis!\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\n👉 Connect with Snyk to start your first analysis!\nWhen scanning folder files, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\n[Trust workspace and connect](command:snyk.initiateLogin 'Connect with Snyk')\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
         "when": "!snyk:error && !snyk:loggedIn"
       },
       {

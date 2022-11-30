@@ -4,10 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IAnalytics, SupportedAnalysisProperties } from '../common/analytics/itly';
 import { FeaturesConfiguration, IConfiguration } from '../common/configuration/configuration';
+import { getTrustedFolders } from '../common/configuration/trustedFolders';
 import { IDE_NAME } from '../common/constants/general';
 import { ErrorHandler } from '../common/error/errorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
+import { messages as generalAnalysisMessages } from '../common/messages/analysisMessages';
 import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
@@ -47,6 +49,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>;
   hasError: boolean;
   hasTransientError: boolean;
+  isAnyWorkspaceFolderTrusted: boolean;
 
   startAnalysis(paths: string[], manual: boolean, reportTriggeredEvent: boolean): Promise<void>;
   clearBundle(): void;
@@ -74,6 +77,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   private _analysisProgress = '';
   private temporaryFailed = false;
   private failed = false;
+  private _isAnyWorkspaceFolderTrusted = true;
 
   constructor(
     readonly extensionContext: ExtensionContext,
@@ -134,6 +138,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   get hasTransientError(): boolean {
     return this.temporaryFailed;
   }
+  get isAnyWorkspaceFolderTrusted(): boolean {
+    return this._isAnyWorkspaceFolderTrusted;
+  }
 
   get analysisStatus(): string {
     return this._analysisStatus;
@@ -149,6 +156,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     const enabledFeatures = this.config.getFeaturesConfiguration();
     const requestId = uuidv4();
+
+    paths = getTrustedFolders(this.config, paths);
+    if (!paths.length) {
+      this._isAnyWorkspaceFolderTrusted = false;
+      this.viewManagerService.refreshCodeAnalysisViews(enabledFeatures);
+      this.logger.info(`Skipping Code scan. ${generalAnalysisMessages.noWorkspaceTrustDescription}`);
+      return;
+    }
+    this._isAnyWorkspaceFolderTrusted = true;
 
     try {
       Logger.info(analysisMessages.started);

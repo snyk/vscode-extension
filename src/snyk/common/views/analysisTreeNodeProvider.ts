@@ -72,5 +72,15 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
     });
   }
 
+  protected getNoWorkspaceTrustTreeNode(): TreeNode {
+    return new TreeNode({
+      text: messages.noWorkspaceTrust,
+      command: {
+        command: SNYK_SHOW_OUTPUT_COMMAND,
+        title: '',
+      },
+    });
+  }
+
   protected abstract getFilteredIssues(issues: readonly unknown[]): readonly unknown[];
 }

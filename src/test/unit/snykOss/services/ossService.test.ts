@@ -33,6 +33,7 @@ suite('OssService', () => {
     } as unknown as ILanguageServer;
     ls.cliReady$.next('');
 
+    const testFolderPath = '';
     ossService = new OssService(
       {
         extensionPath,
@@ -42,10 +43,11 @@ suite('OssService', () => {
         getAdditionalCliParameters: () => '',
         getCliPath: () => undefined,
         isAutomaticDependencyManagementEnabled: () => true,
-      } as IConfiguration,
+        getTrustedFolders: () => [testFolderPath],
+      } as unknown as IConfiguration,
       {} as IWebViewProvider<OssIssueCommandArg>,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolders: () => [testFolderPath],
       } as IVSCodeWorkspace,
       {
         refreshOssView: () => undefined,
