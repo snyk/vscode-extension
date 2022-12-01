@@ -20,7 +20,7 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import { SNYK_LOGIN_COMMAND } from '../constants/languageServer';
+import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
@@ -55,6 +55,7 @@ export class CommandController {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
     await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
+    await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
   }
 
   async setToken(): Promise<void> {

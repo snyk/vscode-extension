@@ -13,6 +13,7 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
+  TRUSTED_FOLDERS,
   YES_TELEMETRY_SETTING,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -68,6 +69,7 @@ class ConfigurationWatcher implements IWatcher {
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CUSTOM_LS_PATH,
+        TRUSTED_FOLDERS,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

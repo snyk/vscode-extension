@@ -50,10 +50,12 @@ suite('CliService', () => {
       getGlobalStateValue: () => undefined,
     } as unknown as ExtensionContext;
 
+    const testFolderPath = 'test-folder';
     configuration = {
       getAdditionalCliParameters: () => '',
       isAutomaticDependencyManagementEnabled: () => true,
       getCliPath: () => undefined,
+      getTrustedFolders: () => [testFolderPath],
     } as unknown as IConfiguration;
 
     downloadService = {
@@ -71,7 +73,7 @@ suite('CliService', () => {
       logger,
       configuration,
       {
-        getWorkspaceFolders: () => ['test-folder'],
+        getWorkspaceFolders: () => [testFolderPath],
       } as IVSCodeWorkspace,
       downloadService,
       ls,

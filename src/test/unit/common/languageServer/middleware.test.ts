@@ -37,6 +37,7 @@ suite('Language Server: Middleware', () => {
         medium: true,
         low: true,
       },
+      getTrustedFolders: () => ['/trusted/test/folder'],
     } as IConfiguration;
   });
 
@@ -84,6 +85,8 @@ suite('Language Server: Middleware', () => {
       serverResult.cliPath,
       CliExecutable.getPath(extensionContextMock.extensionPath, configuration.getCliPath()),
     );
+    assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
+    assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());
   });
 
   test('Configuration request should return an error', async () => {

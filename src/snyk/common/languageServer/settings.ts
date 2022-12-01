@@ -21,6 +21,8 @@ export type ServerSettings = {
   cliPath?: string;
   token?: string;
   filterSeverity?: SeverityFilter;
+  enableTrustedFoldersFeature?: string;
+  trustedFolders?: string[];
 };
 
 export class LanguageServerSettings {
@@ -38,6 +40,8 @@ export class LanguageServerSettings {
       token: await configuration.getToken(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
       filterSeverity: configuration.severityFilter,
+      enableTrustedFoldersFeature: 'true',
+      trustedFolders: configuration.getTrustedFolders(),
     };
   }
 }
