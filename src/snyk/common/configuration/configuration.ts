@@ -5,6 +5,7 @@ import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTOFIX_ENDPOINT,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_PATH,
@@ -66,6 +67,7 @@ export interface IConfiguration {
   snykCodeToken: Promise<string | undefined>;
   snykCodeBaseURL: string;
   snykCodeUrl: string;
+  autofixBaseURL: string;
 
   organization: string | undefined;
 
@@ -112,6 +114,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
+  private readonly defaultAutofixEndpoint = 'http://localhost:1234';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -152,6 +155,15 @@ export class Configuration implements IConfiguration {
     }
 
     return this.defaultSnykCodeBaseURL;
+  }
+
+  get autofixBaseURL(): string {
+    const configuredEndpoint = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTOFIX_ENDPOINT),
+    );
+
+    return configuredEndpoint || this.defaultAutofixEndpoint;
   }
 
   private get customEndpoint(): string | undefined {

@@ -15,6 +15,7 @@ export const SNYK_DCIGNORE_COMMAND = 'snyk.dcignore';
 export const SNYK_OPEN_BROWSER_COMMAND = 'snyk.open';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
+export const SNYK_AUTOFIX_ISSUE_COMMAND = 'snyk.autofixissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_REPORT_FALSE_POSITIVE_COMMAND = 'snyk.reportFalsePositive';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';

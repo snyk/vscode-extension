@@ -46,6 +46,16 @@
       args: { url },
     });
   }
+  function autofixIssue() {
+    sendMessage({
+      type: 'autofixIssue',
+      args: {
+        ...getSuggestionPosition(),
+        message: suggestion.message,
+        rule: suggestion.rule,
+      },
+    });
+  }
   function ignoreIssue(lineOnly: any) {
     sendMessage({
       type: 'ignoreIssue',
@@ -270,6 +280,7 @@
   document.getElementById('current-example')!.addEventListener('click', navigateToCurrentExample);
   document.getElementById('previous-example')!.addEventListener('click', previousExample);
   document.getElementById('next-example')!.addEventListener('click', nextExample);
+  document.getElementById('autofix-issue')!.addEventListener('click', autofixIssue);
   document.getElementById('ignore-line-issue')!.addEventListener('click', ignoreIssue.bind(true));
   document.getElementById('ignore-file-issue')!.addEventListener('click', ignoreIssue.bind(false));
   document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);

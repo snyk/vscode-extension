@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { OpenCommandIssueType } from '../../../common/commands/types';
 import { IConfiguration } from '../../../common/configuration/configuration';
 import {
+  SNYK_AUTOFIX_ISSUE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -165,6 +166,18 @@ export class CodeSuggestionWebviewProvider
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
           break;
         }
+        case 'autofixIssue': {
+          let { message, uri, rule, cols, rows } = args;
+          uri = vscode.Uri.parse(uri as string);
+          const range = createIssueCorrectRange({ cols, rows }, this.languages);
+          await vscode.commands.executeCommand(SNYK_AUTOFIX_ISSUE_COMMAND, {
+            uri,
+            matchedIssue: { message, range },
+            ruleId: rule,
+          });
+          this.panel?.dispose();
+          break;
+        }
         case 'ignoreIssue': {
           // eslint-disable-next-line no-shadow
           let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
@@ -290,6 +303,13 @@ export class CodeSuggestionWebviewProvider
           </div>
         </section>
         <section class="delimiter-top" id="labels"></section>
+        <section class="delimiter-top" id="autofix-top">
+          <div class="row between">
+            <span>This issue can be automatically fixed by Snyk.</span>
+
+            <button id="autofix-issue" class="button">Autofix issue</button>
+          </div>
+        </section>
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.

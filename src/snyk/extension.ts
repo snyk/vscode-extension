@@ -14,6 +14,7 @@ import { OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './common/com
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
+  SNYK_AUTOFIX_ISSUE_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -62,6 +63,7 @@ import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
 import ConfigurationWatcher from './common/watchers/configurationWatcher';
+import { autofixIssue } from './snykCode/codeActions/autofixCommand';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeScanMode } from './snykCode/constants/modes';
@@ -389,6 +391,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.reportFalsePositive(arg),
       ),
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
+      vscode.commands.registerCommand(SNYK_AUTOFIX_ISSUE_COMMAND, autofixIssue),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
     );
   }
