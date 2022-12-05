@@ -145,6 +145,17 @@
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
           },
+          "snyk.features.codeAutofix": {
+            "type": "boolean",
+            "title": "Snyk Code Autofix",
+            "markdownDescription": "Provide automatic code security and quality fixes for found issues.",
+            "default": false
+          },
+          "snyk.advanced.codeAutofixEndpoint": {
+            "type": "string",
+            "markdownDescription": "Sets API endpoint to use for Snyk Code autofix requests. E.g. `https://app.dev.snyk.io/autofix-api`.",
+            "scope": "window"
+          },
           "snyk.severity": {
             "type": "object",
             "default": {

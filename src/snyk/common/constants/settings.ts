@@ -5,6 +5,7 @@ export const CONFIGURATION_IDENTIFIER = 'snyk';
 export const OSS_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.openSourceSecurity`;
 export const CODE_SECURITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeSecurity`;
 export const CODE_QUALITY_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeQuality`;
+export const CODE_AUTOFIX_ENABLED_SETTING = `${CONFIGURATION_IDENTIFIER}.features.codeAutofix`;
 export const FEATURES_PREVIEW_SETTING = `${CONFIGURATION_IDENTIFIER}.features.preview`;
 
 export const YES_CRASH_REPORT_SETTING = `${CONFIGURATION_IDENTIFIER}.yesCrashReport`;
@@ -20,6 +21,7 @@ export const ADVANCED_ORGANIZATION = `${CONFIGURATION_IDENTIFIER}.advanced.organ
 export const ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT = `${CONFIGURATION_IDENTIFIER}.advanced.automaticDependencyManagement`;
 export const ADVANCED_CLI_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.cliPath`;
 export const ADVANCED_CUSTOM_LS_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.languageServerPath`;
+export const ADVANCED_AUTOFIX_ENDPOINT = `${CONFIGURATION_IDENTIFIER}.advanced.codeAutofixEndpoint`;
 
 export const SEVERITY_FILTER_SETTING = `${CONFIGURATION_IDENTIFIER}.severity`;
 export const TRUSTED_FOLDERS = `${CONFIGURATION_IDENTIFIER}.trustedFolders`;
