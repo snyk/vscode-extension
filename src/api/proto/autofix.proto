@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package autofix;
+
+message RuleReport {
+  string rule_id = 1;
+  string message = 2;
+
+  int32 col_begin = 3;
+  int32 col_end = 4;
+  int32 line_begin = 5;
+  int32 line_end = 6;
+  int32 severity = 7;
+  int32 event_id = 8;
+}
+
+message RuleReports {
+  repeated RuleReport reports = 1;
+  string file_name = 2;
+  string repo = 3;
+  string change_id = 4;
+}
+
+message CommitRuleReport {
+  RuleReports precommit_reports = 1;
+  RuleReports postcommit_reports = 2;
+  repeated int32 fixed_rule_indices = 3;
+}
+
+// Describes the identifier of the model artifact. See `pantscode.ml_infra.storage.artifacts`
+// for the description of an atrifact.
+message ModelID {
+  // id is always required
+  string id = 1;
+  // tag is optional, if not set the last version of artifact is used
+  string tag = 2;
+}
