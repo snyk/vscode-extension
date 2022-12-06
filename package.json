@@ -145,6 +145,12 @@
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
           },
+          "snyk.features.infrastructureAsCode": {
+            "type": "boolean",
+            "title": "Snyk Infrastructure as Code issues",
+            "description": "Find and fix your IaC misconfigurations.",
+            "default": true
+          },
           "snyk.severity": {
             "type": "object",
             "default": {
