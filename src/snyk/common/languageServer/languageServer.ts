@@ -72,7 +72,7 @@ export class LanguageServer implements ILanguageServer {
 
     const serverOptions: ServerOptions = {
       command: lsBinaryPath,
-      args: ['-l', 'info'], // TODO file logging?
+      args: ['-l', 'info'],
       options: {
         env: processEnv,
       },

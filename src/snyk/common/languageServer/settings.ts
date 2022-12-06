@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { IConfiguration, SeverityFilter } from '../configuration/configuration';
 
 export type InitializationOptions = ServerSettings & {
@@ -27,12 +28,15 @@ export type ServerSettings = {
 
 export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
-    const iacEnabled =
-      configuration.getPreviewFeatures().lsIacScan && configuration.getFeaturesConfiguration()?.iacEnabled;
+    let iacEnabled = configuration.getFeaturesConfiguration()?.iacEnabled;
+    if (_.isUndefined(iacEnabled)) {
+      iacEnabled = true;
+    }
+
     return {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
-      activateSnykIac: `${iacEnabled ?? false}`,
+      activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
