@@ -153,7 +153,7 @@
           },
           "snyk.advanced.codeAutofixEndpoint": {
             "type": "string",
-            "markdownDescription": "Sets API endpoint to use for Snyk Code autofix requests. E.g. `https://app.dev.snyk.io/autofix-api`.",
+            "markdownDescription": "Sets API endpoint to use for Snyk Code autofix requests. E.g. `app.dev.snyk.io/autofix-api`.",
             "scope": "window"
           },
           "snyk.severity": {
@@ -403,9 +403,9 @@
   },
   "scripts": {
     "gen_proto_interface_autofix": "proto-loader-gen-types --longs=Number --enums=String --defaults --oneofs --includeComments --grpcLib=@grpc/grpc-js --outDir=./src/api/proto/ ./src/api/proto/*.proto",
-    "cp_proto_bundle": "cp -R ./src/api/proto/ ./dist/api/",
+    "cp_proto_autofix": "cp -R ./src/api/proto/ ./out/api/proto",
     "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
-    "build": "tsc -p ./ && npm run cp_proto_bundle",
+    "build": "tsc -p ./ && npm run cp_proto_autofix",
     "deps": "npm install && npm run gen_proto_interface_autofix",
     "watch": "npm run deps && tsc -watch -p ./",
     "watch-resources": "sass media --no-source-map --watch",

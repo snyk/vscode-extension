@@ -1,16 +1,13 @@
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import assert from 'assert';
 import retry from 'async-retry';
 import path from 'path';
 import { promisify } from 'util';
+import { configuration } from '../snyk/common/configuration/instance';
 
 import type { GetFixSuggestionsRequest } from './proto/autofix/GetFixSuggestionsRequest';
 import type { GetFixSuggestionsResponse__Output } from './proto/autofix/GetFixSuggestionsResponse';
 import type { ProtoGrpcType } from './proto/autofix_main_api';
-
-const BUNDLE_SERVER_URL = '127.0.0.1:6005'; // TODO: hardcoded for now
-assert(BUNDLE_SERVER_URL, 'Env var BUNDLE_SERVER_URL must be provided and non-empty');
 
 const packageDefinition = protoLoader.loadSync(path.join(__dirname, 'proto', 'autofix_main_api.proto'), {
   keepCase: false, // This will change names to camelCase
@@ -19,8 +16,8 @@ const packageDefinition = protoLoader.loadSync(path.join(__dirname, 'proto', 'au
   defaults: true,
   oneofs: true,
 });
-const grpcBundleApi = grpc.loadPackageDefinition(packageDefinition) as unknown as ProtoGrpcType;
-const grpcClient = new grpcBundleApi.autofix.AutofixService(BUNDLE_SERVER_URL, grpc.credentials.createInsecure(), {
+const grpcApi = grpc.loadPackageDefinition(packageDefinition) as unknown as ProtoGrpcType;
+const grpcClient = new grpcApi.autofix.AutofixService(configuration.autofixBaseURL, grpc.credentials.createInsecure(), {
   // Reference: https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L236
   'grpc.max_receive_message_length': -1,
   'grpc.max_send_message_length': 64 * 1024 * 1024, // We can send more then allowed 64 thanks to compression
@@ -33,6 +30,7 @@ const grpcClient = new grpcBundleApi.autofix.AutofixService(BUNDLE_SERVER_URL, g
   'grpc.max_reconnect_backoff_ms': 15000,
 });
 
+/* eslint-disable */
 /**
  * Decorate gRPC method with retry mechanism.
  * "abortRetrying" is a callback that takes the error object and
@@ -90,7 +88,6 @@ function decorateMethod<INPUT_T, OUTPUT_T>(
     );
   };
 }
-/* eslint-disable */
 export const GetFixSuggestions = decorateMethod<GetFixSuggestionsRequest, GetFixSuggestionsResponse__Output>(
   grpcClient.getFixSuggestions,
 );

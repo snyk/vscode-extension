@@ -114,7 +114,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
-  private readonly defaultAutofixEndpoint = 'http://localhost:1234';
+  private readonly defaultAutofixEndpoint = 'localhost:6005';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
