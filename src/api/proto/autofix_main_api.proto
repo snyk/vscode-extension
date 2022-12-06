@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package autofix;
+
+import "autofix.proto";
+
+// The service which is called as an entry point to the end-to-end pipeline.
+service AutofixService {
+  rpc GetRuleMatches(GetRuleMatchesRequest) returns (GetRuleMatchesResponse) {}
+  rpc GetFixSuggestions(GetFixSuggestionsRequest) returns (GetFixSuggestionsResponse) {}
+}
+
+// General message type which includes all error codes used accross the autofix API.
+message AutofixApiStatus {
+  enum Code {
+    OK = 0;
+    FAILED_ANALYSIS = 1;
+    INFERENCE_FAILURE = 2;
+  }
+  Code code = 1;
+  string error_message = 2;
+}
+
+message GetRuleMatchesRequest {
+  string input_code = 1;
+}
+
+message GetRuleMatchesResponse {
+  AutofixApiStatus status = 1;
+  repeated RuleReport rule_matches = 3;
+}
+
+message GetFixSuggestionsRequest {
+  string input_code = 1;
+  string nn_model = 2;
+  string rule_id = 3;
+  int32 line_num = 4;
+}
+
+message GetFixSuggestionsResponse {
+  AutofixApiStatus status = 1;
+  repeated string fixes = 2;
+}

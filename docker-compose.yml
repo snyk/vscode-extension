@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  nn:
+    restart: unless-stopped
+    image: gcr.io/snyk-main/autofix_nn:smallhands
+    ports:
+      - '50051:50051'
+
+  autofix:
+    restart: unless-stopped
+    image: gcr.io/snyk-main/autofix_main:smallhands
+    ports:
+      - '6005:6005'
