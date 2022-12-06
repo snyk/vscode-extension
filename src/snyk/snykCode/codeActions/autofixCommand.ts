@@ -34,7 +34,8 @@ export const autofixIssue = _.debounce(
     const payload = {
       inputCode: editor.document.getText(),
       ruleId,
-      lineNum: matchedIssue.range.start.line,
+      // Line number is 0-indexed, engine expects 1-indexed
+      lineNum: matchedIssue.range.start.line + 1,
     };
     const response = await GetFixSuggestions(payload);
 
