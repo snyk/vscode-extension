@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { basename } from 'path';
 import * as vscode from 'vscode';
 import { GetFixSuggestions } from '../../../api/grpc_autofix';
 
@@ -30,17 +31,26 @@ export const autofixIssue = _.debounce(
       return;
     }
 
-    // Replace editor content.
-    const payload = {
-      inputCode: editor.document.getText(),
-      ruleId,
-      // Line number is 0-indexed, engine expects 1-indexed
-      lineNum: matchedIssue.range.start.line + 1,
-    };
-    const response = await GetFixSuggestions(payload);
+    const inputCode = editor.document.getText();
+    // Line number is 0-indexed, engine expects 1-indexed
+    const lineNum = matchedIssue.range.start.line + 1;
+
+    const response = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Loading auto fix suggestions...',
+      },
+      () => {
+        return GetFixSuggestions({
+          inputCode,
+          ruleId,
+          lineNum,
+        });
+      },
+    );
 
     if (response.fixes.length === 0) {
-      void vscode.window.showWarningMessage('Autofix not available for this issue');
+      void vscode.window.showWarningMessage('Auto fix not available for this issue.');
       return;
     }
 
@@ -53,7 +63,9 @@ export const autofixIssue = _.debounce(
       e.replace(replaceRange, replaceContent);
     });
 
-    void vscode.window.showInformationMessage(`Autofix applied for ${matchedIssue.source} issue`);
+    void vscode.window.showInformationMessage(
+      `Snyk Code auto fixed an issue (file: ${basename(uri?.path ?? '')}, line: ${lineNum})`,
+    );
 
     await editor.document.save();
   },

@@ -305,9 +305,14 @@ export class CodeSuggestionWebviewProvider
         <section class="delimiter-top" id="labels"></section>
         <section class="delimiter-top" id="autofix-top">
           <div class="row between">
-            <span>This issue can be automatically fixed by Snyk.</span>
+            <div>
+              <div>This issue can be automatically fixed by Snyk.</div>
+              <small>The fix has a confidence level of 84 out of 100</small>
+            </div>
 
-            <button id="autofix-issue" class="button">Autofix issue</button>
+            <div>
+              <button id="autofix-issue" class="button"> &check; Fix this issue </button>
+            </div>
           </div>
         </section>
         <section class="delimiter-top">
