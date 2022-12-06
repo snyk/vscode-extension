@@ -1,4 +1,4 @@
-import { IConfiguration } from '../configuration/configuration';
+import { IConfiguration, SeverityFilter } from '../configuration/configuration';
 
 export type InitializationOptions = ServerSettings & {
   integrationName?: string;
@@ -20,6 +20,7 @@ export type ServerSettings = {
   manageBinariesAutomatically?: string;
   cliPath?: string;
   token?: string;
+  filterSeverity?: SeverityFilter;
   enableTrustedFoldersFeature?: string;
   trustedFolders?: string[];
 };
@@ -38,6 +39,7 @@ export class LanguageServerSettings {
       organization: configuration.organization,
       token: await configuration.getToken(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
+      filterSeverity: configuration.severityFilter,
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
     };

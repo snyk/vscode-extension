@@ -1,5 +1,15 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.10.0]
+
+### Added
+
+- Snyk LS: Passing severity filter settings to LS on initialisation.
+
+### Fixed
+
+- Extension crashes when Code disabled and severity filter changed.
+
 ## [1.9.0]
 
 ### Added

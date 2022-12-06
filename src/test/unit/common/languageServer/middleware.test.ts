@@ -31,6 +31,12 @@ suite('Language Server: Middleware', () => {
           reportFalsePositives: false,
         };
       },
+      severityFilter: {
+        critical: true,
+        high: true,
+        medium: true,
+        low: true,
+      },
       getTrustedFolders: () => ['/trusted/test/folder'],
     } as IConfiguration;
   });

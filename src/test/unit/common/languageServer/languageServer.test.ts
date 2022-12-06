@@ -49,6 +49,12 @@ suite('Language Server', () => {
           reportFalsePositives: false,
         };
       },
+      severityFilter: {
+        critical: true,
+        high: true,
+        medium: true,
+        low: true,
+      },
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
       },
@@ -90,6 +96,7 @@ suite('Language Server', () => {
       additionalParams: '--all-projects',
       manageBinariesAutomatically: 'true',
       deviceId: user.anonymousId,
+      filterSeverity: { critical: true, high: true, medium: true, low: true },
       enableTrustedFoldersFeature: 'true',
       trustedFolders: ['/trusted/test/folder'],
     };

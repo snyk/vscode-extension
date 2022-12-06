@@ -198,6 +198,10 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     this.codeQualityReview.clear();
     this.diagnosticSuggestion.clear();
 
+    if (!this.analysisResults) {
+      return;
+    }
+
     const { files, suggestions } = this.analysisResults;
     for (const filePath in files) {
       if (!files.hasOwnProperty(filePath)) {
