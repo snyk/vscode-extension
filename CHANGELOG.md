@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.11.0]
+
+### Changed
+
+- Infrastructure as Code scans via Snyk Language Server without a feature flag.
+
 ## [1.10.0]
 
 ### Added

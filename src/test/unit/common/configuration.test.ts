@@ -182,7 +182,6 @@ suite('Configuration', () => {
     deepStrictEqual(configuration.getPreviewFeatures(), {
       reportFalsePositives: false,
       advisor: false,
-      lsIacScan: false,
     } as PreviewFeatures);
   });
 
@@ -190,7 +189,6 @@ suite('Configuration', () => {
     const previewFeatures = {
       reportFalsePositives: true,
       advisor: false,
-      lsIacScan: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 

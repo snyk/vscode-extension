@@ -12,6 +12,7 @@ import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
@@ -44,10 +45,12 @@ suite('Language Server', () => {
       },
       getPreviewFeatures() {
         return {
-          lsIacScan: false,
           advisor: false,
           reportFalsePositives: false,
         };
+      },
+      getFeaturesConfiguration() {
+        return defaultFeaturesConfigurationStub;
       },
       severityFilter: {
         critical: true,
@@ -83,7 +86,7 @@ suite('Language Server', () => {
     const expectedInitializationOptions: InitializationOptions = {
       activateSnykCode: 'false',
       activateSnykOpenSource: 'false',
-      activateSnykIac: 'false',
+      activateSnykIac: 'true',
       token: 'testToken',
       cliPath: 'testPath',
       enableTelemetry: 'true',

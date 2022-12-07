@@ -10,6 +10,7 @@ import {
   ConfigurationRequestHandlerSignature,
   ResponseError,
 } from '../../../../snyk/common/vscode/types';
+import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
 
 suite('Language Server: Middleware', () => {
@@ -26,10 +27,12 @@ suite('Language Server: Middleware', () => {
       getCliPath: () => '/path/to/cli',
       getPreviewFeatures: () => {
         return {
-          lsIacScan: false,
           advisor: false,
           reportFalsePositives: false,
         };
+      },
+      getFeaturesConfiguration() {
+        return defaultFeaturesConfigurationStub;
       },
       severityFilter: {
         critical: true,
@@ -71,7 +74,7 @@ suite('Language Server: Middleware', () => {
     const serverResult = res[0] as ServerSettings;
     assert.strictEqual(serverResult.activateSnykCode, 'false');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
-    assert.strictEqual(serverResult.activateSnykIac, 'false');
+    assert.strictEqual(serverResult.activateSnykIac, 'true');
     assert.strictEqual(serverResult.endpoint, configuration.snykOssApiEndpoint);
     assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
     assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
