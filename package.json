@@ -34,7 +34,11 @@
     "React",
     "Static Code Analysis",
     "Code Quality",
-    "Python"
+    "Python",
+    "Infrastructure as Code",
+    "IaC",
+    "Kubernetes",
+    "Terraform"
   ],
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
