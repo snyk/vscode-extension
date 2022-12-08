@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import fs from 'fs';
-import https from 'https';
-import createHttpsProxyAgent, { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
+import { Agent, AgentOptions } from 'https';
+import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
 import { Logger } from './logger/logger';
 import { IVSCodeWorkspace } from './vscode/workspace';
@@ -24,6 +24,7 @@ export function getProxyOptions(
 
   const defaultOptions: HttpsProxyAgentOptions = {
     rejectUnauthorized: workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true,
+    ...getDefaultAgentOptions(),
   };
 
   if (!proxy) {
@@ -65,26 +66,18 @@ export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined 
 
 export function getAxiosConfig(workspace: IVSCodeWorkspace): AxiosRequestConfig {
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
-  let agentOptions: HttpsProxyAgent | https.Agent | undefined = getHttpsProxyAgent(workspace);
-  if (!agentOptions) {
-    agentOptions = getHttpsAgent(workspace);
-  }
+  let agentOptions: HttpsProxyAgent | Agent | undefined = getHttpsProxyAgent(workspace);
+  if (!agentOptions) agentOptions = getHttpsAgent();
 
   return {
     // proxy false as we're using https-proxy-agent library for proxying
     proxy: false,
-    httpAgent: {
-      ...agentOptions,
-    },
-    httpsAgent: {
-      ...agentOptions,
-    },
+    httpAgent: agentOptions,
+    httpsAgent: agentOptions,
   };
 }
 
-export function getProxyEnvVariable(
-  proxyOptions: createHttpsProxyAgent.HttpsProxyAgentOptions | undefined,
-): string | undefined {
+export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undefined): string | undefined {
   if (!proxyOptions) {
     return;
   }
@@ -99,26 +92,21 @@ function getVSCodeStrictProxy(workspace: IVSCodeWorkspace): boolean {
   return workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
 }
 
-function getHttpsAgent(workspace: IVSCodeWorkspace): https.Agent {
-  return new https.Agent({
-    ...getDefaultAgentOptions(workspace),
+function getHttpsAgent(): Agent {
+  return new Agent({
+    ...getDefaultAgentOptions(),
   });
 }
 
-function getDefaultAgentOptions(
-  workspace: IVSCodeWorkspace,
-  processEnv: NodeJS.ProcessEnv = process.env,
-): https.AgentOptions {
-  const defaultOptions: https.AgentOptions = {
-    rejectUnauthorized: getVSCodeStrictProxy(workspace),
-  };
+function getDefaultAgentOptions(processEnv: NodeJS.ProcessEnv = process.env): AgentOptions | undefined {
+  let defaultOptions: AgentOptions | undefined = undefined;
 
   // use custom certs if provided
   if (processEnv.NODE_EXTRA_CA_CERTS) {
     try {
       fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
       const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
-      defaultOptions.ca = [certs];
+      defaultOptions = { ca: [certs] };
     } catch (error) {
       Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
     }
