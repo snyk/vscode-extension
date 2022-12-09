@@ -29,34 +29,7 @@ suite('Proxy', () => {
 
     const agent = getHttpsProxyAgent(workspace);
 
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
-  });
-
-  suite('.getProxyOptions()', () => {
-    suite('when proxyStrictSsl is set', () => {
-      const getConfiguration = sinon.stub();
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(true);
-      test('should return rejectUnauthorized true', () => {
-        const options = getProxyOptions(workspace);
-        assert.deepStrictEqual(options.rejectUnauthorized, true);
-      });
-    });
-
-    suite('when proxyStrictSsl is not set', () => {
-      const getConfiguration = sinon.stub();
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(false);
-      test('should return rejectUnauthorized false', () => {
-        const options = getProxyOptions(workspace);
-        assert.deepStrictEqual(options.rejectUnauthorized, false);
-      });
-    });
+    assert.deepStrictEqual(agent, undefined);
   });
 
   test('Proxy is set in VS Code settings', () => {
