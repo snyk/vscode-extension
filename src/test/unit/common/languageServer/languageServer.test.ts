@@ -84,7 +84,8 @@ suite('Language Server', () => {
       downloadService,
     );
     const expectedInitializationOptions: InitializationOptions = {
-      activateSnykCode: 'false',
+      activateSnykCodeSecurity: 'false',
+      activateSnykCodeQuality: 'false',
       activateSnykOpenSource: 'false',
       activateSnykIac: 'true',
       token: 'testToken',

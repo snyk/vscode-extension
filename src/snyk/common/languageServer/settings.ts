@@ -9,7 +9,8 @@ export type InitializationOptions = ServerSettings & {
 };
 
 export type ServerSettings = {
-  activateSnykCode?: string;
+  activateSnykCodeSecurity?: string;
+  activateSnykCodeQuality?: string;
   activateSnykOpenSource?: string;
   activateSnykIac?: string;
   endpoint?: string;
@@ -34,7 +35,8 @@ export class LanguageServerSettings {
     }
 
     return {
-      activateSnykCode: 'false',
+      activateSnykCodeSecurity: 'false', // TODO: fill this with preference settings, once LS serves Snyk Code Security issues
+      activateSnykCodeQuality: 'false', // TODO: fill this with preference settings, once LS serves Snyk Code Quality issues
       activateSnykOpenSource: 'false',
       activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
