@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.12.0]
+
+### Fixed
+
+- Regression introduced in 1.7.6
+
 ## [1.11.0]
 
 ### Changed
