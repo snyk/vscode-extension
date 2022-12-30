@@ -7,7 +7,7 @@ export function getTrustedFolders(config: IConfiguration, workspaceFolders: stri
   return workspaceFolders.filter(folder => {
     return trustedFolders.some(trustedFolder => {
       const relative = path.relative(trustedFolder, folder);
-      return relative && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative);
+      return relative === '' || (relative && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative));
     });
   });
 }
