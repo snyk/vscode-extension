@@ -35,4 +35,26 @@ suite('Trusted Folders', () => {
 
     deepStrictEqual(trustedFolders, []);
   });
+
+  test('Parent folder trusted', () => {
+    const config = {
+      getTrustedFolders: () => ['/test'],
+    } as IConfiguration;
+    const workspaceFolders = ['/test/workspace', '/test/workspace2'];
+
+    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+
+    deepStrictEqual(trustedFolders, ['/test/workspace', '/test/workspace2']);
+  });
+
+  test('Parent folder trusted (trailing slash)', () => {
+    const config = {
+      getTrustedFolders: () => ['/test/'],
+    } as IConfiguration;
+    const workspaceFolders = ['/test/workspace', '/test/workspace2'];
+
+    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+
+    deepStrictEqual(trustedFolders, ['/test/workspace', '/test/workspace2']);
+  });
 });
