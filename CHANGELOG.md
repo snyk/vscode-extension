@@ -1,6 +1,10 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.12.0]
+## [1.12.3]
+### Fixed
+- Snyk LS: updated protocol version
+
+## [1.12.2]
 
 ### Fixed
 
