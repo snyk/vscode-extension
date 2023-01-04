@@ -1,4 +1,7 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
+## [1.12.2]
+### Fixed
+- trust workspace folders if parent dir is trusted
 
 ## [1.12.3]
 ### Fixed
