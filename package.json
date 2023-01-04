@@ -472,7 +472,6 @@
     "vscode-languageclient": "8.0.0-next.2"
   },
   "extensionKind": [
-    "ui",
     "workspace"
   ]
 }
