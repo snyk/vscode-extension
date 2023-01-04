@@ -136,10 +136,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       if (result instanceof CliError || !result) {
         return;
       }
-
-      if (oldResult) {
-        await this.ossService.showBackgroundNotification(oldResult);
-      }
     } catch (err) {
       // catch unhandled error cases by reporting test failure
       this.ossService.finalizeTest(new CliError(err));

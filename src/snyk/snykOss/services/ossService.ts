@@ -128,17 +128,6 @@ export class OssService extends CliService<OssResult> {
     this.isVulnerabilityTreeVisible = visible;
   }
 
-  async showBackgroundNotification(oldResult: OssResult): Promise<void> {
-    if (this.isVulnerabilityTreeVisible || !this.config.shouldShowOssBackgroundScanNotification || !this.result) {
-      return;
-    }
-
-    const newVulnerabilities = this.getNewCriticalVulnerabilitiesCount(this.result, oldResult);
-    if (newVulnerabilities > 0) {
-      await this.notificationService.showOssBackgroundScanNotification(newVulnerabilities);
-    }
-  }
-
   getUniqueVulnerabilities(vulnerabilities: OssVulnerability[]): OssVulnerability[] {
     return vulnerabilities.filter((val, i, arr) => arr.findIndex(el => el.id === val.id) == i);
   }
