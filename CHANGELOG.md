@@ -1,7 +1,15 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.12.3]
+## [1.12.4]
+
 ### Fixed
+
+- Support for remote development and Github Codespaces
+
+## [1.12.3]
+
+### Fixed
+
 - Snyk LS: updated protocol version
 
 ## [1.12.2]
