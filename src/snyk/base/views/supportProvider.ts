@@ -7,11 +7,6 @@ export class SupportProvider extends TreeNodeProvider {
   getRootChildren(): TreeNode[] {
     return [
       new TreeNode({
-        text: 'Help Snyk to make a better extension',
-        icon: new ThemeIcon('mortar-board'),
-        link: 'https://calendly.com/snyk-georgi/45min',
-      }),
-      new TreeNode({
         text: 'Send us feedback or report a bug',
         icon: new ThemeIcon('mail'),
         link: 'https://snyk.io/contact-us/?utm_source=vsc',
@@ -23,7 +18,7 @@ export class SupportProvider extends TreeNodeProvider {
           new TreeNode({
             text: '1. How to get the most out of Snyk’s extension?',
             icon: new ThemeIcon('file-text'),
-            link: 'https://docs.snyk.io/features/integrations/ide-tools/visual-studio-code-extension-for-snyk-code',
+            link: 'https://docs.snyk.io/ide-tools/visual-studio-code-extension',
           }),
           new TreeNode({
             text: '2. How to ignore files and directories?',
