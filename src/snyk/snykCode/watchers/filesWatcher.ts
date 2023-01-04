@@ -12,7 +12,7 @@ export default function createFileWatcher(
   const watcher = workspace.createFileSystemWatcher(globPattern);
 
   const updateFiles = (filePath: string): void => {
-    extension.snykCode.addChangedFile(filePath);
+    extension.snykCodeOld.addChangedFile(filePath);
     void extension.runCodeScan(); // It's debounced, so not worries about concurrent calls
   };
 

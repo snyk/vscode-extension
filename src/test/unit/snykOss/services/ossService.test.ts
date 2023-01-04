@@ -1,12 +1,11 @@
 import { deepStrictEqual, rejects, strictEqual } from 'assert';
 import * as fs from 'fs/promises';
 import _ from 'lodash';
-import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { INotificationService } from '../../../../snyk/common/services/notificationService';
@@ -18,6 +17,7 @@ import { OssFileResult, OssResult, OssSeverity } from '../../../../snyk/snykOss/
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from '../../../../snyk/snykOss/watchers/dailyScanJob';
+import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 
 suite('OssService', () => {
@@ -28,9 +28,7 @@ suite('OssService', () => {
   setup(() => {
     logger = new LoggerMock();
 
-    const ls = {
-      cliReady$: new ReplaySubject<void>(1),
-    } as unknown as ILanguageServer;
+    const ls = new LanguageServerMock();
     ls.cliReady$.next('');
 
     const testFolderPath = '';
@@ -61,6 +59,7 @@ suite('OssService', () => {
         logAnalysisIsReady: sinon.fake(),
       } as unknown as IAnalytics,
       ls,
+      new WorkspaceTrust(),
     );
   });
 

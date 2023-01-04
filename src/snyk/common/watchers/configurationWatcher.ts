@@ -33,17 +33,21 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
-      extension.snykCode.analyzer.refreshDiagnostics();
+      extension.snykCodeOld.analyzer.refreshDiagnostics();
       // If two settings are changed simultaneously, only one will be applied, thus refresh all views
-      return extension.viewManagerService.refreshAllCodeAnalysisViews();
+      return extension.viewManagerService.refreshAllOldCodeAnalysisViews();
     } else if (key === SEVERITY_FILTER_SETTING) {
-      extension.snykCode.analyzer.refreshDiagnostics();
+      extension.snykCodeOld.analyzer.refreshDiagnostics();
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_CUSTOM_LS_PATH) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+    } else if (key === TRUSTED_FOLDERS) {
+      extension.workspaceTrust.resetTrustedFoldersCache();
+      extension.viewManagerService.refreshAllCodeAnalysisViews();
+      // extension.viewManagerService.refreshAllViews(); // todo: when oss results delivered via LS
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');

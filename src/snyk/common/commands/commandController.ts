@@ -2,12 +2,10 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { ISnykCodeService } from '../../snykCode/codeService';
+import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { CodeScanMode } from '../../snykCode/constants/modes';
-import { FalsePositive } from '../../snykCode/falsePositive/falsePositive';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
-import { FalsePositiveWebviewModel } from '../../snykCode/views/falsePositive/falsePositiveWebviewProvider';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
@@ -20,7 +18,11 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
+import {
+  SNYK_LANGUAGE_SERVER_NAME,
+  SNYK_LOGIN_COMMAND,
+  SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
+} from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
@@ -29,7 +31,7 @@ import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { OpenCommandIssueType, OpenIssueCommandArg, ReportFalsePositiveCommandArg } from './types';
+import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -37,7 +39,7 @@ export class CommandController {
   constructor(
     private openerService: IOpenerService,
     private authService: IAuthenticationService,
-    private snykCode: ISnykCodeService,
+    private snykCode: ISnykCodeServiceOld,
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
@@ -120,44 +122,17 @@ export class CommandController {
     }
   }
 
-  async reportFalsePositive(arg: ReportFalsePositiveCommandArg): Promise<void> {
-    const suggestion = arg.suggestion;
-    if (!suggestion.markers || suggestion.markers.length === 0) {
-      return;
-    }
-
-    let falsePositive;
-    try {
-      falsePositive = new FalsePositive(this.workspace, suggestion);
-      falsePositive.content = await falsePositive.getGeneratedContent();
-    } catch (e) {
-      ErrorHandler.handle(e, this.logger);
-    }
-
-    if (!falsePositive || !falsePositive.content) {
-      this.logger.warn('Report false positive not shown, since no file content available');
-      return; // don't show panel, if no content available.
-    }
-
-    const model: FalsePositiveWebviewModel = {
-      falsePositive: falsePositive,
-      title: suggestion.title.length ? suggestion.title : suggestion.message,
-      cwe: suggestion.cwe,
-      suggestionType: suggestion.isSecurityType ? 'Vulnerability' : 'Issue',
-      severity: suggestion.severity,
-      severityText: IssueUtils.severityAsText(suggestion.severity).toLowerCase(),
-      isSecurityTypeIssue: suggestion.isSecurityType,
-    };
-
-    await this.snykCode.falsePositiveProvider.showPanel(model);
-  }
-
   setScanMode(mode: CodeScanMode): Promise<void> {
     return this.scanModeService.setCodeMode(mode);
   }
 
   showOutputChannel(): void {
     return this.logger.showOutput();
+  }
+
+  showLsOutputChannel(): void {
+    // To get an instance of an OutputChannel use createOutputChannel.
+    return this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME).show();
   }
 
   async executeCommand(

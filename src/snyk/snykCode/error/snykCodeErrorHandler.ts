@@ -174,7 +174,7 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
     this.transientErrors += 1;
 
     if (errorStatusCode === constants.ErrorCodes.notFound) {
-      this.baseSnykModule.snykCode.clearBundle(); // bundle has expired, trigger complete new analysis
+      this.baseSnykModule.snykCodeOld.clearBundle(); // bundle has expired, trigger complete new analysis
     }
 
     setTimeout(() => {

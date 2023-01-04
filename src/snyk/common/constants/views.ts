@@ -1,6 +1,8 @@
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_FEATURES = 'snyk.views.features';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
+export const SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD = 'snyk.views.analysis.code.security.old';
+export const SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD = 'snyk.views.analysis.code.quality.old';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
@@ -18,6 +20,7 @@ export const SNYK_CONTEXT = {
   FEATURES_SELECTED: 'featuresSelected',
   CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
+  LS_CODE_PREVIEW: 'lsCodePreview',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
   MODE: 'mode',

@@ -10,7 +10,7 @@ import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerial
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
-import { ISnykCodeService } from '../../codeService';
+import { ISnykCodeServiceOld } from '../../codeServiceOld';
 import { FalsePositive } from '../../falsePositive/falsePositive';
 import { messages as errorMessages } from '../../messages/error';
 
@@ -37,7 +37,7 @@ export type FalsePositiveWebviewModel = {
 
 export class FalsePositiveWebviewProvider extends WebviewProvider<FalsePositiveWebviewModel> {
   constructor(
-    private readonly codeService: ISnykCodeService,
+    private readonly codeService: ISnykCodeServiceOld,
     private readonly window: IVSCodeWindow,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,

@@ -11,6 +11,7 @@ export const DID_CHANGE_CONFIGURATION_METHOD = 'workspace/didChangeConfiguration
 export const SNYK_HAS_AUTHENTICATED = '$/snyk.hasAuthenticated';
 export const SNYK_CLI_PATH = '$/snyk.isAvailableCli';
 export const SNYK_ADD_TRUSTED_FOLDERS = '$/snyk.addTrustedFolders';
+export const SNYK_SCAN = '$/snyk.scan';
 
 // commands
 export const SNYK_LOGIN_COMMAND = 'snyk.login';

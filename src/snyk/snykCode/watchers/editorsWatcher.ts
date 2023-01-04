@@ -55,7 +55,7 @@ class SnykEditorsWatcher implements IWatcher {
           contentChanges: [...event.contentChanges],
           document: event.document,
         };
-        void extension.snykCode.analyzer.updateReviewResultsPositions(
+        void extension.snykCodeOld.analyzer.updateReviewResultsPositions(
           extension,
           this.currentTextEditors[currentEditorFileName],
         );

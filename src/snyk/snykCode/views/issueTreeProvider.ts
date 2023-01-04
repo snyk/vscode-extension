@@ -1,15 +1,11 @@
-import { Command, Diagnostic, DiagnosticCollection, Range, Uri } from 'vscode';
-import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
+import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { ISnykCodeService } from '../codeService';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';
-import { getSnykSeverity } from '../utils/analysisUtils';
-import { CodeIssueCommandArg } from './interfaces';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -17,12 +13,11 @@ interface ISeverityCounts {
 
 export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   constructor(
-    protected contextService: IContextService,
-    protected snykCode: ISnykCodeService,
-    protected diagnosticCollection: DiagnosticCollection | undefined,
-    protected configuration: IConfiguration,
+    protected readonly contextService: IContextService,
+    protected readonly codeService: ISnykCodeService,
+    protected readonly configuration: IConfiguration,
   ) {
-    super(configuration, snykCode);
+    super(configuration, codeService);
   }
 
   static getSeverityIcon(severity: number): INodeIcon {
@@ -45,60 +40,41 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   getRootChildren(): TreeNode[] {
     const review: TreeNode[] = [];
     let nIssues = 0;
-    if (!this.contextService.shouldShowCodeAnalysis) return review;
 
-    if (this.snykCode.hasTransientError) {
-      return this.getTransientErrorTreeNodes();
-    } else if (this.snykCode.hasError) {
+    if (!this.contextService.shouldShowCodeAnalysis) return review;
+    if (!this.codeService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
-    } else if (!this.snykCode.isAnyWorkspaceFolderTrusted) {
+    }
+    if (!this.codeService.isAnyWorkspaceFolderTrusted) {
       return [this.getNoWorkspaceTrustTreeNode()];
     }
-
-    if (this.diagnosticCollection) {
-      this.diagnosticCollection.forEach((uri: Uri, diagnostics: readonly Diagnostic[]): void => {
-        const filePath = uri.path.split('/');
-        const filename = filePath.pop() || uri.path;
-        const dir = filePath.pop();
-
-        nIssues += diagnostics.length;
-
-        if (diagnostics.length == 0) return;
-
-        const [issues, severityCounts] = this.getVulnerabilityTreeNodes(diagnostics, uri);
-        issues.sort(this.compareNodes);
-        const fileSeverity = IssueTreeProvider.getFileSeverity(severityCounts);
-        const file = new TreeNode({
-          text: filename,
-          description: this.getIssueDescriptionText(dir, diagnostics),
-          icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
-          children: issues,
-          internal: {
-            nIssues: diagnostics.length,
-            severity: fileSeverity,
-          },
-        });
-        review.push(file);
-      });
-    }
-    review.sort(this.compareNodes);
-    if (this.snykCode.isAnalysisRunning) {
-      review.unshift(
+    if (this.codeService.isAnalysisRunning) {
+      return [
         new TreeNode({
-          text: this.snykCode.analysisStatus,
-          description: this.snykCode.analysisProgress,
+          text: commonMessages.scanRunning,
         }),
-      );
-    } else {
-      const topNodes = [
-        new TreeNode({
-          text: this.getIssueFoundText(nIssues),
-        }),
-        this.getDurationTreeNode(),
-        this.getNoSeverityFiltersSelectedTreeNode(),
       ];
-      review.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     }
+
+    if (this.codeService.result.size <= 0) {
+      return [
+        new TreeNode({
+          text: messages.runTest,
+        }),
+      ];
+    }
+
+    // todo: draw vulnerabilities tree [folder->file->vulnerabilities]
+
+    review.sort(this.compareNodes);
+    const topNodes = [
+      new TreeNode({
+        text: this.getIssueFoundText(nIssues),
+      }),
+      this.getDurationTreeNode(),
+      this.getNoSeverityFiltersSelectedTreeNode(),
+    ];
+    review.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return review;
   }
 
@@ -106,82 +82,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 
-  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
+  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly unknown[]): string | undefined {
     return `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`;
   }
 
-  protected getFilteredIssues(diagnostics: readonly Diagnostic[]): readonly Diagnostic[] {
+  // todo: remove after OSS scans migration to LS
+  protected getFilteredIssues(diagnostics: readonly unknown[]): readonly unknown[] {
     // Diagnostics are already filtered by the analyzer
     return diagnostics;
-  }
-
-  private getVulnerabilityTreeNodes(
-    fileVulnerabilities: readonly Diagnostic[],
-    uri: Uri,
-  ): [TreeNode[], ISeverityCounts] {
-    const severityCounts: ISeverityCounts = {
-      [SNYK_SEVERITIES.information]: 0,
-      [SNYK_SEVERITIES.warning]: 0,
-      [SNYK_SEVERITIES.error]: 0,
-    };
-
-    const nodes = fileVulnerabilities.map(d => {
-      const severity = getSnykSeverity(d.severity);
-      severityCounts[severity] += 1;
-      const params: {
-        text: string;
-        icon: INodeIcon;
-        issue: { uri: Uri; range?: Range };
-        internal: { severity: number };
-        command: Command;
-        children?: TreeNode[];
-      } = {
-        text: d.message,
-        icon: IssueTreeProvider.getSeverityIcon(severity),
-        issue: {
-          uri,
-          range: d.range,
-        },
-        internal: {
-          severity,
-        },
-        command: {
-          command: SNYK_OPEN_ISSUE_COMMAND,
-          title: '',
-          arguments: [
-            {
-              issueType: OpenCommandIssueType.CodeIssue,
-              issue: {
-                message: d.message,
-                uri: uri,
-                range: d.range,
-                diagnostic: d,
-              } as CodeIssueCommandArg,
-            } as OpenIssueCommandArg,
-          ],
-        },
-      };
-
-      return new TreeNode(params);
-    });
-
-    return [nodes, severityCounts];
-  }
-
-  private getTransientErrorTreeNodes(): TreeNode[] {
-    return [
-      new TreeNode({
-        text: messages.temporaryFailed,
-        internal: {
-          isError: true,
-        },
-      }),
-      new TreeNode({
-        text: messages.retry,
-        internal: {
-          isError: true,
-        },
-      }),
-    ];
   }
 }

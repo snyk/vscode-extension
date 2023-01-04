@@ -29,14 +29,15 @@ export type ServerSettings = {
 
 export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
-    let iacEnabled = configuration.getFeaturesConfiguration()?.iacEnabled;
-    if (_.isUndefined(iacEnabled)) {
-      iacEnabled = true;
-    }
+    const featuresConfiguration = configuration.getFeaturesConfiguration();
+
+    const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
+    const codeSecurityEnabled = configuration.getPreviewFeatures().lsCode && featuresConfiguration?.codeSecurityEnabled;
+    const codeQualityEnabled = configuration.getPreviewFeatures().lsCode && featuresConfiguration?.codeQualityEnabled;
 
     return {
-      activateSnykCodeSecurity: 'false', // TODO: fill this with preference settings, once LS serves Snyk Code Security issues
-      activateSnykCodeQuality: 'false', // TODO: fill this with preference settings, once LS serves Snyk Code Quality issues
+      activateSnykCodeSecurity: `${codeSecurityEnabled ?? false}`,
+      activateSnykCodeQuality: `${codeQualityEnabled ?? false}`,
       activateSnykOpenSource: 'false',
       activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,

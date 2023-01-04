@@ -44,6 +44,7 @@ export interface SeverityFilter {
 }
 
 export type PreviewFeatures = {
+  lsCode: boolean | undefined;
   reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
 };
@@ -85,7 +86,7 @@ export interface IConfiguration {
 
   hideWelcomeNotification(): Promise<void>;
 
-  getFeaturesConfiguration(): FeaturesConfiguration | undefined;
+  getFeaturesConfiguration(): FeaturesConfiguration;
 
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
 
@@ -263,7 +264,7 @@ export class Configuration implements IConfiguration {
     return this.defaultBaseApiHost;
   }
 
-  getFeaturesConfiguration(): FeaturesConfiguration | undefined {
+  getFeaturesConfiguration(): FeaturesConfiguration {
     const ossEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(OSS_ENABLED_SETTING),
@@ -405,6 +406,7 @@ export class Configuration implements IConfiguration {
 
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
+      lsCode: false,
       reportFalsePositives: false,
       advisor: false,
     };
