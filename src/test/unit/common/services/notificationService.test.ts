@@ -6,7 +6,6 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { NotificationService } from '../../../../snyk/common/services/notificationService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
-import { messages as ossMessages } from '../../../../snyk/snykOss/messages/test';
 import { LoggerMock } from '../../mocks/logger.mock';
 
 suite('NotificationService', () => {

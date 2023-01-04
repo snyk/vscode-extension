@@ -42,8 +42,6 @@ export class OssService extends CliService<OssResult> {
     super(extensionContext, logger, config, workspace, downloadService, languageServer);
   }
 
-  public getResult = (): OssResult | undefined => this.result;
-
   public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
     if (!this.result) {
       return undefined;

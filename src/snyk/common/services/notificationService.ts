@@ -1,8 +1,7 @@
 import { snykMessages } from '../../base/messages/snykMessages';
-import { messages as ossMessages } from '../../snykOss/messages/test';
 import { IAnalytics } from '../analytics/itly';
 import { IConfiguration } from '../configuration/configuration';
-import { VSCODE_VIEW_CONTAINER_COMMAND, VSCODE_VIEW_OSS_VIEW_COMMAND } from '../constants/commands';
+import { VSCODE_VIEW_CONTAINER_COMMAND } from '../constants/commands';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
