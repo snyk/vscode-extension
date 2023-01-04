@@ -1,7 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
-## [1.12.2]
+## [1.13.0]
 ### Fixed
 - trust workspace folders if parent dir is trusted
+
+### Changed
+- removed background notification about found vulnerabilities in Snyk Open Source
+
 
 ## [1.12.3]
 ### Fixed
