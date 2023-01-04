@@ -2,13 +2,14 @@
 
 ## [1.12.3]
 ### Fixed
-- Snyk LS: updated protocol version
+- Snyk LS: updated protocol version.
+- Contact and documentation url.
 
 ## [1.12.2]
 
 ### Fixed
 
-- Regression introduced in 1.7.6
+- Regression introduced in 1.7.6.
 
 ## [1.11.0]
 
