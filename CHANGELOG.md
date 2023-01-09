@@ -1,21 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.12.5]
-
-### Fixed
-
-- Support for remote development and Github Codespaces
-
-## [1.12.4]
-
-### Fixed
-
-- trust workspace folders if parent dir is trusted
-
 ## [1.12.3]
 
 ### Fixed
 
+- Support for remote development and Github Codespaces
+- trust workspace folders if parent dir is trusted
 - Snyk LS: updated protocol version.
 - Contact and documentation url.
 
