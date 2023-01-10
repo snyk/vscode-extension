@@ -2,8 +2,6 @@ import SegmentPlugin from '@itly/plugin-segment-node';
 import itly, {
   AnalysisIsReadyProperties,
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
-  BackgroundAnalysisNotificationButtonIsClickedProperties,
-  BackgroundAnalysisNotificationIsDisplayedProperties,
   FalsePositiveIsSubmittedProperties,
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
@@ -52,12 +50,6 @@ export interface IAnalytics {
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
   logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void;
-  logBackgroundAnalysisNotificationIsDisplayed(
-    properties: Omit<BackgroundAnalysisNotificationIsDisplayedProperties, 'eventSource' | 'ide'>,
-  ): void;
-  logBackgroundAnalysisNotificationButtonIsClicked(
-    properties: Omit<BackgroundAnalysisNotificationButtonIsClickedProperties, 'eventSource' | 'ide'>,
-  ): void;
   logFalsePositiveIsDisplayed(): void;
   logFalsePositiveIsSubmitted(properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>): void;
 }
@@ -233,30 +225,6 @@ export class Iteratively implements IAnalytics {
   public logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void {
     this.enqueueEvent(() => {
       itly.scanModeIsSelected(this.getAuthenticatedUserId(), {
-        ...properties,
-        ide: this.ide,
-        eventSource: 'IDE',
-      });
-    });
-  }
-
-  public logBackgroundAnalysisNotificationIsDisplayed(
-    properties: Omit<BackgroundAnalysisNotificationIsDisplayedProperties, 'eventSource' | 'ide'>,
-  ): void {
-    this.enqueueEvent(() => {
-      itly.backgroundAnalysisNotificationIsDisplayed(this.getAuthenticatedUserId(), {
-        ...properties,
-        ide: this.ide,
-        eventSource: 'IDE',
-      });
-    });
-  }
-
-  public logBackgroundAnalysisNotificationButtonIsClicked(
-    properties: Omit<BackgroundAnalysisNotificationButtonIsClickedProperties, 'eventSource' | 'ide'>,
-  ): void {
-    this.enqueueEvent(() => {
-      itly.backgroundAnalysisNotificationButtonIsClicked(this.getAuthenticatedUserId(), {
         ...properties,
         ide: this.ide,
         eventSource: 'IDE',
