@@ -55,24 +55,9 @@ export interface IdentifyProperties {
    */
   adminLink?: string;
   /**
-   * Link to access more information about the user
-   */
-  admin_link?: string;
-  /**
    * Auth provider (login method)
    */
   authProvider?: string;
-  /**
-   * Auth provider (login method)
-   */
-  auth_provider?: string;
-  /**
-   * Timestamp of user creation
-   */
-  created_at?: number;
-  /**
-   * Timestamp of user creation
-   */
   createdAt?: number;
   /**
    * Email address for the user
@@ -91,13 +76,13 @@ export interface IdentifyProperties {
    */
   hasPersonalEmail?: boolean;
   /**
+   * Is a user opted in to the new App UI navigation while still in beta (Oct 2022)?
+   */
+  isAppUIBetaEnabled?: boolean;
+  /**
    * Applies to non-user identities, such as Snyk Orgs
    */
   isNonUser?: boolean;
-  /**
-   * Whether or not the user belongs to the Snyk org (determined by the email address ending with @snyk.io)
-   */
-  is_snyk?: boolean;
   /**
    * Whether or not the user belongs to the Snyk org (determined by the email address ending with @snyk.io)
    */
@@ -152,6 +137,66 @@ export interface IdentifyProperties {
 }
 
 export interface GroupProperties {
+  "[Amplitude] Group ID"?: {
+    [k: string]: unknown;
+  };
+  "[Amplitude] Group name"?: {
+    [k: string]: unknown;
+  };
+  $set?: {
+    [k: string]: unknown;
+  };
+  $unset?: {
+    [k: string]: unknown;
+  };
+  "Account ARR"?: {
+    [k: string]: unknown;
+  };
+  "Account Plan"?: {
+    [k: string]: unknown;
+  };
+  "Billing Frequency"?: {
+    [k: string]: unknown;
+  };
+  "Code Licenses"?: {
+    [k: string]: unknown;
+  };
+  "Container Licenses"?: {
+    [k: string]: unknown;
+  };
+  countFixesFirst30Days?: {
+    [k: string]: unknown;
+  };
+  countFixesFirst7Days?: {
+    [k: string]: unknown;
+  };
+  countFixesPast30Days?: {
+    [k: string]: unknown;
+  };
+  countFixesPast7Days?: {
+    [k: string]: unknown;
+  };
+  countFixesTotal?: {
+    [k: string]: unknown;
+  };
+  currentEngagementState?: {
+    [k: string]: unknown;
+  };
+  dateLastEngagementStateChange?: {
+    [k: string]: unknown;
+  };
+  daysSinceLastEngagementStateChange?: {
+    [k: string]: unknown;
+  };
+  "DB Feed Licenses"?: {
+    [k: string]: unknown;
+  };
+  "Free Trial End Date"?: {
+    [k: string]: unknown;
+  };
+  "Free Trial Start Date"?: {
+    [k: string]: unknown;
+  };
   /**
    * ID that is used in conjunction with a groupType to specify an Org or a Group association: {groupId: 1234, groupType: "org"}
    */
@@ -164,10 +209,43 @@ export interface GroupProperties {
    * Key that is used to specify the name of the Segment Group that a groupId is being set for.
    */
   groupType?: "org" | "group" | "account";
+  hasFixFirst30Days?: {
+    [k: string]: unknown;
+  };
+  hasFixFirst7Days?: {
+    [k: string]: unknown;
+  };
+  hasFixPast30Days?: {
+    [k: string]: unknown;
+  };
+  hasFixPast7Days?: {
+    [k: string]: unknown;
+  };
+  "IAC Licenses"?: {
+    [k: string]: unknown;
+  };
+  id?: {
+    [k: string]: unknown;
+  };
+  internalName?: {
+    [k: string]: unknown;
+  };
+  isPassthrough?: {
+    [k: string]: unknown;
+  };
+  name?: {
+    [k: string]: unknown;
+  };
+  "Open Source Licenses"?: {
+    [k: string]: unknown;
+  };
   /**
    * The plan of the org
    */
   plan?: string;
+  priorEngagementState?: {
+    [k: string]: unknown;
+  };
   /**
    * The types of projects in the org
    */
@@ -183,6 +261,14 @@ export interface PageProperties {
    * The name of the package
    */
   package?: string;
+  /**
+   * cocoapods , composer , golang , hex , maven , npm , nuget , pip , rubygems
+   */
+  packageManager?: string;
+  /**
+   * Package version, for example 18.0.1
+   */
+  packageVersion?: string;
   /**
    * The canonical path of the page
    */
@@ -237,19 +323,51 @@ export interface AnalysisIsReadyProperties {
     | "Snyk Container"
     | "Snyk Infrastructure as Code";
   /**
+   * | Rule | Value |
+   * |---|---|
+   * | Type | number |
+   */
+  durationInSeconds?: number;
+  /**
+   * | Rule | Value |
+   * |---|---|
+   * | Type | integer |
+   */
+  fileCount?: number;
+  /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
   /**
    * | Rule | Value |
    * |---|---|
    * | Enum Values | Success, Error |
    */
   result: "Success" | "Error";
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export interface AnalysisIsTriggeredProperties {
@@ -270,9 +388,29 @@ export interface AnalysisIsTriggeredProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
   /**
    * * True means that the analysis was triggered by the User.
    *
@@ -289,93 +427,37 @@ export interface AuthenticateButtonIsClickedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
   /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
-}
-
-export interface BackgroundAnalysisNotificationButtonIsClickedProperties {
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
   /**
-   * Used to identify the source for multi-source events.
-   *
-   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Min Length | 1 |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
-  /**
-   * A button type presented in background analysis notification in VS Code extension.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | View results, Don’t show again |
-   */
-  type: "View results" | "Don’t show again";
-}
-
-export interface BackgroundAnalysisNotificationIsDisplayedProperties {
-  /**
-   * Analysis types selected by the user for the scan:
-   *
-   * * open source vulnerabilities
-   *
-   * * code quality issues
-   *
-   * * code security vulnerabilities
-   *
-   * * advisor issues
-   *
-   * * infrastructure as code issues
-   *
-   * * container vulnerabilities
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Snyk Advisor, Snyk Code Quality, Snyk Code Security, Snyk Open Source, Snyk Container, Snyk Infrastructure as Code |
-   */
-  analysisType:
-    | "Snyk Advisor"
-    | "Snyk Code Quality"
-    | "Snyk Code Security"
-    | "Snyk Open Source"
-    | "Snyk Container"
-    | "Snyk Infrastructure as Code";
-  /**
-   * Used to identify the source for multi-source events.
-   *
-   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
-   */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  runtimeVersion?: string;
 }
 
 export interface FalsePositiveIsDisplayedProperties {
@@ -386,17 +468,37 @@ export interface FalsePositiveIsDisplayedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
   /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export interface FalsePositiveIsSubmittedProperties {
@@ -407,17 +509,17 @@ export interface FalsePositiveIsSubmittedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
   /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
   /**
    * Issue ID as received from the backend.
    */
@@ -437,6 +539,26 @@ export interface FalsePositiveIsSubmittedProperties {
     | "Open Source Vulnerability"
     | "Infrastructure as Code Issue"
     | "Container Vulnerability";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
   /**
    * Severity of the issue
    *
@@ -453,9 +575,9 @@ export interface IssueHoverIsDisplayedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
   /**
    * Issue ID as received from the backend.
    */
@@ -475,6 +597,26 @@ export interface IssueHoverIsDisplayedProperties {
     | "Open Source Vulnerability"
     | "Infrastructure as Code Issue"
     | "Container Vulnerability";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
   /**
    * Severity of the issue
    *
@@ -491,9 +633,9 @@ export interface IssueInTreeIsClickedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
   /**
    * Issue ID as received from the backend.
    */
@@ -514,6 +656,26 @@ export interface IssueInTreeIsClickedProperties {
     | "Infrastructure as Code Issue"
     | "Container Vulnerability";
   /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
+  /**
    * Severity of the issue
    *
    * | Rule | Value |
@@ -529,9 +691,29 @@ export interface PluginIsInstalledProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export interface QuickFixIsDisplayedProperties {
@@ -540,9 +722,17 @@ export interface QuickFixIsDisplayedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
   /**
    * Quick fix types displayed to the user:
    *
@@ -570,6 +760,18 @@ export interface QuickFixIsDisplayedProperties {
    * @minItems 1
    */
   quickFixType: [string, ...string[]];
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export interface ScanModeIsSelectedProperties {
@@ -580,17 +782,37 @@ export interface ScanModeIsSelectedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
   /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
   /**
    * | Rule | Value |
    * |---|---|
@@ -607,17 +829,37 @@ export interface WelcomeButtonIsClickedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE |
+   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
    */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE";
+  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
   /**
    * Ide family.
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export interface WelcomeIsViewedProperties {
@@ -626,15 +868,35 @@ export interface WelcomeIsViewedProperties {
    *
    * | Rule | Value |
    * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains |
+   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
    */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains";
+  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
+  /**
+   * Operating system architecture
+   */
+  osArch?: string;
+  /**
+   * Operating system platform
+   */
+  osPlatform?: string;
+  /**
+   * IDE plugin runtime name.
+   */
+  runtimeName?: string;
+  /**
+   * IDE plugin runtime version.
+   *
+   * | Rule | Value |
+   * |---|---|
+   * | Min Length | 1 |
+   */
+  runtimeVersion?: string;
 }
 
 export class AnalysisIsReady implements Event {
   name = 'Analysis Is Ready';
   id = 'c9337edb-27a3-416e-a654-092fa4375feb';
-  version = '2.0.3';
+  version = '3.0.0';
   properties: AnalysisIsReadyProperties & {
     'itly': true;
   };
@@ -652,7 +914,7 @@ export class AnalysisIsReady implements Event {
 export class AnalysisIsTriggered implements Event {
   name = 'Analysis Is Triggered';
   id = 'dabf569e-219c-470f-8e31-6e029723f0cd';
-  version = '2.0.3';
+  version = '3.0.0';
   properties: AnalysisIsTriggeredProperties & {
     'itly': true;
   };
@@ -670,7 +932,7 @@ export class AnalysisIsTriggered implements Event {
 export class AuthenticateButtonIsClicked implements Event {
   name = 'Authenticate Button Is Clicked';
   id = '2220c25f-ba76-4d5b-92f7-6d0e1c6165be';
-  version = '1.0.3';
+  version = '4.0.0';
   properties: AuthenticateButtonIsClickedProperties & {
     'itly': true;
   };
@@ -685,46 +947,10 @@ export class AuthenticateButtonIsClicked implements Event {
   }
 }
 
-export class BackgroundAnalysisNotificationButtonIsClicked implements Event {
-  name = 'Background Analysis Notification Button Is Clicked';
-  id = '1cafd0e1-7697-43e1-aeed-7b37acdea858';
-  version = '1.0.0';
-  properties: BackgroundAnalysisNotificationButtonIsClickedProperties & {
-    'itly': true;
-  };
-
-  constructor(
-    properties: BackgroundAnalysisNotificationButtonIsClickedProperties,
-  ) {
-    this.properties = {
-        ...properties,
-        'itly': true,
-      };
-  }
-}
-
-export class BackgroundAnalysisNotificationIsDisplayed implements Event {
-  name = 'Background Analysis Notification Is Displayed';
-  id = 'd0c70048-b19b-4cb4-b097-8a5371446546';
-  version = '1.0.0';
-  properties: BackgroundAnalysisNotificationIsDisplayedProperties & {
-    'itly': true;
-  };
-
-  constructor(
-    properties: BackgroundAnalysisNotificationIsDisplayedProperties,
-  ) {
-    this.properties = {
-        ...properties,
-        'itly': true,
-      };
-  }
-}
-
 export class FalsePositiveIsDisplayed implements Event {
   name = 'False Positive Is Displayed';
   id = '73047ba4-5e6b-4472-8d4e-1923fc7117f4';
-  version = '1.0.0';
+  version = '4.0.0';
   properties: FalsePositiveIsDisplayedProperties & {
     'itly': true;
   };
@@ -742,7 +968,7 @@ export class FalsePositiveIsDisplayed implements Event {
 export class FalsePositiveIsSubmitted implements Event {
   name = 'False Positive Is Submitted';
   id = '299be947-f18c-41c4-96f8-33f4c8daa5a1';
-  version = '1.0.1';
+  version = '4.0.0';
   properties: FalsePositiveIsSubmittedProperties & {
     'itly': true;
   };
@@ -760,7 +986,7 @@ export class FalsePositiveIsSubmitted implements Event {
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
-  version = '2.0.5';
+  version = '3.0.0';
   properties: IssueHoverIsDisplayedProperties & {
     'itly': true;
   };
@@ -778,7 +1004,7 @@ export class IssueHoverIsDisplayed implements Event {
 export class IssueInTreeIsClicked implements Event {
   name = 'Issue In Tree Is Clicked';
   id = 'fae15d02-eab9-49bb-9833-18414e26058b';
-  version = '2.0.4';
+  version = '3.0.0';
   properties: IssueInTreeIsClickedProperties & {
     'itly': true;
   };
@@ -796,7 +1022,7 @@ export class IssueInTreeIsClicked implements Event {
 export class PluginIsInstalled implements Event {
   name = 'Plugin Is Installed';
   id = '7bb34693-366e-460e-8f4c-5b3f1c71888a';
-  version = '1.0.3';
+  version = '2.0.0';
   properties: PluginIsInstalledProperties & {
     'itly': true;
   };
@@ -814,7 +1040,7 @@ export class PluginIsInstalled implements Event {
 export class QuickFixIsDisplayed implements Event {
   name = 'Quick Fix Is Displayed';
   id = '170c1284-9ee6-457f-aa82-6c49e49cde93';
-  version = '1.0.2';
+  version = '2.0.0';
   properties: QuickFixIsDisplayedProperties & {
     'itly': true;
   };
@@ -832,7 +1058,7 @@ export class QuickFixIsDisplayed implements Event {
 export class ScanModeIsSelected implements Event {
   name = 'Scan Mode Is Selected';
   id = '41d49045-d336-46ac-b4c2-1a3ebb5c688a';
-  version = '1.0.0';
+  version = '4.0.0';
   properties: ScanModeIsSelectedProperties & {
     'itly': true;
   };
@@ -850,7 +1076,7 @@ export class ScanModeIsSelected implements Event {
 export class WelcomeButtonIsClicked implements Event {
   name = 'Welcome Button Is Clicked';
   id = 'e570e72e-4974-481a-9838-66cca471656b';
-  version = '1.0.2';
+  version = '4.0.0';
   properties: WelcomeButtonIsClickedProperties & {
     'itly': true;
   };
@@ -868,7 +1094,7 @@ export class WelcomeButtonIsClicked implements Event {
 export class WelcomeIsViewed implements Event {
   name = 'Welcome Is Viewed';
   id = '91114669-bbab-4f58-a7dd-ea7c98c79221';
-  version = '1.0.3';
+  version = '2.0.0';
   properties: WelcomeIsViewedProperties & {
     'itly': true;
   };
@@ -927,23 +1153,21 @@ class Itly {
       ...options,
       plugins: [
         new SchemaValidatorPlugin({
-          'group': {"type":"object","properties":{"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"plan":{"type":"string"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"adminLink":{"type":"string"},"admin_link":{"type":"string"},"authProvider":{"type":"string"},"auth_provider":{"type":"string"},"created_at":{"type":"number"},"createdAt":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isNonUser":{"type":"boolean"},"is_snyk":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"learnPreferredEcosystems":{"type":"array","items":{"type":"string"},"uniqueItems":true},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utm_content":{"type":"string"},"utm_medium":{"type":"string"},"utm_source":{"type":"string"},"utm_term":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"result":{"enum":["Success","Error"]}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
-          'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
-          'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'Background Analysis Notification Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"type":{"enum":["View results","Don’t show again"]}},"additionalProperties":false,"required":["ide","itly","type"]},
-          'Background Analysis Notification Is Displayed': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["analysisType","ide","itly"]},
-          'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
-          'Scan Mode Is Selected': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true},"scanMode":{"enum":["paused","auto","manual","throttled"]}},"additionalProperties":false,"required":["ide","itly","scanMode"]},
-          'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
-          'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains"]},"itly":{"const":true}},"additionalProperties":false,"required":["ide","itly"]},
+          'group': {"type":"object","properties":{"[Amplitude] Group ID":{"type":"object"},"[Amplitude] Group name":{"type":"object"},"$set":{"type":"object"},"$unset":{"type":"object"},"Account ARR":{"type":"object"},"Account Plan":{"type":"object"},"Billing Frequency":{"type":"object"},"Code Licenses":{"type":"object"},"Container Licenses":{"type":"object"},"countFixesFirst30Days":{"type":"object"},"countFixesFirst7Days":{"type":"object"},"countFixesPast30Days":{"type":"object"},"countFixesPast7Days":{"type":"object"},"countFixesTotal":{"type":"object"},"currentEngagementState":{"type":"object"},"dateLastEngagementStateChange":{"type":"object"},"daysSinceLastEngagementStateChange":{"type":"object"},"DB Feed Licenses":{"type":"object"},"Free Trial End Date":{"type":"object"},"Free Trial Start Date":{"type":"object"},"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"hasFixFirst30Days":{"type":"object"},"hasFixFirst7Days":{"type":"object"},"hasFixPast30Days":{"type":"object"},"hasFixPast7Days":{"type":"object"},"IAC Licenses":{"type":"object"},"id":{"type":"object"},"internalName":{"type":"object"},"isPassthrough":{"type":"object"},"name":{"type":"object"},"Open Source Licenses":{"type":"object"},"plan":{"type":"string"},"priorEngagementState":{"type":"object"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"adminLink":{"type":"string"},"authProvider":{"type":"string"},"createdAt":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isAppUIBetaEnabled":{"type":"boolean"},"isNonUser":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"learnPreferredEcosystems":{"type":"array","items":{"type":"string"},"uniqueItems":true},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utm_content":{"type":"string"},"utm_medium":{"type":"string"},"utm_source":{"type":"string"},"utm_term":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"packageManager":{"type":"string"},"packageVersion":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"durationInSeconds":{"type":"number"},"fileCount":{"type":"integer"},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"result":{"enum":["Success","Error"]},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
+          'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
+          'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
+          'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
+          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
+          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
+          'Scan Mode Is Selected': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"scanMode":{"enum":["paused","auto","manual","throttled"]}},"additionalProperties":false,"required":["ide","itly","scanMode"]},
+          'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
+          'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
         }),
         ...destinationPlugins,
         ...plugins,
@@ -1037,34 +1261,6 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new AuthenticateButtonIsClicked(properties), options);
-  }
-
-  /**
-   * Owner: Michel Kaporin
-   * @param userId The user's ID.
-   * @param properties The event's properties (e.g. eventSource)
-   * @param options Options for this track call.
-   */
-  backgroundAnalysisNotificationButtonIsClicked(
-    userId: string,
-    properties: BackgroundAnalysisNotificationButtonIsClickedProperties,
-    options?: TrackOptions,
-  ) {
-    this.itly.track(userId, new BackgroundAnalysisNotificationButtonIsClicked(properties), options);
-  }
-
-  /**
-   * Owner: Michel Kaporin
-   * @param userId The user's ID.
-   * @param properties The event's properties (e.g. analysisType)
-   * @param options Options for this track call.
-   */
-  backgroundAnalysisNotificationIsDisplayed(
-    userId: string,
-    properties: BackgroundAnalysisNotificationIsDisplayedProperties,
-    options?: TrackOptions,
-  ) {
-    this.itly.track(userId, new BackgroundAnalysisNotificationIsDisplayed(properties), options);
   }
 
   /**
