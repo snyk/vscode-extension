@@ -42,8 +42,6 @@ export class OssService extends CliService<OssResult> {
     super(extensionContext, logger, config, workspace, downloadService, languageServer);
   }
 
-  public getResult = (): OssResult | undefined => this.result;
-
   public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
     if (!this.result) {
       return undefined;
@@ -126,17 +124,6 @@ export class OssService extends CliService<OssResult> {
 
   setVulnerabilityTreeVisibility(visible: boolean): void {
     this.isVulnerabilityTreeVisible = visible;
-  }
-
-  async showBackgroundNotification(oldResult: OssResult): Promise<void> {
-    if (this.isVulnerabilityTreeVisible || !this.config.shouldShowOssBackgroundScanNotification || !this.result) {
-      return;
-    }
-
-    const newVulnerabilities = this.getNewCriticalVulnerabilitiesCount(this.result, oldResult);
-    if (newVulnerabilities > 0) {
-      await this.notificationService.showOssBackgroundScanNotification(newVulnerabilities);
-    }
   }
 
   getUniqueVulnerabilities(vulnerabilities: OssVulnerability[]): OssVulnerability[] {

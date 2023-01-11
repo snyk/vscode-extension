@@ -130,15 +130,10 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     await firstValueFrom(this.downloadService.downloadReady$);
 
     try {
-      const oldResult = this.ossService.getResult();
       const result = await this.ossService.test(manual, reportTriggeredEvent);
 
       if (result instanceof CliError || !result) {
         return;
-      }
-
-      if (oldResult) {
-        await this.ossService.showBackgroundNotification(oldResult);
       }
     } catch (err) {
       // catch unhandled error cases by reporting test failure
