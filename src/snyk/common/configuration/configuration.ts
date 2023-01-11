@@ -24,6 +24,8 @@ import {
   YES_TELEMETRY_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
+import { Logger } from '../logger/logger';
+import { vsCodeEnv } from '../vscode/env';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
@@ -203,6 +205,15 @@ export class Configuration implements IConfiguration {
   }
 
   async getToken(): Promise<string | undefined> {
+    // We do not want to get token if the extension is running in a remote environment
+    // This is due to the fact that SecretStorage runs independent of the workspace i.e. it runs on the local machine
+    const remoteNames = ['ssh-remote'];
+    const remoteName = vsCodeEnv.getRemoteName();
+    if (remoteName && remoteNames.includes(remoteName)) {
+      Logger.debug(`Token not retrieved. Extension is running remotely via: ${remoteName}`);
+      return;
+    }
+
     return new Promise(resolve => {
       SecretStorageAdapter.instance
         .get(SNYK_TOKEN_KEY)
