@@ -2,6 +2,7 @@
 ## [1.13.0]
 ### Fixed
 - trust workspace folders if parent dir is trusted
+- ignore untrusted CAs if strict proxy is disabled
 
 ### Changed
 - removed background notification about found vulnerabilities in Snyk Open Source
