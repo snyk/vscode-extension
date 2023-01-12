@@ -8,7 +8,7 @@ import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/gen
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
+import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
@@ -22,7 +22,7 @@ suite('CommandController', () => {
     controller = new CommandController(
       {} as IOpenerService,
       {} as IAuthenticationService,
-      {} as ISnykCodeService,
+      {} as ISnykCodeServiceOld,
       {} as OssService,
       {} as ScanModeService,
       {} as IVSCodeWorkspace,

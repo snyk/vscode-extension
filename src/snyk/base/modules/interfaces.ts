@@ -1,9 +1,10 @@
+import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IContextService } from '../../common/services/contextService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { ExtensionContext as VSCodeExtensionContext } from '../../common/vscode/types';
-import { ISnykCodeService } from '../../snykCode/codeService';
+import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge } from '../views/loadingBadge';
 
@@ -13,7 +14,8 @@ export interface IBaseSnykModule {
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
-  snykCode: ISnykCodeService;
+  snykCodeOld: ISnykCodeServiceOld;
+  readonly workspaceTrust: IWorkspaceTrust;
 
   // Abstract methods
   runScan(): Promise<void>;

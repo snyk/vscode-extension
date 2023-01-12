@@ -5,17 +5,17 @@ import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
-import { ISnykCodeService } from '../codeService';
-import { IssueTreeProvider } from './issueTreeProvider';
+import { ISnykCodeServiceOld } from '../codeServiceOld';
+import { IssueTreeProviderOld } from './issueTreeProviderOld';
 
-export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
+export class CodeSecurityIssueTreeProviderOld extends IssueTreeProviderOld {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
-    protected codeService: ISnykCodeService,
+    protected snykCode: ISnykCodeServiceOld,
     protected configuration: IConfiguration,
   ) {
-    super(contextService, codeService, configuration);
+    super(contextService, snykCode, snykCode.analyzer.codeSecurityReview, configuration);
   }
 
   getRootChildren(): TreeNode[] {
@@ -30,7 +30,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     return super.getRootChildren();
   }
 
-  onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
+  onDidChangeTreeData = this.viewManagerService.refreshOldCodeSecurityViewEmitter.event;
 
   protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
     return `${dir} - ${diagnostics.length} ${diagnostics.length === 1 ? 'vulnerability' : 'vulnerabilities'}`;

@@ -197,6 +197,12 @@
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
             "properties": {
+              "lsCode": {
+                "type": "boolean",
+                "title": "Enable \"Code\" using Snyk Language Server",
+                "description": "Enables Snyk Code results delivery using Snyk Language Server.",
+                "default": false
+              },
               "reportFalsePositives": {
                 "type": "boolean",
                 "title": "Enable \"report false positives\"",
@@ -242,14 +248,24 @@
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.security",
+          "id": "snyk.views.analysis.code.security.old",
           "name": "Code Security",
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.quality",
+          "id": "snyk.views.analysis.code.quality.old",
           "name": "Code Quality",
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
+          "id": "snyk.views.analysis.code.security",
+          "name": "Code Security (LS)",
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
+          "id": "snyk.views.analysis.code.quality",
+          "name": "Code Quality (LS)",
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
@@ -326,12 +342,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.actions'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.actions'",
           "group": "navigation"
         }
       ],
@@ -390,6 +406,11 @@
       {
         "command": "snyk.showOutputChannel",
         "title": "Show Output Channel",
+        "category": "Snyk"
+      },
+      {
+        "command": "snyk.showLsOutputChannel",
+        "title": "Show Language Server Output Channel",
         "category": "Snyk"
       }
     ]

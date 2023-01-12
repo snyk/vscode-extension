@@ -180,6 +180,7 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     deepStrictEqual(configuration.getPreviewFeatures(), {
+      lsCode: false,
       reportFalsePositives: false,
       advisor: false,
     } as PreviewFeatures);
@@ -188,6 +189,7 @@ suite('Configuration', () => {
   test('Preview features: some features enabled', () => {
     const previewFeatures = {
       reportFalsePositives: true,
+      lsCode: false,
       advisor: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);

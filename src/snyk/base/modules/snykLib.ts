@@ -97,7 +97,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       paths = vsCodeWorkspace.getWorkspaceFolders();
     }
 
-    await this.snykCode.startAnalysis(paths, manual, reportTriggeredEvent);
+    await this.snykCodeOld.startAnalysis(paths, manual, reportTriggeredEvent);
   }
 
   async onDidChangeWelcomeViewVisibility(visible: boolean): Promise<void> {

@@ -5,7 +5,6 @@ import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_REPORT_FALSE_POSITIVE_COMMAND,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -14,7 +13,7 @@ import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
-import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
+import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
@@ -24,7 +23,6 @@ import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../..
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
 import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
-import { FalsePositiveWebviewModel } from '../falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
 export class CodeSuggestionWebviewProvider
@@ -39,7 +37,6 @@ export class CodeSuggestionWebviewProvider
     private readonly configuration: IConfiguration,
     private readonly analyzer: ISnykCodeAnalyzer,
     private readonly window: IVSCodeWindow,
-    private readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
@@ -134,12 +131,10 @@ export class CodeSuggestionWebviewProvider
   }
 
   disposePanel(): void {
-    this.falsePositiveProvider?.disposePanel();
     super.disposePanel();
   }
 
   protected onPanelDispose(): void {
-    this.falsePositiveProvider?.disposePanel();
     super.onPanelDispose();
   }
 
@@ -181,11 +176,6 @@ export class CodeSuggestionWebviewProvider
           this.panel?.dispose();
           break;
         }
-        case 'openFalsePositive': {
-          const { suggestion } = args as { suggestion: completeFileSuggestionType };
-          await this.openFalsePositiveCode(suggestion);
-          break;
-        }
         default: {
           throw new Error('Unknown message type');
         }
@@ -195,20 +185,8 @@ export class CodeSuggestionWebviewProvider
     }
   }
 
-  private async openFalsePositiveCode(suggestion: completeFileSuggestionType): Promise<void> {
-    await vscode.commands.executeCommand(SNYK_REPORT_FALSE_POSITIVE_COMMAND, {
-      suggestion,
-    });
-  }
-
   private getTitle(suggestion: completeFileSuggestionType): string {
     return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
-  }
-
-  private isReportFalsePositivesEnabled() {
-    return (
-      this.codeSettings.reportFalsePositivesEnabled && this.configuration.getPreviewFeatures().reportFalsePositives
-    );
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
@@ -253,9 +231,7 @@ export class CodeSuggestionWebviewProvider
   <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${
-      webview.cspSource
-    } https:; script-src 'nonce-${nonce}';">
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
       <link href="${styleUri}" rel="stylesheet">
       <link href="${styleVSCodeUri}" rel="stylesheet">
@@ -276,9 +252,7 @@ export class CodeSuggestionWebviewProvider
           <div id="title" class="suggestion-text"></div>
           <div class="suggestion-links">
             <div id="navigateToIssue" class="clickable">
-              <img class="icon" src="${
-                images['icon-lines']
-              }" /> This <span class="issue-type">issue</span> happens on line <span id="line-position"></span>
+              <img class="icon" src="${images['icon-lines']}" /> This <span class="issue-type">issue</span> happens on line <span id="line-position"></span>
             </div>
             <div id="lead-url" class="clickable hidden">
               <img class="icon" src="${images['icon-external']}" /> More info
@@ -321,21 +295,8 @@ export class CodeSuggestionWebviewProvider
         <section class="delimiter-top">
           <div id="actions-section">
             <div class="actions row">
-              ${
-                this.isReportFalsePositivesEnabled()
-                  ? `
               <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
               <button id="ignore-file-issue" class="button">Ignore in this file</button>
-
-              <div class="report-fp-actions">
-                <button id="report-fp" class="button">Report false positive</button>
-              </div>
-              `
-                  : `
-              <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
-              <button id="ignore-file-issue" class="button">Ignore in this file</button>
-              `
-              }
             </div>
           </div>
         </section>

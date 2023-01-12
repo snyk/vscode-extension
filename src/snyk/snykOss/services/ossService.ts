@@ -4,6 +4,7 @@ import { IExtension } from '../../base/modules/interfaces';
 import { CliError, CliService } from '../../cli/services/cliService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
+import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IDE_NAME } from '../../common/constants/general';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { ILog } from '../../common/logger/interfaces';
@@ -38,8 +39,9 @@ export class OssService extends CliService<OssResult> {
     private readonly notificationService: INotificationService,
     private readonly analytics: IAnalytics,
     protected readonly languageServer: ILanguageServer,
+    protected readonly workspaceTrust: IWorkspaceTrust,
   ) {
-    super(extensionContext, logger, config, workspace, downloadService, languageServer);
+    super(extensionContext, logger, config, workspace, downloadService, languageServer, workspaceTrust);
   }
 
   public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
@@ -99,9 +101,9 @@ export class OssService extends CliService<OssResult> {
     this.viewManagerService.refreshOssView();
   }
 
-  override handleLsDownloadFailure(error: Error | unknown): void {
+  override handleLsDownloadFailure(): void {
+    super.handleLsDownloadFailure();
     this.viewManagerService.refreshOssView();
-    super.handleLsDownloadFailure(error);
   }
 
   override handleNoTrustedFolders(): void {

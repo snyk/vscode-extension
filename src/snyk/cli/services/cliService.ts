@@ -2,7 +2,7 @@ import { firstValueFrom } from 'rxjs';
 import parseArgsStringToArgv from 'string-argv';
 import { AnalysisStatusProvider } from '../../common/analysis/statusProvider';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { getTrustedFolders } from '../../common/configuration/trustedFolders';
+import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { ILog } from '../../common/logger/interfaces';
@@ -11,7 +11,6 @@ import { DownloadService } from '../../common/services/downloadService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { CliExecutable } from '../cliExecutable';
-import { messages } from '../messages/messages';
 import { CliProcess } from '../process';
 
 export class CliError {
@@ -23,7 +22,6 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected result: CliResult | CliError | undefined;
 
   private cliProcess?: CliProcess;
-  private _isLsDownloadSuccessful = true;
   private _isCliReady: boolean;
   private _isAnyWorkspaceFolderTrusted = true;
 
@@ -34,12 +32,9 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     protected readonly workspace: IVSCodeWorkspace,
     protected readonly downloadService: DownloadService,
     protected readonly languageServer: ILanguageServer,
+    protected readonly workspaceTrust: IWorkspaceTrust,
   ) {
     super();
-  }
-
-  get isLsDownloadSuccessful(): boolean {
-    return this._isLsDownloadSuccessful;
   }
 
   get isCliReady(): boolean {
@@ -73,12 +68,12 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
     const cliPath = await firstValueFrom(this.languageServer.cliReady$);
     this._isCliReady = true;
 
-    let foldersToTest = this.workspace.getWorkspaceFolders();
-    if (foldersToTest.length == 0) {
+    const workspaceFolders = this.workspace.getWorkspaceFolders();
+    if (workspaceFolders.length == 0) {
       throw new Error('No workspace was opened.');
     }
 
-    foldersToTest = getTrustedFolders(this.config, foldersToTest);
+    const foldersToTest = this.workspaceTrust.getTrustedFolders(this.config, workspaceFolders);
     if (foldersToTest.length == 0) {
       this.handleNoTrustedFolders();
       this.logger.info(`Skipping Open Source scan. ${analysisMessages.noWorkspaceTrustDescription}`);
@@ -140,16 +135,11 @@ export abstract class CliService<CliResult> extends AnalysisStatusProvider {
   protected abstract beforeTest(manualTrigger: boolean, reportTriggeredEvent: boolean): void;
   protected abstract afterTest(result: CliResult | CliError): void;
 
-  handleLsDownloadFailure(error: Error | unknown): void {
-    this.logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(error)}`);
-    this._isLsDownloadSuccessful = false;
-  }
-
   handleNoTrustedFolders() {
     this._isAnyWorkspaceFolderTrusted = false;
   }
 
-  private buildArguments(foldersToTest: string[]): string[] {
+  private buildArguments(foldersToTest: ReadonlyArray<string>): string[] {
     const args = [];
 
     args.push(...this.command);
