@@ -14,6 +14,10 @@
 - Snyk LS: updated protocol version.
 - Contact and documentation url.
 
+### Changed
+
+- Removed background notification about found vulnerabilities in Snyk Open Source.
+
 ## [1.12.2]
 
 ### Fixed
