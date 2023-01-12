@@ -94,7 +94,8 @@ export interface IConfiguration {
   isAutomaticDependencyManagementEnabled(): boolean;
 
   getCliPath(): string | undefined;
-  getInsecure(): string;
+
+  getInsecure(): boolean;
 
   severityFilter: SeverityFilter;
 
@@ -117,9 +118,9 @@ export class Configuration implements IConfiguration {
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
-  getInsecure(): string {
+  getInsecure(): boolean {
     const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
-    return `${!strictSSL}`;
+    return !strictSSL;
   }
 
   static async getVersion(): Promise<string> {

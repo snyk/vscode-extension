@@ -1,11 +1,11 @@
 import { AxiosRequestConfig } from 'axios';
 import fs from 'fs';
-import { Agent, AgentOptions } from 'https';
+import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
+import { configuration } from './configuration/instance';
 import { Logger } from './logger/logger';
 import { IVSCodeWorkspace } from './vscode/workspace';
-import { configuration } from './configuration/instance';
 
 export function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,
@@ -72,6 +72,7 @@ export function getAxiosConfig(workspace: IVSCodeWorkspace): AxiosRequestConfig 
     proxy: false,
     httpAgent: agentOptions,
     httpsAgent: agentOptions,
+    //httpsAgent: new Agent({ rejectUnauthorized: !configuration.getInsecure() }),
   };
 }
 
@@ -96,15 +97,16 @@ function getDefaultAgentOptions(processEnv: NodeJS.ProcessEnv = process.env): Ag
   let defaultOptions: AgentOptions | undefined = undefined;
 
   // use custom certs if provided
-  const disableSSLCheck = !configuration.getInsecure();
+  const disableSSLCheck = configuration.getInsecure();
   if (disableSSLCheck) {
-    defaultOptions = { rejectUnauthorized: !configuration.getInsecure() };
+    globalAgent.options.rejectUnauthorized = false;
   } else {
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
         fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
         const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
         defaultOptions = { ca: [certs] };
+        globalAgent.options.ca = [certs];
       } catch (error) {
         Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
       }

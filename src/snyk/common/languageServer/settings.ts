@@ -51,7 +51,7 @@ export class LanguageServerSettings {
       filterSeverity: configuration.severityFilter,
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
-      insecure: configuration.getInsecure(),
+      insecure: `${configuration.getInsecure()}`,
     };
   }
 }
