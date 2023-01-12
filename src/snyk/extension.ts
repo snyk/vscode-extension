@@ -160,7 +160,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.downloadService = new DownloadService(
       this.context,
       configuration,
-      new StaticLsApi(vsCodeWorkspace),
+      new StaticLsApi(vsCodeWorkspace, configuration, Logger),
       vsCodeWindow,
       Logger,
     );

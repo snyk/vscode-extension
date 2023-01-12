@@ -19,7 +19,7 @@ export class NpmTestApi {
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
       baseURL: configuration.authHost + '/test',
-      ...getAxiosConfig(this.workspace),
+      ...getAxiosConfig(this.workspace, configuration, this.logger),
     });
 
     http.interceptors.response.use(

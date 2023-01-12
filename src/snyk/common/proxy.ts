@@ -3,15 +3,17 @@ import fs from 'fs';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
-import { configuration } from './configuration/instance';
-import { Logger } from './logger/logger';
 import { IVSCodeWorkspace } from './vscode/workspace';
+import { IConfiguration } from './configuration/configuration';
+import { ILog } from './logger/interfaces';
 
 export function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,
+  configuration: IConfiguration,
+  logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
 ): HttpsProxyAgent | undefined {
-  const proxyOptions = getProxyOptions(workspace, processEnv);
+  const proxyOptions = getProxyOptions(workspace, configuration, logger, processEnv);
   if (proxyOptions == undefined) return undefined;
 
   return new HttpsProxyAgent(proxyOptions);
@@ -19,12 +21,14 @@ export function getHttpsProxyAgent(
 
 export function getProxyOptions(
   workspace: IVSCodeWorkspace,
+  configuration: IConfiguration,
+  logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
 ): HttpsProxyAgentOptions | undefined {
   let proxy: string | undefined = getVsCodeProxy(workspace);
 
   const defaultOptions: HttpsProxyAgentOptions = {
-    ...getDefaultAgentOptions(),
+    ...getDefaultAgentOptions(configuration, logger),
   };
 
   if (!proxy) {
@@ -62,17 +66,20 @@ export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined 
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 
-export function getAxiosConfig(workspace: IVSCodeWorkspace): AxiosRequestConfig {
+export function getAxiosConfig(
+  workspace: IVSCodeWorkspace,
+  configuration: IConfiguration,
+  logger: ILog,
+): AxiosRequestConfig {
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
-  let agentOptions: HttpsProxyAgent | Agent | undefined = getHttpsProxyAgent(workspace);
-  if (!agentOptions) agentOptions = getHttpsAgent();
+  let agentOptions: HttpsProxyAgent | Agent | undefined = getHttpsProxyAgent(workspace, configuration, logger);
+  if (!agentOptions) agentOptions = getHttpsAgent(configuration, logger);
 
   return {
     // proxy false as we're using https-proxy-agent library for proxying
     proxy: false,
     httpAgent: agentOptions,
     httpsAgent: agentOptions,
-    //httpsAgent: new Agent({ rejectUnauthorized: !configuration.getInsecure() }),
   };
 }
 
@@ -87,20 +94,25 @@ export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undef
   return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
 }
 
-function getHttpsAgent(): Agent {
+function getHttpsAgent(configuration: IConfiguration, logger: ILog): Agent {
   return new Agent({
-    ...getDefaultAgentOptions(),
+    ...getDefaultAgentOptions(configuration, logger),
   });
 }
 
-function getDefaultAgentOptions(processEnv: NodeJS.ProcessEnv = process.env): AgentOptions | undefined {
-  let defaultOptions: AgentOptions | undefined = undefined;
+function getDefaultAgentOptions(
+  configuration: IConfiguration,
+  logger: ILog,
+  processEnv: NodeJS.ProcessEnv = process.env,
+): AgentOptions | undefined {
+  let defaultOptions: AgentOptions | undefined;
 
-  // use custom certs if provided
-  const disableSSLCheck = configuration.getInsecure();
-  if (disableSSLCheck) {
+  const sslCheck = !configuration.getInsecure();
+  defaultOptions = { rejectUnauthorized: sslCheck };
+  if (!sslCheck) {
     globalAgent.options.rejectUnauthorized = false;
   } else {
+    // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
         fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
@@ -108,7 +120,7 @@ function getDefaultAgentOptions(processEnv: NodeJS.ProcessEnv = process.env): Ag
         defaultOptions = { ca: [certs] };
         globalAgent.options.ca = [certs];
       } catch (error) {
-        Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
+        logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
       }
     }
   }

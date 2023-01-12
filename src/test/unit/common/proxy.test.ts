@@ -5,6 +5,8 @@ import assert from 'assert';
 import sinon from 'sinon';
 import { getAxiosConfig, getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
+import { IConfiguration } from '../../../snyk/common/configuration/configuration';
+import { ILog } from '../../../snyk/common/logger/interfaces';
 
 suite('Proxy', () => {
   // Proxy settings
@@ -14,6 +16,8 @@ suite('Proxy', () => {
   const protocol = 'https:';
   const proxy = `${protocol}//${auth}@${host}:${port}`;
   const proxyStrictSSL = true;
+  const error = sinon.stub();
+  const logger = { error } as unknown as ILog;
 
   teardown(() => {
     sinon.restore();
@@ -21,13 +25,20 @@ suite('Proxy', () => {
 
   test('No proxy set', () => {
     const getConfiguration = sinon.stub();
+    const getInsecure = sinon.stub();
+    getInsecure.returns(!proxyStrictSSL);
+
+    const configuration = {
+      getInsecure,
+    } as unknown as IConfiguration;
+
     getConfiguration.withArgs('http', 'proxy').returns(undefined);
 
     const workspace = {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const configOptions = getAxiosConfig(workspace);
+    const configOptions = getAxiosConfig(workspace, configuration, logger);
 
     // should still set rejectUnauthorized flag
     // @ts-ignore: cannot test options otherwise
@@ -41,9 +52,16 @@ suite('Proxy', () => {
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(true);
+
+      const getInsecure = sinon.stub();
+      getInsecure.returns(false);
+
+      const configuration = {
+        getInsecure,
+      } as unknown as IConfiguration;
+
       test('should return rejectUnauthorized true', () => {
-        const config = getAxiosConfig(workspace);
+        const config = getAxiosConfig(workspace, configuration, logger);
         assert.deepStrictEqual(config.httpAgent?.options.rejectUnauthorized, true);
       });
     });
@@ -53,9 +71,16 @@ suite('Proxy', () => {
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(false);
+
+      const getInsecure = sinon.stub();
+      getInsecure.returns(true);
+
+      const configuration = {
+        getInsecure,
+      } as unknown as IConfiguration;
+
       test('should return rejectUnauthorized false', () => {
-        const config = getAxiosConfig(workspace);
+        const config = getAxiosConfig(workspace, configuration, logger);
         assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
       });
     });
@@ -70,7 +95,14 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const agent = getHttpsProxyAgent(workspace);
+    const getInsecure = sinon.stub();
+    getInsecure.returns(!proxyStrictSSL);
+
+    const configuration = {
+      getInsecure,
+    } as unknown as IConfiguration;
+
+    const agent = getHttpsProxyAgent(workspace, configuration, logger);
 
     // @ts-ignore: cannot test options otherwise
     assert.deepStrictEqual(agent?.proxy.host, host);
@@ -91,7 +123,13 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const agent = getHttpsProxyAgent(workspace, {
+    const getInsecure = sinon.stub();
+    getInsecure.returns(!proxyStrictSSL);
+    const configuration = {
+      getInsecure,
+    } as unknown as IConfiguration;
+
+    const agent = getHttpsProxyAgent(workspace, configuration, logger, {
       https_proxy: proxy,
       http_proxy: proxy,
     });
@@ -115,7 +153,14 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const envVariable = getProxyEnvVariable(getProxyOptions(workspace));
+    const getInsecure = sinon.stub();
+    getInsecure.returns(!proxyStrictSSL);
+
+    const configuration = {
+      getInsecure,
+    } as unknown as IConfiguration;
+
+    const envVariable = getProxyEnvVariable(getProxyOptions(workspace, configuration, logger));
 
     // noinspection HttpUrlsUsage
     assert.deepStrictEqual(envVariable, `${protocol}//${auth}@${host}:${port}`);

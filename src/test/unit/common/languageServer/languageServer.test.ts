@@ -26,6 +26,9 @@ suite('Language Server', () => {
   let downloadService: DownloadService;
   setup(() => {
     configuration = {
+      getInsecure(): boolean {
+        return true;
+      },
       getCliPath(): string | undefined {
         return 'testPath';
       },
@@ -103,6 +106,7 @@ suite('Language Server', () => {
       filterSeverity: { critical: true, high: true, medium: true, low: true },
       enableTrustedFoldersFeature: 'true',
       trustedFolders: ['/trusted/test/folder'],
+      insecure: 'true',
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

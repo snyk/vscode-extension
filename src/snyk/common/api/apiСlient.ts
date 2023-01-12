@@ -27,11 +27,9 @@ export class SnykApiClient implements ISnykApiClient {
     const axiosRequestConfig: AxiosRequestConfig = {
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
-      ...getAxiosConfig(this.workspace),
+      ...getAxiosConfig(this.workspace, this.configuration, this.logger),
     };
 
-    // TODO: remove this log
-    this.logger.info(`Initialising HTTP client with config: ${JSON.stringify(axiosRequestConfig, null, 2)}`);
     const http = axios.create(axiosRequestConfig);
 
     http.interceptors.response.use(
