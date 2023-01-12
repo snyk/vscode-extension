@@ -5,6 +5,7 @@ import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
 import { Logger } from './logger/logger';
 import { IVSCodeWorkspace } from './vscode/workspace';
+import { configuration } from './configuration/instance';
 
 export function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,
@@ -23,7 +24,6 @@ export function getProxyOptions(
   let proxy: string | undefined = getVsCodeProxy(workspace);
 
   const defaultOptions: HttpsProxyAgentOptions = {
-    rejectUnauthorized: workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true,
     ...getDefaultAgentOptions(),
   };
 
@@ -49,15 +49,13 @@ export function getProxyOptions(
     port = parseInt(proxyUrl.port, 10);
   }
 
-  const proxyOptions: HttpsProxyAgentOptions = {
+  return {
     host: proxyUrl.hostname,
     port: port,
     auth: proxyUrl.auth,
     protocol: proxyUrl.protocol,
     ...defaultOptions,
   };
-
-  return proxyOptions;
 }
 
 export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
@@ -88,10 +86,6 @@ export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undef
   return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
 }
 
-function getVSCodeStrictProxy(workspace: IVSCodeWorkspace): boolean {
-  return workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
-}
-
 function getHttpsAgent(): Agent {
   return new Agent({
     ...getDefaultAgentOptions(),
@@ -102,13 +96,18 @@ function getDefaultAgentOptions(processEnv: NodeJS.ProcessEnv = process.env): Ag
   let defaultOptions: AgentOptions | undefined = undefined;
 
   // use custom certs if provided
-  if (processEnv.NODE_EXTRA_CA_CERTS) {
-    try {
-      fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
-      const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
-      defaultOptions = { ca: [certs] };
-    } catch (error) {
-      Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
+  const disableSSLCheck = !configuration.getInsecure();
+  if (disableSSLCheck) {
+    defaultOptions = { rejectUnauthorized: !configuration.getInsecure() };
+  } else {
+    if (processEnv.NODE_EXTRA_CA_CERTS) {
+      try {
+        fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
+        const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
+        defaultOptions = { ca: [certs] };
+      } catch (error) {
+        Logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
+      }
     }
   }
 
