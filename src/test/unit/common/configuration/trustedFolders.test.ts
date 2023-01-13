@@ -1,15 +1,20 @@
 import { deepStrictEqual } from 'assert';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { getTrustedFolders } from '../../../../snyk/common/configuration/trustedFolders';
+import { IWorkspaceTrust, WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
 
 suite('Trusted Folders', () => {
+  let workspaceTrust: IWorkspaceTrust;
+  setup(() => {
+    workspaceTrust = new WorkspaceTrust();
+  });
+
   test('Single folder trusted', () => {
     const config = {
       getTrustedFolders: () => ['/test/workspace', '/test/workspace2'],
     } as IConfiguration;
     const workspaceFolders = ['/test/workspace'];
 
-    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+    const trustedFolders = workspaceTrust.getTrustedFolders(config, workspaceFolders);
 
     deepStrictEqual(trustedFolders, ['/test/workspace']);
   });
@@ -20,7 +25,7 @@ suite('Trusted Folders', () => {
     } as IConfiguration;
     const workspaceFolders = ['/test/workspace', '/test/workspace2'];
 
-    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+    const trustedFolders = workspaceTrust.getTrustedFolders(config, workspaceFolders);
 
     deepStrictEqual(trustedFolders, ['/test/workspace', '/test/workspace2']);
   });
@@ -31,7 +36,7 @@ suite('Trusted Folders', () => {
     } as IConfiguration;
     const workspaceFolders = ['/test/workspace', '/test/workspace2'];
 
-    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+    const trustedFolders = workspaceTrust.getTrustedFolders(config, workspaceFolders);
 
     deepStrictEqual(trustedFolders, []);
   });
@@ -42,7 +47,7 @@ suite('Trusted Folders', () => {
     } as IConfiguration;
     const workspaceFolders = ['/test/workspace', '/test/workspace2'];
 
-    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+    const trustedFolders = workspaceTrust.getTrustedFolders(config, workspaceFolders);
 
     deepStrictEqual(trustedFolders, ['/test/workspace', '/test/workspace2']);
   });
@@ -53,7 +58,7 @@ suite('Trusted Folders', () => {
     } as IConfiguration;
     const workspaceFolders = ['/test/workspace', '/test/workspace2'];
 
-    const trustedFolders = getTrustedFolders(config, workspaceFolders);
+    const trustedFolders = workspaceTrust.getTrustedFolders(config, workspaceFolders);
 
     deepStrictEqual(trustedFolders, ['/test/workspace', '/test/workspace2']);
   });

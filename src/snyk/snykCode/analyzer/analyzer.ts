@@ -251,7 +251,7 @@ class SnykCodeAnalyzer implements ISnykCodeAnalyzer {
     } catch (err) {
       await this.errorHandler.processError(err, {
         message: errorsLogs.updateReviewPositions,
-        bundleId: extension.snykCode.remoteBundle?.fileBundle.bundleHash,
+        bundleId: extension.snykCodeOld.remoteBundle?.fileBundle.bundleHash,
         data: {
           [updatedFile.fullPath]: updatedFile.contentChanges,
         },

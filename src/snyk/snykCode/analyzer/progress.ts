@@ -6,7 +6,7 @@ import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { ISnykCodeService } from '../codeService';
+import { ISnykCodeServiceOld } from '../codeServiceOld';
 import createFileWatcher from '../watchers/filesWatcher';
 
 export class Progress {
@@ -14,7 +14,7 @@ export class Progress {
   private filesWatcher: vscode.FileSystemWatcher;
 
   constructor(
-    private readonly snykCode: ISnykCodeService,
+    private readonly snykCode: ISnykCodeServiceOld,
     private readonly viewManagerService: IViewManagerService,
     private readonly workspace: IVSCodeWorkspace,
   ) {}
@@ -39,7 +39,7 @@ export class Progress {
 
   updateStatus(status: string, progress: string): void {
     this.snykCode.updateStatus(status, progress);
-    this.viewManagerService.refreshAllCodeAnalysisViews();
+    this.viewManagerService.refreshAllOldCodeAnalysisViews();
   }
 
   onSupportedFilesLoaded(data: SupportedFiles | null): void {

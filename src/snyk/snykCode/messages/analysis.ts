@@ -1,4 +1,5 @@
 export const messages = {
+  runTest: 'Run scan for Code vulnerabilites and issues.',
   started: 'Code analysis started.',
   finished: 'Code analysis finished.',
   temporaryFailed: 'Snyk Code is temporarily unavailable.',

@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { CliProcess } from '../../../../snyk/cli/process';
 import { CliError, CliService } from '../../../../snyk/cli/services/cliService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -77,6 +78,7 @@ suite('CliService', () => {
       } as IVSCodeWorkspace,
       downloadService,
       ls,
+      new WorkspaceTrust(),
     );
   });
 

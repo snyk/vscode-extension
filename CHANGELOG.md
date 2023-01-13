@@ -1,17 +1,26 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
+
 ## [1.13.0]
+
 ### Fixed
-- trust workspace folders if parent dir is trusted
+
 - ignore untrusted CAs if strict proxy is disabled
 
-### Changed
-- removed background notification about found vulnerabilities in Snyk Open Source
+### Added
 
+- Enabling Snyk Code scans using Language Server under a feature flag.
 
 ## [1.12.3]
+
 ### Fixed
+
+- Trust workspace folders if parent dir is trusted.
 - Snyk LS: updated protocol version.
 - Contact and documentation url.
+
+### Changed
+
+- Removed background notification about found vulnerabilities in Snyk Open Source.
 
 ## [1.12.2]
 

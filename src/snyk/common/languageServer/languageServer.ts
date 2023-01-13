@@ -1,4 +1,4 @@
-import { firstValueFrom, ReplaySubject } from 'rxjs';
+import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration } from '../configuration/configuration';
@@ -7,6 +7,7 @@ import {
   SNYK_CLI_PATH,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
+  SNYK_SCAN,
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -21,16 +22,19 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
+import { CodeIssueData, OssIssueData, Scan } from './types';
 
 export interface ILanguageServer {
   start(): Promise<void>;
   stop(): Promise<void>;
   cliReady$: ReplaySubject<string>;
+  scan$: Subject<Scan<CodeIssueData | OssIssueData>>;
 }
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
+  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData>>(); // todo: or BehaviourSubject?
 
   constructor(
     private user: User,
@@ -143,6 +147,10 @@ export class LanguageServer implements ILanguageServer {
       this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
       });
+    });
+
+    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
+      this.scan$.next(scan);
     });
   }
 
