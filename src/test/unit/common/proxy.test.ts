@@ -23,7 +23,7 @@ suite('Proxy', () => {
     sinon.restore();
   });
 
-  test('No proxy set', () => {
+  test('No proxy set', async () => {
     const getConfiguration = sinon.stub();
     const getInsecure = sinon.stub();
     getInsecure.returns(!proxyStrictSSL);
@@ -38,7 +38,7 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const configOptions = getAxiosConfig(workspace, configuration, logger);
+    const configOptions = await getAxiosConfig(workspace, configuration, logger);
 
     // should still set rejectUnauthorized flag
     // @ts-ignore: cannot test options otherwise
@@ -60,8 +60,8 @@ suite('Proxy', () => {
         getInsecure,
       } as unknown as IConfiguration;
 
-      test('should return rejectUnauthorized true', () => {
-        const config = getAxiosConfig(workspace, configuration, logger);
+      test('should return rejectUnauthorized true', async () => {
+        const config = await getAxiosConfig(workspace, configuration, logger);
         assert.deepStrictEqual(config.httpAgent?.options.rejectUnauthorized, true);
       });
     });
@@ -79,14 +79,14 @@ suite('Proxy', () => {
         getInsecure,
       } as unknown as IConfiguration;
 
-      test('should return rejectUnauthorized false', () => {
-        const config = getAxiosConfig(workspace, configuration, logger);
+      test('should return rejectUnauthorized false', async () => {
+        const config = await getAxiosConfig(workspace, configuration, logger);
         assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
       });
     });
   });
 
-  test('Proxy is set in VS Code settings', () => {
+  test('Proxy is set in VS Code settings', async () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(proxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
@@ -102,7 +102,7 @@ suite('Proxy', () => {
       getInsecure,
     } as unknown as IConfiguration;
 
-    const agent = getHttpsProxyAgent(workspace, configuration, logger);
+    const agent = await getHttpsProxyAgent(workspace, configuration, logger);
 
     // @ts-ignore: cannot test options otherwise
     assert.deepStrictEqual(agent?.proxy.host, host);
@@ -114,7 +114,7 @@ suite('Proxy', () => {
     assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
   });
 
-  test('Proxy is set in environment', () => {
+  test('Proxy is set in environment', async () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(undefined);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
@@ -129,7 +129,7 @@ suite('Proxy', () => {
       getInsecure,
     } as unknown as IConfiguration;
 
-    const agent = getHttpsProxyAgent(workspace, configuration, logger, {
+    const agent = await getHttpsProxyAgent(workspace, configuration, logger, {
       https_proxy: proxy,
       http_proxy: proxy,
     });
@@ -144,7 +144,7 @@ suite('Proxy', () => {
     assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
   });
 
-  test('getProxyEnvVariable should return the https proxy as env var', () => {
+  test('getProxyEnvVariable should return the https proxy as env var', async () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(proxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
@@ -160,7 +160,7 @@ suite('Proxy', () => {
       getInsecure,
     } as unknown as IConfiguration;
 
-    const envVariable = getProxyEnvVariable(getProxyOptions(workspace, configuration, logger));
+    const envVariable = getProxyEnvVariable(await getProxyOptions(workspace, configuration, logger));
 
     // noinspection HttpUrlsUsage
     assert.deepStrictEqual(envVariable, `${protocol}//${auth}@${host}:${port}`);

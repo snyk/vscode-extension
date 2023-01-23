@@ -55,7 +55,7 @@ export class LanguageServer implements ILanguageServer {
     this.logger.info('Starting Snyk Language Server');
 
     // proxy settings
-    const proxyOptions = getProxyOptions(this.workspace, this.configuration, this.logger);
+    const proxyOptions = await getProxyOptions(this.workspace, this.configuration, this.logger);
     const proxyEnvVariable = getProxyEnvVariable(proxyOptions);
 
     let processEnv = process.env;

@@ -39,7 +39,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
   getRootChildren(): TreeNode[] {
     const review: TreeNode[] = [];
-    let nIssues = 0;
+    const nIssues = 0;
 
     if (!this.contextService.shouldShowCodeAnalysis) return review;
     if (!this.codeService.isLsDownloadSuccessful) {

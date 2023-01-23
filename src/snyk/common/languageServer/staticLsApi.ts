@@ -66,7 +66,7 @@ export class StaticLsApi implements IStaticLsApi {
     const fileName = await this.getFileName(platform);
     const { data } = await axios.get<string>(
       `${this.baseUrl}/snyk-ls_${await this.getLatestVersion()}_SHA256SUMS`,
-      getAxiosConfig(this.workspace, this.configuration, this.logger),
+      await getAxiosConfig(this.workspace, this.configuration, this.logger),
     );
 
     let checksum = '';
@@ -83,7 +83,7 @@ export class StaticLsApi implements IStaticLsApi {
   async getMetadata(): Promise<LsMetadata> {
     const response = await axios.get<LsMetadata>(
       `${this.baseUrl}/metadata.json`,
-      getAxiosConfig(this.workspace, this.configuration, this.logger),
+      await getAxiosConfig(this.workspace, this.configuration, this.logger),
     );
     return response.data;
   }

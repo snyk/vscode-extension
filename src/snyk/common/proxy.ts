@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import fs from 'fs';
+import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
@@ -7,28 +7,28 @@ import { IVSCodeWorkspace } from './vscode/workspace';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
 
-export function getHttpsProxyAgent(
+export async function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
-): HttpsProxyAgent | undefined {
-  const proxyOptions = getProxyOptions(workspace, configuration, logger, processEnv);
+): Promise<HttpsProxyAgent | undefined> {
+  const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
   if (proxyOptions == undefined) return undefined;
 
   return new HttpsProxyAgent(proxyOptions);
 }
 
-export function getProxyOptions(
+export async function getProxyOptions(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
-): HttpsProxyAgentOptions | undefined {
+): Promise<HttpsProxyAgentOptions | undefined> {
   let proxy: string | undefined = getVsCodeProxy(workspace);
 
   const defaultOptions: HttpsProxyAgentOptions = {
-    ...getDefaultAgentOptions(configuration, logger),
+    ...(await getDefaultAgentOptions(configuration, logger)),
   };
 
   if (!proxy) {
@@ -66,14 +66,14 @@ export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined 
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 
-export function getAxiosConfig(
+export async function getAxiosConfig(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   logger: ILog,
-): AxiosRequestConfig {
+): Promise<AxiosRequestConfig> {
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
-  let agentOptions: HttpsProxyAgent | Agent | undefined = getHttpsProxyAgent(workspace, configuration, logger);
-  if (!agentOptions) agentOptions = getHttpsAgent(configuration, logger);
+  let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
+  if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
 
   return {
     // proxy false as we're using https-proxy-agent library for proxying
@@ -94,17 +94,17 @@ export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undef
   return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
 }
 
-function getHttpsAgent(configuration: IConfiguration, logger: ILog): Agent {
+async function getHttpsAgent(configuration: IConfiguration, logger: ILog): Promise<Agent> {
   return new Agent({
-    ...getDefaultAgentOptions(configuration, logger),
+    ...(await getDefaultAgentOptions(configuration, logger)),
   });
 }
 
-function getDefaultAgentOptions(
+async function getDefaultAgentOptions(
   configuration: IConfiguration,
   logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
-): AgentOptions | undefined {
+): Promise<AgentOptions | undefined> {
   let defaultOptions: AgentOptions | undefined;
 
   const sslCheck = !configuration.getInsecure();
@@ -115,8 +115,10 @@ function getDefaultAgentOptions(
     // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
-        fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
-        const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
+        // fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
+        // const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
+        await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
+        const certs = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS);
         defaultOptions = { ca: [certs] };
         globalAgent.options.ca = [certs];
       } catch (error) {
