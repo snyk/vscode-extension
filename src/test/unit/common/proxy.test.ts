@@ -23,7 +23,7 @@ suite('Proxy', () => {
     sinon.restore();
   });
 
-  test('No proxy set', async () => {
+  test('No proxy configured by user (default case)', async () => {
     const getConfiguration = sinon.stub();
     const getInsecure = sinon.stub();
     getInsecure.returns(!proxyStrictSSL);
@@ -47,7 +47,7 @@ suite('Proxy', () => {
   });
 
   suite('.getAxiosConfig()', () => {
-    suite('when proxyStrictSsl is set', () => {
+    suite('when proxyStrictSsl checkbox is checked', () => {
       const getConfiguration = sinon.stub();
       const workspace = {
         getConfiguration,
@@ -66,7 +66,7 @@ suite('Proxy', () => {
       });
     });
 
-    suite('when proxyStrictSsl is not set', () => {
+    suite('when proxyStrictSsl checkbox is not checked', () => {
       const getConfiguration = sinon.stub();
       const workspace = {
         getConfiguration,
@@ -86,7 +86,7 @@ suite('Proxy', () => {
     });
   });
 
-  test('Proxy is set in VS Code settings', async () => {
+  test('Proxy is configured in VS Code settings', async () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(proxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
@@ -114,7 +114,7 @@ suite('Proxy', () => {
     assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
   });
 
-  test('Proxy is set in environment', async () => {
+  test('Proxy is configured in environment', async () => {
     const getConfiguration = sinon.stub();
     getConfiguration.withArgs('http', 'proxy').returns(undefined);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
