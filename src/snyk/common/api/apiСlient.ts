@@ -11,7 +11,7 @@ export interface ISnykApiClient {
 }
 
 export class SnykApiClient implements ISnykApiClient {
-  private instance: AxiosInstance | null = null;
+  private instance: Promise<AxiosInstance> | null = null;
 
   constructor(
     private readonly configuration: IConfiguration,
@@ -19,15 +19,15 @@ export class SnykApiClient implements ISnykApiClient {
     private readonly logger: ILog,
   ) {}
 
-  private get http(): AxiosInstance {
+  private get http(): Promise<AxiosInstance> {
     return this.instance != null ? this.instance : this.initHttp();
   }
 
-  initHttp(): AxiosInstance {
+  async initHttp(): Promise<AxiosInstance> {
     const axiosRequestConfig: AxiosRequestConfig = {
       headers: DEFAULT_API_HEADERS,
       responseType: 'json',
-      ...getAxiosConfig(this.workspace, this.configuration, this.logger),
+      ...(await getAxiosConfig(this.workspace, this.configuration, this.logger)),
     };
 
     const http = axios.create(axiosRequestConfig);
@@ -45,16 +45,16 @@ export class SnykApiClient implements ISnykApiClient {
       },
     );
 
-    this.instance = http;
+    this.instance = Promise.resolve(http);
     return http;
   }
 
   async get<T = unknown, R = AxiosResponse<T>>(url: string, config?: AxiosRequestConfig): Promise<R> {
-    return this.http.get<T, R>(url, await this.getRequestConfigWithAuth(config));
+    return (await this.http).get<T, R>(url, await this.getRequestConfigWithAuth(config));
   }
 
   async post<T = unknown, R = AxiosResponse<T>>(url: string, data: unknown, config?: AxiosRequestConfig): Promise<R> {
-    return this.http.post<T, R>(url, data, await this.getRequestConfigWithAuth(config));
+    return (await this.http).post<T, R>(url, data, await this.getRequestConfigWithAuth(config));
   }
 
   private async getRequestConfigWithAuth(config?: AxiosRequestConfig) {

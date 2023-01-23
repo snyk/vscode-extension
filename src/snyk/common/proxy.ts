@@ -115,8 +115,6 @@ async function getDefaultAgentOptions(
     // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
-        // fs.accessSync(processEnv.NODE_EXTRA_CA_CERTS);
-        // const certs = fs.readFileSync(processEnv.NODE_EXTRA_CA_CERTS);
         await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
         const certs = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS);
         defaultOptions = { ca: [certs] };

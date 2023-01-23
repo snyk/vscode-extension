@@ -52,7 +52,7 @@ export class StaticLsApi implements IStaticLsApi {
     const response = axios.get(downloadUrl, {
       responseType: 'stream',
       cancelToken: axiosCancelToken.token,
-      ...getAxiosConfig(this.workspace, this.configuration, this.logger),
+      ...(await getAxiosConfig(this.workspace, this.configuration, this.logger)),
     });
 
     return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
