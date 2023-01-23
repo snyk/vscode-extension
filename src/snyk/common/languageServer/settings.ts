@@ -25,6 +25,7 @@ export type ServerSettings = {
   filterSeverity?: SeverityFilter;
   enableTrustedFoldersFeature?: string;
   trustedFolders?: string[];
+  insecure?: string;
 };
 
 export class LanguageServerSettings {
@@ -51,6 +52,7 @@ export class LanguageServerSettings {
       filterSeverity: configuration.severityFilter,
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
+      insecure: `${configuration.getInsecure()}`,
     };
   }
 }

@@ -2,6 +2,10 @@
 
 ## [1.13.0]
 
+### Fixed
+
+- ignore untrusted CAs if strict proxy is disabled
+
 ### Added
 
 - Enabling Snyk Code scans using Language Server under a feature flag.

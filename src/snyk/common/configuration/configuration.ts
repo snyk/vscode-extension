@@ -96,6 +96,8 @@ export interface IConfiguration {
 
   getCliPath(): string | undefined;
 
+  getInsecure(): boolean;
+
   severityFilter: SeverityFilter;
 
   getSnykLanguageServerPath(): string | undefined;
@@ -116,6 +118,11 @@ export class Configuration implements IConfiguration {
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+
+  getInsecure(): boolean {
+    const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+    return !strictSSL;
+  }
 
   static async getVersion(): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires

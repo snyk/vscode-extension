@@ -2,9 +2,11 @@ import axios, { CancelTokenSource } from 'axios';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 import { LsExecutable } from './lsExecutable';
 import { LsSupportedPlatform } from './supportedPlatforms';
-import { getAxiosProxyConfig } from '../proxy';
+import { getAxiosConfig } from '../proxy';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { DownloadAxiosResponse } from '../download/downloader';
+import { IConfiguration } from '../configuration/configuration';
+import { ILog } from '../logger/interfaces';
 
 export type LsMetadata = {
   tag: string;
@@ -29,7 +31,11 @@ export interface IStaticLsApi {
 export class StaticLsApi implements IStaticLsApi {
   private readonly baseUrl = `https://static.snyk.io/snyk-ls/${PROTOCOL_VERSION}`;
 
-  constructor(private readonly workspace: IVSCodeWorkspace) {}
+  constructor(
+    private readonly workspace: IVSCodeWorkspace,
+    private readonly configuration: IConfiguration,
+    private readonly logger: ILog,
+  ) {}
 
   async getDownloadUrl(platform: LsSupportedPlatform): Promise<string> {
     return `${this.baseUrl}/${await this.getFileName(platform)}`;
@@ -46,7 +52,7 @@ export class StaticLsApi implements IStaticLsApi {
     const response = axios.get(downloadUrl, {
       responseType: 'stream',
       cancelToken: axiosCancelToken.token,
-      ...getAxiosProxyConfig(this.workspace),
+      ...(await getAxiosConfig(this.workspace, this.configuration, this.logger)),
     });
 
     return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
@@ -60,7 +66,7 @@ export class StaticLsApi implements IStaticLsApi {
     const fileName = await this.getFileName(platform);
     const { data } = await axios.get<string>(
       `${this.baseUrl}/snyk-ls_${await this.getLatestVersion()}_SHA256SUMS`,
-      getAxiosProxyConfig(this.workspace),
+      await getAxiosConfig(this.workspace, this.configuration, this.logger),
     );
 
     let checksum = '';
@@ -75,7 +81,10 @@ export class StaticLsApi implements IStaticLsApi {
   }
 
   async getMetadata(): Promise<LsMetadata> {
-    const response = await axios.get<LsMetadata>(`${this.baseUrl}/metadata.json`, getAxiosProxyConfig(this.workspace));
+    const response = await axios.get<LsMetadata>(
+      `${this.baseUrl}/metadata.json`,
+      await getAxiosConfig(this.workspace, this.configuration, this.logger),
+    );
     return response.data;
   }
 }

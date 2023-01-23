@@ -25,6 +25,9 @@ suite('Language Server: Middleware', () => {
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
       getCliPath: () => '/path/to/cli',
+      getInsecure(): boolean {
+        return true;
+      },
       getPreviewFeatures: () => {
         return {
           advisor: false,
