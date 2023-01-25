@@ -14,7 +14,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     protected codeService: ISnykCodeService,
     protected configuration: IConfiguration,
   ) {
-    super(contextService, codeService, configuration);
+    super(contextService, codeService, configuration, true);
   }
 
   getRootChildren(): TreeNode[] {

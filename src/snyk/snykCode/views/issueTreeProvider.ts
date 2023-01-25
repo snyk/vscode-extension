@@ -20,6 +20,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     protected readonly contextService: IContextService,
     protected readonly codeService: ISnykCodeService,
     protected readonly configuration: IConfiguration,
+    protected readonly isSecurityType: boolean,
   ) {
     super(configuration, codeService);
   }
@@ -87,9 +88,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     for (const result of this.codeService.result.entries()) {
       const folderPath = result[0];
       const folderResult = result[1];
+
+      const shortFolderPath = folderPath.split('/');
+      const folderName = shortFolderPath.pop() || folderPath;
+
       let folderVulnCount = 0;
       if (folderResult instanceof Error) {
-        nodes.push(this.getErrorEncounteredTreeNode(folderPath));
+        nodes.push(this.getErrorEncounteredTreeNode(folderName));
         continue;
       }
 
@@ -106,53 +111,59 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
         const fileSeverityCounts = this.initSeverityCounts();
 
-        const issueNodes = fileIssues.map(issue => {
-          fileSeverityCounts[issue.severity] += 1;
-          totalVulnCount++;
-          folderVulnCount++;
+        const issueNodes = fileIssues
+          .filter(i => i.additionalData.isSecurityType == this.isSecurityType)
+          .map(issue => {
+            fileSeverityCounts[issue.severity] += 1;
+            totalVulnCount++;
+            folderVulnCount++;
 
-          const issueRange = new vscode.Range(
-            issue.additionalData.rows[0],
-            issue.additionalData.cols[0],
-            issue.additionalData.rows[1],
-            issue.additionalData.cols[1],
-          );
-          const params: {
-            text: string;
-            icon: INodeIcon;
-            issue: { filePath: string; range?: vscode.Range }; // todo: where is Uri & Range used?
-            internal: InternalType;
-            command: Command;
-            children?: TreeNode[];
-          } = {
-            text: issue.additionalData.message,
-            icon: IssueTreeProvider.getSeverityIcon(issue.severity),
-            issue: {
-              filePath: issue.filePath,
-              range: issueRange,
-            },
-            internal: {
-              severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
-            },
-            command: {
-              command: SNYK_OPEN_ISSUE_COMMAND,
-              title: '',
-              arguments: [
-                // TODO: update to pass necessary args to open issue command
-                // {
-                //   issueType: OpenCommandIssueType.CodeIssue,
-                //   issue: {
-                //     message: issue.additionalData.message,
-                //     filePath,
-                //     range: issueRange,
-                //     diagnostic: issue,
-                //   } as CodeIssueCommandArg,
-                // } as OpenIssueCommandArg,
-              ],
-            },
-          };
-          return new TreeNode(params);
-        });
+            const issueRange = new vscode.Range(
+              issue.additionalData.rows[0],
+              issue.additionalData.cols[0],
+              issue.additionalData.rows[1],
+              issue.additionalData.cols[1],
+            );
+            const params: {
+              text: string;
+              icon: INodeIcon;
+              issue: { filePath: string; range?: vscode.Range }; // todo: where is Uri & Range used?
+              internal: InternalType;
+              command: Command;
+              children?: TreeNode[];
+            } = {
+              text: issue.additionalData.message,
+              icon: IssueTreeProvider.getSeverityIcon(issue.severity),
+              issue: {
+                filePath: issue.filePath,
+                range: issueRange,
+              },
+              internal: {
+                severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
+              },
+              command: {
+                command: SNYK_OPEN_ISSUE_COMMAND,
+                title: '',
+                arguments: [
+                  // TODO: update to pass necessary args to open issue command
+                  // {
+                  //   issueType: OpenCommandIssueType.CodeIssue,
+                  //   issue: {
+                  //     message: issue.additionalData.message,
+                  //     filePath,
+                  //     range: issueRange,
+                  //     diagnostic: issue,
+                  //   } as CodeIssueCommandArg,
+                  // } as OpenIssueCommandArg,
+                ],
+              },
+            };
+            return new TreeNode(params);
+          });
+
+        if (issueNodes.length === 0) {
+          continue;
+        }
 
         issueNodes.sort(this.compareNodes);
 
@@ -162,11 +173,11 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         // append file node
         const fileNode = new TreeNode({
           text: filename,
-          description: this.getIssueDescriptionText(dir, fileIssues.length),
+          description: this.getIssueDescriptionText(dir, issueNodes.length),
           icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
           children: issueNodes,
           internal: {
-            nIssues: fileIssues.length,
+            nIssues: issueNodes.length,
             severity: IssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
           },
         });
@@ -177,9 +188,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
       const folderSeverity = IssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
+      if (folderVulnCount == 0) {
+        continue;
+      }
+
       const folderNode = new TreeNode({
-        text: folderPath,
-        description: this.getIssueDescriptionText(folderPath, folderVulnCount),
+        text: folderName,
+        description: this.getIssueDescriptionText(folderName, folderVulnCount),
         icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
         children: fileNodes,
         internal: {

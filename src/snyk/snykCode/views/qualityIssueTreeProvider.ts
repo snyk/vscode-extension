@@ -14,7 +14,7 @@ export class CodeQualityIssueTreeProvider extends IssueTreeProvider {
     protected codeService: ISnykCodeService,
     protected configuration: IConfiguration,
   ) {
-    super(contextService, codeService, configuration);
+    super(contextService, codeService, configuration, false);
   }
 
   getRootChildren(): TreeNode[] {
