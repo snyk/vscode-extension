@@ -162,11 +162,11 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         // append file node
         const fileNode = new TreeNode({
           text: filename,
-          description: this.getIssueDescriptionText(dir, fileIssues),
+          description: this.getIssueDescriptionText(dir, fileIssues.length),
           icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
           children: issueNodes,
           internal: {
-            nIssues: folderVulnCount,
+            nIssues: fileIssues.length,
             severity: IssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
           },
         });
@@ -179,11 +179,11 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
       const folderNode = new TreeNode({
         text: folderPath,
-        description: this.getIssueDescriptionText(folderPath, fileNodes),
+        description: this.getIssueDescriptionText(folderPath, folderVulnCount),
         icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
         children: fileNodes,
         internal: {
-          nIssues: fileNodes.length,
+          nIssues: folderVulnCount,
           // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
         },
       });
@@ -198,8 +198,8 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 
-  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly unknown[]): string | undefined {
-    return `${dir} - ${diagnostics.length} issue${diagnostics.length === 1 ? '' : 's'}`;
+  protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
+    return `${dir} - ${issueCount} issue${issueCount === 1 ? '' : 's'}`;
   }
 
   // todo: remove after OSS scans migration to LS

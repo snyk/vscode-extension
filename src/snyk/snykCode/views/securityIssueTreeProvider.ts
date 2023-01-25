@@ -1,4 +1,3 @@
-import { Diagnostic } from 'vscode';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
@@ -32,8 +31,8 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
 
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
 
-  protected getIssueDescriptionText(dir: string | undefined, diagnostics: readonly Diagnostic[]): string | undefined {
-    return `${dir} - ${diagnostics.length} ${diagnostics.length === 1 ? 'vulnerability' : 'vulnerabilities'}`;
+  protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
+    return `${dir} - ${issueCount} ${issueCount === 1 ? 'vulnerability' : 'vulnerabilities'}`;
   }
 
   protected getIssueFoundText(nIssues: number): string {
