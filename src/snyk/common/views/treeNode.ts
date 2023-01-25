@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
+import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 
 export interface INodeIcon {
@@ -43,7 +43,7 @@ export interface INodeOptions {
   description?: string;
   descriptionTail?: string;
   issue?: {
-    uri: Uri;
+    filePath: string;
     range?: Range;
   };
   link?: string;
@@ -72,7 +72,7 @@ export class TreeNode extends TreeItem implements INode {
     this.tooltip = options.description || options.text;
     let desc = options.description;
     if (!desc && options.issue) {
-      desc = options.issue.uri.path.split('/').pop() || '';
+      desc = options.issue.filePath.split('/').pop() || '';
       if (options.issue.range) {
         desc += `[${options.issue.range.start.line + 1}, `;
         desc += `${options.issue.range.start.character + 1}]`;
@@ -89,7 +89,7 @@ export class TreeNode extends TreeItem implements INode {
       (options.issue && {
         command: SNYK_OPEN_LOCAL_COMMAND,
         title: '',
-        arguments: [options.issue.uri, options.issue.range],
+        arguments: [options.issue.filePath, options.issue.range],
       });
     // Not using `options.issue.uri` to avoid default file decorators (see Explorer tab)
     // However, as of August 2020, there is still no way to manually decorate tree items

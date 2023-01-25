@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { OpenCommandIssueType } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
@@ -8,7 +9,6 @@ import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProv
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { Command } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
-import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';
 import { CodeIssueCommandArg } from './interfaces';
 
@@ -34,13 +34,6 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         [IssueSeverity.Low]: NODE_ICONS.low,
       }[severity] || NODE_ICONS.low
     );
-  }
-
-  static getFileSeverity(counts: ISeverityCounts): number {
-    for (const s of [SNYK_SEVERITIES.error, SNYK_SEVERITIES.warning, SNYK_SEVERITIES.information]) {
-      if (counts[s]) return s;
-    }
-    return SNYK_SEVERITIES.information;
   }
 
   getRootChildren(): TreeNode[] {
@@ -93,65 +86,94 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     let totalVulnCount = 0;
 
     for (const result of this.codeService.result.entries()) {
-      let folderPath = result[0];
-      let folderResult = result[1];
+      const folderPath = result[0];
+      const folderResult = result[1];
       if (folderResult instanceof Error) {
         nodes.push(this.getErrorEncounteredTreeNode(folderPath));
         continue;
       }
 
-      const counts: ISeverityCounts = this.initFileSeverityCounts();
-      const vulnerabilityNodes: TreeNode[] = [];
+      const counts = this.initSeverityCounts();
+      const fileNodes: TreeNode[] = [];
 
-      const nodes = folderResult.map(issue => {
-        counts[issue.severity] += 1;
-        const params: {
-          text: string;
-          icon: INodeIcon;
-          issue: { uri: Uri; range?: Range }; // todo: where is Uri & Range used?
-          internal: { severity: string };
-          command: Command;
-          children?: TreeNode[];
-        } = {
-          text: issue.additionalData.message,
-          icon: IssueTreeProvider.getSeverityIcon(issue.severity),
-          issue: {
-            uri, // todo: where is Uri & Range used?
-            range: issue.range,
-          },
+      const fileVulns = _.groupBy(folderResult, v => v.filePath);
+
+      for (const file in fileVulns) {
+        const fileIssues = fileVulns[file];
+        const filePath = file.split('/');
+        const filename = filePath.pop() || file;
+        const dir = filePath.pop();
+
+        const counts = this.initSeverityCounts();
+
+        const issueNodes = fileIssues.map(issue => {
+          counts[issue.severity] += 1;
+          const params: {
+            text: string;
+            icon: INodeIcon;
+            issue: { filePath: string; range?: Range }; // todo: where is Uri & Range used?
+            internal: { severity: string };
+            command: Command;
+            children?: TreeNode[];
+          } = {
+            text: issue.additionalData.message,
+            icon: IssueTreeProvider.getSeverityIcon(issue.severity),
+            issue: {
+              filePath: issue.filePath,
+              range: issue.range,
+            },
+            internal: {
+              severity: issue.severity,
+            },
+            command: {
+              command: SNYK_OPEN_ISSUE_COMMAND,
+              title: '',
+              arguments: [
+                {
+                  issueType: OpenCommandIssueType.CodeIssue,
+                  issue: {
+                    message: issue.additionalData.message,
+                    uri: uri,
+                    range: issue.range,
+                    diagnostic: issue,
+                  } as CodeIssueCommandArg,
+                } as OpenIssueCommandArg,
+              ],
+            },
+          };
+          return new TreeNode(params);
+        });
+
+        const fileSeverity = IssueTreeProvider.getHighestSeverity(counts);
+
+        // append file node
+        const fileNode = new TreeNode({
+          text: filename,
+          description: this.getIssueDescriptionText(dir, fileIssues),
+          icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
+          children: issueNodes,
           internal: {
-            severity: issue.severity,
+            nIssues: fileIssues.length,
+            severity: fileSeverity, // where severity is used?
           },
-          command: {
-            command: SNYK_OPEN_ISSUE_COMMAND,
-            title: '',
-            arguments: [
-              {
-                issueType: OpenCommandIssueType.CodeIssue,
-                issue: {
-                  message: issue.additionalData.message,
-                  uri: uri,
-                  range: issue.range,
-                  diagnostic: issue,
-                } as CodeIssueCommandArg,
-              } as OpenIssueCommandArg,
-            ],
-          },
-        };
-      });
+        });
+        fileNodes.push(fileNode);
+      }
 
-      const folderSeverity = IssueTreeProvider.getFolderSeverity(counts);
+      const folderSeverity = IssueTreeProvider.getHighestSeverity(counts);
 
-      const fileNode = new TreeNode({
+      const folderNode = new TreeNode({
         text: folderPath,
-        description: this.getIssueDescriptionText(folderPath, vulnerabilityNodes),
+        description: this.getIssueDescriptionText(folderPath, fileNodes),
         icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
-        children: vulnerabilityNodes,
+        children: fileNodes,
         internal: {
-          nIssues: vulnerabilityNodes.length,
+          nIssues: fileNodes.length,
           // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
         },
       });
+
+      nodes.push(folderNode);
     }
   }
 
@@ -169,7 +191,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     return diagnostics;
   }
 
-  static getFolderSeverity(counts: ISeverityCounts): IssueSeverity {
+  static getHighestSeverity(counts: ISeverityCounts): IssueSeverity {
     for (const s of [IssueSeverity.Critical, IssueSeverity.High, IssueSeverity.Medium, IssueSeverity.Low]) {
       if (counts[s]) return s;
     }
@@ -177,7 +199,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     return IssueSeverity.Low;
   }
 
-  private initFileSeverityCounts(): ISeverityCounts {
+  private initSeverityCounts(): ISeverityCounts {
     return {
       [IssueSeverity.Critical]: 0,
       [IssueSeverity.High]: 0,
