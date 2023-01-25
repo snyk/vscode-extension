@@ -22,6 +22,7 @@ export type Issue<T> = {
   id: string;
   title: string;
   severity: IssueSeverity;
+  filePath: string;
   additionalData: T;
 };
 
@@ -34,7 +35,6 @@ export enum IssueSeverity {
 
 // Snyk Code
 export type CodeIssueData = {
-  filePath: string;
   message: string;
   leadURL?: string;
   rule: string;
