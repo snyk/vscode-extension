@@ -95,10 +95,10 @@ export class CommandController {
       const suggestion = this.snykCode.analyzer.findSuggestion(issue.diagnostic);
       if (!suggestion) return;
       // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-      if (issue.openUri !== null) await this.openLocal(issue.openUri || issue.uri, issue.openRange || issue.range);
+      await this.openLocal(issue.filePath, issue.range);
 
       try {
-        this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
+        this.snykCode.suggestionProvider.show(suggestion.id, issue.filePath, issue.range);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

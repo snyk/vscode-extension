@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 
 export interface INodeIcon {
@@ -43,6 +43,7 @@ export interface INodeOptions {
   description?: string;
   descriptionTail?: string;
   issue?: {
+    uri?: Uri; //todo: remove;
     filePath: string;
     range?: Range;
   };

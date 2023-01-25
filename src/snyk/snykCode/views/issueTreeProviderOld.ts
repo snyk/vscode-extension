@@ -131,7 +131,7 @@ export class IssueTreeProviderOld extends AnalysisTreeNodeProvder {
       const params: {
         text: string;
         icon: INodeIcon;
-        issue: { uri: Uri; range?: Range };
+        issue: { uri: Uri; filePath: string; range?: Range };
         internal: { severity: number };
         command: Command;
         children?: TreeNode[];
@@ -140,6 +140,7 @@ export class IssueTreeProviderOld extends AnalysisTreeNodeProvder {
         icon: IssueTreeProviderOld.getSeverityIcon(severity),
         issue: {
           uri,
+          filePath: 'dummy', // todo: consolidate uri to filePath
           range: d.range,
         },
         internal: {
@@ -153,7 +154,7 @@ export class IssueTreeProviderOld extends AnalysisTreeNodeProvder {
               issueType: OpenCommandIssueType.CodeIssue,
               issue: {
                 message: d.message,
-                uri: uri,
+                filePath: uri,
                 range: d.range,
                 diagnostic: d,
               } as CodeIssueCommandArg,

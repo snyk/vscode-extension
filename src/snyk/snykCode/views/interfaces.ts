@@ -9,9 +9,7 @@ export interface ICodeSuggestionWebviewProvider extends IWebViewProvider<complet
 
 export type CodeIssueCommandArg = {
   message: string;
-  uri: vscode.Uri; //todo: becomes filePath string
+  filePath: vscode.Uri; //todo: becomes filePath string
   range: vscode.Range;
-  openUri?: vscode.Uri;
-  openRange?: vscode.Range;
   diagnostic: vscode.Diagnostic;
 };

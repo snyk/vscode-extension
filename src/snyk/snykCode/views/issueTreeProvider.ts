@@ -1,16 +1,15 @@
 import _ from 'lodash';
-import { OpenCommandIssueType } from '../../common/commands/types';
+import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
-import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
+import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { Command } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { messages } from '../messages/analysis';
-import { CodeIssueCommandArg } from './interfaces';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -80,7 +79,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   }
 
   getResultNodes(): [TreeNode[], number] {
-    // if single folder, don't create a parent node
+    // TODO: if single workspace folder, don't create a parent node
 
     const nodes: TreeNode[] = [];
     let totalVulnCount = 0;
@@ -88,12 +87,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     for (const result of this.codeService.result.entries()) {
       const folderPath = result[0];
       const folderResult = result[1];
+      let folderVulnCount = 0;
       if (folderResult instanceof Error) {
         nodes.push(this.getErrorEncounteredTreeNode(folderPath));
         continue;
       }
 
-      const counts = this.initSeverityCounts();
+      const folderSeverityCounts = this.initSeverityCounts();
       const fileNodes: TreeNode[] = [];
 
       const fileVulns = _.groupBy(folderResult, v => v.filePath);
@@ -104,15 +104,24 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         const filename = filePath.pop() || file;
         const dir = filePath.pop();
 
-        const counts = this.initSeverityCounts();
+        const fileSeverityCounts = this.initSeverityCounts();
 
         const issueNodes = fileIssues.map(issue => {
-          counts[issue.severity] += 1;
+          fileSeverityCounts[issue.severity] += 1;
+          totalVulnCount++;
+          folderVulnCount++;
+
+          const issueRange = new vscode.Range(
+            issue.additionalData.rows[0],
+            issue.additionalData.cols[0],
+            issue.additionalData.rows[1],
+            issue.additionalData.cols[1],
+          );
           const params: {
             text: string;
             icon: INodeIcon;
-            issue: { filePath: string; range?: Range }; // todo: where is Uri & Range used?
-            internal: { severity: string };
+            issue: { filePath: string; range?: vscode.Range }; // todo: where is Uri & Range used?
+            internal: InternalType;
             command: Command;
             children?: TreeNode[];
           } = {
@@ -120,31 +129,35 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
             icon: IssueTreeProvider.getSeverityIcon(issue.severity),
             issue: {
               filePath: issue.filePath,
-              range: issue.range,
+              range: issueRange,
             },
             internal: {
-              severity: issue.severity,
+              severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
             },
             command: {
               command: SNYK_OPEN_ISSUE_COMMAND,
               title: '',
               arguments: [
-                {
-                  issueType: OpenCommandIssueType.CodeIssue,
-                  issue: {
-                    message: issue.additionalData.message,
-                    uri: uri,
-                    range: issue.range,
-                    diagnostic: issue,
-                  } as CodeIssueCommandArg,
-                } as OpenIssueCommandArg,
+                // TODO: update to pass necessary args to open issue command
+                // {
+                //   issueType: OpenCommandIssueType.CodeIssue,
+                //   issue: {
+                //     message: issue.additionalData.message,
+                //     filePath,
+                //     range: issueRange,
+                //     diagnostic: issue,
+                //   } as CodeIssueCommandArg,
+                // } as OpenIssueCommandArg,
               ],
             },
           };
           return new TreeNode(params);
         });
 
-        const fileSeverity = IssueTreeProvider.getHighestSeverity(counts);
+        issueNodes.sort(this.compareNodes);
+
+        const fileSeverity = IssueTreeProvider.getHighestSeverity(fileSeverityCounts);
+        folderSeverityCounts[fileSeverity] += 1;
 
         // append file node
         const fileNode = new TreeNode({
@@ -153,14 +166,16 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
           icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
           children: issueNodes,
           internal: {
-            nIssues: fileIssues.length,
-            severity: fileSeverity, // where severity is used?
+            nIssues: folderVulnCount,
+            severity: IssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
           },
         });
         fileNodes.push(fileNode);
       }
 
-      const folderSeverity = IssueTreeProvider.getHighestSeverity(counts);
+      fileNodes.sort(this.compareNodes);
+
+      const folderSeverity = IssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
       const folderNode = new TreeNode({
         text: folderPath,
@@ -175,6 +190,8 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
       nodes.push(folderNode);
     }
+
+    return [nodes, totalVulnCount];
   }
 
   protected getIssueFoundText(nIssues: number): string {
@@ -206,5 +223,10 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       [IssueSeverity.Medium]: 0,
       [IssueSeverity.Low]: 0,
     };
+  }
+
+  /** Returns severity significance index. The higher, the more significant severity is. */
+  static getSeverityComparatorIndex(severity: IssueSeverity): number {
+    return Object.values(IssueSeverity).indexOf(severity);
   }
 }

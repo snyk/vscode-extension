@@ -4,6 +4,7 @@ import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
+import { Logger } from '../common/logger/logger';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { Disposable } from '../common/vscode/types';
@@ -120,6 +121,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       this.runningScanCount = 0;
 
       if (scanMsg.status == ScanStatus.Success) {
+        Logger.info(JSON.stringify(scanMsg));
         this._result.set(scanMsg.folderPath, scanMsg.issues);
       } else {
         this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));

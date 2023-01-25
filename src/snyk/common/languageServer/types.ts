@@ -27,10 +27,10 @@ export type Issue<T> = {
 };
 
 export enum IssueSeverity {
-  Critical = 'critical',
-  High = 'high',
-  Medium = 'medium',
   Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Critical = 'critical',
 }
 
 // Snyk Code

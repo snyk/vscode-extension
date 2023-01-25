@@ -70,7 +70,7 @@ export class ViewManagerService implements IViewManagerService {
 
   refreshAllCodeAnalysisViews(): void {
     this.refreshCodeSecurityView();
-    this.refreshCodeQualityView();
+    // this.refreshCodeQualityView(); // todo: uncomment when not debugging any more
   }
 
   refreshCodeAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void {

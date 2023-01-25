@@ -88,7 +88,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
             issueType: OpenCommandIssueType.CodeIssue,
             issue: {
               message: matchedIssue.message,
-              uri: document.uri,
+              filePath: document.uri,
               range: matchedIssue.range,
               diagnostic: matchedIssue,
             } as CodeIssueCommandArg,
