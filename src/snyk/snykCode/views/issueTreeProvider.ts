@@ -1,14 +1,19 @@
+import { OpenCommandIssueType } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
+import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
+import { IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
+import { Command } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';
+import { CodeIssueCommandArg } from './interfaces';
 
 interface ISeverityCounts {
-  [severity: number]: number;
+  [severity: string]: number;
 }
 
 export class IssueTreeProvider extends AnalysisTreeNodeProvder {
@@ -20,12 +25,13 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     super(configuration, codeService);
   }
 
-  static getSeverityIcon(severity: number): INodeIcon {
+  static getSeverityIcon(severity: IssueSeverity | string): INodeIcon {
     return (
       {
-        [SNYK_SEVERITIES.error]: NODE_ICONS.high,
-        [SNYK_SEVERITIES.warning]: NODE_ICONS.medium,
-        [SNYK_SEVERITIES.information]: NODE_ICONS.low,
+        [IssueSeverity.Critical]: NODE_ICONS.critical,
+        [IssueSeverity.High]: NODE_ICONS.high,
+        [IssueSeverity.Medium]: NODE_ICONS.medium,
+        [IssueSeverity.Low]: NODE_ICONS.low,
       }[severity] || NODE_ICONS.low
     );
   }
@@ -38,10 +44,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   }
 
   getRootChildren(): TreeNode[] {
-    const review: TreeNode[] = [];
-    const nIssues = 0;
+    const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowCodeAnalysis) return review;
+    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
     if (!this.codeService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }
@@ -65,8 +70,11 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     }
 
     // todo: draw vulnerabilities tree [folder->file->vulnerabilities]
+    const [resultNodes, nIssues] = this.getResultNodes();
+    nodes.push(...resultNodes);
 
-    review.sort(this.compareNodes);
+    nodes.sort(this.compareNodes);
+
     const topNodes = [
       new TreeNode({
         text: this.getIssueFoundText(nIssues),
@@ -74,8 +82,77 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       this.getDurationTreeNode(),
       this.getNoSeverityFiltersSelectedTreeNode(),
     ];
-    review.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
-    return review;
+    nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
+    return nodes;
+  }
+
+  getResultNodes(): [TreeNode[], number] {
+    // if single folder, don't create a parent node
+
+    const nodes: TreeNode[] = [];
+    let totalVulnCount = 0;
+
+    for (const result of this.codeService.result.entries()) {
+      let folderPath = result[0];
+      let folderResult = result[1];
+      if (folderResult instanceof Error) {
+        nodes.push(this.getErrorEncounteredTreeNode(folderPath));
+        continue;
+      }
+
+      const counts: ISeverityCounts = this.initFileSeverityCounts();
+      const vulnerabilityNodes: TreeNode[] = [];
+
+      const nodes = folderResult.map(issue => {
+        counts[issue.severity] += 1;
+        const params: {
+          text: string;
+          icon: INodeIcon;
+          issue: { uri: Uri; range?: Range }; // todo: where is Uri & Range used?
+          internal: { severity: string };
+          command: Command;
+          children?: TreeNode[];
+        } = {
+          text: issue.additionalData.message,
+          icon: IssueTreeProvider.getSeverityIcon(issue.severity),
+          issue: {
+            uri, // todo: where is Uri & Range used?
+            range: issue.range,
+          },
+          internal: {
+            severity: issue.severity,
+          },
+          command: {
+            command: SNYK_OPEN_ISSUE_COMMAND,
+            title: '',
+            arguments: [
+              {
+                issueType: OpenCommandIssueType.CodeIssue,
+                issue: {
+                  message: issue.additionalData.message,
+                  uri: uri,
+                  range: issue.range,
+                  diagnostic: issue,
+                } as CodeIssueCommandArg,
+              } as OpenIssueCommandArg,
+            ],
+          },
+        };
+      });
+
+      const folderSeverity = IssueTreeProvider.getFolderSeverity(counts);
+
+      const fileNode = new TreeNode({
+        text: folderPath,
+        description: this.getIssueDescriptionText(folderPath, vulnerabilityNodes),
+        icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
+        children: vulnerabilityNodes,
+        internal: {
+          nIssues: vulnerabilityNodes.length,
+          // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
+        },
+      });
+    }
   }
 
   protected getIssueFoundText(nIssues: number): string {
@@ -90,5 +167,22 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   protected getFilteredIssues(diagnostics: readonly unknown[]): readonly unknown[] {
     // Diagnostics are already filtered by the analyzer
     return diagnostics;
+  }
+
+  static getFolderSeverity(counts: ISeverityCounts): IssueSeverity {
+    for (const s of [IssueSeverity.Critical, IssueSeverity.High, IssueSeverity.Medium, IssueSeverity.Low]) {
+      if (counts[s]) return s;
+    }
+
+    return IssueSeverity.Low;
+  }
+
+  private initFileSeverityCounts(): ISeverityCounts {
+    return {
+      [IssueSeverity.Critical]: 0,
+      [IssueSeverity.High]: 0,
+      [IssueSeverity.Medium]: 0,
+      [IssueSeverity.Low]: 0,
+    };
   }
 }

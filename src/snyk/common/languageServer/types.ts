@@ -25,7 +25,7 @@ export type Issue<T> = {
   additionalData: T;
 };
 
-enum IssueSeverity {
+export enum IssueSeverity {
   Critical = 'critical',
   High = 'high',
   Medium = 'medium',
@@ -34,6 +34,7 @@ enum IssueSeverity {
 
 // Snyk Code
 export type CodeIssueData = {
+  filePath: string;
   message: string;
   leadURL?: string;
   rule: string;
