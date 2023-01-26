@@ -84,7 +84,7 @@ suite('LearnService', () => {
 
     test('getLesson - resolves a lesson', async () => {
       const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
-      const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue);
+      const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssueOld);
       deepStrictEqual(lesson?.lessonId, lessonFixture.lessonId);
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
@@ -105,7 +105,7 @@ suite('LearnService', () => {
       sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, isSecurityType: false },
-        OpenCommandIssueType.CodeIssue,
+        OpenCommandIssueType.CodeIssueOld,
       );
       deepStrictEqual(lesson, null);
     });
@@ -133,12 +133,12 @@ suite('LearnService', () => {
     test('returns null if the issue has no params', async () => {
       const lessonNoCWE = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, cwe: [] },
-        OpenCommandIssueType.CodeIssue,
+        OpenCommandIssueType.CodeIssueOld,
       );
       deepStrictEqual(lessonNoCWE, null);
       const lessonNoEcosystem = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, id: '' },
-        OpenCommandIssueType.CodeIssue,
+        OpenCommandIssueType.CodeIssueOld,
       );
       deepStrictEqual(lessonNoEcosystem, null);
     });

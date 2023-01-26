@@ -215,6 +215,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.commandController = new CommandController(
       this.openerService,
       this.authService,
+      this.snykCode,
       this.snykCodeOld,
       this.ossService,
       this.scanModeService,

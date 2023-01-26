@@ -7,9 +7,16 @@ export interface ICodeSuggestionWebviewProvider extends IWebViewProvider<complet
   checkCurrentSuggestion(): void;
 }
 
-export type CodeIssueCommandArg = {
+export type CodeIssueCommandArgOld = {
   message: string;
-  filePath: vscode.Uri; //todo: becomes filePath string
+  filePath: vscode.Uri;
   range: vscode.Range;
   diagnostic: vscode.Diagnostic;
+};
+
+export type CodeIssueCommandArg = {
+  id: string;
+  folderPath: string;
+  filePath: string;
+  range: vscode.Range;
 };

@@ -4,6 +4,7 @@ import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
+import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
@@ -14,6 +15,7 @@ import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   result: Readonly<CodeResult>;
+  getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined;
   isAnyWorkspaceFolderTrusted: boolean;
 
   activateWebviewProviders(): void;
@@ -40,6 +42,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
+    private readonly logger: ILog,
   ) {
     super();
     // this.analyzer = new SnykCodeAnalyzer(
@@ -67,6 +70,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
     this._result = new Map<string, CodeWorkspaceFolderResult>();
+  }
+
+  getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined {
+    const folderResult = this._result.get(folderPath);
+    if (folderResult instanceof Error) {
+      return undefined;
+    }
+
+    return folderResult?.find(issue => issue.id === issueId);
   }
 
   get result(): Readonly<CodeResult> {

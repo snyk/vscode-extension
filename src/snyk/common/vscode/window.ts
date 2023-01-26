@@ -13,6 +13,7 @@ export interface IVSCodeWindow {
   getVisibleTextEditors(): readonly TextEditor[];
   showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Promise<TextEditor>;
   showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
+  showTextDocumentViaFilepath(filePath: string, options?: TextDocumentShowOptions): Thenable<TextEditor>;
   createOutputChannel(channelName: string): vscode.OutputChannel;
   createTextEditorDecorationType(options: vscode.DecorationRenderOptions): TextEditorDecorationType;
 
@@ -56,6 +57,11 @@ export class VSCodeWindow implements IVSCodeWindow {
   }
 
   showTextDocumentViaUri(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor> {
+    return vscode.window.showTextDocument(uri, options);
+  }
+
+  showTextDocumentViaFilepath(filePath: string, options?: TextDocumentShowOptions): Thenable<TextEditor> {
+    const uri = vscode.Uri.parse(filePath);
     return vscode.window.showTextDocument(uri, options);
   }
 

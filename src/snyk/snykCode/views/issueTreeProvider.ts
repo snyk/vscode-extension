@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
+import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IssueSeverity } from '../../common/languageServer/types';
@@ -10,6 +11,7 @@ import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/view
 import { Command } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { messages } from '../messages/analysis';
+import { CodeIssueCommandArg } from './interfaces';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -145,16 +147,15 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
                 command: SNYK_OPEN_ISSUE_COMMAND,
                 title: '',
                 arguments: [
-                  // TODO: update to pass necessary args to open issue command
-                  // {
-                  //   issueType: OpenCommandIssueType.CodeIssue,
-                  //   issue: {
-                  //     message: issue.additionalData.message,
-                  //     filePath,
-                  //     range: issueRange,
-                  //     diagnostic: issue,
-                  //   } as CodeIssueCommandArg,
-                  // } as OpenIssueCommandArg,
+                  {
+                    issueType: OpenCommandIssueType.CodeIssue,
+                    issue: {
+                      id: issue.id,
+                      folderPath,
+                      filePath: file,
+                      range: issueRange,
+                    } as CodeIssueCommandArg,
+                  } as OpenIssueCommandArg,
                 ],
               },
             };

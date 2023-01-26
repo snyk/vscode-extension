@@ -9,7 +9,7 @@ import { ISnykCodeServiceOld } from '../codeServiceOld';
 import { SNYK_SEVERITIES } from '../constants/analysis';
 import { messages } from '../messages/analysis';
 import { getSnykSeverity } from '../utils/analysisUtils';
-import { CodeIssueCommandArg } from './interfaces';
+import { CodeIssueCommandArgOld } from './interfaces';
 
 interface ISeverityCounts {
   [severity: number]: number;
@@ -151,13 +151,13 @@ export class IssueTreeProviderOld extends AnalysisTreeNodeProvder {
           title: '',
           arguments: [
             {
-              issueType: OpenCommandIssueType.CodeIssue,
+              issueType: OpenCommandIssueType.CodeIssueOld,
               issue: {
                 message: d.message,
                 filePath: uri,
                 range: d.range,
                 diagnostic: d,
-              } as CodeIssueCommandArg,
+              } as CodeIssueCommandArgOld,
             } as OpenIssueCommandArg,
           ],
         },

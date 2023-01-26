@@ -72,7 +72,7 @@ export class CodeSuggestionWebviewProvider
   async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await this.learnService.getLesson(suggestion, OpenCommandIssueType.CodeIssue);
+        const lesson = await this.learnService.getLesson(suggestion, OpenCommandIssueType.CodeIssueOld);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',
