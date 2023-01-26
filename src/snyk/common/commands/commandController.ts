@@ -103,9 +103,16 @@ export class CommandController {
     if (arg.issueType == OpenCommandIssueType.CodeIssue) {
       const issueArgs = arg.issue as CodeIssueCommandArg;
       const issue = this.snykCode.getIssue(issueArgs.folderPath, issueArgs.id);
-      if (!issue) return;
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
 
       await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      
+
+
     } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
       const issue = arg.issue as CodeIssueCommandArgOld;
       const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);

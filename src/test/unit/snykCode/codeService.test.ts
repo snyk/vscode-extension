@@ -9,6 +9,7 @@ import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { ISnykCodeService, SnykCodeService } from '../../../snyk/snykCode/codeService';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
+import { LoggerMock } from '../mocks/logger.mock';
 
 suite('Snyk Code Service', () => {
   let ls: ILanguageServer;
@@ -29,6 +30,7 @@ suite('Snyk Code Service', () => {
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
+      new LoggerMock(),
     );
   });
 
