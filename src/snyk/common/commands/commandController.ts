@@ -109,10 +109,6 @@ export class CommandController {
       }
 
       await this.openLocalFile(issue.filePath, issueArgs.range);
-
-      
-
-
     } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
       const issue = arg.issue as CodeIssueCommandArgOld;
       const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);

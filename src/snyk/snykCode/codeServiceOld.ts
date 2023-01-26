@@ -37,15 +37,15 @@ import {
   FalsePositiveWebviewModel,
   FalsePositiveWebviewProvider,
 } from './views/falsePositive/falsePositiveWebviewProvider';
-import { ICodeSuggestionWebviewProvider } from './views/interfaces';
-import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
+import { ICodeSuggestionWebviewProviderOld } from './views/interfaces';
+import { CodeSuggestionWebviewProviderOld } from './views/suggestion/codeSuggestionWebviewProviderOld';
 
 export interface ISnykCodeServiceOld extends AnalysisStatusProvider, Disposable {
   analyzer: ISnykCodeAnalyzer;
   analysisStatus: string;
   analysisProgress: string;
   readonly remoteBundle: FileAnalysis | null;
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
+  readonly suggestionProvider: ICodeSuggestionWebviewProviderOld;
   hasError: boolean;
   hasTransientError: boolean;
   isAnyWorkspaceFolderTrusted: boolean;
@@ -66,7 +66,7 @@ export interface ISnykCodeServiceOld extends AnalysisStatusProvider, Disposable 
 export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykCodeServiceOld {
   remoteBundle: FileAnalysis | null;
   analyzer: ISnykCodeAnalyzer;
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
+  readonly suggestionProvider: ICodeSuggestionWebviewProviderOld;
   readonly falsePositiveProvider: IWebViewProvider<FalsePositiveWebviewModel>;
 
   private changedFiles: Set<string> = new Set();
@@ -115,7 +115,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
       this.logger,
       this.analytics,
     );
-    this.suggestionProvider = new CodeSuggestionWebviewProvider(
+    this.suggestionProvider = new CodeSuggestionWebviewProviderOld(
       config,
       this.analyzer,
       window,

@@ -6,16 +6,21 @@ import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
+import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
+import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
+import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   result: Readonly<CodeResult>;
   getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined;
+  getIssueById(issueId: string): Issue<CodeIssueData> | undefined;
   isAnyWorkspaceFolderTrusted: boolean;
 
   activateWebviewProviders(): void;
@@ -42,6 +47,9 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
+    readonly window: IVSCodeWindow,
+    readonly languages: IVSCodeLanguages,
+    private readonly learnService: LearnService,
     private readonly logger: ILog,
   ) {
     super();
@@ -56,17 +64,16 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     // ); // todo: update in ROAD-1158
     // this.registerAnalyzerProviders(this.analyzer); // todo: update in ROAD-1158
 
-    // this.suggestionProvider = new CodeSuggestionWebviewProvider(
-    //   config,
-    //   this.analyzer,
-    //   window,
-    //   extensionContext,
-    //   this.logger,
-    //   languages,
-    //   workspace,
-    //   codeSettings,
-    //   this.learnService,
-    // ); // todo: update in ROAD-1158
+    this.suggestionProvider = new CodeSuggestionWebviewProvider(
+      config,
+      this,
+      window,
+      extensionContext,
+      this.logger,
+      languages,
+      workspace,
+      this.learnService,
+    ); // todo: update in ROAD-1158
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
     this._result = new Map<string, CodeWorkspaceFolderResult>();
@@ -79,6 +86,22 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     }
 
     return folderResult?.find(issue => issue.id === issueId);
+  }
+
+  getIssueById(issueId: string): Issue<CodeIssueData> | undefined {
+    const results = this._result.values();
+    for (const folderResult of results) {
+      if (folderResult instanceof Error) {
+        return undefined;
+      }
+
+      const issue = folderResult?.find(issue => issue.id === issueId);
+      if (issue) {
+        return issue;
+      }
+    }
+
+    return undefined;
   }
 
   get result(): Readonly<CodeResult> {
@@ -121,6 +144,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     if (scanMsg.status == ScanStatus.Success || scanMsg.status == ScanStatus.Error) {
       this.handleSuccessOrError(scanMsg);
+      this.suggestionProvider.disposePanelIfStale();
     }
   }
 

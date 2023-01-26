@@ -8,7 +8,6 @@ import {
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
-import { CodeIssueData, Issue } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
@@ -19,29 +18,30 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
-import { ISnykCodeService } from '../../codeService';
+import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
-import { completeFileSuggestionType } from '../../interfaces';
+import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
 import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
-import { ICodeSuggestionWebviewProvider } from '../interfaces';
+import { ICodeSuggestionWebviewProviderOld } from '../interfaces';
 
-export class CodeSuggestionWebviewProvider
-  extends WebviewProvider<Issue<CodeIssueData>>
-  implements ICodeSuggestionWebviewProvider
+export class CodeSuggestionWebviewProviderOld
+  extends WebviewProvider<completeFileSuggestionType>
+  implements ICodeSuggestionWebviewProviderOld
 {
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
-  private issue: Issue<CodeIssueData> | undefined;
+  private suggestion: completeFileSuggestionType | undefined;
 
   constructor(
     private readonly configuration: IConfiguration,
-    private readonly codeService: ISnykCodeService,
+    private readonly analyzer: ISnykCodeAnalyzer,
     private readonly window: IVSCodeWindow,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private readonly codeSettings: ICodeSettings,
     private readonly learnService: LearnService,
   ) {
     super(context, logger);
@@ -53,20 +53,19 @@ export class CodeSuggestionWebviewProvider
     );
   }
 
-  show(folderPath: string, issueId: string): void {
-    const issue = this.codeService.getIssue(folderPath, issueId);
-    if (!issue) {
-      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
+    const suggestion = this.analyzer.getFullSuggestion(suggestionId, uri, position);
+    if (!suggestion) {
       this.disposePanel();
       return;
     }
 
-    void this.showPanel(issue);
+    void this.showPanel(suggestion);
   }
 
-  disposePanelIfStale(): void {
-    if (!this.panel || !this.issue) return;
-    const found = this.codeService.getIssueById(this.issue.id);
+  checkCurrentSuggestion(): void {
+    if (!this.panel || !this.suggestion) return;
+    const found = this.analyzer.checkFullSuggestion(this.suggestion);
     if (!found) this.disposePanel();
   }
 
@@ -91,17 +90,17 @@ export class CodeSuggestionWebviewProvider
     }
   }
 
-  async showPanel(issue: Issue<CodeIssueData>): Promise<void> {
+  async showPanel(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       await this.focusSecondEditorGroup();
 
       if (this.panel) {
-        this.panel.title = this.getTitle(issue);
+        this.panel.title = this.getTitle(suggestion);
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
           SNYK_VIEW_SUGGESTION_CODE,
-          this.getTitle(issue),
+          this.getTitle(suggestion),
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
@@ -113,10 +112,10 @@ export class CodeSuggestionWebviewProvider
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      await this.panel.webview.postMessage({ type: 'set', args: issue });
-      // void this.postLearnLessonMessage(issue); // TODO: uncomment
+      await this.panel.webview.postMessage({ type: 'set', args: suggestion });
+      void this.postLearnLessonMessage(suggestion);
 
-      this.issue = issue;
+      this.suggestion = suggestion;
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
@@ -186,8 +185,8 @@ export class CodeSuggestionWebviewProvider
     }
   }
 
-  private getTitle(issue: Issue<CodeIssueData>): string {
-    return issue.additionalData.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
+  private getTitle(suggestion: completeFileSuggestionType): string {
+    return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
