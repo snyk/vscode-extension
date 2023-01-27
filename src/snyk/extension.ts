@@ -429,9 +429,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
+        await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS and Code scans replaced with LS
-        await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
       }),
       vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: CodeScanMode) =>
         this.commandController.setScanMode(mode),
