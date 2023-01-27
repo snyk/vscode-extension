@@ -14,7 +14,7 @@ In using the Visual Studio Code extension, you have the advantage of relying on 
 
 Snyk scans for the following types of issues:
 
-* [**Open Source Security**](https://snyk.io/product/open-source-security-management/) - security vulnerabilities and license issues in both direct and in-direct (transitive) open-source dependencies pulled into the Snyk Project. \
+* [**Open Source Security**](https://snyk.io/product/open-source-security-management/) - security vulnerabilities and license issues in both direct and in-direct (transitive) open-source dependencies pulled into the Snyk Project.\
   See also the [Open Source docs](https://docs.snyk.io/products/snyk-open-source).
 * [**Code Security and Code Quality**](https://snyk.io/product/snyk-code/) - security vulnerabilities and quality issues in your own code. See also the [Snyk Code](../../products/snyk-code/) docs.
 * [**Infrastructure as Code (IaC) Security**](https://snyk.io/product/infrastructure-as-code-security/) - configuration issues in your IaC templates: Terraform, Kubernetes, CloudFormation, and Azure Resource Manager. See also the [IaC](https://docs.snyk.io/products/snyk-infrastructure-as-code) and [Snyk Cloud](https://docs.snyk.io/products/snyk-cloud) docs.
@@ -22,15 +22,15 @@ Snyk scans for the following types of issues:
 This page explains installation of the Visual Studio Code extension. **After you complete the steps on this page**, you will continue by following the instructions in the other Visual studio Code extension docs:
 
 * [Visual Studio Code extension configuration](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-configuration)
-* [Visual Studio Code extension authentication](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-authentication)&#x20;
+* [Visual Studio Code extension authentication](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-authentication)
 * [Create a .dcignore file](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/create-a-.dcignore-file)
 * [Run an analysis with Visual Studio Code extension](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/run-an-analysis-with-visual-studio-code-extension)
 * [View analysis results from Visual Studio Code extension](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/view-analysis-results-from-visual-studio-code-extension)
-* [Troubleshooting for Visual Studio Code extension ](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/troubleshooting-for-visual-studio-code-extension)
+* [Troubleshooting for Visual Studio Code extension](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/troubleshooting-for-visual-studio-code-extension)
 
 ## Supported languages, package managers, and frameworks
 
-Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go, Ruby, Python,  Ruby, PHP, Scala, Swift, Objective-C, Kubernetes, Terraform, CloudFormation, Azure Resource Manager (ARM)
+Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go, Ruby, Python, Ruby, PHP, Scala, Swift, Objective-C, Kubernetes, Terraform, CloudFormation, Azure Resource Manager (ARM)
 
 * For Snyk Open Source, the VS Code extension supports all the languages and package managers supported by Snyk Open Source and the CLI. See the full [list in the docs](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
 * For Snyk Code, the VS Code extension supports all the [languages and frameworks supported by Snyk Code](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support#language-support-with-snyk-code-ai-engine).
@@ -48,6 +48,6 @@ Follow these steps to install:
 * Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-authentication).
 * Navigate back to the IDE; the first scan starts automatically.
 
-## Support&#x20;
+## Support
 
 If you need help, submit a [request](https://support.snyk.io/hc/en-us/requests/new) to Snyk Support.
