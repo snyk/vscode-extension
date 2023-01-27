@@ -46,7 +46,8 @@
       args: { url },
     });
   }
-  function ignoreIssue(lineOnly: any) {
+  function ignoreIssue(lineOnly: boolean) {
+    console.log(lineOnly);
     sendMessage({
       type: 'ignoreIssue',
       args: {
@@ -261,8 +262,12 @@
   document.getElementById('current-example')!.addEventListener('click', navigateToCurrentExample);
   document.getElementById('previous-example')!.addEventListener('click', previousExample);
   document.getElementById('next-example')!.addEventListener('click', nextExample);
-  document.getElementById('ignore-line-issue')!.addEventListener('click', ignoreIssue.bind(true));
-  document.getElementById('ignore-file-issue')!.addEventListener('click', ignoreIssue.bind(false));
+  document.getElementById('ignore-line-issue')!.addEventListener('click', () => {
+    ignoreIssue(true);
+  });
+  document.getElementById('ignore-file-issue')!.addEventListener('click', () => {
+    ignoreIssue(false);
+  });
   document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
 
   // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
