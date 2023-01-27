@@ -82,8 +82,6 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   }
 
   getResultNodes(): [TreeNode[], number] {
-    // TODO: if single workspace folder, don't create a parent node
-
     const nodes: TreeNode[] = [];
     let totalVulnCount = 0;
 
@@ -91,8 +89,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       const folderPath = result[0];
       const folderResult = result[1];
 
-      const shortFolderPath = folderPath.split('/');
-      const folderName = shortFolderPath.pop() || folderPath;
+      const uri = vscode.Uri.parse(folderPath);
+      const shortFolderPath = uri.path.split('/');
+      const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
       if (folderResult instanceof Error) {
@@ -107,8 +106,9 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
       for (const file in fileVulns) {
         const fileIssues = fileVulns[file];
-        const filePath = file.split('/');
-        const filename = filePath.pop() || file;
+        const uri = vscode.Uri.parse(file);
+        const filePath = uri.path.split('/');
+        const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
 
         const fileSeverityCounts = this.initSeverityCounts();
@@ -193,18 +193,22 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
         continue;
       }
 
-      const folderNode = new TreeNode({
-        text: folderName,
-        description: this.getIssueDescriptionText(folderName, folderVulnCount),
-        icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
-        children: fileNodes,
-        internal: {
-          nIssues: folderVulnCount,
-          // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
-        },
-      });
-
-      nodes.push(folderNode);
+      // flatten results if single workspace folder
+      if (this.codeService.result.size == 1) {
+        nodes.push(...fileNodes);
+      } else {
+        const folderNode = new TreeNode({
+          text: folderName,
+          description: this.getIssueDescriptionText(folderName, folderVulnCount),
+          icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
+          children: fileNodes,
+          internal: {
+            nIssues: folderVulnCount,
+            // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
+          },
+        });
+        nodes.push(folderNode);
+      }
     }
 
     return [nodes, totalVulnCount];
