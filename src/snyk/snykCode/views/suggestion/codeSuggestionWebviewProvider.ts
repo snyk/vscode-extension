@@ -8,7 +8,7 @@ import {
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
-import { CodeIssueData, Issue } from '../../../common/languageServer/types';
+import { CodeIssueData, ExampleCommitFix, Issue, Marker, Point } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
@@ -25,6 +25,30 @@ import { completeFileSuggestionType } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
 import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
+
+export declare enum AnalysisSeverity {
+  info = 1,
+  warning = 2,
+  critical = 3,
+}
+
+type Suggestion = {
+  id: string;
+  message: string;
+  severity: AnalysisSeverity;
+  leadURL?: string;
+  rule: string;
+  repoDatasetSize: number;
+  exampleCommitFixes: ExampleCommitFix[];
+  cwe: string[];
+  title: string;
+  text: string;
+  isSecurityType: boolean;
+  uri: string;
+  markers?: Marker[];
+  cols: Point;
+  rows: Point;
+};
 
 export class CodeSuggestionWebviewProvider
   extends WebviewProvider<Issue<CodeIssueData>>
@@ -113,7 +137,7 @@ export class CodeSuggestionWebviewProvider
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      await this.panel.webview.postMessage({ type: 'set', args: issue });
+      await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
       // void this.postLearnLessonMessage(issue); // TODO: uncomment
 
       this.issue = issue;
@@ -137,6 +161,30 @@ export class CodeSuggestionWebviewProvider
 
   protected onPanelDispose(): void {
     super.onPanelDispose();
+  }
+
+  private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
+    // TODO: avoid mapping severity to ints. Remove when releasing Code scans using LS & update codeSuggestionWebviewScript.ts respectively.
+    let severity;
+    switch (issue.severity) {
+      case 'low':
+        severity = 1;
+        break;
+      case 'medium':
+        severity = 2;
+        break;
+      default:
+        severity = 3;
+        break;
+    }
+
+    return {
+      id: issue.id,
+      title: issue.title,
+      severity,
+      ...issue.additionalData,
+      uri: issue.filePath,
+    };
   }
 
   private async handleMessage(message: any) {
@@ -264,7 +312,6 @@ export class CodeSuggestionWebviewProvider
             <a class="learn--link"></a>
           </div>
         </section>
-        <section class="delimiter-top" id="labels"></section>
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.

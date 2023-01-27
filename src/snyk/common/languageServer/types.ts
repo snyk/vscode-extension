@@ -49,7 +49,7 @@ export type CodeIssueData = {
   isSecurityType: boolean;
 };
 
-type ExampleCommitFix = {
+export type ExampleCommitFix = {
   commitURL: string;
   lines: CommitChangeLine[];
 };
@@ -58,7 +58,7 @@ type CommitChangeLine = {
   lineNumber: number;
   lineChange: 'removed' | 'added' | 'none';
 };
-type Marker = {
+export type Marker = {
   msg: Point;
   pos: MarkerPosition[];
 };
@@ -69,7 +69,7 @@ type Position = {
   cols: Point;
   rows: Point;
 };
-type Point = [number, number];
+export type Point = [number, number];
 
 // Snyk Open Source
 export type OssIssueData = {

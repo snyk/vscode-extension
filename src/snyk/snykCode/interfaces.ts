@@ -6,6 +6,7 @@ import { IHoverAdapter } from '../common/vscode/hover';
 import { IMarkdownStringAdapter } from '../common/vscode/markdownString';
 import { Disposable } from '../common/vscode/types';
 
+// TODO: remove after Code move to LS.
 export type completeFileSuggestionType = ICodeSuggestion &
   FileSuggestion & {
     uri: string;

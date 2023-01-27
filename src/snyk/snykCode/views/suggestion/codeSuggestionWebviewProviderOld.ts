@@ -263,7 +263,6 @@ export class CodeSuggestionWebviewProviderOld
             <a class="learn--link"></a>
           </div>
         </section>
-        <section class="delimiter-top" id="labels"></section>
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.

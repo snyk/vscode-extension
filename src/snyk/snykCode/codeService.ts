@@ -73,7 +73,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
       languages,
       workspace,
       this.learnService,
-    ); // todo: update in ROAD-1158
+    );
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
     this._result = new Map<string, CodeWorkspaceFolderResult>();

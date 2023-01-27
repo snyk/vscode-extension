@@ -109,6 +109,19 @@ export class CommandController {
       }
 
       await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      try {
+        this.snykCode.suggestionProvider.show(issueArgs.folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
+
+      this.analytics.logIssueInTreeIsClicked({
+        ide: IDE_NAME,
+        issueId: decodeURIComponent(issue.id),
+        issueType: IssueUtils.getIssueType(issue.additionalData.isSecurityType),
+        severity: IssueUtils.issueSeverityAsText(issue.severity),
+      });
     } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
       const issue = arg.issue as CodeIssueCommandArgOld;
       const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);

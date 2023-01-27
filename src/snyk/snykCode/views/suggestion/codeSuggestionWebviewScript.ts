@@ -215,15 +215,6 @@
     const suggestionPosition2 = document.getElementById('line-position2')!;
     suggestionPosition2.innerHTML = suggestion.rows[0];
 
-    const labels = document.getElementById('labels')!;
-    labels.querySelectorAll('*').forEach(n => n.remove());
-    for (const l of [...suggestion.categories, ...suggestion.tags]) {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.innerHTML = l;
-      labels.appendChild(chip);
-    }
-
     const dataset = document.getElementById('dataset-number')!;
     const infoTop = document.getElementById('info-top')!;
     if (suggestion.repoDatasetSize) {

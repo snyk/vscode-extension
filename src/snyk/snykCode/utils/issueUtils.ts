@@ -1,4 +1,6 @@
 import { FileSuggestion } from '@snyk/code-client';
+import _ from 'lodash';
+import { IssueSeverity } from '../../common/languageServer/types';
 import { Diagnostic, Position, Range } from '../../common/vscode/types';
 
 export type IssuePlacementPosition = {
@@ -25,6 +27,11 @@ export class IssueUtils {
     );
   };
 
+  static issueSeverityAsText = (severity: IssueSeverity): 'Low' | 'Medium' | 'High' | 'Critical' => {
+    return _.startCase(severity) as 'Low' | 'Medium' | 'High' | 'Critical';
+  };
+
+  // todo: remove with OSS integration
   static severityAsText = (severity: 1 | 2 | 3 | 4): 'Low' | 'Medium' | 'High' | 'Critical' => {
     switch (severity) {
       case 1:
