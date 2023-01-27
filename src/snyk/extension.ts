@@ -319,8 +319,11 @@ class SnykExtension extends SnykLib implements IExtension {
     viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
     viewContainer.set(SNYK_VIEW_FEATURES, featuresViewProvider);
 
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+    vscode.workspace.onDidChangeWorkspaceFolders(e => {
       this.workspaceTrust.resetTrustedFoldersCache();
+      e.removed.forEach(folder => {
+        this.snykCode.resetResult(folder.uri.path);
+      });
       this.runScan(false);
     });
 

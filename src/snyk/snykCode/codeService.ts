@@ -21,6 +21,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined;
   getIssueById(issueId: string): Issue<CodeIssueData> | undefined;
   isAnyWorkspaceFolderTrusted: boolean;
+  resetResult(folderPath: string): void;
 
   activateWebviewProviders(): void;
 }
@@ -110,6 +111,11 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   get isAnyWorkspaceFolderTrusted(): boolean {
     const workspacePaths = this.workspace.getWorkspaceFolders();
     return this.workspaceTrust.getTrustedFolders(this.config, workspacePaths).length > 0;
+  }
+
+  resetResult(folderPath: string): void {
+    this._result.delete(folderPath);
+    this.viewManagerService.refreshAllCodeAnalysisViews();
   }
 
   activateWebviewProviders(): void {
