@@ -9,8 +9,7 @@ export interface ICodeSuggestionWebviewProviderOld extends IWebViewProvider<comp
 }
 
 export interface ICodeSuggestionWebviewProvider extends IWebViewProvider<Issue<CodeIssueData>> {
-  show(folderPath: string, issueId: string): void;
-  disposePanelIfStale(): void;
+  openIssueId: string | undefined;
 }
 
 export type CodeIssueCommandArgOld = {

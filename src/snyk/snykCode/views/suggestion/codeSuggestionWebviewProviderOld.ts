@@ -6,7 +6,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
 } from '../../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
+import { SNYK_VIEW_SUGGESTION_CODE_OLD } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
@@ -49,7 +49,7 @@ export class CodeSuggestionWebviewProviderOld
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE, new WebviewPanelSerializer(this)),
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE_OLD, new WebviewPanelSerializer(this)),
     );
   }
 
@@ -99,7 +99,7 @@ export class CodeSuggestionWebviewProviderOld
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION_CODE,
+          SNYK_VIEW_SUGGESTION_CODE_OLD,
           this.getTitle(suggestion),
           {
             viewColumn: vscode.ViewColumn.Two,

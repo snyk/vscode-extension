@@ -11,6 +11,7 @@ import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { ISnykCodeService, SnykCodeService } from '../../../snyk/snykCode/codeService';
+import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/interfaces';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
@@ -25,6 +26,7 @@ suite('Snyk Code Service', () => {
     service = new SnykCodeService(
       {} as ExtensionContext,
       {} as IConfiguration,
+      {} as ICodeSuggestionWebviewProvider,
       {
         refreshAllCodeAnalysisViews: refreshViewFake,
       } as unknown as IViewManagerService,

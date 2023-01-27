@@ -111,7 +111,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.snykCode.suggestionProvider.show(issueArgs.folderPath, issueArgs.id);
+        this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

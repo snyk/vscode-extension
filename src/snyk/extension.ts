@@ -74,6 +74,7 @@ import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeP
 import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
+import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
@@ -187,9 +188,19 @@ class SnykExtension extends SnykLib implements IExtension {
     const lsCodePreview = configuration.getPreviewFeatures().lsCode;
     if (lsCodePreview) {
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
+        vsCodeWindow,
+        extensionContext,
+        Logger,
+        vsCodeLanguages,
+        vsCodeWorkspace,
+        this.learnService,
+      );
+
       this.snykCode = new SnykCodeService(
         this.context,
         configuration,
+        codeSuggestionProvider,
         this.viewManagerService,
         vsCodeWorkspace,
         this.workspaceTrust,
@@ -329,6 +340,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
+    this.snykCode.activateWebviewProviders();
     this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);

@@ -13,10 +13,8 @@ import { Disposable } from '../common/vscode/types';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
-import { CodeSuggestionWebviewProvider } from './views/suggestion/codeSuggestionWebviewProvider';
 
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   result: Readonly<CodeResult>;
   getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined;
   getIssueById(issueId: string): Issue<CodeIssueData> | undefined;
@@ -24,6 +22,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   resetResult(folderPath: string): void;
 
   activateWebviewProviders(): void;
+  showSuggestionProvider(folderPath: string, issueId: string): void;
 }
 
 // Keep type declarations temporarily here, until we get rid of code-client types.
@@ -33,16 +32,18 @@ export type CodeWorkspaceFolderResult = Issue<CodeIssueData>[] | Error;
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   private _result: CodeResult;
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
 
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
   private runningScanCount = 0;
 
   private lsSubscription: Subscription;
 
+  protected disposables: Disposable[] = [];
+
   constructor(
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
+    private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
@@ -63,17 +64,6 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     //   this.config,
     // ); // todo: update in ROAD-1158
     // this.registerAnalyzerProviders(this.analyzer); // todo: update in ROAD-1158
-
-    this.suggestionProvider = new CodeSuggestionWebviewProvider(
-      config,
-      this,
-      window,
-      extensionContext,
-      this.logger,
-      languages,
-      workspace,
-      this.learnService,
-    );
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
     this._result = new Map<string, CodeWorkspaceFolderResult>();
@@ -122,6 +112,24 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     this.suggestionProvider.activate();
   }
 
+  showSuggestionProvider(folderPath: string, issueId: string): Promise<void> {
+    const issue = this.getIssue(folderPath, issueId);
+    if (!issue) {
+      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+      return Promise.resolve();
+    }
+
+    return this.suggestionProvider.showPanel(issue);
+  }
+
+  disposeSuggestionPanelIfStale(): void {
+    const openIssueId = this.suggestionProvider.openIssueId;
+    if (!openIssueId) return;
+
+    const found = this.getIssueById(openIssueId);
+    if (!found) this.suggestionProvider.disposePanel();
+  }
+
   override handleLsDownloadFailure(): void {
     super.handleLsDownloadFailure();
     this.viewManagerService.refreshAllCodeAnalysisViews();
@@ -149,7 +157,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     if (scanMsg.status == ScanStatus.Success || scanMsg.status == ScanStatus.Error) {
       this.handleSuccessOrError(scanMsg);
-      this.suggestionProvider.disposePanelIfStale();
+      this.disposeSuggestionPanelIfStale();
     }
   }
 

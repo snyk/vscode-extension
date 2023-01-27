@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { OpenCommandIssueType } from '../../../common/commands/types';
-import { IConfiguration } from '../../../common/configuration/configuration';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
@@ -19,7 +18,6 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
-import { ISnykCodeService } from '../../codeService';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
@@ -59,8 +57,6 @@ export class CodeSuggestionWebviewProvider
   private issue: Issue<CodeIssueData> | undefined;
 
   constructor(
-    private readonly configuration: IConfiguration,
-    private readonly codeService: ISnykCodeService,
     private readonly window: IVSCodeWindow,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
@@ -77,21 +73,8 @@ export class CodeSuggestionWebviewProvider
     );
   }
 
-  show(folderPath: string, issueId: string): void {
-    const issue = this.codeService.getIssue(folderPath, issueId);
-    if (!issue) {
-      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
-      this.disposePanel();
-      return;
-    }
-
-    void this.showPanel(issue);
-  }
-
-  disposePanelIfStale(): void {
-    if (!this.panel || !this.issue) return;
-    const found = this.codeService.getIssueById(this.issue.id);
-    if (!found) this.disposePanel();
+  get openIssueId(): string | undefined {
+    return this.issue?.id;
   }
 
   async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
