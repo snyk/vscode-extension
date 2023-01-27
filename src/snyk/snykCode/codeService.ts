@@ -5,7 +5,6 @@ import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
-import { Logger } from '../common/logger/logger';
 import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
@@ -151,17 +150,15 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   private handleSuccessOrError(scanMsg: Scan<CodeIssueData>) {
     this.runningScanCount--;
 
-    // prepare results for the view
+    if (scanMsg.status == ScanStatus.Success) {
+      this._result.set(scanMsg.folderPath, scanMsg.issues);
+    } else {
+      this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
+    }
+
     if (this.runningScanCount <= 0) {
       this.analysisFinished();
       this.runningScanCount = 0;
-
-      if (scanMsg.status == ScanStatus.Success) {
-        Logger.info(JSON.stringify(scanMsg));
-        this._result.set(scanMsg.folderPath, scanMsg.issues);
-      } else {
-        this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
-      }
 
       this.viewManagerService.refreshAllCodeAnalysisViews();
     }
