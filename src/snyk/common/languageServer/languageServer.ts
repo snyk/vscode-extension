@@ -151,7 +151,6 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
       this.scan$.next(scan);
-      this.logger.info(`${scan.product} ${scan.folderPath} ${scan.status} ${scan.issues?.length}`);
     });
   }
 
