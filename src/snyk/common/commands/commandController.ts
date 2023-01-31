@@ -2,11 +2,12 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
+import { ISnykCodeService } from '../../snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { CodeScanMode } from '../../snykCode/constants/modes';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
-import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
+import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
@@ -39,7 +40,8 @@ export class CommandController {
   constructor(
     private openerService: IOpenerService,
     private authService: IAuthenticationService,
-    private snykCode: ISnykCodeServiceOld,
+    private snykCode: ISnykCodeService,
+    private snykCodeOld: ISnykCodeServiceOld,
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
@@ -72,6 +74,14 @@ export class CommandController {
     }
   }
 
+  async openLocalFile(filePath: string, range?: Range): Promise<void> {
+    try {
+      await this.window.showTextDocumentViaFilepath(filePath, { viewColumn: 1, selection: range });
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger);
+    }
+  }
+
   openSettings(): void {
     void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`);
   }
@@ -91,14 +101,36 @@ export class CommandController {
 
   async openIssueCommand(arg: OpenIssueCommandArg): Promise<void> {
     if (arg.issueType == OpenCommandIssueType.CodeIssue) {
-      const issue = arg.issue as CodeIssueCommandArg;
-      const suggestion = this.snykCode.analyzer.findSuggestion(issue.diagnostic);
-      if (!suggestion) return;
-      // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-      if (issue.openUri !== null) await this.openLocal(issue.openUri || issue.uri, issue.openRange || issue.range);
+      const issueArgs = arg.issue as CodeIssueCommandArg;
+      const issue = this.snykCode.getIssue(issueArgs.folderPath, issueArgs.id);
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
+
+      await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.snykCode.suggestionProvider.show(suggestion.id, issue.uri, issue.range);
+        this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
+
+      this.analytics.logIssueInTreeIsClicked({
+        ide: IDE_NAME,
+        issueId: decodeURIComponent(issue.id),
+        issueType: IssueUtils.getIssueType(issue.additionalData.isSecurityType),
+        severity: IssueUtils.issueSeverityAsText(issue.severity),
+      });
+    } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
+      const issue = arg.issue as CodeIssueCommandArgOld;
+      const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);
+      if (!suggestion) return;
+      // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
+      await this.openLocal(issue.filePath, issue.range);
+
+      try {
+        this.snykCodeOld.suggestionProvider.show(suggestion.id, issue.filePath, issue.range);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

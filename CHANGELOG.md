@@ -1,5 +1,23 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.14.0]
+
+### Added
+
+- Snyk Code results using Language Server in tree view and details panel.
+
+### Fixed
+
+- File ignores for Snyk Code.
+
+### Fixed
+
+- ignore untrusted CAs if strict proxy is disabled
+
+### Added
+
+- Enabling Snyk Code scans using Language Server under a feature flag.
+
 ## [1.13.0]
 
 ### Fixed

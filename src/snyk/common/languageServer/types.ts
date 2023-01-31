@@ -22,14 +22,15 @@ export type Issue<T> = {
   id: string;
   title: string;
   severity: IssueSeverity;
+  filePath: string;
   additionalData: T;
 };
 
-enum IssueSeverity {
-  Critical = 'critical',
-  High = 'high',
-  Medium = 'medium',
+export enum IssueSeverity {
   Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Critical = 'critical',
 }
 
 // Snyk Code
@@ -48,7 +49,7 @@ export type CodeIssueData = {
   isSecurityType: boolean;
 };
 
-type ExampleCommitFix = {
+export type ExampleCommitFix = {
   commitURL: string;
   lines: CommitChangeLine[];
 };
@@ -57,7 +58,7 @@ type CommitChangeLine = {
   lineNumber: number;
   lineChange: 'removed' | 'added' | 'none';
 };
-type Marker = {
+export type Marker = {
   msg: Point;
   pos: MarkerPosition[];
 };
@@ -68,7 +69,7 @@ type Position = {
   cols: Point;
   rows: Point;
 };
-type Point = [number, number];
+export type Point = [number, number];
 
 // Snyk Open Source
 export type OssIssueData = {

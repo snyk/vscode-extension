@@ -13,5 +13,6 @@ export const windowMock = {
   getVisibleTextEditors: sinon.fake(),
   showTextDocument: sinon.fake(),
   showTextDocumentViaUri: sinon.fake(),
+  showTextDocumentViaFilepath: sinon.fake(),
   showInputBox: sinon.fake(),
 } as IVSCodeWindow;

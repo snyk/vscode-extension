@@ -1,14 +1,15 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
-import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
+import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 
 export enum OpenCommandIssueType {
+  CodeIssueOld,
   CodeIssue,
   OssVulnerability,
 }
 
 export type OpenIssueCommandArg = {
-  issue: CodeIssueCommandArg | OssIssueCommandArg;
+  issue: CodeIssueCommandArg | CodeIssueCommandArgOld | OssIssueCommandArg;
   issueType: OpenCommandIssueType;
 };
 
@@ -20,7 +21,7 @@ export const isCodeIssue = (
   _issue: completeFileSuggestionType | OssIssueCommandArg,
   issueType: OpenCommandIssueType,
 ): _issue is completeFileSuggestionType => {
-  return issueType === OpenCommandIssueType.CodeIssue;
+  return issueType === OpenCommandIssueType.CodeIssueOld;
 };
 
 export const isOssIssue = (

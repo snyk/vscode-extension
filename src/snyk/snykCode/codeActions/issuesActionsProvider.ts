@@ -18,7 +18,7 @@ import {
 import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { ICodeSuggestion } from '../interfaces';
 import { IssueUtils } from '../utils/issueUtils';
-import { CodeIssueCommandArg } from '../views/interfaces';
+import { CodeIssueCommandArgOld } from '../views/interfaces';
 import { CodeActionsCallbackFunctions } from './disposableCodeActionsProvider';
 
 export class SnykIssuesActionProvider implements CodeActionProvider {
@@ -85,13 +85,13 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
         title: SNYK_OPEN_ISSUE_COMMAND,
         arguments: [
           {
-            issueType: OpenCommandIssueType.CodeIssue,
+            issueType: OpenCommandIssueType.CodeIssueOld,
             issue: {
               message: matchedIssue.message,
-              uri: document.uri,
+              filePath: document.uri,
               range: matchedIssue.range,
               diagnostic: matchedIssue,
-            } as CodeIssueCommandArg,
+            } as CodeIssueCommandArgOld,
           } as OpenIssueCommandArg,
         ],
       };

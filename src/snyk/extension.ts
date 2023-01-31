@@ -74,6 +74,7 @@ import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeP
 import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
+import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
@@ -187,13 +188,27 @@ class SnykExtension extends SnykLib implements IExtension {
     const lsCodePreview = configuration.getPreviewFeatures().lsCode;
     if (lsCodePreview) {
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
+        vsCodeWindow,
+        extensionContext,
+        Logger,
+        vsCodeLanguages,
+        vsCodeWorkspace,
+        this.learnService,
+      );
+
       this.snykCode = new SnykCodeService(
         this.context,
         configuration,
+        codeSuggestionProvider,
         this.viewManagerService,
         vsCodeWorkspace,
         this.workspaceTrust,
         this.languageServer,
+        vsCodeWindow,
+        vsCodeLanguages,
+        this.learnService,
+        Logger,
       );
     }
 
@@ -215,6 +230,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.commandController = new CommandController(
       this.openerService,
       this.authService,
+      this.snykCode,
       this.snykCodeOld,
       this.ossService,
       this.scanModeService,
@@ -314,13 +330,17 @@ class SnykExtension extends SnykLib implements IExtension {
     viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
     viewContainer.set(SNYK_VIEW_FEATURES, featuresViewProvider);
 
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+    vscode.workspace.onDidChangeWorkspaceFolders(e => {
       this.workspaceTrust.resetTrustedFoldersCache();
+      e.removed.forEach(folder => {
+        this.snykCode.resetResult(folder.uri.path);
+      });
       this.runScan(false);
     });
 
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
+    this.snykCode.activateWebviewProviders();
     this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
@@ -424,9 +444,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
+        await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS and Code scans replaced with LS
-        await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
       }),
       vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: CodeScanMode) =>
         this.commandController.setScanMode(mode),

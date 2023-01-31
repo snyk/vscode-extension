@@ -44,6 +44,7 @@ export interface INodeOptions {
   descriptionTail?: string;
   issue?: {
     uri: Uri;
+    filePath: string;
     range?: Range;
   };
   link?: string;
@@ -89,7 +90,7 @@ export class TreeNode extends TreeItem implements INode {
       (options.issue && {
         command: SNYK_OPEN_LOCAL_COMMAND,
         title: '',
-        arguments: [options.issue.uri, options.issue.range],
+        arguments: [options.issue.filePath, options.issue.range],
       });
     // Not using `options.issue.uri` to avoid default file decorators (see Explorer tab)
     // However, as of August 2020, there is still no way to manually decorate tree items

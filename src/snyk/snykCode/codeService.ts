@@ -4,18 +4,25 @@ import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
+import { ILog } from '../common/logger/interfaces';
+import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
+import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
   result: Readonly<CodeResult>;
+  getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined;
+  getIssueById(issueId: string): Issue<CodeIssueData> | undefined;
   isAnyWorkspaceFolderTrusted: boolean;
+  resetResult(folderPath: string): void;
 
   activateWebviewProviders(): void;
+  showSuggestionProvider(folderPath: string, issueId: string): void;
 }
 
 // Keep type declarations temporarily here, until we get rid of code-client types.
@@ -25,20 +32,26 @@ export type CodeWorkspaceFolderResult = Issue<CodeIssueData>[] | Error;
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   private _result: CodeResult;
-  readonly suggestionProvider: ICodeSuggestionWebviewProvider;
 
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
   private runningScanCount = 0;
 
   private lsSubscription: Subscription;
 
+  protected disposables: Disposable[] = [];
+
   constructor(
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
+    private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
+    readonly window: IVSCodeWindow,
+    readonly languages: IVSCodeLanguages,
+    private readonly learnService: LearnService,
+    private readonly logger: ILog,
   ) {
     super();
     // this.analyzer = new SnykCodeAnalyzer(
@@ -52,20 +65,33 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     // ); // todo: update in ROAD-1158
     // this.registerAnalyzerProviders(this.analyzer); // todo: update in ROAD-1158
 
-    // this.suggestionProvider = new CodeSuggestionWebviewProvider(
-    //   config,
-    //   this.analyzer,
-    //   window,
-    //   extensionContext,
-    //   this.logger,
-    //   languages,
-    //   workspace,
-    //   codeSettings,
-    //   this.learnService,
-    // ); // todo: update in ROAD-1158
-
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
     this._result = new Map<string, CodeWorkspaceFolderResult>();
+  }
+
+  getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined {
+    const folderResult = this._result.get(folderPath);
+    if (folderResult instanceof Error) {
+      return undefined;
+    }
+
+    return folderResult?.find(issue => issue.id === issueId);
+  }
+
+  getIssueById(issueId: string): Issue<CodeIssueData> | undefined {
+    const results = this._result.values();
+    for (const folderResult of results) {
+      if (folderResult instanceof Error) {
+        return undefined;
+      }
+
+      const issue = folderResult?.find(issue => issue.id === issueId);
+      if (issue) {
+        return issue;
+      }
+    }
+
+    return undefined;
   }
 
   get result(): Readonly<CodeResult> {
@@ -77,8 +103,31 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     return this.workspaceTrust.getTrustedFolders(this.config, workspacePaths).length > 0;
   }
 
+  resetResult(folderPath: string): void {
+    this._result.delete(folderPath);
+    this.viewManagerService.refreshAllCodeAnalysisViews();
+  }
+
   activateWebviewProviders(): void {
     this.suggestionProvider.activate();
+  }
+
+  showSuggestionProvider(folderPath: string, issueId: string): Promise<void> {
+    const issue = this.getIssue(folderPath, issueId);
+    if (!issue) {
+      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+      return Promise.resolve();
+    }
+
+    return this.suggestionProvider.showPanel(issue);
+  }
+
+  disposeSuggestionPanelIfStale(): void {
+    const openIssueId = this.suggestionProvider.openIssueId;
+    if (!openIssueId) return;
+
+    const found = this.getIssueById(openIssueId);
+    if (!found) this.suggestionProvider.disposePanel();
   }
 
   override handleLsDownloadFailure(): void {
@@ -108,22 +157,22 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
 
     if (scanMsg.status == ScanStatus.Success || scanMsg.status == ScanStatus.Error) {
       this.handleSuccessOrError(scanMsg);
+      this.disposeSuggestionPanelIfStale();
     }
   }
 
   private handleSuccessOrError(scanMsg: Scan<CodeIssueData>) {
     this.runningScanCount--;
 
-    // prepare results for the view
+    if (scanMsg.status == ScanStatus.Success) {
+      this._result.set(scanMsg.folderPath, scanMsg.issues);
+    } else {
+      this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
+    }
+
     if (this.runningScanCount <= 0) {
       this.analysisFinished();
       this.runningScanCount = 0;
-
-      if (scanMsg.status == ScanStatus.Success) {
-        this._result.set(scanMsg.folderPath, scanMsg.issues);
-      } else {
-        this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
-      }
 
       this.viewManagerService.refreshAllCodeAnalysisViews();
     }

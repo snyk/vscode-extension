@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import { OpenCommandIssueType } from '../../../common/commands/types';
+import { IConfiguration } from '../../../common/configuration/configuration';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
 } from '../../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
+import { SNYK_VIEW_SUGGESTION_CODE_OLD } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
-import { CodeIssueData, ExampleCommitFix, Issue, Marker, Point } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
@@ -18,50 +18,30 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
+import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
-import { completeFileSuggestionType } from '../../interfaces';
+import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
-import { getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
-import { ICodeSuggestionWebviewProvider } from '../interfaces';
+import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
+import { ICodeSuggestionWebviewProviderOld } from '../interfaces';
 
-export declare enum AnalysisSeverity {
-  info = 1,
-  warning = 2,
-  critical = 3,
-}
-
-type Suggestion = {
-  id: string;
-  message: string;
-  severity: AnalysisSeverity;
-  leadURL?: string;
-  rule: string;
-  repoDatasetSize: number;
-  exampleCommitFixes: ExampleCommitFix[];
-  cwe: string[];
-  title: string;
-  text: string;
-  isSecurityType: boolean;
-  uri: string;
-  markers?: Marker[];
-  cols: Point;
-  rows: Point;
-};
-
-export class CodeSuggestionWebviewProvider
-  extends WebviewProvider<Issue<CodeIssueData>>
-  implements ICodeSuggestionWebviewProvider
+export class CodeSuggestionWebviewProviderOld
+  extends WebviewProvider<completeFileSuggestionType>
+  implements ICodeSuggestionWebviewProviderOld
 {
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
-  private issue: Issue<CodeIssueData> | undefined;
+  private suggestion: completeFileSuggestionType | undefined;
 
   constructor(
+    private readonly configuration: IConfiguration,
+    private readonly analyzer: ISnykCodeAnalyzer,
     private readonly window: IVSCodeWindow,
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private readonly codeSettings: ICodeSettings,
     private readonly learnService: LearnService,
   ) {
     super(context, logger);
@@ -69,12 +49,24 @@ export class CodeSuggestionWebviewProvider
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE, new WebviewPanelSerializer(this)),
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_CODE_OLD, new WebviewPanelSerializer(this)),
     );
   }
 
-  get openIssueId(): string | undefined {
-    return this.issue?.id;
+  show(suggestionId: string, uri: vscode.Uri, position: vscode.Range): void {
+    const suggestion = this.analyzer.getFullSuggestion(suggestionId, uri, position);
+    if (!suggestion) {
+      this.disposePanel();
+      return;
+    }
+
+    void this.showPanel(suggestion);
+  }
+
+  checkCurrentSuggestion(): void {
+    if (!this.panel || !this.suggestion) return;
+    const found = this.analyzer.checkFullSuggestion(this.suggestion);
+    if (!found) this.disposePanel();
   }
 
   async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
@@ -98,17 +90,17 @@ export class CodeSuggestionWebviewProvider
     }
   }
 
-  async showPanel(issue: Issue<CodeIssueData>): Promise<void> {
+  async showPanel(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       await this.focusSecondEditorGroup();
 
       if (this.panel) {
-        this.panel.title = this.getTitle(issue);
+        this.panel.title = this.getTitle(suggestion);
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION_CODE,
-          this.getTitle(issue),
+          SNYK_VIEW_SUGGESTION_CODE_OLD,
+          this.getTitle(suggestion),
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
@@ -120,10 +112,10 @@ export class CodeSuggestionWebviewProvider
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
-      // void this.postLearnLessonMessage(issue); // TODO: uncomment
+      await this.panel.webview.postMessage({ type: 'set', args: suggestion });
+      void this.postLearnLessonMessage(suggestion);
 
-      this.issue = issue;
+      this.suggestion = suggestion;
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
@@ -146,30 +138,6 @@ export class CodeSuggestionWebviewProvider
     super.onPanelDispose();
   }
 
-  private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
-    // TODO: avoid mapping severity to ints. Remove when releasing Code scans using LS & update codeSuggestionWebviewScript.ts respectively.
-    let severity;
-    switch (issue.severity) {
-      case 'low':
-        severity = 1;
-        break;
-      case 'medium':
-        severity = 2;
-        break;
-      default:
-        severity = 3;
-        break;
-    }
-
-    return {
-      id: issue.id,
-      title: issue.title,
-      severity,
-      uri: issue.filePath,
-      ...issue.additionalData,
-    };
-  }
-
   private async handleMessage(message: any) {
     try {
       const { type, args } = message;
@@ -183,32 +151,24 @@ export class CodeSuggestionWebviewProvider
           };
           const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
           const localUri = vscode.Uri.parse(localUriPath);
-          const range = this.languages.createRange(rows[0], cols[0], rows[1], cols[1]);
+          const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
           break;
         }
         case 'openBrowser': {
-          const { url } = args as { url: string };
+          const { url } = args;
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
           break;
         }
         case 'ignoreIssue': {
-          const { lineOnly, message, id, rule, severity, uri, cols, rows } = args as {
-            lineOnly: boolean;
-            message: string;
-            id: string;
-            rule: string;
-            severity: AnalysisSeverity;
-            uri: string;
-            cols: [number, number];
-            rows: [number, number];
-          };
-          const vscodeUri = vscode.Uri.parse(uri);
-          const vscodeSeverity = getVSCodeSeverity(severity as number);
-          const range = this.languages.createRange(rows[0], cols[0], rows[1], cols[1]);
+          // eslint-disable-next-line no-shadow
+          let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
+          uri = vscode.Uri.parse(uri as string);
+          severity = getVSCodeSeverity(severity as number);
+          const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
-            uri: vscodeUri,
-            matchedIssue: { message, severity: vscodeSeverity, range },
+            uri,
+            matchedIssue: { message, severity, range },
             issueId: id,
             ruleId: rule,
             isFileIgnore: !lineOnly,
@@ -225,8 +185,8 @@ export class CodeSuggestionWebviewProvider
     }
   }
 
-  private getTitle(issue: Issue<CodeIssueData>): string {
-    return issue.additionalData.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
+  private getTitle(suggestion: completeFileSuggestionType): string {
+    return suggestion.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
   }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
