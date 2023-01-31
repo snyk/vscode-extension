@@ -129,7 +129,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
             const params: {
               text: string;
               icon: INodeIcon;
-              issue: { filePath: string; range?: vscode.Range }; // todo: where is Uri & Range used?
+              issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range }; // todo: where is Uri & Range used?
               internal: InternalType;
               command: Command;
               children?: TreeNode[];
@@ -137,7 +137,8 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
               text: issue.additionalData.message,
               icon: IssueTreeProvider.getSeverityIcon(issue.severity),
               issue: {
-                filePath: filename,
+                uri,
+                filePath: file,
                 range: issueRange,
               },
               internal: {

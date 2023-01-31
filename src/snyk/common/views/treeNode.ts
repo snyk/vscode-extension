@@ -43,7 +43,7 @@ export interface INodeOptions {
   description?: string;
   descriptionTail?: string;
   issue?: {
-    uri?: Uri; //todo: remove;
+    uri: Uri;
     filePath: string;
     range?: Range;
   };
@@ -73,7 +73,7 @@ export class TreeNode extends TreeItem implements INode {
     this.tooltip = options.description || options.text;
     let desc = options.description;
     if (!desc && options.issue) {
-      desc = options.issue.filePath.split('/').pop() || '';
+      desc = options.issue.uri.path.split('/').pop() || '';
       if (options.issue.range) {
         desc += `[${options.issue.range.start.line + 1}, `;
         desc += `${options.issue.range.start.character + 1}]`;
