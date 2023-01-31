@@ -64,7 +64,6 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       ];
     }
 
-    // todo: draw vulnerabilities tree [folder->file->vulnerabilities]
     const [resultNodes, nIssues] = this.getResultNodes();
     nodes.push(...resultNodes);
 
@@ -89,7 +88,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
       const folderPath = result[0];
       const folderResult = result[1];
 
-      const uri = vscode.Uri.parse(folderPath);
+      const uri = vscode.Uri.file(folderPath);
       const shortFolderPath = uri.path.split('/');
       const folderName = shortFolderPath.pop() || uri.path;
 
@@ -106,7 +105,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
       for (const file in fileVulns) {
         const fileIssues = fileVulns[file];
-        const uri = vscode.Uri.parse(file);
+        const uri = vscode.Uri.file(file);
         const filePath = uri.path.split('/');
         const filename = filePath.pop() || uri.path;
         const dir = filePath.pop();
@@ -129,7 +128,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
             const params: {
               text: string;
               icon: INodeIcon;
-              issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range }; // todo: where is Uri & Range used?
+              issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range };
               internal: InternalType;
               command: Command;
               children?: TreeNode[];
