@@ -137,7 +137,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
               text: issue.additionalData.message,
               icon: IssueTreeProvider.getSeverityIcon(issue.severity),
               issue: {
-                filePath: issue.filePath,
+                filePath: filename,
                 range: issueRange,
               },
               internal: {
