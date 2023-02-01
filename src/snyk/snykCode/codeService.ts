@@ -13,7 +13,7 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
-import { LspSnykCodeIssuesActionProvider } from './codeActions/lspCodeIssuesActionsProvider';
+import { SnykCodeActionsProvider } from './codeActions/codeIssuesActionsProvider';
 import { CodeResult, CodeWorkspaceFolderResult } from './codeResult';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 
@@ -42,7 +42,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
-    private codeActionKindAdapter: ICodeActionKindAdapter,
+    codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
@@ -54,7 +54,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   ) {
     super();
     this._result = new Map<string, CodeWorkspaceFolderResult>();
-    const provider = new LspSnykCodeIssuesActionProvider(this.result, codeActionKindAdapter);
+    const provider = new SnykCodeActionsProvider(this.result, codeActionKindAdapter);
     this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));

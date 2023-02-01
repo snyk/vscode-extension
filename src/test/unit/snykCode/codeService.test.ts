@@ -6,6 +6,7 @@ import { ILanguageServer } from '../../../snyk/common/languageServer/languageSer
 import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { LearnService } from '../../../snyk/common/services/learnService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
+import { ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
@@ -27,6 +28,7 @@ suite('Snyk Code Service', () => {
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as ICodeSuggestionWebviewProvider,
+      {} as ICodeActionKindAdapter,
       {
         refreshAllCodeAnalysisViews: refreshViewFake,
       } as unknown as IViewManagerService,

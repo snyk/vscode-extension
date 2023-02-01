@@ -21,7 +21,7 @@ import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArgOld } from '../views/interfaces';
 import { CodeActionsCallbackFunctions } from './disposableCodeActionsProvider';
 
-export class SnykIssuesActionProvider implements CodeActionProvider {
+export class SnykIssuesActionProviderOld implements CodeActionProvider {
   private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
 
   private issuesList: DiagnosticCollection | undefined;

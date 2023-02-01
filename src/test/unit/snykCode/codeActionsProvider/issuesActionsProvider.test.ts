@@ -10,11 +10,11 @@ import {
   TextDocument,
   Uri,
 } from '../../../../snyk/common/vscode/types';
-import { SnykIssuesActionProvider } from '../../../../snyk/snykCode/codeActions/issuesActionsProvider';
+import { SnykIssuesActionProviderOld } from '../../../../snyk/snykCode/codeActions/issuesActionsProviderOld';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 
 suite('Snyk Code actions provider', () => {
-  let issuesActionsProvider: SnykIssuesActionProvider;
+  let issuesActionsProvider: SnykIssuesActionProviderOld;
   const logQuickFixIsDisplayed = sinon.fake();
 
   setup(() => {
@@ -42,7 +42,7 @@ suite('Snyk Code actions provider', () => {
       findSuggestion: () => true,
     };
 
-    issuesActionsProvider = new SnykIssuesActionProvider(
+    issuesActionsProvider = new SnykIssuesActionProviderOld(
       snykReview,
       callbacks,
       codeActionAdapter,
