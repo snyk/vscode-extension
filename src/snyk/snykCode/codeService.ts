@@ -1,5 +1,4 @@
 import { Subscription } from 'rxjs';
-import * as vscode from 'vscode';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
@@ -8,6 +7,7 @@ import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/l
 import { ILog } from '../common/logger/interfaces';
 import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
+import { ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
@@ -42,6 +42,7 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
+    private codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
@@ -53,10 +54,8 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   ) {
     super();
     this._result = new Map<string, CodeWorkspaceFolderResult>();
-    const provider = new LspSnykCodeIssuesActionProvider(this._result);
-    vscode.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider, {
-      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
-    });
+    const provider = new LspSnykCodeIssuesActionProvider(this.result, codeActionKindAdapter);
+    this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
   }

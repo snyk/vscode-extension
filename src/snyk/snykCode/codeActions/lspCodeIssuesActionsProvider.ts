@@ -1,12 +1,23 @@
-import { CodeAction, CodeActionProvider, Range, TextDocument } from '../../common/vscode/types';
+import { ICodeActionKindAdapter } from '../../common/vscode/codeAction';
+import { CodeAction, CodeActionKind, CodeActionProvider, Range, TextDocument } from '../../common/vscode/types';
 import { CodeResult } from '../codeResult';
 
 export class LspSnykCodeIssuesActionProvider implements CodeActionProvider {
-  constructor(private readonly _issues: CodeResult) {}
+  private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
+
+  constructor(
+    private readonly issues: Readonly<CodeResult>,
+    private readonly codeActionKindProvider: ICodeActionKindAdapter,
+  ) {
+  }
+
+  getProvidedCodeActionKinds(): CodeActionKind[] {
+    return this.providedCodeActionKinds;
+  }
 
   public provideCodeActions(document: TextDocument, clickedRange: Range): CodeAction[] | undefined {
     const uri = document.uri;
 
-    return null;
+    return undefined;
   }
 }

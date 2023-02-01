@@ -201,6 +201,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.context,
         configuration,
         codeSuggestionProvider,
+        this.codeActionKindAdapter,
         this.viewManagerService,
         vsCodeWorkspace,
         this.workspaceTrust,
