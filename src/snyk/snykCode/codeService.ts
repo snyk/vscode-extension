@@ -1,4 +1,5 @@
 import { Subscription } from 'rxjs';
+import * as vscode from 'vscode';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
@@ -12,6 +13,8 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
+import { LspSnykCodeIssuesActionProvider } from './codeActions/lspCodeIssuesActionsProvider';
+import { CodeResult, CodeWorkspaceFolderResult } from './codeResult';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
@@ -24,11 +27,6 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   activateWebviewProviders(): void;
   showSuggestionProvider(folderPath: string, issueId: string): void;
 }
-
-// Keep type declarations temporarily here, until we get rid of code-client types.
-// todo: tidy up during 'lsCode' feature flag drop
-export type CodeResult = Map<string, CodeWorkspaceFolderResult>; // map of a workspace folder to results array or an error occurred in this folder
-export type CodeWorkspaceFolderResult = Issue<CodeIssueData>[] | Error;
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   private _result: CodeResult;
@@ -54,19 +52,13 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     private readonly logger: ILog,
   ) {
     super();
-    // this.analyzer = new SnykCodeAnalyzer(
-    //   logger,
-    //   languages,
-    //   workspace,
-    //   analytics,
-    //   errorHandler,
-    //   this.uriAdapter,
-    //   this.config,
-    // ); // todo: update in ROAD-1158
-    // this.registerAnalyzerProviders(this.analyzer); // todo: update in ROAD-1158
+    this._result = new Map<string, CodeWorkspaceFolderResult>();
+    const provider = new LspSnykCodeIssuesActionProvider(this._result);
+    vscode.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider, {
+      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
+    });
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
-    this._result = new Map<string, CodeWorkspaceFolderResult>();
   }
 
   getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined {
