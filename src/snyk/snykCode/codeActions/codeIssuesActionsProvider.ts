@@ -71,10 +71,7 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
 
       range = IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
 
-      const isInRange = range.contains(clickedRange);
-      if (isInRange) {
-        return true;
-      }
+      return range.contains(clickedRange);
     });
 
     return { issue, range };
