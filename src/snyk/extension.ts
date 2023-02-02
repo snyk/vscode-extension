@@ -345,7 +345,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
-    this.snykCode.activateWebviewProviders();
+    if (lsCodePreview) {
+      this.snykCode.activateWebviewProviders();
+    }
     this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
