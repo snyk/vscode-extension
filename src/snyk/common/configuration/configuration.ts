@@ -115,7 +115,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
 
   static async getVersion(): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -417,9 +417,16 @@ export class Configuration implements IConfiguration {
         this.getConfigName(FEATURES_PREVIEW_SETTING),
       ) || {};
 
+    // WIPP temporary switch on the lsCode
+    const wippOverrideSettings = {
+      lsCode: true,
+    };
+
+
     return {
       ...defaultSetting,
       ...userSetting,
+      ...wippOverrideSettings,
     };
   }
 

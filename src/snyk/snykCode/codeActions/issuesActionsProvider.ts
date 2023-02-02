@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/ban-types */
+import { TextEdit, WorkspaceEdit } from 'vscode';
 import { IAnalytics } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
@@ -15,7 +16,12 @@ import {
   Range,
   TextDocument,
 } from '../../common/vscode/types';
-import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import {
+  FILE_IGNORE_ACTION_NAME,
+  IGNORE_ISSUE_ACTION_NAME,
+  SHOW_ISSUE_ACTION_NAME,
+  AUTOFIX_ISSUE_ACTION_NAME,
+} from '../constants/analysis';
 import { ICodeSuggestion } from '../interfaces';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
@@ -69,6 +75,28 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
     return ignoreIssueAction;
   }
 
+  private createAutofixIssueAction({
+    document,
+    matchedIssue,
+  }: {
+    document: TextDocument;
+    matchedIssue: Diagnostic;
+  }): CodeAction {
+    const autofixIssueAction = this.codeActionAdapter.create(
+      AUTOFIX_ISSUE_ACTION_NAME,
+      this.providedCodeActionKinds[0],
+    );
+
+    const suggestion = this.findSuggestion(matchedIssue);
+    const autofixEdit = new WorkspaceEdit;
+    if (suggestion) {
+      autofixEdit.set(document.uri, [new TextEdit(matchedIssue.range, "WIPP BLAH")]);
+      autofixIssueAction.edit = autofixEdit;
+    }
+
+    return autofixIssueAction;
+  }
+
   private createShowIssueAction({
     document,
     matchedIssue,
@@ -107,6 +135,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
     const matchedIssue = IssueUtils.findIssueWithRange(clickedRange, fileIssues);
     if (matchedIssue) {
       const codeActionParams = { document, matchedIssue };
+      const autofixIssueAction = this.createAutofixIssueAction(codeActionParams);
       const showIssueAction = this.createShowIssueAction(codeActionParams);
       const ignoreIssueAction = this.createIgnoreIssueAction(codeActionParams);
       const fileIgnoreIssueAction = this.createIgnoreIssueAction({
@@ -120,7 +149,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
       });
 
       // returns list of actions, all new actions should be added to this list
-      return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
+      return [autofixIssueAction, showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
 
     return undefined;
