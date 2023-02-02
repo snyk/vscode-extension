@@ -1,3 +1,4 @@
+import { Range } from 'vscode';
 import { IAnalytics } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
@@ -5,9 +6,9 @@ import { IDE_NAME } from '../../common/constants/general';
 import { CodeIssueData, Issue } from '../../common/languageServer/types';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { CodeAction, CodeActionKind, CodeActionProvider, Range, TextDocument } from '../../common/vscode/types';
+import { CodeAction, CodeActionKind, CodeActionProvider, TextDocument } from '../../common/vscode/types';
 import { CodeResult } from '../codeResult';
-import { SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
 
@@ -44,6 +45,9 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
       }
 
       const showIssueAction = this.createShowIssueAction(folderPath, issue, range);
+      const ignoreIssueAction = this.createIgnoreIssueAction(false);
+      const fileIgnoreIssueAction = this.createIgnoreIssueAction(true);
+      showIssueAction.title = showIssueAction.title + '(LS)';
 
       this.analytics.logQuickFixIsDisplayed({
         quickFixType: ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'],
@@ -51,10 +55,17 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
       });
 
       // returns list of actions, all new actions should be added to this list
-      return [showIssueAction];
+      return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
 
     return undefined;
+  }
+
+  private createIgnoreIssueAction(isFileIgnore: boolean): CodeAction {
+    const actionName = isFileIgnore ? FILE_IGNORE_ACTION_NAME : IGNORE_ISSUE_ACTION_NAME;
+    const ignoreAction = this.codeActionAdapter.create(actionName, this.providedCodeActionKinds[0]);
+
+    return ignoreAction;
   }
 
   private findIssueWithRange(

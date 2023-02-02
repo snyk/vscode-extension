@@ -69,7 +69,7 @@ suite('Snyk Code actions provider', () => {
     const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range);
 
     // verify
-    strictEqual(codeActions?.length, 1);
+    strictEqual(codeActions?.length, 3);
   });
 
   test("Logs 'Quick Fix is Displayed' analytical event", () => {
