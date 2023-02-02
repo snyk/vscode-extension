@@ -81,7 +81,7 @@ suite('Snyk Code actions provider', () => {
     } as unknown as TextDocument;
 
     // act
-    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range);
+    issuesActionsProvider.provideCodeActions(document, {} as Range);
 
     // verify
     strictEqual(logQuickFixIsDisplayed.calledOnce, true);
