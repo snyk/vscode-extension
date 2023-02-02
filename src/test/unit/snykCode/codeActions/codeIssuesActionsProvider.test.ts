@@ -1,6 +1,7 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
+import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../../../snyk/common/constants/commands';
 import { CodeIssueData, Issue } from '../../../../snyk/common/languageServer/types';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../../snyk/common/vscode/codeAction';
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
@@ -18,6 +19,9 @@ suite('Snyk Code actions provider', () => {
     codeResults.set('folderName', [
       {
         filePath: '//folderName//test.js',
+        additionalData: {
+          rule: 'some-rule',
+        },
       } as unknown as Issue<CodeIssueData>,
     ]);
 
@@ -70,6 +74,8 @@ suite('Snyk Code actions provider', () => {
 
     // verify
     strictEqual(codeActions?.length, 3);
+    strictEqual(codeActions?.[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
+    strictEqual(codeActions?.[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
   });
 
   test("Logs 'Quick Fix is Displayed' analytical event", () => {

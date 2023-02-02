@@ -63,7 +63,7 @@ export class SnykIssuesActionProviderOld implements CodeActionProvider {
       ignoreIssueAction.command = {
         command: SNYK_IGNORE_ISSUE_COMMAND,
         title: SNYK_IGNORE_ISSUE_COMMAND,
-        arguments: [{ uri: document.uri, matchedIssue, issueId: suggestion.id, ruleId: suggestion.rule, isFileIgnore }],
+        arguments: [{ uri: document.uri, matchedIssue, ruleId: suggestion.rule, isFileIgnore }],
       };
 
     return ignoreIssueAction;

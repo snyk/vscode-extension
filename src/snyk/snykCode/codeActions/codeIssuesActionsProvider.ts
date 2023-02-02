@@ -1,7 +1,7 @@
 import { Range } from 'vscode';
 import { IAnalytics } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
-import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
+import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IDE_NAME } from '../../common/constants/general';
 import { CodeIssueData, Issue } from '../../common/languageServer/types';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
@@ -45,8 +45,8 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
       }
 
       const showIssueAction = this.createShowIssueAction(folderPath, issue, range);
-      const ignoreIssueAction = this.createIgnoreIssueAction(false);
-      const fileIgnoreIssueAction = this.createIgnoreIssueAction(true);
+      const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
+      const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
       showIssueAction.title = showIssueAction.title + '(LS)';
 
       this.analytics.logQuickFixIsDisplayed({
@@ -61,9 +61,23 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
     return undefined;
   }
 
-  private createIgnoreIssueAction(isFileIgnore: boolean): CodeAction {
+  private createIgnoreIssueAction(
+    document: TextDocument,
+    issue: Issue<CodeIssueData>,
+    range: Range,
+    isFileIgnore: boolean,
+  ): CodeAction {
     const actionName = isFileIgnore ? FILE_IGNORE_ACTION_NAME : IGNORE_ISSUE_ACTION_NAME;
     const ignoreAction = this.codeActionAdapter.create(actionName, this.providedCodeActionKinds[0]);
+    const matchedIssue = {
+      range: range,
+    };
+    const ruleId = issue.additionalData.rule;
+    ignoreAction.command = {
+      command: SNYK_IGNORE_ISSUE_COMMAND,
+      title: SNYK_IGNORE_ISSUE_COMMAND,
+      arguments: [{ uri: document.uri, matchedIssue, ruleId, isFileIgnore }],
+    };
 
     return ignoreAction;
   }

@@ -2,35 +2,25 @@ import _ from 'lodash';
 import * as vscode from 'vscode';
 import { VSCODE_ADD_COMMENT_COMMAND } from '../../common/constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../../common/constants/general';
-import { IGNORE_ISSUE_BASE_COMMENT_TEXT, FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT } from '../constants/analysis';
-import { ignoreIssueCommentText, getSnykSeverity } from '../utils/analysisUtils';
+import { FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT, IGNORE_ISSUE_BASE_COMMENT_TEXT } from '../constants/analysis';
+import { ignoreIssueCommentText } from '../utils/analysisUtils';
 
 export class IgnoreCommand {
   static ignoreIssues = _.debounce(
     async ({
       uri,
       matchedIssue,
-      issueId,
       ruleId,
       isFileIgnore,
     }: {
       uri?: vscode.Uri;
       matchedIssue: {
-        severity: number;
         message: string;
         range: vscode.Range;
       };
-      issueId: string;
       ruleId: string;
       isFileIgnore?: boolean;
     }): Promise<void> => {
-      IgnoreCommand.trackIgnoreSuggestion(matchedIssue.severity, {
-        message: matchedIssue.message,
-        data: {
-          issueId,
-          isFileIgnore: !!isFileIgnore,
-        },
-      });
       const issueText: string = ignoreIssueCommentText(ruleId, isFileIgnore);
       const editor: vscode.TextEditor | undefined =
         (uri &&
@@ -100,13 +90,5 @@ export class IgnoreCommand {
       spacesCount -= 1;
     }
     return text;
-  }
-
-  static trackIgnoreSuggestion(vscodeSeverity: number, options: { [key: string]: any }): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    options.data = {
-      severity: getSnykSeverity(vscodeSeverity),
-      ...options.data,
-    };
   }
 }
