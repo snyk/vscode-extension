@@ -30,12 +30,10 @@ suite('Snyk Code actions provider', () => {
       logQuickFixIsDisplayed,
     } as unknown as IAnalytics;
 
-    const fakeCodeAction = {
-      command: {},
-    };
-
     const codeActionAdapter = {
-      create: (_: string, _kind?: CodeActionKind) => fakeCodeAction,
+      create: (_: string, _kind?: CodeActionKind) => ({
+        command: {},
+      }),
     } as ICodeActionAdapter;
 
     const codeActionKindAdapter = {
@@ -74,8 +72,9 @@ suite('Snyk Code actions provider', () => {
 
     // verify
     strictEqual(codeActions?.length, 3);
-    strictEqual(codeActions?.[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
-    strictEqual(codeActions?.[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
+    strictEqual(codeActions[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
+    strictEqual(codeActions[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
+    strictEqual(codeActions[2].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
   });
 
   test("Logs 'Quick Fix is Displayed' analytical event", () => {

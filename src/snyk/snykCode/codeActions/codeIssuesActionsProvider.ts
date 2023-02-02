@@ -44,10 +44,9 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
         continue;
       }
 
-      const showIssueAction = this.createShowIssueAction(folderPath, issue, range);
+      const openIssueAction = this.createOpenIssueAction(folderPath, issue, range);
       const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
       const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
-      showIssueAction.title = showIssueAction.title + '(LS)';
 
       this.analytics.logQuickFixIsDisplayed({
         quickFixType: ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'],
@@ -55,7 +54,7 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
       });
 
       // returns list of actions, all new actions should be added to this list
-      return [showIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
+      return [openIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
     }
 
     return undefined;
@@ -82,6 +81,28 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
     return ignoreAction;
   }
 
+  private createOpenIssueAction(folderPath: string, issue: Issue<CodeIssueData>, issueRange: Range): CodeAction {
+    const openIssueAction = this.codeActionAdapter.create(SHOW_ISSUE_ACTION_NAME, this.providedCodeActionKinds[0]);
+
+    openIssueAction.command = {
+      command: SNYK_OPEN_ISSUE_COMMAND,
+      title: SNYK_OPEN_ISSUE_COMMAND,
+      arguments: [
+        {
+          issueType: OpenCommandIssueType.CodeIssue,
+          issue: {
+            id: issue.id,
+            folderPath,
+            filePath: issue.filePath,
+            range: issueRange,
+          } as CodeIssueCommandArg,
+        } as OpenIssueCommandArg,
+      ],
+    };
+
+    return openIssueAction;
+  }
+
   private findIssueWithRange(
     result: Issue<CodeIssueData>[],
     document: TextDocument,
@@ -100,27 +121,5 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
     });
 
     return { issue, range };
-  }
-
-  private createShowIssueAction(folderPath: string, issue: Issue<CodeIssueData>, issueRange: Range): CodeAction {
-    const showIssueAction = this.codeActionAdapter.create(SHOW_ISSUE_ACTION_NAME, this.providedCodeActionKinds[0]);
-
-    showIssueAction.command = {
-      command: SNYK_OPEN_ISSUE_COMMAND,
-      title: SNYK_OPEN_ISSUE_COMMAND,
-      arguments: [
-        {
-          issueType: OpenCommandIssueType.CodeIssue,
-          issue: {
-            id: issue.id,
-            folderPath,
-            filePath: issue.filePath,
-            range: issueRange,
-          } as CodeIssueCommandArg,
-        } as OpenIssueCommandArg,
-      ],
-    };
-
-    return showIssueAction;
   }
 }
