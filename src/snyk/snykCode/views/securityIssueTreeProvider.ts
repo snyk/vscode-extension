@@ -4,6 +4,7 @@ import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { ISnykCodeService } from '../codeService';
 import { IssueTreeProvider } from './issueTreeProvider';
 
@@ -13,8 +14,9 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     protected contextService: IContextService,
     protected codeService: ISnykCodeService,
     protected configuration: IConfiguration,
+    protected languages: IVSCodeLanguages,
   ) {
-    super(contextService, codeService, configuration, true);
+    super(contextService, codeService, configuration, languages, true);
   }
 
   getRootChildren(): TreeNode[] {

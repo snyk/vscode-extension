@@ -1,6 +1,7 @@
 import { FileSuggestion } from '@snyk/code-client';
 import _ from 'lodash';
-import { IssueSeverity } from '../../common/languageServer/types';
+import { CodeIssueData, IssueSeverity } from '../../common/languageServer/types';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Diagnostic, Position, Range } from '../../common/vscode/types';
 
 export type IssuePlacementPosition = {
@@ -63,4 +64,15 @@ export class IssueUtils {
       },
     };
   };
+
+  static createVsCodeRange = (issueData: CodeIssueData, languages: IVSCodeLanguages): Range => {
+    return IssueUtils.createVsCodeRangeFromRange(issueData.rows, issueData.cols, languages);
+  };
+
+  static createVsCodeRangeFromRange(rows: number[], cols: number[], languages: IVSCodeLanguages): Range {
+    const rowOffset = 1;
+    const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
+
+    return languages.createRange(createPosition(rows[0]), createPosition(cols[0]), createPosition(rows[1]), cols[1]);
+  }
 }

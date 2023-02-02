@@ -1,12 +1,13 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
+import { IAnalytics } from '../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { LearnService } from '../../../snyk/common/services/learnService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
-import { ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
@@ -28,6 +29,7 @@ suite('Snyk Code Service', () => {
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as ICodeSuggestionWebviewProvider,
+      {} as ICodeActionAdapter,
       {} as ICodeActionKindAdapter,
       {
         refreshAllCodeAnalysisViews: refreshViewFake,
@@ -41,6 +43,7 @@ suite('Snyk Code Service', () => {
       {} as IVSCodeLanguages,
       new LearnService({} as IConfiguration, new LoggerMock()),
       new LoggerMock(),
+      {} as IAnalytics,
     );
   });
 

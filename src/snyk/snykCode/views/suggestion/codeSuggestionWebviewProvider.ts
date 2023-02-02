@@ -22,6 +22,7 @@ import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../..
 import { completeFileSuggestionType } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
+import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
 export declare enum AnalysisSeverity {
@@ -183,7 +184,7 @@ export class CodeSuggestionWebviewProvider
           };
           const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
           const localUri = vscode.Uri.parse(localUriPath);
-          const range = this.languages.createRange(rows[0], cols[0], rows[1], cols[1]);
+          const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
           break;
         }
@@ -205,7 +206,7 @@ export class CodeSuggestionWebviewProvider
           };
           const vscodeUri = vscode.Uri.parse(uri);
           const vscodeSeverity = getVSCodeSeverity(severity as number);
-          const range = this.languages.createRange(rows[0], cols[0], rows[1], cols[1]);
+          const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri: vscodeUri,
             matchedIssue: { message, severity: vscodeSeverity, range },

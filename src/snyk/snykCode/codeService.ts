@@ -1,5 +1,6 @@
 import { Subscription } from 'rxjs';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
+import { IAnalytics } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
@@ -7,7 +8,7 @@ import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/l
 import { ILog } from '../common/logger/interfaces';
 import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
-import { ICodeActionKindAdapter } from '../common/vscode/codeAction';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
@@ -42,19 +43,27 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
-    codeActionKindAdapter: ICodeActionKindAdapter,
+    readonly codeActionAdapter: ICodeActionAdapter,
+    readonly codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
     readonly window: IVSCodeWindow,
     readonly languages: IVSCodeLanguages,
-    private readonly learnService: LearnService,
+    private readonly learnService: LearnService, // todo: ensure learn is migrated to new service
     private readonly logger: ILog,
+    private readonly analytics: IAnalytics,
   ) {
     super();
     this._result = new Map<string, CodeWorkspaceFolderResult>();
-    const provider = new SnykCodeActionsProvider(this.result, codeActionKindAdapter);
+    const provider = new SnykCodeActionsProvider(
+      this.result,
+      codeActionAdapter,
+      codeActionKindAdapter,
+      languages,
+      analytics,
+    );
     this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));

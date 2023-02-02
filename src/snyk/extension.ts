@@ -52,7 +52,7 @@ import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
-import { CodeActionKindAdapter } from './common/vscode/codeAction';
+import { CodeActionAdapter, CodeActionKindAdapter } from './common/vscode/codeAction';
 import { vsCodeComands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
@@ -201,6 +201,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.context,
         configuration,
         codeSuggestionProvider,
+        new CodeActionAdapter(),
         this.codeActionKindAdapter,
         this.viewManagerService,
         vsCodeWorkspace,
@@ -210,6 +211,7 @@ class SnykExtension extends SnykLib implements IExtension {
         vsCodeLanguages,
         this.learnService,
         Logger,
+        this.analytics,
       );
     }
 
@@ -262,12 +264,14 @@ class SnykExtension extends SnykLib implements IExtension {
           this.contextService,
           this.snykCode,
           configuration,
+          vsCodeLanguages,
         ),
         codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
           this.viewManagerService,
           this.contextService,
           this.snykCode,
           configuration,
+          vsCodeLanguages,
         );
 
       const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
