@@ -109,7 +109,7 @@ suite('LearnService', () => {
           baseURL: `${config.baseApiUrl}/v1/learn`,
           params: {
             source: 'ide',
-            cwe: codeIssueCommandArgFixtureOld.cwe[0],
+            cwe: codeIssueCommandArgFixture.additionalData.cwe[0],
             rule: 'Sqli',
             ecosystem: 'javascript',
             cve: undefined,
