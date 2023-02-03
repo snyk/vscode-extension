@@ -13,7 +13,7 @@ import {
 import { SnykIssuesActionProviderOld } from '../../../../snyk/snykCode/codeActions/issuesActionsProviderOld';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 
-suite('Snyk Code actions provider', () => {
+suite('Snyk Code actions provider (OLD)', () => {
   let issuesActionsProvider: SnykIssuesActionProviderOld;
   const logQuickFixIsDisplayed = sinon.fake();
 
