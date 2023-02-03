@@ -38,6 +38,7 @@ export type CodeIssueData = {
   message: string;
   leadURL?: string;
   rule: string;
+  ruleId: string;
   repoDatasetSize: number;
   exampleCommitFixes: ExampleCommitFix[];
   cwe: string[];

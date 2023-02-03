@@ -27,6 +27,8 @@ import { CodeIssueData, OssIssueData, Scan } from './types';
 export interface ILanguageServer {
   start(): Promise<void>;
   stop(): Promise<void>;
+  showOutputChannel(): void;
+
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan<CodeIssueData | OssIssueData>>;
 }
@@ -34,7 +36,7 @@ export interface ILanguageServer {
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
-  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData>>(); // todo: or BehaviourSubject?
+  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData>>();
 
   constructor(
     private user: User,
@@ -165,6 +167,14 @@ export class LanguageServer implements ILanguageServer {
       deviceId: this.user.anonymousId,
       automaticAuthentication: 'false',
     };
+  }
+
+  showOutputChannel(): void {
+    if (!this.client) {
+      return;
+    }
+
+    this.client.outputChannel.show();
   }
 
   async stop(): Promise<void> {

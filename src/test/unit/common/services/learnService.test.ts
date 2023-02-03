@@ -75,7 +75,7 @@ suite('LearnService', () => {
 
   suite('CODE specific functionality', () => {
     test('getCodeIssueParams - returns ecosystem & cwes', () => {
-      deepStrictEqual(LearnService.getCodeIssueParams(codeIssueCommandArgFixture), {
+      deepStrictEqual(LearnService.getCodeIssueParamsOld(codeIssueCommandArgFixture), {
         ecosystem: 'javascript',
         rule: 'Sqli',
         cwes: ['CWE-2'],

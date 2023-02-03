@@ -11,6 +11,7 @@ import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
+import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
@@ -30,6 +31,7 @@ suite('CommandController', () => {
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,
       windowMock,
+      new LanguageServerMock(),
       new LoggerMock(),
       {} as IAnalytics,
     );

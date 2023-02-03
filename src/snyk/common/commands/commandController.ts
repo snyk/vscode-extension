@@ -19,12 +19,9 @@ import {
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import {
-  SNYK_LANGUAGE_SERVER_NAME,
-  SNYK_LOGIN_COMMAND,
-  SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
-} from '../constants/languageServer';
+import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
+import { ILanguageServer } from '../languageServer/languageServer';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IVSCodeCommands } from '../vscode/commands';
@@ -47,6 +44,7 @@ export class CommandController {
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
+    private languageServer: ILanguageServer,
     private logger: ILog,
     private analytics: IAnalytics,
   ) {}
@@ -164,7 +162,7 @@ export class CommandController {
 
   showLsOutputChannel(): void {
     // To get an instance of an OutputChannel use createOutputChannel.
-    return this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME).show();
+    return this.languageServer.showOutputChannel();
   }
 
   async executeCommand(
