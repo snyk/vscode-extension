@@ -1,17 +1,20 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
+import { IAnalytics } from '../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { LearnService } from '../../../snyk/common/services/learnService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWindow } from '../../../snyk/common/vscode/window';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { ISnykCodeService, SnykCodeService } from '../../../snyk/snykCode/codeService';
 import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/interfaces';
+import { languagesMock } from '../mocks/languages.mock';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
@@ -27,6 +30,10 @@ suite('Snyk Code Service', () => {
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as ICodeSuggestionWebviewProvider,
+      {} as ICodeActionAdapter,
+      {
+        getQuickFix: sinon.fake(),
+      } as ICodeActionKindAdapter,
       {
         refreshAllCodeAnalysisViews: refreshViewFake,
       } as unknown as IViewManagerService,
@@ -36,9 +43,10 @@ suite('Snyk Code Service', () => {
       new WorkspaceTrust(),
       ls,
       {} as IVSCodeWindow,
-      {} as IVSCodeLanguages,
+      languagesMock,
       new LearnService({} as IConfiguration, new LoggerMock()),
       new LoggerMock(),
+      {} as IAnalytics,
     );
   });
 

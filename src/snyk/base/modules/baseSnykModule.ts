@@ -16,6 +16,7 @@ import { INotificationService } from '../../common/services/notificationService'
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import { User } from '../../common/user';
+import { CodeActionKindAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vscode/markdownString';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
@@ -73,6 +74,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
 
   protected markdownStringAdapter: IMarkdownStringAdapter;
   readonly workspaceTrust: IWorkspaceTrust;
+  readonly codeActionKindAdapter: ICodeActionKindAdapter;
 
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
@@ -95,6 +97,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
+    this.codeActionKindAdapter = new CodeActionKindAdapter();
   }
 
   abstract runScan(): Promise<void>;

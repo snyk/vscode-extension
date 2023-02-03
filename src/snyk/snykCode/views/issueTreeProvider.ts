@@ -8,9 +8,11 @@ import { messages as commonMessages } from '../../common/messages/analysisMessag
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command } from '../../common/vscode/types';
 import { ISnykCodeService } from '../codeService';
 import { messages } from '../messages/analysis';
+import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
 
 interface ISeverityCounts {
@@ -22,6 +24,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
     protected readonly contextService: IContextService,
     protected readonly codeService: ISnykCodeService,
     protected readonly configuration: IConfiguration,
+    protected readonly languages: IVSCodeLanguages,
     protected readonly isSecurityType: boolean,
   ) {
     super(configuration, codeService);
@@ -119,12 +122,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
             totalVulnCount++;
             folderVulnCount++;
 
-            const issueRange = new vscode.Range(
-              issue.additionalData.rows[0],
-              issue.additionalData.cols[0],
-              issue.additionalData.rows[1],
-              issue.additionalData.cols[1],
-            );
+            const issueRange = IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
             const params: {
               text: string;
               icon: INodeIcon;

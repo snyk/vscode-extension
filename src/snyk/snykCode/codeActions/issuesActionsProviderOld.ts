@@ -21,7 +21,7 @@ import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArgOld } from '../views/interfaces';
 import { CodeActionsCallbackFunctions } from './disposableCodeActionsProvider';
 
-export class SnykIssuesActionProvider implements CodeActionProvider {
+export class SnykIssuesActionProviderOld implements CodeActionProvider {
   private readonly providedCodeActionKinds = [this.codeActionKindProvider.getQuickFix()];
 
   private issuesList: DiagnosticCollection | undefined;
@@ -63,7 +63,7 @@ export class SnykIssuesActionProvider implements CodeActionProvider {
       ignoreIssueAction.command = {
         command: SNYK_IGNORE_ISSUE_COMMAND,
         title: SNYK_IGNORE_ISSUE_COMMAND,
-        arguments: [{ uri: document.uri, matchedIssue, issueId: suggestion.id, ruleId: suggestion.rule, isFileIgnore }],
+        arguments: [{ uri: document.uri, matchedIssue, ruleId: suggestion.rule, isFileIgnore }],
       };
 
     return ignoreIssueAction;

@@ -1,5 +1,6 @@
 import { Subscription } from 'rxjs';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
+import { IAnalytics } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
@@ -7,11 +8,14 @@ import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/l
 import { ILog } from '../common/logger/interfaces';
 import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { Disposable } from '../common/vscode/types';
 import { IVSCodeWindow } from '../common/vscode/window';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
+import { SnykCodeActionsProvider } from './codeActions/codeIssuesActionsProvider';
+import { CodeResult, CodeWorkspaceFolderResult } from './codeResult';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 
 export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
@@ -24,11 +28,6 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   activateWebviewProviders(): void;
   showSuggestionProvider(folderPath: string, issueId: string): void;
 }
-
-// Keep type declarations temporarily here, until we get rid of code-client types.
-// todo: tidy up during 'lsCode' feature flag drop
-export type CodeResult = Map<string, CodeWorkspaceFolderResult>; // map of a workspace folder to results array or an error occurred in this folder
-export type CodeWorkspaceFolderResult = Issue<CodeIssueData>[] | Error;
 
 export class SnykCodeService extends AnalysisStatusProvider implements ISnykCodeService {
   private _result: CodeResult;
@@ -44,29 +43,30 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: ICodeSuggestionWebviewProvider,
+    readonly codeActionAdapter: ICodeActionAdapter,
+    readonly codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
     readonly window: IVSCodeWindow,
     readonly languages: IVSCodeLanguages,
-    private readonly learnService: LearnService,
+    private readonly learnService: LearnService, // todo: ensure learn is migrated to new service
     private readonly logger: ILog,
+    private readonly analytics: IAnalytics,
   ) {
     super();
-    // this.analyzer = new SnykCodeAnalyzer(
-    //   logger,
-    //   languages,
-    //   workspace,
-    //   analytics,
-    //   errorHandler,
-    //   this.uriAdapter,
-    //   this.config,
-    // ); // todo: update in ROAD-1158
-    // this.registerAnalyzerProviders(this.analyzer); // todo: update in ROAD-1158
+    this._result = new Map<string, CodeWorkspaceFolderResult>();
+    const provider = new SnykCodeActionsProvider(
+      this.result,
+      codeActionAdapter,
+      codeActionKindAdapter,
+      languages,
+      analytics,
+    );
+    this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
 
     this.lsSubscription = languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => this.handleLsScanMessage(scan));
-    this._result = new Map<string, CodeWorkspaceFolderResult>();
   }
 
   getIssue(folderPath: string, issueId: string): Issue<CodeIssueData> | undefined {

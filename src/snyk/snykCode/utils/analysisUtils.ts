@@ -71,6 +71,7 @@ export const createIssueRange = (position: IssuePlacementPosition, languages: IV
   );
 };
 
+// todo: remove when Snyk Code uses LS.
 export const createIssueCorrectRange = (issuePosition: FileSuggestion, languages: IVSCodeLanguages): Range => {
   return createIssueRange(
     {

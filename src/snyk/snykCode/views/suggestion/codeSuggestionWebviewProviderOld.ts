@@ -162,14 +162,12 @@ export class CodeSuggestionWebviewProviderOld
         }
         case 'ignoreIssue': {
           // eslint-disable-next-line no-shadow
-          let { lineOnly, message, id, rule, severity, uri, cols, rows } = args;
+          let { lineOnly, message, rule, uri, cols, rows } = args;
           uri = vscode.Uri.parse(uri as string);
-          severity = getVSCodeSeverity(severity as number);
           const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri,
-            matchedIssue: { message, severity, range },
-            issueId: id,
+            matchedIssue: { message, range },
             ruleId: rule,
             isFileIgnore: !lineOnly,
           });

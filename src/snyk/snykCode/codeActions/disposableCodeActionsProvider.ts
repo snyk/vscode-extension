@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { IAnalytics } from '../../common/analytics/itly';
 import { CodeActionAdapter, CodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { Disposable } from '../../common/vscode/types';
-import { SnykIssuesActionProvider } from './issuesActionsProvider';
+import { SnykIssuesActionProviderOld } from './issuesActionsProviderOld';
 
 export type CodeActionsCallbackFunctions = { [key: string]: (x: unknown) => any };
 
@@ -21,7 +21,7 @@ export class DisposableCodeActionsProvider implements Disposable {
     snykReview: vscode.DiagnosticCollection | undefined,
     callbacks: CodeActionsCallbackFunctions,
   ) {
-    const provider = new SnykIssuesActionProvider(
+    const provider = new SnykIssuesActionProviderOld(
       snykReview,
       callbacks,
       new CodeActionAdapter(),
