@@ -19,7 +19,6 @@ import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
-import { completeFileSuggestionType } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { IssueUtils } from '../../utils/issueUtils';
@@ -78,10 +77,10 @@ export class CodeSuggestionWebviewProvider
     return this.issue?.id;
   }
 
-  async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
+  async postLearnLessonMessage(issue: Issue<CodeIssueData>): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await this.learnService.getLesson(suggestion, OpenCommandIssueType.CodeIssueOld);
+        const lesson = await this.learnService.getLesson(issue, OpenCommandIssueType.CodeIssue);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',
@@ -122,7 +121,7 @@ export class CodeSuggestionWebviewProvider
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
       await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
-      // void this.postLearnLessonMessage(issue); // TODO: uncomment
+      void this.postLearnLessonMessage(issue);
 
       this.issue = issue;
     } catch (e) {

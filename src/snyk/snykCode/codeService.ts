@@ -6,7 +6,6 @@ import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, Issue, Scan, ScanProduct, ScanStatus } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
-import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
@@ -51,9 +50,8 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
     readonly languageServer: ILanguageServer,
     readonly window: IVSCodeWindow,
     readonly languages: IVSCodeLanguages,
-    private readonly learnService: LearnService, // todo: ensure learn is migrated to new service
     private readonly logger: ILog,
-    private readonly analytics: IAnalytics,
+    readonly analytics: IAnalytics,
   ) {
     super();
     this._result = new Map<string, CodeWorkspaceFolderResult>();

@@ -209,7 +209,6 @@ class SnykExtension extends SnykLib implements IExtension {
         this.languageServer,
         vsCodeWindow,
         vsCodeLanguages,
-        this.learnService,
         Logger,
         this.analytics,
       );
@@ -240,6 +239,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       vsCodeComands,
       vsCodeWindow,
+      this.languageServer,
       Logger,
       this.analytics,
     );

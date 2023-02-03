@@ -6,6 +6,7 @@ import { CodeIssueData, OssIssueData, Scan } from '../../../snyk/common/language
 export class LanguageServerMock implements ILanguageServer {
   start = sinon.fake();
   stop = sinon.fake();
+  showOutputChannel = sinon.fake();
 
   cliReady$ = new ReplaySubject<string>(1);
   scan$ = new Subject<Scan<CodeIssueData | OssIssueData>>();

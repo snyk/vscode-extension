@@ -47,7 +47,6 @@
     });
   }
   function ignoreIssue(lineOnly: boolean) {
-    console.log(lineOnly);
     sendMessage({
       type: 'ignoreIssue',
       args: {

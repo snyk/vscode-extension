@@ -202,7 +202,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
           children: fileNodes,
           internal: {
             nIssues: folderVulnCount,
-            // severity: OssVulnerabilityTreeProvider.getSeverityComparatorIndex(fileSeverity), // todo: is it used to sort folder nodes?
+            severity: IssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
           },
         });
         nodes.push(folderNode);

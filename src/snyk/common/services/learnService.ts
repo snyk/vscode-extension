@@ -1,10 +1,11 @@
 import axios from 'axios';
-import { isCodeIssue, isOssIssue, OpenCommandIssueType } from '../../common/commands/types';
+import { isCodeIssue, isCodeIssueOld, isOssIssue, OpenCommandIssueType } from '../../common/commands/types';
 import { SNYK_LEARN_API_CACHE_DURATION_IN_MS } from '../../common/constants/general';
 import type { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { IConfiguration } from '../configuration/configuration';
 import { ErrorHandler } from '../error/errorHandler';
+import { CodeIssueData, Issue } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 
 export type Lesson = {
@@ -36,13 +37,24 @@ export class LearnService {
     private readonly shouldCacheRequests = true,
   ) {}
 
-  static getCodeIssueParams(issue: completeFileSuggestionType): LessonLookupParams {
+  // TODO: remove when Code results come from LS
+  static getCodeIssueParamsOld(issue: completeFileSuggestionType): LessonLookupParams {
     const idParts = issue.id.split(/\/|%2F/g);
 
     return {
       rule: idParts[idParts.length - 1],
       ecosystem: idParts[0],
       cwes: issue.cwe,
+    };
+  }
+
+  static getCodeIssueParams(issue: Issue<CodeIssueData>): LessonLookupParams {
+    const idParts = issue.additionalData.ruleId.split(/\/|%2F/g);
+
+    return {
+      rule: idParts[idParts.length - 1],
+      ecosystem: idParts[0],
+      cwes: issue.additionalData.cwe,
     };
   }
 
@@ -84,14 +96,18 @@ export class LearnService {
   }
 
   async getLesson(
-    issue: OssIssueCommandArg | completeFileSuggestionType,
+    issue: OssIssueCommandArg | completeFileSuggestionType | Issue<CodeIssueData>,
     issueType: OpenCommandIssueType,
   ): Promise<Lesson | null> {
     try {
       let params: LessonLookupParams | null = null;
 
-      if (isCodeIssue(issue, issueType)) {
+      if (isCodeIssueOld(issue, issueType)) {
         if (!issue.isSecurityType) return null;
+
+        params = LearnService.getCodeIssueParamsOld(issue);
+      } else if (isCodeIssue(issue, issueType)) {
+        if (!issue.additionalData.isSecurityType) return null;
 
         params = LearnService.getCodeIssueParams(issue);
       } else if (isOssIssue(issue, issueType)) {
