@@ -3,6 +3,7 @@ import axios from 'axios';
 import sinon from 'sinon';
 import { OpenCommandIssueType } from '../../../../snyk/common/commands/types';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { CodeIssueData, Issue } from '../../../../snyk/common/languageServer/types';
 import { LearnService } from '../../../../snyk/common/services/learnService';
 import type { completeFileSuggestionType } from '../../../../snyk/snykCode/interfaces';
 import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
@@ -11,6 +12,14 @@ import { LoggerMock } from '../../mocks/logger.mock';
 suite('LearnService', () => {
   const ossIssueCommandArgFixture = { identifiers: { CWE: ['CWE-1'] }, packageManager: 'npm' } as OssIssueCommandArg;
   const codeIssueCommandArgFixture = {
+    additionalData: {
+      isSecurityType: true,
+      cwe: ['CWE-2'],
+      ruleId: 'javascript%2Fdc_interfile_project%2FSqli',
+    },
+  } as Issue<CodeIssueData>;
+
+  const codeIssueCommandArgFixtureOld = {
     isSecurityType: true,
     cwe: ['CWE-2'],
     id: 'javascript%2Fdc_interfile_project%2FSqli',
@@ -75,7 +84,15 @@ suite('LearnService', () => {
 
   suite('CODE specific functionality', () => {
     test('getCodeIssueParams - returns ecosystem & cwes', () => {
-      deepStrictEqual(LearnService.getCodeIssueParamsOld(codeIssueCommandArgFixture), {
+      deepStrictEqual(LearnService.getCodeIssueParams(codeIssueCommandArgFixture), {
+        ecosystem: 'javascript',
+        rule: 'Sqli',
+        cwes: ['CWE-2'],
+      });
+    });
+
+    test('getCodeIssueParams - returns ecosystem & cwes - DEPRECATED', () => {
+      deepStrictEqual(LearnService.getCodeIssueParamsOld(codeIssueCommandArgFixtureOld), {
         ecosystem: 'javascript',
         rule: 'Sqli',
         cwes: ['CWE-2'],
@@ -84,7 +101,7 @@ suite('LearnService', () => {
 
     test('getLesson - resolves a lesson', async () => {
       const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
-      const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssueOld);
+      const lesson = await learnService.getLesson(codeIssueCommandArgFixture, OpenCommandIssueType.CodeIssue);
       deepStrictEqual(lesson?.lessonId, lessonFixture.lessonId);
       deepStrictEqual(stub.getCall(0).args, [
         '/lessons/lookup-for-cta',
@@ -92,7 +109,26 @@ suite('LearnService', () => {
           baseURL: `${config.baseApiUrl}/v1/learn`,
           params: {
             source: 'ide',
-            cwe: codeIssueCommandArgFixture.cwe[0],
+            cwe: codeIssueCommandArgFixtureOld.cwe[0],
+            rule: 'Sqli',
+            ecosystem: 'javascript',
+            cve: undefined,
+          },
+        },
+      ]);
+    });
+
+    test('getLesson - resolves a lesson - DEPRECATED', async () => {
+      const stub = sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
+      const lesson = await learnService.getLesson(codeIssueCommandArgFixtureOld, OpenCommandIssueType.CodeIssueOld);
+      deepStrictEqual(lesson?.lessonId, lessonFixture.lessonId);
+      deepStrictEqual(stub.getCall(0).args, [
+        '/lessons/lookup-for-cta',
+        {
+          baseURL: `${config.baseApiUrl}/v1/learn`,
+          params: {
+            source: 'ide',
+            cwe: codeIssueCommandArgFixtureOld.cwe[0],
             rule: 'Sqli',
             ecosystem: 'javascript',
             cve: undefined,
@@ -104,7 +140,19 @@ suite('LearnService', () => {
     test('getLesson - returns null if issue isSecurityType is false', async () => {
       sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
       const lesson = await learnService.getLesson(
-        { ...codeIssueCommandArgFixture, isSecurityType: false },
+        {
+          ...codeIssueCommandArgFixture,
+          additionalData: { ...codeIssueCommandArgFixture.additionalData, isSecurityType: false },
+        },
+        OpenCommandIssueType.CodeIssue,
+      );
+      deepStrictEqual(lesson, null);
+    });
+
+    test('getLesson - returns null if issue isSecurityType is false', async () => {
+      sinon.stub(axios, 'get').resolves({ data: { lessons: [lessonFixture] } });
+      const lesson = await learnService.getLesson(
+        { ...codeIssueCommandArgFixtureOld, isSecurityType: false },
         OpenCommandIssueType.CodeIssueOld,
       );
       deepStrictEqual(lesson, null);
@@ -132,12 +180,25 @@ suite('LearnService', () => {
 
     test('returns null if the issue has no params', async () => {
       const lessonNoCWE = await learnService.getLesson(
-        { ...codeIssueCommandArgFixture, cwe: [] },
-        OpenCommandIssueType.CodeIssueOld,
+        { ...codeIssueCommandArgFixture, additionalData: { ...codeIssueCommandArgFixture.additionalData, cwe: [] } },
+        OpenCommandIssueType.CodeIssue,
       );
       deepStrictEqual(lessonNoCWE, null);
       const lessonNoEcosystem = await learnService.getLesson(
         { ...codeIssueCommandArgFixture, id: '' },
+        OpenCommandIssueType.CodeIssue,
+      );
+      deepStrictEqual(lessonNoEcosystem, null);
+    });
+
+    test('returns null if the issue has no params - DEPRECATED', async () => {
+      const lessonNoCWE = await learnService.getLesson(
+        { ...codeIssueCommandArgFixtureOld, cwe: [] },
+        OpenCommandIssueType.CodeIssueOld,
+      );
+      deepStrictEqual(lessonNoCWE, null);
+      const lessonNoEcosystem = await learnService.getLesson(
+        { ...codeIssueCommandArgFixtureOld, id: '' },
         OpenCommandIssueType.CodeIssueOld,
       );
       deepStrictEqual(lessonNoEcosystem, null);
