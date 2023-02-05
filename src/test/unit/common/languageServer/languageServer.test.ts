@@ -18,14 +18,14 @@ import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 
 suite('Language Server', () => {
-  const authService = {} as IAuthenticationService;
+  const authServiceMock = {} as IAuthenticationService;
   const user = new User(v4(), undefined);
 
-  let configuration: IConfiguration;
+  let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
-  let downloadService: DownloadService;
+  let downloadServiceMock: DownloadService;
   setup(() => {
-    configuration = {
+    configurationMock = {
       getInsecure(): boolean {
         return true;
       },
@@ -64,9 +64,10 @@ suite('Language Server', () => {
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
       },
+      scanningMode: 'auto',
     } as IConfiguration;
 
-    downloadService = {
+    downloadServiceMock = {
       downloadReady$: new ReplaySubject<void>(1),
     } as DownloadService;
   });
@@ -78,13 +79,13 @@ suite('Language Server', () => {
   test('LanguageServer should provide correct initialization options', async () => {
     languageServer = new LanguageServer(
       user,
-      configuration,
+      configurationMock,
       {} as ILanguageClientAdapter,
       {} as IVSCodeWorkspace,
       windowMock,
-      authService,
+      authServiceMock,
       new LoggerMock(),
-      downloadService,
+      downloadServiceMock,
     );
     const expectedInitializationOptions: InitializationOptions = {
       activateSnykCodeSecurity: 'false',
@@ -145,17 +146,53 @@ suite('Language Server', () => {
 
     languageServer = new LanguageServer(
       user,
-      configuration,
+      configurationMock,
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
       windowMock,
-      authService,
+      authServiceMock,
       new LoggerMock(),
-      downloadService,
+      downloadServiceMock,
     );
-    downloadService.downloadReady$.next();
+    downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.verify();
+  });
+
+  suite('LanguageServer is initialized', () => {
+    setup(() => {
+      const mockLanguageClient = {
+        start: sinon.stub().resolves(),
+      };
+      const mockLanguageClientAdapter = {
+        create: sinon.stub().returns(mockLanguageClient),
+        getLanguageClient: sinon.stub().returns(mockLanguageClient),
+      };
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        mockLanguageClientAdapter,
+        {} as IVSCodeWorkspace,
+        windowMock,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+      );
+    });
+
+    test("scanningMode is not set: returns 'auto'", async () => {
+      const options = await languageServer.getInitializationOptions();
+
+      assert.strictEqual(options.scanningMode, 'auto');
+    });
+    ['auto', 'manual'].forEach(expectedScanningMode => {
+      test(`scanningMode is set to ${expectedScanningMode}`, async () => {
+        configurationMock.scanningMode = expectedScanningMode;
+        const options = await languageServer.getInitializationOptions();
+
+        assert.strictEqual(options.scanningMode, expectedScanningMode);
+      });
+    });
   });
 });

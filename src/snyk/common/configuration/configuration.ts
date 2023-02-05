@@ -101,6 +101,8 @@ export interface IConfiguration {
 
   severityFilter: SeverityFilter;
 
+  scanningMode: string;
+
   getSnykLanguageServerPath(): string | undefined;
 
   setShouldReportEvents(b: boolean): Promise<void>;
