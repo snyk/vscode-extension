@@ -7,7 +7,7 @@ import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
 import {
   ADVANCED_CUSTOM_ENDPOINT,
   FEATURES_PREVIEW_SETTING,
-  SCANNING_MODE
+  SCANNING_MODE,
 } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
@@ -218,5 +218,5 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.scanningMode, 'auto');
-  }
+  });
 });
