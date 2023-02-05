@@ -117,6 +117,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
+  private readonly defaultScanningMode = 'auto';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -461,7 +462,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(SCANNING_MODE),
     );
 
-    return scanningModeInConfig ?? 'auto';
+    return scanningModeInConfig ?? this.defaultScanningMode;
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {
