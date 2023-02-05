@@ -216,6 +216,16 @@
                 "default": false
               }
             }
+          },
+          "snyk.scanningMode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "default": "auto",
+            "title": "Snyk scanning mode",
+            "description": "If set to `auto`, Snyk will automatically scan your workspace for vulnerabilities. If set to `manual`, Snyk will only scan your workspace when you run the `Snyk: Scan` command."
           }
         }
       }
