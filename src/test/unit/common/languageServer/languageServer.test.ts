@@ -76,44 +76,6 @@ suite('Language Server', () => {
     sinon.restore();
   });
 
-  test('LanguageServer should provide correct initialization options', async () => {
-    languageServer = new LanguageServer(
-      user,
-      configurationMock,
-      {} as ILanguageClientAdapter,
-      {} as IVSCodeWorkspace,
-      windowMock,
-      authServiceMock,
-      new LoggerMock(),
-      downloadServiceMock,
-    );
-    const expectedInitializationOptions: InitializationOptions = {
-      activateSnykCodeSecurity: 'false',
-      activateSnykCodeQuality: 'false',
-      activateSnykOpenSource: 'false',
-      activateSnykIac: 'true',
-      token: 'testToken',
-      cliPath: 'testPath',
-      enableTelemetry: 'true',
-      sendErrorReports: 'true',
-      integrationName: 'VS_CODE',
-      integrationVersion: '0.0.0',
-      automaticAuthentication: 'false',
-      endpoint: undefined,
-      organization: undefined,
-      additionalParams: '--all-projects',
-      manageBinariesAutomatically: 'true',
-      deviceId: user.anonymousId,
-      filterSeverity: { critical: true, high: true, medium: true, low: true },
-      enableTrustedFoldersFeature: 'true',
-      trustedFolders: ['/trusted/test/folder'],
-      insecure: 'true',
-      scanningMode: 'auto',
-    };
-
-    deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
-  });
-
   test('LanguageServer adds proxy settings to env of started binary', async () => {
     const expectedProxy = 'http://localhost:8080';
     const lca = sinon.spy({
@@ -181,11 +143,34 @@ suite('Language Server', () => {
       );
     });
 
-    test("scanningMode is not set: returns 'auto'", async () => {
-      const options = await languageServer.getInitializationOptions();
+    test('LanguageServer should provide correct initialization options', async () => {
+      const expectedInitializationOptions: InitializationOptions = {
+        activateSnykCodeSecurity: 'false',
+        activateSnykCodeQuality: 'false',
+        activateSnykOpenSource: 'false',
+        activateSnykIac: 'true',
+        token: 'testToken',
+        cliPath: 'testPath',
+        enableTelemetry: 'true',
+        sendErrorReports: 'true',
+        integrationName: 'VS_CODE',
+        integrationVersion: '0.0.0',
+        automaticAuthentication: 'false',
+        endpoint: undefined,
+        organization: undefined,
+        additionalParams: '--all-projects',
+        manageBinariesAutomatically: 'true',
+        deviceId: user.anonymousId,
+        filterSeverity: { critical: true, high: true, medium: true, low: true },
+        enableTrustedFoldersFeature: 'true',
+        trustedFolders: ['/trusted/test/folder'],
+        insecure: 'true',
+        scanningMode: 'auto',
+      };
 
-      assert.strictEqual(options.scanningMode, 'auto');
+      deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
     });
+
     ['auto', 'manual'].forEach(expectedScanningMode => {
       test(`scanningMode is set to ${expectedScanningMode}`, async () => {
         configurationMock.scanningMode = expectedScanningMode;
