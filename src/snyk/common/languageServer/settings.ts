@@ -26,6 +26,7 @@ export type ServerSettings = {
   enableTrustedFoldersFeature?: string;
   trustedFolders?: string[];
   insecure?: string;
+  scanningMode?: string;
 };
 
 export class LanguageServerSettings {
@@ -53,6 +54,7 @@ export class LanguageServerSettings {
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
       insecure: `${configuration.getInsecure()}`,
+      scanningMode: 'auto',
     };
   }
 }

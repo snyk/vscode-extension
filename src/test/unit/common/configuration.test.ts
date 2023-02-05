@@ -4,7 +4,11 @@ import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
-import { ADVANCED_CUSTOM_ENDPOINT, FEATURES_PREVIEW_SETTING } from '../../../snyk/common/constants/settings';
+import {
+  ADVANCED_CUSTOM_ENDPOINT,
+  FEATURES_PREVIEW_SETTING,
+  SCANNING_MODE
+} from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
@@ -198,4 +202,21 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getPreviewFeatures(), previewFeatures);
   });
+
+  ['auto', 'manual'].forEach(mode => {
+    test(`Scanning mode: returns correct value (${mode})`, () => {
+      const workspace = stubWorkspaceConfiguration(SCANNING_MODE, mode);
+
+      const configuration = new Configuration({}, workspace);
+
+      strictEqual(configuration.scanningMode, mode);
+    });
+  });
+  test("Scanning mode: no value defaults to 'auto'", () => {
+    const workspace = stubWorkspaceConfiguration(SCANNING_MODE, undefined);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.scanningMode, 'auto');
+  }
 });

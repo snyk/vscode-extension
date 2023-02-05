@@ -17,6 +17,7 @@ import {
   FEATURES_PREVIEW_SETTING,
   IAC_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
+  SCANNING_MODE,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
@@ -452,6 +453,15 @@ export class Configuration implements IConfiguration {
     return (
       this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []
     );
+  }
+
+  get scanningMode(): string {
+    const scanningModeInConfig = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(SCANNING_MODE),
+    );
+
+    return scanningModeInConfig ?? 'auto';
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {

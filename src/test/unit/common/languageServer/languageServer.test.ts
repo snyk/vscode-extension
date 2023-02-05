@@ -107,6 +107,7 @@ suite('Language Server', () => {
       enableTrustedFoldersFeature: 'true',
       trustedFolders: ['/trusted/test/folder'],
       insecure: 'true',
+      scanningMode: 'auto',
     };
 
     deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
