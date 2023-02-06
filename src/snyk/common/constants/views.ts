@@ -7,7 +7,6 @@ export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.securi
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
-export const SNYK_VIEW_ACTIONS = 'snyk.views.actions';
 export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
 export const SNYK_VIEW_SUGGESTION_CODE_OLD = 'snyk.views.suggestion.code.old';
 export const SNYK_VIEW_FALSE_POSITIVE_CODE = 'snyk.views.suggestion.code.falsePositive';
