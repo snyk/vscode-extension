@@ -212,6 +212,7 @@ suite('Configuration', () => {
       strictEqual(configuration.scanningMode, mode);
     });
   });
+
   test("Scanning mode: no value defaults to 'auto'", () => {
     const workspace = stubWorkspaceConfiguration(SCANNING_MODE, undefined);
 

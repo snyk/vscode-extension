@@ -86,6 +86,24 @@
             "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
           },
+          "snyk.scanningMode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "enumDescriptions": [
+              "Scan automatically in the background",
+              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command"
+            ],
+            "enumItemLabels": [
+              "Auto",
+              "Manual"
+            ],
+            "default": "auto",
+            "title": "Snyk Code scanning mode",
+            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
+          },
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
@@ -210,24 +228,6 @@
                 "default": false
               }
             }
-          },
-          "snyk.scanningMode": {
-            "type": "string",
-            "enum": [
-              "auto",
-              "manual"
-            ],
-            "enumDescriptions": [
-              "Scan automatically in the background",
-              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command"
-            ],
-            "enumItemLabels": [
-              "Auto",
-              "Manual"
-            ],
-            "default": "auto",
-            "title": "Snyk scanning mode",
-            "description": "Choose whether to scan automatically in the background or only scan when you run the `Snyk: Rescan` command."
           }
         }
       }
