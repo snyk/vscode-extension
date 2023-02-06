@@ -9,7 +9,6 @@ export const SNYK_START_COMMAND = 'snyk.start';
 export const SNYK_INITIATE_LOGIN_COMMAND = 'snyk.initiateLogin';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
 export const SNYK_ENABLE_CODE_COMMAND = 'snyk.enableCode';
-export const SNYK_SETMODE_COMMAND = 'snyk.setmode';
 export const SNYK_SETTINGS_COMMAND = 'snyk.settings';
 export const SNYK_DCIGNORE_COMMAND = 'snyk.dcignore';
 export const SNYK_OPEN_BROWSER_COMMAND = 'snyk.open';

@@ -4,7 +4,6 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
-import { CodeScanMode } from '../../snykCode/constants/modes';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
@@ -150,10 +149,6 @@ export class CommandController {
         severity: capitalizeOssSeverity(issue.severity),
       });
     }
-  }
-
-  setScanMode(mode: CodeScanMode): Promise<void> {
-    return this.scanModeService.setCodeMode(mode);
   }
 
   showOutputChannel(): void {
