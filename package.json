@@ -223,9 +223,17 @@
               "auto",
               "manual"
             ],
+            "enumDescriptions": [
+              "Scan automatically in the background",
+              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command"
+            ],
+            "enumItemLabels": [
+              "Auto",
+              "Manual"
+            ],
             "default": "auto",
             "title": "Snyk scanning mode",
-            "description": "If set to `auto`, Snyk will automatically scan your workspace for vulnerabilities. If set to `manual`, Snyk will only scan your workspace when you run the `Snyk: Scan` command."
+            "description": "Choose whether to scan automatically in the background or only scan when you run the `Snyk: Rescan` command."
           }
         }
       }
