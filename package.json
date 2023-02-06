@@ -80,12 +80,6 @@
             "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
             "scope": "application"
           },
-          "snyk.advanced.advancedMode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
-            "scope": "application"
-          },
           "snyk.advanced.autoScanOpenSourceSecurity": {
             "type": "boolean",
             "default": false,
