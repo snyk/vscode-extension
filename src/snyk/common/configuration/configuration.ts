@@ -23,7 +23,7 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
-  YES_WELCOME_NOTIFICATION_SETTING,
+  YES_WELCOME_NOTIFICATION_SETTING
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';

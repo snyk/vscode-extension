@@ -93,12 +93,8 @@
               "manual"
             ],
             "enumDescriptions": [
-              "Scan automatically in the background",
-              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command"
-            ],
-            "enumItemLabels": [
-              "Auto",
-              "Manual"
+              "Scan automatically in the background.",
+              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command."
             ],
             "default": "auto",
             "title": "Snyk Code scanning mode",
