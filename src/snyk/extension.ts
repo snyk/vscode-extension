@@ -4,7 +4,6 @@ import { AdvisorService } from './advisor/services/advisorService';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
-import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
@@ -16,7 +15,6 @@ import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
   SNYK_DCIGNORE_COMMAND,
-  SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
@@ -32,11 +30,8 @@ import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import { SNYK_WORKSPACE_SCAN_COMMAND } from './common/constants/languageServer';
 import {
   SNYK_CONTEXT,
-  SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
-  SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
-  SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_FEATURES,
   SNYK_VIEW_SUPPORT,
@@ -57,7 +52,7 @@ import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
-import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
@@ -67,11 +62,8 @@ import { vsCodeWorkspace } from './common/vscode/workspace';
 import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
-import { SnykCodeServiceOld } from './snykCode/codeServiceOld';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
-import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
-import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
@@ -143,26 +135,6 @@ class SnykExtension extends SnykLib implements IExtension {
       languageClientAdapter,
     );
 
-    this.snykCodeOld = new SnykCodeServiceOld(
-      this.context,
-      configuration,
-      this.viewManagerService,
-      vsCodeWorkspace,
-      vsCodeWindow,
-      this.user,
-      this.falsePositiveApi,
-      Logger,
-      this.analytics,
-      new VSCodeLanguages(),
-      this.snykCodeErrorHandler,
-      new UriAdapter(),
-      this.codeSettings,
-      this.learnService,
-      this.markdownStringAdapter,
-      this.workspaceTrust,
-    );
-    this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
-
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.downloadService = new DownloadService(
       this.context,
@@ -231,9 +203,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.openerService,
       this.authService,
       this.snykCode,
-      this.snykCodeOld,
       this.ossService,
-      this.scanModeService,
       vsCodeWorkspace,
       vsCodeComands,
       vsCodeWindow,
@@ -242,19 +212,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
     );
     this.registerCommands(vscodeContext);
-
-    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProviderOld(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCodeOld,
-        configuration,
-      ),
-      codeQualityIssueProvider = new CodeQualityIssueTreeProviderOld(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCodeOld,
-        configuration,
-      );
 
     if (lsCodePreview) {
       const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
@@ -299,33 +256,18 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, codeQualityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
     );
 
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
-    const codeEnablementTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT, {
-      treeDataProvider: new EmptyTreeDataProvider(),
-    });
-
     const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossVulnerabilityProvider,
     });
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, {
-      treeDataProvider: codeSecurityIssueProvider,
-    });
-    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, {
-      treeDataProvider: codeQualityIssueProvider,
-    });
     vscodeContext.subscriptions.push(
       ossTree.onDidChangeVisibility(e => this.onDidChangeOssTreeVisibility(e.visible)),
-      codeSecurityTree,
-      codeQualityTree,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
-      codeEnablementTree,
     );
 
     // Fill the view container to expose views for tests
@@ -341,12 +283,10 @@ class SnykExtension extends SnykLib implements IExtension {
       this.runScan(false);
     });
 
-    this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
     if (lsCodePreview) {
       this.snykCode.activateWebviewProviders();
     }
-    this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
 
@@ -405,7 +345,6 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public async deactivate(): Promise<void> {
-    this.snykCodeOld.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
     await this.analytics.flush();
@@ -445,9 +384,6 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
-      vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
-        this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
-      ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return

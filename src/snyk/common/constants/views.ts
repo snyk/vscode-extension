@@ -1,8 +1,5 @@
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_FEATURES = 'snyk.views.features';
-export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
-export const SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD = 'snyk.views.analysis.code.security.old';
-export const SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD = 'snyk.views.analysis.code.quality.old';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
@@ -18,7 +15,6 @@ export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
   FEATURES_SELECTED: 'featuresSelected',
-  CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
   LS_CODE_PREVIEW: 'lsCodePreview',
   WORKSPACE_FOUND: 'workspaceFound',
@@ -31,11 +27,7 @@ export const SNYK_ERROR_CODES = {
   BLOCKING: 'blocking',
 };
 
-export const SNYK_ANALYSIS_STATUS = {
-  FILTERS: 'Supported extentions',
-  COLLECTING: 'Collecting files',
-  BUNDLING: 'Creating file bundles',
-  UPLOADING: 'Uploading files',
+export const SNYK_SCAN_STATUS = {
   OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
   CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',

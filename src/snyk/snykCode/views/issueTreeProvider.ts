@@ -44,7 +44,6 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
     if (!this.codeService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }

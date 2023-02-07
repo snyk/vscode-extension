@@ -1,6 +1,4 @@
-import { getIpFamily } from '@snyk/code-client';
 import { rejects, strictEqual } from 'assert';
-import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
@@ -25,17 +23,6 @@ suite('AuthenticationService', () => {
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
   let previewFeaturesSpy: sinon.SinonSpy;
-
-  const NEEDLE_DEFAULT_TIMEOUT = 1000;
-
-  const overrideNeedleTimeoutOptions = {
-    // eslint-disable-next-line camelcase
-    open_timeout: NEEDLE_DEFAULT_TIMEOUT,
-    // eslint-disable-next-line camelcase
-    response_timeout: NEEDLE_DEFAULT_TIMEOUT,
-    // eslint-disable-next-line camelcase
-    read_timeout: NEEDLE_DEFAULT_TIMEOUT,
-  };
 
   setup(() => {
     baseModule = {} as IBaseSnykModule;
@@ -85,52 +72,6 @@ suite('AuthenticationService', () => {
     await service.initiateLogin();
 
     strictEqual(logAuthenticateButtonIsClickedFake.calledOnce, true);
-  });
-
-  // TODO: the following two tests are more of integration tests, since the second requires access to the network layer. Move it to integration test as part of ROAD-625.
-  test('getIpFamily returns undefined when IPv6 not supported', async () => {
-    const ipv6ErrorCode = 'EADDRNOTAVAIL';
-
-    // code-client calls 'needle', thus it's the easiest place to stub the response when IPv6 is not supported by the OS network stack. Otherwise, Node internals must be stubbed to return the error.
-    sinon.stub(needle, 'request').callsFake((_, uri, data, opts, callback) => {
-      if (!callback) throw new Error();
-      callback(
-        {
-          code: ipv6ErrorCode,
-          errno: ipv6ErrorCode,
-        } as unknown as Error,
-        {} as unknown as NeedleResponse,
-        null,
-      );
-      // eslint-disable-next-line camelcase
-      return needle.post(uri, data, { ...opts, ...overrideNeedleTimeoutOptions });
-    });
-
-    const ipFamily = await getIpFamily('https://dev.snyk.io');
-
-    strictEqual(ipFamily, undefined);
-  });
-
-  test('getIpFamily returns 6 when IPv6 supported', async () => {
-    sinon.stub(needle, 'request').callsFake((_, uri, data, opts, callback) => {
-      if (!callback) throw new Error();
-      callback(
-        null,
-        {
-          body: {
-            response: {
-              statusCode: 401,
-              body: {},
-            },
-          },
-        } as NeedleResponse,
-        null,
-      );
-      return needle.post(uri, data, { ...opts, ...overrideNeedleTimeoutOptions });
-    });
-
-    const ipFamily = await getIpFamily('https://dev.snyk.io');
-    strictEqual(ipFamily, 6);
   });
 
   test("Doesn't call setToken when token is empty", async () => {

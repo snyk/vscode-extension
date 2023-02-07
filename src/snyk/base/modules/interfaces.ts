@@ -4,7 +4,6 @@ import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { ExtensionContext as VSCodeExtensionContext } from '../../common/vscode/types';
-import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge } from '../views/loadingBadge';
 
@@ -14,21 +13,14 @@ export interface IBaseSnykModule {
   contextService: IContextService;
   openerService: IOpenerService;
   viewManagerService: IViewManagerService;
-  snykCodeOld: ISnykCodeServiceOld;
   readonly workspaceTrust: IWorkspaceTrust;
 
   // Abstract methods
   runScan(): Promise<void>;
-  runCodeScan(manual?: boolean): Promise<void>;
   runOssScan(manual?: boolean): Promise<void>;
 }
 
-export interface ISnykLib {
-  enableCode(): Promise<void>;
-  checkAdvancedMode(): Promise<void>;
-}
-
-export interface IExtension extends IBaseSnykModule, ISnykLib {
+export interface IExtension extends IBaseSnykModule {
   context: ExtensionContext | undefined;
   activate(context: VSCodeExtensionContext): void;
   restartLanguageServer(): Promise<void>;

@@ -211,12 +211,6 @@
                 "description": "Enables Snyk Code results delivery using Snyk Language Server.",
                 "default": false
               },
-              "reportFalsePositives": {
-                "type": "boolean",
-                "title": "Enable \"report false positives\"",
-                "description": "Allows reporting false positives for Snyk Code suggestions.",
-                "default": false
-              },
               "advisor": {
                 "type": "boolean",
                 "title": "Enable \"Snyk Advisor\"",
@@ -256,34 +250,14 @@
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.security.old",
-          "name": "Code Security",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.quality.old",
-          "name": "Code Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
           "id": "snyk.views.analysis.code.security",
-          "name": "Code Security (LS)",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "name": "Code Security",
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.quality",
-          "name": "Code Quality (LS)",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.enablement",
-          "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.localEngine",
-          "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "name": "Code Quality",
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
@@ -308,14 +282,6 @@
         "when": "!snyk:error && !snyk:loggedIn && snyk:authenticating"
       },
       {
-        "view": "snyk.views.analysis.code.enablement",
-        "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!"
-      },
-      {
-        "view": "snyk.views.analysis.code.localEngine",
-        "contents": "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension."
-      },
-      {
         "view": "snyk.views.welcome",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
         "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:workspaceFound"
@@ -325,12 +291,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.actions'",
           "group": "navigation"
         }
       ],
