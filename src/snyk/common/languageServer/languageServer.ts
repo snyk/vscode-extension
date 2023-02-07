@@ -51,6 +51,8 @@ export class LanguageServer implements ILanguageServer {
     this.downloadService = downloadService;
   }
 
+  // Starts the language server and the client. LS will be downloaded if missing.
+  // Returns a promise that resolves when the language server is ready to receive requests.
   async start(): Promise<void> {
     // wait until Snyk LS is downloaded
     await firstValueFrom(this.downloadService.downloadReady$);

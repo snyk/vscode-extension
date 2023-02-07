@@ -22,7 +22,6 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SETMODE_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
@@ -69,7 +68,6 @@ import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { SnykCodeServiceOld } from './snykCode/codeServiceOld';
-import { CodeScanMode } from './snykCode/constants/modes';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
@@ -453,11 +451,8 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS and Code scans replaced with LS
+        await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS scans replaced with LS
       }),
-      vscode.commands.registerCommand(SNYK_SETMODE_COMMAND, (mode: CodeScanMode) =>
-        this.commandController.setScanMode(mode),
-      ),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),

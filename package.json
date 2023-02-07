@@ -80,17 +80,25 @@
             "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
             "scope": "application"
           },
-          "snyk.advanced.advancedMode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Allows to configure if Snyk Code analysis is run automatically, manually or every 30 minutes. Default is automatically on save.",
-            "scope": "application"
-          },
           "snyk.advanced.autoScanOpenSourceSecurity": {
             "type": "boolean",
             "default": false,
             "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
             "scope": "application"
+          },
+          "snyk.scanningMode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "enumDescriptions": [
+              "Scan automatically in the background.",
+              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command."
+            ],
+            "default": "auto",
+            "title": "Snyk Code scanning mode",
+            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
           },
           "snyk.advanced.additionalParameters": {
             "type": "string",
@@ -278,11 +286,6 @@
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.actions",
-          "name": "Code Security & Quality Actions",
-          "when": "snyk:advanced && !snyk:error && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound"
-        },
-        {
           "id": "snyk.views.support",
           "name": "Help & feedback"
         }
@@ -316,26 +319,6 @@
         "view": "snyk.views.welcome",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
         "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:workspaceFound"
-      },
-      {
-        "view": "snyk.views.actions",
-        "contents": "You are currently running code security and quality scanning in manual mode. You are in control, no automated actions from our side.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
-        "when": "snyk:mode == 'manual'"
-      },
-      {
-        "view": "snyk.views.actions",
-        "contents": "Code security and quality analysis is currently paused.\n[Resume](command:snyk.setmode?%5B%22auto%22%5D)",
-        "when": "snyk:mode == 'paused'"
-      },
-      {
-        "view": "snyk.views.actions",
-        "contents": "You are currently running code security and quality scanning in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Scan now](command:snyk.start)\n[Switch to auto-scan mode](command:snyk.setmode?%5B%22auto%22%5D)",
-        "when": "snyk:mode == 'throttled'"
-      },
-      {
-        "view": "snyk.views.actions",
-        "contents": "You are currently running code security and quality in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause for 30 minutes](command:snyk.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:snyk.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:snyk.setmode?%5B%22throttled1%22%5D)",
-        "when": "snyk:mode != 'manual' && snyk:mode != 'paused' && snyk:mode != 'throttled'"
       }
     ],
     "menus": {
@@ -347,7 +330,7 @@
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.actions'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome'",
           "group": "navigation"
         }
       ],
