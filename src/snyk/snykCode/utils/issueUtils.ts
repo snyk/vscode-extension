@@ -3,17 +3,6 @@ import { CodeIssueData, IssueSeverity } from '../../common/languageServer/types'
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Range } from '../../common/vscode/types';
 
-export type IssuePlacementPosition = {
-  cols: {
-    start: number;
-    end: number;
-  };
-  rows: {
-    start: number;
-    end: number;
-  };
-};
-
 export class IssueUtils {
   static issueSeverityAsText = (severity: IssueSeverity): 'Low' | 'Medium' | 'High' | 'Critical' => {
     return _.startCase(severity) as 'Low' | 'Medium' | 'High' | 'Critical';
