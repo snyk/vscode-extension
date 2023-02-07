@@ -23,7 +23,7 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
-  YES_WELCOME_NOTIFICATION_SETTING
+  YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -101,7 +101,7 @@ export interface IConfiguration {
 
   severityFilter: SeverityFilter;
 
-  scanningMode: string;
+  scanningMode: string | undefined;
 
   getSnykLanguageServerPath(): string | undefined;
 
@@ -119,7 +119,6 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly devBaseApiHost = 'https://api.dev.snyk.io';
-  private readonly defaultScanningMode = 'auto';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -458,13 +457,8 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  get scanningMode(): string {
-    const scanningModeInConfig = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SCANNING_MODE),
-    );
-
-    return scanningModeInConfig ?? this.defaultScanningMode;
+  get scanningMode(): string | undefined {
+    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(SCANNING_MODE));
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {

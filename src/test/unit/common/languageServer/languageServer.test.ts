@@ -179,5 +179,12 @@ suite('Language Server', () => {
         assert.strictEqual(options.scanningMode, expectedScanningMode);
       });
     });
+
+    test('scanningMode is set to auto by default', async () => {
+      configurationMock.scanningMode = undefined;
+      const options = await languageServer.getInitializationOptions();
+
+      assert.strictEqual(options.scanningMode, 'auto');
+    });
   });
 });

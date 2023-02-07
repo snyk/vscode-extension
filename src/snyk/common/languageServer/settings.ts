@@ -54,7 +54,7 @@ export class LanguageServerSettings {
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
       insecure: `${configuration.getInsecure()}`,
-      scanningMode: configuration.scanningMode,
+      scanningMode: configuration.scanningMode ?? 'auto',
     };
   }
 }
