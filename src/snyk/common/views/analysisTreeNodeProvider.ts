@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as path from 'path';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
-import { SNYK_SHOW_LS_OUTPUT_COMMAND, SNYK_SHOW_OUTPUT_COMMAND } from '../constants/commands';
+import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../constants/commands';
 import { messages } from '../messages/analysisMessages';
 import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
@@ -58,8 +58,6 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
   }
 
   protected getErrorEncounteredTreeNode(scanPath?: string): TreeNode {
-    const lsCodeEnabled = this.configuration.getPreviewFeatures()?.lsCode;
-
     return new TreeNode({
       icon: NODE_ICONS.error,
       text: scanPath ? path.basename(scanPath) : messages.scanFailed,
@@ -68,19 +66,17 @@ export abstract class AnalysisTreeNodeProvder extends TreeNodeProvider {
         isError: true,
       },
       command: {
-        command: lsCodeEnabled ? SNYK_SHOW_LS_OUTPUT_COMMAND : SNYK_SHOW_OUTPUT_COMMAND,
+        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
         title: '',
       },
     });
   }
 
   protected getNoWorkspaceTrustTreeNode(): TreeNode {
-    const lsCodeEnabled = this.configuration.getPreviewFeatures()?.lsCode;
-
     return new TreeNode({
       text: messages.noWorkspaceTrust,
       command: {
-        command: lsCodeEnabled ? SNYK_SHOW_LS_OUTPUT_COMMAND : SNYK_SHOW_OUTPUT_COMMAND,
+        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
         title: '',
       },
     });

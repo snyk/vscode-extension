@@ -34,12 +34,12 @@ export class LanguageServerSettings {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
-    const codeSecurityEnabled = configuration.getPreviewFeatures().lsCode && featuresConfiguration?.codeSecurityEnabled;
-    const codeQualityEnabled = configuration.getPreviewFeatures().lsCode && featuresConfiguration?.codeQualityEnabled;
+    const codeSecurityEnabled = featuresConfiguration?.codeSecurityEnabled;
+    const codeQualityEnabled = featuresConfiguration?.codeQualityEnabled;
 
     return {
-      activateSnykCodeSecurity: `${codeSecurityEnabled ?? false}`,
-      activateSnykCodeQuality: `${codeQualityEnabled ?? false}`,
+      activateSnykCodeSecurity: `${codeSecurityEnabled}`,
+      activateSnykCodeQuality: `${codeQualityEnabled}`,
       activateSnykOpenSource: 'false',
       activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,

@@ -15,8 +15,6 @@ export const SNYK_CONTEXT = {
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
   FEATURES_SELECTED: 'featuresSelected',
-  CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
-  LS_CODE_PREVIEW: 'lsCodePreview',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
   MODE: 'mode',

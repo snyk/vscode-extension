@@ -205,12 +205,6 @@
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
             "properties": {
-              "lsCode": {
-                "type": "boolean",
-                "title": "Enable \"Code\" using Snyk Language Server",
-                "description": "Enables Snyk Code results delivery using Snyk Language Server.",
-                "default": false
-              },
               "advisor": {
                 "type": "boolean",
                 "title": "Enable \"Snyk Advisor\"",
@@ -252,12 +246,12 @@
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
@@ -311,7 +305,7 @@
         },
         {
           "command": "snyk.dcignore",
-          "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound"
+          "when": "!snyk:error && snyk:loggedIn && snyk:workspaceFound"
         }
       ]
     },
