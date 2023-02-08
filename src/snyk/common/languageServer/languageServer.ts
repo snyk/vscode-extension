@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
@@ -154,6 +155,7 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
+      this.logger.info(`${_.capitalize(scan.product)} scan ${scan.status}.`);
       this.scan$.next(scan);
     });
   }

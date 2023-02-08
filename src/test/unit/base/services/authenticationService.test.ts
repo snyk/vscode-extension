@@ -8,6 +8,7 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
 import { IContextService } from '../../../../snyk/common/services/contextService';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -23,6 +24,8 @@ suite('AuthenticationService', () => {
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
   let previewFeaturesSpy: sinon.SinonSpy;
+
+  let commands: IVSCodeCommands;
 
   setup(() => {
     baseModule = {} as IBaseSnykModule;
@@ -50,6 +53,10 @@ suite('AuthenticationService', () => {
       clearToken: clearTokenSpy,
       getPreviewFeatures: previewFeaturesSpy,
     } as unknown as IConfiguration;
+
+    commands = {
+      executeCommand: sinon.fake(),
+    };
   });
 
   teardown(() => sinon.restore());
@@ -67,6 +74,7 @@ suite('AuthenticationService', () => {
       analytics,
       new LoggerMock(),
       languageClientAdapter,
+      commands,
     );
 
     await service.initiateLogin();
@@ -83,6 +91,7 @@ suite('AuthenticationService', () => {
       {} as IAnalytics,
       new LoggerMock(),
       languageClientAdapter,
+      commands,
     );
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
 
@@ -101,6 +110,7 @@ suite('AuthenticationService', () => {
       {} as IAnalytics,
       new LoggerMock(),
       languageClientAdapter,
+      commands,
     );
     const tokenValue = 'token-value';
     sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(tokenValue));
@@ -130,6 +140,7 @@ suite('AuthenticationService', () => {
         {} as IAnalytics,
         new LoggerMock(),
         languageClientAdapter,
+        commands,
       );
     });
 

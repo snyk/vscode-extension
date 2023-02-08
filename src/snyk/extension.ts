@@ -131,6 +131,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
+      vsCodeComands,
     );
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);

@@ -41,10 +41,6 @@ export class CommandController {
     private analytics: IAnalytics,
   ) {}
 
-  // async openBrowser(url: string): Promise<void> {
-  //   await this.commands.executeCommand('snyk.openBrowser', url);
-  // }
-
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
