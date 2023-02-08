@@ -11,7 +11,6 @@ import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProv
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
-  SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
@@ -20,7 +19,6 @@ import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../con
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { ILog } from '../logger/interfaces';
-import { IOpenerService } from '../services/openerService';
 import { IVSCodeCommands } from '../vscode/commands';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
@@ -32,7 +30,6 @@ export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
 
   constructor(
-    private openerService: IOpenerService,
     private authService: IAuthenticationService,
     private snykCode: ISnykCodeService,
     private ossService: OssService,
@@ -44,9 +41,9 @@ export class CommandController {
     private analytics: IAnalytics,
   ) {}
 
-  openBrowser(url: string): unknown {
-    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
-  }
+  // async openBrowser(url: string): Promise<void> {
+  //   await this.commands.executeCommand('snyk.openBrowser', url);
+  // }
 
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');

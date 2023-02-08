@@ -4,7 +4,6 @@ import { IAuthenticationService } from '../../../../snyk/base/services/authentic
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
-import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
@@ -20,7 +19,6 @@ suite('CommandController', () => {
 
   setup(() => {
     controller = new CommandController(
-      {} as IOpenerService,
       {} as IAuthenticationService,
       {} as ISnykCodeService,
       {} as OssService,

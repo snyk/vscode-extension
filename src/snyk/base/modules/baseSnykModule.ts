@@ -13,7 +13,6 @@ import { ContextService, IContextService } from '../../common/services/contextSe
 import { DownloadService } from '../../common/services/downloadService';
 import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
-import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import { User } from '../../common/user';
 import { CodeActionKindAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
@@ -37,7 +36,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected configurationWatcher: IWatcher;
 
   readonly contextService: IContextService;
-  readonly openerService: IOpenerService;
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
@@ -68,7 +66,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.statusBarItem = new SnykStatusBarItem();
     this.viewManagerService = new ViewManagerService();
     this.contextService = new ContextService();
-    this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();
     this.learnService = new LearnService(configuration, Logger);
     this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace, Logger);

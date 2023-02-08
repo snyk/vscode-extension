@@ -1,6 +1,5 @@
 import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IContextService } from '../../common/services/contextService';
-import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { ExtensionContext as VSCodeExtensionContext } from '../../common/vscode/types';
@@ -11,7 +10,6 @@ export interface IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   statusBarItem: IStatusBarItem;
   contextService: IContextService;
-  openerService: IOpenerService;
   viewManagerService: IViewManagerService;
   readonly workspaceTrust: IWorkspaceTrust;
 

@@ -17,7 +17,6 @@ import {
   SNYK_DCIGNORE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_INITIATE_LOGIN_COMMAND,
-  SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SETTINGS_COMMAND,
@@ -200,7 +199,6 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     this.commandController = new CommandController(
-      this.openerService,
       this.authService,
       this.snykCode,
       this.ossService,
@@ -376,9 +374,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
-      vscode.commands.registerCommand(SNYK_OPEN_BROWSER_COMMAND, (url: string) =>
-        this.commandController.openBrowser(url),
-      ),
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
