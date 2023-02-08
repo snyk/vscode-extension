@@ -115,14 +115,14 @@
   }
   function getCurrentSeverity() {
     const stringMap = {
-      1: 'Low',
-      2: 'Medium',
-      3: 'High',
+      Low: 1,
+      Medium: 2,
+      High: 3,
     };
     return suggestion
       ? {
-          value: suggestion.severity,
-          text: stringMap[suggestion.severity],
+          value: stringMap[suggestion.severity],
+          text: suggestion.severity,
         }
       : undefined;
   }
