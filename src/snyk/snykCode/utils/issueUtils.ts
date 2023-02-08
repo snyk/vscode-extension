@@ -30,10 +30,8 @@ export class IssueUtils {
     return IssueUtils.createVsCodeRangeFromRange(issueData.rows, issueData.cols, languages);
   };
 
+  // Creates zero-based range
   static createVsCodeRangeFromRange(rows: number[], cols: number[], languages: IVSCodeLanguages): Range {
-    const rowOffset = 1;
-    const createPosition = (i: number): number => (i - rowOffset < 0 ? 0 : i - rowOffset);
-
-    return languages.createRange(createPosition(rows[0]), createPosition(cols[0]), createPosition(rows[1]), cols[1]);
+    return languages.createRange(rows[0], cols[0], rows[1], cols[1]);
   }
 }
