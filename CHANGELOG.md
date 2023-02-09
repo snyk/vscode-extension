@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.15.1]
+
+### Fixed
+
+- Force Language Server redownload when LSP version increases.
+
 ## [1.15.0]
 
 ### Changed
