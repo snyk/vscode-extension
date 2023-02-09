@@ -4,7 +4,6 @@
 
 ### Changed
 
-- Extension uses Language Server to run Snyk Code scans.
 - Snyk Code "Advanced" menu replaced with a settings option called "Scanning Mode".
 
 ## [1.14.0]

@@ -1,6 +1,6 @@
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
-import { SNYK_SCAN_STATUS } from '../../common/constants/views';
+import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
@@ -23,7 +23,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     if (!configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
       return [
         new TreeNode({
-          text: SNYK_SCAN_STATUS.CODE_SECURITY_DISABLED,
+          text: SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED,
         }),
       ];
     }

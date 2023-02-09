@@ -4,6 +4,7 @@ import { setContext } from '../vscode/vscodeCommandsUtils';
 
 export interface IContextService {
   readonly viewContext: { [key: string]: unknown };
+  shouldShowCodeAnalysis: boolean;
   shouldShowOssAnalysis: boolean;
 
   setContext(key: string, value: unknown): Promise<void>;
@@ -20,6 +21,10 @@ export class ContextService implements IContextService {
     Logger.debug(`Snyk context ${key}: ${value}`);
     this.viewContext[key] = value;
     await setContext(key, value);
+  }
+
+  get shouldShowCodeAnalysis(): boolean {
+    return this.shouldShowAnalysis && !!this.viewContext[SNYK_CONTEXT.CODE_ENABLED];
   }
 
   get shouldShowOssAnalysis(): boolean {

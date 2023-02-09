@@ -115,14 +115,14 @@
   }
   function getCurrentSeverity() {
     const stringMap = {
-      Low: 1,
-      Medium: 2,
-      High: 3,
+      1: 'Low',
+      2: 'Medium',
+      3: 'High',
     };
     return suggestion
       ? {
-          value: stringMap[suggestion.severity],
-          text: suggestion.severity,
+          value: suggestion.severity,
+          text: stringMap[suggestion.severity],
         }
       : undefined;
   }
@@ -190,8 +190,7 @@
         let markLineText = ' [';
         let first = true;
         for (const p of m.pos) {
-          const rowStart = Number(p.rows[0]) + 1; // editors are 1-based
-          markLineText += (first ? '' : ', ') + ':' + rowStart.toString();
+          markLineText += (first ? '' : ', ') + ':' + (p.rows[0] as string);
           first = false;
         }
         markLineText += ']';
@@ -212,9 +211,9 @@
     moreInfo.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
 
     const suggestionPosition = document.getElementById('line-position')!;
-    suggestionPosition.innerHTML = (Number(suggestion.rows[0]) + 1).toString(); // editors are 1-based
+    suggestionPosition.innerHTML = suggestion.rows[0];
     const suggestionPosition2 = document.getElementById('line-position2')!;
-    suggestionPosition2.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
+    suggestionPosition2.innerHTML = suggestion.rows[0];
 
     const dataset = document.getElementById('dataset-number')!;
     const infoTop = document.getElementById('info-top')!;
