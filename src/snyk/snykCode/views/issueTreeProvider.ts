@@ -44,7 +44,6 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
     if (!this.codeService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }
@@ -69,6 +68,12 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
     const [resultNodes, nIssues] = this.getResultNodes();
     nodes.push(...resultNodes);
+
+    const folderResults = Array.from(this.codeService.result.values());
+    const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
+    if (allFailed) {
+      return nodes;
+    }
 
     nodes.sort(this.compareNodes);
 

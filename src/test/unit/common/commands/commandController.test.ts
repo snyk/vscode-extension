@@ -1,15 +1,12 @@
 import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
-import { ScanModeService } from '../../../../snyk/base/services/scanModeService';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
-import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
-import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -22,12 +19,9 @@ suite('CommandController', () => {
 
   setup(() => {
     controller = new CommandController(
-      {} as IOpenerService,
       {} as IAuthenticationService,
       {} as ISnykCodeService,
-      {} as ISnykCodeServiceOld,
       {} as OssService,
-      {} as ScanModeService,
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,
       windowMock,
