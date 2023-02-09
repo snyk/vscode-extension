@@ -3,7 +3,12 @@ import sinon, { stub } from 'sinon';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { MEMENTO_LS_CHECKSUM, MEMENTO_LS_LAST_UPDATE_DATE } from '../../../../snyk/common/constants/globalState';
+import {
+  MEMENTO_LS_CHECKSUM,
+  MEMENTO_LS_LAST_UPDATE_DATE,
+  MEMENTO_LS_PROTOCOL_VERSION,
+} from '../../../../snyk/common/constants/globalState';
+import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { Downloader } from '../../../../snyk/common/download/downloader';
 import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
 import { IStaticLsApi } from '../../../../snyk/common/languageServer/staticLsApi';
@@ -106,14 +111,7 @@ suite('DownloadService', () => {
 
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - fiveDaysInMs);
 
-    const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
-    const latestChecksumStr = 'bdf6446bfaed1ae551b6eca14e8e101a53d855d33622094495e68e9a0b0069fc';
-    const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
-    apigetSha256Checksum.returns(latestChecksumStr);
-
-    sinon.stub(Platform, 'getCurrent').returns('darwin');
-    sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
-    sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.1', new Checksum(latestChecksumStr)));
+    stubSuccessDownload(apigetSha256Checksum, downloader);
 
     const updated = await service.update();
 
@@ -147,18 +145,34 @@ suite('DownloadService', () => {
     strictEqual(updated, false);
   });
 
-  test("Doesn't update LS if 3 days passed since last update", async () => {
+  test("Doesn't update LS if 3 days passed since last update and LSP version is latest", async () => {
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isLsInstalled').resolves(true);
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION);
 
     sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.0', new Checksum('test')));
 
     const updated = await service.update();
 
     strictEqual(updated, false);
+  });
+
+  test('Updates if 3 days passed since last update and LSP version has increased', async () => {
+    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
+    stub(service, 'isLsInstalled').resolves(true);
+
+    const threeDaysInMs = 3 * 24 * 3600 * 1000;
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION - 1);
+
+    stubSuccessDownload(apigetSha256Checksum, downloader);
+
+    const updated = await service.update();
+
+    strictEqual(updated, true);
   });
 
   test("Doesn't try to update if last LS update date was not set", async () => {
@@ -200,3 +214,14 @@ suite('DownloadService', () => {
     strictEqual(updateSpy.called, false);
   });
 });
+
+function stubSuccessDownload(apigetSha256Checksum: sinon.SinonStub, downloader: Downloader) {
+  const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
+  const latestChecksumStr = 'bdf6446bfaed1ae551b6eca14e8e101a53d855d33622094495e68e9a0b0069fc';
+  const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
+  apigetSha256Checksum.returns(latestChecksumStr);
+
+  sinon.stub(Platform, 'getCurrent').returns('darwin');
+  sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
+  sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.1', new Checksum(latestChecksumStr)));
+}

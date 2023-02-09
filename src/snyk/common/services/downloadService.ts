@@ -2,7 +2,12 @@ import { ReplaySubject } from 'rxjs';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
-import { MEMENTO_LS_CHECKSUM, MEMENTO_LS_LAST_UPDATE_DATE } from '../constants/globalState';
+import {
+  MEMENTO_LS_CHECKSUM,
+  MEMENTO_LS_LAST_UPDATE_DATE,
+  MEMENTO_LS_PROTOCOL_VERSION,
+} from '../constants/globalState';
+import { PROTOCOL_VERSION } from '../constants/languageServer';
 import { Downloader } from '../download/downloader';
 import { LsExecutable } from '../languageServer/lsExecutable';
 import { IStaticLsApi } from '../languageServer/staticLsApi';
@@ -55,6 +60,7 @@ export class DownloadService {
     }
 
     await this.setLastLsUpdateDateAndChecksum(executable.checksum);
+    await this.setCurrentLspVersion();
     this.logger.info(messages.downloadFinished(executable.version));
     return true;
   }
@@ -63,7 +69,9 @@ export class DownloadService {
     // let language server manage CLI downloads, but download LS here
     const platform = LsExecutable.getCurrentWithArch();
     const lsInstalled = await this.isLsInstalled();
-    if (!lsInstalled || this.isFourDaysPassedSinceLastLsUpdate()) {
+    const lspVersionHasUpdated = this.hasLspVersionUpdated();
+    const needsUpdate = this.isFourDaysPassedSinceLastLsUpdate() || lspVersionHasUpdated;
+    if (!lsInstalled || needsUpdate) {
       const updateAvailable = await this.isLsUpdateAvailable(platform);
       if (!updateAvailable) {
         return false;
@@ -74,6 +82,7 @@ export class DownloadService {
       }
 
       await this.setLastLsUpdateDateAndChecksum(executable.checksum);
+      await this.setCurrentLspVersion();
       this.logger.info(messages.downloadFinished(executable.version));
       return true;
     }
@@ -107,6 +116,10 @@ export class DownloadService {
     await this.extensionContext.updateGlobalStateValue(MEMENTO_LS_CHECKSUM, checksum.checksum);
   }
 
+  private async setCurrentLspVersion(): Promise<void> {
+    await this.extensionContext.updateGlobalStateValue(MEMENTO_LS_PROTOCOL_VERSION, PROTOCOL_VERSION);
+  }
+
   private isFourDaysPassedSinceLastLsUpdate(): boolean {
     const lastUpdateDate = this.getLastLsUpdateDate();
     if (!lastUpdateDate) {
@@ -115,8 +128,17 @@ export class DownloadService {
     return Date.now() - lastUpdateDate > this.fourDaysInMs;
   }
 
+  private hasLspVersionUpdated(): boolean {
+    const currentProtoclVersion = this.getLsProtocolVersion();
+    return currentProtoclVersion != PROTOCOL_VERSION;
+  }
+
   private getLastLsUpdateDate() {
     return this.extensionContext.getGlobalStateValue<number>(MEMENTO_LS_LAST_UPDATE_DATE);
+  }
+
+  private getLsProtocolVersion() {
+    return this.extensionContext.getGlobalStateValue<number>(MEMENTO_LS_PROTOCOL_VERSION);
   }
 
   private getLsChecksum(): number | undefined {
