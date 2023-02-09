@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.15.1]
+
+### Fix
+
+- Revert: Snyk Code "Advanced" menu replaced with a settings option called "Scanning Mode".
+
 ## [1.15.0]
 
 ### Changed
