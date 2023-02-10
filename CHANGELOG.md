@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.15.2]
+
+### Fixed
+
+- Reduce load on Snyk Code API.
+
 ## [1.15.1]
 
 ### Fixed
