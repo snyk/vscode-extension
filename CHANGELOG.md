@@ -1,10 +1,22 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.15.3]
+
+### Changed
+
+- Extension uses Language Server to run Snyk Code scans.
+
+## [1.15.2]
+
+### Fixed
+
+- Reduce load on Snyk Code API.
+
 ## [1.15.1]
 
-### Fix
+### Fixed
 
-- Revert: Snyk Code "Advanced" menu replaced with a settings option called "Scanning Mode".
+- Force Language Server redownload when LSP version increases.
 
 ## [1.15.0]
 
