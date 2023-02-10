@@ -9,10 +9,14 @@ import { ErrorHandler } from '../../common/error/errorHandler';
 import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
+import { ISnykLib } from './interfaces';
 
-export default class SnykLib extends BaseSnykModule {
+export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
+    Logger.info('Starting full scan');
+
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
+    this.snykCodeErrorHandler.resetTransientErrors();
     this.loadingBadge.setLoadingBadge(false);
 
     const token = await configuration.getToken();
@@ -40,6 +44,7 @@ export default class SnykLib extends BaseSnykModule {
         this.logFullAnalysisIsTriggered(manual);
 
         void this.startOssAnalysis(manual, false);
+        await this.startSnykCodeAnalysis(workspacePaths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
       }
     } catch (err) {
       await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
@@ -50,7 +55,50 @@ export default class SnykLib extends BaseSnykModule {
   // We should avoid having duplicate parallel executions.
   public runScan = _.debounce(this.runFullScan_.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, { leading: true });
 
+  public runCodeScan = _.debounce(this.startSnykCodeAnalysis.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, {
+    leading: true,
+  });
+
   public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
+
+  async enableCode(): Promise<void> {
+    const wasEnabled = await this.codeSettings.enable();
+    if (wasEnabled) {
+      await this.codeSettings.checkCodeEnabled();
+
+      Logger.info('Snyk Code was enabled.');
+      try {
+        await this.startSnykCodeAnalysis();
+      } catch (err) {
+        ErrorHandler.handle(err, Logger);
+      }
+    }
+  }
+
+  async startSnykCodeAnalysis(paths: string[] = [], manual = false, reportTriggeredEvent = true): Promise<void> {
+    // If the execution is suspended, we only allow user-triggered Snyk Code analyses.
+    if (this.isSnykCodeAutoscanSuspended(manual)) {
+      return;
+    }
+
+    const codeEnabled = await this.codeSettings.checkCodeEnabled();
+    if (!codeEnabled) {
+      return;
+    }
+
+    if (
+      !configuration.getFeaturesConfiguration()?.codeSecurityEnabled &&
+      !configuration.getFeaturesConfiguration()?.codeQualityEnabled
+    ) {
+      return;
+    }
+
+    if (!paths.length) {
+      paths = vsCodeWorkspace.getWorkspaceFolders();
+    }
+
+    await this.snykCodeOld.startAnalysis(paths, manual, reportTriggeredEvent);
+  }
 
   async onDidChangeWelcomeViewVisibility(visible: boolean): Promise<void> {
     if (visible && !(await configuration.getToken())) {
@@ -93,10 +141,19 @@ export default class SnykLib extends BaseSnykModule {
     }
   }
 
+  private isSnykCodeAutoscanSuspended(manual: boolean) {
+    return !manual && !this.scanModeService.isCodeAutoScanAllowed();
+  }
+
   private logFullAnalysisIsTriggered(manual: boolean) {
     const analysisType: SupportedAnalysisProperties[] = [];
     const enabledFeatures = configuration.getFeaturesConfiguration();
 
+    // Ensure preconditions are the same as within running specific analysis
+    if (!this.isSnykCodeAutoscanSuspended(manual)) {
+      if (enabledFeatures?.codeSecurityEnabled) analysisType.push('Snyk Code Security');
+      if (enabledFeatures?.codeQualityEnabled) analysisType.push('Snyk Code Quality');
+    }
     if (enabledFeatures?.ossEnabled) analysisType.push('Snyk Open Source');
 
     if (analysisType.length) {

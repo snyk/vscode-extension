@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import * as vscode from 'vscode';
 import { OpenCommandIssueType } from '../../../common/commands/types';
 import {
@@ -25,10 +24,16 @@ import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
+export declare enum AnalysisSeverity {
+  info = 1,
+  warning = 2,
+  critical = 3,
+}
+
 type Suggestion = {
   id: string;
   message: string;
-  severity: string;
+  severity: AnalysisSeverity;
   leadURL?: string;
   rule: string;
   repoDatasetSize: number;
@@ -142,11 +147,25 @@ export class CodeSuggestionWebviewProvider
   }
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
+    // TODO: avoid mapping severity to ints. Remove when releasing Code scans using LS & update codeSuggestionWebviewScript.ts respectively.
+    let severity;
+    switch (issue.severity) {
+      case 'low':
+        severity = 1;
+        break;
+      case 'medium':
+        severity = 2;
+        break;
+      default:
+        severity = 3;
+        break;
+    }
+
     return {
       id: issue.id,
       title: issue.title,
+      severity,
       uri: issue.filePath,
-      severity: _.capitalize(issue.severity),
       ...issue.additionalData,
     };
   }

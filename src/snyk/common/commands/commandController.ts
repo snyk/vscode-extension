@@ -1,16 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
+import { ScanModeService } from '../../base/services/scanModeService';
 import { ISnykCodeService } from '../../snykCode/codeService';
+import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
-import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
+import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
@@ -19,6 +22,7 @@ import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../con
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { ILog } from '../logger/interfaces';
+import { IOpenerService } from '../services/openerService';
 import { IVSCodeCommands } from '../vscode/commands';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
@@ -30,9 +34,12 @@ export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
 
   constructor(
+    private openerService: IOpenerService,
     private authService: IAuthenticationService,
     private snykCode: ISnykCodeService,
+    private snykCodeOld: ISnykCodeServiceOld,
     private ossService: OssService,
+    private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
@@ -40,6 +47,10 @@ export class CommandController {
     private logger: ILog,
     private analytics: IAnalytics,
   ) {}
+
+  openBrowser(url: string): unknown {
+    return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
+  }
 
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
@@ -107,6 +118,25 @@ export class CommandController {
         issueId: decodeURIComponent(issue.id),
         issueType: IssueUtils.getIssueType(issue.additionalData.isSecurityType),
         severity: IssueUtils.issueSeverityAsText(issue.severity),
+      });
+    } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
+      const issue = arg.issue as CodeIssueCommandArgOld;
+      const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);
+      if (!suggestion) return;
+      // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
+      await this.openLocal(issue.filePath, issue.range);
+
+      try {
+        this.snykCodeOld.suggestionProvider.show(suggestion.id, issue.filePath, issue.range);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
+
+      this.analytics.logIssueInTreeIsClicked({
+        ide: IDE_NAME,
+        issueId: decodeURIComponent(suggestion.id),
+        issueType: IssueUtils.getIssueType(suggestion.isSecurityType),
+        severity: IssueUtils.severityAsText(suggestion.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issue = arg.issue as OssIssueCommandArg;

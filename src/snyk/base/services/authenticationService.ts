@@ -1,11 +1,10 @@
 import { validate as uuidValidate } from 'uuid';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { DID_CHANGE_CONFIGURATION_METHOD, SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/languageServer';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
-import { IVSCodeCommands } from '../../common/vscode/commands';
 import { ILanguageClientAdapter } from '../../common/vscode/languageClient';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { IBaseSnykModule } from '../modules/interfaces';
@@ -26,7 +25,6 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly analytics: IAnalytics,
     private readonly logger: ILog,
     private readonly clientAdapter: ILanguageClientAdapter,
-    private commands: IVSCodeCommands,
   ) {}
 
   async initiateLogin(): Promise<void> {
@@ -68,8 +66,6 @@ export class AuthenticationService implements IAuthenticationService {
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
       this.baseModule.loadingBadge.setLoadingBadge(false);
-
-      await this.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
     }
   }
 }
