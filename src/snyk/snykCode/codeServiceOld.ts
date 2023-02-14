@@ -1,4 +1,4 @@
-import { AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
+import { AnalysisContext, AnalysisSeverity, analyzeFolders, extendAnalysis, FileAnalysis } from '@snyk/code-client';
 import { ConnectionOptions } from '@snyk/code-client/dist/http';
 import { v4 as uuidv4 } from 'uuid';
 import { AnalysisStatusProvider } from '../common/analysis/statusProvider';
@@ -177,6 +177,19 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
 
       const snykCodeToken = await this.config.snykCodeToken;
 
+      const analysisContext: AnalysisContext = {
+        analysisContext: {
+          flow: this.config.source,
+          initiator: 'IDE',
+          org: {
+            name: this.config.organization || 'unknown',
+            displayName: 'unknown',
+            publicId: 'unknown',
+            flags: {},
+          },
+        },
+      };
+
       let result: FileAnalysis | null = null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
@@ -184,6 +197,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
           ...this.remoteBundle,
           files: changedFiles,
           connection: this.getConnectionOptions(requestId, snykCodeToken),
+          ...analysisContext,
         });
       } else {
         result = await analyzeFolders({
@@ -194,11 +208,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
           fileOptions: {
             paths: pathsToTest.concat([]),
           },
-          analysisContext: {
-            flow: this.config.source,
-            initiator: 'IDE',
-            orgDisplayName: this.config.organization,
-          },
+          ...analysisContext,
         });
       }
 
