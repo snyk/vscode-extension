@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.15.5]
+
+### Changed
+
+- Enabled dynamic Snyk Code scans via Language Server rollout.
+
 ## [1.15.3]
 
 ### Changed
