@@ -6,6 +6,7 @@ import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
+import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
@@ -39,6 +40,14 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       await this.setWorkspaceContext(workspacePaths);
 
       await this.user.identify(this.snykApiClient, this.analytics);
+
+      const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
+        ExperimentKey.CodeScansViaLanguageServer,
+      );
+
+      if (codeScansViaLs) {
+        await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      }
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);

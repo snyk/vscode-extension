@@ -22,7 +22,7 @@ import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
-import { createIssueCorrectRange, getAbsoluteMarkerFilePath, getVSCodeSeverity } from '../../utils/analysisUtils';
+import { createIssueCorrectRange, getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { ICodeSuggestionWebviewProviderOld } from '../interfaces';
 
 export class CodeSuggestionWebviewProviderOld
@@ -216,7 +216,7 @@ export class CodeSuggestionWebviewProviderOld
       'snykCode',
       'views',
       'suggestion',
-      'codeSuggestionWebviewScript.js',
+      'codeSuggestionWebviewScriptOld.js',
     );
     const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
     const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');

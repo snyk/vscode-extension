@@ -7,6 +7,7 @@ import { User } from '../../user';
 export enum ExperimentKey {
   // to be populated with running experiment keys
   TestExperiment = 'vscode-test-experiment',
+  CodeScansViaLanguageServer = 'snyk-code-via-ls-in-vs-code-integration',
 }
 
 export class ExperimentService {
@@ -42,7 +43,7 @@ export class ExperimentService {
 
     const variants = await this.fetchVariants();
     const variant = variants[variantFlag];
-    if (variant?.value === 'test') {
+    if (variant?.value === 'on') {
       return true;
     }
 
