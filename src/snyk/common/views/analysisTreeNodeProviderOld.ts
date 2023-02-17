@@ -2,12 +2,12 @@ import _ from 'lodash';
 import * as path from 'path';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
-import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../constants/commands';
+import { SNYK_SHOW_OUTPUT_COMMAND } from '../constants/commands';
 import { messages } from '../messages/analysisMessages';
 import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 
-export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
+export abstract class AnalysisTreeNodeProviderOld extends TreeNodeProvider {
   constructor(protected readonly configuration: IConfiguration, private statusProvider: AnalysisStatusProvider) {
     super();
   }
@@ -66,7 +66,7 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
         isError: true,
       },
       command: {
-        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
+        command: SNYK_SHOW_OUTPUT_COMMAND,
         title: '',
       },
     });
@@ -76,7 +76,7 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return new TreeNode({
       text: messages.noWorkspaceTrust,
       command: {
-        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
+        command: SNYK_SHOW_OUTPUT_COMMAND,
         title: '',
       },
     });
