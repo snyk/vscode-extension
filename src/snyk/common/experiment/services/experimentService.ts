@@ -1,4 +1,4 @@
-import { Experiment, ExperimentClient, Variants } from '@amplitude/experiment-node-server';
+import { Experiment, RemoteEvaluationClient, Variants } from '@amplitude/experiment-node-server';
 import { IConfiguration } from '../../configuration/configuration';
 import { SnykConfiguration } from '../../configuration/snykConfiguration';
 import { ILog } from '../../logger/interfaces';
@@ -11,7 +11,7 @@ export enum ExperimentKey {
 }
 
 export class ExperimentService {
-  private client: ExperimentClient;
+  private client: RemoteEvaluationClient;
   private variants?: Variants;
 
   constructor(

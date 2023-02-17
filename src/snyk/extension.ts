@@ -31,6 +31,7 @@ import {
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import { SNYK_WORKSPACE_SCAN_COMMAND } from './common/constants/languageServer';
 import {
+  SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD,
@@ -43,7 +44,7 @@ import {
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
-import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExperimentKey, ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
@@ -140,6 +141,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
+      vsCodeComands,
     );
 
     this.snykCodeOld = new SnykCodeServiceOld(
@@ -171,6 +173,8 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -180,6 +184,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      this.experimentService,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -347,7 +352,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
     this.analytics.load();
-    this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
     this.experimentService.load();
 
     this.logPluginIsInstalled();
@@ -385,6 +389,17 @@ class SnykExtension extends SnykLib implements IExtension {
       this.markdownStringAdapter,
       configuration,
     );
+
+    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
+      ExperimentKey.CodeScansViaLanguageServer,
+    );
+    if (codeScansViaLs) {
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      Logger.info('Code scans via language server enabled.');
+    } else {
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
+      Logger.info('Code scans are not using Language Server.');
+    }
 
     await this.languageServer.start();
 

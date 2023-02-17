@@ -41,14 +41,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       await this.user.identify(this.snykApiClient, this.analytics);
 
-      const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
-        ExperimentKey.CodeScansViaLanguageServer,
-      );
-
-      if (codeScansViaLs) {
-        await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-      }
-
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
 
@@ -92,6 +84,14 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
     const codeEnabled = await this.codeSettings.checkCodeEnabled();
     if (!codeEnabled) {
+      return;
+    }
+
+    // if LS is used to scan, don't proceed
+    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
+      ExperimentKey.CodeScansViaLanguageServer,
+    );
+    if (codeScansViaLs) {
       return;
     }
 
