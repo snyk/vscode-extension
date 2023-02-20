@@ -12,7 +12,6 @@ export enum ScanStatus {
 }
 
 export type Scan<T> = {
-  scanTime: number;
   folderPath: string;
   product: ScanProduct;
   status: ScanStatus;
