@@ -12,7 +12,7 @@ import {
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
-import { ExperimentService } from '../experiment/services/experimentService';
+import { ExperimentKey, ExperimentService } from '../experiment/services/experimentService';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
@@ -24,7 +24,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-import { CodeIssueData, OssIssueData, Scan } from './types';
+import { CodeIssueData, OssIssueData, Scan, ScanStatus } from './types';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -156,8 +156,28 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
+    client.onNotification(SNYK_SCAN, async (scan: Scan<CodeIssueData | OssIssueData>) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
+
+      // we need to force extension restart if user's amplitude experiment status has changed
+      if (scan.status === ScanStatus.InProgress) {
+        const isPartOfLSCodeExperiment = await this.experimentService.isUserPartOfExperiment(
+          ExperimentKey.CodeScansViaLanguageServer,
+        );
+
+        // aim for eventual consistency
+        const waitTime = 5 * 60 * 1000; // 5 minutes
+        const currentTimestamp = new Date().getTime();
+        const fiveMinutesPassed = currentTimestamp - scan.scanTime > waitTime;
+
+        if (isPartOfLSCodeExperiment && fiveMinutesPassed) {
+          this.logger.info('Restarting extension due to experiment change.');
+          // do restart
+        }
+      }
+
+      // update scan time
+      scan.scanTime = new Date().getTime();
       this.scan$.next(scan);
     });
   }
