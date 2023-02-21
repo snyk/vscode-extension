@@ -1,5 +1,6 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
+import { IBaseSnykModule } from '../../../../../snyk/base/modules/interfaces';
 import { IConfiguration } from '../../../../../snyk/common/configuration/configuration';
 import { SnykConfiguration } from '../../../../../snyk/common/configuration/snykConfiguration';
 import { SNYK_CONTEXT } from '../../../../../snyk/common/constants/views';
@@ -45,7 +46,11 @@ suite('Code Scan Orchestrator', () => {
       viewContext: {},
     };
 
-    codeScanOrchestrator = new CodeScanOrchestrator(experimentService, ls, logger, contextServiceMock);
+    const extension = {
+      runCodeScan: sinon.fake(),
+    } as unknown as IBaseSnykModule;
+
+    codeScanOrchestrator = new CodeScanOrchestrator(experimentService, ls, logger, contextServiceMock, extension);
   });
 
   teardown(() => {
@@ -106,24 +111,6 @@ suite('Code Scan Orchestrator', () => {
       }
     });
   }
-
-  test('Correctly updates code scan settings when user is part of experiment', async () => {
-    isUserPartOfExperimentStub.resolves(true);
-
-    codeScanOrchestrator.setWaitTimeInMs(10);
-    await sleepInMs(15);
-
-    ls.scan$.next({
-      product: ScanProduct.Code,
-      folderPath: 'test/path',
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-
-    // wait for the orchestrator to finish, possible race condition still exists
-    await sleepInMs(15);
-    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-  });
 
   test('Correctly updates code scan settings when user is NOT part of experiment', async () => {
     codeScanOrchestrator.setWaitTimeInMs(10);

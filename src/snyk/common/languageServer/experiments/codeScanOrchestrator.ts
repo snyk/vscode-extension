@@ -1,4 +1,5 @@
 import { Subscription } from 'rxjs';
+import { IBaseSnykModule } from '../../../base/modules/interfaces';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { ExperimentKey, ExperimentService } from '../../experiment/services/experimentService';
 import { ILog } from '../../logger/interfaces';
@@ -16,6 +17,7 @@ export class CodeScanOrchestrator {
     readonly languageServer: ILanguageServer,
     private readonly logger: ILog,
     private readonly contextService: IContextService,
+    private extension: IBaseSnykModule,
   ) {
     this.lastExperimentCheck = new Date().getTime();
     this.setWaitTimeInMs(1000 * 60 * 15); // 15 minutes
@@ -32,6 +34,7 @@ export class CodeScanOrchestrator {
 
   async handleExperimentCheck(scan: Scan<CodeIssueData>): Promise<void> {
     if (!this.isCheckRequired() || scan.status !== ScanStatus.InProgress || scan.product !== ScanProduct.Code) {
+      this.logger.debug('Code scan update not required.');
       return;
     }
 
@@ -41,13 +44,9 @@ export class CodeScanOrchestrator {
       true,
     );
 
-    if (isPartOfLSCodeExperiment) {
-      // update code scan context
-      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-      this.logger.debug('Code scans via language server enabled.');
-    } else {
+    if (!isPartOfLSCodeExperiment) {
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
-      this.logger.debug('Code scans are not using Language Server.');
+      await this.extension.runCodeScan();
     }
 
     // update lastExperimentCheckTime

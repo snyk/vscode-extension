@@ -409,6 +409,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       Logger,
       this.contextService,
+      this,
     );
 
     // noinspection ES6MissingAwait
