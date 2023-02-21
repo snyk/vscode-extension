@@ -36,12 +36,12 @@ export class ExperimentService {
     return true;
   }
 
-  async isUserPartOfExperiment(variantFlag: ExperimentKey): Promise<boolean> {
+  async isUserPartOfExperiment(variantFlag: ExperimentKey, forceFetchVariants = false): Promise<boolean> {
     if (!this.canExperiment) {
       return false;
     }
 
-    const variants = await this.fetchVariants();
+    const variants = await this.fetchVariants(forceFetchVariants);
     const variant = variants[variantFlag];
     if (variant?.value === 'on') {
       return true;
@@ -50,8 +50,8 @@ export class ExperimentService {
     return false;
   }
 
-  private async fetchVariants(): Promise<Variants> {
-    if (!this.variants) {
+  private async fetchVariants(forceFetchVariants: boolean): Promise<Variants> {
+    if (!this.variants || forceFetchVariants) {
       try {
         this.variants = await this.client.fetch({
           /* eslint-disable camelcase */

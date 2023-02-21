@@ -1,3 +1,4 @@
+import { Experiment, RemoteEvaluationClient } from '@amplitude/experiment-node-server';
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IConfiguration } from '../../../../../snyk/common/configuration/configuration';
@@ -8,6 +9,7 @@ import { LoggerMock } from '../../../mocks/logger.mock';
 
 suite('ExperimentService', () => {
   let user: User;
+  let fetchStub: sinon.SinonStub;
 
   setup(() => {
     user = new User(undefined, undefined);
@@ -16,6 +18,11 @@ suite('ExperimentService', () => {
       amplitudeExperimentApiKey: 'test',
       segmentWriteKey: 'test',
     } as SnykConfiguration);
+
+    fetchStub = sinon.stub();
+    sinon.stub(Experiment, 'initialize').returns({
+      fetch: fetchStub,
+    } as unknown as RemoteEvaluationClient);
   });
 
   teardown(() => {
@@ -43,5 +50,39 @@ suite('ExperimentService', () => {
     const isUserPartOfExperiment = await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
 
     strictEqual(isUserPartOfExperiment, false);
+  });
+
+  test('Should force a fetch of variants even if cache is available', async () => {
+    const config = {
+      shouldReportEvents: true,
+    } as unknown as IConfiguration;
+
+    const snykConfig = new SnykConfiguration('test', 'test', 'test');
+    const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
+    service.load();
+
+    fetchStub.returns({});
+
+    await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
+    await service.isUserPartOfExperiment(ExperimentKey.TestExperiment, true);
+
+    strictEqual(fetchStub.callCount, 2);
+  });
+
+  test('Should use cached variants by default', async () => {
+    const config = {
+      shouldReportEvents: true,
+    } as unknown as IConfiguration;
+
+    const snykConfig = new SnykConfiguration('test', 'test', 'test');
+    const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
+    service.load();
+
+    fetchStub.returns({});
+
+    await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
+    await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
+
+    strictEqual(fetchStub.callCount, 1);
   });
 });
