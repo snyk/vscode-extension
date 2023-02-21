@@ -3,7 +3,7 @@ import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IContextService } from '../../common/services/contextService';
-import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
+import { AnalysisTreeNodeProviderOld } from '../../common/views/analysisTreeNodeProviderOld';
 import { INodeIcon, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { ISnykCodeServiceOld } from '../codeServiceOld';
 import { SNYK_SEVERITIES } from '../constants/analysis';
@@ -15,7 +15,7 @@ interface ISeverityCounts {
   [severity: number]: number;
 }
 
-export class IssueTreeProviderOld extends AnalysisTreeNodeProvder {
+export class IssueTreeProviderOld extends AnalysisTreeNodeProviderOld {
   constructor(
     protected contextService: IContextService,
     protected snykCode: ISnykCodeServiceOld,

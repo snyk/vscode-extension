@@ -205,12 +205,6 @@
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
             "properties": {
-              "lsCode": {
-                "type": "boolean",
-                "title": "Enable \"Code\" using Snyk Language Server",
-                "description": "Enables Snyk Code results delivery using Snyk Language Server.",
-                "default": false
-              },
               "reportFalsePositives": {
                 "type": "boolean",
                 "title": "Enable \"report false positives\"",
@@ -258,32 +252,32 @@
         {
           "id": "snyk.views.analysis.code.security.old",
           "name": "Code Security",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.quality.old",
           "name": "Code Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.security",
-          "name": "Code Security (LS)",
+          "name": "Code Security",
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.quality",
-          "name": "Code Quality (LS)",
+          "name": "Code Quality",
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.localEngine",
           "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
@@ -449,7 +443,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@amplitude/experiment-node-server": "^1.0.2",
+    "@amplitude/experiment-node-server": "^1.3.0",
     "@babel/parser": "^7.12.11",
     "@babel/traverse": "^7.12.12",
     "@babel/types": "^7.12.12",

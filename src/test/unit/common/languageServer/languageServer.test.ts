@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import assert, { deepStrictEqual } from 'assert';
+import assert, { deepStrictEqual, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { ExperimentService } from '../../../../snyk/common/experiment/services/experimentService';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -115,6 +116,7 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
+      new ExperimentService(user, new LoggerMock(), configurationMock),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -140,6 +142,7 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
+        new ExperimentService(user, new LoggerMock(), configurationMock),
       );
     });
 
@@ -169,6 +172,28 @@ suite('Language Server', () => {
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
+    });
+
+    test('LanguageServer should respect experiment setup for Code', async () => {
+      const experimentServiceMock = {
+        isUserPartOfExperiment: sinon.stub().resolves(true),
+      };
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        {} as ILanguageClientAdapter,
+        {} as IVSCodeWorkspace,
+        windowMock,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+        experimentServiceMock as unknown as ExperimentService,
+      );
+
+      const initOptions = await languageServer.getInitializationOptions();
+
+      strictEqual(initOptions.activateSnykCodeQuality, `true`);
+      strictEqual(initOptions.activateSnykCodeQuality, `true`);
     });
 
     ['auto', 'manual'].forEach(expectedScanningMode => {

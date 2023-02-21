@@ -35,7 +35,7 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
     for (const result of this.issues.entries()) {
       const folderPath = result[0];
       const issues = result[1];
-      if (issues instanceof Error) {
+      if (issues instanceof Error || !issues) {
         continue;
       }
 

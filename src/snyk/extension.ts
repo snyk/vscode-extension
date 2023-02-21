@@ -44,7 +44,8 @@ import {
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
-import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExperimentKey, ExperimentService } from './common/experiment/services/experimentService';
+import { CodeScanOrchestrator } from './common/languageServer/experiments/codeScanOrchestrator';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
@@ -141,6 +142,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
+      vsCodeComands,
     );
 
     this.snykCodeOld = new SnykCodeServiceOld(
@@ -172,6 +174,8 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -181,36 +185,33 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      this.experimentService,
     );
 
-    const lsCodePreview = configuration.getPreviewFeatures().lsCode;
-    if (lsCodePreview) {
-      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-      const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
-        vsCodeWindow,
-        extensionContext,
-        Logger,
-        vsCodeLanguages,
-        vsCodeWorkspace,
-        this.learnService,
-      );
+    const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+      this.learnService,
+    );
 
-      this.snykCode = new SnykCodeService(
-        this.context,
-        configuration,
-        codeSuggestionProvider,
-        new CodeActionAdapter(),
-        this.codeActionKindAdapter,
-        this.viewManagerService,
-        vsCodeWorkspace,
-        this.workspaceTrust,
-        this.languageServer,
-        vsCodeWindow,
-        vsCodeLanguages,
-        Logger,
-        this.analytics,
-      );
-    }
+    this.snykCode = new SnykCodeService(
+      this.context,
+      configuration,
+      codeSuggestionProvider,
+      new CodeActionAdapter(),
+      this.codeActionKindAdapter,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      vsCodeWindow,
+      vsCodeLanguages,
+      Logger,
+      this.analytics,
+    );
 
     this.ossService = new OssService(
       this.context,
@@ -243,49 +244,47 @@ class SnykExtension extends SnykLib implements IExtension {
     );
     this.registerCommands(vscodeContext);
 
-    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProviderOld(
+    const codeSecurityIssueProviderOld = new CodeSecurityIssueTreeProviderOld(
         this.viewManagerService,
         this.contextService,
         this.snykCodeOld,
         configuration,
       ),
-      codeQualityIssueProvider = new CodeQualityIssueTreeProviderOld(
+      codeQualityIssueProviderOld = new CodeQualityIssueTreeProviderOld(
         this.viewManagerService,
         this.contextService,
         this.snykCodeOld,
         configuration,
       );
 
-    if (lsCodePreview) {
-      const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-          this.viewManagerService,
-          this.contextService,
-          this.snykCode,
-          configuration,
-          vsCodeLanguages,
-        ),
-        codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
-          this.viewManagerService,
-          this.contextService,
-          this.snykCode,
-          configuration,
-          vsCodeLanguages,
-        );
-
-      const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
-        treeDataProvider: codeSecurityIssueProvider,
-      });
-      const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
-        treeDataProvider: codeQualityIssueProvider,
-      });
-
-      vscodeContext.subscriptions.push(
-        vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
-        vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
-        codeSecurityTree,
-        codeQualityTree,
+    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
+        this.viewManagerService,
+        this.contextService,
+        this.snykCode,
+        configuration,
+        vsCodeLanguages,
+      ),
+      codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
+        this.viewManagerService,
+        this.contextService,
+        this.snykCode,
+        configuration,
+        vsCodeLanguages,
       );
-    }
+
+    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
+      treeDataProvider: codeSecurityIssueProvider,
+    });
+    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
+      treeDataProvider: codeQualityIssueProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
+      codeSecurityTree,
+      codeQualityTree,
+    );
 
     const ossVulnerabilityProvider = new OssVulnerabilityTreeProvider(
       this.viewManagerService,
@@ -299,8 +298,8 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, codeQualityIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, codeSecurityIssueProviderOld),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, codeQualityIssueProviderOld),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
     );
 
@@ -314,16 +313,16 @@ class SnykExtension extends SnykLib implements IExtension {
     const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossVulnerabilityProvider,
     });
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, {
-      treeDataProvider: codeSecurityIssueProvider,
+    const codeSecurityTreeOld = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, {
+      treeDataProvider: codeSecurityIssueProviderOld,
     });
-    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, {
-      treeDataProvider: codeQualityIssueProvider,
+    const codeQualityTreeOld = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, {
+      treeDataProvider: codeQualityIssueProviderOld,
     });
     vscodeContext.subscriptions.push(
       ossTree.onDidChangeVisibility(e => this.onDidChangeOssTreeVisibility(e.visible)),
-      codeSecurityTree,
-      codeQualityTree,
+      codeSecurityTreeOld,
+      codeQualityTreeOld,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
       codeEnablementTree,
     );
@@ -343,9 +342,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
-    if (lsCodePreview) {
-      this.snykCode.activateWebviewProviders();
-    }
+    this.snykCode.activateWebviewProviders();
     this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
@@ -356,7 +353,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
     this.analytics.load();
-    this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
     this.experimentService.load();
 
     this.logPluginIsInstalled();
@@ -395,7 +391,26 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
 
+    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
+      ExperimentKey.CodeScansViaLanguageServer,
+    );
+    if (codeScansViaLs) {
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      Logger.info('Code scans via language server enabled.');
+    } else {
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
+      Logger.info('Code scans are not using Language Server.');
+    }
+
     await this.languageServer.start();
+
+    this.codeScanOrchestrator = new CodeScanOrchestrator(
+      this.experimentService,
+      this.languageServer,
+      Logger,
+      this.contextService,
+      this,
+    );
 
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
@@ -408,6 +423,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.snykCodeOld.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
+    this.codeScanOrchestrator.dispose();
     await this.analytics.flush();
     await ErrorReporter.flush();
   }

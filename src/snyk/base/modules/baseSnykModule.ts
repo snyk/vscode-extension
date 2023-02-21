@@ -7,6 +7,7 @@ import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
+import { CodeScanOrchestrator } from '../../common/languageServer/experiments/codeScanOrchestrator';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
@@ -66,6 +67,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   snykCodeOld: ISnykCodeServiceOld;
   snykCode: ISnykCodeService;
   protected codeSettings: ICodeSettings;
+  protected codeScanOrchestrator: CodeScanOrchestrator;
 
   readonly loadingBadge: ILoadingBadge;
   protected user: User;

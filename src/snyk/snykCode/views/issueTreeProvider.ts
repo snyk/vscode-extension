@@ -6,7 +6,7 @@ import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
-import { AnalysisTreeNodeProvder } from '../../common/views/analysisTreeNodeProvider';
+import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command } from '../../common/vscode/types';
@@ -19,7 +19,7 @@ interface ISeverityCounts {
   [severity: string]: number;
 }
 
-export class IssueTreeProvider extends AnalysisTreeNodeProvder {
+export class IssueTreeProvider extends AnalysisTreeNodeProvider {
   constructor(
     protected readonly contextService: IContextService,
     protected readonly codeService: ISnykCodeService,
@@ -69,6 +69,12 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvder {
 
     const [resultNodes, nIssues] = this.getResultNodes();
     nodes.push(...resultNodes);
+
+    const folderResults = Array.from(this.codeService.result.values());
+    const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
+    if (allFailed) {
+      return nodes;
+    }
 
     nodes.sort(this.compareNodes);
 

@@ -6,6 +6,7 @@ import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
+import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
@@ -83,6 +84,14 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
     const codeEnabled = await this.codeSettings.checkCodeEnabled();
     if (!codeEnabled) {
+      return;
+    }
+
+    // if LS is used to scan, don't proceed
+    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
+      ExperimentKey.CodeScansViaLanguageServer,
+    );
+    if (codeScansViaLs) {
       return;
     }
 
