@@ -60,7 +60,7 @@ suite('Code Scan Orchestrator', () => {
   test('Orchestrates only when check is required', async () => {
     // check is required if 10ms passed since last check
     codeScanOrchestrator.setWaitTimeInMs(10);
-    await sleepInMs(5);
+    await sleepInMs(50);
 
     ls.scan$.next({
       product: ScanProduct.Code,
@@ -114,7 +114,7 @@ suite('Code Scan Orchestrator', () => {
 
   test('Correctly updates code scan settings when user is NOT part of experiment', async () => {
     codeScanOrchestrator.setWaitTimeInMs(10);
-    await sleepInMs(15);
+    await sleepInMs(20);
 
     ls.scan$.next({
       product: ScanProduct.Code,
@@ -124,7 +124,7 @@ suite('Code Scan Orchestrator', () => {
     });
 
     // wait for the orchestrator to finish, possible race condition still exists
-    await sleepInMs(15);
+    await sleepInMs(20);
     sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, false);
   });
 });
