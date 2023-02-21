@@ -12,7 +12,7 @@ import {
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
-import { ExperimentKey, ExperimentService } from '../experiment/services/experimentService';
+import { ExperimentService } from '../experiment/services/experimentService';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
@@ -24,7 +24,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-import { CodeIssueData, OssIssueData, Scan, ScanStatus } from './types';
+import { CodeIssueData, OssIssueData, Scan } from './types';
 
 export interface ILanguageServer {
   start(): Promise<void>;
