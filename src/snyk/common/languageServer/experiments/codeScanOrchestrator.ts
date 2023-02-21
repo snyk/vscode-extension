@@ -43,11 +43,11 @@ export class CodeScanOrchestrator {
 
     if (isPartOfLSCodeExperiment) {
       // update code scan context
-      this.logger.debug('Switching to LS Code Preview');
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+      this.logger.debug('Code scans via language server enabled.');
     } else {
-      this.logger.debug('Switching to code/client');
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
+      this.logger.debug('Code scans are not using Language Server.');
     }
 
     // update lastExperimentCheckTime
