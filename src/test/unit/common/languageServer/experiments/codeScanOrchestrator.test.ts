@@ -59,8 +59,8 @@ suite('Code Scan Orchestrator', () => {
 
   test('Orchestrates only when check is required', async () => {
     // check is required if 10ms passed since last check
-    codeScanOrchestrator.setWaitTimeInMs(10);
-    await sleepInMs(50);
+    codeScanOrchestrator.setWaitTimeInMs(100);
+    await sleepInMs(20);
 
     ls.scan$.next({
       product: ScanProduct.Code,
