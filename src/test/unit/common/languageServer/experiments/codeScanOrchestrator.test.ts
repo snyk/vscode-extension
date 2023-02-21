@@ -12,7 +12,7 @@ import { User } from '../../../../../snyk/common/user';
 import { LanguageServerMock } from '../../../mocks/languageServer.mock';
 import { LoggerMock } from '../../../mocks/logger.mock';
 
-suite.only('Code Scan Orchestrator', () => {
+suite('Code Scan Orchestrator', () => {
   let ls: ILanguageServer;
   let codeScanOrchestrator: CodeScanOrchestrator;
   let experimentService: ExperimentService;
@@ -120,6 +120,8 @@ suite.only('Code Scan Orchestrator', () => {
       status: ScanStatus.InProgress,
     });
 
+    // wait for the orchestrator to finish, possible race condition still exists
+    await sleepInMs(15);
     sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, true);
   });
 
@@ -134,6 +136,8 @@ suite.only('Code Scan Orchestrator', () => {
       status: ScanStatus.InProgress,
     });
 
+    // wait for the orchestrator to finish, possible race condition still exists
+    await sleepInMs(15);
     sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, false);
   });
 });
