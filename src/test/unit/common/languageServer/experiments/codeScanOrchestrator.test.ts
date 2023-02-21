@@ -1,6 +1,6 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IBaseSnykModule } from '../../../../../snyk/base/modules/interfaces';
+import { IExtension } from '../../../../../snyk/base/modules/interfaces';
 import { IConfiguration } from '../../../../../snyk/common/configuration/configuration';
 import { SnykConfiguration } from '../../../../../snyk/common/configuration/snykConfiguration';
 import { SNYK_CONTEXT } from '../../../../../snyk/common/constants/views';
@@ -48,7 +48,7 @@ suite('Code Scan Orchestrator', () => {
 
     const extension = {
       runCodeScan: sinon.fake(),
-    } as unknown as IBaseSnykModule;
+    } as unknown as IExtension;
 
     codeScanOrchestrator = new CodeScanOrchestrator(experimentService, ls, logger, contextServiceMock, extension);
   });

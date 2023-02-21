@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs';
-import { IBaseSnykModule } from '../../../base/modules/interfaces';
+import { IExtension } from '../../../base/modules/interfaces';
 import { SNYK_CONTEXT } from '../../constants/views';
 import { ExperimentKey, ExperimentService } from '../../experiment/services/experimentService';
 import { ILog } from '../../logger/interfaces';
@@ -17,12 +17,11 @@ export class CodeScanOrchestrator {
     readonly languageServer: ILanguageServer,
     private readonly logger: ILog,
     private readonly contextService: IContextService,
-    private extension: IBaseSnykModule,
+    private extension: IExtension,
   ) {
     this.lastExperimentCheck = new Date().getTime();
     this.setWaitTimeInMs(1000 * 60 * 15); // 15 minutes
     this.lsSubscription = languageServer.scan$.subscribe(
-      // todo: understand why eslint complains
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async (scan: Scan<CodeIssueData>) => await this.handleExperimentCheck(scan),
     );
@@ -47,6 +46,7 @@ export class CodeScanOrchestrator {
     if (!isPartOfLSCodeExperiment) {
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
       await this.extension.runCodeScan();
+      await this.extension.restartLanguageServer();
     }
 
     // update lastExperimentCheckTime
