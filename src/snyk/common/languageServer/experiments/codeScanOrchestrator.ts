@@ -1,19 +1,24 @@
 import { Subscription } from 'rxjs';
+import { SNYK_CONTEXT } from '../../constants/views';
 import { ExperimentKey, ExperimentService } from '../../experiment/services/experimentService';
 import { ILog } from '../../logger/interfaces';
+import { IContextService } from '../../services/contextService';
 import { ILanguageServer } from '../languageServer';
 import { CodeIssueData, Scan, ScanProduct, ScanStatus } from '../types';
 
 export class CodeScanOrchestrator {
   private lastExperimentCheck: number;
   private lsSubscription: Subscription;
+  private waitTimeInMs: number;
 
   constructor(
-    private experimentService: ExperimentService,
+    private readonly experimentService: ExperimentService,
     readonly languageServer: ILanguageServer,
     private readonly logger: ILog,
+    private readonly contextService: IContextService,
   ) {
     this.lastExperimentCheck = new Date().getTime();
+    this.setWaitTimeInMs(1000 * 60 * 15); // 15 minutes
     this.lsSubscription = languageServer.scan$.subscribe(
       // todo: understand why eslint complains
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -26,7 +31,7 @@ export class CodeScanOrchestrator {
   }
 
   async handleExperimentCheck(scan: Scan<CodeIssueData>): Promise<void> {
-    if (this.minutesSinceLastCheck(5) || scan.status !== ScanStatus.InProgress || scan.product !== ScanProduct.Code) {
+    if (!this.isCheckRequired() || scan.status !== ScanStatus.InProgress || scan.product !== ScanProduct.Code) {
       return;
     }
 
@@ -39,18 +44,19 @@ export class CodeScanOrchestrator {
     if (isPartOfLSCodeExperiment) {
       // force restart of extension
       this.logger.debug('Restarting extension due to experiment change.');
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
     }
 
     // update lastExperimentCheckTime
     this.lastExperimentCheck = new Date().getTime();
   }
 
-  private setWaitTimeInMinutes(minutes: number): number {
-    return 1000 * 60 * minutes;
+  setWaitTimeInMs(ms: number) {
+    this.waitTimeInMs = ms;
   }
 
-  private minutesSinceLastCheck(minutes: number): boolean {
+  isCheckRequired(): boolean {
     const currentTimestamp = new Date().getTime();
-    return currentTimestamp - this.lastExperimentCheck > this.setWaitTimeInMinutes(minutes);
+    return currentTimestamp - this.lastExperimentCheck > this.waitTimeInMs;
   }
 }

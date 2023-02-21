@@ -156,30 +156,8 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_SCAN, async (scan: Scan<CodeIssueData | OssIssueData>) => {
+    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
-
-      // // we need to force extension restart if user's amplitude experiment status has changed
-      // if (scan.status === ScanStatus.InProgress) {
-      //   const isPartOfLSCodeExperiment = await this.experimentService.isUserPartOfExperiment(
-      //     ExperimentKey.CodeScansViaLanguageServer,
-      //   );
-
-      //   // check if the user's experiment has changed
-
-      //   // aim for eventual consistency
-      //   const waitTime = 5 * 60 * 1000; // 5 minutes
-      //   const currentTimestamp = new Date().getTime();
-      //   const fiveMinutesPassed = currentTimestamp - scan.scanTime > waitTime;
-
-      //   if (isPartOfLSCodeExperiment && fiveMinutesPassed) {
-      //     this.logger.info('Restarting extension due to experiment change.');
-      //     // do restart
-      //   }
-      // }
-
-      // // update scan time
-      // scan.scanTime = new Date().getTime();
       this.scan$.next(scan);
     });
   }
