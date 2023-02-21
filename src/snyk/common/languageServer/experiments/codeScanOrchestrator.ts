@@ -35,15 +35,18 @@ export class CodeScanOrchestrator {
       return;
     }
 
-    // check if the user's experiment has changed
+    // check if the user is part of the experiment
     const isPartOfLSCodeExperiment = await this.experimentService.isUserPartOfExperiment(
       ExperimentKey.CodeScansViaLanguageServer,
       true,
     );
 
     if (isPartOfLSCodeExperiment) {
-      // force restart of extension
-      this.logger.debug('Restarting extension due to experiment change.');
+      // update code scan context
+      this.logger.debug('Switching to LS Code Preview');
+      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+    } else {
+      this.logger.debug('Switching to code/client');
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
     }
 

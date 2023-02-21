@@ -2,6 +2,7 @@ import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IConfiguration } from '../../../../../snyk/common/configuration/configuration';
 import { SnykConfiguration } from '../../../../../snyk/common/configuration/snykConfiguration';
+import { SNYK_CONTEXT } from '../../../../../snyk/common/constants/views';
 import { ExperimentService } from '../../../../../snyk/common/experiment/services/experimentService';
 import { CodeScanOrchestrator } from '../../../../../snyk/common/languageServer/experiments/codeScanOrchestrator';
 import { ILanguageServer } from '../../../../../snyk/common/languageServer/languageServer';
@@ -19,6 +20,10 @@ suite.only('Code Scan Orchestrator', () => {
   let config: IConfiguration;
   let snykConfig: SnykConfiguration;
   let logger: LoggerMock;
+  let contextServiceMock: IContextService;
+  let setContextSpy: sinon.SinonSpy;
+  let isUserPartOfExperimentStub: sinon.SinonStub;
+
   const sleepInMs = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
   setup(() => {
@@ -29,6 +34,18 @@ suite.only('Code Scan Orchestrator', () => {
     config = {
       shouldReportEvents: true,
     } as unknown as IConfiguration;
+    experimentService = new ExperimentService(user, logger, config, snykConfig);
+    isUserPartOfExperimentStub = sinon.stub(experimentService, 'isUserPartOfExperiment').resolves(false);
+
+    setContextSpy = sinon.fake();
+    contextServiceMock = {
+      setContext: setContextSpy,
+      shouldShowCodeAnalysis: false,
+      shouldShowOssAnalysis: false,
+      viewContext: {},
+    };
+
+    codeScanOrchestrator = new CodeScanOrchestrator(experimentService, ls, logger, contextServiceMock);
   });
 
   teardown(() => {
@@ -36,16 +53,6 @@ suite.only('Code Scan Orchestrator', () => {
   });
 
   test('Orchestrates only when check is required', async () => {
-    experimentService = new ExperimentService(user, logger, config, snykConfig);
-    const isUserPartOfExperimentStub = sinon.stub(experimentService, 'isUserPartOfExperiment').resolves(false);
-    const contextService = sinon.fake();
-    codeScanOrchestrator = new CodeScanOrchestrator(
-      experimentService,
-      ls,
-      logger,
-      contextService as unknown as IContextService,
-    );
-
     // check is required if 10ms passed since last check
     codeScanOrchestrator.setWaitTimeInMs(10);
     await sleepInMs(5);
@@ -62,16 +69,6 @@ suite.only('Code Scan Orchestrator', () => {
 
   for (const status in ScanStatus) {
     test(`Orchestrates only when scan is in progres - currently: ${status}`, async () => {
-      experimentService = new ExperimentService(user, logger, config, snykConfig);
-      const isUserPartOfExperimentStub = sinon.stub(experimentService, 'isUserPartOfExperiment').resolves(false);
-      const contextService = sinon.fake();
-      codeScanOrchestrator = new CodeScanOrchestrator(
-        experimentService,
-        ls,
-        logger,
-        contextService as unknown as IContextService,
-      );
-
       codeScanOrchestrator.setWaitTimeInMs(10);
       await sleepInMs(15);
 
@@ -92,16 +89,6 @@ suite.only('Code Scan Orchestrator', () => {
 
   for (const product in ScanProduct) {
     test(`Orchestrates only when product is code - currently: ${product}`, async () => {
-      experimentService = new ExperimentService(user, logger, config, snykConfig);
-      const isUserPartOfExperimentStub = sinon.stub(experimentService, 'isUserPartOfExperiment').resolves(false);
-      const contextService = sinon.fake();
-      codeScanOrchestrator = new CodeScanOrchestrator(
-        experimentService,
-        ls,
-        logger,
-        contextService as unknown as IContextService,
-      );
-
       codeScanOrchestrator.setWaitTimeInMs(10);
       await sleepInMs(15);
 
@@ -119,4 +106,34 @@ suite.only('Code Scan Orchestrator', () => {
       }
     });
   }
+
+  test('Correctly updates code scan settings when user is part of experiment', async () => {
+    isUserPartOfExperimentStub.resolves(true);
+
+    codeScanOrchestrator.setWaitTimeInMs(10);
+    await sleepInMs(15);
+
+    ls.scan$.next({
+      product: ScanProduct.Code,
+      folderPath: 'test/path',
+      issues: [],
+      status: ScanStatus.InProgress,
+    });
+
+    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, true);
+  });
+
+  test('Correctly updates code scan settings when user is NOT part of experiment', async () => {
+    codeScanOrchestrator.setWaitTimeInMs(10);
+    await sleepInMs(15);
+
+    ls.scan$.next({
+      product: ScanProduct.Code,
+      folderPath: 'test/path',
+      issues: [],
+      status: ScanStatus.InProgress,
+    });
+
+    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LS_CODE_PREVIEW, false);
+  });
 });
