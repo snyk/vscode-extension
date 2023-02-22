@@ -37,6 +37,10 @@ export class CodeScanOrchestrator {
       return;
     }
 
+    if (!this.contextService.isCodeInLsPreview) {
+      return;
+    }
+
     // check if the user is part of the experiment
     const isPartOfLSCodeExperiment = await this.experimentService.isUserPartOfExperiment(
       ExperimentKey.CodeScansViaLanguageServer,

@@ -19,6 +19,7 @@ suite('Snyk Code Settings', () => {
       setContext: setContextFake,
       shouldShowCodeAnalysis: false,
       shouldShowOssAnalysis: false,
+      isCodeInLsPreview: false,
       viewContext: {},
     };
 
