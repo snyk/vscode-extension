@@ -20,7 +20,7 @@ jobs:
 
           cp $SOURCE_PATH ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
-              -e "s|../../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
+              -e "s|../../../.gitbook/assets/|https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/|g" \
               ./$DESTINATION_REPOSITORY/$FILE_TO_COMMIT
           sed -i \
               -E "s|\!\\[([[:alnum:][:space:][:punct:]]*)\]\(<([[:alnum:][:punct:]\-\.\/:[:space:]\(\)]+)>\)|<img src=\"\2\" alt=\"\1\" />|g" \
