@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.16.1]
+
+### Added
+
+- Snyk IaC: Added IaC issue data type definitions
+
 ## [1.15.5]
 
 ### Changed
