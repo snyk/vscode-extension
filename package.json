@@ -216,6 +216,12 @@
                 "title": "Enable \"Snyk Advisor\"",
                 "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
                 "default": false
+              },
+              "iacUi": {
+                "type": "boolean",
+                "title": "Enable \"Snyk Infrastructure as Code UI\"",
+                "description": "Enable the new Snyk Infrastructure as Code UI.",
+                "default": false
               }
             }
           }
