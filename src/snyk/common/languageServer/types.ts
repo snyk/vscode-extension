@@ -103,15 +103,12 @@ export type Identifiers = {
 
 // Snyk Infrastructure as Code
 export type IacIssueData = {
-  id: string;
-  title: string;
-  severity: string;
   publicId: string;
   documentation: string;
   lineNumber: number;
   issue: string;
   impact: string;
+  path?: string[];
   resolve?: string;
   references?: string[];
-  path?: string[];
 };
