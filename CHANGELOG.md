@@ -6,6 +6,12 @@
 
 - Snyk IaC: UI Feature flag
 
+## [1.16.1]
+
+### Added
+
+- Snyk IaC: Added IaC issue data type definitions
+
 ## [1.15.5]
 
 ### Changed

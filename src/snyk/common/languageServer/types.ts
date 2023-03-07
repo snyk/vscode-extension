@@ -100,3 +100,15 @@ export type Identifiers = {
   CWE: string[];
   CVE: string[];
 };
+
+// Snyk Infrastructure as Code
+export type IacIssueData = {
+  publicId: string;
+  documentation: string;
+  lineNumber: number;
+  issue: string;
+  impact: string;
+  path?: string[];
+  resolve?: string;
+  references?: string[];
+};
