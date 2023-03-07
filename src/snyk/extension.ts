@@ -37,6 +37,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD,
+  SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_FEATURES,
   SNYK_VIEW_SUPPORT,
@@ -74,6 +75,9 @@ import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTr
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
+import { SnykIacService } from './snykIaC/iacService';
+import IacIssueTreeProvider from './snykIaC/views/iacIssueTreeProvider';
+//import { IacSuggestionWebviewProvider } from './snykIaC/views/suggestion/iacSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
@@ -228,6 +232,31 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
     );
 
+    // const iacSuggestionProvider = new IacSuggestionWebviewProvider(
+    //   vsCodeWindow,
+    //   extensionContext,
+    //   Logger,
+    //   vsCodeLanguages,
+    //   vsCodeWorkspace,
+    //   this.learnService,
+    // );
+
+    this.iacService = new SnykIacService(
+      this.context,
+      configuration,
+      //iacSuggestionProvider,
+      // new CodeActionAdapter(),
+      // this.codeActionKindAdapter,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      // vsCodeWindow,
+      // vsCodeLanguages,
+      Logger,
+      // this.analytics,
+    );
+
     this.commandController = new CommandController(
       this.openerService,
       this.authService,
@@ -325,6 +354,23 @@ class SnykExtension extends SnykLib implements IExtension {
       codeQualityTreeOld,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
       codeEnablementTree,
+    );
+
+    const iacIssueProvider = new IacIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.iacService,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const iacSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_IAC, {
+      treeDataProvider: iacIssueProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_IAC, iacIssueProvider),
+      iacSecurityTree,
     );
 
     // Fill the view container to expose views for tests

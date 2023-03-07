@@ -6,6 +6,7 @@ export interface IContextService {
   readonly viewContext: { [key: string]: unknown };
   shouldShowCodeAnalysis: boolean;
   shouldShowOssAnalysis: boolean;
+  shouldShowIacAnalysis: boolean;
   isCodeInLsPreview: boolean;
 
   setContext(key: string, value: unknown): Promise<void>;
@@ -33,6 +34,10 @@ export class ContextService implements IContextService {
   }
 
   get shouldShowOssAnalysis(): boolean {
+    return this.shouldShowAnalysis;
+  }
+
+  get shouldShowIacAnalysis(): boolean {
     return this.shouldShowAnalysis;
   }
 

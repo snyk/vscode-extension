@@ -271,6 +271,11 @@
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
+          "id": "snyk.views.analysis.IaC.security",
+          "name": "Configuration",
+          "when": "snyk:lsIaCPreview && snyk:loggedIn && snyk:featuresSelected && snyk:IaCEnabled && !snyk:IaCLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
