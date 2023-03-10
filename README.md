@@ -35,7 +35,9 @@ Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go,
 * For Snyk Open Source, the VS Code extension supports all the languages and package managers supported by Snyk Open Source and the CLI. See the full [list in the docs](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
 * For Snyk Code, the VS Code extension supports all the [languages and frameworks supported by Snyk Code](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support#language-support-with-snyk-code-ai-engine).
 
-## Supported Operating Systems and Architecture
+## Supported operating systems and architecture
+
+You can use the Snyk Visual Studio Code extension in the following environments:
 
 * Linux: AMD64 and ARM64
 * Windows: 386 and AMD64
