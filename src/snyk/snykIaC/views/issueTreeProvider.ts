@@ -132,7 +132,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
             command: Command;
             children?: TreeNode[];
           } = {
-            text: issue.title, //IS THIS RIGHT?
+            text: issue.title,
             icon: IssueTreeProvider.getSeverityIcon(issue.severity),
             issue: {
               uri,
