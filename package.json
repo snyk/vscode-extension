@@ -271,6 +271,11 @@
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
+          "id": "snyk.views.analysis.configuration",
+          "name": "Configuration",
+          "when": "snyk:iacUiVisible && snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+        },
+        {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
@@ -325,12 +330,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome'",
+          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         }
       ],

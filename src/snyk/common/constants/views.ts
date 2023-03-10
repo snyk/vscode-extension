@@ -11,6 +11,7 @@ export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
 export const SNYK_VIEW_SUGGESTION_CODE_OLD = 'snyk.views.suggestion.code.old';
 export const SNYK_VIEW_FALSE_POSITIVE_CODE = 'snyk.views.suggestion.code.falsePositive';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
+export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
 
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
@@ -20,6 +21,7 @@ export const SNYK_CONTEXT = {
   FEATURES_SELECTED: 'featuresSelected',
   CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
+  IAC_UI_VISIBLE: 'iacUiVisible',
   LS_CODE_PREVIEW: 'lsCodePreview',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
@@ -39,4 +41,5 @@ export const SNYK_ANALYSIS_STATUS = {
   OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
   CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',
+  IAC_DISABLED: 'Snyk Configuration is disabled. Enable it in settings to use it.',
 };

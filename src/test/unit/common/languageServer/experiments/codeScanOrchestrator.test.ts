@@ -43,6 +43,7 @@ suite('Code Scan Orchestrator', () => {
       setContext: setContextSpy,
       shouldShowCodeAnalysis: false,
       shouldShowOssAnalysis: false,
+      shouldShowIacAnalysis: false,
       isCodeInLsPreview: true,
       viewContext: {},
     };

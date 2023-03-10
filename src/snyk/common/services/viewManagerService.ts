@@ -28,6 +28,7 @@ export interface IViewManagerService {
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
   readonly refreshOssViewEmitter: EventEmitter<void>;
+  readonly refreshIacViewEmitter: EventEmitter<void>;
 
   refreshAllViews(): void;
   refreshAllCodeAnalysisViews(): void;
@@ -36,6 +37,7 @@ export interface IViewManagerService {
   refreshCodeSecurityView(): void;
   refreshCodeQualityView(): void;
   refreshOssView(): void;
+  refreshIacView(): void;
 }
 
 export class ViewManagerService implements IViewManagerService {
@@ -48,6 +50,8 @@ export class ViewManagerService implements IViewManagerService {
 
   readonly refreshOssViewEmitter: EventEmitter<void>;
 
+  readonly refreshIacViewEmitter: EventEmitter<void>;
+
   constructor() {
     this.refreshOldCodeSecurityViewEmitter = new EventEmitter<void>();
     this.refreshOldCodeQualityViewEmitter = new EventEmitter<void>();
@@ -56,11 +60,14 @@ export class ViewManagerService implements IViewManagerService {
 
     this.refreshOssViewEmitter = new EventEmitter<void>();
     this.viewContainer = new ViewContainer();
+
+    this.refreshIacViewEmitter = new EventEmitter<void>();
   }
 
   refreshAllViews(): void {
     this.refreshOssView();
     this.refreshAllOldCodeAnalysisViews();
+    this.refreshIacView();
   }
 
   refreshAllOldCodeAnalysisViews(): void {
@@ -123,6 +130,10 @@ export class ViewManagerService implements IViewManagerService {
   );
 
   refreshOssView = _.throttle((): void => this.refreshOssViewEmitter.fire(), REFRESH_VIEW_DEBOUNCE_INTERVAL, {
+    leading: true,
+  });
+
+  refreshIacView = _.throttle((): void => this.refreshIacViewEmitter.fire(), REFRESH_VIEW_DEBOUNCE_INTERVAL, {
     leading: true,
   });
 }
