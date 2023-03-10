@@ -10,7 +10,8 @@ import { ExtensionContext } from '../common/vscode/extensionContext';
 import { Disposable } from '../common/vscode/types';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { IacResult, IacWorkspaceFolderResult } from './iacResult';
-export interface ISnykIacService extends AnalysisStatusProvider, Disposable {
+import { IIacSuggestionWebviewProvider } from './views/interfaces';
+export interface IIacService extends AnalysisStatusProvider, Disposable {
   result: Readonly<IacResult>;
   getIssue(folderPath: string, issueId: string): Issue<IacIssueData> | undefined;
   getIssueById(issueId: string): Issue<IacIssueData> | undefined;
@@ -18,11 +19,11 @@ export interface ISnykIacService extends AnalysisStatusProvider, Disposable {
   resetResult(folderPath: string): void;
   isAnyResultAvailable(): boolean;
 
-  //activateWebviewProviders(): void;
-  //showSuggestionProvider(folderPath: string, issueId: string): void;
+  activateWebviewProviders(): void;
+  showSuggestionProvider(folderPath: string, issueId: string): void;
 }
 
-export class SnykIacService extends AnalysisStatusProvider implements ISnykIacService {
+export class IacService extends AnalysisStatusProvider implements IIacService {
   private _result: IacResult;
 
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
@@ -35,7 +36,7 @@ export class SnykIacService extends AnalysisStatusProvider implements ISnykIacSe
   constructor(
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
-    // private readonly suggestionProvider: IIacSuggestionWebviewProvider,
+    private readonly suggestionProvider: IIacSuggestionWebviewProvider,
     // readonly codeActionAdapter: ICodeActionAdapter,
     // readonly codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly viewManagerService: IViewManagerService,
@@ -103,27 +104,27 @@ export class SnykIacService extends AnalysisStatusProvider implements ISnykIacSe
     return this._result.size > 0;
   }
 
-  // activateWebviewProviders(): void {
-  //   this.suggestionProvider.activate();
-  // }
+  activateWebviewProviders(): void {
+    this.suggestionProvider.activate();
+  }
 
-  // showSuggestionProvider(folderPath: string, issueId: string): Promise<void> {
-  //   const issue = this.getIssue(folderPath, issueId);
-  //   if (!issue) {
-  //     this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
-  //     return Promise.resolve();
-  //   }
+  showSuggestionProvider(folderPath: string, issueId: string): Promise<void> {
+    const issue = this.getIssue(folderPath, issueId);
+    if (!issue) {
+      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+      return Promise.resolve();
+    }
 
-  //   return this.suggestionProvider.showPanel(issue);
-  // }
+    return this.suggestionProvider.showPanel(issue);
+  }
 
-  // disposeSuggestionPanelIfStale(): void {
-  //   const openIssueId = this.suggestionProvider.openIssueId;
-  //   if (!openIssueId) return;
+  disposeSuggestionPanelIfStale(): void {
+    const openIssueId = this.suggestionProvider.openIssueId;
+    if (!openIssueId) return;
 
-  //   const found = this.getIssueById(openIssueId);
-  //   if (!found) this.suggestionProvider.disposePanel();
-  // }
+    const found = this.getIssueById(openIssueId);
+    if (!found) this.suggestionProvider.disposePanel();
+  }
 
   override handleLsDownloadFailure(): void {
     super.handleLsDownloadFailure();
@@ -152,7 +153,7 @@ export class SnykIacService extends AnalysisStatusProvider implements ISnykIacSe
 
     if (scanMsg.status == ScanStatus.Success || scanMsg.status == ScanStatus.Error) {
       this.handleSuccessOrError(scanMsg);
-      //this.disposeSuggestionPanelIfStale();
+      this.disposeSuggestionPanelIfStale();
     }
   }
 

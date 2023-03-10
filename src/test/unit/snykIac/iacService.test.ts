@@ -7,21 +7,23 @@ import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/typ
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { ISnykIacService, SnykIacService } from '../../../snyk/snykIaC/iacService';
+import { IacService, IIacService } from '../../../snyk/snykIaC/iacService';
+import { IIacSuggestionWebviewProvider } from '../../../snyk/snykIaC/views/interfaces';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
 suite('Snyk IaC Service', () => {
   let ls: ILanguageServer;
-  let service: ISnykIacService;
+  let service: IIacService;
   let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
     ls = new LanguageServerMock();
     refreshViewFake = sinon.fake();
-    service = new SnykIacService(
+    service = new IacService(
       {} as ExtensionContext,
       {} as IConfiguration,
+      {} as unknown as IIacSuggestionWebviewProvider,
       {
         refreshIacView: refreshViewFake,
       } as unknown as IViewManagerService,

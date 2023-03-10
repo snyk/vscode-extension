@@ -75,9 +75,9 @@ import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTr
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
-import { SnykIacService } from './snykIaC/iacService';
+import { IacService } from './snykIaC/iacService';
 import IacIssueTreeProvider from './snykIaC/views/iacIssueTreeProvider';
-//import { IacSuggestionWebviewProvider } from './snykIaC/views/suggestion/iacSuggestionWebviewProvider';
+import { IacSuggestionWebviewProvider } from './snykIaC/views/suggestion/iacSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
@@ -232,19 +232,19 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
     );
 
-    // const iacSuggestionProvider = new IacSuggestionWebviewProvider(
-    //   vsCodeWindow,
-    //   extensionContext,
-    //   Logger,
-    //   vsCodeLanguages,
-    //   vsCodeWorkspace,
-    //   this.learnService,
-    // );
+    const iacSuggestionProvider = new IacSuggestionWebviewProvider(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+      this.learnService,
+    );
 
-    this.iacService = new SnykIacService(
+    this.iacService = new IacService(
       this.context,
       configuration,
-      //iacSuggestionProvider,
+      iacSuggestionProvider,
       // new CodeActionAdapter(),
       // this.codeActionKindAdapter,
       this.viewManagerService,
@@ -262,6 +262,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       this.snykCode,
       this.snykCodeOld,
+      this.iacService,
       this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
@@ -392,6 +393,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
+    this.iacService.activateWebviewProviders();
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();

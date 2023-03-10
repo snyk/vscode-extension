@@ -10,6 +10,7 @@ import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
+import { IIacService } from '../../../../snyk/snykIaC/iacService';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -26,6 +27,7 @@ suite('CommandController', () => {
       {} as IAuthenticationService,
       {} as ISnykCodeService,
       {} as ISnykCodeServiceOld,
+      {} as IIacService,
       {} as OssService,
       {} as ScanModeService,
       {} as IVSCodeWorkspace,

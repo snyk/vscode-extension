@@ -28,7 +28,7 @@ import { CodeSettings, ICodeSettings } from '../../snykCode/codeSettings';
 import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
-import { ISnykIacService } from '../../snykIaC/iacService';
+import { IIacService } from '../../snykIaC/iacService';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { IAuthenticationService } from '../services/authenticationService';
@@ -70,7 +70,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected codeSettings: ICodeSettings;
   protected codeScanOrchestrator: CodeScanOrchestrator;
 
-  iacService: ISnykIacService;
+  iacService: IIacService;
 
   readonly loadingBadge: ILoadingBadge;
   protected user: User;

@@ -1,16 +1,9 @@
 import _ from 'lodash';
 import * as vscode from 'vscode';
-import { OpenCommandIssueType } from '../../../common/commands/types';
-import {
-  SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_OPEN_BROWSER_COMMAND,
-  SNYK_OPEN_LOCAL_COMMAND,
-} from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_IAC } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { IacIssueData, Issue } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
-import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
@@ -126,7 +119,7 @@ export class IacSuggestionWebviewProvider
     this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
     // Handle messages from the webview
-    this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
+    // this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
   }
 
   disposePanel(): void {
@@ -147,56 +140,56 @@ export class IacSuggestionWebviewProvider
     };
   }
 
-  private async handleMessage(message: any) {
-    try {
-      const { type, args } = message;
-      switch (type) {
-        case 'openLocal': {
-          const { uri, cols, rows, suggestionUri } = args as {
-            uri: string;
-            cols: [number, number];
-            rows: [number, number];
-            suggestionUri: string;
-          };
-          const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
-          const localUri = vscode.Uri.parse(localUriPath);
-          const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
-          await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
-          break;
-        }
-        case 'openBrowser': {
-          const { url } = args as { url: string };
-          await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
-          break;
-        }
-        case 'ignoreIssue': {
-          const { lineOnly, message, rule, uri, cols, rows } = args as {
-            lineOnly: boolean;
-            message: string;
-            rule: string;
-            uri: string;
-            cols: [number, number];
-            rows: [number, number];
-          };
-          const vscodeUri = vscode.Uri.parse(uri);
-          const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
-          await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
-            uri: vscodeUri,
-            matchedIssue: { message, range },
-            ruleId: rule,
-            isFileIgnore: !lineOnly,
-          });
-          this.panel?.dispose();
-          break;
-        }
-        default: {
-          throw new Error('Unknown message type');
-        }
-      }
-    } catch (e) {
-      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewMessageHandlingFailed(JSON.stringify(message)));
-    }
-  }
+  // private async handleMessage(message: any) {
+  //   try {
+  //     const { type, args } = message;
+  //     switch (type) {
+  //       case 'openLocal': {
+  //         const { uri, cols, rows, suggestionUri } = args as {
+  //           uri: string;
+  //           cols: [number, number];
+  //           rows: [number, number];
+  //           suggestionUri: string;
+  //         };
+  //         const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
+  //         const localUri = vscode.Uri.parse(localUriPath);
+  //         const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
+  //         await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
+  //         break;
+  //       }
+  //       case 'openBrowser': {
+  //         const { url } = args as { url: string };
+  //         await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
+  //         break;
+  //       }
+  //       case 'ignoreIssue': {
+  //         const { lineOnly, message, rule, uri, cols, rows } = args as {
+  //           lineOnly: boolean;
+  //           message: string;
+  //           rule: string;
+  //           uri: string;
+  //           cols: [number, number];
+  //           rows: [number, number];
+  //         };
+  //         const vscodeUri = vscode.Uri.parse(uri);
+  //         const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
+  //         await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
+  //           uri: vscodeUri,
+  //           matchedIssue: { message, range },
+  //           ruleId: rule,
+  //           isFileIgnore: !lineOnly,
+  //         });
+  //         this.panel?.dispose();
+  //         break;
+  //       }
+  //       default: {
+  //         throw new Error('Unknown message type');
+  //       }
+  //     }
+  //   } catch (e) {
+  //     ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewMessageHandlingFailed(JSON.stringify(message)));
+  //   }
+  // }
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [

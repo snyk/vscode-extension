@@ -5,14 +5,14 @@ import { IContextService } from '../../common/services/contextService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { ISnykIacService } from '../iacService';
+import { IIacService } from '../iacService';
 import { IssueTreeProvider } from './issueTreeProvider';
 
 export default class IacIssueTreeProvider extends IssueTreeProvider {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
-    protected iacService: ISnykIacService,
+    protected iacService: IIacService,
     protected configuration: IConfiguration,
     protected languages: IVSCodeLanguages,
   ) {
