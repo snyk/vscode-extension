@@ -24,7 +24,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
-import { CodeIssueData, OssIssueData, Scan } from './types';
+import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -32,13 +32,13 @@ export interface ILanguageServer {
   showOutputChannel(): void;
 
   cliReady$: ReplaySubject<string>;
-  scan$: Subject<Scan<CodeIssueData | OssIssueData>>;
+  scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>;
 }
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
-  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData>>();
+  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
 
   constructor(
     private user: User,
@@ -156,7 +156,7 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData>) => {
+    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
     });

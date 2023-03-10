@@ -10,11 +10,9 @@ import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodePro
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command } from '../../common/vscode/types';
-import { ISnykCodeService } from '../codeService';
+import { ISnykIacService } from '../iacService';
 import { messages } from '../messages/analysis';
-import { IssueUtils } from '../utils/issueUtils';
-import { CodeIssueCommandArg } from './interfaces';
-
+import { IacIssueCommandArg } from './interfaces';
 interface ISeverityCounts {
   [severity: string]: number;
 }
@@ -22,12 +20,12 @@ interface ISeverityCounts {
 export class IssueTreeProvider extends AnalysisTreeNodeProvider {
   constructor(
     protected readonly contextService: IContextService,
-    protected readonly codeService: ISnykCodeService,
+    protected readonly iacService: ISnykIacService,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
     protected readonly isSecurityType: boolean,
   ) {
-    super(configuration, codeService);
+    super(configuration, iacService);
   }
 
   static getSeverityIcon(severity: IssueSeverity | string): INodeIcon {
@@ -44,14 +42,14 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
-    if (!this.codeService.isLsDownloadSuccessful) {
+    if (!this.contextService.shouldShowIacAnalysis) return nodes;
+    if (!this.iacService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }
-    if (!this.codeService.isAnyWorkspaceFolderTrusted) {
+    if (!this.iacService.isAnyWorkspaceFolderTrusted) {
       return [this.getNoWorkspaceTrustTreeNode()];
     }
-    if (this.codeService.isAnalysisRunning) {
+    if (this.iacService.isAnalysisRunning) {
       return [
         new TreeNode({
           text: commonMessages.scanRunning,
@@ -59,7 +57,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
       ];
     }
 
-    if (!this.codeService.isAnyResultAvailable()) {
+    if (!this.iacService.isAnyResultAvailable()) {
       return [
         new TreeNode({
           text: messages.runTest,
@@ -70,7 +68,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     const [resultNodes, nIssues] = this.getResultNodes();
     nodes.push(...resultNodes);
 
-    const folderResults = Array.from(this.codeService.result.values());
+    const folderResults = Array.from(this.iacService.result.values());
     const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
     if (allFailed) {
       return nodes;
@@ -93,7 +91,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     const nodes: TreeNode[] = [];
     let totalVulnCount = 0;
 
-    for (const result of this.codeService.result.entries()) {
+    for (const result of this.iacService.result.entries()) {
       const folderPath = result[0];
       const folderResult = result[1];
 
@@ -121,50 +119,45 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
 
         const fileSeverityCounts = this.initSeverityCounts();
 
-        const issueNodes = fileIssues
-          .filter(i => i.additionalData.isSecurityType == this.isSecurityType)
-          .map(issue => {
-            fileSeverityCounts[issue.severity] += 1;
-            totalVulnCount++;
-            folderVulnCount++;
+        const issueNodes = fileIssues.map(issue => {
+          fileSeverityCounts[issue.severity] += 1;
+          totalVulnCount++;
+          folderVulnCount++;
 
-            const issueRange = IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
-            const params: {
-              text: string;
-              icon: INodeIcon;
-              issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range };
-              internal: InternalType;
-              command: Command;
-              children?: TreeNode[];
-            } = {
-              text: issue.additionalData.message,
-              icon: IssueTreeProvider.getSeverityIcon(issue.severity),
-              issue: {
-                uri,
-                filePath: file,
-                range: issueRange,
-              },
-              internal: {
-                severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
-              },
-              command: {
-                command: SNYK_OPEN_ISSUE_COMMAND,
-                title: '',
-                arguments: [
-                  {
-                    issueType: OpenCommandIssueType.CodeIssue,
-                    issue: {
-                      id: issue.id,
-                      folderPath,
-                      filePath: file,
-                      range: issueRange,
-                    } as CodeIssueCommandArg,
-                  } as OpenIssueCommandArg,
-                ],
-              },
-            };
-            return new TreeNode(params);
-          });
+          const params: {
+            text: string;
+            icon: INodeIcon;
+            issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range };
+            internal: InternalType;
+            command: Command;
+            children?: TreeNode[];
+          } = {
+            text: issue.title,
+            icon: IssueTreeProvider.getSeverityIcon(issue.severity),
+            issue: {
+              uri,
+              filePath: file,
+            },
+            internal: {
+              severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
+            },
+            command: {
+              command: SNYK_OPEN_ISSUE_COMMAND,
+              title: '',
+              arguments: [
+                {
+                  issueType: OpenCommandIssueType.CodeIssue,
+                  issue: {
+                    id: issue.id,
+                    folderPath,
+                    filePath: file,
+                  } as IacIssueCommandArg,
+                } as OpenIssueCommandArg,
+              ],
+            },
+          };
+          return new TreeNode(params);
+        });
 
         if (issueNodes.length === 0) {
           continue;
@@ -198,7 +191,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
       }
 
       // flatten results if single workspace folder
-      if (this.codeService.result.size == 1) {
+      if (this.iacService.result.size == 1) {
         nodes.push(...fileNodes);
       } else {
         const folderNode = new TreeNode({

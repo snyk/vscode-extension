@@ -1,16 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.16.2]
+## [1.17.0]
 
 ### Added
 
-- Snyk IaC: UI Feature flag
-
-## [1.16.1]
-
-### Added
-
-- Snyk IaC: Added IaC issue data type definitions
+- Snyk IaC: Added tree view.
+- Snyk IaC: Added IaC issue data type definitions.
+- Snyk IaC: UI Feature flag.
 
 ## [1.15.5]
 

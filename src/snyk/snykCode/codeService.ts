@@ -23,6 +23,7 @@ export interface ISnykCodeService extends AnalysisStatusProvider, Disposable {
   getIssueById(issueId: string): Issue<CodeIssueData> | undefined;
   isAnyWorkspaceFolderTrusted: boolean;
   resetResult(folderPath: string): void;
+  isAnyResultAvailable(): boolean;
 
   activateWebviewProviders(): void;
   showSuggestionProvider(folderPath: string, issueId: string): void;
@@ -104,6 +105,10 @@ export class SnykCodeService extends AnalysisStatusProvider implements ISnykCode
   resetResult(folderPath: string): void {
     this._result.delete(folderPath);
     this.viewManagerService.refreshAllCodeAnalysisViews();
+  }
+
+  public isAnyResultAvailable(): boolean {
+    return this._result.size > 0;
   }
 
   activateWebviewProviders(): void {
