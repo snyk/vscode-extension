@@ -59,7 +59,7 @@ import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
-import { vsCodeLanguages, VSCodeLanguages } from './common/vscode/languages';
+import { VSCodeLanguages, vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
@@ -447,6 +447,8 @@ class SnykExtension extends SnykLib implements IExtension {
       await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
       Logger.info('Code scans are not using Language Server.');
     }
+
+    await this.contextService.setContext(SNYK_CONTEXT.IAC_UI_VISIBLE, !!configuration.getPreviewFeatures().iacUi);
 
     await this.languageServer.start();
 
