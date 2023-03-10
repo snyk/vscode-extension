@@ -11,6 +11,7 @@ import {
   ADVANCED_CUSTOM_LS_PATH,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
+  IAC_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
@@ -36,6 +37,8 @@ class ConfigurationWatcher implements IWatcher {
       extension.snykCodeOld.analyzer.refreshDiagnostics();
       // If two settings are changed simultaneously, only one will be applied, thus refresh all views
       return extension.viewManagerService.refreshAllOldCodeAnalysisViews();
+    } else if (key === IAC_ENABLED_SETTING) {
+      return extension.viewManagerService.refreshIacView();
     } else if (key === SEVERITY_FILTER_SETTING) {
       extension.snykCodeOld.analyzer.refreshDiagnostics();
       return extension.viewManagerService.refreshAllViews();
@@ -46,8 +49,7 @@ class ConfigurationWatcher implements IWatcher {
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
-      extension.viewManagerService.refreshAllCodeAnalysisViews();
-      // extension.viewManagerService.refreshAllViews(); // todo: when oss results delivered via LS
+      extension.viewManagerService.refreshAllViews();
     }
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
@@ -70,6 +72,7 @@ class ConfigurationWatcher implements IWatcher {
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         CODE_QUALITY_ENABLED_SETTING,
+        IAC_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CUSTOM_LS_PATH,
