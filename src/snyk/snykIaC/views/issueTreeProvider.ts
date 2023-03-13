@@ -3,13 +3,13 @@ import * as vscode from 'vscode'; // todo: invert dependency
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { IssueSeverity } from '../../common/languageServer/types';
+import { IacIssueData, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { Command } from '../../common/vscode/types';
+import { Command, Range } from '../../common/vscode/types';
 import { IIacService } from '../iacService';
 import { messages } from '../messages/analysis';
 import { IacIssueCommandArg } from './interfaces';
@@ -151,6 +151,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
                     id: issue.id,
                     folderPath,
                     filePath: file,
+                    range: this.createVsCodeRange(issue.additionalData),
                   } as IacIssueCommandArg,
                 } as OpenIssueCommandArg,
               ],
@@ -232,6 +233,10 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
 
     return IssueSeverity.Low;
   }
+
+  createVsCodeRange = (issueData: IacIssueData): Range => {
+    return this.languages.createRange(issueData.lineNumber, 0, issueData.lineNumber, Number.MAX_VALUE);
+  };
 
   private initSeverityCounts(): ISeverityCounts {
     return {
