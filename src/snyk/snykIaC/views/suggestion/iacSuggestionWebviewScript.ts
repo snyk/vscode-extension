@@ -48,8 +48,8 @@
     // Set severity icon
     setSeverityIcon();
 
-    // // Fill identifiers line
-    // fillIdentifiers();
+    // Fill identifiers line
+    fillIdentifiers();
 
     // // Fill summary
     // fillSummary();
@@ -75,6 +75,19 @@
         severity.querySelectorAll('img').forEach(n => (n.className = 'icon hidden'));
       }
     }
+
+    function fillIdentifiers() {
+      const identifiers = document.querySelector('.identifiers')!;
+      identifiers.innerHTML = ''; // reset node
+      const typeNode = document.createTextNode('Issue');
+      identifiers.appendChild(typeNode);
+
+      appendIdentifierSpan(
+        identifiers,
+        issue.additionalData.publicId.toUpperCase(),
+        issue.additionalData.documentation,
+      );
+    }
   }
 
   window.addEventListener('message', event => {
@@ -93,4 +106,23 @@
       }
     }
   });
+
+  function appendIdentifierSpan(identifiers: Element, id: string, link?: string) {
+    const delimiter = document.createElement('span');
+    delimiter.innerText = ' | ';
+    delimiter.className = 'delimiter';
+    identifiers.appendChild(delimiter);
+
+    let cveNode: HTMLElement;
+    if (link) {
+      cveNode = document.createElement('a');
+      cveNode.onclick = () => navigateToUrl(link);
+    } else {
+      cveNode = document.createElement('span');
+    }
+
+    cveNode.innerText = id;
+
+    identifiers.appendChild(cveNode);
+  }
 })();
