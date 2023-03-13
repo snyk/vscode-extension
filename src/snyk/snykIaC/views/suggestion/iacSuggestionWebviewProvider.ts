@@ -16,21 +16,6 @@ import { messages as errorMessages } from '../../messages/error';
 // import { IssueUtils } from '../../utils/issueUtils';
 // import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
-type Suggestion = {
-  id: string;
-  title: string;
-  uri: string;
-  severity: string;
-  publicId: string;
-  documentation: string;
-  lineNumber: number;
-  issue: string;
-  impact: string;
-  path?: string[];
-  resolve?: string;
-  references?: string[];
-};
-
 export class IacSuggestionWebviewProvider
   extends WebviewProvider<Issue<IacIssueData>>
   implements IWebViewProvider<Issue<IacIssueData>>
@@ -59,38 +44,16 @@ export class IacSuggestionWebviewProvider
     return this.issue?.id;
   }
 
-  // async postLearnLessonMessage(issue: Issue<IacIssueData>): Promise<void> {
-  //   try {
-  //     if (this.panel) {
-  //       const lesson = await this.learnService.getLesson(issue, OpenCommandIssueType.CodeIssue);
-  //       if (lesson) {
-  //         void this.panel.webview.postMessage({
-  //           type: 'setLesson',
-  //           args: { url: lesson.url, title: learnMessages.lessonButtonTitle },
-  //         });
-  //       } else {
-  //         void this.panel.webview.postMessage({
-  //           type: 'setLesson',
-  //           args: null,
-  //         });
-  //       }
-  //     }
-  //   } catch (e) {
-  //     ErrorHandler.handle(e, this.logger, learnMessages.getLessonError);
-  //   }
-  // }
-
   async showPanel(issue: Issue<IacIssueData>): Promise<void> {
     try {
       await this.focusSecondEditorGroup();
 
       if (this.panel) {
-        this.panel.title = issue.title;
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
           SNYK_VIEW_SUGGESTION_IAC,
-          issue.title,
+          'Snyk Configuration Issue',
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
@@ -102,7 +65,7 @@ export class IacSuggestionWebviewProvider
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
+      await this.panel.webview.postMessage({ type: 'set', args: issue });
 
       this.issue = issue;
     } catch (e) {
@@ -125,16 +88,6 @@ export class IacSuggestionWebviewProvider
 
   protected onPanelDispose(): void {
     super.onPanelDispose();
-  }
-
-  private mapToModel(issue: Issue<IacIssueData>): Suggestion {
-    return {
-      id: issue.id,
-      title: issue.title,
-      uri: issue.filePath,
-      severity: _.capitalize(issue.severity),
-      ...issue.additionalData,
-    };
   }
 
   // private async handleMessage(message: any) {
@@ -190,12 +143,11 @@ export class IacSuggestionWebviewProvider
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
-      ['icon-code', 'svg'],
+      ['icon-code', 'svg'], // todo: do we need it?
       ['dark-critical-severity', 'svg'],
       ['dark-high-severity', 'svg'],
       ['dark-medium-severity', 'svg'],
       ['dark-low-severity', 'svg'],
-      ['learn-icon', 'svg'],
     ].reduce((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
