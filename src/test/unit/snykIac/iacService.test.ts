@@ -7,8 +7,8 @@ import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/typ
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { IacService, IIacService } from '../../../snyk/snykIaC/iacService';
-import { IIacSuggestionWebviewProvider } from '../../../snyk/snykIaC/views/interfaces';
+import { IIacService, IacService } from '../../../snyk/snykIac/iacService';
+import { IIacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/interfaces';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 

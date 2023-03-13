@@ -4,7 +4,6 @@ import { SNYK_VIEW_SUGGESTION_IAC } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { IacIssueData, Issue } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
-import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
@@ -46,7 +45,6 @@ export class IacSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
-    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -105,7 +103,6 @@ export class IacSuggestionWebviewProvider
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
       await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
-      // void this.postLearnLessonMessage(issue);
 
       this.issue = issue;
     } catch (e) {
@@ -193,21 +190,13 @@ export class IacSuggestionWebviewProvider
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
-      ['icon-lines', 'svg'],
-      ['icon-external', 'svg'],
       ['icon-code', 'svg'],
-      ['icon-github', 'svg'],
-      ['icon-like', 'svg'],
+      ['dark-critical-severity', 'svg'],
       ['dark-high-severity', 'svg'],
       ['dark-medium-severity', 'svg'],
-      ['light-icon-critical', 'svg'],
       ['dark-low-severity', 'svg'],
-      ['arrow-left-dark', 'svg'],
-      ['arrow-right-dark', 'svg'],
-      ['arrow-left-light', 'svg'],
-      ['arrow-right-light', 'svg'],
       ['learn-icon', 'svg'],
-    ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
+    ].reduce((accumulator: Record<string, string>, [name, ext]) => {
       const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
       if (!uri) throw new Error('Image missing.');
       accumulator[name] = uri.toString();
@@ -217,93 +206,74 @@ export class IacSuggestionWebviewProvider
     const scriptUri = this.getWebViewUri(
       'out',
       'snyk',
-      'snykCode',
+      'snykIac',
       'views',
       'suggestion',
-      'codeSuggestionWebviewScript.js',
+      'iacSuggestionWebviewScript.js',
     );
-    const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
-    const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
-    const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
+    const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css'); // make it common
 
     const nonce = getNonce();
-    return `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
-      <link href="${styleUri}" rel="stylesheet">
-      <link href="${styleVSCodeUri}" rel="stylesheet">
-      <link href="${learnStyleUri}" rel="stylesheet">
-  </head>
-  <body>
-      <div class="suggestion">
-        <section id="suggestion-info">
-          <div id="severity">
-            <img id="sev1l" class="icon light-only hidden" src="${images['dark-low-severity']}" />
-            <img id="sev1d" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
-            <img id="sev2l" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
-            <img id="sev2d" class="icon dark-only hidden" src="${images['dark-medium-severity']}" />
-            <img id="sev3l" class="icon light-only hidden" src="${images['dark-high-severity']}" />
-            <img id="sev3d" class="icon dark-only hidden" src="${images['dark-high-severity']}" />
-            <span id="severity-text"></span>
-          </div>
-          <div id="title" class="suggestion-text"></div>
-          <div class="suggestion-links">
-            <div id="navigateToIssue" class="clickable">
-              <img class="icon" src="${images['icon-lines']}" /> This <span class="issue-type">issue</span> happens on line <span id="line-position"></span>
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+				<!--
+					Use a content security policy to only allow loading images from https or from our extension directory,
+					and only allow scripts that have a specific nonce.
+				-->
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+
+				<link href="${styleUri}" rel="stylesheet">
+			</head>
+			<body>
+        <div class="suggestion">
+          <section class="suggestion--header">
+            <div class="severity">
+              <img id="lowl" class="icon light-only hidden" src="${images['dark-low-severity']}" />
+              <img id="lowd" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
+              <img id="mediuml" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
+              <img id="mediumd" class="icon dark-only hidden" src="${images['dark-medium-severity']}" />
+              <img id="highl" class="icon light-only hidden" src="${images['dark-high-severity']}" />
+              <img id="highd" class="icon dark-only hidden" src="${images['dark-high-severity']}" />
+              <img id="criticall" class="icon light-only hidden" src="${images['dark-critical-severity']}" />
+              <img id="criticald" class="icon dark-only hidden" src="${images['dark-critical-severity']}" />
+              <span id="severity-text"></span>
             </div>
-            <div id="lead-url" class="clickable hidden">
-              <img class="icon" src="${images['icon-external']}" /> More info
+            <div class="suggestion-text"></div>
+            <div class="identifiers"></div>
+          </section>
+          <section class="delimiter-top summary">
+            <div class="summary-item module">
+              <div class="label font-light">Vulnerable module</div>
+              <div class="content"></div>
             </div>
-          </div>
-          <div class="learn learn__code">
-            <img class="icon" src="${images['learn-icon']}" />
-            <a class="learn--link"></a>
-          </div>
-        </section>
-        <section class="delimiter-top">
-          <div id="info-top" class="font-light">
-            This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
-          </div>
-          <div id="info-no-examples" class="font-light">
-            There are no example fixes for this issue.
-          </div>
-          <div id="example-top" class="row between">
-            <div id="current-example" class="clickable">
-              <img class="icon" src="${images['icon-github']}"></img>
-              <span id="example-link"></span>
+            <div class="summary-item introduced-through">
+              <div class="label font-light">Introduced through</div>
+              <div class="content"></div>
             </div>
-            <div>
-              <div id="previous-example" class="arrow">
-                <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
-                <img src=${images['arrow-left-light']} class="arrow-icon light-only"></img>
-              </div>
-              <span id="example-text">
-                Example <span id="example-counter">1</span>/<span id="example-number2"></span>
-              </span>
-              <div id="next-example" class="arrow">
-                <img src=${images['arrow-right-dark']} class="arrow-icon dark-only"></img>
-                <img src=${images['arrow-right-light']} class="arrow-icon light-only"></img>
-              </div>
+            <div class="summary-item fixed-in">
+              <div class="label font-light">Fixed in</div>
+              <div class="content"></div>
             </div>
-          </div>
-          <div id="example"></div>
-        </section>
-        <section class="delimiter-top">
-          <div id="actions-section">
-            <div class="actions row">
-              <button id="ignore-line-issue" class="button">Ignore on line <span id="line-position2"></span></button>
-              <button id="ignore-file-issue" class="button">Ignore in this file</button>
+            <div class="summary-item maturity">
+              <div class="label font-light">Exploit maturity</div>
+              <div class="content"></div>
             </div>
-          </div>
-        </section>
-      </div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
-  </body>
-  </html>`;
+          </section>
+          <section class="delimiter-top">
+            <h2>Detailed paths</h2>
+            <div class="detailed-paths"></div>
+          </section>
+          <section class="delimiter-top">
+            <div id="overview" class="font-light"></div>
+          </section>
+        </div>
+				<script nonce="${nonce}" src="${scriptUri}"></script>
+			</body>
+			</html>`;
   }
 }

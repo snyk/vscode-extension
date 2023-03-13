@@ -10,7 +10,7 @@ import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
-import { IIacService } from '../../../../snyk/snykIaC/iacService';
+import { IIacService } from '../../../../snyk/snykIac/iacService';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';

@@ -1,6 +1,6 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
-import { IacIssueCommandArg } from '../../snykIaC/views/interfaces';
+import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue } from '../languageServer/types';
 

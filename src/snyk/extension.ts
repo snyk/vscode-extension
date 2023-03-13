@@ -75,9 +75,9 @@ import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTr
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
-import { IacService } from './snykIaC/iacService';
-import IacIssueTreeProvider from './snykIaC/views/iacIssueTreeProvider';
-import { IacSuggestionWebviewProvider } from './snykIaC/views/suggestion/iacSuggestionWebviewProvider';
+import { IacService } from './snykIac/iacService';
+import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
+import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
@@ -238,7 +238,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      this.learnService,
     );
 
     this.iacService = new IacService(
