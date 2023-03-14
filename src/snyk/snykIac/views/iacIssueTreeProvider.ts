@@ -1,18 +1,19 @@
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
+import { IacIssueData } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
+import { IProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { IIacService } from '../iacService';
 import { IssueTreeProvider } from './issueTreeProvider';
 
 export default class IacIssueTreeProvider extends IssueTreeProvider {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
-    protected iacService: IIacService,
+    protected iacService: IProductService<IacIssueData>,
     protected configuration: IConfiguration,
     protected languages: IVSCodeLanguages,
   ) {

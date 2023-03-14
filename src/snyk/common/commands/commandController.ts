@@ -7,7 +7,6 @@ import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
-import { IIacService } from '../../snykIac/iacService';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
@@ -31,6 +30,8 @@ import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
+import { IProductService } from '../services/productService';
+import { IacIssueData } from '../languageServer/types';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -40,7 +41,7 @@ export class CommandController {
     private authService: IAuthenticationService,
     private snykCode: ISnykCodeService,
     private snykCodeOld: ISnykCodeServiceOld,
-    private iacService: IIacService,
+    private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,

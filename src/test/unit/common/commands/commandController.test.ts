@@ -10,11 +10,12 @@ import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
-import { IIacService } from '../../../../snyk/snykIac/iacService';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
+import { IProductService } from '../../../../snyk/common/services/productService';
+import { IacIssueData } from '../../../../snyk/common/languageServer/types';
 
 suite('CommandController', () => {
   const sleep = util.promisify(setTimeout);
@@ -27,7 +28,7 @@ suite('CommandController', () => {
       {} as IAuthenticationService,
       {} as ISnykCodeService,
       {} as ISnykCodeServiceOld,
-      {} as IIacService,
+      {} as IProductService<IacIssueData>,
       {} as OssService,
       {} as ScanModeService,
       {} as IVSCodeWorkspace,

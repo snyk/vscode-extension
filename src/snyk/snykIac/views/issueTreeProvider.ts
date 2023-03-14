@@ -10,9 +10,9 @@ import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodePro
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command, Range } from '../../common/vscode/types';
-import { IIacService } from '../iacService';
 import { messages } from '../messages/analysis';
 import { IacIssueCommandArg } from './interfaces';
+import { IProductService } from '../../common/services/productService';
 interface ISeverityCounts {
   [severity: string]: number;
 }
@@ -20,7 +20,7 @@ interface ISeverityCounts {
 export class IssueTreeProvider extends AnalysisTreeNodeProvider {
   constructor(
     protected readonly contextService: IContextService,
-    protected readonly iacService: IIacService,
+    protected readonly iacService: IProductService<IacIssueData>,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
     protected readonly isSecurityType: boolean,

@@ -1,19 +1,19 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IConfiguration } from '../../../snyk/common/configuration/configuration';
-import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
-import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
-import { IacIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
-import { IProductService } from '../../../snyk/common/services/productService';
-import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
-import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
-import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { IacService } from '../../../snyk/snykIac/iacService';
-import { IIacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/interfaces';
-import { LanguageServerMock } from '../mocks/languageServer.mock';
-import { LoggerMock } from '../mocks/logger.mock';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
+import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import { IacIssueData, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
+import { IProductService } from '../../../../snyk/common/services/productService';
+import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+import { IacService } from '../../../../snyk/snykIac/iacService';
+import { IIacSuggestionWebviewProvider } from '../../../../snyk/snykIac/views/interfaces';
+import { LanguageServerMock } from '../../mocks/languageServer.mock';
+import { LoggerMock } from '../../mocks/logger.mock';
 
-suite('Snyk IaC Service', () => {
+suite('Product Service', () => {
   let ls: ILanguageServer;
   let service: IProductService<IacIssueData>;
   let refreshViewFake: sinon.SinonSpy;
@@ -35,7 +35,7 @@ suite('Snyk IaC Service', () => {
       ls,
       new LoggerMock(),
     );
-  });
+  }); // todo: update the mock service implementation
 
   teardown(() => {
     sinon.restore();
