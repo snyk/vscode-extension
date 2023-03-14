@@ -20,7 +20,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
-    protected readonly isSecurityType: boolean,
   ) {
     super(configuration, productService);
   }

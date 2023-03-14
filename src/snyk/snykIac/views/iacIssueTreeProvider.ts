@@ -17,7 +17,7 @@ export default class IacIssueTreeProvider extends IssueTreeProvider {
     protected configuration: IConfiguration,
     protected languages: IVSCodeLanguages,
   ) {
-    super(contextService, iacService, configuration, languages, true);
+    super(contextService, iacService, configuration, languages);
   }
 
   getRootChildren(): TreeNode[] {
