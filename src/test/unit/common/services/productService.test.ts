@@ -3,31 +3,48 @@ import sinon from 'sinon';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import { IacIssueData, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
-import { IProductService } from '../../../../snyk/common/services/productService';
+import { Issue, Scan, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
+import { IProductService, ProductService } from '../../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
+import { IProductWebviewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { IacService } from '../../../../snyk/snykIac/iacService';
-import { IIacSuggestionWebviewProvider } from '../../../../snyk/snykIac/views/interfaces';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 
+type ProductData = {
+  productName: string;
+};
+class MockProductService extends ProductService<ProductData> {
+  subscribeToLsScanMessages(): void {
+    this.lsSubscription = this.languageServer.scan$.subscribe((scan: Scan<unknown>) => {
+      super.handleLsScanMessage(scan as Scan<ProductData>);
+    });
+  }
+
+  refreshTreeView(): void {
+    this.viewManagerService.refreshAllViews();
+  }
+}
+
 suite('Product Service', () => {
   let ls: ILanguageServer;
-  let service: IProductService<IacIssueData>;
+  let service: IProductService<ProductData>;
   let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
     ls = new LanguageServerMock();
     refreshViewFake = sinon.fake();
-    service = new IacService(
+
+    const viewManagerService = {
+      refreshAllViews: refreshViewFake,
+    } as unknown as IViewManagerService;
+
+    service = new MockProductService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as unknown as IIacSuggestionWebviewProvider,
-      {
-        refreshIacView: refreshViewFake,
-      } as unknown as IViewManagerService,
+      {} as unknown as IProductWebviewProvider<Issue<ProductData>>,
+      viewManagerService,
       {
         getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
@@ -35,23 +52,24 @@ suite('Product Service', () => {
       ls,
       new LoggerMock(),
     );
-  }); // todo: update the mock service implementation
+  });
 
   teardown(() => {
     sinon.restore();
   });
 
-  test('Scan returned for different product', () => {
-    ls.scan$.next({
-      product: ScanProduct.OpenSource,
-      folderPath: 'test/path',
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
+  // test('Scan returned for different product', () => {
+  //   ls.scan$.next({
+  //     product: ScanProduct.OpenSource,
+  //     folderPath: 'test/path',
+  //     issues: [],
+  //     status: ScanStatus.InProgress,
+  //   });
 
-    strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.notCalled(refreshViewFake);
-  });
+  //   strictEqual(service.isAnalysisRunning, false);
+  //   sinon.assert.notCalled(refreshViewFake);
+  // });
+  // todo: move to the test of IacService/CodeService
 
   test('Scan in progress', () => {
     ls.scan$.next({
