@@ -1,24 +1,21 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IAnalytics } from '../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
-import { CodeIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
+import { IacIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { IProductService } from '../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
-import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { SnykCodeService } from '../../../snyk/snykCode/codeService';
-import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/interfaces';
+import { IacService } from '../../../snyk/snykIac/iacService';
+import { IacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
-import { languagesMock } from '../mocks/languages.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
 suite('IaC Service', () => {
   let ls: ILanguageServer;
-  let service: IProductService<CodeIssueData>;
+  let service: IProductService<IacIssueData>;
   let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
@@ -29,23 +26,17 @@ suite('IaC Service', () => {
       refreshIacView: refreshViewFake,
     } as unknown as IViewManagerService;
 
-    service = new SnykCodeService(
+    service = new IacService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as ICodeSuggestionWebviewProvider,
-      {} as ICodeActionAdapter,
-      {
-        getQuickFix: sinon.fake(),
-      } as ICodeActionKindAdapter,
+      {} as unknown as IacSuggestionWebviewProvider,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
-      languagesMock,
       new LoggerMock(),
-      {} as IAnalytics,
     );
   });
 
