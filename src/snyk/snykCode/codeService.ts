@@ -1,3 +1,4 @@
+import { Subscription } from 'rxjs';
 import { IAnalytics } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
@@ -48,8 +49,8 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
   }
 
-  subscribeToLsScanMessages() {
-    this.lsSubscription = this.languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => {
+  subscribeToLsScanMessages(): Subscription {
+    return this.languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => {
       if (scan.product !== ScanProduct.Code) {
         return;
       }

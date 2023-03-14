@@ -60,10 +60,10 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     //   analytics,
     // );
     // this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
-    this.subscribeToLsScanMessages();
+    this.lsSubscription = this.subscribeToLsScanMessages();
   }
 
-  abstract subscribeToLsScanMessages(): void;
+  abstract subscribeToLsScanMessages(): Subscription;
 
   abstract refreshTreeView(): void;
 

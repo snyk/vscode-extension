@@ -1,4 +1,5 @@
 import { strictEqual } from 'assert';
+import { Subscription } from 'rxjs';
 import sinon from 'sinon';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
@@ -16,8 +17,8 @@ type ProductData = {
   productName: string;
 };
 class MockProductService extends ProductService<ProductData> {
-  subscribeToLsScanMessages(): void {
-    this.lsSubscription = this.languageServer.scan$.subscribe((scan: Scan<unknown>) => {
+  subscribeToLsScanMessages(): Subscription {
+    return this.languageServer.scan$.subscribe((scan: Scan<unknown>) => {
       super.handleLsScanMessage(scan as Scan<ProductData>);
     });
   }
@@ -57,19 +58,6 @@ suite('Product Service', () => {
   teardown(() => {
     sinon.restore();
   });
-
-  // test('Scan returned for different product', () => {
-  //   ls.scan$.next({
-  //     product: ScanProduct.OpenSource,
-  //     folderPath: 'test/path',
-  //     issues: [],
-  //     status: ScanStatus.InProgress,
-  //   });
-
-  //   strictEqual(service.isAnalysisRunning, false);
-  //   sinon.assert.notCalled(refreshViewFake);
-  // });
-  // todo: move to the test of IacService/CodeService
 
   test('Scan in progress', () => {
     ls.scan$.next({
