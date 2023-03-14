@@ -1,15 +1,20 @@
+import { Command, Range } from 'vscode';
+import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
+import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
-import { IacIssueData } from '../../common/languageServer/types';
+import { IacIssueData, Issue } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
+import { ProductIssueTreeProvider } from '../../common/views/issueTreeProvider';
 import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { IssueTreeProvider } from './issueTreeProvider';
+import { messages } from '../messages/analysis';
+import { IacIssueCommandArg } from './interfaces';
 
-export default class IacIssueTreeProvider extends IssueTreeProvider {
+export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIssueData> {
   constructor(
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
@@ -34,11 +39,46 @@ export default class IacIssueTreeProvider extends IssueTreeProvider {
 
   onDidChangeTreeData = this.viewManagerService.refreshIacViewEmitter.event;
 
-  protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
+  getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
     return `${dir} - ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`;
   }
 
-  protected getIssueFoundText(nIssues: number): string {
+  getIssueFoundText(nIssues: number): string {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} ${nIssues === 1 ? 'issue' : 'issues'}`}`;
+  }
+
+  filterIssues(issues: Issue<IacIssueData>[]): Issue<IacIssueData>[] {
+    return issues;
+  }
+
+  getRunTestMessage = () => messages.runTest;
+
+  getIssueTitle = (issue: Issue<IacIssueData>) => issue.title;
+
+  getIssueRange(issue: Issue<IacIssueData>): Range {
+    return this.languages.createRange(
+      issue.additionalData.lineNumber,
+      0,
+      issue.additionalData.lineNumber,
+      Number.MAX_VALUE,
+    );
+  }
+
+  getOpenIssueCommand(issue: Issue<IacIssueData>, folderPath: string, filePath: string): Command {
+    return {
+      command: SNYK_OPEN_ISSUE_COMMAND,
+      title: '',
+      arguments: [
+        {
+          issueType: OpenCommandIssueType.IacIssue,
+          issue: {
+            id: issue.id,
+            folderPath,
+            filePath,
+            range: this.getIssueRange(issue),
+          } as IacIssueCommandArg,
+        } as OpenIssueCommandArg,
+      ],
+    };
   }
 }
