@@ -26,7 +26,7 @@ suite('IaC Service', () => {
     refreshViewFake = sinon.fake();
 
     const viewManagerService = {
-      refreshAllCodeAnalysisViews: refreshViewFake,
+      refreshIacView: refreshViewFake,
     } as unknown as IViewManagerService;
 
     service = new SnykCodeService(

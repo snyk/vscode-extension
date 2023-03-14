@@ -109,7 +109,6 @@ export class IacSuggestionWebviewProvider
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
-      ['icon-code', 'svg'], // todo: do we need it?
       ['dark-critical-severity', 'svg'],
       ['dark-high-severity', 'svg'],
       ['dark-medium-severity', 'svg'],
