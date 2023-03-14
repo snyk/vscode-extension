@@ -164,29 +164,29 @@ export class IacSuggestionWebviewProvider
             <div class="identifiers"></div>
           </section>
           <section class="delimiter-top summary">
-            <div class="summary-item module">
-              <div class="label font-light">Vulnerable module</div>
+            <div class="summary-item description">
+              <div class="label font-light">Description</div>
               <div class="content"></div>
             </div>
-            <div class="summary-item introduced-through">
-              <div class="label font-light">Introduced through</div>
+            <div class="summary-item impact">
+              <div class="label font-light">Impact</div>
               <div class="content"></div>
             </div>
-            <div class="summary-item fixed-in">
-              <div class="label font-light">Fixed in</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item maturity">
-              <div class="label font-light">Exploit maturity</div>
-              <div class="content"></div>
+            <div class="summary-item path">
+              <div class="label font-light">Path</div>
+              <div class="content">
+                <code></code>
+              </div>
             </div>
           </section>
+        </div>
           <section class="delimiter-top">
-            <h2>Detailed paths</h2>
-            <div class="detailed-paths"></div>
+            <h2>Remediation</h2>
+            <div class="remediation" class="font-light"></div>
           </section>
-          <section class="delimiter-top">
-            <div id="overview" class="font-light"></div>
+          <section class="delimiter-top hidden references">
+            <h2>References</h2>
+            <div class="reference-links" class="font-light"></div>
           </section>
         </div>
 				<script nonce="${nonce}" src="${scriptUri}"></script>

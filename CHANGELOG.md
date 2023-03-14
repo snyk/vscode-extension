@@ -1,5 +1,9 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.18.0]
+
+- Snyk IaC: Added details panel body.
+
 ## [1.17.0]
 
 ### Added
