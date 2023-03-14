@@ -29,7 +29,7 @@ suite('IaC Service', () => {
     service = new IacService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as unknown as IacSuggestionWebviewProvider,
+      {} as IacSuggestionWebviewProvider,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
