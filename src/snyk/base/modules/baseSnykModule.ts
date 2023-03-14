@@ -9,7 +9,7 @@ import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trus
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { CodeScanOrchestrator } from '../../common/languageServer/experiments/codeScanOrchestrator';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
-import { IacIssueData } from '../../common/languageServer/types';
+import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
@@ -24,7 +24,6 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vscode/markdownString';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
-import { ISnykCodeService } from '../../snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { CodeSettings, ICodeSettings } from '../../snykCode/codeSettings';
 import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
@@ -67,7 +66,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected advisorApiClient: IAdvisorApiClient;
   protected falsePositiveApi: IFalsePositiveApi;
   snykCodeOld: ISnykCodeServiceOld;
-  snykCode: ISnykCodeService;
+  snykCode: IProductService<CodeIssueData>;
   protected codeSettings: ICodeSettings;
   protected codeScanOrchestrator: CodeScanOrchestrator;
 

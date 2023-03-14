@@ -211,7 +211,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       this.workspaceTrust,
       this.languageServer,
-      vsCodeWindow,
       vsCodeLanguages,
       Logger,
       this.analytics,

@@ -3,17 +3,17 @@ import * as vscode from 'vscode'; // todo: invert dependency
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { IssueSeverity } from '../../common/languageServer/types';
+import { CodeIssueData, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command } from '../../common/vscode/types';
-import { ISnykCodeService } from '../codeService';
 import { messages } from '../messages/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
+import { IProductService } from '../../common/services/productService';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -22,7 +22,7 @@ interface ISeverityCounts {
 export class IssueTreeProvider extends AnalysisTreeNodeProvider {
   constructor(
     protected readonly contextService: IContextService,
-    protected readonly codeService: ISnykCodeService,
+    protected readonly codeService: IProductService<CodeIssueData>,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
     protected readonly isSecurityType: boolean,

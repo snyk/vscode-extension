@@ -8,14 +8,13 @@ import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/gen
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { ISnykCodeService } from '../../../../snyk/snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../../../snyk/snykCode/codeServiceOld';
 import { OssService } from '../../../../snyk/snykOss/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { IProductService } from '../../../../snyk/common/services/productService';
-import { IacIssueData } from '../../../../snyk/common/languageServer/types';
+import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 
 suite('CommandController', () => {
   const sleep = util.promisify(setTimeout);
@@ -26,7 +25,7 @@ suite('CommandController', () => {
     controller = new CommandController(
       {} as IOpenerService,
       {} as IAuthenticationService,
-      {} as ISnykCodeService,
+      {} as IProductService<CodeIssueData>,
       {} as ISnykCodeServiceOld,
       {} as IProductService<IacIssueData>,
       {} as OssService,

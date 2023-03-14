@@ -2,7 +2,6 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { ISnykCodeService } from '../../snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
@@ -22,16 +21,16 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
+import { CodeIssueData, IacIssueData } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
+import { IProductService } from '../services/productService';
 import { IVSCodeCommands } from '../vscode/commands';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
-import { IProductService } from '../services/productService';
-import { IacIssueData } from '../languageServer/types';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -39,7 +38,7 @@ export class CommandController {
   constructor(
     private openerService: IOpenerService,
     private authService: IAuthenticationService,
-    private snykCode: ISnykCodeService,
+    private snykCode: IProductService<CodeIssueData>,
     private snykCodeOld: ISnykCodeServiceOld,
     private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
