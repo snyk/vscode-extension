@@ -4,6 +4,10 @@ import { Logger } from '../logger/logger';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { WebviewOptions } from '../vscode/types';
 
+export interface IProductWebviewProvider<T> extends IWebViewProvider<T> {
+  openIssueId: string | undefined;
+}
+
 export interface IWebViewProvider<ViewModel> {
   activate(): void;
   disposePanel(): void;

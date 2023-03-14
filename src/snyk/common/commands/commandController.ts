@@ -2,11 +2,11 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { ISnykCodeService } from '../../snykCode/codeService';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
+import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
@@ -21,8 +21,10 @@ import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHE
 import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
+import { CodeIssueData, IacIssueData } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
+import { IProductService } from '../services/productService';
 import { IVSCodeCommands } from '../vscode/commands';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
@@ -36,8 +38,9 @@ export class CommandController {
   constructor(
     private openerService: IOpenerService,
     private authService: IAuthenticationService,
-    private snykCode: ISnykCodeService,
+    private snykCode: IProductService<CodeIssueData>,
     private snykCodeOld: ISnykCodeServiceOld,
+    private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
@@ -147,6 +150,28 @@ export class CommandController {
         issueId: issue.id,
         issueType: 'Open Source Vulnerability',
         severity: capitalizeOssSeverity(issue.severity),
+      });
+    } else if (arg.issueType == OpenCommandIssueType.IacIssue) {
+      const issueArgs = arg.issue as IacIssueCommandArg;
+      const issue = this.iacService.getIssue(issueArgs.folderPath, issueArgs.id);
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
+
+      await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      try {
+        this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
+
+      this.analytics.logIssueInTreeIsClicked({
+        ide: IDE_NAME,
+        issueId: issue.id,
+        issueType: 'Infrastructure as Code Issue',
+        severity: IssueUtils.issueSeverityAsText(issue.severity),
       });
     }
   }

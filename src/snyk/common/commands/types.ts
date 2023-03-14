@@ -1,5 +1,6 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
+import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue } from '../languageServer/types';
 
@@ -7,10 +8,11 @@ export enum OpenCommandIssueType {
   CodeIssueOld,
   CodeIssue,
   OssVulnerability,
+  IacIssue,
 }
 
 export type OpenIssueCommandArg = {
-  issue: CodeIssueCommandArg | CodeIssueCommandArgOld | OssIssueCommandArg;
+  issue: CodeIssueCommandArg | CodeIssueCommandArgOld | OssIssueCommandArg | IacIssueCommandArg;
   issueType: OpenCommandIssueType;
 };
 

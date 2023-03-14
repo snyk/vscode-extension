@@ -3,28 +3,34 @@ import sinon from 'sinon';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
-import { ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
+import { IacIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
+import { IProductService } from '../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
-import { ISnykIacService, SnykIacService } from '../../../snyk/snykIaC/iacService';
+import { IacService } from '../../../snyk/snykIac/iacService';
+import { IacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
-suite('Snyk IaC Service', () => {
+suite('IaC Service', () => {
   let ls: ILanguageServer;
-  let service: ISnykIacService;
+  let service: IProductService<IacIssueData>;
   let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
     ls = new LanguageServerMock();
     refreshViewFake = sinon.fake();
-    service = new SnykIacService(
+
+    const viewManagerService = {
+      refreshIacView: refreshViewFake,
+    } as unknown as IViewManagerService;
+
+    service = new IacService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {
-        refreshIacView: refreshViewFake,
-      } as unknown as IViewManagerService,
+      {} as IacSuggestionWebviewProvider,
+      viewManagerService,
       {
         getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
@@ -38,7 +44,7 @@ suite('Snyk IaC Service', () => {
     sinon.restore();
   });
 
-  test('Scan returned for different product', () => {
+  test('Scan returned for non-IaC product', () => {
     ls.scan$.next({
       product: ScanProduct.OpenSource,
       folderPath: 'test/path',
@@ -48,90 +54,5 @@ suite('Snyk IaC Service', () => {
 
     strictEqual(service.isAnalysisRunning, false);
     sinon.assert.notCalled(refreshViewFake);
-  });
-
-  test('Scan in progress', () => {
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath: 'test/path',
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-
-    strictEqual(service.isAnalysisRunning, true);
-    sinon.assert.calledOnce(refreshViewFake);
-  });
-
-  test('Scan successfully finished', () => {
-    const folderPath = 'test/path';
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath,
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath,
-      issues: [],
-      status: ScanStatus.Success,
-    });
-
-    strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
-  });
-
-  test('Scan failed', () => {
-    const folderPath = 'test/path';
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath,
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath,
-      issues: [],
-      status: ScanStatus.Error,
-    });
-
-    strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
-  });
-
-  test('Scan finished when all scans in progress completed', () => {
-    const folder1Path = 'test/path';
-    const folder2Path = 'test/path2';
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath: folder1Path,
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath: folder2Path,
-      issues: [],
-      status: ScanStatus.InProgress,
-    });
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath: folder1Path,
-      issues: [],
-      status: ScanStatus.Success,
-    });
-
-    strictEqual(service.isAnalysisRunning, true);
-
-    ls.scan$.next({
-      product: ScanProduct.InfrastructureAsCode,
-      folderPath: folder2Path,
-      issues: [],
-      status: ScanStatus.Success,
-    });
-
-    strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
   });
 });

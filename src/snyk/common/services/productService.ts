@@ -1,0 +1,179 @@
+import { Subscription } from 'rxjs';
+import { AnalysisStatusProvider } from '../analysis/statusProvider';
+import { IConfiguration } from '../configuration/configuration';
+import { IWorkspaceTrust } from '../configuration/trustedFolders';
+import { ILanguageServer } from '../languageServer/languageServer';
+import { Issue, Scan, ScanStatus } from '../languageServer/types';
+import { ILog } from '../logger/interfaces';
+import { IViewManagerService } from '../services/viewManagerService';
+import { IProductWebviewProvider } from '../views/webviewProvider';
+import { ExtensionContext } from '../vscode/extensionContext';
+import { Disposable } from '../vscode/types';
+import { IVSCodeWorkspace } from '../vscode/workspace';
+
+export type WorkspaceFolderResult<T> = Issue<T>[] | Error;
+export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder
+
+export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
+  result: Readonly<ProductResult<T>>;
+  getIssue(folderPath: string, issueId: string): Issue<T> | undefined;
+  getIssueById(issueId: string): Issue<T> | undefined;
+  isAnyWorkspaceFolderTrusted: boolean;
+  resetResult(folderPath: string): void;
+  isAnyResultAvailable(): boolean;
+
+  activateWebviewProviders(): void;
+  showSuggestionProvider(folderPath: string, issueId: string): void;
+}
+
+export abstract class ProductService<T> extends AnalysisStatusProvider implements IProductService<T> {
+  private _result: ProductResult<T>;
+
+  // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
+  private runningScanCount = 0;
+
+  protected lsSubscription: Subscription;
+
+  protected disposables: Disposable[] = [];
+
+  constructor(
+    readonly extensionContext: ExtensionContext,
+    private readonly config: IConfiguration,
+    private readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
+    // readonly codeActionAdapter: ICodeActionAdapter,
+    // readonly codeActionKindAdapter: ICodeActionKindAdapter,
+    protected readonly viewManagerService: IViewManagerService,
+    readonly workspace: IVSCodeWorkspace,
+    private readonly workspaceTrust: IWorkspaceTrust,
+    readonly languageServer: ILanguageServer,
+    // readonly window: IVSCodeWindow,
+    // readonly languages: IVSCodeLanguages,
+    private readonly logger: ILog, // readonly analytics: IAnalytics,
+  ) {
+    super();
+    this._result = new Map<string, WorkspaceFolderResult<T>>();
+    // const provider = new iacCodeActionsProvider(
+    //   this.result,
+    //   codeActionAdapter,
+    //   codeActionKindAdapter,
+    //   languages,
+    //   analytics,
+    // );
+    // this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
+    this.lsSubscription = this.subscribeToLsScanMessages();
+  }
+
+  abstract subscribeToLsScanMessages(): Subscription;
+
+  abstract refreshTreeView(): void;
+
+  getIssue(folderPath: string, issueId: string): Issue<T> | undefined {
+    const folderResult = this._result.get(folderPath);
+    if (folderResult instanceof Error) {
+      return undefined;
+    }
+
+    return folderResult?.find(issue => issue.id === issueId);
+  }
+
+  getIssueById(issueId: string): Issue<T> | undefined {
+    const results = this._result.values();
+    for (const folderResult of results) {
+      if (folderResult instanceof Error) {
+        return undefined;
+      }
+
+      const issue = folderResult?.find(issue => issue.id === issueId);
+      if (issue) {
+        return issue;
+      }
+    }
+
+    return undefined;
+  }
+
+  get result(): Readonly<ProductResult<T>> {
+    return this._result;
+  }
+
+  get isAnyWorkspaceFolderTrusted(): boolean {
+    const workspacePaths = this.workspace.getWorkspaceFolders();
+    return this.workspaceTrust.getTrustedFolders(this.config, workspacePaths).length > 0;
+  }
+
+  resetResult(folderPath: string): void {
+    this._result.delete(folderPath);
+    this.refreshTreeView();
+  }
+
+  public isAnyResultAvailable(): boolean {
+    return this._result.size > 0;
+  }
+
+  activateWebviewProviders(): void {
+    this.suggestionProvider.activate();
+  }
+
+  showSuggestionProvider(folderPath: string, issueId: string): Promise<void> {
+    const issue = this.getIssue(folderPath, issueId);
+    if (!issue) {
+      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+      return Promise.resolve();
+    }
+
+    return this.suggestionProvider.showPanel(issue);
+  }
+
+  disposeSuggestionPanelIfStale(): void {
+    const openIssueId = this.suggestionProvider.openIssueId;
+    if (!openIssueId) return;
+
+    const found = this.getIssueById(openIssueId);
+    if (!found) this.suggestionProvider.disposePanel();
+  }
+
+  override handleLsDownloadFailure(): void {
+    super.handleLsDownloadFailure();
+    this.refreshTreeView();
+  }
+
+  dispose(): void {
+    this.lsSubscription.unsubscribe();
+  }
+
+  // Must be called from the child class to listen on scan messages
+  handleLsScanMessage(scanMsg: Scan<T>) {
+    if (scanMsg.status == ScanStatus.InProgress) {
+      if (!this.isAnalysisRunning) {
+        this.analysisStarted();
+        this._result.set(scanMsg.folderPath, []);
+        this.refreshTreeView();
+      }
+
+      this.runningScanCount++;
+      return;
+    }
+
+    if (scanMsg.status == ScanStatus.Success || scanMsg.status == ScanStatus.Error) {
+      this.handleSuccessOrError(scanMsg);
+      this.disposeSuggestionPanelIfStale();
+    }
+  }
+
+  private handleSuccessOrError(scanMsg: Scan<T>) {
+    this.runningScanCount--;
+
+    if (scanMsg.status == ScanStatus.Success) {
+      this._result.set(scanMsg.folderPath, scanMsg.issues);
+    } else {
+      this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
+    }
+
+    if (this.runningScanCount <= 0) {
+      this.analysisFinished();
+      this.runningScanCount = 0;
+
+      this.refreshTreeView();
+    }
+  }
+}

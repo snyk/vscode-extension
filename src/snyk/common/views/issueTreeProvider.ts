@@ -1,31 +1,27 @@
 import _ from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { IssueSeverity } from '../../common/languageServer/types';
+import { Issue, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
+import { IProductService } from '../../common/services/productService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { Command } from '../../common/vscode/types';
-import { ISnykIacService } from '../iacService';
-import { messages } from '../messages/analysis';
-import { IacIssueCommandArg } from './interfaces';
+import { Command, Range } from '../../common/vscode/types';
+
 interface ISeverityCounts {
   [severity: string]: number;
 }
 
-export class IssueTreeProvider extends AnalysisTreeNodeProvider {
+export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
   constructor(
     protected readonly contextService: IContextService,
-    protected readonly iacService: ISnykIacService,
+    protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
-    protected readonly isSecurityType: boolean,
   ) {
-    super(configuration, iacService);
+    super(configuration, productService);
   }
 
   static getSeverityIcon(severity: IssueSeverity | string): INodeIcon {
@@ -39,17 +35,25 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     );
   }
 
+  abstract filterIssues(issues: Issue<T>[]): Issue<T>[];
+
+  abstract getRunTestMessage(): string;
+  abstract getIssueTitle(issue: Issue<T>): string;
+
+  abstract getIssueRange(issue: Issue<T>): Range;
+  abstract getOpenIssueCommand(issue: Issue<T>, folderPath: string, filePath: string): Command;
+
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowIacAnalysis) return nodes;
-    if (!this.iacService.isLsDownloadSuccessful) {
+    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
+    if (!this.productService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }
-    if (!this.iacService.isAnyWorkspaceFolderTrusted) {
+    if (!this.productService.isAnyWorkspaceFolderTrusted) {
       return [this.getNoWorkspaceTrustTreeNode()];
     }
-    if (this.iacService.isAnalysisRunning) {
+    if (this.productService.isAnalysisRunning) {
       return [
         new TreeNode({
           text: commonMessages.scanRunning,
@@ -57,10 +61,10 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
       ];
     }
 
-    if (!this.iacService.isAnyResultAvailable()) {
+    if (!this.productService.isAnyResultAvailable()) {
       return [
         new TreeNode({
-          text: messages.runTest,
+          text: this.getRunTestMessage(),
         }),
       ];
     }
@@ -68,7 +72,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     const [resultNodes, nIssues] = this.getResultNodes();
     nodes.push(...resultNodes);
 
-    const folderResults = Array.from(this.iacService.result.values());
+    const folderResults = Array.from(this.productService.result.values());
     const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
     if (allFailed) {
       return nodes;
@@ -91,7 +95,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     const nodes: TreeNode[] = [];
     let totalVulnCount = 0;
 
-    for (const result of this.iacService.result.entries()) {
+    for (const result of this.productService.result.entries()) {
       const folderPath = result[0];
       const folderResult = result[1];
 
@@ -119,11 +123,14 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
 
         const fileSeverityCounts = this.initSeverityCounts();
 
-        const issueNodes = fileIssues.map(issue => {
+        const filteredIssues = this.filterIssues(fileIssues);
+
+        const issueNodes = filteredIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           totalVulnCount++;
           folderVulnCount++;
 
+          const issueRange = this.getIssueRange(issue);
           const params: {
             text: string;
             icon: INodeIcon;
@@ -132,29 +139,17 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
             command: Command;
             children?: TreeNode[];
           } = {
-            text: issue.title,
-            icon: IssueTreeProvider.getSeverityIcon(issue.severity),
+            text: this.getIssueTitle(issue),
+            icon: ProductIssueTreeProvider.getSeverityIcon(issue.severity),
             issue: {
               uri,
               filePath: file,
+              range: issueRange,
             },
             internal: {
-              severity: IssueTreeProvider.getSeverityComparatorIndex(issue.severity),
+              severity: ProductIssueTreeProvider.getSeverityComparatorIndex(issue.severity),
             },
-            command: {
-              command: SNYK_OPEN_ISSUE_COMMAND,
-              title: '',
-              arguments: [
-                {
-                  issueType: OpenCommandIssueType.CodeIssue,
-                  issue: {
-                    id: issue.id,
-                    folderPath,
-                    filePath: file,
-                  } as IacIssueCommandArg,
-                } as OpenIssueCommandArg,
-              ],
-            },
+            command: this.getOpenIssueCommand(issue, folderPath, file),
           };
           return new TreeNode(params);
         });
@@ -165,18 +160,18 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
 
         issueNodes.sort(this.compareNodes);
 
-        const fileSeverity = IssueTreeProvider.getHighestSeverity(fileSeverityCounts);
+        const fileSeverity = ProductIssueTreeProvider.getHighestSeverity(fileSeverityCounts);
         folderSeverityCounts[fileSeverity] += 1;
 
         // append file node
         const fileNode = new TreeNode({
           text: filename,
           description: this.getIssueDescriptionText(dir, issueNodes.length),
-          icon: IssueTreeProvider.getSeverityIcon(fileSeverity),
+          icon: ProductIssueTreeProvider.getSeverityIcon(fileSeverity),
           children: issueNodes,
           internal: {
             nIssues: issueNodes.length,
-            severity: IssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
+            severity: ProductIssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
           },
         });
         fileNodes.push(fileNode);
@@ -184,24 +179,24 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
 
       fileNodes.sort(this.compareNodes);
 
-      const folderSeverity = IssueTreeProvider.getHighestSeverity(folderSeverityCounts);
+      const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
       if (folderVulnCount == 0) {
         continue;
       }
 
       // flatten results if single workspace folder
-      if (this.iacService.result.size == 1) {
+      if (this.productService.result.size == 1) {
         nodes.push(...fileNodes);
       } else {
         const folderNode = new TreeNode({
           text: folderName,
           description: this.getIssueDescriptionText(folderName, folderVulnCount),
-          icon: IssueTreeProvider.getSeverityIcon(folderSeverity),
+          icon: ProductIssueTreeProvider.getSeverityIcon(folderSeverity),
           children: fileNodes,
           internal: {
             nIssues: folderVulnCount,
-            severity: IssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
+            severity: ProductIssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
           },
         });
         nodes.push(folderNode);
@@ -219,7 +214,7 @@ export class IssueTreeProvider extends AnalysisTreeNodeProvider {
     return `${dir} - ${issueCount} issue${issueCount === 1 ? '' : 's'}`;
   }
 
-  // todo: remove after OSS scans migration to LS
+  // todo: Obsolete. Remove after OSS scans migration to LS
   protected getFilteredIssues(diagnostics: readonly unknown[]): readonly unknown[] {
     // Diagnostics are already filtered by the analyzer
     return diagnostics;
