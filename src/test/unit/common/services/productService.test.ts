@@ -9,6 +9,7 @@ import { IProductService, ProductService } from '../../../../snyk/common/service
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
 import { IProductWebviewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -51,6 +52,7 @@ suite('Product Service', () => {
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
+      {} as IVSCodeLanguages,
       new LoggerMock(),
     );
   });

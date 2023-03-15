@@ -2,12 +2,14 @@ import { Subscription } from 'rxjs';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
+import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { Issue, Scan, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from '../services/viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
 import { ExtensionContext } from '../vscode/extensionContext';
+import { IVSCodeLanguages } from '../vscode/languages';
 import { Disposable } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
@@ -40,32 +42,25 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
-    // readonly codeActionAdapter: ICodeActionAdapter,
-    // readonly codeActionKindAdapter: ICodeActionKindAdapter,
     protected readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
-    // readonly window: IVSCodeWindow,
-    // readonly languages: IVSCodeLanguages,
-    private readonly logger: ILog, // readonly analytics: IAnalytics,
+    readonly languages: IVSCodeLanguages,
+    private readonly logger: ILog,
   ) {
     super();
     this._result = new Map<string, WorkspaceFolderResult<T>>();
-    // const provider = new iacCodeActionsProvider(
-    //   this.result,
-    //   codeActionAdapter,
-    //   codeActionKindAdapter,
-    //   languages,
-    //   analytics,
-    // );
-    // this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
     this.lsSubscription = this.subscribeToLsScanMessages();
   }
 
   abstract subscribeToLsScanMessages(): Subscription;
 
   abstract refreshTreeView(): void;
+
+  registerCodeActionsProvider(provider: CodeActionsProvider<T>) {
+    this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
+  }
 
   getIssue(folderPath: string, issueId: string): Issue<T> | undefined {
     const folderResult = this._result.get(folderPath);

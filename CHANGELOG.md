@@ -2,7 +2,9 @@
 
 ## [1.18.0]
 
+### Added
 - Snyk IaC: Added details panel body.
+- Snyk IaC: Added code action to navigate from issue in editor to issue details panel.
 
 ## [1.17.0]
 

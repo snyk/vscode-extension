@@ -1,12 +1,15 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
+import { IAnalytics } from '../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { IacIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { IProductService } from '../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { IacService } from '../../../snyk/snykIac/iacService';
 import { IacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/suggestion/iacSuggestionWebviewProvider';
@@ -30,13 +33,21 @@ suite('IaC Service', () => {
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as IacSuggestionWebviewProvider,
+      {} as ICodeActionAdapter,
+      {
+        getQuickFix: sinon.fake(),
+      } as ICodeActionKindAdapter,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
+      {
+        registerCodeActionsProvider: sinon.fake(),
+      } as unknown as IVSCodeLanguages,
       new LoggerMock(),
+      {} as IAnalytics,
     );
   });
 

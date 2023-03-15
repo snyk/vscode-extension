@@ -25,7 +25,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     workspace: IVSCodeWorkspace,
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
-    private readonly languages: IVSCodeLanguages,
+    languages: IVSCodeLanguages,
     logger: ILog,
     readonly analytics: IAnalytics,
   ) {
@@ -37,16 +37,13 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
       workspace,
       workspaceTrust,
       languageServer,
+      languages,
       logger,
     );
-    const provider = new SnykCodeActionsProvider(
-      this.result,
-      codeActionAdapter,
-      codeActionKindAdapter,
-      languages,
-      analytics,
-    ); // todo: consider moving this to the base class
-    this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
+
+    this.registerCodeActionsProvider(
+      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, analytics),
+    );
   }
 
   subscribeToLsScanMessages(): Subscription {
