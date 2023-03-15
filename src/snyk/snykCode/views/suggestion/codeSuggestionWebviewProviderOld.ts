@@ -150,7 +150,7 @@ export class CodeSuggestionWebviewProviderOld
             suggestionUri: string;
           };
           const localUriPath = getAbsoluteMarkerFilePath(this.workspace, uri, suggestionUri);
-          const localUri = vscode.Uri.parse(localUriPath);
+          const localUri = vscode.Uri.file(localUriPath);
           const range = createIssueCorrectRange({ cols, rows }, this.languages);
           await vscode.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, localUri, range);
           break;

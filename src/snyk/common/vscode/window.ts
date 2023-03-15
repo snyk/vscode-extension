@@ -61,7 +61,7 @@ export class VSCodeWindow implements IVSCodeWindow {
   }
 
   showTextDocumentViaFilepath(filePath: string, options?: TextDocumentShowOptions): Thenable<TextEditor> {
-    const uri = vscode.Uri.parse(filePath);
+    const uri = vscode.Uri.file(filePath);
     return vscode.window.showTextDocument(uri, options);
   }
 
