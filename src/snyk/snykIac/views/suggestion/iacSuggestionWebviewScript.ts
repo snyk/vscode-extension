@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 // This script will be run within the webview itself
+
 // It cannot access the main VS Code APIs directly.
 (function () {
   // TODO: Redefine types until bundling is introduced into extension
@@ -51,14 +52,20 @@
     // Fill identifiers line
     fillIdentifiers();
 
-    // // Fill summary
-    // fillSummary();
+    // Fill description
+    fillDescription();
 
-    // // Fill detailed paths
-    // fillDetailedPaths();
+    // Fill impact
+    fillImpact();
 
-    // // Fill overview
-    // fillOverview();
+    // Fill path
+    fillPath();
+
+    // Fill remediation
+    fillRemediation();
+
+    // Fill references
+    fillReferences();
 
     function setSeverityIcon() {
       if (issue.severity) {
@@ -87,6 +94,52 @@
         issue.additionalData.publicId.toUpperCase(),
         issue.additionalData.documentation,
       );
+    }
+
+    function fillDescription() {
+      const module = document.querySelector('.description > .content')!;
+      module.textContent = issue.additionalData.issue;
+    }
+
+    function fillImpact() {
+      const module = document.querySelector('.impact > .content')!;
+      module.textContent = issue.additionalData.impact;
+    }
+
+    function fillPath() {
+      const module = document.querySelector('.path > .content code')!;
+      if (issue.additionalData.path) {
+        module.textContent = issue.additionalData.path.join(' > ');
+      } else {
+        module.textContent = 'No path available.';
+      }
+    }
+
+    function fillRemediation() {
+      const module = document.querySelector('.remediation')!;
+      if (issue.additionalData.resolve) {
+        module.textContent = issue.additionalData.resolve;
+      } else {
+        module.textContent = 'No remediation available.';
+      }
+    }
+
+    function fillReferences() {
+      const section = document.querySelector('.references')!;
+      if (issue.additionalData.references) {
+        section.classList.remove('hidden');
+        const module = document.querySelector('.references > .reference-links')!;
+        for (const reference of issue.additionalData.references) {
+          const paragraph = document.createElement('p');
+          const referenceLink = document.createElement('a');
+          const linkText = document.createTextNode(reference);
+          referenceLink.appendChild(linkText);
+          referenceLink.title = reference;
+          referenceLink.href = reference;
+          paragraph.appendChild(referenceLink);
+          module.appendChild(paragraph);
+        }
+      }
     }
   }
 
