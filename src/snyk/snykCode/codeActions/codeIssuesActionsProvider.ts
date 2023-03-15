@@ -1,63 +1,43 @@
-import { Range } from 'vscode';
-import { IAnalytics } from '../../common/analytics/itly';
+import { CodeAction, Range, TextDocument } from 'vscode';
+import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { IDE_NAME } from '../../common/constants/general';
+import { CodeActionsProvider } from '../../common/editor/codeActionsProvider';
 import { CodeIssueData, Issue } from '../../common/languageServer/types';
+import { codeActionMessages } from '../../common/messages/codeActionMessages';
+import { ProductResult } from '../../common/services/productService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { CodeAction, CodeActionKind, CodeActionProvider, TextDocument } from '../../common/vscode/types';
-import { CodeResult } from '../codeResult';
-import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME, SHOW_ISSUE_ACTION_NAME } from '../constants/analysis';
+import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
 
-export class SnykCodeActionsProvider implements CodeActionProvider {
-  private readonly providedCodeActionKinds = [this.codeActionKindAdapter.getQuickFix()];
-
+export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> {
   constructor(
-    private readonly issues: Readonly<CodeResult>,
+    issues: Readonly<ProductResult<CodeIssueData>>,
     private readonly codeActionAdapter: ICodeActionAdapter,
-    private readonly codeActionKindAdapter: ICodeActionKindAdapter,
+    codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly languages: IVSCodeLanguages,
-    private readonly analytics: IAnalytics,
-  ) {}
-
-  getProvidedCodeActionKinds(): CodeActionKind[] {
-    return this.providedCodeActionKinds;
+    analytics: IAnalytics,
+  ) {
+    super(issues, codeActionKindAdapter, analytics);
   }
 
-  public provideCodeActions(document: TextDocument, clickedRange: Range): CodeAction[] | undefined {
-    if (this.issues.size === 0) {
-      return undefined;
-    }
+  getActions(folderPath: string, document: TextDocument, issue: Issue<CodeIssueData>, range: Range): CodeAction[] {
+    const openIssueAction = this.createOpenIssueAction(folderPath, issue, range);
+    const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
+    const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
 
-    for (const result of this.issues.entries()) {
-      const folderPath = result[0];
-      const issues = result[1];
-      if (issues instanceof Error || !issues) {
-        continue;
-      }
+    // returns list of actions, all new actions should be added to this list
+    return [openIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
+  }
 
-      const { issue, range } = this.findIssueWithRange(issues, document, clickedRange);
-      if (!issue || !range) {
-        continue;
-      }
+  getAnalyticsActionTypes(): [string, ...string[]] & [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]] {
+    return ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'];
+  }
 
-      const openIssueAction = this.createOpenIssueAction(folderPath, issue, range);
-      const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
-      const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
-
-      this.analytics.logQuickFixIsDisplayed({
-        quickFixType: ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'],
-        ide: IDE_NAME,
-      });
-
-      // returns list of actions, all new actions should be added to this list
-      return [openIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
-    }
-
-    return undefined;
+  getIssueRange(issue: Issue<CodeIssueData>): Range {
+    return IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
   }
 
   private createIgnoreIssueAction(
@@ -82,7 +62,10 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
   }
 
   private createOpenIssueAction(folderPath: string, issue: Issue<CodeIssueData>, issueRange: Range): CodeAction {
-    const openIssueAction = this.codeActionAdapter.create(SHOW_ISSUE_ACTION_NAME, this.providedCodeActionKinds[0]);
+    const openIssueAction = this.codeActionAdapter.create(
+      codeActionMessages.showSuggestion,
+      this.providedCodeActionKinds[0],
+    );
 
     openIssueAction.command = {
       command: SNYK_OPEN_ISSUE_COMMAND,
@@ -101,25 +84,5 @@ export class SnykCodeActionsProvider implements CodeActionProvider {
     };
 
     return openIssueAction;
-  }
-
-  private findIssueWithRange(
-    result: Issue<CodeIssueData>[],
-    document: TextDocument,
-    clickedRange: Range,
-  ): { issue: Issue<CodeIssueData> | undefined; range: Range | undefined } {
-    let range = undefined;
-
-    const issue = result.find(issue => {
-      if (issue.filePath !== document.uri.fsPath) {
-        return false;
-      }
-
-      range = IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
-
-      return range.contains(clickedRange);
-    });
-
-    return { issue, range };
   }
 }

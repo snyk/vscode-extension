@@ -11,6 +11,7 @@ import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ProductIssueTreeProvider } from '../../common/views/issueTreeProvider';
 import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
+import { IacIssue } from '../issue';
 import { messages } from '../messages/analysis';
 import { IacIssueCommandArg } from './interfaces';
 
@@ -56,12 +57,7 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
   getIssueTitle = (issue: Issue<IacIssueData>) => issue.title;
 
   getIssueRange(issue: Issue<IacIssueData>): Range {
-    return this.languages.createRange(
-      issue.additionalData.lineNumber,
-      0,
-      issue.additionalData.lineNumber,
-      Number.MAX_VALUE,
-    );
+    return IacIssue.getRange(issue, this.languages);
   }
 
   getOpenIssueCommand(issue: Issue<IacIssueData>, folderPath: string, filePath: string): Command {
