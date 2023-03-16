@@ -22,6 +22,10 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     super(contextService, codeService, configuration, languages);
   }
 
+  shouldShowTree(): boolean {
+    return this.contextService.shouldShowCodeAnalysis;
+  }
+
   filterIssues(issues: Issue<CodeIssueData>[]): Issue<CodeIssueData>[] {
     return issues.filter(i => i.additionalData.isSecurityType == this.isSecurityType);
   }

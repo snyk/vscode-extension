@@ -35,6 +35,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     );
   }
 
+  abstract shouldShowTree(): boolean;
   abstract filterIssues(issues: Issue<T>[]): Issue<T>[];
 
   abstract getRunTestMessage(): string;
@@ -46,7 +47,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    if (!this.contextService.shouldShowCodeAnalysis) return nodes;
+    if (!this.shouldShowTree()) return nodes;
     if (!this.productService.isLsDownloadSuccessful) {
       return [this.getErrorEncounteredTreeNode()];
     }

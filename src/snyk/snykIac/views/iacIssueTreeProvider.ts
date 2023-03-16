@@ -40,6 +40,10 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
 
   onDidChangeTreeData = this.viewManagerService.refreshIacViewEmitter.event;
 
+  shouldShowTree(): boolean {
+    return this.contextService.shouldShowIacAnalysis;
+  }
+
   getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
     return `${dir} - ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`;
   }
