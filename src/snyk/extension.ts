@@ -447,8 +447,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger.info('Code scans are not using Language Server.');
     }
 
-    await this.contextService.setContext(SNYK_CONTEXT.IAC_UI_VISIBLE, !!configuration.getPreviewFeatures().iacUi);
-
     await this.languageServer.start();
 
     this.codeScanOrchestrator = new CodeScanOrchestrator(

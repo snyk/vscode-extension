@@ -3,8 +3,10 @@
 ## [1.18.0]
 
 ### Added
+
 - Snyk IaC: Added details panel body.
 - Snyk IaC: Added code action to navigate from issue in editor to issue details panel.
+- Snyk IaC: Remove UI feature flag.
 
 ## [1.17.0]
 
