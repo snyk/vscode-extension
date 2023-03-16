@@ -38,7 +38,7 @@ export class ContextService implements IContextService {
   }
 
   get shouldShowIacAnalysis(): boolean {
-    return this.shouldShowAnalysis && !!this.viewContext[SNYK_CONTEXT.IAC_UI_VISIBLE];
+    return this.shouldShowAnalysis;
   }
 
   private get shouldShowAnalysis(): boolean {

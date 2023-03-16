@@ -135,7 +135,7 @@
           const linkText = document.createTextNode(reference);
           referenceLink.appendChild(linkText);
           referenceLink.title = reference;
-          referenceLink.href = reference;
+          referenceLink.onclick = () => navigateToUrl(reference);
           paragraph.appendChild(referenceLink);
           module.appendChild(paragraph);
         }
