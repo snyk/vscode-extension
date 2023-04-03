@@ -37,6 +37,9 @@ export class ExperimentService {
   }
 
   async isUserPartOfExperiment(variantFlag: ExperimentKey, forceFetchVariants = false): Promise<boolean> {
+    // WIPP
+    return true;
+
     if (!this.canExperiment) {
       return false;
     }
