@@ -45,7 +45,7 @@ export class AuthenticationService implements IAuthenticationService {
       placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       password: true,
       validateInput: token => {
-        const valid = uuidValidate(token);
+        const valid = this.validateToken(token);
         if (!valid) {
           return 'The entered token has an invalid format.';
         }
@@ -57,11 +57,20 @@ export class AuthenticationService implements IAuthenticationService {
     return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
   }
 
+  private validateToken(token: string) {
+    let valid = uuidValidate(token);
+    // check if the token is a json string if uuid is not valid
+    if (!valid && token.startsWith('{')) {
+      valid = true;
+    }
+    return valid;
+  }
+
   async updateToken(token: string): Promise<void> {
     if (!token) {
       await this.initiateLogout();
     } else {
-      if (!uuidValidate(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
+      if (!this.validateToken(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
 
       await this.configuration.setToken(token);
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
