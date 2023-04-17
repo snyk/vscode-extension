@@ -1,4 +1,4 @@
-import { strictEqual } from 'assert';
+import { notStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { CLI_INTEGRATION_NAME } from '../../../snyk/cli/contants/integration';
 import { CliProcess } from '../../../snyk/cli/process';
@@ -9,6 +9,7 @@ import { LoggerMock } from '../mocks/logger.mock';
 
 suite('CliProcess', () => {
   let logger: ILog;
+  const snykOssApiEndpoint = 'https://snykgov.io/api/';
   const emptyWorkspace = {
     getConfiguration: () => undefined,
   } as unknown as IVSCodeWorkspace;
@@ -23,6 +24,7 @@ suite('CliProcess', () => {
       {
         shouldReportEvents: false,
         getToken: () => Promise.resolve(),
+        snykOssApiEndpoint: snykOssApiEndpoint,
       } as IConfiguration,
       emptyWorkspace,
     );
@@ -36,6 +38,7 @@ suite('CliProcess', () => {
       {
         shouldReportEvents: true,
         getToken: () => Promise.resolve(),
+        snykOssApiEndpoint: snykOssApiEndpoint,
       } as IConfiguration,
       emptyWorkspace,
     );
@@ -67,6 +70,29 @@ suite('CliProcess', () => {
     strictEqual(envVars['SNYK_CFG_ORG'], organization);
   });
 
+  test('Sets correct token if oauth authentication', async () => {
+    const token = '{fake-token}';
+    const snykOssApiEndpoint = 'https://snykgov.io/api/';
+    const organization = 'test-org';
+    const process = new CliProcess(
+      logger,
+      {
+        getToken: () => Promise.resolve(token),
+        snykOssApiEndpoint: snykOssApiEndpoint,
+        organization: organization,
+      } as IConfiguration,
+      emptyWorkspace,
+    );
+
+    const envVars = await process.getProcessEnv();
+
+    strictEqual(envVars['SNYK_TOKEN'], undefined);
+    strictEqual(envVars['INTERNAL_SNYK_OAUTH_ENABLED'], '1');
+    strictEqual(envVars['INTERNAL_OAUTH_TOKEN_STORAGE'], token);
+    strictEqual(envVars['SNYK_API'], snykOssApiEndpoint);
+    strictEqual(envVars['SNYK_CFG_ORG'], organization);
+  });
+
   test('Sets correct proxy variable', async () => {
     // arrange
     const proxy = 'http://my.proxy.com:8080';
@@ -78,6 +104,7 @@ suite('CliProcess', () => {
       {
         shouldReportEvents: true,
         getToken: () => Promise.resolve(),
+        snykOssApiEndpoint: snykOssApiEndpoint,
       } as IConfiguration,
       {
         getConfiguration: getConfiguration,

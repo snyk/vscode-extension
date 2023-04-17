@@ -59,7 +59,6 @@ export class CliProcess {
     let env = {
       SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
       SNYK_INTEGRATION_VERSION: await Configuration.getVersion(),
-      SNYK_TOKEN: await this.config.getToken(),
       SNYK_API: this.config.snykOssApiEndpoint,
       SNYK_CFG_ORG: this.config.organization,
     } as NodeJS.ProcessEnv;
@@ -74,6 +73,20 @@ export class CliProcess {
         ...env,
         HTTP_PROXY: vscodeProxy,
         HTTPS_PROXY: vscodeProxy,
+      };
+    }
+
+    const token = await this.config.getToken();
+    if (this.config.snykOssApiEndpoint.indexOf('snykgov.io') > 1) {
+      env = {
+        ...env,
+        INTERNAL_OAUTH_TOKEN_STORAGE: token,
+        INTERNAL_SNYK_OAUTH_ENABLED: '1',
+      };
+    } else {
+      env = {
+        ...env,
+        SNYK_TOKEN: token,
       };
     }
 
