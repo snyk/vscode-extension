@@ -162,8 +162,6 @@ class SnykExtension extends SnykLib implements IExtension {
       new VSCodeLanguages(),
       this.snykCodeErrorHandler,
       new UriAdapter(),
-      this.codeSettings,
-      this.learnService,
       this.markdownStringAdapter,
       this.workspaceTrust,
     );
@@ -198,7 +196,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      this.learnService,
     );
 
     this.snykCode = new SnykCodeService(
@@ -220,7 +217,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.context,
       Logger,
       configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
+      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger),
       vsCodeWorkspace,
       this.viewManagerService,
       this.downloadService,

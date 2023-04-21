@@ -13,7 +13,6 @@ import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
-import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IProductService } from '../../common/services/productService';
@@ -52,7 +51,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected downloadService: DownloadService;
   protected ossService?: OssService;
   protected advisorService?: AdvisorProvider;
-  protected learnService: LearnService;
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
   protected ossVulnerabilityCountService: OssVulnerabilityCountService;
@@ -88,7 +86,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();
-    this.learnService = new LearnService(configuration, Logger);
     this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace, Logger);
     this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace, Logger);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(

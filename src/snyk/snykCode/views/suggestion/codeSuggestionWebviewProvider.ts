@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import * as vscode from 'vscode';
-import { OpenCommandIssueType } from '../../../common/commands/types';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
@@ -11,7 +10,6 @@ import { ErrorHandler } from '../../../common/error/errorHandler';
 import { CodeIssueData, ExampleCommitFix, Issue, Marker, Point } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
-import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -24,6 +22,7 @@ import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
+import { getCodeLesson } from '../../../common/services/learnService';
 
 type Suggestion = {
   id: string;
@@ -57,7 +56,6 @@ export class CodeSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
-    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -75,7 +73,7 @@ export class CodeSuggestionWebviewProvider
   async postLearnLessonMessage(issue: Issue<CodeIssueData>): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await this.learnService.getLesson(issue, OpenCommandIssueType.CodeIssue);
+        const lesson = await getCodeLesson(issue);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',

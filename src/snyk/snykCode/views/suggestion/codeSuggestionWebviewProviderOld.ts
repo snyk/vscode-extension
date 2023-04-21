@@ -10,7 +10,7 @@ import { SNYK_VIEW_SUGGESTION_CODE_OLD } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
-import { LearnService } from '../../../common/services/learnService';
+import { getCodeLessonOld } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -18,7 +18,6 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
-import { ICodeSettings } from '../../codeSettings';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { completeFileSuggestionType, ISnykCodeAnalyzer } from '../../interfaces';
 import { messages as errorMessages } from '../../messages/error';
@@ -41,8 +40,6 @@ export class CodeSuggestionWebviewProviderOld
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
-    private readonly codeSettings: ICodeSettings,
-    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -72,7 +69,7 @@ export class CodeSuggestionWebviewProviderOld
   async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await this.learnService.getLesson(suggestion, OpenCommandIssueType.CodeIssueOld);
+        const lesson = await getCodeLessonOld(suggestion);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',
