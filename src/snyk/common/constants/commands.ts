@@ -17,6 +17,7 @@ export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 export const SNYK_SHOW_LS_OUTPUT_COMMAND = 'snyk.showLsOutputChannel';
+export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

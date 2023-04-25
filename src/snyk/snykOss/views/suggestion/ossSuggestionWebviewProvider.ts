@@ -11,7 +11,7 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { messages as errorMessages } from '../../messages/error';
 import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
-import { getOssLesson } from '../../../common/services/learnService';
+import { LearnService } from '../../../common/services/learnService';
 
 enum OssSuggestionsViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -27,6 +27,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
     protected readonly context: ExtensionContext,
     private readonly window: IVSCodeWindow,
     protected readonly logger: ILog,
+    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -40,7 +41,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
   async postLearnLessonMessage(vulnerability: OssIssueCommandArg): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await getOssLesson(vulnerability);
+        const lesson = await this.learnService.getOssLesson(vulnerability);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',

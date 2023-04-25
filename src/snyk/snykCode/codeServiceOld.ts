@@ -37,6 +37,7 @@ import {
 } from './views/falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProviderOld } from './views/interfaces';
 import { CodeSuggestionWebviewProviderOld } from './views/suggestion/codeSuggestionWebviewProviderOld';
+import { LearnService } from '../common/services/learnService';
 
 export interface ISnykCodeServiceOld extends AnalysisStatusProvider, Disposable {
   analyzer: ISnykCodeAnalyzer;
@@ -91,6 +92,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
     private readonly uriAdapter: IUriAdapter,
     private readonly markdownStringAdapter: IMarkdownStringAdapter,
     private readonly workspaceTrust: IWorkspaceTrust,
+    private readonly learnService: LearnService,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(
@@ -119,6 +121,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
       this.logger,
       languages,
       workspace,
+      this.learnService,
     );
 
     this.progress = new Progress(this, viewManagerService, this.workspace);
@@ -184,7 +187,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
         },
       };
 
-      let result: FileAnalysis | null = null;
+      let result: FileAnalysis | null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
         result = await extendAnalysis({

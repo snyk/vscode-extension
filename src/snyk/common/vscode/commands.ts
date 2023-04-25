@@ -10,4 +10,4 @@ export class VSCodeCommands implements IVSCodeCommands {
   }
 }
 
-export const vsCodeComands = new VSCodeCommands();
+export const vsCodeCommands = new VSCodeCommands();

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { OpenCommandIssueType } from '../../../common/commands/types';
 import { IConfiguration } from '../../../common/configuration/configuration';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -10,7 +9,7 @@ import { SNYK_VIEW_SUGGESTION_CODE_OLD } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
-import { getCodeLessonOld } from '../../../common/services/learnService';
+import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -40,6 +39,7 @@ export class CodeSuggestionWebviewProviderOld
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -69,7 +69,7 @@ export class CodeSuggestionWebviewProviderOld
   async postLearnLessonMessage(suggestion: completeFileSuggestionType): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await getCodeLessonOld(suggestion);
+        const lesson = await this.learnService.getCodeLessonOld(suggestion);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',

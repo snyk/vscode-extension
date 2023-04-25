@@ -54,7 +54,7 @@ import { DownloadService } from './common/services/downloadService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter, CodeActionKindAdapter } from './common/vscode/codeAction';
-import { vsCodeComands } from './common/vscode/commands';
+import { vsCodeCommands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
@@ -129,7 +129,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.configurationWatcher = new ConfigurationWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
       vsCodeWindow,
-      vsCodeComands,
+      vsCodeCommands,
       configuration,
       this.analytics,
       Logger,
@@ -146,7 +146,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
-      vsCodeComands,
+      vsCodeCommands,
     );
 
     this.snykCodeOld = new SnykCodeServiceOld(
@@ -164,6 +164,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new UriAdapter(),
       this.markdownStringAdapter,
       this.workspaceTrust,
+      this.learnService,
     );
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
@@ -196,6 +197,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
+      this.learnService,
     );
 
     this.snykCode = new SnykCodeService(
@@ -217,7 +219,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.context,
       Logger,
       configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger),
+      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
       vsCodeWorkspace,
       this.viewManagerService,
       this.downloadService,
@@ -260,7 +262,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
-      vsCodeComands,
+      vsCodeCommands,
       vsCodeWindow,
       this.languageServer,
       Logger,

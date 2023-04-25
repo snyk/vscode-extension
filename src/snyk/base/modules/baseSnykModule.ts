@@ -35,6 +35,7 @@ import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
+import { LearnService } from '../../common/services/learnService';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -73,6 +74,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   protected user: User;
   protected experimentService: ExperimentService;
+  protected learnService: LearnService;
   protected snykCodeErrorHandler: ISnykCodeErrorHandler;
 
   protected markdownStringAdapter: IMarkdownStringAdapter;
@@ -100,6 +102,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
     this.codeActionKindAdapter = new CodeActionKindAdapter();
+    this.learnService = new LearnService(this.commandController);
   }
 
   abstract runScan(): Promise<void>;

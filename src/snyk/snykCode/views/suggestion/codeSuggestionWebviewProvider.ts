@@ -22,7 +22,7 @@ import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
-import { getCodeLesson } from '../../../common/services/learnService';
+import { LearnService } from '../../../common/services/learnService';
 
 type Suggestion = {
   id: string;
@@ -56,6 +56,7 @@ export class CodeSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private readonly learnService: LearnService,
   ) {
     super(context, logger);
   }
@@ -73,7 +74,7 @@ export class CodeSuggestionWebviewProvider
   async postLearnLessonMessage(issue: Issue<CodeIssueData>): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await getCodeLesson(issue);
+        const lesson = await this.learnService.getCodeLesson(issue);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',
