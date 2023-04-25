@@ -5,6 +5,7 @@ import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
 import { SNYK_CLI_CONFIG_SAST_ENABLED } from '../common/constants/commands';
+import { SastSettings } from '../common/services/cliConfigService';
 
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
@@ -13,7 +14,7 @@ export interface ICodeSettings {
 
   enable(): Promise<boolean>;
 
-  getSastSettings(): Promise<boolean | undefined>;
+  getSastSettings(): Promise<SastSettings | undefined>;
 }
 
 export class CodeSettings implements ICodeSettings {
@@ -32,15 +33,23 @@ export class CodeSettings implements ICodeSettings {
   ) {}
 
   async checkCodeEnabled(): Promise<boolean> {
-    const enabled = await this.getSastSettings();
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    const settings = await this.getSastSettings();
+    if (!settings) {
+      return false;
+    }
 
-    return enabled ?? false;
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, settings.sastEnabled);
+    await this.contextService.setContext(
+      SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED,
+      settings.localCodeEngine.enabled ?? false,
+    );
+
+    return settings.sastEnabled && !settings.localCodeEngine.enabled;
   }
 
   async enable(): Promise<boolean> {
-    let enabled = await this.getSastSettings();
-    if (enabled) {
+    let settings = await this.getSastSettings();
+    if (settings?.sastEnabled) {
       return true;
     }
 
@@ -54,8 +63,8 @@ export class CodeSettings implements ICodeSettings {
       await this.sleep(i * 1000);
 
       // eslint-disable-next-line no-await-in-loop
-      enabled = await this.getSastSettings();
-      if (enabled) {
+      settings = await this.getSastSettings();
+      if (settings?.sastEnabled) {
         return true;
       }
     }
@@ -63,7 +72,7 @@ export class CodeSettings implements ICodeSettings {
     return false;
   }
 
-  async getSastSettings(): Promise<boolean | undefined> {
+  async getSastSettings(): Promise<SastSettings | undefined> {
     return this.commandExecutor.executeCommand(SNYK_CLI_CONFIG_SAST_ENABLED);
   }
 

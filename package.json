@@ -257,12 +257,12 @@
         {
           "id": "snyk.views.analysis.code.quality.old",
           "name": "Code Quality",
-          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.configuration",
@@ -272,17 +272,17 @@
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.localEngine",
           "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
