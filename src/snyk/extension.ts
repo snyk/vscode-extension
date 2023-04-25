@@ -51,6 +51,7 @@ import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
+import { LearnService } from './common/services/learnService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter, CodeActionKindAdapter } from './common/vscode/codeAction';
@@ -87,6 +88,7 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
+import { CodeSettings } from './snykCode/codeSettings';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -146,6 +148,16 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
+      vsCodeCommands,
+    );
+
+    this.learnService = new LearnService(vsCodeCommands);
+
+    this.codeSettings = new CodeSettings(
+      this.snykApiClient,
+      this.contextService,
+      configuration,
+      this.openerService,
       vsCodeCommands,
     );
 

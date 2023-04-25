@@ -1,16 +1,19 @@
 import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
 import { SNYK_CONTEXT } from '../common/constants/views';
-import { getSastSettings, SastSettings } from '../common/services/cliConfigService';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
+import { IVSCodeCommands } from '../common/vscode/commands';
+import { SNYK_CLI_CONFIG_SAST_ENABLED } from '../common/constants/commands';
 
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
 
   checkCodeEnabled(): Promise<boolean>;
+
   enable(): Promise<boolean>;
-  getSastSettings(): Promise<SastSettings | undefined>;
+
+  getSastSettings(): Promise<boolean | undefined>;
 }
 
 export class CodeSettings implements ICodeSettings {
@@ -25,26 +28,19 @@ export class CodeSettings implements ICodeSettings {
     private readonly contextService: IContextService,
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
+    private readonly commandExecutor: IVSCodeCommands,
   ) {}
 
   async checkCodeEnabled(): Promise<boolean> {
-    const settings = await this.getSastSettings();
-    if (!settings) {
-      return false;
-    }
+    const enabled = await this.getSastSettings();
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
 
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, settings.sastEnabled);
-    await this.contextService.setContext(
-      SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED,
-      settings.localCodeEngine.enabled ?? false,
-    );
-
-    return settings.sastEnabled && !settings.localCodeEngine.enabled;
+    return enabled ?? false;
   }
 
   async enable(): Promise<boolean> {
-    let settings = await this.getSastSettings();
-    if (settings?.sastEnabled) {
+    let enabled = await this.getSastSettings();
+    if (enabled) {
       return true;
     }
 
@@ -58,8 +54,8 @@ export class CodeSettings implements ICodeSettings {
       await this.sleep(i * 1000);
 
       // eslint-disable-next-line no-await-in-loop
-      settings = await this.getSastSettings();
-      if (settings?.sastEnabled) {
+      enabled = await this.getSastSettings();
+      if (enabled) {
         return true;
       }
     }
@@ -67,14 +63,8 @@ export class CodeSettings implements ICodeSettings {
     return false;
   }
 
-  async getSastSettings(): Promise<SastSettings | undefined> {
-    const settings = await getSastSettings(this.snykApiClient, this.config);
-    if (settings) {
-      // cache if false positive reports are enabled.
-      this._reportFalsePositivesEnabled = settings.reportFalsePositivesEnabled;
-    }
-
-    return settings;
+  async getSastSettings(): Promise<boolean | undefined> {
+    return this.commandExecutor.executeCommand(SNYK_CLI_CONFIG_SAST_ENABLED);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));

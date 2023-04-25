@@ -13,6 +13,7 @@ import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
+import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IProductService } from '../../common/services/productService';
@@ -24,7 +25,7 @@ import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vsco
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
-import { CodeSettings, ICodeSettings } from '../../snykCode/codeSettings';
+import { ICodeSettings } from '../../snykCode/codeSettings';
 import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
@@ -35,7 +36,6 @@ import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
-import { LearnService } from '../../common/services/learnService';
 
 export default abstract class BaseSnykModule implements IBaseSnykModule {
   context: ExtensionContext;
@@ -97,12 +97,10 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
       this,
       configuration,
     );
-    this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
     this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
     this.codeActionKindAdapter = new CodeActionKindAdapter();
-    this.learnService = new LearnService(this.commandController);
   }
 
   abstract runScan(): Promise<void>;
