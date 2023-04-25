@@ -1,6 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
+## [1.18.3]
 
-## [1.18.0]
+### Added
+- Added support for OAuth2 authentication
+- Snyk Learn: now uses language server to retrieve lessons
+
+## [1.18.2]
 
 ### Added
 
