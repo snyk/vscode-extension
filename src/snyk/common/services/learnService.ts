@@ -30,7 +30,7 @@ export class LearnService {
       vulnerability.packageManager,
       cweElement,
       cveElement,
-      '4',
+      4,
     );
   }
 
@@ -44,7 +44,7 @@ export class LearnService {
       cwe = additionalData.cwe[0];
     }
 
-    return this.commandExecutor.executeCommand('snyk.getLearnLesson', rule, ecosystem, cwe, '', '2');
+    return this.commandExecutor.executeCommand('snyk.getLearnLesson', rule, ecosystem, cwe, '', 2);
   }
 
   async getCodeLessonOld(issue: completeFileSuggestionType): Promise<Lesson | undefined> {
@@ -57,6 +57,6 @@ export class LearnService {
       cwe = issue.cwe[0];
     }
 
-    return this.commandExecutor.executeCommand(SNYK_GET_LESSON_COMMAND, rule, ecosystem, cwe, '', '2');
+    return this.commandExecutor.executeCommand(SNYK_GET_LESSON_COMMAND, rule, ecosystem, cwe, '', 2);
   }
 }

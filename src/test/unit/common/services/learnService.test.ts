@@ -6,6 +6,7 @@ import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabil
 import { CodeIssueData, Issue, IssueSeverity } from '../../../../snyk/common/languageServer/types';
 import { completeFileSuggestionType } from '../../../../snyk/snykCode/interfaces';
 import { AnalysisSeverity } from '@snyk/code-client';
+import { SNYK_GET_LESSON_COMMAND } from '../../../../snyk/common/constants/commands';
 
 suite('LearnService', () => {
   let commands: IVSCodeCommands;
@@ -21,20 +22,22 @@ suite('LearnService', () => {
     sinon.restore();
   });
 
-  test('getOssLesson executes correct command', () => {
+  test('getOssLesson executes correct command', async () => {
     const learnService = new LearnService(commands);
 
-    const vulnerability: OssIssueCommandArg = {
+    const issue: OssIssueCommandArg = {
       id: 'id',
       packageManager: 'packageManager',
     } as OssIssueCommandArg;
 
-    void learnService.getOssLesson(vulnerability).then(() => {
-      strictEqual(executeCommandFake.calledOnce, true);
-      strictEqual(executeCommandFake.calledWith(vulnerability.id, vulnerability.packageManager), true);
-    });
+    await learnService.getOssLesson(issue);
+    strictEqual(executeCommandFake.calledOnce, true);
+    strictEqual(
+      executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, issue.id, issue.packageManager, '', '', 4),
+      true,
+    );
   });
-  test('getCodeLesson executes correct command', () => {
+  test('getCodeLesson executes correct command', async () => {
     const learnService = new LearnService(commands);
     const issue: Issue<CodeIssueData> = {
       id: 'javascript/nosqli',
@@ -55,12 +58,11 @@ suite('LearnService', () => {
       filePath: 'not used',
     };
 
-    void learnService.getCodeLesson(issue).then(() => {
-      strictEqual(executeCommandFake.calledOnce, true);
-      strictEqual(executeCommandFake.calledWith('nosqli', 'javascript', 'CWE-79'), true);
-    });
+    await learnService.getCodeLesson(issue);
+    strictEqual(executeCommandFake.calledOnce, true);
+    strictEqual(executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2), true);
   });
-  test('getCodeLessonOld executes correct command', () => {
+  test('getCodeLessonOld executes correct command', async () => {
     const learnService = new LearnService(commands);
     const issue: completeFileSuggestionType = {
       categories: [],
@@ -81,9 +83,8 @@ suite('LearnService', () => {
       id: 'javascript/nosqli',
     };
 
-    void learnService.getCodeLessonOld(issue).then(() => {
-      strictEqual(executeCommandFake.calledOnce, true);
-      strictEqual(executeCommandFake.calledWith('nosqli', 'javascript', 'CWE-79'), true);
-    });
+    await learnService.getCodeLessonOld(issue);
+    strictEqual(executeCommandFake.calledOnce, true);
+    strictEqual(executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2), true);
   });
 });
