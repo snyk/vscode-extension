@@ -4,7 +4,7 @@ import { SNYK_CONTEXT } from '../common/constants/views';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
-import { SNYK_CLI_CONFIG_SAST_ENABLED } from '../common/constants/commands';
+import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SastSettings } from '../common/services/cliConfigService';
 
 export interface ICodeSettings {
@@ -73,7 +73,7 @@ export class CodeSettings implements ICodeSettings {
   }
 
   async getSastSettings(): Promise<SastSettings | undefined> {
-    return this.commandExecutor.executeCommand(SNYK_CLI_CONFIG_SAST_ENABLED);
+    return this.commandExecutor.executeCommand(SNYK_GET_SETTINGS_SAST_ENABLED);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
