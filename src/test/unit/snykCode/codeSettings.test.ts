@@ -6,6 +6,7 @@ import { SNYK_CONTEXT } from '../../../snyk/common/constants/views';
 import { IContextService } from '../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../snyk/common/services/openerService';
 import { CodeSettings, ICodeSettings } from '../../../snyk/snykCode/codeSettings';
+import { IVSCodeCommands } from '../../../snyk/common/vscode/commands';
 
 suite('Snyk Code Settings', () => {
   let settings: ICodeSettings;
@@ -24,7 +25,13 @@ suite('Snyk Code Settings', () => {
       viewContext: {},
     };
 
-    settings = new CodeSettings({} as ISnykApiClient, contextService, {} as IConfiguration, {} as IOpenerService);
+    settings = new CodeSettings(
+      {} as ISnykApiClient,
+      contextService,
+      {} as IConfiguration,
+      {} as IOpenerService,
+      {} as IVSCodeCommands,
+    );
   });
 
   teardown(() => {
@@ -77,23 +84,5 @@ suite('Snyk Code Settings', () => {
     strictEqual(codeEnabled, false);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, true), true);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, true), true);
-  });
-
-  test('Entitlement reportFalsePositivesEnabled gets cached', async () => {
-    const getFake = sinon.stub().returns({
-      data: {
-        reportFalsePositivesEnabled: true,
-      },
-    });
-
-    const apiClient: ISnykApiClient = {
-      get: getFake,
-    };
-
-    settings = new CodeSettings(apiClient, contextService, {} as IConfiguration, {} as IOpenerService);
-
-    await settings.getSastSettings();
-
-    strictEqual(settings.reportFalsePositivesEnabled, true);
   });
 });
