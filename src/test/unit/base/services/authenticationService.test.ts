@@ -3,7 +3,7 @@ import { rejects, strictEqual } from 'assert';
 import needle, { NeedleResponse } from 'needle';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
-import { AuthenticationService } from '../../../../snyk/base/services/authenticationService';
+import { AuthenticationService, OAuthToken } from '../../../../snyk/base/services/authenticationService';
 import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
@@ -232,6 +232,41 @@ suite('AuthenticationService', () => {
       const invalidToken = 'thisTokenIsNotValid';
 
       await rejects(service.updateToken(invalidToken));
+      sinon.assert.notCalled(setTokenSpy);
+    });
+
+    test('accepts oauth token', async () => {
+      const oauthToken: OAuthToken = {
+        // eslint-disable-next-line camelcase
+        access_token: 'access_token',
+        expiry: new Date(Date.now() + 10000).toISOString(),
+        // eslint-disable-next-line camelcase
+        refresh_token: 'refresh_token',
+      };
+      const oauthTokenString = JSON.stringify(oauthToken);
+
+      await service.updateToken(oauthTokenString);
+      sinon.assert.calledWith(setTokenSpy, oauthTokenString);
+    });
+
+    test('fails with error on non oauth token json string', async () => {
+      const oauthTokenString = '{}';
+
+      await rejects(service.updateToken(oauthTokenString));
+      sinon.assert.notCalled(setTokenSpy);
+    });
+
+    test('fails with error on setting expired token', async () => {
+      const oauthToken: OAuthToken = {
+        // eslint-disable-next-line camelcase
+        access_token: 'access_token',
+        expiry: new Date(Date.now() - 10000).toISOString(),
+        // eslint-disable-next-line camelcase
+        refresh_token: 'refresh_token',
+      };
+      const oauthTokenString = JSON.stringify(oauthToken);
+
+      await rejects(service.updateToken(oauthTokenString));
       sinon.assert.notCalled(setTokenSpy);
     });
   });

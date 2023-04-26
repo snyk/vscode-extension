@@ -12,10 +12,19 @@ import { IBaseSnykModule } from '../modules/interfaces';
 
 export interface IAuthenticationService {
   initiateLogin(): Promise<void>;
+
   initiateLogout(): Promise<void>;
+
   setToken(): Promise<void>;
+
   updateToken(token: string): Promise<void>;
 }
+
+export type OAuthToken = {
+  access_token: string;
+  expiry: string;
+  refresh_token: string;
+};
 
 export class AuthenticationService implements IAuthenticationService {
   constructor(
@@ -57,11 +66,20 @@ export class AuthenticationService implements IAuthenticationService {
     return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
   }
 
-  private validateToken(token: string) {
+  validateToken(token: string) {
     let valid = uuidValidate(token);
-    // check if the token is a json string if uuid is not valid
-    if (!valid && token.startsWith('{')) {
-      valid = true;
+    if (valid) return true;
+
+    // try to parse as json (oauth2 token)
+    try {
+      const oauthToken = JSON.parse(token) as OAuthToken;
+      valid =
+        oauthToken.access_token.length > 0 &&
+        Date.parse(oauthToken.expiry) > Date.now() &&
+        oauthToken.refresh_token.length > 0;
+      this.logger.debug(`Token ${token} parsed`);
+    } catch (e) {
+      this.logger.warn(`Token ${token} is not a valid uuid or json string: ${e}`);
     }
     return valid;
   }
