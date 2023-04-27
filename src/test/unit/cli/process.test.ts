@@ -1,4 +1,4 @@
-import { notStrictEqual, strictEqual } from 'assert';
+import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { CLI_INTEGRATION_NAME } from '../../../snyk/cli/contants/integration';
 import { CliProcess } from '../../../snyk/cli/process';
@@ -6,6 +6,7 @@ import { Configuration, IConfiguration } from '../../../snyk/common/configuratio
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { LoggerMock } from '../mocks/logger.mock';
+import { OAuthToken } from '../../../snyk/base/services/authenticationService';
 
 suite('CliProcess', () => {
   let logger: ILog;
@@ -71,7 +72,7 @@ suite('CliProcess', () => {
   });
 
   test('Sets correct token if oauth authentication', async () => {
-    const token = '{fake-token}';
+    const token = '{"access_token": "fake-token"}';
     const snykOssApiEndpoint = 'https://snykgov.io/api/';
     const organization = 'test-org';
     const process = new CliProcess(
@@ -85,10 +86,9 @@ suite('CliProcess', () => {
     );
 
     const envVars = await process.getProcessEnv();
-
+    const oauthToken = JSON.parse(token) as OAuthToken;
     strictEqual(envVars['SNYK_TOKEN'], undefined);
-    strictEqual(envVars['INTERNAL_SNYK_OAUTH_ENABLED'], '1');
-    strictEqual(envVars['INTERNAL_OAUTH_TOKEN_STORAGE'], token);
+    strictEqual(envVars['SNYK_OAUTH_TOKEN'], oauthToken.access_token);
     strictEqual(envVars['SNYK_API'], snykOssApiEndpoint);
     strictEqual(envVars['SNYK_CFG_ORG'], organization);
   });
