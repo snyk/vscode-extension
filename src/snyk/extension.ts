@@ -27,9 +27,9 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
-import { SNYK_WORKSPACE_SCAN_COMMAND } from './common/constants/languageServer';
 import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
@@ -71,6 +71,7 @@ import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { SnykCodeServiceOld } from './snykCode/codeServiceOld';
+import { CodeSettings } from './snykCode/codeSettings';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
@@ -88,7 +89,6 @@ import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabili
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
-import { CodeSettings } from './snykCode/codeSettings';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -153,13 +153,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.learnService = new LearnService(vsCodeCommands);
 
-    this.codeSettings = new CodeSettings(
-      this.snykApiClient,
-      this.contextService,
-      configuration,
-      this.openerService,
-      vsCodeCommands,
-    );
+    this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
     this.snykCodeOld = new SnykCodeServiceOld(
       this.context,

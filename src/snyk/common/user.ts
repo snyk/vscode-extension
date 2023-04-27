@@ -1,9 +1,10 @@
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { IAnalytics } from './analytics/itly';
-import { ISnykApiClient } from './api/apiСlient';
+import { SNYK_GET_ACTIVE_USER } from './constants/commands';
 import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
 import { ErrorReporter } from './error/errorReporter';
+import { IVSCodeCommands } from './vscode/commands';
 import { ExtensionContext } from './vscode/extensionContext';
 
 export type UserDto = {
@@ -43,8 +44,8 @@ export class User {
     return crypto.createHash('sha256').update(this._authenticatedId).digest('hex');
   }
 
-  async identify(apiClient: ISnykApiClient, analytics: IAnalytics): Promise<void> {
-    const user = await this.userMe(apiClient);
+  async identify(commandExecutor: IVSCodeCommands, analytics: IAnalytics): Promise<void> {
+    const user = await this.userMe(commandExecutor);
     if (user && user.id) {
       this._authenticatedId = user.id;
 
@@ -53,10 +54,10 @@ export class User {
     }
   }
 
-  private async userMe(api: ISnykApiClient): Promise<UserDto | undefined> {
-    const response = await api.get<UserDto>('/user/me');
-    if (!response) return;
+  private async userMe(commandExecutor: IVSCodeCommands): Promise<UserDto | undefined> {
+    const user: UserDto | undefined = await commandExecutor.executeCommand(SNYK_GET_ACTIVE_USER);
+    if (!user) return;
 
-    return response.data;
+    return user;
   }
 }

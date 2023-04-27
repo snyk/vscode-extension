@@ -1,7 +1,8 @@
 import { validate as uuidValidate } from 'uuid';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { DID_CHANGE_CONFIGURATION_METHOD, SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/languageServer';
+import { SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/commands';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';

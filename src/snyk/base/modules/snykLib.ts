@@ -11,6 +11,7 @@ import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
 import { ISnykLib } from './interfaces';
+import { vsCodeCommands } from '../../common/vscode/commands';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
@@ -39,7 +40,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       await this.setWorkspaceContext(workspacePaths);
 
-      await this.user.identify(this.snykApiClient, this.analytics);
+      await this.user.identify(vsCodeCommands, this.analytics);
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);

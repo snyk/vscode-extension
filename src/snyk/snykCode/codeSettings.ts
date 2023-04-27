@@ -1,11 +1,9 @@
-import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
+import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SNYK_CONTEXT } from '../common/constants/views';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
-import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
-import { SastSettings } from '../common/services/cliConfigService';
 
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
@@ -17,6 +15,14 @@ export interface ICodeSettings {
   getSastSettings(): Promise<SastSettings | undefined>;
 }
 
+export type SastSettings = {
+  sastEnabled: boolean;
+  localCodeEngine: {
+    enabled: boolean;
+  };
+  reportFalsePositivesEnabled: boolean;
+};
+
 export class CodeSettings implements ICodeSettings {
   private _reportFalsePositivesEnabled: boolean;
 
@@ -25,7 +31,6 @@ export class CodeSettings implements ICodeSettings {
   }
 
   constructor(
-    private readonly snykApiClient: ISnykApiClient,
     private readonly contextService: IContextService,
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,

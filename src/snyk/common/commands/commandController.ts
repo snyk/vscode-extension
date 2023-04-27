@@ -13,12 +13,13 @@ import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProv
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
+  SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../constants/languageServer';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../languageServer/types';
