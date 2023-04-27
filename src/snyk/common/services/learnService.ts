@@ -25,7 +25,7 @@ export class LearnService {
       cveElement = cve[0];
     }
     return this.commandExecutor.executeCommand(
-      'snyk.getLearnLesson',
+      SNYK_GET_LESSON_COMMAND,
       vulnerability.id,
       vulnerability.packageManager,
       cweElement,
@@ -44,7 +44,7 @@ export class LearnService {
       cwe = additionalData.cwe[0];
     }
 
-    return this.commandExecutor.executeCommand('snyk.getLearnLesson', rule, ecosystem, cwe, '', 2);
+    return this.commandExecutor.executeCommand(SNYK_GET_LESSON_COMMAND, rule, ecosystem, cwe, '', 2);
   }
 
   async getCodeLessonOld(issue: completeFileSuggestionType): Promise<Lesson | undefined> {
