@@ -148,7 +148,7 @@ export class Configuration implements IConfiguration {
 
   get snykCodeBaseURL(): string {
     if (this.isDevelopment) {
-      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL ?? 'https://deeproxy.dev.snyk.io';
+      return 'http://localhost:11981';
     } else if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
 
@@ -174,7 +174,7 @@ export class Configuration implements IConfiguration {
 
   get authHost(): string {
     if (this.isDevelopment) {
-      return 'https://dev.snyk.io';
+      return 'https://michel-registry.ngrok.io';
     } else if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
       return `${url.protocol}//${url.host}`;
@@ -226,8 +226,8 @@ export class Configuration implements IConfiguration {
   }
 
   get snykCodeToken(): Promise<string | undefined> {
-    if (this.isDevelopment && this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN) {
-      return Promise.resolve(this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN);
+    if (this.isDevelopment) {
+      return Promise.resolve('92aff47c-deb8-485b-9c64-7aefb735b412');
     }
     return this.getToken();
   }
