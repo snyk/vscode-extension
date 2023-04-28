@@ -38,27 +38,35 @@ export class CodeSettings implements ICodeSettings {
   ) {}
 
   async checkCodeEnabled(): Promise<boolean> {
-    const settings = await this.getSastSettings();
-    if (!settings) {
-      return false;
+    let enabled = false;
+    try {
+      const settings = await this.getSastSettings();
+      if (!settings) {
+        return false;
+      }
+      enabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
+    } catch (e) {
+      // Ignore potential command not found error during LS startup and poll
+      enabled = await this.enable(false);
     }
-
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, settings.sastEnabled);
-    await this.contextService.setContext(
-      SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED,
-      settings.localCodeEngine.enabled ?? false,
-    );
-
-    return settings.sastEnabled && !settings.localCodeEngine.enabled;
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, false);
+    return enabled;
   }
 
-  async enable(): Promise<boolean> {
-    let settings = await this.getSastSettings();
+  async enable(openBrowser = true): Promise<boolean> {
+    let settings: SastSettings | undefined;
+    try {
+      settings = await this.getSastSettings();
+    } catch (e) {
+      // Ignore potential command not found error during LS startup
+    }
+
     if (settings?.sastEnabled) {
       return true;
     }
 
-    if (this.config.snykCodeUrl != null) {
+    if (this.config.snykCodeUrl != null && openBrowser) {
       await this.openerService.openBrowserUrl(this.config.snykCodeUrl);
     }
 
@@ -67,10 +75,14 @@ export class CodeSettings implements ICodeSettings {
       // eslint-disable-next-line no-await-in-loop
       await this.sleep(i * 1000);
 
-      // eslint-disable-next-line no-await-in-loop
-      settings = await this.getSastSettings();
-      if (settings?.sastEnabled) {
-        return true;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        settings = await this.getSastSettings();
+        if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
+          return true;
+        }
+      } catch (e) {
+        // Ignore potential command not found error during LS startup
       }
     }
 

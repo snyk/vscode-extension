@@ -6,6 +6,7 @@ import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
 import { ErrorReporter } from './error/errorReporter';
 import { IVSCodeCommands } from './vscode/commands';
 import { ExtensionContext } from './vscode/extensionContext';
+import { Logger } from './logger/logger';
 
 export type UserDto = {
   id: string;
@@ -55,9 +56,12 @@ export class User {
   }
 
   private async userMe(commandExecutor: IVSCodeCommands): Promise<UserDto | undefined> {
-    const user: UserDto | undefined = await commandExecutor.executeCommand(SNYK_GET_ACTIVE_USER);
-    if (!user) return;
-
+    let user: UserDto | undefined;
+    try {
+      user = await commandExecutor.executeCommand(SNYK_GET_ACTIVE_USER);
+    } catch (error) {
+      Logger.log('Warn', `Failed to get user: ${error}`);
+    }
     return user;
   }
 }
