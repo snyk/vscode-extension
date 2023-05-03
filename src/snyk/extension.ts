@@ -116,7 +116,7 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
-    this.user = await User.getAnonymous(this.context);
+    this.user = await User.getAnonymous(this.context, Logger);
 
     this.analytics = new Iteratively(
       this.user,

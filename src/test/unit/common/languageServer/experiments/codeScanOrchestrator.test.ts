@@ -29,7 +29,7 @@ suite('Code Scan Orchestrator', () => {
 
   setup(() => {
     ls = new LanguageServerMock();
-    user = new User(undefined, undefined);
+    user = new User(undefined, undefined, logger);
     snykConfig = new SnykConfiguration('test', 'test', 'test');
     logger = new LoggerMock();
     config = {

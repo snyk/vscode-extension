@@ -75,7 +75,7 @@ suite('Snyk Code Settings', () => {
     const codeEnabled = await settings.checkCodeEnabled();
 
     strictEqual(codeEnabled, false);
-    strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, true), true);
+    strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, false), true);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, true), true);
   });
 });

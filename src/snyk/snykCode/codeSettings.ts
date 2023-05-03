@@ -38,20 +38,22 @@ export class CodeSettings implements ICodeSettings {
   ) {}
 
   async checkCodeEnabled(): Promise<boolean> {
-    let enabled = false;
+    let codeEnabled = false;
+    let localCodeEngineEnabled = false;
     try {
       const settings = await this.getSastSettings();
       if (!settings) {
         return false;
       }
-      enabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
+      codeEnabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
+      localCodeEngineEnabled = settings.localCodeEngine.enabled;
     } catch (e) {
       // Ignore potential command not found error during LS startup and poll
-      enabled = await this.enable(false);
+      codeEnabled = await this.enable(false);
     }
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, enabled);
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, false);
-    return enabled;
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, codeEnabled);
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, localCodeEngineEnabled);
+    return codeEnabled;
   }
 
   async enable(openBrowser = true): Promise<boolean> {

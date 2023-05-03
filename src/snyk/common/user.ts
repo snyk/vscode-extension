@@ -6,7 +6,7 @@ import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
 import { ErrorReporter } from './error/errorReporter';
 import { IVSCodeCommands } from './vscode/commands';
 import { ExtensionContext } from './vscode/extensionContext';
-import { Logger } from './logger/logger';
+import { ILog } from './logger/interfaces';
 
 export type UserDto = {
   id: string;
@@ -15,22 +15,24 @@ export type UserDto = {
 
 export class User {
   private _authenticatedId?: string;
+  private logger?: ILog;
 
   readonly anonymousId: string;
 
-  constructor(anonymousId?: string, authenticatedId?: string) {
+  constructor(anonymousId?: string, authenticatedId?: string, logger?: ILog) {
     this.anonymousId = anonymousId ?? uuidv4();
     this._authenticatedId = authenticatedId ?? undefined;
+    this.logger = logger ?? undefined;
   }
 
-  static async getAnonymous(context: ExtensionContext): Promise<User> {
+  static async getAnonymous(context: ExtensionContext, logger?: ILog): Promise<User> {
     let anonymousId = context.getGlobalStateValue<string>(MEMENTO_ANONYMOUS_ID);
     if (!anonymousId) {
       anonymousId = uuidv4();
       await context.updateGlobalStateValue(MEMENTO_ANONYMOUS_ID, anonymousId);
     }
 
-    return new User(anonymousId);
+    return new User(anonymousId, undefined, logger ?? undefined);
   }
 
   get authenticatedId(): string | undefined {
@@ -60,7 +62,9 @@ export class User {
     try {
       user = await commandExecutor.executeCommand(SNYK_GET_ACTIVE_USER);
     } catch (error) {
-      Logger.log('Warn', `Failed to get user: ${error}`);
+      if (this.logger) {
+        this.logger.error(`Failed to get user: ${error}`);
+      }
     }
     return user;
   }
