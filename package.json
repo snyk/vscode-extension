@@ -399,7 +399,7 @@
   },
   "scripts": {
     "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
-    "build": "tsc -p ./",
+    "build": "npm run vscode:prepublish",
     "watch": "tsc -watch -p ./",
     "watch-resources": "sass media --no-source-map --watch",
     "watch-all": "concurrently --kill-others 'npm run watch' 'npm run watch-resources'",
