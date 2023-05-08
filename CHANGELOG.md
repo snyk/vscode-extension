@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.18.3]
+
+### Added
+
+- Enabled Autofix for Snyk Code issues.
+
 ## [1.18.0]
 
 ### Added
