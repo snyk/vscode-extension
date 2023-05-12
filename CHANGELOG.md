@@ -1,6 +1,6 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.18.4]
+## [1.19.1]
 
 ### Fixed
 
