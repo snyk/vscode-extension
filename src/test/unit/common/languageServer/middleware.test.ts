@@ -1,12 +1,9 @@
 import assert from 'assert';
 import sinon from 'sinon';
-import { v4 } from 'uuid';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { ExperimentService } from '../../../../snyk/common/experiment/services/experimentService';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
-import { User } from '../../../../snyk/common/user';
 import {
   CancellationToken,
   ConfigurationParams,
@@ -15,7 +12,6 @@ import {
 } from '../../../../snyk/common/vscode/types';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { extensionContextMock } from '../../mocks/extensionContext.mock';
-import { LoggerMock } from '../../mocks/logger.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
@@ -56,10 +52,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware(
-      configuration,
-      new ExperimentService(new User(v4(), undefined), new LoggerMock(), configuration),
-    );
+    const middleware = new LanguageClientMiddleware(configuration);
     const params: ConfigurationParams = {
       items: [
         {
@@ -104,10 +97,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware(
-      configuration,
-      new ExperimentService(new User(v4(), undefined), new LoggerMock(), configuration),
-    );
+    const middleware = new LanguageClientMiddleware(configuration);
     const params: ConfigurationParams = {
       items: [
         {

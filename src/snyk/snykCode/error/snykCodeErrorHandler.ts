@@ -2,12 +2,14 @@ import { constants } from '@snyk/code-client';
 import { errorType, IBaseSnykModule } from '../../base/modules/interfaces';
 import { ILoadingBadge } from '../../base/views/loadingBadge';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { CONNECTION_ERROR_RETRY_INTERVAL, MAX_CONNECTION_RETRIES } from '../../common/constants/general';
+import { MAX_CONNECTION_RETRIES } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { TagKeys, Tags } from '../../common/error/errorReporter';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
+
+// TODO - remove this entire class. Code scans run through LS now.
 
 type SnykCodeErrorResponseType = {
   apiName: string;
@@ -177,9 +179,10 @@ export class SnykCodeErrorHandler extends ErrorHandler implements ISnykCodeError
       this.baseSnykModule.snykCodeOld.clearBundle(); // bundle has expired, trigger complete new analysis
     }
 
-    setTimeout(() => {
-      this.baseSnykModule.runCodeScan().catch(err => this.capture(err, options));
-    }, CONNECTION_ERROR_RETRY_INTERVAL);
+    // Removed this code in order to remove runCodeScan
+    // setTimeout(() => {
+    //   this.baseSnykModule.runCodeScan().catch(err => this.capture(err, options));
+    // }, CONNECTION_ERROR_RETRY_INTERVAL);
 
     return Promise.resolve();
   }

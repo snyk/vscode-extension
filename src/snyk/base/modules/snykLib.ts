@@ -6,7 +6,6 @@ import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
-import { ExperimentKey } from '../../common/experiment/services/experimentService';
 import { Logger } from '../../common/logger/logger';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
@@ -14,6 +13,7 @@ import { ISnykLib } from './interfaces';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
+    // Only starts OSS scan. Code & IaC scans are managed by LS
     Logger.info('Starting full scan');
 
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
@@ -43,9 +43,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
-
         void this.startOssAnalysis(manual, false);
-        await this.startSnykCodeAnalysis(workspacePaths, manual, false); // mark void, handle errors inside of startSnykCodeAnalysis()
       }
     } catch (err) {
       await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
@@ -54,11 +52,8 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
   // This function is called by commands, error handlers, etc.
   // We should avoid having duplicate parallel executions.
+  // Only starts OSS scan. Code & IaC scans are managed by LS
   public runScan = _.debounce(this.runFullScan_.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, { leading: true });
-
-  public runCodeScan = _.debounce(this.startSnykCodeAnalysis.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, {
-    leading: true,
-  });
 
   public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
 
@@ -68,45 +63,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       await this.codeSettings.checkCodeEnabled();
 
       Logger.info('Snyk Code was enabled.');
-      try {
-        await this.startSnykCodeAnalysis();
-      } catch (err) {
-        ErrorHandler.handle(err, Logger);
-      }
     }
-  }
-
-  async startSnykCodeAnalysis(paths: string[] = [], manual = false, reportTriggeredEvent = true): Promise<void> {
-    // If the execution is suspended, we only allow user-triggered Snyk Code analyses.
-    if (this.isSnykCodeAutoscanSuspended(manual)) {
-      return;
-    }
-
-    const codeEnabled = await this.codeSettings.checkCodeEnabled();
-    if (!codeEnabled) {
-      return;
-    }
-
-    // if LS is used to scan, don't proceed
-    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
-      ExperimentKey.CodeScansViaLanguageServer,
-    );
-    if (codeScansViaLs) {
-      return;
-    }
-
-    if (
-      !configuration.getFeaturesConfiguration()?.codeSecurityEnabled &&
-      !configuration.getFeaturesConfiguration()?.codeQualityEnabled
-    ) {
-      return;
-    }
-
-    if (!paths.length) {
-      paths = vsCodeWorkspace.getWorkspaceFolders();
-    }
-
-    await this.snykCodeOld.startAnalysis(paths, manual, reportTriggeredEvent);
   }
 
   async onDidChangeWelcomeViewVisibility(visible: boolean): Promise<void> {

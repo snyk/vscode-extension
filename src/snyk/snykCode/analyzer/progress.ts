@@ -1,13 +1,11 @@
 import { emitter as emitterDC, SupportedFiles } from '@snyk/code-client';
 import _ from 'lodash';
 import * as vscode from 'vscode';
-import { getExtension } from '../../../extension';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { Logger } from '../../common/logger/logger';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { ISnykCodeServiceOld } from '../codeServiceOld';
-import createFileWatcher from '../watchers/filesWatcher';
 
 export class Progress {
   private emitter = emitterDC;
@@ -46,11 +44,6 @@ export class Progress {
     const msg = data ? 'Ignore rules loading' : 'Loading';
 
     this.updateStatus(SNYK_ANALYSIS_STATUS.FILTERS, msg);
-
-    // Setup file watcher
-    if (!this.filesWatcher && data) {
-      this.filesWatcher = createFileWatcher(getExtension(), this.workspace, data);
-    }
   }
 
   onScanFilesProgress(value: number): void {

@@ -45,8 +45,7 @@ import {
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
-import { ExperimentKey, ExperimentService } from './common/experiment/services/experimentService';
-import { CodeScanOrchestrator } from './common/languageServer/experiments/codeScanOrchestrator';
+import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
@@ -189,7 +188,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
-      this.experimentService,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -436,26 +434,8 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
 
-    const codeScansViaLs = await this.experimentService.isUserPartOfExperiment(
-      ExperimentKey.CodeScansViaLanguageServer,
-    );
-    if (codeScansViaLs) {
-      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-      Logger.info('Code scans via language server enabled.');
-    } else {
-      await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, false);
-      Logger.info('Code scans are not using Language Server.');
-    }
-
+    await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
     await this.languageServer.start();
-
-    this.codeScanOrchestrator = new CodeScanOrchestrator(
-      this.experimentService,
-      this.languageServer,
-      Logger,
-      this.contextService,
-      this,
-    );
 
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
@@ -468,7 +448,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.snykCodeOld.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
-    this.codeScanOrchestrator.dispose();
     await this.analytics.flush();
     await ErrorReporter.flush();
   }

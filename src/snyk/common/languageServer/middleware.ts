@@ -1,5 +1,4 @@
 import { IConfiguration } from '../configuration/configuration';
-import { ExperimentService } from '../experiment/services/experimentService';
 import {
   CancellationToken,
   ConfigurationParams,
@@ -19,7 +18,7 @@ export type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration, private experimentService: ExperimentService) {}
+  constructor(private configuration: IConfiguration) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -40,7 +39,7 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.experimentService);
+      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration);
       return [serverSettings];
     },
   };
