@@ -145,8 +145,8 @@ suite('Language Server', () => {
 
     test('LanguageServer should provide correct initialization options', async () => {
       const expectedInitializationOptions: InitializationOptions = {
-        activateSnykCodeSecurity: 'false',
-        activateSnykCodeQuality: 'false',
+        activateSnykCodeSecurity: 'true',
+        activateSnykCodeQuality: 'true',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
         token: 'testToken',

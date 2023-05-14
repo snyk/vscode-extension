@@ -75,8 +75,8 @@ suite('Language Server: Middleware', () => {
     }
 
     const serverResult = res[0] as ServerSettings;
-    assert.strictEqual(serverResult.activateSnykCodeSecurity, 'false');
-    assert.strictEqual(serverResult.activateSnykCodeQuality, 'false');
+    assert.strictEqual(serverResult.activateSnykCodeSecurity, 'true');
+    assert.strictEqual(serverResult.activateSnykCodeQuality, 'true');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
     assert.strictEqual(serverResult.activateSnykIac, 'true');
     assert.strictEqual(serverResult.endpoint, configuration.snykOssApiEndpoint);
