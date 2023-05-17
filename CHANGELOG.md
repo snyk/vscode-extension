@@ -5,6 +5,18 @@
 - Added support for OAuth2 authentication
 - Snyk Learn: now uses language server to retrieve lessons
 
+## [1.19.1]
+
+### Fixed
+
+- Updated support links.
+
+## [1.18.3]
+
+### Added
+
+- Enabled Autofix for Snyk Code issues.
+
 ## [1.18.0]
 
 ### Added

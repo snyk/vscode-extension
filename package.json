@@ -11,6 +11,9 @@
     "type": "git",
     "url": "https://github.com/snyk/vscode-extension.git"
   },
+  "bugs": {
+    "url": "https://support.snyk.io/"
+  },
   "engines": {
     "vscode": "^1.58.0"
   },
