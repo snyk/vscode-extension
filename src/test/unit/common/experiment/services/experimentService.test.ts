@@ -12,7 +12,7 @@ suite('ExperimentService', () => {
   let fetchStub: sinon.SinonStub;
 
   setup(() => {
-    user = new User(undefined, undefined);
+    user = new User(undefined, undefined, new LoggerMock());
 
     sinon.stub(SnykConfiguration, 'get').resolves({
       amplitudeExperimentApiKey: 'test',

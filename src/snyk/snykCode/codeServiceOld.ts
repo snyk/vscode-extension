@@ -10,7 +10,6 @@ import { ErrorHandler } from '../common/error/errorHandler';
 import { ILog } from '../common/logger/interfaces';
 import { Logger } from '../common/logger/logger';
 import { messages as generalAnalysisMessages } from '../common/messages/analysisMessages';
-import { LearnService } from '../common/services/learnService';
 import { IViewManagerService } from '../common/services/viewManagerService';
 import { User } from '../common/user';
 import { IWebViewProvider } from '../common/views/webviewProvider';
@@ -25,7 +24,6 @@ import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import SnykCodeAnalyzer from './analyzer/analyzer';
 import { Progress } from './analyzer/progress';
 import { DisposableCodeActionsProvider } from './codeActions/disposableCodeActionsProvider';
-import { ICodeSettings } from './codeSettings';
 import { ISnykCodeErrorHandler } from './error/snykCodeErrorHandler';
 import { IFalsePositiveApi } from './falsePositive/api/falsePositiveApi';
 import { FalsePositive } from './falsePositive/falsePositive';
@@ -39,6 +37,7 @@ import {
 } from './views/falsePositive/falsePositiveWebviewProvider';
 import { ICodeSuggestionWebviewProviderOld } from './views/interfaces';
 import { CodeSuggestionWebviewProviderOld } from './views/suggestion/codeSuggestionWebviewProviderOld';
+import { LearnService } from '../common/services/learnService';
 
 export interface ISnykCodeServiceOld extends AnalysisStatusProvider, Disposable {
   analyzer: ISnykCodeAnalyzer;
@@ -91,10 +90,9 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
     readonly languages: IVSCodeLanguages,
     private readonly errorHandler: ISnykCodeErrorHandler,
     private readonly uriAdapter: IUriAdapter,
-    codeSettings: ICodeSettings,
-    private readonly learnService: LearnService,
     private readonly markdownStringAdapter: IMarkdownStringAdapter,
     private readonly workspaceTrust: IWorkspaceTrust,
+    private readonly learnService: LearnService,
   ) {
     super();
     this.analyzer = new SnykCodeAnalyzer(
@@ -123,7 +121,6 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
       this.logger,
       languages,
       workspace,
-      codeSettings,
       this.learnService,
     );
 
@@ -190,7 +187,7 @@ export class SnykCodeServiceOld extends AnalysisStatusProvider implements ISnykC
         },
       };
 
-      let result: FileAnalysis | null = null;
+      let result: FileAnalysis | null;
       if (this.changedFiles.size && this.remoteBundle) {
         const changedFiles = [...this.changedFiles];
         result = await extendAnalysis({

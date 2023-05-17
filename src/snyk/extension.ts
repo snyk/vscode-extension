@@ -27,9 +27,9 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
-import { SNYK_WORKSPACE_SCAN_COMMAND } from './common/constants/languageServer';
 import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
@@ -51,10 +51,11 @@ import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
+import { LearnService } from './common/services/learnService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter, CodeActionKindAdapter } from './common/vscode/codeAction';
-import { vsCodeComands } from './common/vscode/commands';
+import { vsCodeCommands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
@@ -70,6 +71,7 @@ import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { SnykCodeServiceOld } from './snykCode/codeServiceOld';
+import { CodeSettings } from './snykCode/codeSettings';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
@@ -114,7 +116,7 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
-    this.user = await User.getAnonymous(this.context);
+    this.user = await User.getAnonymous(this.context, Logger);
 
     this.analytics = new Iteratively(
       this.user,
@@ -129,7 +131,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.configurationWatcher = new ConfigurationWatcher(this.analytics, Logger);
     this.notificationService = new NotificationService(
       vsCodeWindow,
-      vsCodeComands,
+      vsCodeCommands,
       configuration,
       this.analytics,
       Logger,
@@ -146,8 +148,12 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       Logger,
       languageClientAdapter,
-      vsCodeComands,
+      vsCodeCommands,
     );
+
+    this.learnService = new LearnService(vsCodeCommands);
+
+    this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
     this.snykCodeOld = new SnykCodeServiceOld(
       this.context,
@@ -162,10 +168,9 @@ class SnykExtension extends SnykLib implements IExtension {
       new VSCodeLanguages(),
       this.snykCodeErrorHandler,
       new UriAdapter(),
-      this.codeSettings,
-      this.learnService,
       this.markdownStringAdapter,
       this.workspaceTrust,
+      this.learnService,
     );
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
@@ -263,7 +268,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
-      vsCodeComands,
+      vsCodeCommands,
       vsCodeWindow,
       this.languageServer,
       Logger,

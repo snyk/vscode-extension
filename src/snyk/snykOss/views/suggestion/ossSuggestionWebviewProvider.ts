@@ -1,11 +1,9 @@
 import * as vscode from 'vscode';
-import { OpenCommandIssueType } from '../../../common/commands/types';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
-import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -13,6 +11,7 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { messages as errorMessages } from '../../messages/error';
 import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
+import { LearnService } from '../../../common/services/learnService';
 
 enum OssSuggestionsViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -42,7 +41,7 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
   async postLearnLessonMessage(vulnerability: OssIssueCommandArg): Promise<void> {
     try {
       if (this.panel) {
-        const lesson = await this.learnService.getLesson(vulnerability, OpenCommandIssueType.OssVulnerability);
+        const lesson = await this.learnService.getOssLesson(vulnerability);
         if (lesson) {
           void this.panel.webview.postMessage({
             type: 'setLesson',

@@ -58,7 +58,7 @@ suite('Language Server: Middleware', () => {
   test('Configuration request should translate settings', async () => {
     const middleware = new LanguageClientMiddleware(
       configuration,
-      new ExperimentService(new User(v4(), undefined), new LoggerMock(), configuration),
+      new ExperimentService(new User(v4(), undefined, new LoggerMock()), new LoggerMock(), configuration),
     );
     const params: ConfigurationParams = {
       items: [
@@ -106,7 +106,7 @@ suite('Language Server: Middleware', () => {
   test('Configuration request should return an error', async () => {
     const middleware = new LanguageClientMiddleware(
       configuration,
-      new ExperimentService(new User(v4(), undefined), new LoggerMock(), configuration),
+      new ExperimentService(new User(v4(), undefined, new LoggerMock()), new LoggerMock(), configuration),
     );
     const params: ConfigurationParams = {
       items: [

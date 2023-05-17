@@ -20,7 +20,7 @@ import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
-  const user = new User(v4(), undefined);
+  const user = new User(v4(), undefined, new LoggerMock());
 
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;

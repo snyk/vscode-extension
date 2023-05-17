@@ -5,10 +5,9 @@ import { getVsCodeProxy } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CLI_INTEGRATION_NAME } from './contants/integration';
 import { CliError } from './services/cliService';
+import { OAuthToken } from '../base/services/authenticationService';
 
 export class CliProcess {
-  private readonly successExitCodes = [0, 1];
-
   private runningProcess: ChildProcessWithoutNullStreams | null;
 
   constructor(
@@ -59,7 +58,6 @@ export class CliProcess {
     let env = {
       SNYK_INTEGRATION_NAME: CLI_INTEGRATION_NAME,
       SNYK_INTEGRATION_VERSION: await Configuration.getVersion(),
-      SNYK_TOKEN: await this.config.getToken(),
       SNYK_API: this.config.snykOssApiEndpoint,
       SNYK_CFG_ORG: this.config.organization,
     } as NodeJS.ProcessEnv;
@@ -74,6 +72,20 @@ export class CliProcess {
         ...env,
         HTTP_PROXY: vscodeProxy,
         HTTPS_PROXY: vscodeProxy,
+      };
+    }
+
+    const token = await this.config.getToken();
+    if (token && this.config.snykOssApiEndpoint.indexOf('snykgov.io') > 1) {
+      const oauthToken = JSON.parse(token) as OAuthToken;
+      env = {
+        ...env,
+        SNYK_OAUTH_TOKEN: oauthToken.access_token,
+      };
+    } else {
+      env = {
+        ...env,
+        SNYK_TOKEN: token,
       };
     }
 
