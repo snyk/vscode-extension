@@ -1,7 +1,8 @@
 import { validate as uuidValidate } from 'uuid';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { DID_CHANGE_CONFIGURATION_METHOD, SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/languageServer';
+import { SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/commands';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
@@ -12,10 +13,19 @@ import { IBaseSnykModule } from '../modules/interfaces';
 
 export interface IAuthenticationService {
   initiateLogin(): Promise<void>;
+
   initiateLogout(): Promise<void>;
+
   setToken(): Promise<void>;
+
   updateToken(token: string): Promise<void>;
 }
+
+export type OAuthToken = {
+  access_token: string;
+  expiry: string;
+  refresh_token: string;
+};
 
 export class AuthenticationService implements IAuthenticationService {
   constructor(
@@ -45,7 +55,7 @@ export class AuthenticationService implements IAuthenticationService {
       placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       password: true,
       validateInput: token => {
-        const valid = uuidValidate(token);
+        const valid = this.validateToken(token);
         if (!valid) {
           return 'The entered token has an invalid format.';
         }
@@ -57,11 +67,29 @@ export class AuthenticationService implements IAuthenticationService {
     return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
   }
 
+  validateToken(token: string) {
+    let valid = uuidValidate(token);
+    if (valid) return true;
+
+    // try to parse as json (oauth2 token)
+    try {
+      const oauthToken = JSON.parse(token) as OAuthToken;
+      valid =
+        oauthToken.access_token.length > 0 &&
+        Date.parse(oauthToken.expiry) > Date.now() &&
+        oauthToken.refresh_token.length > 0;
+      this.logger.debug(`Token ${token} parsed`);
+    } catch (e) {
+      this.logger.warn(`Token ${token} is not a valid uuid or json string: ${e}`);
+    }
+    return valid;
+  }
+
   async updateToken(token: string): Promise<void> {
     if (!token) {
       await this.initiateLogout();
     } else {
-      if (!uuidValidate(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
+      if (!this.validateToken(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
 
       await this.configuration.setToken(token);
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);

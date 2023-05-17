@@ -2,7 +2,6 @@ import { AdvisorApiClient, IAdvisorApiClient } from '../../advisor/services/advi
 import AdvisorProvider from '../../advisor/services/advisorProvider';
 import { AdvisorService } from '../../advisor/services/advisorService';
 import { IAnalytics } from '../../common/analytics/itly';
-import { ISnykApiClient, SnykApiClient } from '../../common/api/apiСlient';
 import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
@@ -24,7 +23,7 @@ import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vsco
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
-import { CodeSettings, ICodeSettings } from '../../snykCode/codeSettings';
+import { ICodeSettings } from '../../snykCode/codeSettings';
 import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
@@ -51,7 +50,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected downloadService: DownloadService;
   protected ossService?: OssService;
   protected advisorService?: AdvisorProvider;
-  protected learnService: LearnService;
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
   protected ossVulnerabilityCountService: OssVulnerabilityCountService;
@@ -61,7 +59,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected notificationService: INotificationService;
   protected analytics: IAnalytics;
 
-  protected snykApiClient: ISnykApiClient;
   protected advisorApiClient: IAdvisorApiClient;
   protected falsePositiveApi: IFalsePositiveApi;
   snykCodeOld: ISnykCodeServiceOld;
@@ -73,6 +70,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   protected user: User;
   protected experimentService: ExperimentService;
+  protected learnService: LearnService;
   protected snykCodeErrorHandler: ISnykCodeErrorHandler;
 
   protected markdownStringAdapter: IMarkdownStringAdapter;
@@ -86,8 +84,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();
-    this.learnService = new LearnService(configuration, Logger);
-    this.snykApiClient = new SnykApiClient(configuration, vsCodeWorkspace, Logger);
     this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace, Logger);
     this.snykCodeErrorHandler = new SnykCodeErrorHandler(
       this.contextService,
@@ -96,7 +92,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
       this,
       configuration,
     );
-    this.codeSettings = new CodeSettings(this.snykApiClient, this.contextService, configuration, this.openerService);
     this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();

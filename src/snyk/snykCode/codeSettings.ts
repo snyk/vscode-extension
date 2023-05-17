@@ -1,17 +1,27 @@
-import { ISnykApiClient } from '../common/api/apiСlient';
 import { IConfiguration } from '../common/configuration/configuration';
+import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SNYK_CONTEXT } from '../common/constants/views';
-import { getSastSettings, SastSettings } from '../common/services/cliConfigService';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
+import { IVSCodeCommands } from '../common/vscode/commands';
 
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
 
   checkCodeEnabled(): Promise<boolean>;
+
   enable(): Promise<boolean>;
+
   getSastSettings(): Promise<SastSettings | undefined>;
 }
+
+export type SastSettings = {
+  sastEnabled: boolean;
+  localCodeEngine: {
+    enabled: boolean;
+  };
+  reportFalsePositivesEnabled: boolean;
+};
 
 export class CodeSettings implements ICodeSettings {
   private _reportFalsePositivesEnabled: boolean;
@@ -21,34 +31,44 @@ export class CodeSettings implements ICodeSettings {
   }
 
   constructor(
-    private readonly snykApiClient: ISnykApiClient,
     private readonly contextService: IContextService,
     private readonly config: IConfiguration,
     private readonly openerService: IOpenerService,
+    private readonly commandExecutor: IVSCodeCommands,
   ) {}
 
   async checkCodeEnabled(): Promise<boolean> {
-    const settings = await this.getSastSettings();
-    if (!settings) {
-      return false;
+    let codeEnabled = false;
+    let localCodeEngineEnabled = false;
+    try {
+      const settings = await this.getSastSettings();
+      if (!settings) {
+        return false;
+      }
+      codeEnabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
+      localCodeEngineEnabled = settings.localCodeEngine.enabled;
+    } catch (e) {
+      // Ignore potential command not found error during LS startup and poll
+      codeEnabled = await this.enable(false);
     }
-
-    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, settings.sastEnabled);
-    await this.contextService.setContext(
-      SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED,
-      settings.localCodeEngine.enabled ?? false,
-    );
-
-    return settings.sastEnabled && !settings.localCodeEngine.enabled;
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, codeEnabled);
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, localCodeEngineEnabled);
+    return codeEnabled;
   }
 
-  async enable(): Promise<boolean> {
-    let settings = await this.getSastSettings();
+  async enable(openBrowser = true): Promise<boolean> {
+    let settings: SastSettings | undefined;
+    try {
+      settings = await this.getSastSettings();
+    } catch (e) {
+      // Ignore potential command not found error during LS startup
+    }
+
     if (settings?.sastEnabled) {
       return true;
     }
 
-    if (this.config.snykCodeUrl != null) {
+    if (this.config.snykCodeUrl != null && openBrowser) {
       await this.openerService.openBrowserUrl(this.config.snykCodeUrl);
     }
 
@@ -57,10 +77,14 @@ export class CodeSettings implements ICodeSettings {
       // eslint-disable-next-line no-await-in-loop
       await this.sleep(i * 1000);
 
-      // eslint-disable-next-line no-await-in-loop
-      settings = await this.getSastSettings();
-      if (settings?.sastEnabled) {
-        return true;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        settings = await this.getSastSettings();
+        if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
+          return true;
+        }
+      } catch (e) {
+        // Ignore potential command not found error during LS startup
       }
     }
 
@@ -68,13 +92,7 @@ export class CodeSettings implements ICodeSettings {
   }
 
   async getSastSettings(): Promise<SastSettings | undefined> {
-    const settings = await getSastSettings(this.snykApiClient, this.config);
-    if (settings) {
-      // cache if false positive reports are enabled.
-      this._reportFalsePositivesEnabled = settings.reportFalsePositivesEnabled;
-    }
-
-    return settings;
+    return this.commandExecutor.executeCommand(SNYK_GET_SETTINGS_SAST_ENABLED);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));

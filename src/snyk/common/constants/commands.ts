@@ -17,6 +17,13 @@ export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 export const SNYK_SHOW_LS_OUTPUT_COMMAND = 'snyk.showLsOutputChannel';
+export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
+export const SNYK_GET_SETTINGS_SAST_ENABLED = 'snyk.getSettingsSastEnabled';
+// commands
+export const SNYK_LOGIN_COMMAND = 'snyk.login';
+export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
+export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
+export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';
