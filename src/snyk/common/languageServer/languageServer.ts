@@ -115,6 +115,7 @@ export class LanguageServer implements ILanguageServer {
     // Start the client. This will also launch the server
     this.client.start();
     this.logger.info('Snyk Language Server started');
+    return this.client.onReady();
   }
 
   private registerListeners(client: LanguageClient): void {

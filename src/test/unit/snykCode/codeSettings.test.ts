@@ -40,7 +40,7 @@ suite('Snyk Code Settings', () => {
       reportFalsePositivesEnabled: true,
     });
 
-    const codeEnabled = await settings.checkCodeEnabled();
+    const codeEnabled = await settings.updateIsCodeEnabled();
 
     strictEqual(codeEnabled, false);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, false), true);
@@ -56,7 +56,7 @@ suite('Snyk Code Settings', () => {
       reportFalsePositivesEnabled: true,
     });
 
-    const codeEnabled = await settings.checkCodeEnabled();
+    const codeEnabled = await settings.updateIsCodeEnabled();
 
     strictEqual(codeEnabled, true);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, true), true);
@@ -72,7 +72,7 @@ suite('Snyk Code Settings', () => {
       reportFalsePositivesEnabled: true,
     });
 
-    const codeEnabled = await settings.checkCodeEnabled();
+    const codeEnabled = await settings.updateIsCodeEnabled();
 
     strictEqual(codeEnabled, false);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, false), true);

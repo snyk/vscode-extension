@@ -7,10 +7,10 @@ import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } 
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Logger } from '../../common/logger/logger';
+import { vsCodeCommands } from '../../common/vscode/commands';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import BaseSnykModule from './baseSnykModule';
 import { ISnykLib } from './interfaces';
-import { vsCodeCommands } from '../../common/vscode/commands';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
@@ -61,7 +61,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   async enableCode(): Promise<void> {
     const wasEnabled = await this.codeSettings.enable();
     if (wasEnabled) {
-      await this.codeSettings.checkCodeEnabled();
+      await this.codeSettings.updateIsCodeEnabled();
 
       Logger.info('Snyk Code was enabled.');
     }

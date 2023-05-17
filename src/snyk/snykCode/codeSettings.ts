@@ -8,7 +8,7 @@ import { IVSCodeCommands } from '../common/vscode/commands';
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
 
-  checkCodeEnabled(): Promise<boolean>;
+  updateIsCodeEnabled(): Promise<boolean>;
 
   enable(): Promise<boolean>;
 
@@ -37,7 +37,7 @@ export class CodeSettings implements ICodeSettings {
     private readonly commandExecutor: IVSCodeCommands,
   ) {}
 
-  async checkCodeEnabled(): Promise<boolean> {
+  async updateIsCodeEnabled(): Promise<boolean> {
     let codeEnabled = false;
     let localCodeEngineEnabled = false;
     try {
@@ -48,8 +48,7 @@ export class CodeSettings implements ICodeSettings {
       codeEnabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
       localCodeEngineEnabled = settings.localCodeEngine.enabled;
     } catch (e) {
-      // Ignore potential command not found error during LS startup and poll
-      codeEnabled = await this.enable(false);
+      return false;
     }
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, codeEnabled);
     await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, localCodeEngineEnabled);
@@ -81,6 +80,8 @@ export class CodeSettings implements ICodeSettings {
         // eslint-disable-next-line no-await-in-loop
         settings = await this.getSastSettings();
         if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.updateIsCodeEnabled();
           return true;
         }
       } catch (e) {
