@@ -59,12 +59,9 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
 
   async enableCode(): Promise<void> {
+    Logger.info('Enabling Snyk Code');
     const wasEnabled = await this.codeSettings.enable();
-    if (wasEnabled) {
-      await this.codeSettings.updateIsCodeEnabled();
-
-      Logger.info('Snyk Code was enabled.');
-    }
+    Logger.info(wasEnabled ? 'Snyk Code was enabled' : 'Failed to enable Snyk Code');
   }
 
   async onDidChangeWelcomeViewVisibility(visible: boolean): Promise<void> {

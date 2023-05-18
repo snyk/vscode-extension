@@ -440,7 +440,6 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-    const lsStartupTask = this.languageServer.start();
 
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
@@ -450,7 +449,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
-    await lsStartupTask;
+    await this.languageServer.start();
     await this.codeSettings.updateIsCodeEnabled();
   }
 

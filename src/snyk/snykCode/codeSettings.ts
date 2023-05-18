@@ -1,6 +1,7 @@
 import { IConfiguration } from '../common/configuration/configuration';
 import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SNYK_CONTEXT } from '../common/constants/views';
+import { Logger } from '../common/logger/logger';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
@@ -60,7 +61,9 @@ export class CodeSettings implements ICodeSettings {
     try {
       settings = await this.getSastSettings();
     } catch (e) {
-      // Ignore potential command not found error during LS startup
+      if (e instanceof Error) {
+        Logger.error(e.message);
+      }
     }
 
     if (settings?.sastEnabled) {
@@ -81,7 +84,6 @@ export class CodeSettings implements ICodeSettings {
         settings = await this.getSastSettings();
         if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
           // eslint-disable-next-line no-await-in-loop
-          await this.updateIsCodeEnabled();
           return true;
         }
       } catch (e) {
@@ -93,7 +95,9 @@ export class CodeSettings implements ICodeSettings {
   }
 
   async getSastSettings(): Promise<SastSettings | undefined> {
-    return this.commandExecutor.executeCommand(SNYK_GET_SETTINGS_SAST_ENABLED);
+    const settings = await this.commandExecutor.executeCommand<SastSettings>(SNYK_GET_SETTINGS_SAST_ENABLED);
+    await this.updateIsCodeEnabled();
+    return settings;
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
