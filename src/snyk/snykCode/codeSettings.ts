@@ -1,7 +1,6 @@
 import { IConfiguration } from '../common/configuration/configuration';
 import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SNYK_CONTEXT } from '../common/constants/views';
-import { Logger } from '../common/logger/logger';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
@@ -63,7 +62,7 @@ export class CodeSettings implements ICodeSettings {
       await this.updateIsCodeEnabled(settings);
     } catch (e) {
       if (e instanceof Error) {
-        Logger.error(e.message);
+        // Ignore potential command not found error during LS startup
       }
     }
 
