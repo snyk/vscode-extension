@@ -6,7 +6,6 @@ import { CommandController } from '../../common/commands/commandController';
 import { configuration } from '../../common/configuration/instance';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
-import { CodeScanOrchestrator } from '../../common/languageServer/experiments/codeScanOrchestrator';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { Logger } from '../../common/logger/logger';
@@ -65,7 +64,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   snykCodeOld: ISnykCodeServiceOld;
   snykCode: IProductService<CodeIssueData>;
   protected codeSettings: ICodeSettings;
-  protected codeScanOrchestrator: CodeScanOrchestrator;
 
   iacService: IProductService<IacIssueData>;
 
@@ -101,8 +99,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   }
 
   abstract runScan(): Promise<void>;
-
-  abstract runCodeScan(): Promise<void>;
 
   abstract runOssScan(): Promise<void>;
 }

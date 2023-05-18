@@ -8,7 +8,7 @@ import { IVSCodeCommands } from '../common/vscode/commands';
 export interface ICodeSettings {
   reportFalsePositivesEnabled: boolean;
 
-  checkCodeEnabled(): Promise<boolean>;
+  updateIsCodeEnabled(): Promise<boolean>;
 
   enable(): Promise<boolean>;
 
@@ -37,19 +37,18 @@ export class CodeSettings implements ICodeSettings {
     private readonly commandExecutor: IVSCodeCommands,
   ) {}
 
-  async checkCodeEnabled(): Promise<boolean> {
+  async updateIsCodeEnabled(settings: SastSettings | undefined = undefined): Promise<boolean> {
     let codeEnabled = false;
     let localCodeEngineEnabled = false;
     try {
-      const settings = await this.getSastSettings();
+      settings = settings === undefined ? await this.getSastSettings() : settings;
       if (!settings) {
         return false;
       }
       codeEnabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
       localCodeEngineEnabled = settings.localCodeEngine.enabled;
     } catch (e) {
-      // Ignore potential command not found error during LS startup and poll
-      codeEnabled = await this.enable(false);
+      return false;
     }
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, codeEnabled);
     await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, localCodeEngineEnabled);
@@ -60,8 +59,11 @@ export class CodeSettings implements ICodeSettings {
     let settings: SastSettings | undefined;
     try {
       settings = await this.getSastSettings();
+      await this.updateIsCodeEnabled(settings);
     } catch (e) {
-      // Ignore potential command not found error during LS startup
+      if (e instanceof Error) {
+        // Ignore potential command not found error during LS startup
+      }
     }
 
     if (settings?.sastEnabled) {
@@ -81,6 +83,8 @@ export class CodeSettings implements ICodeSettings {
         // eslint-disable-next-line no-await-in-loop
         settings = await this.getSastSettings();
         if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.updateIsCodeEnabled(settings);
           return true;
         }
       } catch (e) {
@@ -92,7 +96,7 @@ export class CodeSettings implements ICodeSettings {
   }
 
   async getSastSettings(): Promise<SastSettings | undefined> {
-    return this.commandExecutor.executeCommand(SNYK_GET_SETTINGS_SAST_ENABLED);
+    return this.commandExecutor.executeCommand<SastSettings>(SNYK_GET_SETTINGS_SAST_ENABLED);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));

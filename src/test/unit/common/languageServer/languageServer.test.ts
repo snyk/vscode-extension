@@ -5,7 +5,6 @@ import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { ExperimentService } from '../../../../snyk/common/experiment/services/experimentService';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -116,7 +115,6 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
-      new ExperimentService(user, new LoggerMock(), configurationMock),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -142,14 +140,13 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        new ExperimentService(user, new LoggerMock(), configurationMock),
       );
     });
 
     test('LanguageServer should provide correct initialization options', async () => {
       const expectedInitializationOptions: InitializationOptions = {
-        activateSnykCodeSecurity: 'false',
-        activateSnykCodeQuality: 'false',
+        activateSnykCodeSecurity: 'true',
+        activateSnykCodeQuality: 'true',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
         token: 'testToken',
@@ -175,9 +172,6 @@ suite('Language Server', () => {
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {
-      const experimentServiceMock = {
-        isUserPartOfExperiment: sinon.stub().resolves(true),
-      };
       languageServer = new LanguageServer(
         user,
         configurationMock,
@@ -187,7 +181,6 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        experimentServiceMock as unknown as ExperimentService,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

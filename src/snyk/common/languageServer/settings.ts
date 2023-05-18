@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { IConfiguration, SeverityFilter } from '../configuration/configuration';
-import { ExperimentKey, ExperimentService } from '../experiment/services/experimentService';
 
 export type InitializationOptions = ServerSettings & {
   integrationName?: string;
@@ -31,25 +30,16 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(
-    configuration: IConfiguration,
-    experimentService: ExperimentService,
-  ): Promise<ServerSettings> {
+  static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
-    let codeSecurityEnabled = _.isUndefined(featuresConfiguration.codeSecurityEnabled)
+    const codeSecurityEnabled = _.isUndefined(featuresConfiguration.codeSecurityEnabled)
       ? true
       : featuresConfiguration.codeSecurityEnabled;
-    let codeQualityEnabled = _.isUndefined(featuresConfiguration.codeQualityEnabled)
+    const codeQualityEnabled = _.isUndefined(featuresConfiguration.codeQualityEnabled)
       ? true
       : featuresConfiguration.codeQualityEnabled;
-
-    const codeScansViaLs = await experimentService.isUserPartOfExperiment(ExperimentKey.CodeScansViaLanguageServer);
-    if (!codeScansViaLs) {
-      codeSecurityEnabled = false;
-      codeQualityEnabled = false;
-    }
 
     return {
       activateSnykCodeSecurity: `${codeSecurityEnabled}`,

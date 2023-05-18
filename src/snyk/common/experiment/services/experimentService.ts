@@ -7,7 +7,6 @@ import { User } from '../../user';
 export enum ExperimentKey {
   // to be populated with running experiment keys
   TestExperiment = 'vscode-test-experiment',
-  CodeScansViaLanguageServer = 'snyk-code-via-ls-in-vs-code-integration',
 }
 
 export class ExperimentService {

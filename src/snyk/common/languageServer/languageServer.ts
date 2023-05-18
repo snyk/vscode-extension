@@ -12,7 +12,6 @@ import {
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
-import { ExperimentService } from '../experiment/services/experimentService';
 import { ILog } from '../logger/interfaces';
 import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
@@ -49,7 +48,6 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
-    private experimentService: ExperimentService,
   ) {
     this.downloadService = downloadService;
   }
@@ -97,7 +95,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.configuration, this.experimentService),
+      middleware: new LanguageClientMiddleware(this.configuration),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
@@ -107,16 +105,17 @@ export class LanguageServer implements ILanguageServer {
 
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
-    this.client
-      .onReady()
-      .then(() => {
-        this.registerListeners(this.client);
-      })
-      .catch((error: Error) => ErrorHandler.handle(error, this.logger, error.message));
 
     // Start the client. This will also launch the server
     this.client.start();
     this.logger.info('Snyk Language Server started');
+
+    try {
+      await this.client.onReady();
+      this.registerListeners(this.client);
+    } catch (error) {
+      return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
+    }
   }
 
   private registerListeners(client: LanguageClient): void {
@@ -165,7 +164,7 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<InitializationOptions> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.experimentService);
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration);
 
     return {
       ...settings,
