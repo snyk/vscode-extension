@@ -38,11 +38,11 @@ export class CodeSettings implements ICodeSettings {
     private readonly commandExecutor: IVSCodeCommands,
   ) {}
 
-  async updateIsCodeEnabled(): Promise<boolean> {
+  async updateIsCodeEnabled(settings: SastSettings | undefined = undefined): Promise<boolean> {
     let codeEnabled = false;
     let localCodeEngineEnabled = false;
     try {
-      const settings = await this.getSastSettings();
+      settings = settings === undefined ? await this.getSastSettings() : settings;
       if (!settings) {
         return false;
       }
@@ -60,6 +60,7 @@ export class CodeSettings implements ICodeSettings {
     let settings: SastSettings | undefined;
     try {
       settings = await this.getSastSettings();
+      await this.updateIsCodeEnabled(settings);
     } catch (e) {
       if (e instanceof Error) {
         Logger.error(e.message);
@@ -84,6 +85,7 @@ export class CodeSettings implements ICodeSettings {
         settings = await this.getSastSettings();
         if (settings?.sastEnabled && !settings?.localCodeEngine.enabled) {
           // eslint-disable-next-line no-await-in-loop
+          await this.updateIsCodeEnabled(settings);
           return true;
         }
       } catch (e) {
@@ -95,9 +97,7 @@ export class CodeSettings implements ICodeSettings {
   }
 
   async getSastSettings(): Promise<SastSettings | undefined> {
-    const settings = await this.commandExecutor.executeCommand<SastSettings>(SNYK_GET_SETTINGS_SAST_ENABLED);
-    await this.updateIsCodeEnabled();
-    return settings;
+    return this.commandExecutor.executeCommand<SastSettings>(SNYK_GET_SETTINGS_SAST_ENABLED);
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
