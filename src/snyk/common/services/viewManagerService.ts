@@ -32,7 +32,6 @@ export interface IViewManagerService {
 
   refreshAllViews(): void;
   refreshAllCodeAnalysisViews(): void;
-  refreshAllOldCodeAnalysisViews(): void;
   refreshCodeAnalysisViews(enabledFeatures?: FeaturesConfiguration | null): void;
   refreshCodeSecurityView(): void;
   refreshCodeQualityView(): void;
@@ -66,13 +65,8 @@ export class ViewManagerService implements IViewManagerService {
 
   refreshAllViews(): void {
     this.refreshOssView();
-    this.refreshAllOldCodeAnalysisViews();
+    this.refreshAllCodeAnalysisViews();
     this.refreshIacView();
-  }
-
-  refreshAllOldCodeAnalysisViews(): void {
-    this.refreshOldCodeSecurityView();
-    this.refreshOldCodeQualityView();
   }
 
   refreshAllCodeAnalysisViews(): void {
