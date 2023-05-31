@@ -2,10 +2,9 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
-import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
+import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { capitalizeOssSeverity } from '../../snykOss/ossResult';
 import { OssService } from '../../snykOss/services/ossService';
@@ -40,7 +39,6 @@ export class CommandController {
     private openerService: IOpenerService,
     private authService: IAuthenticationService,
     private snykCode: IProductService<CodeIssueData>,
-    private snykCodeOld: ISnykCodeServiceOld,
     private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
     private scanModeService: ScanModeService,
@@ -122,25 +120,6 @@ export class CommandController {
         issueId: decodeURIComponent(issue.id),
         issueType: IssueUtils.getIssueType(issue.additionalData.isSecurityType),
         severity: IssueUtils.issueSeverityAsText(issue.severity),
-      });
-    } else if (arg.issueType == OpenCommandIssueType.CodeIssueOld) {
-      const issue = arg.issue as CodeIssueCommandArgOld;
-      const suggestion = this.snykCodeOld.analyzer.findSuggestion(issue.diagnostic);
-      if (!suggestion) return;
-      // Set openUri = null to avoid opening the file (e.g. in the ActionProvider)
-      await this.openLocal(issue.filePath, issue.range);
-
-      try {
-        this.snykCodeOld.suggestionProvider.show(suggestion.id, issue.filePath, issue.range);
-      } catch (e) {
-        ErrorHandler.handle(e, this.logger);
-      }
-
-      this.analytics.logIssueInTreeIsClicked({
-        ide: IDE_NAME,
-        issueId: decodeURIComponent(suggestion.id),
-        issueType: IssueUtils.getIssueType(suggestion.isSecurityType),
-        severity: IssueUtils.severityAsText(suggestion.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issue = arg.issue as OssIssueCommandArg;

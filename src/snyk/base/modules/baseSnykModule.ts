@@ -22,9 +22,7 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vscode/markdownString';
 import { vsCodeWorkspace } from '../../common/vscode/workspace';
 import { IWatcher } from '../../common/watchers/interfaces';
-import { ISnykCodeServiceOld } from '../../snykCode/codeServiceOld';
 import { ICodeSettings } from '../../snykCode/codeSettings';
-import { ISnykCodeErrorHandler, SnykCodeErrorHandler } from '../../snykCode/error/snykCodeErrorHandler';
 import { FalsePositiveApi, IFalsePositiveApi } from '../../snykCode/falsePositive/api/falsePositiveApi';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
 import { OssService } from '../../snykOss/services/ossService';
@@ -61,7 +59,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
 
   protected advisorApiClient: IAdvisorApiClient;
   protected falsePositiveApi: IFalsePositiveApi;
-  snykCodeOld: ISnykCodeServiceOld;
   snykCode: IProductService<CodeIssueData>;
   protected codeSettings: ICodeSettings;
 
@@ -71,7 +68,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected user: User;
   protected experimentService: ExperimentService;
   protected learnService: LearnService;
-  protected snykCodeErrorHandler: ISnykCodeErrorHandler;
 
   protected markdownStringAdapter: IMarkdownStringAdapter;
   readonly workspaceTrust: IWorkspaceTrust;
@@ -85,13 +81,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();
     this.falsePositiveApi = new FalsePositiveApi(configuration, vsCodeWorkspace, Logger);
-    this.snykCodeErrorHandler = new SnykCodeErrorHandler(
-      this.contextService,
-      this.loadingBadge,
-      Logger,
-      this,
-      configuration,
-    );
     this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
