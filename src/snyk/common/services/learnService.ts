@@ -9,7 +9,7 @@ export type Lesson = {
 };
 
 export class LearnService {
-  constructor(private commandExecutor: IVSCodeCommands) { }
+  constructor(private commandExecutor: IVSCodeCommands) {}
 
   async getOssLesson(vulnerability: OssIssueCommandArg): Promise<Lesson | undefined> {
     const cwe = vulnerability.identifiers?.CWE;
