@@ -23,8 +23,6 @@ export class ViewContainer {
 export interface IViewManagerService {
   viewContainer: ViewContainer;
 
-  readonly refreshOldCodeSecurityViewEmitter: EventEmitter<void>;
-  readonly refreshOldCodeQualityViewEmitter: EventEmitter<void>;
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
   readonly refreshOssViewEmitter: EventEmitter<void>;
@@ -42,8 +40,6 @@ export interface IViewManagerService {
 export class ViewManagerService implements IViewManagerService {
   readonly viewContainer: ViewContainer;
 
-  readonly refreshOldCodeSecurityViewEmitter: EventEmitter<void>;
-  readonly refreshOldCodeQualityViewEmitter: EventEmitter<void>;
   readonly refreshCodeSecurityViewEmitter: EventEmitter<void>;
   readonly refreshCodeQualityViewEmitter: EventEmitter<void>;
 
@@ -52,8 +48,6 @@ export class ViewManagerService implements IViewManagerService {
   readonly refreshIacViewEmitter: EventEmitter<void>;
 
   constructor() {
-    this.refreshOldCodeSecurityViewEmitter = new EventEmitter<void>();
-    this.refreshOldCodeQualityViewEmitter = new EventEmitter<void>();
     this.refreshCodeSecurityViewEmitter = new EventEmitter<void>();
     this.refreshCodeQualityViewEmitter = new EventEmitter<void>();
 
@@ -82,31 +76,15 @@ export class ViewManagerService implements IViewManagerService {
     }
 
     if (enabledFeatures.codeSecurityEnabled) {
-      this.refreshOldCodeSecurityView();
+      this.refreshCodeSecurityView();
     }
     if (enabledFeatures.codeQualityEnabled) {
-      this.refreshOldCodeQualityView();
+      this.refreshCodeQualityView();
     }
   }
 
   // Avoid refreshing context/views too often:
   // https://github.com/Microsoft/vscode/issues/68424
-  refreshOldCodeSecurityView = _.throttle(
-    (): void => this.refreshOldCodeSecurityViewEmitter.fire(),
-    REFRESH_VIEW_DEBOUNCE_INTERVAL,
-    {
-      leading: true,
-    },
-  );
-
-  refreshOldCodeQualityView = _.throttle(
-    (): void => this.refreshOldCodeQualityViewEmitter.fire(),
-    REFRESH_VIEW_DEBOUNCE_INTERVAL,
-    {
-      leading: true,
-    },
-  );
-
   refreshCodeSecurityView = _.throttle(
     (): void => this.refreshCodeSecurityViewEmitter.fire(),
     REFRESH_VIEW_DEBOUNCE_INTERVAL,

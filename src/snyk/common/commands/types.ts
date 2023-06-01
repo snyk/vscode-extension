@@ -1,30 +1,22 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
-import { CodeIssueCommandArg, CodeIssueCommandArgOld } from '../../snykCode/views/interfaces';
+import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue } from '../languageServer/types';
 
 export enum OpenCommandIssueType {
-  CodeIssueOld,
   CodeIssue,
   OssVulnerability,
   IacIssue,
 }
 
 export type OpenIssueCommandArg = {
-  issue: CodeIssueCommandArg | CodeIssueCommandArgOld | OssIssueCommandArg | IacIssueCommandArg;
+  issue: CodeIssueCommandArg | OssIssueCommandArg | IacIssueCommandArg;
   issueType: OpenCommandIssueType;
 };
 
 export type ReportFalsePositiveCommandArg = {
   suggestion: Readonly<completeFileSuggestionType>;
-};
-
-export const isCodeIssueOld = (
-  _issue: completeFileSuggestionType | Issue<CodeIssueData> | OssIssueCommandArg,
-  issueType: OpenCommandIssueType,
-): _issue is completeFileSuggestionType => {
-  return issueType === OpenCommandIssueType.CodeIssueOld;
 };
 
 export const isCodeIssue = (
