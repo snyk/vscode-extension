@@ -253,16 +253,6 @@
           "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.security.old",
-          "name": "Code Security",
-          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.quality.old",
-          "name": "Code Quality",
-          "when": "snyk:loggedIn && !snyk:lsCodePreview && snyk:featuresSelected && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
           "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
@@ -327,12 +317,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security.old' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality.old' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         }
       ],
