@@ -106,12 +106,11 @@ export class LanguageServer implements ILanguageServer {
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
-    // Start the client. This will also launch the server
-    this.client.start();
-    this.logger.info('Snyk Language Server started');
-
     try {
-      await this.client.onReady();
+      // Start the client. This will also launch the server
+      await this.client.start();
+      this.logger.info('Snyk Language Server started');
+
       this.registerListeners(this.client);
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');

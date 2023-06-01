@@ -1,7 +1,6 @@
-import { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
-import { CodeIssueData, Issue } from '../languageServer/types';
 import { SNYK_GET_LESSON_COMMAND } from '../constants/commands';
+import { CodeIssueData, Issue } from '../languageServer/types';
 import { IVSCodeCommands } from '../vscode/commands';
 
 export type Lesson = {
@@ -42,19 +41,6 @@ export class LearnService {
     let cwe = '';
     if (additionalData.cwe.length > 0) {
       cwe = additionalData.cwe[0];
-    }
-
-    return this.commandExecutor.executeCommand(SNYK_GET_LESSON_COMMAND, rule, ecosystem, cwe, '', 2);
-  }
-
-  async getCodeLessonOld(issue: completeFileSuggestionType): Promise<Lesson | undefined> {
-    const ruleSplit = issue.id.split('/');
-    const rule = ruleSplit[ruleSplit.length - 1];
-    const ecosystem = ruleSplit[0];
-
-    let cwe = '';
-    if (issue.cwe.length > 0) {
-      cwe = issue.cwe[0];
     }
 
     return this.commandExecutor.executeCommand(SNYK_GET_LESSON_COMMAND, rule, ecosystem, cwe, '', 2);

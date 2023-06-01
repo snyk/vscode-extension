@@ -34,13 +34,10 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
-      extension.snykCodeOld.analyzer.refreshDiagnostics();
-      // If two settings are changed simultaneously, only one will be applied, thus refresh all views
-      return extension.viewManagerService.refreshAllOldCodeAnalysisViews();
+      return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
     } else if (key === SEVERITY_FILTER_SETTING) {
-      extension.snykCodeOld.analyzer.refreshDiagnostics();
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
@@ -51,6 +48,8 @@ class ConfigurationWatcher implements IWatcher {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
     }
+
+    // from here on only for OSS and trusted folders
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
     const url: string | undefined = extensionConfig.get('url');

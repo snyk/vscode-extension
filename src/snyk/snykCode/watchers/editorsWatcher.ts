@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { IExtension } from '../../base/modules/interfaces';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { openedTextEditorType } from '../interfaces';
 
@@ -41,7 +40,7 @@ class SnykEditorsWatcher implements IWatcher {
     });
   }
 
-  private watchEditorCodeChanges(extension: IExtension) {
+  private watchEditorCodeChanges() {
     vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
       const currentEditorFileName = event.document.fileName;
       if (this.currentTextEditors[currentEditorFileName] && event.contentChanges && event.contentChanges.length) {
@@ -55,25 +54,21 @@ class SnykEditorsWatcher implements IWatcher {
           contentChanges: [...event.contentChanges],
           document: event.document,
         };
-        void extension.snykCodeOld.analyzer.updateReviewResultsPositions(
-          extension,
-          this.currentTextEditors[currentEditorFileName],
-        );
       }
     });
   }
 
-  private async prepareWatchers(extension: IExtension): Promise<void> {
+  private async prepareWatchers(): Promise<void> {
     for await (const editor of vscode.window.visibleTextEditors) {
       this.createEditorInfo(editor);
     }
     this.watchEditorsNavChange();
     this.watchClosingEditor();
-    this.watchEditorCodeChanges(extension);
+    this.watchEditorCodeChanges();
   }
 
-  public activate(extension: IExtension): void {
-    void this.prepareWatchers(extension);
+  public activate(): void {
+    void this.prepareWatchers();
   }
 }
 

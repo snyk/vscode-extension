@@ -22,8 +22,8 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SETTINGS_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
+  SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
@@ -34,9 +34,7 @@ import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
-  SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
-  SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_FEATURES,
@@ -59,7 +57,7 @@ import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { HoverAdapter } from './common/vscode/hover';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
-import { VSCodeLanguages, vsCodeLanguages } from './common/vscode/languages';
+import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
@@ -69,12 +67,9 @@ import { vsCodeWorkspace } from './common/vscode/workspace';
 import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
-import { SnykCodeServiceOld } from './snykCode/codeServiceOld';
 import { CodeSettings } from './snykCode/codeSettings';
 import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
-import { CodeQualityIssueTreeProviderOld } from './snykCode/views/qualityIssueTreeProviderOld';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
-import { CodeSecurityIssueTreeProviderOld } from './snykCode/views/securityIssueTreeProviderOld';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
@@ -154,23 +149,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
-    this.snykCodeOld = new SnykCodeServiceOld(
-      this.context,
-      configuration,
-      this.viewManagerService,
-      vsCodeWorkspace,
-      vsCodeWindow,
-      this.user,
-      this.falsePositiveApi,
-      Logger,
-      this.analytics,
-      new VSCodeLanguages(),
-      this.snykCodeErrorHandler,
-      new UriAdapter(),
-      this.markdownStringAdapter,
-      this.workspaceTrust,
-      this.learnService,
-    );
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
     this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
@@ -261,7 +239,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.openerService,
       this.authService,
       this.snykCode,
-      this.snykCodeOld,
       this.iacService,
       this.ossService,
       this.scanModeService,
@@ -273,19 +250,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
     );
     this.registerCommands(vscodeContext);
-
-    const codeSecurityIssueProviderOld = new CodeSecurityIssueTreeProviderOld(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCodeOld,
-        configuration,
-      ),
-      codeQualityIssueProviderOld = new CodeQualityIssueTreeProviderOld(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCodeOld,
-        configuration,
-      );
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
         this.viewManagerService,
@@ -328,8 +292,6 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, codeSecurityIssueProviderOld),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, codeQualityIssueProviderOld),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
     );
 
@@ -343,16 +305,9 @@ class SnykExtension extends SnykLib implements IExtension {
     const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossVulnerabilityProvider,
     });
-    const codeSecurityTreeOld = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY_OLD, {
-      treeDataProvider: codeSecurityIssueProviderOld,
-    });
-    const codeQualityTreeOld = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY_OLD, {
-      treeDataProvider: codeQualityIssueProviderOld,
-    });
+
     vscodeContext.subscriptions.push(
       ossTree.onDidChangeVisibility(e => this.onDidChangeOssTreeVisibility(e.visible)),
-      codeSecurityTreeOld,
-      codeQualityTreeOld,
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
       codeEnablementTree,
     );
@@ -390,7 +345,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
     this.snykCode.activateWebviewProviders();
-    this.snykCodeOld.activateWebviewProviders();
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
     this.iacService.activateWebviewProviders();
@@ -454,7 +408,6 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public async deactivate(): Promise<void> {
-    this.snykCodeOld.dispose();
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
     await this.analytics.flush();

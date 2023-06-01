@@ -4,8 +4,6 @@ import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { LearnService } from '../../../../snyk/common/services/learnService';
 import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue, IssueSeverity } from '../../../../snyk/common/languageServer/types';
-import { completeFileSuggestionType } from '../../../../snyk/snykCode/interfaces';
-import { AnalysisSeverity } from '@snyk/code-client';
 import { SNYK_GET_LESSON_COMMAND } from '../../../../snyk/common/constants/commands';
 
 suite('LearnService', () => {
@@ -59,31 +57,6 @@ suite('LearnService', () => {
     };
 
     await learnService.getCodeLesson(issue);
-    strictEqual(executeCommandFake.calledOnce, true);
-    strictEqual(executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2), true);
-  });
-  test('getCodeLessonOld executes correct command', async () => {
-    const learnService = new LearnService(commands);
-    const issue: completeFileSuggestionType = {
-      categories: [],
-      cols: [0, 0],
-      cwe: ['CWE-79', 'CWE-89'],
-      exampleCommitDescriptions: [],
-      exampleCommitFixes: [],
-      isSecurityType: false,
-      message: '',
-      repoDatasetSize: 0,
-      rows: [0, 0],
-      rule: '',
-      severity: AnalysisSeverity.critical,
-      tags: [],
-      text: '',
-      title: '',
-      uri: '',
-      id: 'javascript/nosqli',
-    };
-
-    await learnService.getCodeLessonOld(issue);
     strictEqual(executeCommandFake.calledOnce, true);
     strictEqual(executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2), true);
   });

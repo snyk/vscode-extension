@@ -117,7 +117,6 @@ export class Configuration implements IConfiguration {
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
-  private readonly devBaseApiHost = 'https://api.dev.snyk.io';
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -173,9 +172,7 @@ export class Configuration implements IConfiguration {
   }
 
   get authHost(): string {
-    if (this.isDevelopment) {
-      return 'https://dev.snyk.io';
-    } else if (this.customEndpoint) {
+    if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
       return `${url.protocol}//${url.host}`;
     }
@@ -184,9 +181,7 @@ export class Configuration implements IConfiguration {
   }
 
   get snykOssApiEndpoint(): string {
-    if (this.isDevelopment) {
-      return `${this.authHost}/api/v1`;
-    } else if (this.customEndpoint) {
+    if (this.customEndpoint) {
       return this.customEndpoint; // E.g. https://app.eu.snyk.io/api
     }
 
@@ -267,9 +262,6 @@ export class Configuration implements IConfiguration {
   }
 
   get baseApiUrl(): string {
-    if (this.isDevelopment) {
-      return this.devBaseApiHost;
-    }
     return this.defaultBaseApiHost;
   }
 

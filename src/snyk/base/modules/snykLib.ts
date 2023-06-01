@@ -18,7 +18,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     Logger.info('Starting full scan');
 
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
-    this.snykCodeErrorHandler.resetTransientErrors();
     this.loadingBadge.setLoadingBadge(false);
 
     const token = await configuration.getToken();
