@@ -181,7 +181,7 @@ export class CodeSuggestionWebviewProvider
             cols: [number, number];
             rows: [number, number];
           };
-          const vscodeUri = vscode.Uri.parse(uri);
+          const vscodeUri = vscode.Uri.file(uri);
           const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
             uri: vscodeUri,
