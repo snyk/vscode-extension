@@ -1,0 +1,5 @@
+# add false positives here
+
+167c8da2a48acd42b43ed52f70bab864c7de5d7b:src/test/unit/base/services/authenticationService.test.ts:generic-api-key:203
+167c8da2a48acd42b43ed52f70bab864c7de5d7b:src/test/unit/base/services/authenticationService.test.ts:generic-api-key:217
+167c8da2a48acd42b43ed52f70bab864c7de5d7b:src/test/unit/base/services/authenticationService.test.ts:generic-api-key:225
