@@ -45,7 +45,7 @@ export class CodeSettings implements ICodeSettings {
       if (!settings) {
         return false;
       }
-      codeEnabled = settings.sastEnabled && !settings.localCodeEngine.enabled;
+      codeEnabled = settings.sastEnabled;
       localCodeEngineEnabled = settings.localCodeEngine.enabled;
     } catch (e) {
       return false;
