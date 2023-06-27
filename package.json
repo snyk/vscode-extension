@@ -265,17 +265,12 @@
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
           "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.localEngine",
-          "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:codeEnabled && snyk:codeLocalEngineEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
@@ -302,10 +297,6 @@
       {
         "view": "snyk.views.analysis.code.enablement",
         "contents": "Thanks for connecting with Snyk. ✅\n 👉 You are almost set 🤗.\n[Enable Snyk Code and start analysing](command:snyk.enableCode 'Upload code to Snyk')\nIt looks like your organization's configuration is disabled, that's why you are seeing this message. You can easily enable it by pressing the above button and switching it on.\nWe apologize for the inconvenience and please [contact us](https://snyk.io/contact-us/?utm_source=vsc) if you have any other questions or concerns!"
-      },
-      {
-        "view": "snyk.views.analysis.code.localEngine",
-        "contents": "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension."
       },
       {
         "view": "snyk.views.welcome",
