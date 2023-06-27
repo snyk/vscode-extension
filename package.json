@@ -255,7 +255,7 @@
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.configuration",
@@ -337,7 +337,7 @@
         },
         {
           "command": "snyk.dcignore",
-          "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && !snyk:codeLocalEngineEnabled && snyk:workspaceFound"
+          "when": "!snyk:error && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound"
         }
       ]
     },

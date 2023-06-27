@@ -62,20 +62,4 @@ suite('Snyk Code Settings', () => {
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, true), true);
     strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, false), true);
   });
-
-  test('Code is disabled when LCE is enabled', async () => {
-    sinon.stub(CodeSettings.prototype, 'getSastSettings').resolves({
-      sastEnabled: true,
-      localCodeEngine: {
-        enabled: true,
-      },
-      reportFalsePositivesEnabled: true,
-    });
-
-    const codeEnabled = await settings.updateIsCodeEnabled();
-
-    strictEqual(codeEnabled, false);
-    strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_ENABLED, false), true);
-    strictEqual(setContextFake.calledWith(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, true), true);
-  });
 });
