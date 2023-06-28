@@ -9,12 +9,20 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "runtimeArgs": ["--preserve-symlinks"],
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "runtimeArgs": [
+        "--preserve-symlinks"
+      ],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
-        "SNYK_VSCE_DEVELOPMENT": "1"
+        "SNYK_VSCE_DEVELOPMENT": "1",
+        "SNYK_API_TOKEN": "",
+        "SNYK_TEST_TOKEN": ""
       }
     },
     {
@@ -27,7 +35,9 @@
         "--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
         "${workspaceFolder}/src/test/integration/mocked_data"
       ],
-      "outFiles": ["${workspaceFolder}/out/test/integration/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/test/integration/**/*.js"
+      ],
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
         "SNYK_VSCE_DEVELOPMENT": "1"
@@ -39,14 +49,25 @@
       "request": "launch",
       "name": "Extension Unit Tests",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "args": ["--ui", "tdd", "--timeout", "999999", "--colors", "${workspaceFolder}/out/test/unit/**/*.test.js"],
+      "args": [
+        "--ui",
+        "tdd",
+        "--timeout",
+        "999999",
+        "--colors",
+        "${workspaceFolder}/out/test/unit/**/*.test.js"
+      ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**/*.js"],
+      "skipFiles": [
+        "<node_internals>/**/*.js"
+      ],
       "env": {
         "SNYK_VSCE_DEVELOPMENT": "1"
       },
-      "outFiles": ["${workspaceFolder}/out/test/unit/**/*.js"]
+      "outFiles": [
+        "${workspaceFolder}/out/test/unit/**/*.js"
+      ]
     }
   ]
 }

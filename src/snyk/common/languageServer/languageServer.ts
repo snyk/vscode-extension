@@ -81,9 +81,9 @@ export class LanguageServer implements ILanguageServer {
 
     const serverOptions: ServerOptions = {
       command: lsBinaryPath,
-      args: ['-l', 'info'],
+      args: ['-l', 'debug'],
       options: {
-        env: processEnv,
+        env: { ...processEnv, DEEPROXY_API_URL: 'http://10.40.250.160:11981' },
       },
     };
 

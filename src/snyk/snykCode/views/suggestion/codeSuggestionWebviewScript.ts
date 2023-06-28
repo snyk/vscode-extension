@@ -112,6 +112,9 @@
       code.innerHTML = l.line;
       line.appendChild(code);
     }
+    const explanation = document.getElementById('example-explanation')!;
+    explanation.textContent = suggestion.exampleCommitFixes[exampleCount].explanation;
+    console.log(suggestion.exampleCommitFixes[exampleCount].explanation);
   }
   function getCurrentSeverity() {
     const stringMap = {

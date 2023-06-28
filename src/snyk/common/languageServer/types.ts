@@ -51,6 +51,8 @@ export type CodeIssueData = {
 };
 
 export type ExampleCommitFix = {
+  id: string;
+  explanation: string;
   commitURL: string;
   lines: CommitChangeLine[];
 };
