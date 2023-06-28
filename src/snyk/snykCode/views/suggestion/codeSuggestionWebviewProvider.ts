@@ -172,6 +172,15 @@ export class CodeSuggestionWebviewProvider
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
           break;
         }
+        case 'fixAsInExample': {
+          const { exampleIndex, autofixCodeActionId } = args as {
+            exampleIndex: number;
+            autofixCodeActionId: string;
+          };
+
+          // todo: execute command to fix like in a selected example
+          await vscode.commands.executeCommand('snyk.code.fix', exampleIndex, autofixCodeActionId);
+        }
         case 'ignoreIssue': {
           const { lineOnly, message, rule, uri, cols, rows } = args as {
             lineOnly: boolean;
@@ -306,6 +315,9 @@ export class CodeSuggestionWebviewProvider
             </div>
           </div>
           <div id="example"></div><br>
+          <div class="actions row">
+            <button id="fix-as-in-example" class="button" style="margin-left: auto;">Fix like this</button>
+          </div>
           <div id="example-explanation" class="row between"></div>
         </section>
         <section class="delimiter-top">

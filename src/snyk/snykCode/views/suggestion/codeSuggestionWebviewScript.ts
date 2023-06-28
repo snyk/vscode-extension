@@ -67,6 +67,15 @@
       },
     });
   }
+  function fixAsInExample(exampleIndex: number) {
+    sendMessage({
+      type: 'fixAsInExample',
+      args: {
+        exampleIndex,
+        autofixCodeActionId: suggestion.autofixCodeActionId,
+      },
+    });
+  }
   function getSuggestionPosition(position?: { file: string; rows: any; cols: any }) {
     return {
       uri: position?.file ?? suggestion.uri,
@@ -255,7 +264,8 @@
       | { url: any }
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
-      | { suggestion: any };
+      | { suggestion: any }
+      | { exampleIndex: number; autofixCodeActionId: string };
   }) {
     vscode.postMessage(message);
   }
@@ -272,6 +282,9 @@
     ignoreIssue(false);
   });
   document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
+  document.getElementById('fix-as-in-example')!.addEventListener('click', () => {
+    fixAsInExample(exampleCount);
+  });
 
   // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {

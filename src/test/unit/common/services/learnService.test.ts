@@ -1,10 +1,10 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
-import { LearnService } from '../../../../snyk/common/services/learnService';
-import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
-import { CodeIssueData, Issue, IssueSeverity } from '../../../../snyk/common/languageServer/types';
 import { SNYK_GET_LESSON_COMMAND } from '../../../../snyk/common/constants/commands';
+import { CodeIssueData, Issue, IssueSeverity } from '../../../../snyk/common/languageServer/types';
+import { LearnService } from '../../../../snyk/common/services/learnService';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 
 suite('LearnService', () => {
   let commands: IVSCodeCommands;
@@ -50,6 +50,7 @@ suite('LearnService', () => {
         cols: [1, 2],
         rows: [1, 2],
         isSecurityType: true,
+        autofixCodeActionId: 'not used',
       },
       title: 'not used',
       severity: IssueSeverity.Critical,

@@ -48,6 +48,7 @@ export type CodeIssueData = {
   cols: Point;
   rows: Point;
   isSecurityType: boolean;
+  autofixCodeActionId: string;
 };
 
 export type ExampleCommitFix = {
