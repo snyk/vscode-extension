@@ -92,8 +92,7 @@
   margin: 0 auto 10px;
 }
 
-#severity-text {
-}
+#severity-text {}
 
 .vscode-dark .light-only {
   display: none;
@@ -172,7 +171,7 @@
   background-color: #ffeef0;
 }
 
-.example-line.removed > code {
+.example-line.removed>code {
   font-weight: 600;
 }
 
@@ -180,11 +179,11 @@
   background-color: #e6ffed;
 }
 
-.example-line.added > code {
+.example-line.added>code {
   font-weight: 600;
 }
 
-.example-line > code {
+.example-line>code {
   padding-left: 30px;
   white-space: pre-wrap;
   color: #231f20;
@@ -206,16 +205,16 @@
   color: #fff;
 }
 
-.vscode-dark .example-line > code {
+.vscode-dark .example-line>code {
   color: $editor-font-color;
   font-weight: 400;
 }
 
-.vscode-dark .added > code {
+.vscode-dark .added>code {
   color: #fff;
 }
 
-.vscode-dark .removed > code {
+.vscode-dark .removed>code {
   color: #fff;
 }
 
@@ -240,5 +239,9 @@
 }
 
 .report-fp-actions {
+  margin-left: auto;
+}
+
+#fix-as-in-example {
   margin-left: auto;
 }

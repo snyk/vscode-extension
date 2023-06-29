@@ -173,8 +173,8 @@ export class CodeSuggestionWebviewProvider
           break;
         }
         case 'fixAsInExample': {
-          const { exampleIndex, autofixCodeActionId, path, range } = args as {
-            exampleIndex: number;
+          const { exampleId, autofixCodeActionId, path, range } = args as {
+            exampleId: number;
             autofixCodeActionId: string;
             path: string;
             range: {
@@ -190,7 +190,7 @@ export class CodeSuggestionWebviewProvider
           };
 
           // todo: execute command to fix like in a selected example
-          await vscode.commands.executeCommand('snyk.code.fix', autofixCodeActionId, path, range, exampleIndex);
+          await vscode.commands.executeCommand('snyk.code.fix', autofixCodeActionId, path, range, exampleId);
         }
         case 'ignoreIssue': {
           const { lineOnly, message, rule, uri, cols, rows } = args as {
@@ -327,7 +327,7 @@ export class CodeSuggestionWebviewProvider
           </div>
           <div id="example"></div><br>
           <div class="actions row">
-            <button id="fix-as-in-example" class="button" style="margin-left: auto;">Fix like this</button>
+            <button id="fix-as-in-example" class="button">Fix like this</button>
           </div>
           <div id="example-explanation" class="row between"></div>
         </section>

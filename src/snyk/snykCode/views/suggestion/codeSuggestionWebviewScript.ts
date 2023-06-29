@@ -67,11 +67,11 @@
       },
     });
   }
-  function fixAsInExample(exampleIndex: number) {
+  function fixAsInExample(exampleId: string) {
     sendMessage({
       type: 'fixAsInExample',
       args: {
-        exampleIndex,
+        exampleId,
         autofixCodeActionId: suggestion.autofixCodeActionId,
         path: suggestion.uri,
         range: {
@@ -276,7 +276,7 @@
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
       | { suggestion: any }
-      | { exampleIndex: number; path: string; autofixCodeActionId: string; range: any };
+      | { exampleId: string; path: string; autofixCodeActionId: string; range: any };
   }) {
     vscode.postMessage(message);
   }
@@ -294,7 +294,7 @@
   });
   document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
   document.getElementById('fix-as-in-example')!.addEventListener('click', () => {
-    fixAsInExample(exampleCount);
+    fixAsInExample(suggestion.exampleCommitFixes[exampleCount].id);
   });
 
   // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
