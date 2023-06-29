@@ -173,13 +173,24 @@ export class CodeSuggestionWebviewProvider
           break;
         }
         case 'fixAsInExample': {
-          const { exampleIndex, autofixCodeActionId } = args as {
+          const { exampleIndex, autofixCodeActionId, path, range } = args as {
             exampleIndex: number;
             autofixCodeActionId: string;
+            path: string;
+            range: {
+              start: {
+                line: number;
+                character: number;
+              };
+              end: {
+                line: number;
+                character: number;
+              };
+            };
           };
 
           // todo: execute command to fix like in a selected example
-          await vscode.commands.executeCommand('snyk.code.fix', exampleIndex, autofixCodeActionId);
+          await vscode.commands.executeCommand('snyk.code.fix', autofixCodeActionId, path, range, exampleIndex);
         }
         case 'ignoreIssue': {
           const { lineOnly, message, rule, uri, cols, rows } = args as {

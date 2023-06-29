@@ -73,6 +73,17 @@
       args: {
         exampleIndex,
         autofixCodeActionId: suggestion.autofixCodeActionId,
+        path: suggestion.uri,
+        range: {
+          Start: {
+            Line: suggestion.rows[0],
+            Character: suggestion.cols[0],
+          },
+          End: {
+            Line: suggestion.rows[1],
+            Character: suggestion.cols[1],
+          },
+        },
       },
     });
   }
@@ -265,7 +276,7 @@
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
       | { suggestion: any }
-      | { exampleIndex: number; autofixCodeActionId: string };
+      | { exampleIndex: number; path: string; autofixCodeActionId: string; range: any };
   }) {
     vscode.postMessage(message);
   }
