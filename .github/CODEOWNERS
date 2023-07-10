@@ -1,3 +1,5 @@
 * @snyk/hammerhead
 src/snyk/common/services/learnService.ts @snyk/owl
 src/test/unit/common/services/learnService.test.ts @snyk/owl
+src/snyk/snykCode/codeSettings.ts @snyk/nebula
+src/test/unit/snykCode/codeSettings.test.ts @snyk/nebula
