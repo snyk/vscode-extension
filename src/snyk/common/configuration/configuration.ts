@@ -146,7 +146,9 @@ export class Configuration implements IConfiguration {
   }
 
   get snykCodeBaseURL(): string {
-    if (this.customEndpoint) {
+    if (this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL) {
+      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL;
+    } else if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
 
       if (Configuration.isSingleTenant(url)) {

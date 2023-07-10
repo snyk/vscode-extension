@@ -61,13 +61,14 @@ suite('Configuration', () => {
   });
 
   test('Snyk Code: development base url is returned when in development', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
     const configuration = new Configuration(
       {
         SNYK_VSCE_DEVELOPMENT: '1',
       },
-      workspaceStub,
+      workspace,
     );
-    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.dev.snyk.io');
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
   });
 
   test('Snyk Code: base url respects custom endpoint configuration', () => {
