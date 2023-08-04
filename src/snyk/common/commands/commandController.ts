@@ -57,8 +57,8 @@ export class CommandController {
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
-    await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
     await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
+    await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
   }
 
   async setToken(): Promise<void> {
