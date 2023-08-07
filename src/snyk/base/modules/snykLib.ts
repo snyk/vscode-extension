@@ -14,9 +14,6 @@ import { ISnykLib } from './interfaces';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(manual = false): Promise<void> {
-    // Only starts OSS scan. Code & IaC scans are managed by LS
-    Logger.info('Starting full scan');
-
     await this.contextService.setContext(SNYK_CONTEXT.ERROR, false);
     this.loadingBadge.setLoadingBadge(false);
 
@@ -25,6 +22,9 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       if (!token) {
         return;
       }
+
+      // Only starts OSS scan. Code & IaC scans are managed by LS
+      Logger.info('Starting full scan');
 
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);

@@ -398,13 +398,13 @@ class SnykExtension extends SnykLib implements IExtension {
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
 
-    // Actually start analysis
-    this.runScan();
-
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
     await this.codeSettings.updateIsCodeEnabled();
+
+    // Actually start analysis
+    this.runScan();
   }
 
   public async deactivate(): Promise<void> {

@@ -146,8 +146,8 @@ export class Configuration implements IConfiguration {
   }
 
   get snykCodeBaseURL(): string {
-    if (this.isDevelopment) {
-      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL ?? 'https://deeproxy.dev.snyk.io';
+    if (this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL) {
+      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL;
     } else if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
 
