@@ -16,9 +16,26 @@
     title: string;
   };
 
-  let lesson: Lesson | null;
+  type Suggestion = {
+    isSecurityType: boolean;
+    severity: string;
+    message: string;
+    leadURL?: string;
+    uri?: string;
+    rows?: any;
+    cols?: any;
+    id?: any;
+    rule?: string;
+    exampleCommitFixes?: {
+      commitURL: string;
+      lines: { lineChange: string; line: string }[];
+    }[];
+    markers?: { msg: any; pos: any[] }[];
+    repoDatasetSize?: any;
+  };
 
   const vscode = acquireVsCodeApi();
+
   function navigateToUrl(url: string) {
     sendMessage({
       type: 'openBrowser',
@@ -27,19 +44,27 @@
   }
 
   let exampleCount = 0;
-  let suggestion = {} as any;
+
+  // Try to restore the previous state
+  let lesson: Lesson | null = vscode.getState()?.lesson || null;
+  fillLearnLink();
+  let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
+  showCurrentSuggestion();
 
   function navigateToLeadURL() {
-    if (!suggestion.leadURL) return;
+    if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
   }
   function navigateToIssue(_e: any, range: any) {
+    if (!suggestion) return;
     sendMessage({
       type: 'openLocal',
-      args: getSuggestionPosition(range),
+      args: getSuggestionPosition(suggestion, range),
     });
   }
   function navigateToCurrentExample() {
+    if (!suggestion?.exampleCommitFixes) return;
+
     const url = suggestion.exampleCommitFixes[exampleCount].commitURL;
     sendMessage({
       type: 'openBrowser',
@@ -47,10 +72,12 @@
     });
   }
   function ignoreIssue(lineOnly: boolean) {
+    if (!suggestion) return;
+
     sendMessage({
       type: 'ignoreIssue',
       args: {
-        ...getSuggestionPosition(),
+        ...getSuggestionPosition(suggestion),
         message: suggestion.message,
         rule: suggestion.rule,
         id: suggestion.id,
@@ -67,12 +94,12 @@
       },
     });
   }
-  function getSuggestionPosition(position?: { file: string; rows: any; cols: any }) {
+  function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
-      uri: position?.file ?? suggestion.uri,
-      rows: position ? position.rows : suggestion.rows,
-      cols: position ? position.cols : suggestion.cols,
-      suggestionUri: suggestion.uri,
+      uri: position?.file ?? suggestionParam.uri,
+      rows: position ? position.rows : suggestionParam.rows,
+      cols: position ? position.cols : suggestionParam.cols,
+      suggestionUri: suggestionParam.uri,
     };
   }
   function previousExample() {
@@ -88,8 +115,7 @@
   }
   function showCurrentExample() {
     if (
-      !suggestion ||
-      !suggestion.exampleCommitFixes.length ||
+      !suggestion?.exampleCommitFixes?.length ||
       exampleCount < 0 ||
       exampleCount >= suggestion.exampleCommitFixes.length
     )
@@ -141,6 +167,10 @@
   }
 
   function showCurrentSuggestion() {
+    if (!suggestion) {
+      return;
+    }
+
     exampleCount = 0;
     const currentSeverity = getCurrentSeverity();
     const severity = document.getElementById('severity')!;
@@ -228,13 +258,13 @@
     const exampleTop = document.getElementById('example-top')!;
     const example = document.getElementById('example')!;
     const noExamples = document.getElementById('info-no-examples')!;
-    if (suggestion.exampleCommitFixes.length) {
+    if (suggestion?.exampleCommitFixes?.length) {
       exampleTop.className = 'row between';
       example.className = '';
       const exNum = document.getElementById('example-number')!;
-      exNum.innerHTML = suggestion.exampleCommitFixes.length;
+      exNum.innerHTML = suggestion.exampleCommitFixes.length.toString();
       const exNum2 = document.getElementById('example-number2')!;
-      exNum2.innerHTML = suggestion.exampleCommitFixes.length;
+      exNum2.innerHTML = suggestion.exampleCommitFixes.length.toString();
       noExamples.className = 'hidden';
       showCurrentExample();
     } else {
