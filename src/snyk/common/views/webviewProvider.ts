@@ -64,11 +64,11 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
     }
   }
 
-  protected async checkVisibility(): Promise<void> {
+  protected checkVisibility(): void {
     if (this.panel && this.panel.visible) {
       try {
-        await this.panel.webview.postMessage({ type: 'get' });
-        await this.panel.webview.postMessage({ type: 'getLesson' });
+        void this.panel.webview.postMessage({ type: 'get' });
+        void this.panel.webview.postMessage({ type: 'getLesson' });
       } catch (e) {
         if (!this.panel) return; // can happen due to asynchronicity, ignore such cases
         Logger.error(`Failed to restore the '${this.panel.title}' webview.`);

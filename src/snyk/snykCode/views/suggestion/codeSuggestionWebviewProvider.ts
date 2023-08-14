@@ -10,6 +10,7 @@ import { ErrorHandler } from '../../../common/error/errorHandler';
 import { CodeIssueData, ExampleCommitFix, Issue, Marker, Point } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
+import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -22,7 +23,6 @@ import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
-import { LearnService } from '../../../common/services/learnService';
 
 type Suggestion = {
   id: string;
@@ -114,7 +114,7 @@ export class CodeSuggestionWebviewProvider
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
 
-      await this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
+      void this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
       void this.postLearnLessonMessage(issue);
 
       this.issue = issue;
