@@ -16,22 +16,41 @@
     title: string;
   };
 
+  type ExampleCommitFix = {
+    commitURL: string;
+    lines: CommitChangeLine[];
+  };
+  type CommitChangeLine = {
+    line: string;
+    lineNumber: number;
+    lineChange: 'removed' | 'added' | 'none';
+  };
+  type Marker = {
+    msg: Point;
+    pos: MarkerPosition[];
+  };
+  type MarkerPosition = {
+    cols: Point;
+    rows: Point;
+    file: string;
+  };
+  type Point = [number, number];
   type Suggestion = {
-    isSecurityType: boolean;
-    severity: string;
+    id: string;
     message: string;
+    severity: string;
     leadURL?: string;
-    uri?: string;
-    rows?: any;
-    cols?: any;
-    id?: any;
-    rule?: string;
-    exampleCommitFixes?: {
-      commitURL: string;
-      lines: { lineChange: string; line: string }[];
-    }[];
-    markers?: { msg: any; pos: any[] }[];
-    repoDatasetSize?: any;
+    rule: string;
+    repoDatasetSize: number;
+    exampleCommitFixes: ExampleCommitFix[];
+    cwe: string[];
+    title: string;
+    text: string;
+    isSecurityType: boolean;
+    uri: string;
+    markers?: Marker[];
+    cols: Point;
+    rows: Point;
   };
 
   const vscode = acquireVsCodeApi();
@@ -215,7 +234,7 @@
         };
         title.appendChild(mark);
         const markMsg = document.createElement('span');
-        markMsg.innerHTML = suggestion.message.substring(m.msg[0], (m.msg[1] as number) + 1);
+        markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
         mark.appendChild(markMsg);
         let markLineText = ' [';
         let first = true;
@@ -229,7 +248,7 @@
         markLine.innerHTML = markLineText;
         markLine.className = 'mark-position';
         mark.appendChild(markLine);
-        i = (m.msg[1] as number) + 1;
+        i = m.msg[1] + 1;
       }
       const postText = suggestion.message.substring(i);
       const postMark = document.createTextNode(postText);
@@ -249,7 +268,7 @@
     const dataset = document.getElementById('dataset-number')!;
     const infoTop = document.getElementById('info-top')!;
     if (suggestion.repoDatasetSize) {
-      dataset.innerHTML = suggestion.repoDatasetSize;
+      dataset.innerHTML = suggestion.repoDatasetSize.toString();
       infoTop.className = 'font-light';
     } else {
       infoTop.className = 'font-light hidden';
