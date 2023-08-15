@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as lsc from 'vscode-languageclient/node';
+import * as lst from 'vscode-languageserver-textdocument';
 
 // VS Code core type mappings
 export type Disposable = vscode.Disposable;
@@ -57,3 +58,6 @@ export type ConfigurationParams = lsc.ConfigurationParams;
 export type CancellationToken = lsc.CancellationToken;
 export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.HandlerSignature;
 export type ResponseError<D = void> = lsc.ResponseError<D>;
+export type InlineValueContext = lsc.InlineValueContext;
+export type InlineValueText = lsc.InlineValueText;
+export type LSPTextDocument = lst.TextDocument;

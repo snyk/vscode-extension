@@ -59,6 +59,7 @@ import { HoverAdapter } from './common/vscode/hover';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
+import { TextDocumentAdapter } from './common/vscode/textdocument';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
 import { UriAdapter } from './common/vscode/uri';
@@ -74,10 +75,8 @@ import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeS
 import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
-import { NpmTestApi } from './snykOss/api/npmTestApi';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
-import { NpmModuleInfoFetchService } from './snykOss/services/vulnerabilityCount/npmModuleInfoFetchService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
@@ -361,16 +360,16 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.initDependencyDownload();
 
-    const npmModuleInfoFetchService = new NpmModuleInfoFetchService(
-      configuration,
-      Logger,
-      new NpmTestApi(Logger, vsCodeWorkspace),
-    );
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
       vsCodeWindow,
       vsCodeLanguages,
-      new ModuleVulnerabilityCountProvider(this.ossService, npmModuleInfoFetchService),
+      new ModuleVulnerabilityCountProvider(
+        this.ossService,
+        languageClientAdapter,
+        new UriAdapter(),
+        new TextDocumentAdapter(),
+      ),
       this.ossService,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
