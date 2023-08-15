@@ -16,9 +16,45 @@
     title: string;
   };
 
-  let lesson: Lesson | null;
+  type ExampleCommitFix = {
+    commitURL: string;
+    lines: CommitChangeLine[];
+  };
+  type CommitChangeLine = {
+    line: string;
+    lineNumber: number;
+    lineChange: 'removed' | 'added' | 'none';
+  };
+  type Marker = {
+    msg: Point;
+    pos: MarkerPosition[];
+  };
+  type MarkerPosition = {
+    cols: Point;
+    rows: Point;
+    file: string;
+  };
+  type Point = [number, number];
+  type Suggestion = {
+    id: string;
+    message: string;
+    severity: string;
+    leadURL?: string;
+    rule: string;
+    repoDatasetSize: number;
+    exampleCommitFixes: ExampleCommitFix[];
+    cwe: string[];
+    title: string;
+    text: string;
+    isSecurityType: boolean;
+    uri: string;
+    markers?: Marker[];
+    cols: Point;
+    rows: Point;
+  };
 
   const vscode = acquireVsCodeApi();
+
   function navigateToUrl(url: string) {
     sendMessage({
       type: 'openBrowser',
@@ -27,19 +63,27 @@
   }
 
   let exampleCount = 0;
-  let suggestion = {} as any;
+
+  // Try to restore the previous state
+  let lesson: Lesson | null = vscode.getState()?.lesson || null;
+  fillLearnLink();
+  let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
+  showCurrentSuggestion();
 
   function navigateToLeadURL() {
-    if (!suggestion.leadURL) return;
+    if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
   }
   function navigateToIssue(_e: any, range: any) {
+    if (!suggestion) return;
     sendMessage({
       type: 'openLocal',
-      args: getSuggestionPosition(range),
+      args: getSuggestionPosition(suggestion, range),
     });
   }
   function navigateToCurrentExample() {
+    if (!suggestion?.exampleCommitFixes) return;
+
     const url = suggestion.exampleCommitFixes[exampleCount].commitURL;
     sendMessage({
       type: 'openBrowser',
@@ -47,10 +91,12 @@
     });
   }
   function ignoreIssue(lineOnly: boolean) {
+    if (!suggestion) return;
+
     sendMessage({
       type: 'ignoreIssue',
       args: {
-        ...getSuggestionPosition(),
+        ...getSuggestionPosition(suggestion),
         message: suggestion.message,
         rule: suggestion.rule,
         id: suggestion.id,
@@ -67,12 +113,12 @@
       },
     });
   }
-  function getSuggestionPosition(position?: { file: string; rows: any; cols: any }) {
+  function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
-      uri: position?.file ?? suggestion.uri,
-      rows: position ? position.rows : suggestion.rows,
-      cols: position ? position.cols : suggestion.cols,
-      suggestionUri: suggestion.uri,
+      uri: position?.file ?? suggestionParam.uri,
+      rows: position ? position.rows : suggestionParam.rows,
+      cols: position ? position.cols : suggestionParam.cols,
+      suggestionUri: suggestionParam.uri,
     };
   }
   function previousExample() {
@@ -88,8 +134,7 @@
   }
   function showCurrentExample() {
     if (
-      !suggestion ||
-      !suggestion.exampleCommitFixes.length ||
+      !suggestion?.exampleCommitFixes?.length ||
       exampleCount < 0 ||
       exampleCount >= suggestion.exampleCommitFixes.length
     )
@@ -141,6 +186,10 @@
   }
 
   function showCurrentSuggestion() {
+    if (!suggestion) {
+      return;
+    }
+
     exampleCount = 0;
     const currentSeverity = getCurrentSeverity();
     const severity = document.getElementById('severity')!;
@@ -185,7 +234,7 @@
         };
         title.appendChild(mark);
         const markMsg = document.createElement('span');
-        markMsg.innerHTML = suggestion.message.substring(m.msg[0], (m.msg[1] as number) + 1);
+        markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
         mark.appendChild(markMsg);
         let markLineText = ' [';
         let first = true;
@@ -199,7 +248,7 @@
         markLine.innerHTML = markLineText;
         markLine.className = 'mark-position';
         mark.appendChild(markLine);
-        i = (m.msg[1] as number) + 1;
+        i = m.msg[1] + 1;
       }
       const postText = suggestion.message.substring(i);
       const postMark = document.createTextNode(postText);
@@ -219,7 +268,7 @@
     const dataset = document.getElementById('dataset-number')!;
     const infoTop = document.getElementById('info-top')!;
     if (suggestion.repoDatasetSize) {
-      dataset.innerHTML = suggestion.repoDatasetSize;
+      dataset.innerHTML = suggestion.repoDatasetSize.toString();
       infoTop.className = 'font-light';
     } else {
       infoTop.className = 'font-light hidden';
@@ -228,13 +277,13 @@
     const exampleTop = document.getElementById('example-top')!;
     const example = document.getElementById('example')!;
     const noExamples = document.getElementById('info-no-examples')!;
-    if (suggestion.exampleCommitFixes.length) {
+    if (suggestion?.exampleCommitFixes?.length) {
       exampleTop.className = 'row between';
       example.className = '';
       const exNum = document.getElementById('example-number')!;
-      exNum.innerHTML = suggestion.exampleCommitFixes.length;
+      exNum.innerHTML = suggestion.exampleCommitFixes.length.toString();
       const exNum2 = document.getElementById('example-number2')!;
-      exNum2.innerHTML = suggestion.exampleCommitFixes.length;
+      exNum2.innerHTML = suggestion.exampleCommitFixes.length.toString();
       noExamples.className = 'hidden';
       showCurrentExample();
     } else {
