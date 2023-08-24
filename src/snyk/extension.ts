@@ -252,12 +252,12 @@ class SnykExtension extends SnykLib implements IExtension {
     this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-    ),
+        this.viewManagerService,
+        this.contextService,
+        this.snykCode,
+        configuration,
+        vsCodeLanguages,
+      ),
       codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
         this.viewManagerService,
         this.contextService,
