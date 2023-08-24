@@ -23,7 +23,7 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
-  YES_WELCOME_NOTIFICATION_SETTING,
+  YES_WELCOME_NOTIFICATION_SETTING
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -122,7 +122,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
 
   getInsecure(): boolean {
     const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
