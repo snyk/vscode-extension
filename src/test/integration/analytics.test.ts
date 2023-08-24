@@ -1,9 +1,9 @@
 import { strictEqual } from 'assert';
-import { configuration } from '../../snyk/common/configuration/instance';
-import * as vscode from 'vscode';
-import { VSCODE_VIEW_CONTAINER_COMMAND } from '../../snyk/common/constants/commands';
 import * as sinon from 'sinon';
+import * as vscode from 'vscode';
 import itly from '../../ampli';
+import { configuration } from '../../snyk/common/configuration/instance';
+import { VSCODE_VIEW_CONTAINER_COMMAND } from '../../snyk/common/constants/commands';
 
 suite('Analytics', () => {
   let welcomeIsViewed: sinon.SinonSpy;
@@ -29,6 +29,14 @@ suite('Analytics', () => {
   test('"Welcome Is Viewed" not tracked if telemetry is off', async () => {
     await configuration.setShouldReportEvents(false);
 
+    await vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
+    await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
+
+    strictEqual(welcomeIsViewed.notCalled, true);
+  });
+
+  test('"Welcome Is Viewed" not tracked if using fedramp endpoint', async () => {
+    await configuration.setEndpoint('https://snyk.fedramp.gov');
     await vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
     await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
 

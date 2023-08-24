@@ -111,6 +111,8 @@ export interface IConfiguration {
   getTrustedFolders(): string[];
 
   setTrustedFolders(trustedFolders: string[]): Promise<void>;
+
+  setEndpoint(endpoint: string): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -180,6 +182,15 @@ export class Configuration implements IConfiguration {
     }
 
     return this.defaultAuthHost;
+  }
+
+  async setEndpoint(endpoint: string): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_ENDPOINT),
+      endpoint.toString(),
+      true,
+    );
   }
 
   get isFedramp(): boolean {
