@@ -70,7 +70,7 @@ export class Iteratively implements IAnalytics {
     private isFedramp: boolean,
     private isDevelopment: boolean,
     private snykConfiguration?: SnykConfiguration,
-  ) { }
+  ) {}
 
   setShouldReportEvents(shouldReportEvents: boolean): void {
     this.shouldReportEvents = shouldReportEvents;
