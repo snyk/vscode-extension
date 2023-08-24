@@ -23,7 +23,7 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
-  YES_WELCOME_NOTIFICATION_SETTING,
+  YES_WELCOME_NOTIFICATION_SETTING
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -98,6 +98,8 @@ export interface IConfiguration {
 
   getInsecure(): boolean;
 
+  isFedramp: boolean;
+
   severityFilter: SeverityFilter;
 
   scanningMode: string | undefined;
@@ -118,7 +120,7 @@ export class Configuration implements IConfiguration {
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
 
   getInsecure(): boolean {
     const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
@@ -178,6 +180,20 @@ export class Configuration implements IConfiguration {
     }
 
     return this.defaultAuthHost;
+  }
+
+  get isFedramp(): boolean {
+    if (!this.customEndpoint) return false;
+
+    const endpoint = new URL(this.customEndpoint);
+
+    // hostname validation
+    const hostnameParts = endpoint.hostname.split('.');
+    if (hostnameParts.length < 3) return false;
+
+    const isFedrampInstance = hostnameParts[1] === 'fedramp';
+    const isFedrampDomain = hostnameParts[2] === 'snykgov' && hostnameParts[3] === 'io';
+    return isFedrampDomain && isFedrampInstance;
   }
 
   get snykOssApiEndpoint(): string {

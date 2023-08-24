@@ -14,7 +14,7 @@ suite('ErrorReporter', () => {
   let configuration: IConfiguration;
 
   setup(async () => {
-    configuration = {} as IConfiguration;
+    configuration = { isFedramp: false } as IConfiguration;
     await ErrorReporter.init(configuration, snykConfig, '', envMock, new LoggerMock(), sentryTransport);
   });
 
@@ -54,6 +54,14 @@ suite('ErrorReporter', () => {
 
   test("Doesn't report error when shouldReportErrors == false", () => {
     configuration.shouldReportErrors = false;
+
+    ErrorReporter.capture(new Error());
+
+    strictEqual(testkit.reports().length, 0);
+  });
+
+  test("Doesn't report error when isFedramp == true", () => {
+    configuration.isFedramp = true;
 
     ErrorReporter.capture(new Error());
 
