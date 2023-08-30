@@ -81,7 +81,7 @@ export class LanguageServer implements ILanguageServer {
 
     const serverOptions: ServerOptions = {
       command: lsBinaryPath,
-      args: ['-l', 'debug'],
+      args: ['-l', 'info'],
       options: {
         env: processEnv,
       },
