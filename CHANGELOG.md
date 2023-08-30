@@ -1,5 +1,18 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.21.4]
+
+### Changed
+- Use Language Server to retrieve vulnerability count for HTML files
+
+## [1.21.1]
+### Fixed
+- Snyk Learn links
+
+## [1.21.0]
+### Fixed
+- Plugin Initialization
+
 ## [1.20.3]
 
 ### Removed
