@@ -196,14 +196,15 @@ export class Configuration implements IConfiguration {
   get isFedramp(): boolean {
     if (!this.customEndpoint) return false;
 
+    // FEDRAMP URL e.g. https://api.fedramp.snykgov.io
     const endpoint = new URL(this.customEndpoint);
 
     // hostname validation
     const hostnameParts = endpoint.hostname.split('.');
     if (hostnameParts.length < 3) return false;
 
-    const isFedrampInstance = hostnameParts[1] === 'fedramp';
-    const isFedrampDomain = hostnameParts[2] === 'snykgov' && hostnameParts[3] === 'io';
+    const isFedrampInstance = hostnameParts[1].includes('fedramp');
+    const isFedrampDomain = hostnameParts[2].includes('snykgov') && hostnameParts[3].includes('io');
     return isFedrampDomain && isFedrampInstance;
   }
 
