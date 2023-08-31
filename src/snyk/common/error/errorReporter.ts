@@ -66,7 +66,7 @@ export class ErrorReporter {
       beforeSend(event) {
         // drop reporting, if user doesn't want to report events here
         // https://github.com/getsentry/sentry-javascript/issues/2039
-        if (!userConfig.shouldReportErrors) {
+        if (!userConfig.shouldReportErrors || userConfig.isFedramp) {
           return null;
         }
 

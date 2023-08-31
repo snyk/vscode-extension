@@ -98,6 +98,8 @@ export interface IConfiguration {
 
   getInsecure(): boolean;
 
+  isFedramp: boolean;
+
   severityFilter: SeverityFilter;
 
   scanningMode: string | undefined;
@@ -109,6 +111,8 @@ export interface IConfiguration {
   getTrustedFolders(): string[];
 
   setTrustedFolders(trustedFolders: string[]): Promise<void>;
+
+  setEndpoint(endpoint: string): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -178,6 +182,30 @@ export class Configuration implements IConfiguration {
     }
 
     return this.defaultAuthHost;
+  }
+
+  async setEndpoint(endpoint: string): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_ENDPOINT),
+      endpoint.toString(),
+      true,
+    );
+  }
+
+  get isFedramp(): boolean {
+    if (!this.customEndpoint) return false;
+
+    // FEDRAMP URL e.g. https://api.fedramp.snykgov.io
+    const endpoint = new URL(this.customEndpoint);
+
+    // hostname validation
+    const hostnameParts = endpoint.hostname.split('.');
+    if (hostnameParts.length < 3) return false;
+
+    const isFedrampInstance = hostnameParts[1].includes('fedramp');
+    const isFedrampDomain = hostnameParts[2].includes('snykgov') && hostnameParts[3].includes('io');
+    return isFedrampDomain && isFedrampInstance;
   }
 
   get snykOssApiEndpoint(): string {

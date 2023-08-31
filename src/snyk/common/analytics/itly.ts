@@ -1,13 +1,13 @@
 import SegmentPlugin from '@itly/plugin-segment-node';
 import itly, {
   AnalysisIsReadyProperties,
-  AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
   FalsePositiveIsSubmittedProperties,
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
-  QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
   ScanModeIsSelectedProperties,
   TrackOptions,
+  AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
+  QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
 } from '../../../ampli';
 import { Configuration } from '../configuration/configuration';
 import { SnykConfiguration } from '../configuration/snykConfiguration';
@@ -67,6 +67,7 @@ export class Iteratively implements IAnalytics {
     private readonly user: User,
     private logger: ILog,
     private shouldReportEvents: boolean,
+    private isFedramp: boolean,
     private isDevelopment: boolean,
     private snykConfiguration?: SnykConfiguration,
   ) {}
@@ -77,9 +78,11 @@ export class Iteratively implements IAnalytics {
   }
 
   load(): Iteratively | null {
-    if (!this.shouldReportEvents) {
+    if (!this.shouldReportEvents || this.isFedramp) {
+      this.logger.debug(`Analytics are disabled. No analytics will be collected.`);
       return null;
     }
+    this.logger.debug(`Analytics are enabled. Analytics will be collected.`);
 
     const segmentWriteKey = this.snykConfiguration?.segmentWriteKey;
     if (!segmentWriteKey) {

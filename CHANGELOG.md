@@ -1,16 +1,27 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.21.5]
+
+### Added
+
+- Fedrammp endpoints will not send Sentry/Amplitude events
+
 ## [1.21.4]
 
 ### Changed
+
 - Use Language Server to retrieve vulnerability count for HTML files
 
 ## [1.21.1]
+
 ### Fixed
+
 - Snyk Learn links
 
 ## [1.21.0]
+
 ### Fixed
+
 - Plugin Initialization
 
 ## [1.20.3]
@@ -28,6 +39,7 @@
 ## [1.18.3]
 
 ### Added
+
 - Added support for OAuth2 authentication
 - Snyk Learn: now uses language server to retrieve lessons
 
