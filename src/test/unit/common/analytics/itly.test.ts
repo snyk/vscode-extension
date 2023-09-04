@@ -4,7 +4,7 @@ import { SnykConfiguration } from '../../../../snyk/common/configuration/snykCon
 import { User } from '../../../../snyk/common/user';
 import { LoggerMock } from '../../mocks/logger.mock';
 
-suite.only('Iteratively', () => {
+suite('Iteratively', () => {
   const snykConfig = {} as SnykConfiguration;
   const isDevelopment = false;
 
