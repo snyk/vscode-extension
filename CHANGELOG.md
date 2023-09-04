@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.21.6]
+
+### Added
+
+- Only check `snykgov.io` domain to check if fedramp
+
 ## [1.21.5]
 
 ### Added
