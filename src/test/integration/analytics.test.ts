@@ -36,7 +36,7 @@ suite('Analytics', () => {
   });
 
   test('"Welcome Is Viewed" not tracked if using fedramp endpoint', async () => {
-    await configuration.setEndpoint('https://api.fedramp.snykgov.io');
+    await configuration.setEndpoint('https://api.feddramp.snykgov.io');
     await vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
     await vscode.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
 

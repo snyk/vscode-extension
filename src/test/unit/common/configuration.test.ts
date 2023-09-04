@@ -211,4 +211,24 @@ suite('Configuration', () => {
       strictEqual(configuration.scanningMode, mode);
     });
   });
+
+  suite('.isFedramp()', () => {
+    test('returns true for FEDRAMP URLs', () => {
+      const fedrampUrl = 'https://api.fedramp.snykgov.io';
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, fedrampUrl);
+
+      const configuration = new Configuration({}, workspace);
+
+      strictEqual(configuration.isFedramp, true);
+    });
+
+    test('returns false for non-FEDRAMP URLs', () => {
+      const nonFedrampUrl = 'https://api.snyk.io';
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, nonFedrampUrl);
+
+      const configuration = new Configuration({}, workspace);
+
+      strictEqual(configuration.isFedramp, false);
+    });
+  });
 });
