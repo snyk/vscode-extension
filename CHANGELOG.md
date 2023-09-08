@@ -1,6 +1,9 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.21.6]
+## [1.23.0]
+- add detection for standalone/cli embedded language server based on binary size
+
+## [1.22.0]
 
 ### Added
 
