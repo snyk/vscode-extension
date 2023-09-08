@@ -197,7 +197,7 @@ suite('Language Server', () => {
     sinon.verify();
   });
 
-  test('LanguageServer adds proxy settings to env of started binary', async () => {
+  test('LanguageServer adds proxy settings to env of started binary', () => {
     const expectedProxy = 'http://localhost:8080';
     const lca = sinon.spy({
       create(
