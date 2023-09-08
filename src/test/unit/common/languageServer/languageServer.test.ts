@@ -125,14 +125,7 @@ suite('Language Server', () => {
       stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
       windowMock,
       authServiceMock,
-      {
-        info(_msg: string) {},
-        warn(_msg: string) {},
-        log(_msg: string) {},
-        error(msg: string) {
-          fail(msg);
-        },
-      } as unknown as LoggerMock,
+      logger,
       downloadServiceMock,
     );
     downloadServiceMock.downloadReady$.next();
@@ -197,7 +190,7 @@ suite('Language Server', () => {
     sinon.verify();
   });
 
-  test('LanguageServer adds proxy settings to env of started binary', () => {
+  test('LanguageServer adds proxy settings to env of started binary', async () => {
     const expectedProxy = 'http://localhost:8080';
     const lca = sinon.spy({
       create(
@@ -240,6 +233,7 @@ suite('Language Server', () => {
       downloadServiceMock,
     );
     downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
     sinon.assert.called(lca.create);
     sinon.verify();
   });
@@ -280,7 +274,7 @@ suite('Language Server', () => {
         automaticAuthentication: 'false',
         endpoint: undefined,
         organization: undefined,
-        additionalParams: '--all-projects',
+        additionalParams: '--all-projects -d',
         manageBinariesAutomatically: 'true',
         deviceId: user.anonymousId,
         filterSeverity: { critical: true, high: true, medium: true, low: true },
