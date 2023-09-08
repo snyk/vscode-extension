@@ -1,7 +1,9 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
 ## [1.23.0]
-- add detection for standalone/cli embedded language server based on binary size
+- add `language-server` as first positional argument to language server start
+- enable setting of log level in language server via SNYK_LOG_LEVEL
+- enable setting of debug level in language server via `-d` or `--debug`
 
 ## [1.22.0]
 
