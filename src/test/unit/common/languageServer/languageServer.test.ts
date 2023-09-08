@@ -16,7 +16,6 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import * as fs from 'fs';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -49,11 +48,6 @@ suite('Language Server', () => {
       shouldReportEvents: true,
       shouldReportErrors: true,
       getSnykLanguageServerPath(): string {
-        try {
-          fs.statSync(path);
-        } catch (_) {
-          fs.writeFileSync(path, 'huhu');
-        }
         return path;
       },
       getAdditionalCliParameters() {
@@ -89,67 +83,10 @@ suite('Language Server', () => {
   });
 
   teardown(() => {
-    fs.rmSync(path, { force: true });
     sinon.restore();
   });
 
-  test('LanguageServer (standalone) starts with correct args', async () => {
-    const lca = sinon.spy({
-      create(
-        _id: string,
-        _name: string,
-        serverOptions: ServerOptions,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _clientOptions: LanguageClientOptions,
-      ): LanguageClient {
-        return {
-          start(): Promise<void> {
-            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[0] : '', '-l');
-            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[1] : '', 'debug');
-            return Promise.resolve();
-          },
-          onNotification(): void {
-            return;
-          },
-          onReady(): Promise<void> {
-            return Promise.resolve();
-          },
-        } as unknown as LanguageClient;
-      },
-    });
-
-    languageServer = new LanguageServer(
-      user,
-      configurationMock,
-      lca as unknown as ILanguageClientAdapter,
-      stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-      windowMock,
-      authServiceMock,
-      logger,
-      downloadServiceMock,
-    );
-    downloadServiceMock.downloadReady$.next();
-
-    await languageServer.start();
-    sinon.assert.called(lca.create);
-    sinon.verify();
-  });
-
-  test('LanguageServer (embedded) starts with language-server arg', async () => {
-    configurationMock.getSnykLanguageServerPath = () => {
-      try {
-        fs.statSync(path);
-      } catch (_) {
-        // write >50MB of data to simulate a CLI sized binary
-        let data = '';
-        const size = 55 * 128 * 1024; // 128 * 8 = 1024 bytes, 55 * 1024 * 1024 = 55MB
-        for (let i = 0; i < size; i++) {
-          data += '01234567';
-        }
-        fs.writeFileSync(path, data);
-      }
-      return path;
-    };
+  test('LanguageServer starts with correct args', async () => {
     const lca = sinon.spy({
       create(
         _id: string,
@@ -161,6 +98,8 @@ suite('Language Server', () => {
         return {
           start(): Promise<void> {
             assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[0] : '', 'language-server');
+            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[1] : '', '-l');
+            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[2] : '', 'debug');
             return Promise.resolve();
           },
           onNotification(): void {

@@ -92,14 +92,7 @@ export class LanguageServer implements ILanguageServer {
     }
     logLevel = process.env.SNYK_LOG_LEVEL ?? logLevel;
 
-    // check size of file at lsBinaryPath to determine if cli or ls
-    let args = ['-l', logLevel];
-    const lsBinarySize = fs.statSync(lsBinaryPath).size;
-    const fiftyMB = 50 * 1024 * 1024;
-    if (lsBinarySize > fiftyMB) {
-      args = ['language-server', ...args];
-    }
-
+    const args = ['language-server', '-l', logLevel];
     this.logger.info(`Snyk Language Server - path: ${lsBinaryPath}`);
     this.logger.info(`Snyk Language Server - args: ${args}`);
     const serverOptions: ServerOptions = {
