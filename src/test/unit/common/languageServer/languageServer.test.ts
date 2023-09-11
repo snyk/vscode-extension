@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import assert, { deepStrictEqual, strictEqual } from 'assert';
+/* eslint-disable @typescript-eslint/no-empty-function */
+import assert, { deepStrictEqual, fail, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
@@ -24,13 +24,23 @@ suite('Language Server', () => {
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
+  const path = 'testPath';
+  const logger = {
+    info(_msg: string) {},
+    warn(_msg: string) {},
+    log(_msg: string) {},
+    error(msg: string) {
+      fail(msg);
+    },
+  } as unknown as LoggerMock;
+
   setup(() => {
     configurationMock = {
       getInsecure(): boolean {
         return true;
       },
       getCliPath(): string | undefined {
-        return 'testPath';
+        return path;
       },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
@@ -38,10 +48,10 @@ suite('Language Server', () => {
       shouldReportEvents: true,
       shouldReportErrors: true,
       getSnykLanguageServerPath(): string {
-        return 'testPath';
+        return path;
       },
       getAdditionalCliParameters() {
-        return '--all-projects';
+        return '--all-projects -d';
       },
       isAutomaticDependencyManagementEnabled() {
         return true;
@@ -76,6 +86,49 @@ suite('Language Server', () => {
     sinon.restore();
   });
 
+  test('LanguageServer starts with correct args', async () => {
+    const lca = sinon.spy({
+      create(
+        _id: string,
+        _name: string,
+        serverOptions: ServerOptions,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _clientOptions: LanguageClientOptions,
+      ): LanguageClient {
+        return {
+          start(): Promise<void> {
+            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[0] : '', 'language-server');
+            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[1] : '', '-l');
+            assert.strictEqual('args' in serverOptions ? serverOptions?.args?.[2] : '', 'debug');
+            return Promise.resolve();
+          },
+          onNotification(): void {
+            return;
+          },
+          onReady(): Promise<void> {
+            return Promise.resolve();
+          },
+        } as unknown as LanguageClient;
+      },
+    });
+
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      lca as unknown as ILanguageClientAdapter,
+      stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      windowMock,
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+    );
+    downloadServiceMock.downloadReady$.next();
+
+    await languageServer.start();
+    sinon.assert.called(lca.create);
+    sinon.verify();
+  });
+
   test('LanguageServer adds proxy settings to env of started binary', async () => {
     const expectedProxy = 'http://localhost:8080';
     const lca = sinon.spy({
@@ -90,9 +143,11 @@ suite('Language Server', () => {
             assert.strictEqual(id, 'Snyk LS');
             assert.strictEqual(name, 'Snyk Language Server');
             assert.strictEqual(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               'options' in serverOptions ? serverOptions?.options?.env?.http_proxy : undefined,
               expectedProxy,
             );
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             assert.strictEqual(clientOptions.initializationOptions.token, 'testToken');
             return Promise.resolve();
           },
@@ -158,7 +213,7 @@ suite('Language Server', () => {
         automaticAuthentication: 'false',
         endpoint: undefined,
         organization: undefined,
-        additionalParams: '--all-projects',
+        additionalParams: '--all-projects -d',
         manageBinariesAutomatically: 'true',
         deviceId: user.anonymousId,
         filterSeverity: { critical: true, high: true, medium: true, low: true },

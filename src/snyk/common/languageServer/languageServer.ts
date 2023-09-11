@@ -24,10 +24,13 @@ import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+import * as fs from 'fs';
 
 export interface ILanguageServer {
   start(): Promise<void>;
+
   stop(): Promise<void>;
+
   showOutputChannel(): void;
 
   cliReady$: ReplaySubject<string>;
@@ -77,11 +80,24 @@ export class LanguageServer implements ILanguageServer {
 
     const lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
 
-    this.logger.info(`Snyk Language Server path: ${lsBinaryPath}`);
+    // log level is set to info by default
+    let logLevel = 'info';
+    const additionalCliParameters = this.configuration.getAdditionalCliParameters();
+    if (
+      additionalCliParameters != null &&
+      additionalCliParameters.length > 0 &&
+      (additionalCliParameters.includes('-d') || additionalCliParameters.includes('--debug'))
+    ) {
+      logLevel = 'debug';
+    }
+    logLevel = process.env.SNYK_LOG_LEVEL ?? logLevel;
 
+    const args = ['language-server', '-l', logLevel];
+    this.logger.info(`Snyk Language Server - path: ${lsBinaryPath}`);
+    this.logger.info(`Snyk Language Server - args: ${args}`);
     const serverOptions: ServerOptions = {
       command: lsBinaryPath,
-      args: ['-l', 'info'],
+      args: args,
       options: {
         env: processEnv,
       },
