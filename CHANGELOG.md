@@ -1,6 +1,13 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.23.1]
+
+### Fixed
+
+- Vulnerabilities in transitive dependencies
+
 ## [1.23.0]
+
 - add `language-server` as first positional argument to language server start
 - enable setting of log level in language server via SNYK_LOG_LEVEL
 - enable setting of debug level in language server via `-d` or `--debug`
