@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vscode-extension
+  annotations:
+    github.com/project-slug: snyk/vscode-extension
+    github.com/team-slug: snyk/hammerhead
+spec:
+  type: ide-plugin
+  lifecycle: "-"
+  owner: hammerhead
