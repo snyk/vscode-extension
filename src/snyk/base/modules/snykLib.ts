@@ -30,17 +30,12 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
 
       if (!configuration.getFeaturesConfiguration()) {
-        await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, false);
         return;
       }
 
-      await this.contextService.setContext(SNYK_CONTEXT.FEATURES_SELECTED, true);
-
-      const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
-      await this.setWorkspaceContext(workspacePaths);
-
       await this.user.identify(vsCodeCommands, this.analytics);
 
+      const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
         void this.startOssAnalysis(manual, false);
@@ -80,7 +75,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
 
-  private async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
+  protected async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
     const workspaceFound = !!workspacePaths.length;
     await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, workspaceFound);
   }

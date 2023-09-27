@@ -1,12 +1,11 @@
 import _ from 'lodash';
 import { EventEmitter, TreeView } from 'vscode';
-import { FeaturesViewProvider } from '../../base/views/featureSelection/featuresViewProvider';
 import { FeaturesConfiguration } from '../configuration/configuration';
 import { configuration } from '../configuration/instance';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { TreeNode } from '../views/treeNode';
 
-export type ViewType = FeaturesViewProvider | TreeView<TreeNode>;
+export type ViewType = TreeView<TreeNode>;
 
 export class ViewContainer {
   private container = new Map<string, ViewType>();

@@ -1,3 +1,5 @@
+// noinspection JSUnusedLocalSymbols
+
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_FEATURES = 'snyk.views.features';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
@@ -13,12 +15,11 @@ export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
 export const SNYK_CONTEXT = {
+  NOT_LOADING: 'notLoading', // default to loading state (notLoading = false when boolean is initialized)
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
-  FEATURES_SELECTED: 'featuresSelected',
   CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
-  LS_CODE_PREVIEW: 'lsCodePreview',
   WORKSPACE_FOUND: 'workspaceFound',
   ERROR: 'error',
   MODE: 'mode',

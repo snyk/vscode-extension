@@ -6,6 +6,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
+declare const acquireVsCodeApi: any;
+
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
 (function () {
@@ -101,7 +104,7 @@
         rule: suggestion.rule,
         id: suggestion.id,
         severity: suggestion.severity,
-        lineOnly: !!lineOnly,
+        lineOnly: lineOnly,
       },
     });
   }
