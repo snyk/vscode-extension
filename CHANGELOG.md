@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.23.2]
+
+### Fixed
+
+- Removed false positives feature flag
+
 ## [1.23.1]
 
 ### Fixed

@@ -3,10 +3,10 @@
   "SourceId": "4be0392d-f232-4850-943e-edab84cc8ccd",
   "Path": "./src/ampli",
   "Branch": "main",
-  "Version": "249.0.0",
+  "Version": "322.0.0",
   "OrgId": "114775",
   "Runtime": "node.js:typescript-v3",
-  "VersionId": "f20814a9-b2ff-43b0-88ef-0581da87dfbd",
+  "VersionId": "d8260d9e-1d43-4871-99ca-1e78645b558f",
   "Platform": "Node.js",
   "Language": "TypeScript",
   "SDK": "@itly/sdk@^2.0"

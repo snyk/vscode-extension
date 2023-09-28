@@ -6,7 +6,6 @@ export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
-export const SNYK_VIEW_FALSE_POSITIVE_CODE = 'snyk.views.suggestion.code.falsePositive';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
 export const SNYK_VIEW_SUGGESTION_IAC = 'snyk.views.suggestion.iac';
 export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';

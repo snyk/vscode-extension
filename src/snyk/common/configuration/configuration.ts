@@ -45,7 +45,6 @@ export interface SeverityFilter {
 }
 
 export type PreviewFeatures = {
-  reportFalsePositives: boolean | undefined;
   advisor: boolean | undefined;
 };
 
@@ -434,7 +433,6 @@ export class Configuration implements IConfiguration {
 
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
-      reportFalsePositives: false,
       advisor: false,
     };
 

@@ -55,14 +55,44 @@ export interface IdentifyProperties {
    */
   adminLink?: string;
   /**
+   * Company name as provided by the user in Appcues user profile survey
+   */
+  appcuesCompanyName?: string;
+  /**
+   * First name as provided by the user in Appcues user profile survey
+   */
+  appcuesFirstName?: string;
+  /**
+   * Job title as provided by the user in Appcues user profile survey
+   */
+  appcuesJobTitle?: string;
+  /**
+   * Last name as provided by the user in Appcues user profile survey
+   */
+  appcuesLastName?: string;
+  /**
+   * Current goal as provided by the user in Appcues user profile survey
+   */
+  appcuesUserGoal?: string;
+  /**
+   * Work email as provided by the user in Appcues user profile survey
+   */
+  appcuesWorkEmail?: string;
+  /**
    * Auth provider (login method)
    */
   authProvider?: string;
-  createdAt?: number;
+  createdAt?: {
+    [k: string]: unknown;
+  };
   /**
    * Email address for the user
    */
   email?: string;
+  /**
+   * User's first name
+   */
+  firstName?: string;
   /**
    * Whether or not the user has their first integration set up
    */
@@ -91,6 +121,10 @@ export interface IdentifyProperties {
    * Whether or not the user should be considered a Snyk administrator
    */
   isSnykAdmin?: boolean;
+  /**
+   * User's last name
+   */
+  lastName?: string;
   /**
    * An array of the ecosystems(eg: javascript, java, docker, kubernetes) that the user selects as their favorites on the snyk learn app.
    */
@@ -458,115 +492,6 @@ export interface AuthenticateButtonIsClickedProperties {
    * | Min Length | 1 |
    */
   runtimeVersion?: string;
-}
-
-export interface FalsePositiveIsDisplayedProperties {
-  /**
-   * Used to identify the source for multi-source events.
-   *
-   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
-   */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
-  /**
-   * Operating system architecture
-   */
-  osArch?: string;
-  /**
-   * Operating system platform
-   */
-  osPlatform?: string;
-  /**
-   * IDE plugin runtime name.
-   */
-  runtimeName?: string;
-  /**
-   * IDE plugin runtime version.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Min Length | 1 |
-   */
-  runtimeVersion?: string;
-}
-
-export interface FalsePositiveIsSubmittedProperties {
-  /**
-   * Used to identify the source for multi-source events.
-   *
-   * For example, if a given event is shared between Snyk Advisor and Snyk Learn, this property helps to differentiate between the two.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Advisor, App, Learn, IDE, Website, CodeSnippets |
-   */
-  eventSource?: "Advisor" | "App" | "Learn" | "IDE" | "Website" | "CodeSnippets";
-  /**
-   * Ide family.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Visual Studio Code, Visual Studio, Eclipse, JetBrains, Other |
-   */
-  ide: "Visual Studio Code" | "Visual Studio" | "Eclipse" | "JetBrains" | "Other";
-  /**
-   * Issue ID as received from the backend.
-   */
-  issueId?: string;
-  /**
-   * Issue type
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | Advisor, Code Quality Issue, Code Security Vulnerability, Licence Issue, Open Source Vulnerability, Infrastructure as Code Issue, Container Vulnerability |
-   */
-  issueType?:
-    | "Advisor"
-    | "Code Quality Issue"
-    | "Code Security Vulnerability"
-    | "Licence Issue"
-    | "Open Source Vulnerability"
-    | "Infrastructure as Code Issue"
-    | "Container Vulnerability";
-  /**
-   * Operating system architecture
-   */
-  osArch?: string;
-  /**
-   * Operating system platform
-   */
-  osPlatform?: string;
-  /**
-   * IDE plugin runtime name.
-   */
-  runtimeName?: string;
-  /**
-   * IDE plugin runtime version.
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Min Length | 1 |
-   */
-  runtimeVersion?: string;
-  /**
-   * Severity of the issue
-   *
-   * | Rule | Value |
-   * |---|---|
-   * | Enum Values | High, Medium, Low, Critical |
-   */
-  severity?: "High" | "Medium" | "Low" | "Critical";
 }
 
 export interface IssueHoverIsDisplayedProperties {
@@ -947,42 +872,6 @@ export class AuthenticateButtonIsClicked implements Event {
   }
 }
 
-export class FalsePositiveIsDisplayed implements Event {
-  name = 'False Positive Is Displayed';
-  id = '73047ba4-5e6b-4472-8d4e-1923fc7117f4';
-  version = '4.0.0';
-  properties: FalsePositiveIsDisplayedProperties & {
-    'itly': true;
-  };
-
-  constructor(
-    properties: FalsePositiveIsDisplayedProperties,
-  ) {
-    this.properties = {
-        ...properties,
-        'itly': true,
-      };
-  }
-}
-
-export class FalsePositiveIsSubmitted implements Event {
-  name = 'False Positive Is Submitted';
-  id = '299be947-f18c-41c4-96f8-33f4c8daa5a1';
-  version = '4.0.0';
-  properties: FalsePositiveIsSubmittedProperties & {
-    'itly': true;
-  };
-
-  constructor(
-    properties: FalsePositiveIsSubmittedProperties,
-  ) {
-    this.properties = {
-        ...properties,
-        'itly': true,
-      };
-  }
-}
-
 export class IssueHoverIsDisplayed implements Event {
   name = 'Issue Hover Is Displayed';
   id = '5bcc7fd8-6118-4777-b719-366cda263a13';
@@ -1153,21 +1042,19 @@ class Itly {
       ...options,
       plugins: [
         new SchemaValidatorPlugin({
-          'group': {"type":"object","properties":{"[Amplitude] Group ID":{"type":"object"},"[Amplitude] Group name":{"type":"object"},"$set":{"type":"object"},"$unset":{"type":"object"},"Account ARR":{"type":"object"},"Account Plan":{"type":"object"},"Billing Frequency":{"type":"object"},"Code Licenses":{"type":"object"},"Container Licenses":{"type":"object"},"countFixesFirst30Days":{"type":"object"},"countFixesFirst7Days":{"type":"object"},"countFixesPast30Days":{"type":"object"},"countFixesPast7Days":{"type":"object"},"countFixesTotal":{"type":"object"},"currentEngagementState":{"type":"object"},"dateLastEngagementStateChange":{"type":"object"},"daysSinceLastEngagementStateChange":{"type":"object"},"DB Feed Licenses":{"type":"object"},"Free Trial End Date":{"type":"object"},"Free Trial Start Date":{"type":"object"},"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"hasFixFirst30Days":{"type":"object"},"hasFixFirst7Days":{"type":"object"},"hasFixPast30Days":{"type":"object"},"hasFixPast7Days":{"type":"object"},"IAC Licenses":{"type":"object"},"id":{"type":"object"},"internalName":{"type":"object"},"isPassthrough":{"type":"object"},"name":{"type":"object"},"Open Source Licenses":{"type":"object"},"plan":{"type":"string"},"priorEngagementState":{"type":"object"},"projectTypes":{"type":"array","items":{"type":"string"},"uniqueItems":true}},"additionalProperties":false,"required":[]},
-          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"adminLink":{"type":"string"},"authProvider":{"type":"string"},"createdAt":{"type":"number"},"email":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isAppUIBetaEnabled":{"type":"boolean"},"isNonUser":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"learnPreferredEcosystems":{"type":"array","items":{"type":"string"},"uniqueItems":true},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utm_content":{"type":"string"},"utm_medium":{"type":"string"},"utm_source":{"type":"string"},"utm_term":{"type":"string"}},"additionalProperties":false,"required":[]},
+          'group': {"type":"object","properties":{"[Amplitude] Group ID":{"type":"object"},"[Amplitude] Group name":{"type":"object"},"$set":{"type":"object"},"$unset":{"type":"object"},"Account ARR":{"type":"object"},"Account Plan":{"type":"object"},"Billing Frequency":{"type":"object"},"Code Licenses":{"type":"object"},"Container Licenses":{"type":"object"},"countFixesFirst30Days":{"type":"object"},"countFixesFirst7Days":{"type":"object"},"countFixesPast30Days":{"type":"object"},"countFixesPast7Days":{"type":"object"},"countFixesTotal":{"type":"object"},"currentEngagementState":{"type":"object"},"dateLastEngagementStateChange":{"type":"object"},"daysSinceLastEngagementStateChange":{"type":"object"},"DB Feed Licenses":{"type":"object"},"Free Trial End Date":{"type":"object"},"Free Trial Start Date":{"type":"object"},"groupId":{"type":"string"},"groupName":{"type":"string"},"groupType":{"enum":["org","group","account"]},"hasFixFirst30Days":{"type":"object"},"hasFixFirst7Days":{"type":"object"},"hasFixPast30Days":{"type":"object"},"hasFixPast7Days":{"type":"object"},"IAC Licenses":{"type":"object"},"id":{"type":"object"},"internalName":{"type":"object"},"isPassthrough":{"type":"object"},"name":{"type":"object"},"Open Source Licenses":{"type":"object"},"plan":{"type":"string"},"priorEngagementState":{"type":"object"},"projectTypes":{"items":{"type":"string"},"uniqueItems":true,"type":"array"}},"additionalProperties":false,"required":[]},
+          'identify': {"type":"object","properties":{"accountType":{"enum":["user","service","app-instance","automated-test-user"]},"adminLink":{"type":"string"},"appcuesCompanyName":{"type":"string"},"appcuesFirstName":{"type":"string"},"appcuesJobTitle":{"type":"string"},"appcuesLastName":{"type":"string"},"appcuesUserGoal":{"type":"string"},"appcuesWorkEmail":{"type":"string"},"authProvider":{"type":"string"},"createdAt":{"type":"object"},"email":{"type":"string"},"firstName":{"type":"string"},"hasFirstIntegration":{"type":"boolean"},"hasFirstProject":{"type":"boolean"},"hasPersonalEmail":{"type":"boolean"},"isAppUIBetaEnabled":{"type":"boolean"},"isNonUser":{"type":"boolean"},"isSnyk":{"type":"boolean"},"isSnykAdmin":{"type":"boolean"},"lastName":{"type":"string"},"learnPreferredEcosystems":{"items":{"type":"string"},"uniqueItems":true,"type":"array"},"productUpdatesConsent":{"type":"boolean"},"productUpdatesConsentIsDisplayed":{"type":"boolean"},"user_id":{"type":"string"},"username":{"type":"string"},"utm_campaign":{"type":"string"},"utm_content":{"type":"string"},"utm_medium":{"type":"string"},"utm_source":{"type":"string"},"utm_term":{"type":"string"}},"additionalProperties":false,"required":[]},
           'page': {"type":"object","properties":{"ecosystem":{"type":"string"},"package":{"type":"string"},"packageManager":{"type":"string"},"packageVersion":{"type":"string"},"path":{"type":"string"},"referrer":{"type":"string"},"search":{"type":"string"},"title":{"type":"string"},"url":{"type":"string"},"vulnerabilityId":{"type":"string"}},"additionalProperties":false,"required":[]},
-          'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"durationInSeconds":{"type":"number"},"fileCount":{"type":"integer"},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"result":{"enum":["Success","Error"]},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
-          'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
-          'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
-          'False Positive Is Displayed': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
-          'False Positive Is Submitted': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
-          'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
-          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"quickFixType":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
-          'Scan Mode Is Selected': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1},"scanMode":{"enum":["paused","auto","manual","throttled"]}},"additionalProperties":false,"required":["ide","itly","scanMode"]},
-          'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
-          'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"type":"string","minLength":1}},"additionalProperties":false,"required":["ide","itly"]},
+          'Analysis Is Ready': {"type":"object","properties":{"analysisType":{"enum":["Snyk Advisor","Snyk Code Quality","Snyk Code Security","Snyk Open Source","Snyk Container","Snyk Infrastructure as Code"]},"durationInSeconds":{"type":"number"},"fileCount":{"type":"integer"},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"result":{"enum":["Success","Error"]},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["analysisType","ide","itly","result"]},
+          'Analysis Is Triggered': {"type":"object","properties":{"analysisType":{"items":{"type":"string"},"minItems":1,"uniqueItems":true,"type":"array"},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"},"triggeredByUser":{"type":"boolean"}},"additionalProperties":false,"required":["analysisType","ide","itly","triggeredByUser"]},
+          'Authenticate Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue Hover Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Issue In Tree Is Clicked': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"issueId":{"type":"string"},"issueType":{"enum":["Advisor","Code Quality Issue","Code Security Vulnerability","Licence Issue","Open Source Vulnerability","Infrastructure as Code Issue","Container Vulnerability"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"},"severity":{"enum":["High","Medium","Low","Critical"]}},"additionalProperties":false,"required":["ide","itly"]},
+          'Plugin Is Installed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["ide","itly"]},
+          'Quick Fix Is Displayed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"quickFixType":{"items":{"type":"string"},"minItems":1,"uniqueItems":true,"type":"array"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["ide","itly","quickFixType"]},
+          'Scan Mode Is Selected': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"},"scanMode":{"enum":["paused","auto","manual","throttled"]}},"additionalProperties":false,"required":["ide","itly","scanMode"]},
+          'Welcome Button Is Clicked': {"type":"object","properties":{"eventSource":{"enum":["Advisor","App","Learn","IDE","Website","CodeSnippets"]},"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["ide","itly"]},
+          'Welcome Is Viewed': {"type":"object","properties":{"ide":{"enum":["Visual Studio Code","Visual Studio","Eclipse","JetBrains","Other"]},"itly":{"const":true},"osArch":{"type":"string"},"osPlatform":{"type":"string"},"runtimeName":{"type":"string"},"runtimeVersion":{"minLength":1,"type":"string"}},"additionalProperties":false,"required":["ide","itly"]},
         }),
         ...destinationPlugins,
         ...plugins,
@@ -1261,38 +1148,6 @@ class Itly {
     options?: TrackOptions,
   ) {
     this.itly.track(userId, new AuthenticateButtonIsClicked(properties), options);
-  }
-
-  /**
-   * This event fires when the "Report false positive" view is shown in IDE.
-   *
-   * Owner: Michel Kaporin
-   * @param userId The user's ID.
-   * @param properties The event's properties (e.g. eventSource)
-   * @param options Options for this track call.
-   */
-  falsePositiveIsDisplayed(
-    userId: string,
-    properties: FalsePositiveIsDisplayedProperties,
-    options?: TrackOptions,
-  ) {
-    this.itly.track(userId, new FalsePositiveIsDisplayed(properties), options);
-  }
-
-  /**
-   * This event fires when false positive is reported from IDE.
-   *
-   * Owner: Michel Kaporin
-   * @param userId The user's ID.
-   * @param properties The event's properties (e.g. eventSource)
-   * @param options Options for this track call.
-   */
-  falsePositiveIsSubmitted(
-    userId: string,
-    properties: FalsePositiveIsSubmittedProperties,
-    options?: TrackOptions,
-  ) {
-    this.itly.track(userId, new FalsePositiveIsSubmitted(properties), options);
   }
 
   /**

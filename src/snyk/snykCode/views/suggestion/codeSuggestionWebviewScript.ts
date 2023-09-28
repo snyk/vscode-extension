@@ -105,14 +105,6 @@
       },
     });
   }
-  function openFalsePositiveCode() {
-    sendMessage({
-      type: 'openFalsePositive',
-      args: {
-        suggestion: suggestion,
-      },
-    });
-  }
   function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
       uri: position?.file ?? suggestionParam.uri,
@@ -317,7 +309,6 @@
   document.getElementById('ignore-file-issue')!.addEventListener('click', () => {
     ignoreIssue(false);
   });
-  document.getElementById('report-fp')?.addEventListener('click', openFalsePositiveCode);
 
   // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {

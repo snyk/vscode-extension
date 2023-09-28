@@ -6,8 +6,6 @@ import { IOpenerService } from '../common/services/openerService';
 import { IVSCodeCommands } from '../common/vscode/commands';
 
 export interface ICodeSettings {
-  reportFalsePositivesEnabled: boolean;
-
   updateIsCodeEnabled(): Promise<boolean>;
 
   enable(): Promise<boolean>;
@@ -20,16 +18,9 @@ export type SastSettings = {
   localCodeEngine: {
     enabled: boolean;
   };
-  reportFalsePositivesEnabled: boolean;
 };
 
 export class CodeSettings implements ICodeSettings {
-  private _reportFalsePositivesEnabled: boolean;
-
-  get reportFalsePositivesEnabled(): boolean {
-    return this._reportFalsePositivesEnabled;
-  }
-
   constructor(
     private readonly contextService: IContextService,
     private readonly config: IConfiguration,

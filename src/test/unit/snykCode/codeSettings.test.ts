@@ -37,7 +37,6 @@ suite('Snyk Code Settings', () => {
       localCodeEngine: {
         enabled: false,
       },
-      reportFalsePositivesEnabled: true,
     });
 
     const codeEnabled = await settings.updateIsCodeEnabled();
@@ -53,7 +52,6 @@ suite('Snyk Code Settings', () => {
       localCodeEngine: {
         enabled: false,
       },
-      reportFalsePositivesEnabled: true,
     });
 
     const codeEnabled = await settings.updateIsCodeEnabled();
