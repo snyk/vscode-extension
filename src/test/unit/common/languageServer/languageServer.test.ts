@@ -59,7 +59,6 @@ suite('Language Server', () => {
       getPreviewFeatures() {
         return {
           advisor: false,
-          reportFalsePositives: false,
         };
       },
       getFeaturesConfiguration() {

@@ -1,7 +1,6 @@
 import SegmentPlugin from '@itly/plugin-segment-node';
 import itly, {
   AnalysisIsReadyProperties,
-  FalsePositiveIsSubmittedProperties,
   IssueHoverIsDisplayedProperties,
   IssueInTreeIsClickedProperties,
   ScanModeIsSelectedProperties,
@@ -50,8 +49,6 @@ export interface IAnalytics {
   logQuickFixIsDisplayed(properties: QuickFixIsDisplayedProperties): void;
   logIssueHoverIsDisplayed(properties: IssueHoverIsDisplayedProperties): void;
   logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void;
-  logFalsePositiveIsDisplayed(): void;
-  logFalsePositiveIsSubmitted(properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>): void;
 }
 
 /**
@@ -228,27 +225,6 @@ export class Iteratively implements IAnalytics {
   public logScanModeIsSelected(properties: Omit<ScanModeIsSelectedProperties, 'eventSource' | 'ide'>): void {
     this.enqueueEvent(() => {
       itly.scanModeIsSelected(this.getAuthenticatedUserId(), {
-        ...properties,
-        ide: this.ide,
-        eventSource: 'IDE',
-      });
-    });
-  }
-
-  public logFalsePositiveIsDisplayed(): void {
-    this.enqueueEvent(() => {
-      itly.falsePositiveIsDisplayed(this.getAuthenticatedUserId(), {
-        ide: this.ide,
-        eventSource: 'IDE',
-      });
-    });
-  }
-
-  public logFalsePositiveIsSubmitted(
-    properties: Omit<FalsePositiveIsSubmittedProperties, 'eventSource' | 'ide'>,
-  ): void {
-    this.enqueueEvent(() => {
-      itly.falsePositiveIsSubmitted(this.getAuthenticatedUserId(), {
         ...properties,
         ide: this.ide,
         eventSource: 'IDE',
