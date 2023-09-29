@@ -13,7 +13,7 @@ export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
 export const SNYK_CONTEXT = {
-  NOT_LOADING: 'notLoading', // default to loading state (notLoading = false when boolean is initialized)
+  INITIALIZED: 'initialized', // default to loading state (notLoading = false when boolean is initialized)
   LOGGEDIN: 'loggedIn',
   AUTHENTICATING: 'authenticating',
   CODE_ENABLED: 'codeEnabled',

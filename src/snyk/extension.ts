@@ -109,7 +109,7 @@ class SnykExtension extends SnykLib implements IExtension {
   private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
     // initialize context correctly
     // see package.json when each view is shown, based on context value
-    await this.contextService.setContext(SNYK_CONTEXT.NOT_LOADING, false);
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, false);
 
     // default to true, as the check is async and can only be done after startup of LS
     // if set to true, the option to enable code is not shown in the initialization phase
@@ -412,7 +412,7 @@ class SnykExtension extends SnykLib implements IExtension {
     if (loggedIn != undefined) {
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
     }
-    await this.contextService.setContext(SNYK_CONTEXT.NOT_LOADING, true);
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
     await this.codeSettings.updateIsCodeEnabled();
 
     // Actually start analysis
