@@ -1,10 +1,9 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
 ## [1.23.2]
-
 ### Fixed
-
 - Removed false positives feature flag
+- View management: show accurate information during startup of the plugin
 
 ## [1.23.1]
 

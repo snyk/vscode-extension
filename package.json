@@ -231,40 +231,34 @@
     "views": {
       "snyk": [
         {
-          "id": "snyk.views.features",
-          "name": "Snyk",
-          "when": "snyk:loggedIn && !snyk:featuresSelected && !snyk:error",
-          "type": "webview"
-        },
-        {
           "id": "snyk.views.welcome",
           "name": "Snyk",
-          "when": "!snyk:loggedIn || snyk:error || snyk:featuresSelected && !snyk:workspaceFound"
+          "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound"
         },
         {
           "id": "snyk.views.analysis.oss",
           "name": "Open Source Security",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.configuration",
-          "name": "Configuration",
-          "when": "snyk:loggedIn && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "name": "Configuration Issues",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:lsCodePreview && snyk:loggedIn && snyk:codeEnabled && snyk:featuresSelected && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
-          "when": "snyk:loggedIn && snyk:featuresSelected && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",
@@ -280,13 +274,18 @@
       },
       {
         "view": "snyk.views.welcome",
+        "contents": "Welcome to Snyk for Visual Studio Code. 👋\n👉 Please wait, the extension is loading...",
+        "when": "!snyk:error && !snyk:initialized"
+      },
+      {
+        "view": "snyk.views.welcome",
         "contents": "Welcome to Snyk for Visual Studio Code. 👋\n👉 Connect with Snyk to start your first analysis!\nWhen scanning folder files, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\n[Trust workspace and connect](command:snyk.initiateLogin 'Connect with Snyk')\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
-        "when": "!snyk:error && !snyk:loggedIn"
+        "when": "!snyk:error && snyk:initialized && !snyk:loggedIn"
       },
       {
         "view": "snyk.views.welcome",
         "contents": "We are now redirecting you to our auth page, go ahead and log in. If a browser window doesn't open after a few seconds, please copy the url below and manually paste it in a browser.\n[Copy URL to clipboard](command:snyk.copyAuthLink 'Copy URL to clipboard')",
-        "when": "!snyk:error && !snyk:loggedIn && snyk:authenticating"
+        "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && snyk:authenticating"
       },
       {
         "view": "snyk.views.analysis.code.enablement",
@@ -295,7 +294,7 @@
       {
         "view": "snyk.views.welcome",
         "contents": "Open a workspace or a folder in Visual Studio Code to start the analysis.",
-        "when": "!snyk:error && snyk:loggedIn && snyk:featuresSelected && !snyk:workspaceFound"
+        "when": "!snyk:error && snyk:initialized && snyk:loggedIn && !snyk:workspaceFound"
       }
     ],
     "menus": {
@@ -453,6 +452,6 @@
     "uuid": "^8.3.2",
     "validate-npm-package-name": "^3.0.0",
     "vscode-languageclient": "8.1.0",
-    "vscode-languageserver-textdocument":"^1.0.8"
+    "vscode-languageserver-textdocument": "^1.0.8"
   }
 }

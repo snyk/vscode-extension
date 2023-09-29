@@ -6,7 +6,6 @@ import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
 import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
-import { FeaturesViewProvider } from './base/views/featureSelection/featuresViewProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { messages } from './cli/messages/messages';
 import { Iteratively } from './common/analytics/itly';
@@ -37,7 +36,6 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
-  SNYK_VIEW_FEATURES,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -109,6 +107,19 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
+    // initialize context correctly
+    // see package.json when each view is shown, based on context value
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, false);
+
+    // default to true, as the check is async and can only be done after startup of LS
+    // if set to true, the option to enable code is not shown in the initialization phase
+    await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, true);
+
+    // set the workspace context so that the text to add folders is only shown if really the case
+    // initializing after LS startup and just before scan is too late
+    const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
+    await this.setWorkspaceContext(workspacePaths);
+
     this.user = await User.getAnonymous(this.context, Logger);
 
     this.analytics = new Iteratively(
@@ -287,10 +298,7 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
 
-    const featuresViewProvider = new FeaturesViewProvider(vscodeContext.extensionUri, this.contextService);
-
     vscodeContext.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(SNYK_VIEW_FEATURES, featuresViewProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
     );
@@ -332,7 +340,6 @@ class SnykExtension extends SnykLib implements IExtension {
     // Fill the view container to expose views for tests
     const viewContainer = this.viewManagerService.viewContainer;
     viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
-    viewContainer.set(SNYK_VIEW_FEATURES, featuresViewProvider);
 
     vscode.workspace.onDidChangeWorkspaceFolders(e => {
       this.workspaceTrust.resetTrustedFoldersCache();
@@ -393,14 +400,19 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
 
-    await this.contextService.setContext(SNYK_CONTEXT.LS_CODE_PREVIEW, true);
-
     // noinspection ES6MissingAwait
     void this.advisorScoreDisposable.activate();
 
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
+
+    // initialize contexts
+    const loggedIn = await configuration.getToken();
+    if (loggedIn != undefined) {
+      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+    }
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
     await this.codeSettings.updateIsCodeEnabled();
 
     // Actually start analysis

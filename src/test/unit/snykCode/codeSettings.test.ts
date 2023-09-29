@@ -20,7 +20,6 @@ suite('Snyk Code Settings', () => {
       shouldShowCodeAnalysis: false,
       shouldShowOssAnalysis: false,
       shouldShowIacAnalysis: false,
-      isCodeInLsPreview: false,
       viewContext: {},
     };
 

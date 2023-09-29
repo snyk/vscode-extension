@@ -7,7 +7,6 @@ export interface IContextService {
   shouldShowCodeAnalysis: boolean;
   shouldShowOssAnalysis: boolean;
   shouldShowIacAnalysis: boolean;
-  isCodeInLsPreview: boolean;
 
   setContext(key: string, value: unknown): Promise<void>;
 }
@@ -23,10 +22,6 @@ export class ContextService implements IContextService {
     Logger.debug(`Snyk context ${key}: ${value}`);
     this.viewContext[key] = value;
     await setContext(key, value);
-  }
-
-  get isCodeInLsPreview(): boolean {
-    return !!this.viewContext[SNYK_CONTEXT.LS_CODE_PREVIEW];
   }
 
   get shouldShowCodeAnalysis(): boolean {
