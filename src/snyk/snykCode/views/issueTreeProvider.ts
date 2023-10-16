@@ -32,7 +32,9 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
 
   getRunTestMessage = () => messages.runTest;
 
-  getIssueTitle = (issue: Issue<CodeIssueData>) => issue.additionalData.message;
+  // The title in the tree is taken from the title for vulnerabilities and from the message for quality rules
+  getIssueTitle = (issue: Issue<CodeIssueData>) =>
+    issue.additionalData.isSecurityType ? issue.title.split(':')[0] : issue.additionalData.message.split('.')[0];
 
   getIssueRange(issue: Issue<CodeIssueData>): Range {
     return IssueUtils.createVsCodeRange(issue.additionalData, this.languages);

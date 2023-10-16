@@ -2,7 +2,7 @@ export const messages = {
   scanFailed: 'Scan failed',
   noWorkspaceTrust: 'No workspace folder was granted trust',
   clickToProblem: 'Click here to see the problem.',
-  scanRunning: 'Scanning for vulnerabilities...',
+  scanRunning: 'Scanning...',
   allSeverityFiltersDisabled: 'Please enable severity filters to see the results.',
   duration: (time: string, day: string): string => `Analysis finished at ${time}, ${day}`,
   noWorkspaceTrustDescription:

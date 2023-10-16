@@ -4,6 +4,7 @@ import { SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
+import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
@@ -11,7 +12,6 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { messages as errorMessages } from '../../messages/error';
 import { OssIssueCommandArg } from '../ossVulnerabilityTreeProvider';
-import { LearnService } from '../../../common/services/learnService';
 
 enum OssSuggestionsViewEventMessageType {
   OpenBrowser = 'openBrowser',
@@ -79,6 +79,12 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+      this.panel.iconPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'images',
+        'snyk-oss.svg',
+      );
 
       void this.panel.webview.postMessage({ type: 'set', args: vulnerability });
       void this.postLearnLessonMessage(vulnerability);
@@ -189,12 +195,12 @@ export class OssSuggestionWebviewProvider extends WebviewProvider<OssIssueComman
               <div class="content"></div>
             </div>
           </section>
-          <section class="delimiter-top">
+          <section class="delimiter-top summary">
             <h2>Detailed paths</h2>
             <div class="detailed-paths"></div>
           </section>
           <section class="delimiter-top">
-            <div id="overview" class="font-light"></div>
+            <div id="overview" class="vulnerability-overview"></div>
           </section>
         </div>
 				<script nonce="${nonce}" src="${scriptUri}"></script>

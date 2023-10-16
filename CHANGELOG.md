@@ -1,7 +1,16 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [1.23.2]
+## [1.25.1]
+
+### Changed
+
+- Improved UI: updated issue details panels, used vscode colors where possible, new meta section for Code
+- Optimized messages in the UI
+
+## [1.24.1]
+
 ### Fixed
+
 - Removed false positives feature flag
 - View management: show accurate information during startup of the plugin
 
