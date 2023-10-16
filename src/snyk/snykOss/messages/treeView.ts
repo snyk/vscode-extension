@@ -1,8 +1,8 @@
 export const messages = {
-  cookingDependencies: 'Getting ready Snyk dependencies...',
+  cookingDependencies: 'Scanning...',
 
   runTest: 'Run scan for Open Source security vulnerabilities.',
-  noVulnerabilitiesFound: 'Snyk found no vulnerabilities ✅',
+  noVulnerabilitiesFound: ' ✅ Congrats! Snyk found no vulnerabilities.',
   singleVulnerabilityFound: 'Snyk found 1 vulnerability',
   vulnerability: 'vulnerability',
   vulnerabilities: 'vulnerabilities',

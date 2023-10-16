@@ -6,7 +6,11 @@
 }
 
 .delimiter {
-  margin: 0 0.2em 0 0.2em;
+  width: 0;
+  height: 1.3rem;
+  margin: 0 0.8rem 0 0.8rem;
+  border-right:1px solid var(--vscode-input-border);
+  line-height: 1rem;
 }
 
 .summary .summary-item {
@@ -15,13 +19,33 @@
 }
 
 .summary .label {
-  flex: 30%;
+  width: 160px;
 }
 
 .summary .content {
   flex: 70%;
 }
 
-.path {
-  margin-bottom: 0.75em;
+.summary .remediation {
+  margin-bottom: 1.6rem
+}
+
+.summary .detailed-path:last-child .remediation {
+  margin-bottom: 0
+}
+
+.vulnerability-overview pre {
+  padding: 8px 16px;
+  overflow-x: auto;
+  border-radius: 4px;
+  font-size: var(--vscode-editor-font-size);
+  font-family: var(--vscode-editor-font-family);
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+}
+
+.vulnerability-overview code {
+  color: var(--vscode-foreground);
+  font-size: var(--vscode-editor-font-size);
+  font-family: var(--vscode-editor-font-family);
 }

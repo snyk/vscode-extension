@@ -64,6 +64,12 @@ export class IacSuggestionWebviewProvider
       }
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+      this.panel.iconPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'images',
+        'snyk-iac.svg',
+      );
 
       await this.panel.webview.postMessage({ type: 'set', args: issue });
 

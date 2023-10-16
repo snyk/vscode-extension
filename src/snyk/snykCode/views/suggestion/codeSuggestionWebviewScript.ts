@@ -189,49 +189,79 @@ declare const acquireVsCodeApi: any;
     const currentSeverity = getCurrentSeverity();
     const severity = document.getElementById('severity')!;
     const title = document.getElementById('title')!;
+    const description = document.getElementById('description')!;
+    const meta = document.getElementById('meta')!;
+    let type = '';
 
-    // Display correct issue type text
-    const issueType = document.getElementsByClassName('issue-type');
-    for (const typeElement of issueType as any) {
-      typeElement.innerHTML = suggestion.isSecurityType ? 'vulnerability' : 'issue';
+    // Set issue type: vulnerability or issue
+    type = suggestion.isSecurityType ? 'vulnerability' : 'issue';
+
+    // Remove existing meta
+    const metas = meta.querySelectorAll('.suggestion-meta');
+    metas.forEach(element => {
+      element.remove();
+    });
+
+    // Append CWEs
+    if (suggestion.cwe !== null && suggestion.cwe.length) {
+      // add the new CWEs
+      suggestion.cwe.forEach(cwe => {
+        meta.insertAdjacentHTML(
+          'afterbegin',
+          '<a href="https://cwe.mitre.org/data/definitions/' +
+            cwe.split('-')[1] +
+            '.html" class="suggestion-meta suggestion-cwe">' +
+            cwe +
+            '</a>',
+        );
+      });
     }
 
-    const sevText = document.getElementById('severity-text')!;
+    // Append issue type in the meta section
+    meta.insertAdjacentHTML('afterbegin', '<span id="suggestion-type" class="suggestion-meta">' + type + '</span>');
+
+    // Append line number
+    const issuePosition = document.getElementById('navigateToIssue')!;
+    issuePosition.innerHTML = '';
+    issuePosition.insertAdjacentHTML(
+      'afterbegin',
+      'Position: line <a id="line-position">' + (Number(suggestion.rows[0]) + 1).toString() + '</a>',
+    );
+
     if (currentSeverity && currentSeverity.text) {
       severity.querySelectorAll('img').forEach(n => {
-        if (n.id.slice(-1) === 'l') {
-          if (n.id.includes(currentSeverity.value)) n.className = 'icon light-only';
-          else n.className = 'icon light-only hidden';
+        if (n.id.includes(currentSeverity.value)) {
+          n.className = 'icon';
+          severity.setAttribute('title', currentSeverity.text);
         } else {
-          if (n.id.includes(currentSeverity.value)) n.className = 'icon dark-only';
-          else n.className = 'icon dark-only hidden';
+          n.className = 'icon hidden';
         }
       });
-      sevText.innerHTML = currentSeverity.text;
-      title.className = `suggestion-text ${currentSeverity.text.toLowerCase()}`;
     } else {
       severity.querySelectorAll('img').forEach(n => (n.className = 'icon hidden'));
-      sevText.innerHTML = '';
     }
 
-    title.querySelectorAll('*').forEach(n => n.remove());
-    title.innerHTML = '';
+    title.innerText = suggestion.title.split(':')[0];
+
+    description.querySelectorAll('*').forEach(n => n.remove());
+    description.innerHTML = '';
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
         const preText = suggestion.message.substring(i, m.msg[0]);
         const preMark = document.createTextNode(preText);
-        title.appendChild(preMark);
-        const mark = document.createElement('span');
+        description.appendChild(preMark);
+        const mark = document.createElement('a');
         mark.className = 'mark-message clickable';
         mark.onclick = function () {
           navigateToIssue(undefined, m.pos[0]);
         };
-        title.appendChild(mark);
+        description.appendChild(mark);
         const markMsg = document.createElement('span');
+        markMsg.className = 'mark-string';
         markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
         mark.appendChild(markMsg);
-        let markLineText = ' [';
+        let markLineText = '[';
         let first = true;
         for (const p of m.pos) {
           const rowStart = Number(p.rows[0]) + 1; // editors are 1-based
@@ -247,16 +277,14 @@ declare const acquireVsCodeApi: any;
       }
       const postText = suggestion.message.substring(i);
       const postMark = document.createTextNode(postText);
-      title.appendChild(postMark);
+      description.appendChild(postMark);
     } else {
-      title.innerHTML = suggestion.message;
+      description.innerHTML = suggestion.message;
     }
 
     const moreInfo = document.getElementById('lead-url')!;
     moreInfo.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
 
-    const suggestionPosition = document.getElementById('line-position')!;
-    suggestionPosition.innerHTML = (Number(suggestion.rows[0]) + 1).toString(); // editors are 1-based
     const suggestionPosition2 = document.getElementById('line-position2')!;
     suggestionPosition2.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
 

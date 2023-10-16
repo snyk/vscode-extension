@@ -1,14 +1,6 @@
 @import '../../common/variables';
 @import '../../common/webview';
 
-.font-blue {
-  color: #7754db;
-}
-
-.font-red {
-  color: #fc3838;
-}
-
 .row {
   display: flex;
   flex-direction: row;
@@ -35,45 +27,63 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  margin: 0;
+  font-size: 1.4rem;
 }
 
-#suggestion-info {
-  padding-left: 12rem;
+.suggestion-title {
+  padding: 0.4rem 0;
+  margin-bottom: 0.8rem;
+  font-size: 1.8rem;
+  font-weight: 500;
+  line-height: 2.4rem;
 }
 
 .suggestion-text {
-  float: left;
-  margin-bottom: 2rem;
-  font-size: 1.6rem;
   line-height: 1.6;
 }
 
-.suggestion-text.critical .mark-position {
-  color: #ce5019;
+.cwe-list {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
 }
 
-.suggestion-text.warning .mark-position {
-  color: #d68000;
+.suggestion-metas {
+  font-size: 1.3rem;
+  line-height: 2rem;
 }
 
-.suggestion-text.info .mark-position {
-  color: #88879e;
+.suggestion-meta,
+.suggestion-position {
+  display: inline-block;
+  padding: 0 8px;
+  border-right: 1px solid var(--vscode-input-border);
+  line-height: 1;
+  text-transform: capitalize;
 }
 
-.suggestion-text.critical .mark-message:hover {
-  color: #ce5019;
+.suggestion-meta:first-child {
+  padding-left: 0
 }
 
-.suggestion-text.warning .mark-message:hover {
-  color: #d68000;
+.suggestion-position {
+  border: none;
+  padding-left: 5px;
+  text-transform: none;
 }
 
-.suggestion-text.info .mark-message:hover {
-  color: #88879e;
+.suggestion--header {
+  background-image: linear-gradient(0, --vscode-tab-activeBackground, transparent);
+}
+
+.mark-position {
+  font-weight: 400;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .mark-message {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 #severity {
@@ -81,18 +91,14 @@
   flex-direction: column;
   flex-grow: 0;
   float: left;
-  width: 80px;
-  margin: 1rem 0 0 -10rem;
+  margin: 0 1rem 0 0;
   text-align: center;
 }
 
 #severity .icon {
   width: 32px;
   height: 32px;
-  margin: 0 auto 10px;
-}
-
-#severity-text {
+  color: var(--vscode-icon-foreground);
 }
 
 .vscode-dark .light-only {
@@ -107,16 +113,6 @@
   cursor: pointer;
 }
 
-.chip {
-  opacity: 0.75;
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 15px;
-  margin: 3px;
-  background-color: rgba(150, 150, 150, 0.15);
-  text-transform: capitalize;
-}
-
 #info-top {
   margin-bottom: 8px;
 }
@@ -125,97 +121,90 @@
   margin-bottom: 16px;
 }
 
-.arrow {
-  display: inline-flex;
-  vertical-align: middle;
-  cursor: pointer;
+.repo {
+  display: flex;
+  gap: 8px;
 }
 
-.arrow.enabled {
-  fill: #7754db;
-  color: #7754db;
+.arrow {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: center;
+  line-height: 1;
 }
 
 .arrow:hover {
-  fill: #7754db;
-  color: #7754db;
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.examples-nav {
+  display: flex;
+  gap: 4px;
 }
 
 #example-text {
-  margin-left: 2px;
-  margin-right: 2px;
-}
-
-.arrow-icon {
-  margin-bottom: 2px;
-  padding-bottom: 1px;
-}
-
-.arrow.down {
-  transform: rotate(-180deg);
+  width: 86px;
+  text-align: center;
 }
 
 #example {
   width: 100%;
-  border: 1px solid;
+  border: 1px solid var(--vscode-input-border);
   border-radius: 3px;
   line-height: 1.5;
-  background-color: #fff;
-  font-weight: 600;
-}
-
-.vscode-light #example {
-  border-color: $editor-background-color;
+  background-color: var(--vscode-editor-background);
 }
 
 .example-line.removed {
-  background-color: #ffeef0;
+  background-color: rgb(255, 215, 213);
 }
 
-.example-line.removed > code {
-  font-weight: 600;
+.example-line.removed::before {
+  content: "-";
+  position: absolute;
+  padding: 0 4px;
+  line-height: 1;
 }
 
 .example-line.added {
-  background-color: #e6ffed;
+  background-color: rgb(204, 255, 216);
 }
 
-.example-line.added > code {
-  font-weight: 600;
+.example-line.added::before {
+  content: "+";
+  position: absolute;
+  padding: 0 4px;
+  line-height: 1;
 }
 
-.example-line > code {
+.example-line>code {
+  display: block;
   padding-left: 30px;
   white-space: pre-wrap;
-  color: #231f20;
+  color: var(--vscode-editor-foreground);
   font-weight: 400;
 }
 
-.vscode-dark #example {
-  border-color: rgba(255, 255, 255, 0.075);
-  background-color: $editor-background-color;
-}
-
 .vscode-dark .removed {
-  background-color: rgba(201, 60, 55, 0.2);
+  background-color: rgba(84, 36, 38, 1);
   color: #fff;
 }
 
 .vscode-dark .added {
-  background-color: rgba(70, 149, 74, 0.2);
+  background-color: rgba(28, 68, 40, 1);
   color: #fff;
 }
 
-.vscode-dark .example-line > code {
-  color: $editor-font-color;
-  font-weight: 400;
-}
 
-.vscode-dark .added > code {
+.vscode-dark .added>code {
   color: #fff;
 }
 
-.vscode-dark .removed > code {
+.vscode-dark .removed>code {
   color: #fff;
 }
 
@@ -235,8 +224,9 @@
 }
 
 .actions .button {
-  margin: 0 1rem 2rem;
+  margin: 0 0 2rem;
   flex: 0 0 30%;
+  border-radius: 3px;
 }
 
 .report-fp-actions {

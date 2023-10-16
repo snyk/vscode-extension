@@ -5,7 +5,6 @@ html {
 
 body {
   padding: 0;
-  font-size: 1.4rem;
   line-height: 1.5;
 }
 
@@ -13,20 +12,32 @@ body * {
   box-sizing: border-box;
 }
 
-h2 {
-  font-size: 1em;
+h2, h3 {
+  font-size: 1.1rem;
   margin-block-start: 0;
+  margin-block-end: 0.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 a {
   cursor: pointer;
-  color: #7c74f2;
   text-decoration: none;
 }
 
 a:hover {
-  color: #7c74f2;
   text-decoration: underline;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table td {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-button-border);
+  padding: 3px;
 }
 
 .font-light {
@@ -34,13 +45,20 @@ a:hover {
 }
 
 .vscode-light {
-  background-color: rgba(0, 0, 0, 0.05);
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 0;
+}
+
+.suggestion--header {
+  background-image: linear-gradient(0, transparent, var(--vscode-tab-activeBackground));
 }
 
 .vscode-dark {
   background-color: rgba(255, 255, 255, 0.075);
-  border-right: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.vscode-light {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .vscode-light .delimiter-top {

@@ -111,8 +111,13 @@ export class CodeSuggestionWebviewProvider
         );
         this.registerListeners();
       }
-
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+      this.panel.iconPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'images',
+        'snyk-code.svg',
+      );
 
       void this.panel.webview.postMessage({ type: 'set', args: this.mapToModel(issue) });
       void this.postLearnLessonMessage(issue);
@@ -207,15 +212,14 @@ export class CodeSuggestionWebviewProvider
 
   protected getHtmlForWebview(webview: vscode.Webview): string {
     const images: Record<string, string> = [
-      ['icon-lines', 'svg'],
       ['icon-external', 'svg'],
       ['icon-code', 'svg'],
       ['icon-github', 'svg'],
       ['icon-like', 'svg'],
-      ['dark-high-severity', 'svg'],
-      ['dark-medium-severity', 'svg'],
-      ['light-icon-critical', 'svg'],
       ['dark-low-severity', 'svg'],
+      ['dark-medium-severity', 'svg'],
+      ['dark-high-severity', 'svg'],
+      ['light-icon-critical', 'svg'],
       ['arrow-left-dark', 'svg'],
       ['arrow-right-dark', 'svg'],
       ['arrow-left-light', 'svg'],
@@ -236,8 +240,8 @@ export class CodeSuggestionWebviewProvider
       'suggestion',
       'codeSuggestionWebviewScript.js',
     );
-    const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
     const styleVSCodeUri = this.getWebViewUri('media', 'views', 'common', 'vscode.css');
+    const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
     const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
 
     const nonce = getNonce();
@@ -249,60 +253,60 @@ export class CodeSuggestionWebviewProvider
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
-      <link href="${styleUri}" rel="stylesheet">
       <link href="${styleVSCodeUri}" rel="stylesheet">
+      <link href="${styleUri}" rel="stylesheet">
       <link href="${learnStyleUri}" rel="stylesheet">
   </head>
   <body>
       <div class="suggestion">
-        <section id="suggestion-info">
+        <section class="suggestion--header">
           <div id="severity">
-            <img id="sev1l" class="icon light-only hidden" src="${images['dark-low-severity']}" />
-            <img id="sev1d" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
-            <img id="sev2l" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
-            <img id="sev2d" class="icon dark-only hidden" src="${images['dark-medium-severity']}" />
-            <img id="sev3l" class="icon light-only hidden" src="${images['dark-high-severity']}" />
-            <img id="sev3d" class="icon dark-only hidden" src="${images['dark-high-severity']}" />
+            <img id="sev1" class="icon hidden" src="${images['dark-low-severity']}" />
+            <img id="sev2" class="icon hidden" src="${images['dark-medium-severity']}" />
+            <img id="sev3" class="icon hidden" src="${images['dark-high-severity']}" />
             <span id="severity-text"></span>
           </div>
-          <div id="title" class="suggestion-text"></div>
-          <div class="suggestion-links">
-            <div id="navigateToIssue" class="clickable">
-              <img class="icon" src="${images['icon-lines']}" /> This <span class="issue-type">issue</span> happens on line <span id="line-position"></span>
-            </div>
-            <div id="lead-url" class="clickable hidden">
-              <img class="icon" src="${images['icon-external']}" /> More info
-            </div>
+          <div id="title" class="suggestion-title"></div>
+          <div id="meta" class="suggestion-metas">
+            <span id="navigateToIssue" class="clickable suggestion-position"></span>
           </div>
           <div class="learn learn__code">
             <img class="icon" src="${images['learn-icon']}" />
             <a class="learn--link"></a>
           </div>
         </section>
+        <section id="suggestion-info" class="delimiter-top">
+          <div id="description" class="suggestion-text"></div>
+          <div class="suggestion-links">
+            <div id="lead-url" class="clickable hidden">
+              <img class="icon" src="${images['icon-external']}" /> More info
+            </div>
+          </div>
+        </section>
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
-            This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> example fixes.
+            This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> examples:
           </div>
           <div id="info-no-examples" class="font-light">
-            There are no example fixes for this issue.
+            There are no fix examples for this issue.
           </div>
           <div id="example-top" class="row between">
-            <div id="current-example" class="clickable">
-              <img class="icon" src="${images['icon-github']}"></img>
-              <span id="example-link"></span>
+            <div id="current-example" class="repo clickable">
+              <img class="repo-icon icon" src="${images['icon-github']}"></img>
+              <span id="example-link" class="repo-link"></span>
             </div>
-            <div>
-              <div id="previous-example" class="arrow">
+            <div class="examples-nav">
+              <span id="previous-example" class="arrow" title="Previous example">
                 <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
                 <img src=${images['arrow-left-light']} class="arrow-icon light-only"></img>
-              </div>
-              <span id="example-text">
-                Example <span id="example-counter">1</span>/<span id="example-number2"></span>
               </span>
-              <div id="next-example" class="arrow">
+              <span id="example-text">
+                Example <strong id="example-counter">1</strong>/<span id="example-number2"></span>
+              </span>
+              <span id="next-example" class="arrow" title="Next example">
                 <img src=${images['arrow-right-dark']} class="arrow-icon dark-only"></img>
                 <img src=${images['arrow-right-light']} class="arrow-icon light-only"></img>
-              </div>
+              </span>
             </div>
           </div>
           <div id="example"></div>

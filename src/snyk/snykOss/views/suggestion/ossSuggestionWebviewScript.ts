@@ -190,12 +190,17 @@
         }
 
         const html = `
-        <div class="path">
-          <div class="label">Introduced through: <span class="font-light">${introducedThrough}</span></div>
-          <div class="label">Remediation: <span class="font-light">${remediationAdvice}</span></div>
+        <div class="summary-item path">
+          <div class="label font-light">Introduced through</div>
+          <div class="content">${introducedThrough}</div>
+        </div>
+        <div class="summary-item remediation">
+          <div class="label font-light">Remediation</div>
+          <div class="content">${remediationAdvice}</div>
         </div>`;
 
         const path = document.createElement('div');
+        path.className = 'detailed-path';
         path.innerHTML = html;
         paths.append(path);
       });
@@ -214,7 +219,7 @@
 
   function appendIdentifierSpan(identifiers: Element, id: string, link?: string) {
     const delimiter = document.createElement('span');
-    delimiter.innerText = ' | ';
+    // delimiter.innerText = ' | ';
     delimiter.className = 'delimiter';
     identifiers.appendChild(delimiter);
 
