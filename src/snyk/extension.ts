@@ -408,12 +408,7 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.start();
 
     // initialize contexts
-    const loggedIn = await configuration.getToken();
-    if (loggedIn != undefined) {
-      await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
-    }
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
-    await this.codeSettings.updateIsCodeEnabled();
 
     // Actually start analysis
     this.runScan();

@@ -28,6 +28,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+      await this.codeSettings.updateIsCodeEnabled();
 
       if (!configuration.getFeaturesConfiguration()) {
         return;
