@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/HEAD-78_oss_via_ls # TODO: delete before merging to main
   workflow_call:
     secrets:
       ITERATIVELY_KEY:
