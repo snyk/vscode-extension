@@ -13,10 +13,10 @@ import { IViewManagerService } from '../../../../snyk/common/services/viewManage
 import { IWebViewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { OssFileResult, OssResult, OssSeverity } from '../../../../snyk/snykOss/ossResult';
-import { OssService } from '../../../../snyk/snykOss/services/ossService';
-import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
-import { DailyScanJob } from '../../../../snyk/snykOss/watchers/dailyScanJob';
+import { OssFileResult, OssResult, OssSeverity } from '../../../../snyk/snykOssOld/ossResult';
+import { OssService } from '../../../../snyk/snykOssOld/services/ossService';
+import { OssIssueCommandArg } from '../../../../snyk/snykOssOld/views/ossVulnerabilityTreeProvider';
+import { DailyScanJob } from '../../../../snyk/snykOssOld/watchers/dailyScanJob';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 

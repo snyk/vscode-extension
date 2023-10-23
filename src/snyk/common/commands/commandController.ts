@@ -6,9 +6,9 @@ import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { capitalizeOssSeverity } from '../../snykOss/ossResult';
-import { OssService } from '../../snykOss/services/ossService';
-import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { capitalizeOssSeverity } from '../../snykOssOld/ossResult';
+import { OssService } from '../../snykOssOld/services/ossService';
+import { OssIssueCommandArg } from '../../snykOssOld/views/ossVulnerabilityTreeProvider';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,

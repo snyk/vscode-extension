@@ -1,4 +1,4 @@
-import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { OssIssueCommandArg } from '../../snykOssOld/views/ossVulnerabilityTreeProvider';
 import { SNYK_GET_LESSON_COMMAND } from '../constants/commands';
 import { CodeIssueData, Issue } from '../languageServer/types';
 import { IVSCodeCommands } from '../vscode/commands';

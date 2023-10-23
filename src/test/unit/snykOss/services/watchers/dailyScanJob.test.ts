@@ -1,7 +1,7 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IExtension } from '../../../../../snyk/base/modules/interfaces';
-import { DailyScanJob } from '../../../../../snyk/snykOss/watchers/dailyScanJob';
+import { DailyScanJob } from '../../../../../snyk/snykOssOld/watchers/dailyScanJob';
 
 suite('OSS DailyScanJob', () => {
   let extension: IExtension;

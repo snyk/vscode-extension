@@ -73,13 +73,13 @@ import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeS
 import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
-import { EditorDecorator } from './snykOss/editor/editorDecorator';
-import { OssService } from './snykOss/services/ossService';
-import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
-import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
-import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
-import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
-import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
+import { EditorDecorator } from './snykOssOld/editor/editorDecorator';
+import { OssService } from './snykOssOld/services/ossService';
+import { OssVulnerabilityCountService } from './snykOssOld/services/vulnerabilityCount/ossVulnerabilityCountService';
+import { ModuleVulnerabilityCountProvider } from './snykOssOld/services/vulnerabilityCount/vulnerabilityCountProvider';
+import { OssVulnerabilityTreeProvider } from './snykOssOld/views/ossVulnerabilityTreeProvider';
+import { OssSuggestionWebviewProvider } from './snykOssOld/views/suggestion/ossSuggestionWebviewProvider';
+import { DailyScanJob } from './snykOssOld/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
