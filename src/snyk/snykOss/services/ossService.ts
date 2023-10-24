@@ -1,26 +1,28 @@
 import * as marked from 'marked';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { IExtension } from '../../base/modules/interfaces';
-import { CliError, CliService } from '../../cli/services/cliService';
+import { CliError } from '../../cli/services/cliService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IDE_NAME } from '../../common/constants/general';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
+import { OssIssueData, Scan, ScanProduct } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
 import { DownloadService } from '../../common/services/downloadService';
 import { INotificationService } from '../../common/services/notificationService';
+import { ProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { IWebViewProvider } from '../../common/views/webviewProvider';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
-import { isResultCliError, OssFileResult, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
+import { OssFileResult, OssResult, OssSeverity, OssVulnerability, isResultCliError } from '../ossResult';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
-export class OssService extends CliService<OssResult> {
+export class OssService extends ProductService<OssIssueData> {
   protected readonly command: string[] = ['test'];
 
   private isVulnerabilityTreeVisible = false;
@@ -42,6 +44,20 @@ export class OssService extends CliService<OssResult> {
     protected readonly workspaceTrust: IWorkspaceTrust,
   ) {
     super(extensionContext, logger, config, workspace, downloadService, languageServer, workspaceTrust);
+  }
+
+  subscribeToLsScanMessages(): Subscription {
+    return this.languageServer.scan$.subscribe((scan: Scan<OssIssueData>) => {
+      if (scan.product !== ScanProduct.OpenSource) {
+        return;
+      }
+
+      super.handleLsScanMessage(scan);
+    });
+  }
+
+  refreshTreeView() {
+    this.viewManagerService.refreshIacView();
   }
 
   public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
