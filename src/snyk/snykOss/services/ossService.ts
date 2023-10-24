@@ -9,17 +9,17 @@ import { IDE_NAME } from '../../common/constants/general';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { OssIssueData, Scan, ScanProduct } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
-import { DownloadService } from '../../common/services/downloadService';
-import { INotificationService } from '../../common/services/notificationService';
 import { ProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { IWebViewProvider } from '../../common/views/webviewProvider';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
+import { OssCodeActionsProvider } from '../codeActions/ossCodeActionsProvider';
 import { messages } from '../messages/test';
 import { OssFileResult, OssResult, OssSeverity, OssVulnerability, isResultCliError } from '../ossResult';
+import { IOssSuggestionWebviewProvider } from '../views/interfaces';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
-import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
 export class OssService extends ProductService<OssIssueData> {
@@ -30,20 +30,34 @@ export class OssService extends ProductService<OssIssueData> {
   readonly scanFinished$ = new Subject<void>();
 
   constructor(
-    protected readonly extensionContext: ExtensionContext,
-    protected readonly logger: ILog,
-    protected readonly config: IConfiguration,
-    private readonly suggestionProvider: IWebViewProvider<OssIssueCommandArg>,
-    protected readonly workspace: IVSCodeWorkspace,
-    private readonly viewManagerService: IViewManagerService,
-    protected readonly downloadService: DownloadService,
-    private readonly dailyScanJob: DailyScanJob,
-    private readonly notificationService: INotificationService,
-    private readonly analytics: IAnalytics,
-    protected readonly languageServer: ILanguageServer,
-    protected readonly workspaceTrust: IWorkspaceTrust,
+    extensionContext: ExtensionContext,
+    config: IConfiguration,
+    suggestionProvider: IOssSuggestionWebviewProvider,
+    readonly codeActionAdapter: ICodeActionAdapter,
+    readonly codeActionKindAdapter: ICodeActionKindAdapter,
+    viewManagerService: IViewManagerService,
+    workspace: IVSCodeWorkspace,
+    workspaceTrust: IWorkspaceTrust,
+    languageServer: ILanguageServer,
+    languages: IVSCodeLanguages,
+    logger: ILog,
+    readonly analytics: IAnalytics,
   ) {
-    super(extensionContext, logger, config, workspace, downloadService, languageServer, workspaceTrust);
+    super(
+      extensionContext,
+      config,
+      suggestionProvider,
+      viewManagerService,
+      workspace,
+      workspaceTrust,
+      languageServer,
+      languages,
+      logger,
+    );
+
+    this.registerCodeActionsProvider(
+      new OssCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, analytics),
+    );
   }
 
   subscribeToLsScanMessages(): Subscription {
@@ -57,7 +71,7 @@ export class OssService extends ProductService<OssIssueData> {
   }
 
   refreshTreeView() {
-    this.viewManagerService.refreshIacView();
+    this.viewManagerService.refreshOssView();
   }
 
   public getResultArray = (): ReadonlyArray<OssFileResult> | undefined => {
