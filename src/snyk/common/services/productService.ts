@@ -40,14 +40,14 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   constructor(
     readonly extensionContext: ExtensionContext,
-    private readonly config: IConfiguration,
-    private readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
+    protected readonly config: IConfiguration,
+    protected readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
     protected readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
     readonly languages: IVSCodeLanguages,
-    private readonly logger: ILog,
+    protected readonly logger: ILog,
   ) {
     super();
     this._result = new Map<string, WorkspaceFolderResult<T>>();

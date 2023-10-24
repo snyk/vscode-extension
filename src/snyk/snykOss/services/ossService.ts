@@ -7,8 +7,10 @@ import { IConfiguration } from '../../common/configuration/configuration';
 import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IDE_NAME } from '../../common/constants/general';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
-import { OssIssueData, Scan, ScanProduct } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, OssIssueData, Scan, ScanProduct } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
+import { DownloadService } from '../../common/services/downloadService';
+import { INotificationService } from '../../common/services/notificationService';
 import { ProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
@@ -17,17 +19,42 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { OssCodeActionsProvider } from '../codeActions/ossCodeActionsProvider';
 import { messages } from '../messages/test';
-import { OssFileResult, OssResult, OssSeverity, OssVulnerability, isResultCliError } from '../ossResult';
-import { IOssSuggestionWebviewProvider } from '../views/interfaces';
-import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
+import { OssFileResult, OssResult, OssResultBody, OssSeverity, OssVulnerability, isResultCliError } from '../ossResult';
+import { IOssSuggestionWebviewProvider, OssIssueCommandArg } from '../views/interfaces';
+import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
 
 export class OssService extends ProductService<OssIssueData> {
   protected readonly command: string[] = ['test'];
 
   private isVulnerabilityTreeVisible = false;
+  private _isAnyWorkspaceFolderTrusted = true;
 
   readonly scanFinished$ = new Subject<void>();
+
+  /**
+   *   protected readonly command: string[] = ['test'];
+
+  private isVulnerabilityTreeVisible = false;
+
+  readonly scanFinished$ = new Subject<void>();
+
+  constructor(
+    protected readonly extensionContext: ExtensionContext,
+    protected readonly logger: ILog,
+    protected readonly config: IConfiguration,
+    private readonly suggestionProvider: IWebViewProvider<OssIssueCommandArg>,
+    protected readonly workspace: IVSCodeWorkspace,
+    private readonly viewManagerService: IViewManagerService,
+    protected readonly downloadService: DownloadService,
+    private readonly notificationService: INotificationService,
+    private readonly analytics: IAnalytics,
+    protected readonly languageServer: ILanguageServer,
+    protected readonly workspaceTrust: IWorkspaceTrust,
+  ) {
+    super(extensionContext, logger, config, workspace, downloadService, languageServer, workspaceTrust);
+  }
+   */
 
   constructor(
     extensionContext: ExtensionContext,
@@ -42,6 +69,11 @@ export class OssService extends ProductService<OssIssueData> {
     languages: IVSCodeLanguages,
     logger: ILog,
     readonly analytics: IAnalytics,
+
+    // private readonly suggestionProvider: IWebViewProvider<OssIssueCommandArg>,
+    private readonly dailyScanJob: DailyScanJob,
+    protected readonly downloadService: DownloadService,
+    private readonly notificationService: INotificationService,
   ) {
     super(
       extensionContext,
@@ -79,7 +111,64 @@ export class OssService extends ProductService<OssIssueData> {
       return undefined;
     }
 
-    return Array.isArray(this.result) ? this.result : [this.result];
+    let tempResultArray: OssFileResult[] = [];
+    let resultCache = new Map<string, OssResultBody>();
+
+    for (const [, value] of this.result) {
+      // value is Error
+      if (value instanceof Error) {
+        tempResultArray.push(new CliError(value as Error));
+      }
+      // value is Issue<T>[]
+      else {
+        for (const issue of value) {
+          // try to access list of vulns for the current file
+          let res = resultCache.get(issue.filePath);
+
+          // add list of vulns to local cache if not there yet
+          if (res === undefined) {
+            res = {
+              path: issue.filePath,
+              vulnerabilities: [],
+              projectName: issue.additionalData.projectName,
+              displayTargetFile: issue.additionalData.displayTargetFile,
+              packageManager: issue.additionalData.packageManager,
+            };
+            resultCache.set(issue.filePath, res);
+          }
+
+          let tempVuln: OssVulnerability = {
+            id: issue.id,
+            license: issue.additionalData.license,
+            identifiers: issue.additionalData.identifiers,
+            title: issue.title,
+            description: issue.additionalData.description,
+            language: issue.additionalData.language,
+            packageManager: issue.additionalData.packageManager,
+            packageName: issue.additionalData.packageName,
+            severity: issue.severity as unknown as OssSeverity,
+            name: issue.additionalData.name,
+            version: issue.additionalData.version,
+            exploit: issue.additionalData.exploit,
+
+            CVSSv3: issue.additionalData.CVSSv3,
+            cvssScore: issue.additionalData.cvssScore,
+
+            fixedIn: issue.additionalData.fixedIn,
+            from: issue.additionalData.from,
+            upgradePath: issue.additionalData.upgradePath,
+            isPatchable: issue.additionalData.isPatchable,
+            isUpgradable: issue.additionalData.isUpgradable,
+          };
+          res.vulnerabilities.push(tempVuln);
+        }
+      }
+    }
+
+    // copy cached results to final result arra
+    resultCache.forEach(value => tempResultArray.push(value));
+
+    return tempResultArray;
   };
 
   protected mapToResultType(rawCliResult: string): OssResult {
@@ -136,8 +225,8 @@ export class OssService extends ProductService<OssIssueData> {
     this.viewManagerService.refreshOssView();
   }
 
-  override handleNoTrustedFolders(): void {
-    super.handleNoTrustedFolders();
+  handleNoTrustedFolders(): void {
+    this._isAnyWorkspaceFolderTrusted = false;
     this.viewManagerService.refreshOssView();
   }
 
@@ -145,8 +234,16 @@ export class OssService extends ProductService<OssIssueData> {
     this.suggestionProvider.activate();
   }
 
-  showSuggestionProvider(vulnerability: OssIssueCommandArg): Promise<void> {
-    return this.suggestionProvider.showPanel(vulnerability);
+  showSuggestionProvider2(vulnerability: OssIssueCommandArg): Promise<void> {
+    // TODO translate
+    let t: Issue<OssIssueData> = {
+      id: '',
+      title: '',
+      severity: IssueSeverity.Critical,
+      filePath: '',
+      additionalData: {} as unknown as OssIssueData,
+    };
+    return this.suggestionProvider.showPanel(t);
   }
 
   activateManifestFileWatcher(extension: IExtension): void {

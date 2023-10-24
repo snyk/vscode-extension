@@ -77,8 +77,8 @@ import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
+import { IOssSuggestionWebviewProvider } from './snykOss/views/interfaces';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
-import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -210,17 +210,20 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.ossService = new OssService(
       this.context,
-      Logger,
       configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
-      vsCodeWorkspace,
+      {} as unknown as IOssSuggestionWebviewProvider,
+      new CodeActionAdapter(),
+      this.codeActionKindAdapter,
       this.viewManagerService,
-      this.downloadService,
-      new DailyScanJob(this),
-      this.notificationService,
-      this.analytics,
-      this.languageServer,
+      vsCodeWorkspace,
       this.workspaceTrust,
+      this.languageServer,
+      vsCodeLanguages,
+      Logger,
+      this.analytics,
+      new DailyScanJob(this),
+      this.downloadService,
+      this.notificationService,
     );
 
     const iacSuggestionProvider = new IacSuggestionWebviewProvider(
