@@ -5,15 +5,15 @@ import { ScanModeService } from '../../../../snyk/base/services/scanModeService'
 import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
+import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
+import { IProductService } from '../../../../snyk/common/services/productService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { OssService } from '../../../../snyk/snykOss/services/ossService';
+import { OssService } from '../../../../snyk/snykOssOld/services/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
-import { IProductService } from '../../../../snyk/common/services/productService';
-import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 
 suite('CommandController', () => {
   const sleep = util.promisify(setTimeout);

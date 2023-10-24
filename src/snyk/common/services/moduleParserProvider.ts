@@ -1,7 +1,7 @@
-import { BabelParser } from '../../snykOss/services/vulnerabilityCount/parsers/babelParser';
-import { HtmlParser } from '../../snykOss/services/vulnerabilityCount/parsers/htmlParser';
-import { ModuleParser } from '../../snykOss/services/vulnerabilityCount/parsers/moduleParser';
-import { PackageJsonParser } from '../../snykOss/services/vulnerabilityCount/parsers/packageJsonParser';
+import { BabelParser } from '../../snykOssOld/services/vulnerabilityCount/parsers/babelParser';
+import { HtmlParser } from '../../snykOssOld/services/vulnerabilityCount/parsers/htmlParser';
+import { ModuleParser } from '../../snykOssOld/services/vulnerabilityCount/parsers/moduleParser';
+import { PackageJsonParser } from '../../snykOssOld/services/vulnerabilityCount/parsers/packageJsonParser';
 import { IConfiguration } from '../configuration/configuration';
 import { ILog } from '../logger/interfaces';
 import { Language } from '../types';

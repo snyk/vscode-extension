@@ -3,8 +3,8 @@ import sinon from 'sinon';
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { IThemeColorAdapter } from '../../../../snyk/common/vscode/theme';
 import { IVSCodeWindow } from '../../../../snyk/common/vscode/window';
-import { EditorDecorator } from '../../../../snyk/snykOss/editor/editorDecorator';
-import { ModuleVulnerabilityCount } from '../../../../snyk/snykOss/services/vulnerabilityCount/importedModule';
+import { EditorDecorator } from '../../../../snyk/snykOssOld/editor/editorDecorator';
+import { ModuleVulnerabilityCount } from '../../../../snyk/snykOssOld/services/vulnerabilityCount/importedModule';
 
 suite('OSS Editor Decorator', () => {
   let decorator: EditorDecorator;

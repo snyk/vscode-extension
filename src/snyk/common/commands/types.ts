@@ -1,7 +1,7 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { OssIssueCommandArg } from '../../snykOssOld/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue } from '../languageServer/types';
 
 export enum OpenCommandIssueType {
