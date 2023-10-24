@@ -41,7 +41,7 @@ import {
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
-import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExperimentKey, ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
 import { Logger } from './common/logger/logger';
@@ -363,6 +363,11 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.analytics.load();
     this.experimentService.load();
+    const ossViaLanguageServer = await this.experimentService.isUserPartOfExperiment(
+      ExperimentKey.OssViaLanguageServer,
+      true,
+    );
+    console.log(`Snyk "Open Source Security" via Language Server: ${ossViaLanguageServer}`);
 
     this.logPluginIsInstalled();
 
