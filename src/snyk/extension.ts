@@ -20,13 +20,10 @@ import {
   SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
-  SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SET_TOKEN_COMMAND,
-  SNYK_SETTINGS_COMMAND,
-  SNYK_SHOW_LS_OUTPUT_COMMAND,
+  SNYK_OPEN_LOCAL_COMMAND, SNYK_SETTINGS_COMMAND, SNYK_SET_TOKEN_COMMAND, SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
-  SNYK_WORKSPACE_SCAN_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
@@ -37,7 +34,7 @@ import {
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
-  SNYK_VIEW_WELCOME,
+  SNYK_VIEW_WELCOME
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
@@ -74,11 +71,13 @@ import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
+import { OssServiceLanguageServer } from './snykOss/ossServiceLs';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
+import { OssSuggestionWebviewProviderLanguageServer } from './snykOss/views/suggestion/ossSuggestionWebviewProviderLanguageServer';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -223,6 +222,30 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
     );
 
+
+    const ossSuggestionProvider = new OssSuggestionWebviewProviderLanguageServer(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+    )
+
+    this.ossServiceLanguageServer = new OssServiceLanguageServer(
+      extensionContext,
+      configuration,
+      ossSuggestionProvider,
+      new CodeActionAdapter(),
+      this.codeActionKindAdapter,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      vsCodeLanguages,
+      Logger,
+      this.analytics,
+    )
+
     const iacSuggestionProvider = new IacSuggestionWebviewProvider(
       vsCodeWindow,
       extensionContext,
@@ -263,12 +286,12 @@ class SnykExtension extends SnykLib implements IExtension {
     this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCode,
-        configuration,
-        vsCodeLanguages,
-      ),
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    ),
       codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
         this.viewManagerService,
         this.contextService,

@@ -44,7 +44,7 @@ export class LanguageServerSettings {
     return {
       activateSnykCodeSecurity: `${codeSecurityEnabled}`,
       activateSnykCodeQuality: `${codeQualityEnabled}`,
-      activateSnykOpenSource: 'false',
+      activateSnykOpenSource: 'true', // TODO: read value from config like we do for code/iac
       activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
