@@ -26,7 +26,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
-  SNYK_WORKSPACE_SCAN_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
@@ -36,8 +36,9 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
+  SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
   SNYK_VIEW_SUPPORT,
-  SNYK_VIEW_WELCOME,
+  SNYK_VIEW_WELCOME
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
@@ -76,6 +77,7 @@ import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSugg
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
+import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
@@ -288,19 +290,20 @@ class SnykExtension extends SnykLib implements IExtension {
     this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCode,
-        configuration,
-        vsCodeLanguages,
-      ),
-      codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
-        this.viewManagerService,
-        this.contextService,
-        this.snykCode,
-        configuration,
-        vsCodeLanguages,
-      );
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
 
     const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
       treeDataProvider: codeSecurityIssueProvider,
@@ -345,6 +348,23 @@ class SnykExtension extends SnykLib implements IExtension {
       codeEnablementTree,
     );
 
+    const ossIssueProvider = new OssIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.ossServiceLanguageServer,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, {
+      treeDataProvider: ossIssueProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, ossIssueProvider),
+      ossSecurityTree,
+    );
+
     const iacIssueProvider = new IacIssueTreeProvider(
       this.viewManagerService,
       this.contextService,
@@ -380,6 +400,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.ossService.activateSuggestionProvider();
     this.ossService.activateManifestFileWatcher(this);
     this.iacService.activateWebviewProviders();
+    this.ossServiceLanguageServer.activateWebviewProviders();
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
