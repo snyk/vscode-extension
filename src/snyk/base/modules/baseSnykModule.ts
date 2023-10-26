@@ -23,7 +23,7 @@ import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vsco
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ICodeSettings } from '../../snykCode/codeSettings';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
-import { OssServiceLanguageServer } from '../../snykOss/ossServiceLs';
+import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
 import { OssService } from '../../snykOss/services/ossService';
 import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { IAuthenticationService } from '../services/authenticationService';

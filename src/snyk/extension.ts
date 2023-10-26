@@ -71,7 +71,7 @@ import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
-import { OssServiceLanguageServer } from './snykOss/ossServiceLs';
+import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
