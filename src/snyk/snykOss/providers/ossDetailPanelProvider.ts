@@ -1,22 +1,19 @@
 import * as vscode from 'vscode';
-import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION_IAC, SNYK_VIEW_SUGGESTION_OSS } from '../../../common/constants/views';
-import { ErrorHandler } from '../../../common/error/errorHandler';
-import { IacIssueData, Issue, OssIssueData } from '../../../common/languageServer/types';
-import { ILog } from '../../../common/logger/interfaces';
-import { getNonce } from '../../../common/views/nonce';
-import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
-import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
-import { ExtensionContext } from '../../../common/vscode/extensionContext';
-import { IVSCodeLanguages } from '../../../common/vscode/languages';
-import { IVSCodeWindow } from '../../../common/vscode/window';
-import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
-import { messages as errorMessages } from '../../messages/error';
-// import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
-// import { IssueUtils } from '../../utils/issueUtils';
-// import { ICodeSuggestionWebviewProvider } from '../interfaces';
+import { SNYK_OPEN_BROWSER_COMMAND } from '../../common/constants/commands';
+import { SNYK_VIEW_SUGGESTION_OSS } from '../../common/constants/views';
+import { ErrorHandler } from '../../common/error/errorHandler';
+import { Issue, OssIssueData } from '../../common/languageServer/types';
+import { ILog } from '../../common/logger/interfaces';
+import { getNonce } from '../../common/views/nonce';
+import { WebviewPanelSerializer } from '../../common/views/webviewPanelSerializer';
+import { IWebViewProvider, WebviewProvider } from '../../common/views/webviewProvider';
+import { ExtensionContext } from '../../common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../common/vscode/languages';
+import { IVSCodeWindow } from '../../common/vscode/window';
+import { IVSCodeWorkspace } from '../../common/vscode/workspace';
+import { messages as errorMessages } from '../messages/error';
 
-export class OssSuggestionWebviewProviderLanguageServer
+export class OssDetailPanelProvider
   extends WebviewProvider<Issue<OssIssueData>>
   implements IWebViewProvider<Issue<OssIssueData>>
 {

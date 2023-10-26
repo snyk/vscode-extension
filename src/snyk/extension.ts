@@ -75,12 +75,12 @@ import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
+import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
-import { OssSuggestionWebviewProviderLanguageServer } from './snykOss/views/suggestion/ossSuggestionWebviewProviderLanguageServer';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -225,7 +225,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
     );
 
-    const ossSuggestionProvider = new OssSuggestionWebviewProviderLanguageServer(
+    const ossSuggestionProvider = new OssDetailPanelProvider(
       vsCodeWindow,
       extensionContext,
       Logger,

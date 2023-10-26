@@ -11,7 +11,7 @@ import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/cod
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
-import { IOssSuggestionWebviewProvider } from './views/interfaces';
+import { IOssSuggestionWebviewProvider } from './interfaces';
 
 export class OssServiceLanguageServer extends ProductService<OssIssueData> {
   constructor(
