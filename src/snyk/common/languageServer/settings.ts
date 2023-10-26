@@ -33,6 +33,8 @@ export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
+    const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
+
     const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
     const codeSecurityEnabled = _.isUndefined(featuresConfiguration.codeSecurityEnabled)
       ? true
@@ -44,7 +46,7 @@ export class LanguageServerSettings {
     return {
       activateSnykCodeSecurity: `${codeSecurityEnabled}`,
       activateSnykCodeQuality: `${codeQualityEnabled}`,
-      activateSnykOpenSource: 'true', // TODO: read value from config like we do for code/iac
+      activateSnykOpenSource: `${ossEnabled}`,
       activateSnykIac: `${iacEnabled}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
