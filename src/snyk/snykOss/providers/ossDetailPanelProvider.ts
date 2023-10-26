@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND } from '../../common/constants/commands';
-import { SNYK_VIEW_SUGGESTION_OSS } from '../../common/constants/views';
+import { SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Issue, OssIssueData } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
@@ -33,7 +33,7 @@ export class OssDetailPanelProvider
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_OSS, new WebviewPanelSerializer(this)),
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER, new WebviewPanelSerializer(this)),
     );
   }
 
@@ -49,7 +49,7 @@ export class OssDetailPanelProvider
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION_OSS,
+          SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER,
           'Snyk OSS Vulnerability',
           {
             viewColumn: vscode.ViewColumn.Two,
