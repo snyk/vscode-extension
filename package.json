@@ -236,6 +236,11 @@
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound"
         },
         {
+          "id": "snyk.views.analysis.oss.languageServer",
+          "name": "Open Source Security (LS)",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
+        },
+        {
           "id": "snyk.views.analysis.oss",
           "name": "Open Source Security",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
