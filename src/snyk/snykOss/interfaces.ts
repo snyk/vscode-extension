@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { Issue, OssIssueData } from '../common/languageServer/types';
 import { IWebViewProvider } from '../common/views/webviewProvider';
 
@@ -5,7 +6,9 @@ export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<Os
   openIssueId: string | undefined;
 }
 
-export type OssIssueCommandArgLanguageServer = OssIssueData & {
-  matchingIdVulnerabilities: OssIssueData[];
-  overviewHtml: string;
+export type OssIssueCommandArgLanguageServer = {
+  id: string,
+  folderPath: string,
+  filePath: string,
+  range: vscode.Range | undefined,
 };
