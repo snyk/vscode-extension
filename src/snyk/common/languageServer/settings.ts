@@ -57,35 +57,35 @@ export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
-    const iacEnabled = defaultToTrue(featuresConfiguration.iacEnabled);
-    const codeSecurityEnabled = defaultToTrue(featuresConfiguration.codeSecurityEnabled);
-    const codeQualityEnabled = defaultToTrue(featuresConfiguration.codeQualityEnabled);
+    const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
+
+    const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
+    const codeSecurityEnabled = _.isUndefined(featuresConfiguration.codeSecurityEnabled)
+      ? true
+      : featuresConfiguration.codeSecurityEnabled;
+    const codeQualityEnabled = _.isUndefined(featuresConfiguration.codeQualityEnabled)
+      ? true
+      : featuresConfiguration.codeQualityEnabled;
 
     return {
-      activateSnykCodeSecurity: codeSecurityEnabled,
-      activateSnykCodeQuality: codeQualityEnabled,
-      activateSnykOpenSource: 'false',
-      activateSnykIac: iacEnabled,
-
+      activateSnykCodeSecurity: `${codeSecurityEnabled}`,
+      activateSnykCodeQuality: `${codeQualityEnabled}`,
+      activateSnykOpenSource: `${ossEnabled}`,
+      activateSnykIac: `${iacEnabled}`,
+      enableTelemetry: `${configuration.shouldReportEvents}`,
+      sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
       endpoint: configuration.snykOssApiEndpoint,
       organization: configuration.organization,
-
       token: await configuration.getToken(),
       automaticAuthentication: 'false',
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-
-      sendErrorReports: `${configuration.shouldReportErrors}`,
-      enableTelemetry: `${configuration.shouldReportEvents}`,
-
       filterSeverity: configuration.severityFilter,
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
-
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
-
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
