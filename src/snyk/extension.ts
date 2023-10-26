@@ -21,8 +21,8 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SET_TOKEN_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SET_TOKEN_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
@@ -74,11 +74,13 @@ import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
+import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
 import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { ModuleVulnerabilityCountProvider } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProvider';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
 import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
+import { OssSuggestionWebviewProviderLanguageServer } from './snykOss/views/suggestion/ossSuggestionWebviewProviderLanguageServer';
 import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -221,6 +223,29 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
       this.languageServer,
       this.workspaceTrust,
+    );
+
+    const ossSuggestionProvider = new OssSuggestionWebviewProviderLanguageServer(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+    );
+
+    this.ossServiceLanguageServer = new OssServiceLanguageServer(
+      extensionContext,
+      configuration,
+      ossSuggestionProvider,
+      new CodeActionAdapter(),
+      this.codeActionKindAdapter,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      vsCodeLanguages,
+      Logger,
+      this.analytics,
     );
 
     const iacSuggestionProvider = new IacSuggestionWebviewProvider(
