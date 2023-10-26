@@ -33,7 +33,10 @@ export class OssDetailPanelProvider
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER, new WebviewPanelSerializer(this)),
+      this.window.registerWebviewPanelSerializer(
+        SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER,
+        new WebviewPanelSerializer(this),
+      ),
     );
   }
 

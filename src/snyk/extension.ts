@@ -26,7 +26,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
-  SNYK_WORKSPACE_SCAN_COMMAND
+  SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
@@ -38,7 +38,7 @@ import {
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
   SNYK_VIEW_SUPPORT,
-  SNYK_VIEW_WELCOME
+  SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';

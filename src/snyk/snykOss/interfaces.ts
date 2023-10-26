@@ -7,8 +7,8 @@ export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<Os
 }
 
 export type OssIssueCommandArgLanguageServer = {
-  id: string,
-  folderPath: string,
-  filePath: string,
-  range: vscode.Range | undefined,
+  id: string;
+  folderPath: string;
+  filePath: string;
+  range: vscode.Range | undefined;
 };

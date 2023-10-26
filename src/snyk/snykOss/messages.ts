@@ -36,5 +36,5 @@ export const messages = {
   },
   errors: {
     suggestionViewShowFailed: 'Failed to show Snyk OSS suggestion view',
-  }
-}
+  },
+};
