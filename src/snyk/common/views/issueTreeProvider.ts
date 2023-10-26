@@ -41,7 +41,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   abstract getRunTestMessage(): string;
   abstract getIssueTitle(issue: Issue<T>): string;
 
-  abstract getIssueRange(issue: Issue<T>): Range;
+  abstract getIssueRange(issue?: Issue<T>): Range | undefined;
   abstract getOpenIssueCommand(issue: Issue<T>, folderPath: string, filePath: string): Command;
 
   getRootChildren(): TreeNode[] {
