@@ -51,7 +51,6 @@ export class OssServiceLanguageServer extends ProductService<OssIssueData> {
         return;
       }
 
-      console.log('received OSS scan message', scan); // TODO: delete
       super.handleLsScanMessage(scan);
     });
   }
