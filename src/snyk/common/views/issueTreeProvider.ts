@@ -42,7 +42,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   abstract getIssueTitle(issue: Issue<T>): string;
 
   abstract getIssueRange(issue?: Issue<T>): Range | undefined;
-  abstract getOpenIssueCommand(issue: Issue<T>, folderPath: string, filePath: string): Command;
+  abstract getOpenIssueCommand(issue: Issue<T>, folderPath: string, filePath: string, filteredIssues?: Issue<T>[]): Command;
 
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
@@ -229,7 +229,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return IssueSeverity.Low;
   }
 
-  private initSeverityCounts(): ISeverityCounts {
+  protected initSeverityCounts(): ISeverityCounts {
     return {
       [IssueSeverity.Critical]: 0,
       [IssueSeverity.High]: 0,
