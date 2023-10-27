@@ -6,9 +6,7 @@ export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<Os
   openIssueId: string | undefined;
 }
 
-export type OssIssueCommandArgLanguageServer = {
-  id: string;
-  folderPath: string;
-  filePath: string;
-  range: vscode.Range | undefined;
+export type OssIssueCommandArgLanguageServer = Issue<OssIssueData> & {
+  matchingIdVulnerabilities: Issue<OssIssueData>[];
+  overviewHtml: string;
 };
