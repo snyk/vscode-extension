@@ -42,7 +42,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   abstract getIssueTitle(issue: Issue<T>): string;
 
   abstract getIssueRange(issue?: Issue<T>): Range | undefined;
-  abstract getOpenIssueCommand(issue: Issue<T>, folderPath: string, filePath: string, filteredIssues?: Issue<T>[]): Command;
+  abstract getOpenIssueCommand(
+    issue: Issue<T>,
+    folderPath: string,
+    filePath: string,
+    filteredIssues?: Issue<T>[],
+  ): Command;
 
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
