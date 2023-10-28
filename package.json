@@ -440,7 +440,7 @@
     "@sentry/tracing": "^6.19.7",
     "@snyk/code-client": "^4.12.4",
     "analytics-node": "^4.0.1",
-    "axios": "^0.27.2",
+    "axios": "^1.6.0",
     "glob": "^7.2.0",
     "he": "^1.2.0",
     "htmlparser2": "^7.2.0",
