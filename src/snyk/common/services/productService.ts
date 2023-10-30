@@ -30,7 +30,7 @@ export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
 
 export abstract class ProductService<T> extends AnalysisStatusProvider implements IProductService<T> {
   private _result: ProductResult<T>;
-  readonly newResultAvailable$ = new Subject<void>;
+  readonly newResultAvailable$ = new Subject<void>();
 
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
   private runningScanCount = 0;
