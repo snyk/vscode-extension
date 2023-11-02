@@ -12,7 +12,7 @@ import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { OssServiceLanguageServer } from '../../../snyk/snykOss/ossServiceLanguageServer';
-import { OssSuggestionWebviewProviderLanguageServer } from '../../../snyk/snykOss/views/suggestion/ossSuggestionWebviewProviderLanguageServer';
+import { OssDetailPanelProvider } from '../../../snyk/snykOss/providers/ossDetailPanelProvider';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
@@ -32,7 +32,7 @@ suite('OSS Service', () => {
     service = new OssServiceLanguageServer(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as OssSuggestionWebviewProviderLanguageServer,
+      {} as OssDetailPanelProvider,
       {} as ICodeActionAdapter,
       {
         getQuickFix: sinon.fake(),
