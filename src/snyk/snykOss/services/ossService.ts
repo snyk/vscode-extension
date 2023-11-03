@@ -174,13 +174,6 @@ export class OssService extends CliService<OssResult> {
     vulnerability: OssVulnerability,
     allVulnerabilities: OssVulnerability[],
   ): Promise<OssIssueCommandArg> {
-    return OssService.getOssIssueCommandArg(vulnerability, allVulnerabilities);
-  }
-
-  static getOssIssueCommandArg(
-    vulnerability: OssVulnerability,
-    allVulnerabilities: OssVulnerability[],
-  ): Promise<OssIssueCommandArg> {
     return new Promise((resolve, reject) => {
       const matchingIdVulnerabilities = allVulnerabilities.filter(v => v.id === vulnerability.id);
       marked.parse(vulnerability.description, (err, overviewHtml) => {
