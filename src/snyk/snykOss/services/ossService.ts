@@ -15,7 +15,7 @@ import { IWebViewProvider } from '../../common/views/webviewProvider';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../messages/test';
-import { isResultCliError, OssFileResult, OssResult, OssSeverity, OssVulnerability } from '../ossResult';
+import { OssFileResult, OssResult, OssSeverity, OssVulnerability, isResultCliError } from '../ossResult';
 import { OssIssueCommandArg } from '../views/ossVulnerabilityTreeProvider';
 import { DailyScanJob } from '../watchers/dailyScanJob';
 import createManifestFileWatcher from '../watchers/manifestFileWatcher';
