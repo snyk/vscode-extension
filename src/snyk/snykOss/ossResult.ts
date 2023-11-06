@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { CliError } from '../cli/services/cliService';
+import { IssueSeverity } from '../common/languageServer/types';
 
 export type OssResult = OssFileResult[] | OssFileResult;
 
@@ -55,4 +56,17 @@ export function capitalizeOssSeverity(ossSeverity: OssSeverity): Capitalize<OssS
 
 export function isResultCliError(fileResult: OssFileResult): fileResult is CliError {
   return (fileResult as CliError).error !== undefined;
+}
+
+export function convertSeverity(severity: IssueSeverity): OssSeverity {
+  switch (severity) {
+    case IssueSeverity.Low:
+      return OssSeverity.Low;
+    case IssueSeverity.Medium:
+      return OssSeverity.Medium;
+    case IssueSeverity.High:
+      return OssSeverity.High;
+    default:
+      return OssSeverity.Critical;
+  }
 }
