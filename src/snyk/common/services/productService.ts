@@ -1,4 +1,4 @@
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
@@ -30,6 +30,7 @@ export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
 
 export abstract class ProductService<T> extends AnalysisStatusProvider implements IProductService<T> {
   private _result: ProductResult<T>;
+  readonly newResultAvailable$ = new Subject<void>();
 
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
   private runningScanCount = 0;
@@ -168,6 +169,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       this.analysisFinished();
       this.runningScanCount = 0;
 
+      this.newResultAvailable$.next();
       this.refreshTreeView();
     }
   }
