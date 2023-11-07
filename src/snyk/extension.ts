@@ -50,7 +50,7 @@ import { DownloadService } from './common/services/downloadService';
 import { LearnService } from './common/services/learnService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
-import { CodeActionAdapter, CodeActionKindAdapter } from './common/vscode/codeAction';
+import { CodeActionAdapter } from './common/vscode/codeAction';
 import { vsCodeCommands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
@@ -239,8 +239,6 @@ class SnykExtension extends SnykLib implements IExtension {
       extensionContext,
       configuration,
       ossSuggestionProvider,
-      new CodeActionAdapter(),
-      this.codeActionKindAdapter,
       this.viewManagerService,
       vsCodeWorkspace,
       this.workspaceTrust,
@@ -427,7 +425,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossServiceLanguageServer,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
-      new CodeActionKindAdapter(),
       this.analytics,
       configuration,
     );
