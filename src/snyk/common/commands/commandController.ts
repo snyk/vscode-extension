@@ -47,7 +47,7 @@ export class CommandController {
     private languageServer: ILanguageServer,
     private logger: ILog,
     private analytics: IAnalytics,
-  ) {}
+  ) { }
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
@@ -133,7 +133,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.ossService.showSuggestionProvider(folderPath, issueArgs.id);
+        await this.ossService.showSuggestionProvider(folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
