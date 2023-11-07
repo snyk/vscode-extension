@@ -74,7 +74,6 @@ export function convertSeverity(severity: IssueSeverity): OssSeverity {
 export function convertIssue(issue: Issue<OssIssueData>): OssVulnerability {
   const tempVuln: OssVulnerability = {
     id: issue.id,
-    license: issue.additionalData.license,
     identifiers: issue.additionalData.identifiers,
     title: issue.title,
     description: issue.additionalData.description,
@@ -95,5 +94,10 @@ export function convertIssue(issue: Issue<OssIssueData>): OssVulnerability {
     isPatchable: issue.additionalData.isPatchable,
     isUpgradable: issue.additionalData.isUpgradable,
   };
+
+  if (issue.additionalData.license !== undefined) {
+    tempVuln.license = issue.additionalData.license;
+  }
+
   return tempVuln;
 }
