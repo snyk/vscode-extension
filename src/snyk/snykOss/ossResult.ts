@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { CliError } from '../cli/services/cliService';
-import { IssueSeverity } from '../common/languageServer/types';
+import { Issue, IssueSeverity, OssIssueData } from '../common/languageServer/types';
 
 export type OssResult = OssFileResult[] | OssFileResult;
 
@@ -69,4 +69,31 @@ export function convertSeverity(severity: IssueSeverity): OssSeverity {
     default:
       return OssSeverity.Critical;
   }
+}
+
+export function convertIssue(issue: Issue<OssIssueData>): OssVulnerability {
+  const tempVuln: OssVulnerability = {
+    id: issue.id,
+    license: issue.additionalData.license,
+    identifiers: issue.additionalData.identifiers,
+    title: issue.title,
+    description: issue.additionalData.description,
+    language: issue.additionalData.language,
+    packageManager: issue.additionalData.packageManager,
+    packageName: issue.additionalData.packageName,
+    severity: convertSeverity(issue.severity),
+    name: issue.additionalData.name,
+    version: issue.additionalData.version,
+    exploit: issue.additionalData.exploit,
+
+    CVSSv3: issue.additionalData.CVSSv3,
+    cvssScore: issue.additionalData.cvssScore,
+
+    fixedIn: issue.additionalData.fixedIn === undefined ? [] : issue.additionalData.fixedIn,
+    from: issue.additionalData.from,
+    upgradePath: issue.additionalData.upgradePath,
+    isPatchable: issue.additionalData.isPatchable,
+    isUpgradable: issue.additionalData.isUpgradable,
+  };
+  return tempVuln;
 }
