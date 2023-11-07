@@ -278,7 +278,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       this.snykCode,
       this.iacService,
-      this.ossService,
+      this.ossServiceLanguageServer,
       this.scanModeService,
       vsCodeWorkspace,
       vsCodeCommands,
