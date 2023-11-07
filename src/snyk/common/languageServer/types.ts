@@ -95,6 +95,8 @@ export type OssIssueData = {
 
   projectName: string;
   displayTargetFile: string;
+
+  details: string;
 };
 export type Identifiers = {
   CWE: string[];
