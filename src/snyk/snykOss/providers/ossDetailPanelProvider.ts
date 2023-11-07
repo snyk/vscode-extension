@@ -65,7 +65,32 @@ export class OssDetailPanelProvider
         this.registerListeners();
       }
 
-      this.panel.webview.html = issue.additionalData.details;
+      const images: Record<string, string> = [
+        ['icon-code', 'svg'],
+        ['dark-critical-severity', 'svg'],
+        ['dark-high-severity', 'svg'],
+        ['dark-medium-severity', 'svg'],
+        ['dark-low-severity', 'svg'],
+        ['learn-icon', 'svg'],
+      ].reduce((accumulator: Record<string, string>, [name, ext]) => {
+        const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
+        if (!uri) throw new Error('Image missing.');
+        accumulator[name] = uri.toString();
+        return accumulator;
+      }, {});
+
+      const displayMode = 'dark';
+
+      const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
+      const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
+      const headerEndValue = `<link href="${styleUri}" rel="stylesheet"><link href="${learnStyleUri}" rel="stylesheet">`;
+      const serverityIconName = `${displayMode}-${issue.severity}-severity`;
+
+      let html = issue.additionalData.details;
+      html = html.replace('${headerEnd}', headerEndValue);
+      html = html.replace('${severityIcon}', images[serverityIconName]);
+      html = html.replaceAll(/\$\{\w+\}/g, '');
+      this.panel.webview.html = html;
       this.panel.iconPath = vscode.Uri.joinPath(
         vscode.Uri.file(this.context.extensionPath),
         'media',
