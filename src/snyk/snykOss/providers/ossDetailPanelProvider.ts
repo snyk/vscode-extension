@@ -82,13 +82,13 @@ export class OssDetailPanelProvider
       const displayMode = 'dark';
 
       const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
-      const learnStyleUri = this.getWebViewUri('media', 'views', 'common', 'learn.css');
-      const headerEndValue = `<link href="${styleUri}" rel="stylesheet"><link href="${learnStyleUri}" rel="stylesheet">`;
+      const headerEndValue = `<link href="${styleUri}" rel="stylesheet">`;
       const serverityIconName = `${displayMode}-${issue.severity}-severity`;
 
       let html = issue.additionalData.details;
       html = html.replace('${headerEnd}', headerEndValue);
       html = html.replace('${severityIcon}', images[serverityIconName]);
+      html = html.replace('${learnIcon}', images['learn-icon']);
       html = html.replaceAll(/\$\{\w+\}/g, '');
       this.panel.webview.html = html;
       this.panel.iconPath = vscode.Uri.joinPath(
