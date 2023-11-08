@@ -3,6 +3,7 @@ import { SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER } from '../../common/constants
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Issue, OssIssueData } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
+import { getNonce } from '../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../common/views/webviewProvider';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
@@ -80,13 +81,15 @@ export class OssDetailPanelProvider
       }, {});
 
       const displayMode = 'dark';
-
       const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
       const headerEndValue = `<link href="${styleUri}" rel="stylesheet">`;
       const serverityIconName = `${displayMode}-${issue.severity}-severity`;
+      const nonce = getNonce();
 
       let html = issue.additionalData.details;
       html = html.replace('${headerEnd}', headerEndValue);
+      html = html.replaceAll('${cspSource}', this.panel.webview.cspSource);
+      html = html.replaceAll('${nonce}', nonce);
       html = html.replace('${severityIcon}', images[serverityIconName]);
       html = html.replace('${learnIcon}', images['learn-icon']);
       html = html.replaceAll(/\$\{\w+\}/g, '');
