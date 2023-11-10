@@ -35,7 +35,6 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
-  SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
@@ -78,11 +77,8 @@ import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
+import { ModuleVulnerabilityCountProviderLS } from './snykOss/providers/vulnerabilityCountProviderLS';
 import { OssVulnerabilityCountServiceLS } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
-import { ModuleVulnerabilityCountProviderLS } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProviderLS';
-import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
-import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
-import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -301,17 +297,7 @@ class SnykExtension extends SnykLib implements IExtension {
       codeQualityTree,
     );
 
-    const ossVulnerabilityProvider = new OssVulnerabilityTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.ossService,
-      configuration,
-    );
-
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
-    );
+    vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
       treeDataProvider: new EmptyTreeDataProvider(),
@@ -320,12 +306,7 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
 
-    const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
-      treeDataProvider: ossVulnerabilityProvider,
-    });
-
     vscodeContext.subscriptions.push(
-      ossTree.onDidChangeVisibility(e => this.onDidChangeOssTreeVisibility(e.visible)),
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
       codeEnablementTree,
     );
@@ -379,8 +360,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
     this.snykCode.activateWebviewProviders();
-    this.ossService.activateSuggestionProvider();
-    this.ossService.activateManifestFileWatcher(this);
     this.iacService.activateWebviewProviders();
     this.ossServiceLanguageServer.activateWebviewProviders();
 
@@ -465,7 +444,6 @@ class SnykExtension extends SnykLib implements IExtension {
   private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       Logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(err)}`);
-      this.ossService?.handleLsDownloadFailure();
     });
 
     return this.downloadService;
@@ -486,8 +464,6 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS scans replaced with LS
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>

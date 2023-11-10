@@ -10,7 +10,7 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { messages as errorMessages } from '../messages/error';
+import { messages } from '../constants/messages';
 
 export class OssDetailPanelProvider
   extends WebviewProvider<Issue<OssIssueData>>
@@ -103,7 +103,7 @@ export class OssDetailPanelProvider
 
       this.issue = issue;
     } catch (e) {
-      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
+      ErrorHandler.handle(e, this.logger, messages.errors.suggestionViewShowFailed);
     }
   }
 

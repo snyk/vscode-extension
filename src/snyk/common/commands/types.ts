@@ -21,4 +21,3 @@ export const isCodeIssue = (
 ): _issue is Issue<CodeIssueData> => {
   return issueType === OpenCommandIssueType.CodeIssue;
 };
-

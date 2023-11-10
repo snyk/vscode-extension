@@ -1,4 +1,4 @@
-import { ModuleVulnerabilityCount } from './services/vulnerabilityCount/importedModule';
+import { ModuleVulnerabilityCount } from '../services/vulnerabilityCount/importedModule';
 
 export const messages = {
   analysis: {
