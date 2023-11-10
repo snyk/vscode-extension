@@ -15,7 +15,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
-  VSCODE_GO_TO_SETTINGS_COMMAND
+  VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
@@ -47,7 +47,7 @@ export class CommandController {
     private languageServer: ILanguageServer,
     private logger: ILog,
     private analytics: IAnalytics,
-  ) { }
+  ) {}
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
