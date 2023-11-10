@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { CliError } from '../../cli/services/cliService';
 import { SupportedAnalysisProperties } from '../../common/analytics/itly';
 import { configuration } from '../../common/configuration/instance';
-import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME, OSS_SCAN_DEBOUNCE_INTERVAL } from '../../common/constants/general';
+import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME } from '../../common/constants/general';
 import { SNYK_CONTEXT } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Logger } from '../../common/logger/logger';
@@ -23,7 +23,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
         return;
       }
 
-      // Only starts OSS scan. Code & IaC scans are managed by LS
       Logger.info('Starting full scan');
 
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
@@ -39,7 +38,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
       const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
       if (workspacePaths.length) {
         this.logFullAnalysisIsTriggered(manual);
-        void this.startOssAnalysis(manual, false);
       }
     } catch (err) {
       await ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
@@ -48,10 +46,7 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
   // This function is called by commands, error handlers, etc.
   // We should avoid having duplicate parallel executions.
-  // Only starts OSS scan. Code & IaC scans are managed by LS
   public runScan = _.debounce(this.runFullScan_.bind(this), DEFAULT_SCAN_DEBOUNCE_INTERVAL, { leading: true });
-
-  public runOssScan = _.debounce(this.startOssAnalysis.bind(this), OSS_SCAN_DEBOUNCE_INTERVAL, { leading: true });
 
   async enableCode(): Promise<void> {
     Logger.info('Enabling Snyk Code');
@@ -66,12 +61,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     }
   }
 
-  onDidChangeOssTreeVisibility(visible: boolean): void {
-    if (this.ossService) {
-      this.ossService.setVulnerabilityTreeVisibility(visible);
-    }
-  }
-
   async checkAdvancedMode(): Promise<void> {
     await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
   }
@@ -79,25 +68,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   protected async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
     const workspaceFound = !!workspacePaths.length;
     await this.contextService.setContext(SNYK_CONTEXT.WORKSPACE_FOUND, workspaceFound);
-  }
-
-  private async startOssAnalysis(manual = false, reportTriggeredEvent = true): Promise<void> {
-    if (!configuration.getFeaturesConfiguration()?.ossEnabled) return;
-    if (!this.ossService) throw new Error('OSS service is not initialized.');
-
-    // wait until Snyk Language Server is downloaded
-    await firstValueFrom(this.downloadService.downloadReady$);
-
-    try {
-      const result = await this.ossService.test(manual, reportTriggeredEvent);
-
-      if (result instanceof CliError || !result) {
-        return;
-      }
-    } catch (err) {
-      // catch unhandled error cases by reporting test failure
-      this.ossService.finalizeTest(new CliError(err));
-    }
   }
 
   private isSnykCodeAutoscanSuspended(manual: boolean) {

@@ -85,6 +85,4 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   }
 
   abstract runScan(): Promise<void>;
-
-  abstract runOssScan(): Promise<void>;
 }

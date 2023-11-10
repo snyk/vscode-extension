@@ -24,7 +24,7 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(private readonly analytics: IAnalytics, private readonly logger: ILog) {}
+  constructor(private readonly analytics: IAnalytics, private readonly logger: ILog) { }
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
@@ -59,7 +59,7 @@ class ConfigurationWatcher implements IWatcher {
       void extensionConfig.update('url', cleaned, true);
     }
 
-    return extension.runScan();
+    // return extension.runScan();
   }
 
   public activate(extension: IExtension): void {
@@ -87,11 +87,11 @@ class ConfigurationWatcher implements IWatcher {
       }
     });
 
-    SecretStorageAdapter.instance.onDidChange(event => {
-      if (event.key === SNYK_TOKEN_KEY) {
-        return extension.runScan();
-      }
-    });
+    // SecretStorageAdapter.instance.onDidChange(event => {
+    //   if (event.key === SNYK_TOKEN_KEY) {
+    //     return extension.runScan();
+    //   }
+    // });
   }
 }
 
