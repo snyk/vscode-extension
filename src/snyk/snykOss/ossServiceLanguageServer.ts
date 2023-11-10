@@ -7,7 +7,6 @@ import { OssIssueData, Scan, ScanProduct } from '../common/languageServer/types'
 import { ILog } from '../common/logger/interfaces';
 import { ProductService } from '../common/services/productService';
 import { IViewManagerService } from '../common/services/viewManagerService';
-import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
@@ -18,8 +17,6 @@ export class OssServiceLanguageServer extends ProductService<OssIssueData> {
     extensionContext: ExtensionContext,
     config: IConfiguration,
     suggestionProvider: IOssSuggestionWebviewProvider,
-    readonly codeActionAdapter: ICodeActionAdapter,
-    readonly codeActionKindAdapter: ICodeActionKindAdapter,
     viewManagerService: IViewManagerService,
     workspace: IVSCodeWorkspace,
     workspaceTrust: IWorkspaceTrust,
@@ -39,10 +36,6 @@ export class OssServiceLanguageServer extends ProductService<OssIssueData> {
       languages,
       logger,
     );
-
-    // this.registerCodeActionsProvider(
-    //   new OssCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, analytics),
-    // );
   }
 
   subscribeToLsScanMessages(): Subscription {

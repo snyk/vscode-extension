@@ -33,10 +33,6 @@ suite('OSS Service', () => {
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as OssDetailPanelProvider,
-      {} as ICodeActionAdapter,
-      {
-        getQuickFix: sinon.fake(),
-      } as ICodeActionKindAdapter,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
