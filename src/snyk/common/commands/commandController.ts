@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash';
+import path from 'path';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { capitalizeOssSeverity } from '../../snykOss/ossResult';
-import { OssService } from '../../snykOss/services/ossService';
-import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -40,7 +39,7 @@ export class CommandController {
     private authService: IAuthenticationService,
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
-    private ossService: OssService,
+    private ossService: OssServiceLanguageServer,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
@@ -122,14 +121,28 @@ export class CommandController {
         severity: IssueUtils.issueSeverityAsText(issue.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
-      const issue = arg.issue as OssIssueCommandArg;
-      void this.ossService.showSuggestionProvider(issue);
+      const issueArgs = arg.issue as CodeIssueCommandArg;
+      const folderPath = path.dirname(issueArgs.filePath);
+      const issue = this.ossService.getIssue(folderPath, issueArgs.id);
+
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
+
+      await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      try {
+        await this.ossService.showSuggestionProvider(folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
 
       this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: issue.id,
         issueType: 'Open Source Vulnerability',
-        severity: capitalizeOssSeverity(issue.severity),
+        severity: IssueUtils.issueSeverityAsText(issue.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.IacIssue) {
       const issueArgs = arg.issue as IacIssueCommandArg;
