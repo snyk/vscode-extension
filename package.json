@@ -45,7 +45,7 @@
   ],
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
-    "onWebviewPanel:snyk.views.suggestion.oss.languageServer",
+    "onWebviewPanel:snyk.views.suggestion.oss",
     "*"
   ],
   "main": "./out/extension.js",
@@ -236,8 +236,8 @@
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound"
         },
         {
-          "id": "snyk.views.analysis.oss.languageServer",
-          "name": "Open Source Security (LS)",
+          "id": "snyk.views.analysis.oss",
+          "name": "Open Source Security",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
@@ -301,12 +301,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss.languageServer' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss.languageServer' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         }
       ],

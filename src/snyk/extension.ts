@@ -35,7 +35,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
-  SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
+  SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -319,12 +319,12 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
     );
 
-    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, {
+    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossIssueProvider,
     });
 
     vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, ossIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
     );
 
