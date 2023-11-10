@@ -23,8 +23,8 @@ import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vsco
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ICodeSettings } from '../../snykCode/codeSettings';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
-import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
-import { OssVulnerabilityCountServiceLS } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
+import { OssService } from '../../snykOss/ossService';
+import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
@@ -44,11 +44,11 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
-  protected ossServiceLanguageServer?: OssServiceLanguageServer;
+  protected ossService?: OssService;
   protected advisorService?: AdvisorProvider;
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
-  protected ossVulnerabilityCountServiceLanguageServer: OssVulnerabilityCountServiceLS;
+  protected ossVulnerabilityCountService: OssVulnerabilityCountService;
   protected advisorScoreDisposable: AdvisorService;
   protected languageServer: ILanguageServer;
 

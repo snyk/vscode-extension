@@ -7,7 +7,7 @@ import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
+import { OssService } from '../../snykOss/ossService';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -15,7 +15,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
-  VSCODE_GO_TO_SETTINGS_COMMAND,
+  VSCODE_GO_TO_SETTINGS_COMMAND
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
@@ -39,7 +39,7 @@ export class CommandController {
     private authService: IAuthenticationService,
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
-    private ossService: OssServiceLanguageServer,
+    private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
@@ -47,7 +47,7 @@ export class CommandController {
     private languageServer: ILanguageServer,
     private logger: ILog,
     private analytics: IAnalytics,
-  ) {}
+  ) { }
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);

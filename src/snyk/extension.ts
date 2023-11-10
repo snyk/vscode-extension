@@ -26,7 +26,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
-  SNYK_WORKSPACE_SCAN_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND
 } from './common/constants/commands';
 import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
@@ -37,7 +37,7 @@ import {
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
   SNYK_VIEW_SUPPORT,
-  SNYK_VIEW_WELCOME,
+  SNYK_VIEW_WELCOME
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
@@ -74,11 +74,11 @@ import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
-import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
+import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
-import { ModuleVulnerabilityCountProviderLS } from './snykOss/providers/vulnerabilityCountProviderLS';
-import { OssVulnerabilityCountServiceLS } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
+import { ModuleVulnerabilityCountProvider } from './snykOss/providers/vulnerabilityCountProvider';
+import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -215,7 +215,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
     );
 
-    this.ossServiceLanguageServer = new OssServiceLanguageServer(
+    this.ossService = new OssService(
       extensionContext,
       configuration,
       ossSuggestionProvider,
@@ -256,7 +256,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       this.snykCode,
       this.iacService,
-      this.ossServiceLanguageServer,
+      this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
       vsCodeCommands,
@@ -314,7 +314,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const ossIssueProvider = new OssIssueTreeProvider(
       this.viewManagerService,
       this.contextService,
-      this.ossServiceLanguageServer,
+      this.ossService,
       configuration,
       vsCodeLanguages,
     );
@@ -361,7 +361,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.configurationWatcher.activate(this);
     this.snykCode.activateWebviewProviders();
     this.iacService.activateWebviewProviders();
-    this.ossServiceLanguageServer.activateWebviewProviders();
+    this.ossService.activateWebviewProviders();
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
@@ -375,23 +375,23 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.initDependencyDownload();
 
-    this.ossVulnerabilityCountServiceLanguageServer = new OssVulnerabilityCountServiceLS(
+    this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
       vsCodeWindow,
       vsCodeLanguages,
-      new ModuleVulnerabilityCountProviderLS(
-        this.ossServiceLanguageServer,
+      new ModuleVulnerabilityCountProvider(
+        this.ossService,
         languageClientAdapter,
         new UriAdapter(),
         new TextDocumentAdapter(),
       ),
-      this.ossServiceLanguageServer,
+      this.ossService,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
       this.analytics,
       configuration,
     );
-    this.ossVulnerabilityCountServiceLanguageServer.activate();
+    this.ossVulnerabilityCountService.activate();
 
     this.advisorScoreDisposable = new AdvisorService(
       vsCodeWindow,
@@ -421,7 +421,7 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public async deactivate(): Promise<void> {
-    this.ossVulnerabilityCountServiceLanguageServer.dispose();
+    this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
     await this.analytics.flush();
     await ErrorReporter.flush();

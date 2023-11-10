@@ -12,7 +12,7 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { IOssSuggestionWebviewProvider } from './interfaces';
 
-export class OssServiceLanguageServer extends ProductService<OssIssueData> {
+export class OssService extends ProductService<OssIssueData> {
   constructor(
     extensionContext: ExtensionContext,
     config: IConfiguration,
