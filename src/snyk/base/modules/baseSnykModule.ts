@@ -24,7 +24,6 @@ import { IWatcher } from '../../common/watchers/interfaces';
 import { ICodeSettings } from '../../snykCode/codeSettings';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
 import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
-import { OssService } from '../../snykOss/services/ossService';
 import { OssVulnerabilityCountServiceLS } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
 import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
@@ -45,7 +44,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
-  protected ossService?: OssService;
   protected ossServiceLanguageServer?: OssServiceLanguageServer;
   protected advisorService?: AdvisorProvider;
   protected commandController: CommandController;

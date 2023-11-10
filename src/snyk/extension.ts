@@ -78,7 +78,6 @@ import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
-import { OssService } from './snykOss/services/ossService';
 import { OssVulnerabilityCountServiceLS } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
 import { ModuleVulnerabilityCountProviderLS } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProviderLS';
 import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
@@ -210,21 +209,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       Logger,
       this.analytics,
-    );
-
-    this.ossService = new OssService(
-      this.context,
-      Logger,
-      configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
-      vsCodeWorkspace,
-      this.viewManagerService,
-      this.downloadService,
-      new DailyScanJob(this),
-      this.notificationService,
-      this.analytics,
-      this.languageServer,
-      this.workspaceTrust,
     );
 
     const ossSuggestionProvider = new OssDetailPanelProvider(
