@@ -36,7 +36,6 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
-  SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -75,15 +74,11 @@ import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
-import { OssServiceLanguageServer } from './snykOss/ossServiceLanguageServer';
+import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
-import { OssService } from './snykOss/services/ossService';
-import { OssVulnerabilityCountServiceLS } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountServiceLS';
-import { ModuleVulnerabilityCountProviderLS } from './snykOss/services/vulnerabilityCount/vulnerabilityCountProviderLS';
-import { OssVulnerabilityTreeProvider } from './snykOss/views/ossVulnerabilityTreeProvider';
-import { OssSuggestionWebviewProvider } from './snykOss/views/suggestion/ossSuggestionWebviewProvider';
-import { DailyScanJob } from './snykOss/watchers/dailyScanJob';
+import { ModuleVulnerabilityCountProvider } from './snykOss/providers/vulnerabilityCountProvider';
+import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -212,21 +207,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.analytics,
     );
 
-    this.ossService = new OssService(
-      this.context,
-      Logger,
-      configuration,
-      new OssSuggestionWebviewProvider(this.context, vsCodeWindow, Logger, this.learnService),
-      vsCodeWorkspace,
-      this.viewManagerService,
-      this.downloadService,
-      new DailyScanJob(this),
-      this.notificationService,
-      this.analytics,
-      this.languageServer,
-      this.workspaceTrust,
-    );
-
     const ossSuggestionProvider = new OssDetailPanelProvider(
       vsCodeWindow,
       extensionContext,
@@ -235,7 +215,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
     );
 
-    this.ossServiceLanguageServer = new OssServiceLanguageServer(
+    this.ossService = new OssService(
       extensionContext,
       configuration,
       ossSuggestionProvider,
@@ -276,7 +256,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       this.snykCode,
       this.iacService,
-      this.ossServiceLanguageServer,
+      this.ossService,
       this.scanModeService,
       vsCodeWorkspace,
       vsCodeCommands,
@@ -317,17 +297,7 @@ class SnykExtension extends SnykLib implements IExtension {
       codeQualityTree,
     );
 
-    const ossVulnerabilityProvider = new OssVulnerabilityTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.ossService,
-      configuration,
-    );
-
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossVulnerabilityProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()),
-    );
+    vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
       treeDataProvider: new EmptyTreeDataProvider(),
@@ -336,12 +306,7 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
 
-    const ossTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
-      treeDataProvider: ossVulnerabilityProvider,
-    });
-
     vscodeContext.subscriptions.push(
-      ossTree.onDidChangeVisibility(e => this.onDidChangeOssTreeVisibility(e.visible)),
       welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
       codeEnablementTree,
     );
@@ -349,17 +314,17 @@ class SnykExtension extends SnykLib implements IExtension {
     const ossIssueProvider = new OssIssueTreeProvider(
       this.viewManagerService,
       this.contextService,
-      this.ossServiceLanguageServer,
+      this.ossService,
       configuration,
       vsCodeLanguages,
     );
 
-    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, {
+    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
       treeDataProvider: ossIssueProvider,
     });
 
     vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS_LANGUAGE_SERVER, ossIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
     );
 
@@ -395,10 +360,8 @@ class SnykExtension extends SnykLib implements IExtension {
     this.editorsWatcher.activate(this);
     this.configurationWatcher.activate(this);
     this.snykCode.activateWebviewProviders();
-    this.ossService.activateSuggestionProvider();
-    this.ossService.activateManifestFileWatcher(this);
     this.iacService.activateWebviewProviders();
-    this.ossServiceLanguageServer.activateWebviewProviders();
+    this.ossService.activateWebviewProviders();
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
@@ -412,23 +375,23 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.initDependencyDownload();
 
-    this.ossVulnerabilityCountServiceLanguageServer = new OssVulnerabilityCountServiceLS(
+    this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
       vsCodeWindow,
       vsCodeLanguages,
-      new ModuleVulnerabilityCountProviderLS(
-        this.ossServiceLanguageServer,
+      new ModuleVulnerabilityCountProvider(
+        this.ossService,
         languageClientAdapter,
         new UriAdapter(),
         new TextDocumentAdapter(),
       ),
-      this.ossServiceLanguageServer,
+      this.ossService,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
       this.analytics,
       configuration,
     );
-    this.ossVulnerabilityCountServiceLanguageServer.activate();
+    this.ossVulnerabilityCountService.activate();
 
     this.advisorScoreDisposable = new AdvisorService(
       vsCodeWindow,
@@ -458,7 +421,7 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public async deactivate(): Promise<void> {
-    this.ossVulnerabilityCountServiceLanguageServer.dispose();
+    this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
     await this.analytics.flush();
     await ErrorReporter.flush();
@@ -481,7 +444,6 @@ class SnykExtension extends SnykLib implements IExtension {
   private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       Logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(err)}`);
-      this.ossService?.handleLsDownloadFailure();
     });
 
     return this.downloadService;
@@ -502,8 +464,6 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        await this.commandController.executeCommand(SNYK_START_COMMAND, () => this.runScan(true)); // todo: remove once OSS scans replaced with LS
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>

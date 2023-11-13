@@ -7,7 +7,7 @@ import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { OssServiceLanguageServer } from '../../snykOss/ossServiceLanguageServer';
+import { OssService } from '../../snykOss/ossService';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -39,7 +39,7 @@ export class CommandController {
     private authService: IAuthenticationService,
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
-    private ossService: OssServiceLanguageServer,
+    private ossService: OssService,
     private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,

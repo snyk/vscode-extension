@@ -1,8 +1,7 @@
-import { strictEqual } from 'assert';
 import sinon from 'sinon';
+import { strictEqual } from 'assert';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { LearnService } from '../../../../snyk/common/services/learnService';
-import { OssIssueCommandArg } from '../../../../snyk/snykOss/views/ossVulnerabilityTreeProvider';
 import { CodeIssueData, Issue, IssueSeverity } from '../../../../snyk/common/languageServer/types';
 import { SNYK_GET_LESSON_COMMAND } from '../../../../snyk/common/constants/commands';
 
@@ -20,21 +19,6 @@ suite('LearnService', () => {
     sinon.restore();
   });
 
-  test('getOssLesson executes correct command', async () => {
-    const learnService = new LearnService(commands);
-
-    const issue: OssIssueCommandArg = {
-      id: 'id',
-      packageManager: 'packageManager',
-    } as OssIssueCommandArg;
-
-    await learnService.getOssLesson(issue);
-    strictEqual(executeCommandFake.calledOnce, true);
-    strictEqual(
-      executeCommandFake.calledWith(SNYK_GET_LESSON_COMMAND, issue.id, issue.packageManager, '', '', 4),
-      true,
-    );
-  });
   test('getCodeLesson executes correct command', async () => {
     const learnService = new LearnService(commands);
     const issue: Issue<CodeIssueData> = {
