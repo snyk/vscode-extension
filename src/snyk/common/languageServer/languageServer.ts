@@ -24,7 +24,6 @@ import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { InitializationOptions, LanguageServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
-import * as fs from 'fs';
 
 export interface ILanguageServer {
   start(): Promise<void>;

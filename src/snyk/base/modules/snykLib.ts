@@ -1,6 +1,4 @@
 import * as _ from 'lodash';
-import { firstValueFrom } from 'rxjs';
-import { CliError } from '../../cli/services/cliService';
 import { SupportedAnalysisProperties } from '../../common/analytics/itly';
 import { configuration } from '../../common/configuration/instance';
 import { DEFAULT_SCAN_DEBOUNCE_INTERVAL, IDE_NAME } from '../../common/constants/general';
