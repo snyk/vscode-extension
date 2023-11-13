@@ -41,7 +41,9 @@ export const messages = {
       if (isNaN(vulnerabilityCountNumber)) {
         return vulnerabilityCount;
       }
-      return `${vulnerabilityCountNumber} ${vulnerabilityCountNumber > 1 ? 'vulnerabilities' : 'vulnerability'}`;
+      return `${vulnerabilityCountNumber} ${
+        vulnerabilityCountNumber == 1 ? 'direct vulnerability' : 'direct vulnerabilites'
+      }`;
     },
     diagnosticMessagePrefix: (module: ModuleVulnerabilityCount): string => {
       return `Dependency ${module.name}${module.version ? `@${module.version}` : ''} has `;
