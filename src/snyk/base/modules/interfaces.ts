@@ -17,7 +17,6 @@ export interface IBaseSnykModule {
 
   // Abstract methods
   runScan(): Promise<void>;
-  runOssScan(manual?: boolean): Promise<void>;
 }
 
 export interface ISnykLib {

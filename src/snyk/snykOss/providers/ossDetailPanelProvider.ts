@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER } from '../../common/constants/views';
+import { SNYK_VIEW_SUGGESTION_OSS } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Issue, OssIssueData } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
@@ -10,7 +10,7 @@ import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
-import { messages as errorMessages } from '../messages/error';
+import { messages } from '../constants/messages';
 
 export class OssDetailPanelProvider
   extends WebviewProvider<Issue<OssIssueData>>
@@ -36,10 +36,7 @@ export class OssDetailPanelProvider
 
   activate(): void {
     this.context.addDisposables(
-      this.window.registerWebviewPanelSerializer(
-        SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER,
-        new WebviewPanelSerializer(this),
-      ),
+      this.window.registerWebviewPanelSerializer(SNYK_VIEW_SUGGESTION_OSS, new WebviewPanelSerializer(this)),
     );
   }
 
@@ -55,7 +52,7 @@ export class OssDetailPanelProvider
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
-          SNYK_VIEW_SUGGESTION_OSS_LANGUAGE_SERVER,
+          SNYK_VIEW_SUGGESTION_OSS,
           'Snyk OSS Vulnerability',
           {
             viewColumn: vscode.ViewColumn.Two,
@@ -103,7 +100,7 @@ export class OssDetailPanelProvider
 
       this.issue = issue;
     } catch (e) {
-      ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
+      ErrorHandler.handle(e, this.logger, messages.errors.suggestionViewShowFailed);
     }
   }
 

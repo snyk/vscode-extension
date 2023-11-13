@@ -46,7 +46,6 @@
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
     "onWebviewPanel:snyk.views.suggestion.oss",
-    "onWebviewPanel:snyk.views.suggestion.oss.languageServer",
     "*"
   ],
   "main": "./out/extension.js",
@@ -235,11 +234,6 @@
           "id": "snyk.views.welcome",
           "name": "Snyk",
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound"
-        },
-        {
-          "id": "snyk.views.analysis.oss.languageServer",
-          "name": "Open Source Security (LS)",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.oss",
