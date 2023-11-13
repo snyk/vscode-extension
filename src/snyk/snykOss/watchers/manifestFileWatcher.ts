@@ -45,13 +45,13 @@ export default function createManifestFileWatcher(
   const globPattern = `**/{${Object.values(SUPPORTED_MANIFEST_FILES).join(',')}}`;
   const watcher = workspace.createFileSystemWatcher(globPattern);
 
-  watcher.onDidChange(() => runOssScan());
-  watcher.onDidDelete(() => runOssScan());
-  watcher.onDidCreate(() => runOssScan());
+  watcher.onDidChange(() => runScan());
+  watcher.onDidDelete(() => runScan());
+  watcher.onDidCreate(() => runScan());
 
-  function runOssScan() {
+  function runScan() {
     if (configuration.shouldAutoScanOss) {
-      void extension.runOssScan();
+      void extension.runScan();
     }
   }
 

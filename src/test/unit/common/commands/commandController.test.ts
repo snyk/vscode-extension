@@ -10,7 +10,7 @@ import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IProductService } from '../../../../snyk/common/services/productService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
-import { OssServiceLanguageServer } from '../../../../snyk/snykOss/ossServiceLanguageServer';
+import { OssService } from '../../../../snyk/snykOss/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
@@ -26,7 +26,7 @@ suite('CommandController', () => {
       {} as IAuthenticationService,
       {} as IProductService<CodeIssueData>,
       {} as IProductService<IacIssueData>,
-      {} as OssServiceLanguageServer,
+      {} as OssService,
       {} as ScanModeService,
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,

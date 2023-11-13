@@ -4,7 +4,7 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IThemeColorAdapter } from '../../common/vscode/theme';
 import { TextEditorDecorationType } from '../../common/vscode/types';
 import { IVSCodeWindow } from '../../common/vscode/window';
-import { messages } from '../messages/vulnerabilityCount';
+import { messages } from '../constants/messages';
 import { ImportedModule, ModuleVulnerabilityCount } from '../services/vulnerabilityCount/importedModule';
 
 export class EditorDecorator {
@@ -58,7 +58,7 @@ export class EditorDecorator {
           module.line - 1,
           this.editorLastCharacterIndex,
         ),
-        renderOptions: getRenderOptions(messages.fetchingVulnerabilities, this.themeColorAdapter),
+        renderOptions: getRenderOptions(messages.vulnerabilityCount.fetchingVulnerabilities, this.themeColorAdapter),
       };
     }
 
@@ -92,7 +92,7 @@ export class EditorDecorator {
       this.fileDecorationMap.set(filePath, lineDecorations); // set map, if no decoration was set before
     }
 
-    const text = vulnerabilityCount.count ? messages.decoratorMessage(vulnerabilityCount.count) : '';
+    const text = vulnerabilityCount.count ? messages.vulnerabilityCount.decoratorMessage(vulnerabilityCount.count) : '';
 
     lineDecorations[vulnerabilityCount.line] = {
       range: this.languages.createRange(
