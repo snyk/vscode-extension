@@ -76,8 +76,8 @@ import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSugg
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
+import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
-import { ModuleVulnerabilityCountProvider } from './snykOss/providers/vulnerabilityCountProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 
 class SnykExtension extends SnykLib implements IExtension {
@@ -379,7 +379,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       vsCodeWindow,
       vsCodeLanguages,
-      new ModuleVulnerabilityCountProvider(
+      new OssVulnerabilityCountProvider(
         this.ossService,
         languageClientAdapter,
         new UriAdapter(),
