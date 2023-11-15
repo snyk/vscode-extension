@@ -57,7 +57,7 @@ export class EditorDecorator {
           module.line - 1,
           this.editorLastCharacterIndex,
         ),
-        renderOptions: getRenderOptions('', this.themeColorAdapter),
+        renderOptions: getRenderOptions('Fetching vulnerabilities...', this.themeColorAdapter),
       };
     }
 
@@ -91,13 +91,13 @@ export class EditorDecorator {
       this.fileDecorationMap.set(filePath, lineDecorations); // set map, if no decoration was set before
     }
 
-    const vulnerabilityCountMessage = vulnerabilityCount.count ?? '';
+    const vulnerabilityCountMessage = vulnerabilityCount.count ?? 'Vulnerabilities: 0';
 
     lineDecorations[vulnerabilityCount.line] = {
       range: this.languages.createRange(
-        vulnerabilityCount.line - 1,
+        vulnerabilityCount.line - 1, // start line, index is 0 based
         this.editorLastCharacterIndex,
-        vulnerabilityCount.line - 1,
+        vulnerabilityCount.line - 1, // end line, index is 0 based
         this.editorLastCharacterIndex,
       ),
       renderOptions: getRenderOptions(vulnerabilityCountMessage, this.themeColorAdapter),
