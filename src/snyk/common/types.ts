@@ -1,3 +1,10 @@
+import {
+  JAVASCRIPT,
+  TYPESCRIPT,
+  HTML,
+  PJSON
+} from './constants/languageConsts';
+
 export enum Language {
   TypeScript,
   JavaScript,
@@ -22,3 +29,16 @@ export type ImportedModule = {
   string: string;
   version?: string;
 };
+
+export function languageToString(language: Language): string {
+  switch (language) {
+    case Language.TypeScript:
+      return TYPESCRIPT;
+    case Language.JavaScript:
+      return JAVASCRIPT;
+    case Language.HTML:
+      return HTML;
+    case Language.PJSON:
+      return PJSON;
+  }
+}
