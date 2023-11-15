@@ -1,9 +1,4 @@
-import {
-  JAVASCRIPT,
-  TYPESCRIPT,
-  HTML,
-  PJSON
-} from './constants/languageConsts';
+import { JAVASCRIPT, TYPESCRIPT, HTML, PJSON } from './constants/languageConsts';
 
 export enum Language {
   TypeScript,
