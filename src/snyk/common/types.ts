@@ -22,18 +22,3 @@ export type ImportedModule = {
   string: string;
   version?: string;
 };
-
-export function languageToString(language: Language): string {
-  switch (language) {
-    case Language.TypeScript:
-      return 'TypeScript';
-    case Language.JavaScript:
-      return 'JavaScript';
-    case Language.HTML:
-      return 'HTML';
-    case Language.PJSON:
-      return 'Package.json';
-    default:
-      return 'Unknown';
-  }
-}
