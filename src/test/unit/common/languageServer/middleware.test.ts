@@ -4,7 +4,8 @@ import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
-import {
+import { User } from '../../../../snyk/common/user';
+import type {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
@@ -15,7 +16,10 @@ import { extensionContextMock } from '../../mocks/extensionContext.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
+  let user: User;
+
   setup(() => {
+    user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
       shouldReportEvents: false,
       shouldReportErrors: false,
@@ -51,7 +55,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware(configuration);
+    const middleware = new LanguageClientMiddleware(configuration, user);
     const params: ConfigurationParams = {
       items: [
         {
@@ -96,7 +100,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware(configuration);
+    const middleware = new LanguageClientMiddleware(configuration, user);
     const params: ConfigurationParams = {
       items: [
         {

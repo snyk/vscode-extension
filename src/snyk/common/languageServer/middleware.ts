@@ -1,5 +1,7 @@
-import { IConfiguration } from '../configuration/configuration';
-import {
+import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
+import { Configuration, IConfiguration } from '../../common/configuration/configuration';
+import { User } from '../user';
+import type {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
@@ -18,7 +20,7 @@ export type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration) {}
+  constructor(private configuration: IConfiguration, private user: User) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -40,7 +42,16 @@ export class LanguageClientMiddleware implements Middleware {
       }
 
       const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration);
-      return [serverSettings];
+
+      return [
+        {
+          ...serverSettings,
+          integrationName: CLI_INTEGRATION_NAME,
+          integrationVersion: await Configuration.getVersion(),
+          deviceId: this.user.anonymousId,
+          automaticAuthentication: 'false',
+        },
+      ];
     },
   };
 
