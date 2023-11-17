@@ -1,12 +1,7 @@
 import _ from 'lodash';
-import { IConfiguration, SeverityFilter } from '../configuration/configuration';
-
-export type InitializationOptions = ServerSettings & {
-  integrationName?: string;
-  integrationVersion?: string;
-  automaticAuthentication?: string;
-  deviceId?: string;
-};
+import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
+import { Configuration, IConfiguration, SeverityFilter } from '../configuration/configuration';
+import { User } from '../user';
 
 export type ServerSettings = {
   activateSnykCodeSecurity?: string;
@@ -27,10 +22,15 @@ export type ServerSettings = {
   trustedFolders?: string[];
   insecure?: string;
   scanningMode?: string;
+
+  integrationName?: string;
+  integrationVersion?: string;
+  automaticAuthentication?: string;
+  deviceId?: string;
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration): Promise<ServerSettings> {
+  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
@@ -59,6 +59,11 @@ export class LanguageServerSettings {
       trustedFolders: configuration.getTrustedFolders(),
       insecure: `${configuration.getInsecure()}`,
       scanningMode: configuration.scanningMode,
+
+      integrationName: CLI_INTEGRATION_NAME,
+      integrationVersion: await Configuration.getVersion(),
+      deviceId: user.anonymousId,
+      automaticAuthentication: 'false',
     };
   }
 }

@@ -1,5 +1,4 @@
-import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import { Configuration, IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration } from '../../common/configuration/configuration';
 import { User } from '../user';
 import type {
   CancellationToken,
@@ -41,17 +40,8 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration);
-
-      return [
-        {
-          ...serverSettings,
-          integrationName: CLI_INTEGRATION_NAME,
-          integrationVersion: await Configuration.getVersion(),
-          deviceId: this.user.anonymousId,
-          automaticAuthentication: 'false',
-        },
-      ];
+      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+      return [serverSettings];
     },
   };
 
