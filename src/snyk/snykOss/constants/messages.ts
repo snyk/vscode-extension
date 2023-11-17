@@ -31,20 +31,4 @@ export const messages = {
     vulnerabilities: 'vulnerabilities',
     multipleVulnerabilitiesFound: (issueCount: number): string => `Snyk found ${issueCount} vulnerabilities`,
   },
-  vulnerabilityCount: {
-    fetchingVulnerabilities: 'Fetching vulnerabilities...',
-    vulnerability: 'vulnerability',
-    vulnerabilities: 'vulnerabilities',
-    showMostSevereVulnerability: 'Show the most severe vulnerability (Snyk)',
-    decoratorMessage: (vulnerabilityCount: string): string => {
-      const vulnerabilityCountNumber = Number.parseInt(vulnerabilityCount, 10);
-      if (isNaN(vulnerabilityCountNumber)) {
-        return vulnerabilityCount;
-      }
-      return `${vulnerabilityCountNumber} ${vulnerabilityCountNumber > 1 ? 'vulnerabilities' : 'vulnerability'}`;
-    },
-    diagnosticMessagePrefix: (module: ModuleVulnerabilityCount): string => {
-      return `Dependency ${module.name}${module.version ? `@${module.version}` : ''} has `;
-    },
-  },
 };
