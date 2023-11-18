@@ -24,6 +24,7 @@ export type ServerSettings = {
   // Reporting and telemetry
   sendErrorReports?: string;
   enableTelemetry?: string;
+  enableAnalytics?: boolean;
 
   // Security and scanning settings
   filterSeverity?: SeverityFilter;
@@ -78,6 +79,7 @@ export class LanguageServerSettings {
 
       sendErrorReports: `${configuration.shouldReportErrors}`,
       enableTelemetry: `${configuration.shouldReportEvents}`,
+      enableAnalytics: configuration.shouldReportAnalytics,
 
       filterSeverity: configuration.severityFilter,
       scanningMode: configuration.scanningMode,

@@ -24,6 +24,7 @@ suite('LanguageServerSettings', () => {
       const mockConfiguration: IConfiguration = {
         shouldReportEvents: true,
         shouldReportErrors: false,
+        shouldReportAnalytics: true,
         snykOssApiEndpoint: 'https://dev.snyk.io/api',
         organization: 'my-org',
         // eslint-disable-next-line @typescript-eslint/require-await
@@ -47,6 +48,8 @@ suite('LanguageServerSettings', () => {
 
       assert.strictEqual(serverSettings.enableTelemetry, 'true');
       assert.strictEqual(serverSettings.sendErrorReports, 'false');
+      assert.strictEqual(serverSettings.enableAnalytics, true);
+
       assert.strictEqual(serverSettings.cliPath, '/path/to/cli');
 
       assert.strictEqual(serverSettings.token, 'snyk-token');

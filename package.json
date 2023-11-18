@@ -55,6 +55,13 @@
       {
         "title": "Snyk Security - Code and Open Source Dependencies",
         "properties": {
+          "snyk.yesAnalyticsReport": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Send usage statistics to Snyk",
+            "scope": "application"
+          },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",

@@ -20,6 +20,7 @@ import {
   SCANNING_MODE,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
+  YES_ANALYTICS_REPORT,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_TELEMETRY_SETTING,
@@ -81,6 +82,7 @@ export interface IConfiguration {
 
   shouldReportErrors: boolean;
   shouldReportEvents: boolean;
+  shouldReportAnalytics: boolean;
   shouldShowWelcomeNotification: boolean;
 
   hideWelcomeNotification(): Promise<void>;
@@ -338,6 +340,22 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
       config?.codeQualityEnabled,
+      true,
+    );
+  }
+
+  get shouldReportAnalytics(): boolean {
+    return !!this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(YES_ANALYTICS_REPORT),
+    );
+  }
+
+  async setShouldReportAnalytics(yesAnalyticsReport: boolean): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(YES_ANALYTICS_REPORT),
+      yesAnalyticsReport,
       true,
     );
   }

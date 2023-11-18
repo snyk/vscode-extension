@@ -47,6 +47,7 @@ suite('Language Server', () => {
       },
       shouldReportEvents: true,
       shouldReportErrors: true,
+      shouldReportAnalytics: true,
       getSnykLanguageServerPath(): string {
         return path;
       },
@@ -206,6 +207,7 @@ suite('Language Server', () => {
         token: 'testToken',
         cliPath: 'testPath',
         enableTelemetry: 'true',
+        enableAnalytics: true,
         sendErrorReports: 'true',
         integrationName: 'VS_CODE',
         integrationVersion: '0.0.0',
