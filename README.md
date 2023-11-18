@@ -56,6 +56,16 @@ Follow these steps to install:
 * Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-authentication).
 * Navigate back to the IDE; the first scan starts automatically.
 
+## Configuration Options
+
+The Snyk Visual Studio Code extension allows you to configure various settings to customize the behavior of the plugin. These settings can be found and modified in the Settings view of VS Code.
+
+### Analytics Reporting
+
+The `snyk.yesAnalyticsReport` setting controls whether the extension sends anonymized usage data to Snyk to help improve the product. By default, analytics reporting is enabled, but you can opt out at any time by unchecking the box you can find in the Settings view of VS Code (`Ctrl` + `,` or `Cmd` + `,`).
+
+For more detailed instructions on configuring the extension, refer to the [Visual Studio Code extension configuration](https://docs.snyk.io/ide-tools/visual-studio-code-extension-for-snyk-code/visual-studio-code-extension-configuration) documentation.
+
 ## Support
 
 If you need help, submit a request to [Snyk Support](https://support.snyk.io/hc/en-us/requests/new).

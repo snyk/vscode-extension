@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.26.2]
+
+### Features
+
+- Added `snyk.yesAnalyticsReport` setting to enable users to opt-in to analytics reporting. This setting allows the extension to collect usage statistics to help improve the product.
+
 ## [1.26.1]
 
 ### Fixed
