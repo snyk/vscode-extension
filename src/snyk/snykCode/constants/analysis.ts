@@ -24,6 +24,7 @@ export const ISSUES_MARKERS_DECORATION_TYPE: { [key: string]: string } = {
 export const DIAGNOSTICS_CODE_SECURITY_COLLECTION_NAME = 'Snyk Code Security';
 export const DIAGNOSTICS_CODE_QUALITY_COLLECTION_NAME = 'Snyk Code Quality';
 export const DIAGNOSTICS_OSS_COLLECTION_NAME = 'Snyk Open Source Security';
+export const DIAGNOSTICS_OSS_COLLECTION_NAME_LS = 'Snyk Open Source';
 
 export const WEBVIEW_PANEL_SECURITY_TITLE = 'Snyk Code Vulnerability';
 export const WEBVIEW_PANEL_QUALITY_TITLE = 'Snyk Code Issue';
