@@ -6,7 +6,7 @@ import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import { InitializationOptions } from '../../../../snyk/common/languageServer/settings';
+import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
@@ -198,7 +198,7 @@ suite('Language Server', () => {
     });
 
     test('LanguageServer should provide correct initialization options', async () => {
-      const expectedInitializationOptions: InitializationOptions = {
+      const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
         activateSnykCodeQuality: 'true',
         activateSnykOpenSource: 'false',

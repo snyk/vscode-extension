@@ -1,8 +1,7 @@
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import { Configuration, IConfiguration } from '../configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CLI_PATH,
@@ -22,9 +21,8 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
-import { InitializationOptions, LanguageServerSettings } from './settings';
+import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
-import * as fs from 'fs';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -111,7 +109,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.configuration),
+      middleware: new LanguageClientMiddleware(this.configuration, this.user),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
@@ -178,16 +176,9 @@ export class LanguageServer implements ILanguageServer {
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
-  async getInitializationOptions(): Promise<InitializationOptions> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration);
-
-    return {
-      ...settings,
-      integrationName: CLI_INTEGRATION_NAME,
-      integrationVersion: await Configuration.getVersion(),
-      deviceId: this.user.anonymousId,
-      automaticAuthentication: 'false',
-    };
+  async getInitializationOptions(): Promise<ServerSettings> {
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+    return settings;
   }
 
   showOutputChannel(): void {

@@ -1,5 +1,24 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.26.1]
+
+### Fixed
+
+- Expanded the server settings returned by `LanguageClientMiddleware` to include necessary attributes for consistent initialization across the application.
+
+### Added
+
+- Introduced the `defaultToTrue` utility function within `LanguageServerSettings` to treat undefined feature flags as enabled by default.
+
+### Changed
+
+- Enhanced the `ServerSettings` type to include user-specific attributes such as `integrationName`, `integrationVersion`, `automaticAuthentication`, and `deviceId`. This unification simplifies the configuration management.
+
+### BREAKING CHANGES
+
+- The `fromConfiguration` method in `LanguageServerSettings` now requires a `User` object to initialize server settings, impacting all areas of the application where server settings are consumed.
+- `LanguageClientMiddleware` instantiation now requires a `User` object, aligning with new server settings structure. Consumers must now pass a `User` object upon middleware creation.
+
 ## [1.25.1]
 
 ### Changed
