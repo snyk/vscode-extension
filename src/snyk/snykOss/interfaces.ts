@@ -7,7 +7,7 @@ export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<Os
   openIssueId: string | undefined;
 }
 
-export type OssIssueCommandArgLanguageServer = Issue<OssIssueData> & {
+export type OssIssueCommandArg = Issue<OssIssueData> & {
   matchingIdVulnerabilities: Issue<OssIssueData>[];
   overviewHtml: string;
 };
