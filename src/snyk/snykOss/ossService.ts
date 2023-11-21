@@ -42,7 +42,7 @@ export class OssService extends ProductService<OssIssueData> {
     );
 
     this.registerCodeActionsProvider(
-      new OssCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, analytics),
+      new OssCodeActionsProvider(languages, codeActionAdapter, codeActionKindAdapter, this.result, analytics),
     );
   }
 

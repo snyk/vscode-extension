@@ -13,10 +13,10 @@ import { DIAGNOSTICS_OSS_COLLECTION_NAME_LS } from '../../snykCode/constants/ana
 
 export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
   constructor(
-    issues: Readonly<ProductResult<OssIssueData>>,
+    private readonly languages: IVSCodeLanguages,
     private readonly codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
-    private readonly languages: IVSCodeLanguages,
+    issues: Readonly<ProductResult<OssIssueData>>,
     analytics: IAnalytics,
   ) {
     super(issues, codeActionKindAdapter, analytics);
