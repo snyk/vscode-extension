@@ -1,4 +1,3 @@
-import marked from 'marked';
 import { CodeAction, Range, TextDocument, Uri } from 'vscode';
 import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
@@ -11,7 +10,6 @@ import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { CodeActionContext } from '../../common/vscode/types';
 import { DIAGNOSTICS_OSS_COLLECTION_NAME_LS } from '../../snykCode/constants/analysis';
-import { OssIssueCommandArg } from '../interfaces';
 
 export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
   constructor(
@@ -35,63 +33,22 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       return;
     }
 
-    // get all OSS vulnerabilities for the folder
-    const ossResult = this.issues.get(folderPath);
-    if (!ossResult || ossResult instanceof Error) {
+    const vulnerabilities = this.getVulnerabilities(folderPath, context);
+    if (!vulnerabilities) {
       return;
     }
 
-    // get all OSS diagnostics; these contain the relavnt vulnerabilities
-    const ossDiagnostics = context.diagnostics.filter(d => d.source === DIAGNOSTICS_OSS_COLLECTION_NAME_LS);
-    if (!ossDiagnostics.length) {
-      return;
-    }
-
-    // find the corresponding Issue<OssIssueData> objects from ossDiagnostics
-    const vulnerabilities: Issue<OssIssueData>[] = [];
-    for (const diagnostic of ossDiagnostics) {
-      const vulnerability = ossResult.find(
-        ossIssue => ossIssue.id === (diagnostic.code as { value: string | number; target: Uri }).value,
-      );
-      if (!vulnerability) {
-        continue;
-      }
-      vulnerabilities.push(vulnerability);
-    }
-
-    // iterate vulnerabilities and get the most severe one
-    // if there are multiple of the same severity, get the first one
-    let highestSeverity = this.issueSeverityToRanking(IssueSeverity.Low);
-    let mostSevereVulnerability: Issue<OssIssueData> | undefined;
-
-    for (const vulnerability of vulnerabilities) {
-      if (this.issueSeverityToRanking(vulnerability.severity) > highestSeverity) {
-        highestSeverity = this.issueSeverityToRanking(vulnerability.severity);
-        mostSevereVulnerability = vulnerability;
-      }
-    }
-
+    const mostSevereVulnerability = this.getMostSevereVulnerability(vulnerabilities);
     if (!mostSevereVulnerability) {
       return;
     }
 
-    // create the CodeAction
-    const openIssueAction = this.codeActionAdapter.create(
-      `Show the most severe vulnerability [${mostSevereVulnerability.id}] (Snyk)`,
-      this.providedCodeActionKinds[0],
+    const codeActions = this.getActions(
+      folderPath,
+      document,
+      mostSevereVulnerability,
+      this.getIssueRange(mostSevereVulnerability),
     );
-
-    openIssueAction.command = {
-      command: SNYK_OPEN_ISSUE_COMMAND,
-      title: SNYK_OPEN_ISSUE_COMMAND,
-      arguments: [
-        {
-          issueType: OpenCommandIssueType.OssVulnerability,
-          issue: this.getOssIssueCommandArg(mostSevereVulnerability, vulnerabilities),
-        } as OpenIssueCommandArg,
-      ],
-    };
-
     const analyticsType = this.getAnalyticsActionTypes();
 
     this.analytics.logQuickFixIsDisplayed({
@@ -99,11 +56,16 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       ide: IDE_NAME,
     });
 
-    return [openIssueAction];
+    return codeActions;
   }
 
-  getActions(folderPath: string, _: TextDocument, issue: Issue<OssIssueData>, range: Range): CodeAction[] {
-    const openIssueAction = this.createOpenIssueAction(folderPath, issue, range);
+  getActions(
+    _folderPath: string,
+    _document: TextDocument,
+    mostSevereVulnerability: Issue<OssIssueData>,
+    _issueRange?: Range,
+  ): CodeAction[] {
+    const openIssueAction = this.createMostSevereVulnerabilityAction(mostSevereVulnerability);
 
     // returns list of actions, all new actions should be added to this list
     return [openIssueAction];
@@ -118,27 +80,10 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     return this.languages.createRange(0, 0, 0, 0);
   }
 
-  getOssIssueCommandArg(issue: Issue<OssIssueData>, filteredIssues: Issue<OssIssueData>[]): OssIssueCommandArg {
-    const matchingIdVulnerabilities = filteredIssues.filter(v => v.id === issue.id);
-    let overviewHtml = '';
-
-    try {
-      // TODO: marked.parse does not sanitize the HTML. See: https://marked.js.org/#usage
-      overviewHtml = marked.parse(issue.additionalData.description);
-    } catch (error) {
-      overviewHtml = '<p>There was a problem rendering the vulnerability overview</p>';
-    }
-
-    return {
-      ...issue,
-      matchingIdVulnerabilities,
-      overviewHtml,
-    };
-  }
-
-  private createOpenIssueAction(_folderPath: string, issue: Issue<OssIssueData>, _issueRange: Range): CodeAction {
+  private createMostSevereVulnerabilityAction(mostSevereVulnerability: Issue<OssIssueData>): CodeAction {
+    // create the CodeAction
     const openIssueAction = this.codeActionAdapter.create(
-      'Show the most severe vulnerability (Snyk)',
+      `Show the most severe vulnerability [${mostSevereVulnerability.id}] (Snyk)`,
       this.providedCodeActionKinds[0],
     );
 
@@ -148,12 +93,8 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       arguments: [
         {
           issueType: OpenCommandIssueType.OssVulnerability,
-          issue: {
-            ...issue,
-            matchingIdVulnerabilities: [issue],
-            overviewHtml: '',
-          },
-        },
+          issue: mostSevereVulnerability,
+        } as OpenIssueCommandArg,
       ],
     };
 
@@ -171,5 +112,49 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       default:
         return 0;
     }
+  }
+
+  private getVulnerabilities(folderPath: string, context: CodeActionContext): Issue<OssIssueData>[] | undefined {
+    // get all OSS vulnerabilities for the folder
+    const ossResult = this.issues.get(folderPath);
+    if (!ossResult || ossResult instanceof Error) {
+      return;
+    }
+
+    // get all OSS diagnostics; these contain the relevant vulnerabilities
+    const ossDiagnostics = context.diagnostics.filter(d => d.source === DIAGNOSTICS_OSS_COLLECTION_NAME_LS);
+    if (!ossDiagnostics.length) {
+      return;
+    }
+
+    // find the corresponding Issue<OssIssueData> objects from ossDiagnostics
+    const vulnerabilities: Issue<OssIssueData>[] = [];
+    for (const diagnostic of ossDiagnostics) {
+      const vulnerability = ossResult.find(
+        ossIssue => ossIssue.id === (diagnostic.code as { value: string | number; target: Uri }).value,
+      );
+      if (!vulnerability) {
+        continue;
+      }
+      vulnerabilities.push(vulnerability);
+    }
+
+    return vulnerabilities;
+  }
+
+  private getMostSevereVulnerability(vulnerabilities: Issue<OssIssueData>[]): Issue<OssIssueData> | undefined {
+    // iterate vulnerabilities and get the most severe one
+    // if there are multiple of the same severity, get the first one
+    let highestSeverity = this.issueSeverityToRanking(IssueSeverity.Low);
+    let mostSevereVulnerability: Issue<OssIssueData> | undefined;
+
+    for (const vulnerability of vulnerabilities) {
+      if (this.issueSeverityToRanking(vulnerability.severity) > highestSeverity) {
+        highestSeverity = this.issueSeverityToRanking(vulnerability.severity);
+        mostSevereVulnerability = vulnerability;
+      }
+    }
+
+    return mostSevereVulnerability;
   }
 }
