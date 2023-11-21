@@ -48,7 +48,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     }
 
     // find the corresponding Issue<OssIssueData> objects from ossDiagnostics
-    let vulnerabilities: Issue<OssIssueData>[] = [];
+    const vulnerabilities: Issue<OssIssueData>[] = [];
     for (const diagnostic of ossDiagnostics) {
       const vulnerability = ossResult.find(
         ossIssue => ossIssue.id === (diagnostic.code as { value: string | number; target: Uri }).value,
@@ -58,7 +58,6 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       }
       vulnerabilities.push(vulnerability);
     }
-
 
     // iterate vulnerabilities and get the most severe one
     // if there are multiple of the same severity, get the first one
