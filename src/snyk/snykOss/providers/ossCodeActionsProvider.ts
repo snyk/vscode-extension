@@ -113,6 +113,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     return ['Show Suggestion'];
   }
 
+  // noop
   getIssueRange(_issue: Issue<OssIssueData>): Range {
     return this.languages.createRange(0, 0, 0, 0);
   }

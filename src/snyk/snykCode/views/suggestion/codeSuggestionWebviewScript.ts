@@ -341,7 +341,7 @@ declare const acquireVsCodeApi: any;
     ignoreIssue(false);
   });
 
-  // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
+  // file deepcode ignore InsufficientPostmessageValidation: <please specify a reason of ignoring this>
   window.addEventListener('message', event => {
     const { type, args } = event.data;
     switch (type) {
