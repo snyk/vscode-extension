@@ -2,7 +2,8 @@ name: Build and Release "Preview"
 on:
   push:
     branches:
-      - main
+      # TODO: revert back to main once this feature is released
+      - feat/HEAD-78_oss_via_ls
 jobs:
   build:
     uses: snyk/vscode-extension/.github/workflows/ci.yaml@main
