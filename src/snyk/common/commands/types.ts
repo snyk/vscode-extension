@@ -1,7 +1,7 @@
 import { completeFileSuggestionType } from '../../snykCode/interfaces';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { OssIssueCommandArgLanguageServer } from '../../snykOss/interfaces';
+import { OssIssueCommandArg } from '../../snykOss/interfaces';
 import { CodeIssueData, Issue } from '../languageServer/types';
 
 export enum OpenCommandIssueType {
@@ -11,12 +11,12 @@ export enum OpenCommandIssueType {
 }
 
 export type OpenIssueCommandArg = {
-  issue: CodeIssueCommandArg | IacIssueCommandArg | OssIssueCommandArgLanguageServer;
+  issue: CodeIssueCommandArg | IacIssueCommandArg | OssIssueCommandArg;
   issueType: OpenCommandIssueType;
 };
 
 export const isCodeIssue = (
-  _issue: completeFileSuggestionType | Issue<CodeIssueData> | OssIssueCommandArgLanguageServer,
+  _issue: completeFileSuggestionType | Issue<CodeIssueData> | OssIssueCommandArg,
   issueType: OpenCommandIssueType,
 ): _issue is Issue<CodeIssueData> => {
   return issueType === OpenCommandIssueType.CodeIssue;

@@ -7,11 +7,12 @@ import { ILanguageServer } from '../../../snyk/common/languageServer/languageSer
 import { OssIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { IProductService } from '../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
+import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
+import { IOssSuggestionWebviewProvider } from '../../../snyk/snykOss/interfaces';
 import { OssService } from '../../../snyk/snykOss/ossService';
-import { OssDetailPanelProvider } from '../../../snyk/snykOss/providers/ossDetailPanelProvider';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 
@@ -31,7 +32,9 @@ suite('OSS Service', () => {
     service = new OssService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as OssDetailPanelProvider,
+      {} as IOssSuggestionWebviewProvider,
+      {} as ICodeActionAdapter,
+      { getQuickFix: sinon.fake() } as ICodeActionKindAdapter,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
