@@ -25,7 +25,7 @@ export class CliProcess {
     return new Promise((resolve, reject) => {
       let output = '';
 
-      // file deepcode ignore ArrayMethodOnNonArray: <please specify a reason of ignoring this>
+      // file deepcode ignore ArrayMethodOnNonArray: readonly string[] is an array of strings
       this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
       this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv }, cwd });
