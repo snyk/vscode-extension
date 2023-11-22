@@ -2,19 +2,26 @@ import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/
 import { IDE_NAME } from '../../common/constants/general';
 import { Issue } from '../../common/languageServer/types';
 import { ICodeActionKindAdapter } from '../../common/vscode/codeAction';
-import { CodeAction, CodeActionKind, CodeActionProvider, Range, TextDocument } from '../../common/vscode/types';
+import {
+  CodeAction,
+  CodeActionContext,
+  CodeActionKind,
+  CodeActionProvider,
+  Range,
+  TextDocument,
+} from '../../common/vscode/types';
 import { ProductResult } from '../services/productService';
 
 export abstract class CodeActionsProvider<T> implements CodeActionProvider {
   protected readonly providedCodeActionKinds = [this.codeActionKindAdapter.getQuickFix()];
 
   constructor(
-    private readonly issues: ProductResult<T>,
+    protected readonly issues: ProductResult<T>,
     private readonly codeActionKindAdapter: ICodeActionKindAdapter,
-    private readonly analytics: IAnalytics,
+    protected readonly analytics: IAnalytics,
   ) {}
 
-  abstract getActions(folderPath: string, document: TextDocument, issue: Issue<T>, issueRange: Range): CodeAction[];
+  abstract getActions(folderPath: string, document: TextDocument, issue: Issue<T>, issueRange?: Range): CodeAction[];
 
   abstract getAnalyticsActionTypes(): [string, ...string[]] &
     [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]];
@@ -25,7 +32,11 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
     return this.providedCodeActionKinds;
   }
 
-  public provideCodeActions(document: TextDocument, clickedRange: Range): CodeAction[] | undefined {
+  public provideCodeActions(
+    document: TextDocument,
+    clickedRange: Range,
+    _context: CodeActionContext,
+  ): CodeAction[] | undefined {
     if (this.issues.size === 0) {
       return undefined;
     }
@@ -57,7 +68,7 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
     return undefined;
   }
 
-  private findIssueWithRange(
+  protected findIssueWithRange(
     result: Issue<T>[],
     document: TextDocument,
     clickedRange: Range,

@@ -3,7 +3,7 @@ import _ from 'lodash';
 import path from 'path';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
+import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
@@ -89,11 +89,11 @@ export class CommandController {
       const paths = this.workspace.getWorkspaceFolders();
       const promises = [];
       for (const p of paths) {
-        promises.push(createDCIgnore(p, custom, this.workspace, this.window, uriAdapter));
+        promises.push(createDCIgnoreUtil(p, custom, this.workspace, this.window, uriAdapter));
       }
       await Promise.all(promises);
     } else {
-      await createDCIgnore(path, custom, this.workspace, this.window, uriAdapter);
+      await createDCIgnoreUtil(path, custom, this.workspace, this.window, uriAdapter);
     }
   }
 

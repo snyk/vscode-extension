@@ -6,7 +6,7 @@ import { CodeActionsProvider } from '../../../../snyk/common/editor/codeActionsP
 import { Issue } from '../../../../snyk/common/languageServer/types';
 import { WorkspaceFolderResult } from '../../../../snyk/common/services/productService';
 import { ICodeActionKindAdapter } from '../../../../snyk/common/vscode/codeAction';
-import { CodeAction, Range, TextDocument } from '../../../../snyk/common/vscode/types';
+import { CodeAction, CodeActionContext, Range, TextDocument } from '../../../../snyk/common/vscode/types';
 
 type ProductData = {
   issueType: string;
@@ -84,7 +84,7 @@ suite('Code Actions Provider', () => {
     } as unknown as TextDocument;
 
     // act
-    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range);
+    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
 
     // verify
     strictEqual(codeActions?.length, 2);
@@ -101,7 +101,7 @@ suite('Code Actions Provider', () => {
     } as unknown as TextDocument;
 
     // act
-    issuesActionsProvider.provideCodeActions(document, {} as Range);
+    issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
 
     // verify
     strictEqual(logQuickFixIsDisplayed.calledOnce, true);

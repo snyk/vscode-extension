@@ -6,7 +6,7 @@ import { IacIssueData, Issue } from '../../../../snyk/common/languageServer/type
 import { WorkspaceFolderResult } from '../../../../snyk/common/services/productService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../../snyk/common/vscode/codeAction';
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
-import { CodeActionKind, Range, TextDocument } from '../../../../snyk/common/vscode/types';
+import { CodeActionContext, CodeActionKind, Range, TextDocument } from '../../../../snyk/common/vscode/types';
 import { IacCodeActionsProvider } from '../../../../snyk/snykIac/codeActions/iacCodeActionsProvider';
 import { IacIssue } from '../../../../snyk/snykIac/issue';
 
@@ -66,7 +66,7 @@ suite('IaC code actions provider', () => {
     } as unknown as TextDocument;
 
     // act
-    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range);
+    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
 
     // verify
     strictEqual(codeActions?.length, 1);
@@ -82,7 +82,7 @@ suite('IaC code actions provider', () => {
     } as unknown as TextDocument;
 
     // act
-    issuesActionsProvider.provideCodeActions(document, {} as Range);
+    issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
 
     // verify
     strictEqual(logQuickFixIsDisplayed.calledOnce, true);

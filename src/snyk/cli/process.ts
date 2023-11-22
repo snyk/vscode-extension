@@ -1,11 +1,11 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
+import { OAuthToken } from '../base/services/authenticationService';
 import { Configuration, IConfiguration } from '../common/configuration/configuration';
 import { ILog } from '../common/logger/interfaces';
 import { getVsCodeProxy } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CLI_INTEGRATION_NAME } from './contants/integration';
 import { CliError } from './services/cliService';
-import { OAuthToken } from '../base/services/authenticationService';
 
 export class CliProcess {
   private runningProcess: ChildProcessWithoutNullStreams | null;
@@ -25,6 +25,7 @@ export class CliProcess {
     return new Promise((resolve, reject) => {
       let output = '';
 
+      // file deepcode ignore ArrayMethodOnNonArray: readonly string[] is an array of strings
       this.logger.info(`Running "${cliPath} ${args.join(' ')}".`);
 
       this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv }, cwd });
