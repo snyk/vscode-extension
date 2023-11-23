@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
