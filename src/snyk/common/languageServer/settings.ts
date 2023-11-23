@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
@@ -77,22 +78,15 @@ export class LanguageServerSettings {
       cliPath: configuration.getCliPath(),
       endpoint: configuration.snykOssApiEndpoint,
       organization: configuration.organization,
-
       token: await configuration.getToken(),
       automaticAuthentication: 'false',
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-
-      sendErrorReports: `${configuration.shouldReportErrors}`,
-      enableTelemetry: `${configuration.shouldReportEvents}`,
-
       filterSeverity: configuration.severityFilter,
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
-
       enableTrustedFoldersFeature: 'true',
       trustedFolders: configuration.getTrustedFolders(),
-
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
