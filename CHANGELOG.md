@@ -1,8 +1,14 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [1.27.1]
+
+### Changed
+
+- Cleaner OSS vulnerability count text
+
 ## [1.27.0]
 
-### Feat
+### Changed
 
 - Snyk LS: Snyk Open Source Security features now use Language Server backend
 
