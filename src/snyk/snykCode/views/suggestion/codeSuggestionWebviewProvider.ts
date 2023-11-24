@@ -1,3 +1,4 @@
+import he from 'he';
 import _ from 'lodash';
 import * as vscode from 'vscode';
 import {
@@ -111,6 +112,14 @@ export class CodeSuggestionWebviewProvider
         );
         this.registerListeners();
       }
+
+      issue.additionalData.exampleCommitFixes.map(ecf => {
+        return ecf.lines.map(l => {
+          l.line = he.encode(l.line);
+          return l;
+        });
+      });
+
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
       this.panel.iconPath = vscode.Uri.joinPath(
         vscode.Uri.file(this.context.extensionPath),
