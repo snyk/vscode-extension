@@ -10,6 +10,7 @@ export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<Os
 export type OssIssueCommandArg = Issue<OssIssueData> & {
   matchingIdVulnerabilities: Issue<OssIssueData>[];
   overviewHtml: string;
+  folderPath: string;
 };
 
 export type OssResult = OssFileResult[] | OssFileResult;
