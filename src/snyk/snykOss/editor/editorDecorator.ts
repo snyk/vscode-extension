@@ -91,7 +91,7 @@ export class EditorDecorator {
       this.fileDecorationMap.set(filePath, lineDecorations); // set map, if no decoration was set before
     }
 
-    const vulnerabilityCountMessage = vulnerabilityCount.count ?? 'Vulnerabilities: 0';
+    const vulnerabilityCountMessage = vulnerabilityCount.count ?? '';
 
     lineDecorations[vulnerabilityCount.line] = {
       range: this.languages.createRange(
