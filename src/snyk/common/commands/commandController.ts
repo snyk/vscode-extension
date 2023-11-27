@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash';
-import path from 'path';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
@@ -122,7 +121,7 @@ export class CommandController {
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issueArgs = arg.issue as CodeIssueCommandArg;
-      const folderPath = path.dirname(issueArgs.filePath);
+      const folderPath = issueArgs.folderPath;
       const issue = this.ossService.getIssue(folderPath, issueArgs.id);
 
       if (!issue) {
