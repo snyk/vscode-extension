@@ -28,6 +28,7 @@ jobs:
       - name: Verify analytics events
         run: npm run ampli:verify -- -t ${{ secrets.ITERATIVELY_KEY }}
 
+        # Naming convention for the preview version means we can only release one preview per hour
       - name: Patch to preview version
         run: npm run patch-preview
         env:
