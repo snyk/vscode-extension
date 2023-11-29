@@ -4,7 +4,6 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IThemeColorAdapter } from '../../common/vscode/theme';
 import { TextEditorDecorationType } from '../../common/vscode/types';
 import { IVSCodeWindow } from '../../common/vscode/window';
-import { messages } from '../messages/vulnerabilityCount';
 import { ImportedModule, ModuleVulnerabilityCount } from '../services/vulnerabilityCount/importedModule';
 
 export class EditorDecorator {
@@ -58,7 +57,7 @@ export class EditorDecorator {
           module.line - 1,
           this.editorLastCharacterIndex,
         ),
-        renderOptions: getRenderOptions(messages.fetchingVulnerabilities, this.themeColorAdapter),
+        renderOptions: getRenderOptions('Fetching vulnerabilities...', this.themeColorAdapter),
       };
     }
 
@@ -92,16 +91,16 @@ export class EditorDecorator {
       this.fileDecorationMap.set(filePath, lineDecorations); // set map, if no decoration was set before
     }
 
-    const text = vulnerabilityCount.count ? messages.decoratorMessage(vulnerabilityCount.count) : '';
+    const vulnerabilityCountMessage = vulnerabilityCount.count ?? '';
 
     lineDecorations[vulnerabilityCount.line] = {
       range: this.languages.createRange(
-        vulnerabilityCount.line - 1,
+        vulnerabilityCount.line - 1, // start line, index is 0 based
         this.editorLastCharacterIndex,
-        vulnerabilityCount.line - 1,
+        vulnerabilityCount.line - 1, // end line, index is 0 based
         this.editorLastCharacterIndex,
       ),
-      renderOptions: getRenderOptions(text, this.themeColorAdapter),
+      renderOptions: getRenderOptions(vulnerabilityCountMessage, this.themeColorAdapter),
     };
 
     if (triggerUpdate) {

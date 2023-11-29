@@ -2,13 +2,11 @@
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
-import { createDCIgnore } from '../../snykCode/utils/ignoreFileUtils';
+import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
-import { capitalizeOssSeverity } from '../../snykOss/ossResult';
-import { OssService } from '../../snykOss/services/ossService';
-import { OssIssueCommandArg } from '../../snykOss/views/ossVulnerabilityTreeProvider';
+import { OssService } from '../../snykOss/ossService';
 import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -90,11 +88,11 @@ export class CommandController {
       const paths = this.workspace.getWorkspaceFolders();
       const promises = [];
       for (const p of paths) {
-        promises.push(createDCIgnore(p, custom, this.workspace, this.window, uriAdapter));
+        promises.push(createDCIgnoreUtil(p, custom, this.workspace, this.window, uriAdapter));
       }
       await Promise.all(promises);
     } else {
-      await createDCIgnore(path, custom, this.workspace, this.window, uriAdapter);
+      await createDCIgnoreUtil(path, custom, this.workspace, this.window, uriAdapter);
     }
   }
 
@@ -122,14 +120,28 @@ export class CommandController {
         severity: IssueUtils.issueSeverityAsText(issue.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
-      const issue = arg.issue as OssIssueCommandArg;
-      void this.ossService.showSuggestionProvider(issue);
+      const issueArgs = arg.issue as CodeIssueCommandArg;
+      const folderPath = issueArgs.folderPath;
+      const issue = this.ossService.getIssue(folderPath, issueArgs.id);
+
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
+
+      await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      try {
+        await this.ossService.showSuggestionProvider(folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
 
       this.analytics.logIssueInTreeIsClicked({
         ide: IDE_NAME,
         issueId: issue.id,
         issueType: 'Open Source Vulnerability',
-        severity: capitalizeOssSeverity(issue.severity),
+        severity: IssueUtils.issueSeverityAsText(issue.severity),
       });
     } else if (arg.issueType == OpenCommandIssueType.IacIssue) {
       const issueArgs = arg.issue as IacIssueCommandArg;

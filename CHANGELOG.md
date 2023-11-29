@@ -1,5 +1,18 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.1.0]
+
+### Added
+
+- Snyk LS: Snyk Open Source Security features now use Language Server backend
+- Snyk OSS: Squiggly warning underlines for direct and transitive vulnerabilities
+- Snyk OSS: Squiggly underlines colour coded based on severity
+- Snyk OSS: Vulnerability count text includes transitive vulnerabilities
+- Snyk OSS: Vulnerability count text includes breakdown of vulnerabilities by severity
+- Snyk OSS: Hovers lists vulnerabilities and shows summary (without typo)
+- Snyk OSS: Hovers show information from security.snyk.io/vuln database
+- Snyk OSS: CodeActions shows actions available for all vulnerabilities
+
 ## [1.26.1]
 
 ### Fixed

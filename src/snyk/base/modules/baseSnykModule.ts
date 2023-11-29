@@ -23,7 +23,7 @@ import { IMarkdownStringAdapter, MarkdownStringAdapter } from '../../common/vsco
 import { IWatcher } from '../../common/watchers/interfaces';
 import { ICodeSettings } from '../../snykCode/codeSettings';
 import SnykEditorsWatcher from '../../snykCode/watchers/editorsWatcher';
-import { OssService } from '../../snykOss/services/ossService';
+import { OssService } from '../../snykOss/ossService';
 import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
@@ -85,6 +85,4 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   }
 
   abstract runScan(): Promise<void>;
-
-  abstract runOssScan(): Promise<void>;
 }

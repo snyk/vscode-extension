@@ -43,10 +43,10 @@ export class LsExecutable {
       return customPath;
     }
 
-    const platform = this.getCurrentWithArch();
+    const platform = LsExecutable.getCurrentWithArch();
 
     const homeDir = Platform.getHomeDir();
-    const lsFilename = this.getFilename(platform);
+    const lsFilename = LsExecutable.getFilename(platform);
     const defaultPath = this.defaultPaths[platform];
     const lsDir = path.join(homeDir, defaultPath, 'snyk-ls');
     return path.join(lsDir, lsFilename);

@@ -1,6 +1,6 @@
 ## Run extension and debug
 
-Clone the repository, then run `npm install` in the directory.
+Clone the repository, then run `npm install && npm run build` in the directory.
 
 - Open repository directory in VS Code and press `F5` to run extension in a new VS Code window.
 - This allows extension debugging within VS Code.
