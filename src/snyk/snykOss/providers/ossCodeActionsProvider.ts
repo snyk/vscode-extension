@@ -10,6 +10,7 @@ import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { CodeActionContext } from '../../common/vscode/types';
 import { DIAGNOSTICS_OSS_COLLECTION_NAME_LS } from '../../snykCode/constants/analysis';
+import { getOssIssueCommandArg } from './ossIssueCommandHelper';
 
 export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
   constructor(
@@ -38,7 +39,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       return;
     }
 
-    const mostSevereVulnerability = this.getMostSevereVulnerability(vulnerabilities);
+    const mostSevereVulnerability = this.getMostSevereVulnerability(vulnerabilities, folderPath);
     if (!mostSevereVulnerability) {
       return;
     }
@@ -142,7 +143,10 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     return vulnerabilities;
   }
 
-  private getMostSevereVulnerability(vulnerabilities: Issue<OssIssueData>[]): Issue<OssIssueData> | undefined {
+  private getMostSevereVulnerability(
+    vulnerabilities: Issue<OssIssueData>[],
+    folderPath: string,
+  ): Issue<OssIssueData> | undefined {
     // iterate vulnerabilities and get the most severe one
     // if there are multiple of the same severity, get the first one
     let highestSeverity = this.issueSeverityToRanking(IssueSeverity.Low);
@@ -155,6 +159,10 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       }
     }
 
-    return mostSevereVulnerability;
+    if (!mostSevereVulnerability) {
+      return;
+    }
+
+    return getOssIssueCommandArg(mostSevereVulnerability, folderPath, vulnerabilities);
   }
 }
