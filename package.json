@@ -63,21 +63,21 @@
             "scope": "application"
           },
           "snyk.yesTelemetry": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
             "type": "boolean",
             "default": true,
             "markdownDescription": "Send usage statistics to Snyk",
             "scope": "application"
           },
           "snyk.yesWelcomeNotification": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
             "type": "boolean",
             "default": true,
             "markdownDescription": "Show welcome notification after installation and restart",
             "scope": "application"
           },
           "snyk.yesBackgroundOssNotification": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
             "type": "boolean",
             "default": true,
             "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
