@@ -47,11 +47,7 @@ export class AdvisorApiClient implements IAdvisorApiClient {
     const token = await this.configuration.getToken();
     this.http.interceptors.request.use(req => {
       req.baseURL = this.configuration.baseApiUrl;
-      req.headers = {
-        ...req.headers,
-        Authorization: `token ${token}`,
-      } as { [header: string]: string };
-
+      req.headers['Authorization'] = `token ${token}`;
       return req;
     });
     return this.http.post<T, R>(url, data, config);
