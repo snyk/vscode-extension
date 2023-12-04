@@ -3,9 +3,9 @@ import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
-import { IVSCodeWorkspace } from './vscode/workspace';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
+import { IVSCodeWorkspace } from './vscode/workspace';
 
 export async function getHttpsProxyAgent(
   workspace: IVSCodeWorkspace,

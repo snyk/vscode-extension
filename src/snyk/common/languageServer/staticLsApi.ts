@@ -1,12 +1,12 @@
 import axios, { CancelTokenSource } from 'axios';
+import { IConfiguration } from '../configuration/configuration';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { LsExecutable } from './lsExecutable';
-import { LsSupportedPlatform } from './supportedPlatforms';
+import { DownloadAxiosResponse } from '../download/downloader';
+import { ILog } from '../logger/interfaces';
 import { getAxiosConfig } from '../proxy';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { DownloadAxiosResponse } from '../download/downloader';
-import { IConfiguration } from '../configuration/configuration';
-import { ILog } from '../logger/interfaces';
+import { LsExecutable } from './lsExecutable';
+import { LsSupportedPlatform } from './supportedPlatforms';
 
 export type LsMetadata = {
   tag: string;
