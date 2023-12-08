@@ -1,5 +1,3 @@
-import { ModuleVulnerabilityCount } from '../services/vulnerabilityCount/importedModule';
-
 export const messages = {
   analysis: {
     scanFailed: 'Scan failed',
