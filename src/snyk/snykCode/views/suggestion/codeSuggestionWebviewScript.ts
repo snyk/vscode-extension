@@ -186,11 +186,14 @@ declare const acquireVsCodeApi: any;
     }
 
     exampleCount = 0;
+
     const currentSeverity = getCurrentSeverity();
     const severity = document.getElementById('severity')!;
     const title = document.getElementById('title')!;
     const description = document.getElementById('description')!;
+    const suggestionDetails = document.querySelector('#suggestion-details');
     const meta = document.getElementById('meta')!;
+
     let type = '';
 
     // Set issue type: vulnerability or issue
@@ -245,6 +248,9 @@ declare const acquireVsCodeApi: any;
 
     description.querySelectorAll('*').forEach(n => n.remove());
     description.innerHTML = '';
+
+    showSuggestionDetails(suggestion);
+
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
@@ -313,6 +319,15 @@ declare const acquireVsCodeApi: any;
       exampleTop.className = 'row between hidden';
       example.className = 'hidden';
       noExamples.className = 'font-light';
+    }
+
+    function showSuggestionDetails(suggestion: Suggestion) {
+      if (!suggestion.text) {
+        return;
+      }
+
+      suggestionDetails!.className = 'show';
+      suggestionDetails!.innerHTML = suggestion.text;
     }
   }
 

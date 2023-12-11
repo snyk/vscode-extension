@@ -43,6 +43,14 @@
   line-height: 1.6;
 }
 
+#suggestion-details {
+  display: none;
+}
+
+#suggestion-details.show {
+  display: block;
+}
+
 .cwe-list {
   display: inline-block;
   margin: 0;

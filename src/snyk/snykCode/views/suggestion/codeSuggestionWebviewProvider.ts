@@ -1,5 +1,6 @@
 import he from 'he';
 import _ from 'lodash';
+import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -155,12 +156,14 @@ export class CodeSuggestionWebviewProvider
   }
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
+    const parsedDetails = marked.parse(issue.additionalData.text) as string;
     return {
       id: issue.id,
       title: issue.title,
       uri: issue.filePath,
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
+      text: parsedDetails,
     };
   }
 
@@ -291,6 +294,8 @@ export class CodeSuggestionWebviewProvider
               <img class="icon" src="${images['icon-external']}" /> More info
             </div>
           </div>
+        </section>
+        <section id="suggestion-details" class="delimiter-top">
         </section>
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
