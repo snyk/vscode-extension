@@ -438,7 +438,7 @@
     "@itly/sdk": "^2.3.1",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
-    "@snyk/code-client": "^4.12.4",
+    "@snyk/code-client": "^4.23.2",
     "analytics-node": "^4.0.1",
     "axios": "^1.6.0",
     "glob": "^9.0.0",
