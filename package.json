@@ -441,7 +441,7 @@
     "@snyk/code-client": "^4.12.4",
     "analytics-node": "^4.0.1",
     "axios": "^1.6.0",
-    "glob": "^9.0.0",
+    "glob": "^9.3.5",
     "he": "^1.2.0",
     "htmlparser2": "^7.2.0",
     "http-proxy-agent": "^5.0.0",
