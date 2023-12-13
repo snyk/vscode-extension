@@ -429,9 +429,9 @@
   },
   "dependencies": {
     "@amplitude/experiment-node-server": "^1.7.8",
-    "@babel/parser": "^7.12.11",
-    "@babel/traverse": "^7.12.12",
-    "@babel/types": "^7.12.12",
+    "@babel/parser": "^7.23.4",
+    "@babel/traverse": "^7.23.4",
+    "@babel/types": "^7.23.4",
     "@itly/plugin-amplitude-node": "^2.5.0",
     "@itly/plugin-schema-validator": "^2.4.0",
     "@itly/plugin-segment-node": "^2.4.0",
