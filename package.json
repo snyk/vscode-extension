@@ -450,7 +450,7 @@
     "marked": "^11.1.0",
     "open": "^7.4.2",
     "rxjs": "^7.8.1",
-    "string-argv": "^0.3.1",
+    "string-argv": "^0.3.2",
     "uuid": "^8.3.2",
     "validate-npm-package-name": "^3.0.0",
     "vscode-languageclient": "8.1.0",
