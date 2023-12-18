@@ -1,5 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.2.0]
+
+### Added
+
+- Snyk Code: New UI section `#suggestion-details` for displaying suggestion details in snykCode.
+- Snyk Code: Added a collapsible section for suggestion details. This includes a 'Read more' button to toggle the full display of suggestion details.
+
 ## [2.1.0]
 
 ### Added
