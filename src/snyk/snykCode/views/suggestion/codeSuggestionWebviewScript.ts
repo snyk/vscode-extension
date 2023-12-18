@@ -73,6 +73,8 @@ declare const acquireVsCodeApi: any;
   let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
   showCurrentSuggestion();
 
+  showSuggestionDetails(suggestion);
+
   function navigateToLeadURL() {
     if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
@@ -186,14 +188,11 @@ declare const acquireVsCodeApi: any;
     }
 
     exampleCount = 0;
-
     const currentSeverity = getCurrentSeverity();
     const severity = document.getElementById('severity')!;
     const title = document.getElementById('title')!;
     const description = document.getElementById('description')!;
-    const suggestionDetails = document.querySelector('#suggestion-details');
     const meta = document.getElementById('meta')!;
-
     let type = '';
 
     // Set issue type: vulnerability or issue
@@ -248,9 +247,6 @@ declare const acquireVsCodeApi: any;
 
     description.querySelectorAll('*').forEach(n => n.remove());
     description.innerHTML = '';
-
-    showSuggestionDetails(suggestion);
-
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
@@ -320,15 +316,32 @@ declare const acquireVsCodeApi: any;
       example.className = 'hidden';
       noExamples.className = 'font-light';
     }
+  }
 
-    function showSuggestionDetails(suggestion: Suggestion) {
-      if (!suggestion.text) {
-        return;
-      }
+  function showSuggestionDetails(suggestion: Suggestion | null) {
+    const suggestionDetails = document.querySelector('#suggestion-details') as HTMLElement;
+    const readMoreBtn = document.querySelector('.read-more-btn') as HTMLElement;
 
-      suggestionDetails!.className = 'show';
-      suggestionDetails!.innerHTML = suggestion.text;
+    if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
+      return;
     }
+
+    suggestionDetails.innerHTML = suggestion.text;
+    suggestionDetails.classList.add('collapsed');
+
+    readMoreBtn.style.display = 'block';
+
+    readMoreBtn.addEventListener('click', () => {
+      const isCollapsed = suggestionDetails.classList.contains('collapsed');
+
+      if (isCollapsed) {
+        suggestionDetails.classList.remove('collapsed');
+        readMoreBtn.textContent = 'Read less';
+      } else {
+        suggestionDetails.classList.add('collapsed');
+        readMoreBtn.textContent = 'Read more';
+      }
+    });
   }
 
   function sendMessage(message: {

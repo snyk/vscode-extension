@@ -295,8 +295,14 @@ export class CodeSuggestionWebviewProvider
             </div>
           </div>
         </section>
-        <section id="suggestion-details" class="delimiter-top">
+
+        <section class="delimiter-top">
+          <div id="suggestion-details" class="suggestion-details"></div>
         </section>
+        <section class="actions row">
+          <button class="button read-more-btn">Read more</button>
+        </section>
+
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> examples:
