@@ -58,6 +58,8 @@ declare const acquireVsCodeApi: any;
 
   const vscode = acquireVsCodeApi();
 
+  let isReadMoreBtnEventBound = false;
+
   function navigateToUrl(url: string) {
     sendMessage({
       type: 'openBrowser',
@@ -331,17 +333,20 @@ declare const acquireVsCodeApi: any;
 
     readMoreBtn.style.display = 'block';
 
-    readMoreBtn.addEventListener('click', () => {
-      const isCollapsed = suggestionDetails.classList.contains('collapsed');
+    if (!isReadMoreBtnEventBound) {
+      readMoreBtn.addEventListener('click', () => {
+        const isCollapsed = suggestionDetails.classList.contains('collapsed');
 
-      if (isCollapsed) {
-        suggestionDetails.classList.remove('collapsed');
-        readMoreBtn.textContent = 'Read less';
-      } else {
-        suggestionDetails.classList.add('collapsed');
-        readMoreBtn.textContent = 'Read more';
-      }
-    });
+        if (isCollapsed) {
+          suggestionDetails.classList.remove('collapsed');
+          readMoreBtn.textContent = 'Read less';
+        } else {
+          suggestionDetails.classList.add('collapsed');
+          readMoreBtn.textContent = 'Read more';
+        }
+      });
+      isReadMoreBtnEventBound = true;
+    }
   }
 
   function sendMessage(message: {
