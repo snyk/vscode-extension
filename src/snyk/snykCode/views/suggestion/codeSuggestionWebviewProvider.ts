@@ -1,4 +1,3 @@
-import he from 'he';
 import _ from 'lodash';
 import * as vscode from 'vscode';
 import {
@@ -22,6 +21,7 @@ import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
+import { encodeExampleCommitFixes } from '../../utils/htmlEncoder';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
@@ -113,12 +113,7 @@ export class CodeSuggestionWebviewProvider
         this.registerListeners();
       }
 
-      issue.additionalData.exampleCommitFixes.map(ecf => {
-        return ecf.lines.map(l => {
-          l.line = he.encode(l.line);
-          return l;
-        });
-      });
+      issue.additionalData.exampleCommitFixes = encodeExampleCommitFixes(issue.additionalData.exampleCommitFixes);
 
       this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
       this.panel.iconPath = vscode.Uri.joinPath(
