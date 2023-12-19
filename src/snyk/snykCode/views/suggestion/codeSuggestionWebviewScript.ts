@@ -75,8 +75,6 @@ declare const acquireVsCodeApi: any;
   let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
   showCurrentSuggestion();
 
-  showSuggestionDetails(suggestion);
-
   function navigateToLeadURL() {
     if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
@@ -188,6 +186,8 @@ declare const acquireVsCodeApi: any;
     if (!suggestion) {
       return;
     }
+
+    showSuggestionDetails(suggestion);
 
     exampleCount = 0;
     const currentSeverity = getCurrentSeverity();
@@ -320,7 +320,7 @@ declare const acquireVsCodeApi: any;
     }
   }
 
-  function showSuggestionDetails(suggestion: Suggestion | null) {
+  function showSuggestionDetails(suggestion: Suggestion) {
     const suggestionDetails = document.querySelector('#suggestion-details') as HTMLElement;
     const readMoreBtn = document.querySelector('.read-more-btn') as HTMLElement;
 
