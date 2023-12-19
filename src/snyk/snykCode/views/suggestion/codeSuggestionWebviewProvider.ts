@@ -299,7 +299,7 @@ export class CodeSuggestionWebviewProvider
         <section class="delimiter-top">
           <div id="suggestion-details" class="suggestion-details"></div>
         </section>
-        <section class="actions row">
+        <section class="actions row no-padding-top">
           <button class="button read-more-btn">Read more</button>
         </section>
 

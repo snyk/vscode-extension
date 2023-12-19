@@ -69,6 +69,10 @@
   max-height: none;
 }
 
+.no-padding-top {
+  padding-top: 0;
+}
+
 .read-more-btn {
   background: none;
   border: 2px solid var(--vscode-textLink-foreground);
