@@ -58,6 +58,8 @@ declare const acquireVsCodeApi: any;
 
   const vscode = acquireVsCodeApi();
 
+  let isReadMoreBtnEventBound = false;
+
   function navigateToUrl(url: string) {
     sendMessage({
       type: 'openBrowser',
@@ -184,6 +186,8 @@ declare const acquireVsCodeApi: any;
     if (!suggestion) {
       return;
     }
+
+    showSuggestionDetails(suggestion);
 
     exampleCount = 0;
     const currentSeverity = getCurrentSeverity();
@@ -313,6 +317,35 @@ declare const acquireVsCodeApi: any;
       exampleTop.className = 'row between hidden';
       example.className = 'hidden';
       noExamples.className = 'font-light';
+    }
+  }
+
+  function showSuggestionDetails(suggestion: Suggestion) {
+    const suggestionDetails = document.querySelector('#suggestion-details') as HTMLElement;
+    const readMoreBtn = document.querySelector('.read-more-btn') as HTMLElement;
+
+    if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
+      return;
+    }
+
+    suggestionDetails.innerHTML = suggestion.text;
+    suggestionDetails.classList.add('collapsed');
+
+    readMoreBtn.style.display = 'block';
+
+    if (!isReadMoreBtnEventBound) {
+      readMoreBtn.addEventListener('click', () => {
+        const isCollapsed = suggestionDetails.classList.contains('collapsed');
+
+        if (isCollapsed) {
+          suggestionDetails.classList.remove('collapsed');
+          readMoreBtn.textContent = 'Read less';
+        } else {
+          suggestionDetails.classList.add('collapsed');
+          readMoreBtn.textContent = 'Read more';
+        }
+      });
+      isReadMoreBtnEventBound = true;
     }
   }
 

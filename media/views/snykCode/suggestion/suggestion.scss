@@ -43,6 +43,43 @@
   line-height: 1.6;
 }
 
+.suggestion-details {
+  height: auto;
+  transition: height 400ms ease-out;
+}
+
+.suggestion-details.collapsed {
+  height: 90px;
+  overflow: hidden;
+}
+
+.suggestion-details.collapsed p:first-of-type {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.suggestion-details.collapsed:after {
+  content: '...';
+  float: right;
+  background: linear-gradient(to left, transparent, white 50%);
+}
+
+.suggestion-details.show {
+  max-height: none;
+}
+
+.no-padding-top {
+  padding-top: 0;
+}
+
+.read-more-btn {
+  background: none;
+  border: 2px solid var(--vscode-textLink-foreground);
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+
 .cwe-list {
   display: inline-block;
   margin: 0;

@@ -1,5 +1,6 @@
 import he from 'he';
 import _ from 'lodash';
+import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -155,12 +156,14 @@ export class CodeSuggestionWebviewProvider
   }
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
+    const parsedDetails = marked.parse(issue.additionalData.text) as string;
     return {
       id: issue.id,
       title: issue.title,
       uri: issue.filePath,
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
+      text: parsedDetails,
     };
   }
 
@@ -292,6 +295,14 @@ export class CodeSuggestionWebviewProvider
             </div>
           </div>
         </section>
+
+        <section class="delimiter-top">
+          <div id="suggestion-details" class="suggestion-details"></div>
+        </section>
+        <section class="actions row no-padding-top">
+          <button class="button read-more-btn">Read more</button>
+        </section>
+
         <section class="delimiter-top">
           <div id="info-top" class="font-light">
             This <span class="issue-type">issue</span> was fixed by <span id="dataset-number"></span> projects. Here are <span id="example-number"></span> examples:
