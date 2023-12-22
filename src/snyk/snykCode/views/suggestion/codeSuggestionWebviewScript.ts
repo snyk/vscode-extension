@@ -58,6 +58,12 @@ declare const acquireVsCodeApi: any;
 
   const vscode = acquireVsCodeApi();
 
+  const elements = {
+    readMoreBtn: document.querySelector('.read-more-btn') as HTMLElement,
+    suggestionDetails: document.querySelector('#suggestion-details') as HTMLElement,
+    suggestionDetailsContent: document.querySelector('.suggestion-details-content') as HTMLElement,
+  };
+
   let isReadMoreBtnEventBound = false;
 
   function navigateToUrl(url: string) {
@@ -321,9 +327,7 @@ declare const acquireVsCodeApi: any;
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const suggestionDetails = document.querySelector('#suggestion-details') as HTMLElement;
-    const readMoreBtn = document.querySelector('.read-more-btn') as HTMLElement;
-    const suggestionDetailsContent = document.querySelector('.suggestion-details-content') as HTMLElement;
+    const { suggestionDetails, readMoreBtn, suggestionDetailsContent } = elements;
 
     if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
       readMoreBtn.classList.add('hidden');
