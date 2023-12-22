@@ -1,5 +1,12 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.2.1]
+
+### Fixed
+
+- Snyk Code: Optimized performance by caching DOM element references in `suggestion-details`. This minimizes repetitive DOM queries, enhancing the responsiveness and efficiency of the webview.
+- Snyk Code: Corrected the visibility toggling behavior in the `#suggestion-details` section. Replaced inline styling with CSS class-based approach.
+
 ## [2.2.0]
 
 ### Added
