@@ -291,7 +291,7 @@ export class CodeSuggestionWebviewProvider
           </div>
         </section>
 
-        <section class="delimiter-top">
+        <section class="delimiter-top suggestion-details-content">
           <div id="suggestion-details" class="suggestion-details"></div>
         </section>
         <section class="actions row no-padding-top">

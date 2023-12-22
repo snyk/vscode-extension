@@ -323,15 +323,18 @@ declare const acquireVsCodeApi: any;
   function showSuggestionDetails(suggestion: Suggestion) {
     const suggestionDetails = document.querySelector('#suggestion-details') as HTMLElement;
     const readMoreBtn = document.querySelector('.read-more-btn') as HTMLElement;
+    const suggestionDetailsContent = document.querySelector('.suggestion-details-content') as HTMLElement;
 
     if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
+      readMoreBtn.classList.add('hidden');
+      suggestionDetailsContent.classList.add('hidden');
       return;
     }
 
     suggestionDetails.innerHTML = suggestion.text;
     suggestionDetails.classList.add('collapsed');
-
-    readMoreBtn.style.display = 'block';
+    readMoreBtn.classList.remove('hidden');
+    suggestionDetailsContent.classList.remove('hidden');
 
     if (!isReadMoreBtnEventBound) {
       readMoreBtn.addEventListener('click', () => {
