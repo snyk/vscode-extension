@@ -54,6 +54,7 @@ declare const acquireVsCodeApi: any;
     markers?: Marker[];
     cols: Point;
     rows: Point;
+    priorityScore: number;
   };
 
   const vscode = acquireVsCodeApi();
@@ -230,13 +231,21 @@ declare const acquireVsCodeApi: any;
     // Append issue type in the meta section
     meta.insertAdjacentHTML('afterbegin', '<span id="suggestion-type" class="suggestion-meta">' + type + '</span>');
 
-    // Append line number
-    const issuePosition = document.getElementById('navigateToIssue')!;
-    issuePosition.innerHTML = '';
-    issuePosition.insertAdjacentHTML(
-      'afterbegin',
-      'Position: line <a id="line-position">' + (Number(suggestion.rows[0]) + 1).toString() + '</a>',
-    );
+    const metaContainer = document.getElementById('navigateToIssue') as HTMLElement;
+
+    // Create and append the line number span
+    const lineNumberElement = document.createElement('span');
+    lineNumberElement.className = 'suggestion-meta';
+    lineNumberElement.textContent = 'Position: line ' + (Number(suggestion.rows[0]) + 1).toString();
+    metaContainer.appendChild(lineNumberElement);
+
+    // Create and append the priority score span, if available
+    if (suggestion.priorityScore !== undefined) {
+      const priorityScoreElement = document.createElement('span');
+      priorityScoreElement.className = 'suggestion-meta';
+      priorityScoreElement.textContent = 'Priority Score: ' + suggestion.priorityScore.toString();
+      metaContainer.appendChild(priorityScoreElement);
+    }
 
     if (currentSeverity && currentSeverity.text) {
       severity.querySelectorAll('img').forEach(n => {

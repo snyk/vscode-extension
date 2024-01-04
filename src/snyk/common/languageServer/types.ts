@@ -43,11 +43,11 @@ export type CodeIssueData = {
   exampleCommitFixes: ExampleCommitFix[];
   cwe: string[];
   text: string;
-
   markers?: Marker[];
   cols: Point;
   rows: Point;
   isSecurityType: boolean;
+  priorityScore: number;
 };
 
 export type ExampleCommitFix = {

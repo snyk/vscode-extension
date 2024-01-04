@@ -95,9 +95,21 @@
 .suggestion-position {
   display: inline-block;
   padding: 0 8px;
-  border-right: 1px solid var(--vscode-input-border);
   line-height: 1;
   text-transform: capitalize;
+}
+
+/* Add separator after every .suggestion-meta element except the last one */
+.suggestion-meta:not(:last-child)::after {
+  content: '|';
+  padding-left: 8px;
+  color: var(--vscode-input-border);
+}
+
+/* Remove the right border from the CSS as it's replaced by the pseudo-element */
+.suggestion-meta,
+.suggestion-position {
+  border-right: none;
 }
 
 .suggestion-meta:first-child {
