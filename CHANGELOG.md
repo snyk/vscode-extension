@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.2.2]
+
+### Fixed
+
+- Only send Amplitude events when connected to a MT US environment
+
 ## [2.2.1]
 
 ### Fixed

@@ -125,7 +125,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.user,
       Logger,
       configuration.shouldReportEvents,
-      configuration.isFedramp,
+      configuration.analyticsPermitted,
       configuration.isDevelopment,
       snykConfiguration,
     );

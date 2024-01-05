@@ -64,7 +64,7 @@ export class Iteratively implements IAnalytics {
     private readonly user: User,
     private logger: ILog,
     private shouldReportEvents: boolean,
-    private isFedramp: boolean,
+    private analyticsPermitted: boolean,
     private isDevelopment: boolean,
     private snykConfiguration?: SnykConfiguration,
   ) {}
@@ -75,7 +75,7 @@ export class Iteratively implements IAnalytics {
   }
 
   load(): Iteratively | null {
-    if (!this.shouldReportEvents || this.isFedramp) {
+    if (!this.shouldReportEvents || !this.analyticsPermitted) {
       this.logger.debug(`Analytics are disabled. No analytics will be collected.`);
       return null;
     }
