@@ -87,39 +87,33 @@
 }
 
 .suggestion-metas {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 16px;
   font-size: 1.3rem;
   line-height: 2rem;
 }
 
-.suggestion-meta,
-.suggestion-position {
-  display: inline-block;
-  padding: 0 8px;
-  line-height: 1;
-  text-transform: capitalize;
+/* Style each meta element */
+.suggestion-meta {
+  position: relative;
+  align-items: center;
 }
 
-/* Add separator after every .suggestion-meta element except the last one */
-.suggestion-meta:not(:last-child)::after {
+.suggestion-meta:not(:first-child)::before {
   content: '|';
-  padding-left: 8px;
   color: var(--vscode-input-border);
+  position: absolute;
+  left: -10px;
 }
 
-/* Remove the right border from the CSS as it's replaced by the pseudo-element */
-.suggestion-meta,
-.suggestion-position {
+.suggestion-meta {
   border-right: none;
 }
 
 .suggestion-meta:first-child {
   padding-left: 0
-}
-
-.suggestion-position {
-  border: none;
-  padding-left: 5px;
-  text-transform: none;
 }
 
 .suggestion--header {

@@ -63,6 +63,7 @@ declare const acquireVsCodeApi: any;
     readMoreBtn: document.querySelector('.read-more-btn') as HTMLElement,
     suggestionDetails: document.querySelector('#suggestion-details') as HTMLElement,
     suggestionDetailsContent: document.querySelector('.suggestion-details-content') as HTMLElement,
+    meta: document.getElementById('meta') as HTMLElement,
   };
 
   let isReadMoreBtnEventBound = false;
@@ -201,51 +202,8 @@ declare const acquireVsCodeApi: any;
     const severity = document.getElementById('severity')!;
     const title = document.getElementById('title')!;
     const description = document.getElementById('description')!;
-    const meta = document.getElementById('meta')!;
-    let type = '';
 
-    // Set issue type: vulnerability or issue
-    type = suggestion.isSecurityType ? 'vulnerability' : 'issue';
-
-    // Remove existing meta
-    const metas = meta.querySelectorAll('.suggestion-meta');
-    metas.forEach(element => {
-      element.remove();
-    });
-
-    // Append CWEs
-    if (suggestion.cwe !== null && suggestion.cwe.length) {
-      // add the new CWEs
-      suggestion.cwe.forEach(cwe => {
-        meta.insertAdjacentHTML(
-          'afterbegin',
-          '<a href="https://cwe.mitre.org/data/definitions/' +
-            cwe.split('-')[1] +
-            '.html" class="suggestion-meta suggestion-cwe">' +
-            cwe +
-            '</a>',
-        );
-      });
-    }
-
-    // Append issue type in the meta section
-    meta.insertAdjacentHTML('afterbegin', '<span id="suggestion-type" class="suggestion-meta">' + type + '</span>');
-
-    const metaContainer = document.getElementById('navigateToIssue') as HTMLElement;
-
-    // Create and append the line number span
-    const lineNumberElement = document.createElement('span');
-    lineNumberElement.className = 'suggestion-meta';
-    lineNumberElement.textContent = 'Position: line ' + (Number(suggestion.rows[0]) + 1).toString();
-    metaContainer.appendChild(lineNumberElement);
-
-    // Create and append the priority score span, if available
-    if (suggestion.priorityScore !== undefined) {
-      const priorityScoreElement = document.createElement('span');
-      priorityScoreElement.className = 'suggestion-meta';
-      priorityScoreElement.textContent = 'Priority Score: ' + suggestion.priorityScore.toString();
-      metaContainer.appendChild(priorityScoreElement);
-    }
+    showSuggestionMeta(suggestion);
 
     if (currentSeverity && currentSeverity.text) {
       severity.querySelectorAll('img').forEach(n => {
@@ -335,6 +293,61 @@ declare const acquireVsCodeApi: any;
     }
   }
 
+  /**
+   * Constructs and displays the metadata section for a given suggestion.
+   * This includes the issue type (Vulnerability or Issue), the associated CWE information,
+   * the position of the issue in the code (line number), and the priority score if available.
+   *
+   * The line number is clickable and will trigger the navigateToIssue function when clicked.
+   *
+   * @param {Suggestion} suggestion - The suggestion object containing the details to be displayed.
+   */
+  function showSuggestionMeta(suggestion: Suggestion) {
+    const { meta } = elements;
+
+    // Clear previously metadata.
+    meta.querySelectorAll('.suggestion-meta').forEach(element => element.remove());
+
+    // Append issue type: 'Vulnerability' or 'Issue'.
+    const issueTypeElement = document.createElement('span');
+    issueTypeElement.className = 'suggestion-meta';
+    issueTypeElement.textContent = suggestion.isSecurityType ? 'Vulnerability' : 'Issue';
+    meta.appendChild(issueTypeElement);
+
+    // Append the CWE information and link to CWE definition.
+    if (suggestion.cwe) {
+      suggestion.cwe.forEach(cwe => {
+        const cweElement = document.createElement('a');
+        cweElement.className = 'suggestion-meta suggestion-cwe';
+        cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
+        cweElement.textContent = cwe;
+        meta.appendChild(cweElement);
+      });
+    }
+
+    // Append the issue code position.
+    // The line number triggers navigation to the issue location.
+    const issuePositionLineElement = document.createElement('span');
+    const linePositionAnchor = document.createElement('a');
+
+    issuePositionLineElement.className = 'suggestion-meta';
+    linePositionAnchor.id = 'navigateToIssue';
+    linePositionAnchor.textContent = ` ${Number(suggestion.rows[0]) + 1}`;
+    linePositionAnchor.href = 'javascript:void(0)';
+    linePositionAnchor.addEventListener('click', navigateToIssue.bind(undefined));
+    issuePositionLineElement.appendChild(document.createTextNode('Position: line '));
+    issuePositionLineElement.appendChild(linePositionAnchor);
+    meta.appendChild(issuePositionLineElement);
+
+    // Append the priority score if available.
+    if (suggestion.priorityScore !== undefined) {
+      const priorityScoreElement = document.createElement('span');
+      priorityScoreElement.className = 'suggestion-meta';
+      priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
+      meta.appendChild(priorityScoreElement);
+    }
+  }
+
   function showSuggestionDetails(suggestion: Suggestion) {
     const { suggestionDetails, readMoreBtn, suggestionDetailsContent } = elements;
 
@@ -378,7 +391,6 @@ declare const acquireVsCodeApi: any;
     vscode.postMessage(message);
   }
 
-  document.getElementById('navigateToIssue')!.addEventListener('click', navigateToIssue.bind(undefined));
   document.getElementById('lead-url')!.addEventListener('click', navigateToLeadURL);
   document.getElementById('current-example')!.addEventListener('click', navigateToCurrentExample);
   document.getElementById('previous-example')!.addEventListener('click', previousExample);
