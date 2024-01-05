@@ -64,6 +64,21 @@ declare const acquireVsCodeApi: any;
     suggestionDetails: document.querySelector('#suggestion-details') as HTMLElement,
     suggestionDetailsContent: document.querySelector('.suggestion-details-content') as HTMLElement,
     meta: document.getElementById('meta') as HTMLElement,
+
+    severity: document.getElementById('severity') as HTMLElement,
+    title: document.getElementById('title') as HTMLElement,
+    description: document.getElementById('description') as HTMLElement,
+
+    moreInfo: document.getElementById('lead-url') as HTMLElement,
+    suggestionPosition2: document.getElementById('line-position2') as HTMLElement,
+    dataset: document.getElementById('dataset-number') as HTMLElement,
+    infoTop: document.getElementById('info-top') as HTMLElement,
+
+    exampleTop: document.getElementById('example-top') as HTMLElement,
+    example: document.getElementById('example') as HTMLElement,
+    noExamples: document.getElementById('info-no-examples') as HTMLElement,
+    exNum: document.getElementById('example-number') as HTMLElement,
+    exNum2: document.getElementById('example-number2') as HTMLElement,
   };
 
   let isReadMoreBtnEventBound = false;
@@ -195,15 +210,13 @@ declare const acquireVsCodeApi: any;
       return;
     }
 
-    showSuggestionDetails(suggestion);
-
     exampleCount = 0;
-    const currentSeverity = getCurrentSeverity();
-    const severity = document.getElementById('severity')!;
-    const title = document.getElementById('title')!;
-    const description = document.getElementById('description')!;
 
     showSuggestionMeta(suggestion);
+    showSuggestionDetails(suggestion);
+
+    const { severity, title, description } = elements;
+    const currentSeverity = getCurrentSeverity();
 
     if (currentSeverity && currentSeverity.text) {
       severity.querySelectorAll('img').forEach(n => {
@@ -259,14 +272,12 @@ declare const acquireVsCodeApi: any;
       description.innerHTML = suggestion.message;
     }
 
-    const moreInfo = document.getElementById('lead-url')!;
+    const { moreInfo, suggestionPosition2, dataset, infoTop } = elements;
+
     moreInfo.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
 
-    const suggestionPosition2 = document.getElementById('line-position2')!;
     suggestionPosition2.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
 
-    const dataset = document.getElementById('dataset-number')!;
-    const infoTop = document.getElementById('info-top')!;
     if (suggestion.repoDatasetSize) {
       dataset.innerHTML = suggestion.repoDatasetSize.toString();
       infoTop.className = 'font-light';
@@ -274,15 +285,14 @@ declare const acquireVsCodeApi: any;
       infoTop.className = 'font-light hidden';
     }
 
-    const exampleTop = document.getElementById('example-top')!;
-    const example = document.getElementById('example')!;
-    const noExamples = document.getElementById('info-no-examples')!;
+    const { exampleTop, example, noExamples, exNum, exNum2 } = elements;
+
     if (suggestion?.exampleCommitFixes?.length) {
       exampleTop.className = 'row between';
       example.className = '';
-      const exNum = document.getElementById('example-number')!;
+
       exNum.innerHTML = suggestion.exampleCommitFixes.length.toString();
-      const exNum2 = document.getElementById('example-number2')!;
+
       exNum2.innerHTML = suggestion.exampleCommitFixes.length.toString();
       noExamples.className = 'hidden';
       showCurrentExample();
