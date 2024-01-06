@@ -211,6 +211,34 @@ declare const acquireVsCodeApi: any;
     };
   }
 
+  /**
+   * Toggles visibility of severity icons based on the current severity level.
+   *
+   * If `currentSeverity` is undefined, all icons are hidden.
+   * It also updates the title attribute of the `severity` element to the text
+   * representation of the current severity.
+   *
+   * @param {HTMLElement} severity - The HTML element containing severity icons.
+   * @param {CurrentSeverity | undefined} currentSeverity - The current severity object, or
+   *        undefined if there is no current severity.
+   */
+  function toggleSeverityIcons(severity: HTMLElement, currentSeverity: CurrentSeverity | undefined) {
+    const severityIcons = severity.querySelectorAll('img');
+    const validIconsIds: { [key: number]: string } = { 1: 'sev1', 2: 'sev2', 3: 'sev3' };
+
+    if (!currentSeverity) {
+      severityIcons.forEach(icon => (icon.className = 'icon hidden'));
+      return;
+    }
+
+    severity.setAttribute('title', currentSeverity.text);
+
+    severityIcons.forEach(icon => {
+      const currentIconId = validIconsIds[currentSeverity.value];
+      icon.className = icon.id === currentIconId ? 'icon' : 'icon hidden';
+    });
+  }
+
   function fillLearnLink() {
     const learnWrapper = document.querySelector('.learn')!;
     learnWrapper.className = 'learn learn__code';
@@ -237,18 +265,7 @@ declare const acquireVsCodeApi: any;
     const { severity, title, description } = elements;
     const currentSeverity = getCurrentSeverity(suggestion.severity);
 
-    if (currentSeverity && currentSeverity.text) {
-      severity.querySelectorAll('img').forEach(n => {
-        if (n.id.includes(`${currentSeverity.value}`)) {
-          n.className = 'icon';
-          severity.setAttribute('title', currentSeverity.text);
-        } else {
-          n.className = 'icon hidden';
-        }
-      });
-    } else {
-      severity.querySelectorAll('img').forEach(n => (n.className = 'icon hidden'));
-    }
+    toggleSeverityIcons(severity, currentSeverity);
 
     title.innerText = suggestion.title.split(':')[0];
 
