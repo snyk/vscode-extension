@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
@@ -41,7 +41,7 @@ declare const acquireVsCodeApi: any;
   type Suggestion = {
     id: string;
     message: string;
-    severity: string;
+    severity: 'Low' | 'Medium' | 'High';
     leadURL?: string;
     rule: string;
     repoDatasetSize: number;
@@ -55,6 +55,10 @@ declare const acquireVsCodeApi: any;
     cols: Point;
     rows: Point;
     priorityScore: number;
+  };
+  type CurrentSeverity = {
+    value: number;
+    text: string;
   };
 
   const vscode = acquireVsCodeApi();
@@ -178,18 +182,33 @@ declare const acquireVsCodeApi: any;
       line.appendChild(code);
     }
   }
-  function getCurrentSeverity() {
-    const stringMap = {
+
+  /**
+   * Transforms a severity string from a `Suggestion` object into a `CurrentSeverity` object.
+   *
+   * This function maps a severity string ('Low', 'Medium', 'High') to its corresponding
+   * numeric value. If the provided severity string is not one of the allowed values, the function
+   * returns `undefined`.
+   *
+   * @param {Suggestion['severity']} severity - The severity string to be mapped.
+   * @returns {CurrentSeverity | undefined} The mapped severity object, or undefined
+   */
+  function getCurrentSeverity(severity: Suggestion['severity']): CurrentSeverity | undefined {
+    const severityMap = {
       Low: 1,
       Medium: 2,
       High: 3,
     };
-    return suggestion
-      ? {
-          value: stringMap[suggestion.severity],
-          text: suggestion.severity,
-        }
-      : undefined;
+
+    const severityAllowedValues = Object.keys(severityMap);
+    if (!severityAllowedValues.includes(severity)) {
+      return undefined;
+    }
+
+    return {
+      value: severityMap[severity],
+      text: severity,
+    };
   }
 
   function fillLearnLink() {
@@ -216,11 +235,11 @@ declare const acquireVsCodeApi: any;
     showSuggestionDetails(suggestion);
 
     const { severity, title, description } = elements;
-    const currentSeverity = getCurrentSeverity();
+    const currentSeverity = getCurrentSeverity(suggestion.severity);
 
     if (currentSeverity && currentSeverity.text) {
       severity.querySelectorAll('img').forEach(n => {
-        if (n.id.includes(currentSeverity.value)) {
+        if (n.id.includes(`${currentSeverity.value}`)) {
           n.className = 'icon';
           severity.setAttribute('title', currentSeverity.text);
         } else {
