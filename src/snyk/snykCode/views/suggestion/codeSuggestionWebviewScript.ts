@@ -330,11 +330,11 @@ declare const acquireVsCodeApi: any;
 
     suggestionPosition2Elem.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
 
+    infoTopElem.classList.add('font-light');
     if (suggestion.repoDatasetSize) {
       datasetElem.innerHTML = suggestion.repoDatasetSize.toString();
-      infoTopElem.className = 'font-light';
     } else {
-      infoTopElem.className = 'font-light hidden';
+      infoTopElem.classList.add('hidden');
     }
 
     if (suggestion?.exampleCommitFixes?.length) {
