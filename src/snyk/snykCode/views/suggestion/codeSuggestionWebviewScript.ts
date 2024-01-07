@@ -268,9 +268,8 @@ declare const acquireVsCodeApi: any;
     toggleSeverityIcons(severity, currentSeverity);
 
     title.innerText = suggestion.title.split(':')[0];
-
-    description.querySelectorAll('*').forEach(n => n.remove());
     description.innerHTML = '';
+
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
