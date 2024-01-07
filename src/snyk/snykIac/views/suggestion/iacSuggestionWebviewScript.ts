@@ -163,7 +163,6 @@
 
   function appendIdentifierSpan(identifiers: Element, id: string, link?: string) {
     const delimiter = document.createElement('span');
-    delimiter.innerText = ' | ';
     delimiter.className = 'delimiter';
     identifiers.appendChild(delimiter);
 

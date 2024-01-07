@@ -102,10 +102,13 @@
 }
 
 .suggestion-meta:not(:first-child)::before {
-  content: '|';
-  color: var(--vscode-input-border);
+  content: '';
+  border-left: 1px solid var(--vscode-input-border);
   position: absolute;
   left: -10px;
+  height: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .suggestion-meta {
