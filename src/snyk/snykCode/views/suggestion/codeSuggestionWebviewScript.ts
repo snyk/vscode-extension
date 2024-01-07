@@ -64,25 +64,25 @@ declare const acquireVsCodeApi: any;
   const vscode = acquireVsCodeApi();
 
   const elements = {
-    readMoreBtn: document.querySelector('.read-more-btn') as HTMLElement,
-    suggestionDetails: document.querySelector('#suggestion-details') as HTMLElement,
-    suggestionDetailsContent: document.querySelector('.suggestion-details-content') as HTMLElement,
-    meta: document.getElementById('meta') as HTMLElement,
+    readMoreBtnElem: document.querySelector('.read-more-btn') as HTMLElement,
+    suggestionDetailsElem: document.querySelector('#suggestion-details') as HTMLElement,
+    suggestionDetailsContentElem: document.querySelector('.suggestion-details-content') as HTMLElement,
+    metaElem: document.getElementById('meta') as HTMLElement,
 
-    severity: document.getElementById('severity') as HTMLElement,
-    title: document.getElementById('title') as HTMLElement,
-    description: document.getElementById('description') as HTMLElement,
+    severityElem: document.getElementById('severity') as HTMLElement,
+    titleElem: document.getElementById('title') as HTMLElement,
+    descriptionElem: document.getElementById('description') as HTMLElement,
 
-    moreInfo: document.getElementById('lead-url') as HTMLElement,
-    suggestionPosition2: document.getElementById('line-position2') as HTMLElement,
-    dataset: document.getElementById('dataset-number') as HTMLElement,
-    infoTop: document.getElementById('info-top') as HTMLElement,
+    moreInfoElem: document.getElementById('lead-url') as HTMLElement,
+    suggestionPosition2Elem: document.getElementById('line-position2') as HTMLElement,
+    datasetElem: document.getElementById('dataset-number') as HTMLElement,
+    infoTopElem: document.getElementById('info-top') as HTMLElement,
 
-    exampleTop: document.getElementById('example-top') as HTMLElement,
-    example: document.getElementById('example') as HTMLElement,
-    noExamples: document.getElementById('info-no-examples') as HTMLElement,
-    exNum: document.getElementById('example-number') as HTMLElement,
-    exNum2: document.getElementById('example-number2') as HTMLElement,
+    exampleTopElem: document.getElementById('example-top') as HTMLElement,
+    exampleElem: document.getElementById('example') as HTMLElement,
+    noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
+    exNumElem: document.getElementById('example-number') as HTMLElement,
+    exNum2Elem: document.getElementById('example-number2') as HTMLElement,
   };
 
   let isReadMoreBtnEventBound = false;
@@ -262,26 +262,45 @@ declare const acquireVsCodeApi: any;
     showSuggestionMeta(suggestion);
     showSuggestionDetails(suggestion);
 
-    const { severity, title, description } = elements;
+    const {
+      severityElem,
+      titleElem,
+      descriptionElem,
+      moreInfoElem,
+      suggestionPosition2Elem,
+      infoTopElem,
+      datasetElem,
+      exampleTopElem,
+      exampleElem,
+      noExamplesElem,
+      exNumElem,
+      exNum2Elem,
+    } = elements;
+
     const currentSeverity = getCurrentSeverity(suggestion.severity);
 
-    toggleSeverityIcons(severity, currentSeverity);
+    toggleSeverityIcons(severityElem, currentSeverity);
+    const suggestionTitle = suggestion.title.split(':')[0];
 
-    title.innerText = suggestion.title.split(':')[0];
-    description.innerHTML = '';
+    // Manipulate DOM only if the title has changed
+    if (titleElem.innerText !== suggestionTitle) {
+      titleElem.innerText = suggestionTitle;
+    }
+
+    descriptionElem.innerHTML = '';
 
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
         const preText = suggestion.message.substring(i, m.msg[0]);
         const preMark = document.createTextNode(preText);
-        description.appendChild(preMark);
+        descriptionElem.appendChild(preMark);
         const mark = document.createElement('a');
         mark.className = 'mark-message clickable';
         mark.onclick = function () {
           navigateToIssue(undefined, m.pos[0]);
         };
-        description.appendChild(mark);
+        descriptionElem.appendChild(mark);
         const markMsg = document.createElement('span');
         markMsg.className = 'mark-string';
         markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
@@ -302,39 +321,35 @@ declare const acquireVsCodeApi: any;
       }
       const postText = suggestion.message.substring(i);
       const postMark = document.createTextNode(postText);
-      description.appendChild(postMark);
+      descriptionElem.appendChild(postMark);
     } else {
-      description.innerHTML = suggestion.message;
+      descriptionElem.innerHTML = suggestion.message;
     }
 
-    const { moreInfo, suggestionPosition2, dataset, infoTop } = elements;
+    moreInfoElem.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
 
-    moreInfo.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
-
-    suggestionPosition2.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
+    suggestionPosition2Elem.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
 
     if (suggestion.repoDatasetSize) {
-      dataset.innerHTML = suggestion.repoDatasetSize.toString();
-      infoTop.className = 'font-light';
+      datasetElem.innerHTML = suggestion.repoDatasetSize.toString();
+      infoTopElem.className = 'font-light';
     } else {
-      infoTop.className = 'font-light hidden';
+      infoTopElem.className = 'font-light hidden';
     }
 
-    const { exampleTop, example, noExamples, exNum, exNum2 } = elements;
-
     if (suggestion?.exampleCommitFixes?.length) {
-      exampleTop.className = 'row between';
-      example.className = '';
+      exampleTopElem.className = 'row between';
+      exampleElem.className = '';
 
-      exNum.innerHTML = suggestion.exampleCommitFixes.length.toString();
+      exNumElem.innerHTML = suggestion.exampleCommitFixes.length.toString();
 
-      exNum2.innerHTML = suggestion.exampleCommitFixes.length.toString();
-      noExamples.className = 'hidden';
+      exNum2Elem.innerHTML = suggestion.exampleCommitFixes.length.toString();
+      noExamplesElem.className = 'hidden';
       showCurrentExample();
     } else {
-      exampleTop.className = 'row between hidden';
-      example.className = 'hidden';
-      noExamples.className = 'font-light';
+      exampleTopElem.className = 'row between hidden';
+      exampleElem.className = 'hidden';
+      noExamplesElem.className = 'font-light';
     }
   }
 
@@ -348,16 +363,16 @@ declare const acquireVsCodeApi: any;
    * @param {Suggestion} suggestion - The suggestion object containing the details to be displayed.
    */
   function showSuggestionMeta(suggestion: Suggestion) {
-    const { meta } = elements;
+    const { metaElem } = elements;
 
     // Clear previously metadata.
-    meta.querySelectorAll('.suggestion-meta').forEach(element => element.remove());
+    metaElem.querySelectorAll('.suggestion-meta').forEach(element => element.remove());
 
     // Append issue type: 'Vulnerability' or 'Issue'.
     const issueTypeElement = document.createElement('span');
     issueTypeElement.className = 'suggestion-meta';
     issueTypeElement.textContent = suggestion.isSecurityType ? 'Vulnerability' : 'Issue';
-    meta.appendChild(issueTypeElement);
+    metaElem.appendChild(issueTypeElement);
 
     // Append the CWE information and link to CWE definition.
     if (suggestion.cwe) {
@@ -366,7 +381,7 @@ declare const acquireVsCodeApi: any;
         cweElement.className = 'suggestion-meta suggestion-cwe';
         cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
         cweElement.textContent = cwe;
-        meta.appendChild(cweElement);
+        metaElem.appendChild(cweElement);
       });
     }
 
@@ -382,41 +397,41 @@ declare const acquireVsCodeApi: any;
     linePositionAnchor.addEventListener('click', navigateToIssue.bind(undefined));
     issuePositionLineElement.appendChild(document.createTextNode('Position: line '));
     issuePositionLineElement.appendChild(linePositionAnchor);
-    meta.appendChild(issuePositionLineElement);
+    metaElem.appendChild(issuePositionLineElement);
 
     // Append the priority score if available.
     if (suggestion.priorityScore !== undefined) {
       const priorityScoreElement = document.createElement('span');
       priorityScoreElement.className = 'suggestion-meta';
       priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
-      meta.appendChild(priorityScoreElement);
+      metaElem.appendChild(priorityScoreElement);
     }
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const { suggestionDetails, readMoreBtn, suggestionDetailsContent } = elements;
+    const { suggestionDetailsElem, readMoreBtnElem, suggestionDetailsContentElem } = elements;
 
-    if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
-      readMoreBtn.classList.add('hidden');
-      suggestionDetailsContent.classList.add('hidden');
+    if (!suggestion || !suggestion.text || !suggestionDetailsElem || !readMoreBtnElem) {
+      readMoreBtnElem.classList.add('hidden');
+      suggestionDetailsContentElem.classList.add('hidden');
       return;
     }
 
-    suggestionDetails.innerHTML = suggestion.text;
-    suggestionDetails.classList.add('collapsed');
-    readMoreBtn.classList.remove('hidden');
-    suggestionDetailsContent.classList.remove('hidden');
+    suggestionDetailsElem.innerHTML = suggestion.text;
+    suggestionDetailsElem.classList.add('collapsed');
+    readMoreBtnElem.classList.remove('hidden');
+    suggestionDetailsContentElem.classList.remove('hidden');
 
     if (!isReadMoreBtnEventBound) {
-      readMoreBtn.addEventListener('click', () => {
-        const isCollapsed = suggestionDetails.classList.contains('collapsed');
+      readMoreBtnElem.addEventListener('click', () => {
+        const isCollapsed = suggestionDetailsElem.classList.contains('collapsed');
 
         if (isCollapsed) {
-          suggestionDetails.classList.remove('collapsed');
-          readMoreBtn.textContent = 'Read less';
+          suggestionDetailsElem.classList.remove('collapsed');
+          readMoreBtnElem.textContent = 'Read less';
         } else {
-          suggestionDetails.classList.add('collapsed');
-          readMoreBtn.textContent = 'Read more';
+          suggestionDetailsElem.classList.add('collapsed');
+          readMoreBtnElem.textContent = 'Read more';
         }
       });
       isReadMoreBtnEventBound = true;
