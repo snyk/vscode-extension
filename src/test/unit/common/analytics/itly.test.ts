@@ -9,15 +9,15 @@ suite('Iteratively', () => {
   const isDevelopment = false;
 
   suite('.load()', () => {
-    suite('when connecting to FEDRAMP endpoints', () => {
-      const isFedramp = true;
+    suite('when analytics are not permitted', () => {
+      const analyticsPermitted = false;
       [true, false].forEach(shouldReportEvents => {
         test(`Returns "null" when shouldReportEvents == ${shouldReportEvents}`, () => {
           const iteratively = new Iteratively(
             new User(),
             new LoggerMock(),
             shouldReportEvents,
-            isFedramp,
+            analyticsPermitted,
             isDevelopment,
             snykConfig,
           );
@@ -29,11 +29,18 @@ suite('Iteratively', () => {
       });
     });
 
-    suite('when connecting to non-FEDRAMP endpoints', () => {
-      const isFedramp = false;
+    suite('when analytics are permitted', () => {
+      const analyticsPermitted = true;
 
       test('Returns "null" when shouldReportEvents == false', () => {
-        const iteratively = new Iteratively(new User(), new LoggerMock(), false, isFedramp, isDevelopment, snykConfig);
+        const iteratively = new Iteratively(
+          new User(),
+          new LoggerMock(),
+          false,
+          analyticsPermitted,
+          isDevelopment,
+          snykConfig,
+        );
 
         const result = iteratively.load();
 
@@ -41,7 +48,14 @@ suite('Iteratively', () => {
       });
 
       test('Returns "Iteratively" when shouldReportEvents == true', () => {
-        const iteratively = new Iteratively(new User(), new LoggerMock(), true, isFedramp, isDevelopment, snykConfig);
+        const iteratively = new Iteratively(
+          new User(),
+          new LoggerMock(),
+          true,
+          analyticsPermitted,
+          isDevelopment,
+          snykConfig,
+        );
 
         const result = iteratively.load();
 
