@@ -78,6 +78,12 @@
   border: 2px solid var(--vscode-textLink-foreground);
   color: var(--vscode-textLink-foreground);
   cursor: pointer;
+  width: 130px;
+  border-radius: 3px;
+
+}.read-more-btn:hover, .read-more-btn:active  {
+  background: var(--vscode-textLink-foreground);
+  color: var(--vscode-button-foreground);
 }
 
 .cwe-list {
@@ -145,6 +151,16 @@
   width: 32px;
   height: 32px;
   color: var(--vscode-icon-foreground);
+}
+
+.vscode-dark .removed, .vscode-high-contrast:not(.vscode-high-contrast-light) .removed {
+  background-color: #542426;
+  color: #fff;
+}
+
+.vscode-dark .added, .vscode-high-contrast:not(.vscode-high-contrast-light) .added {
+  background-color: #1C4428;
+  color: #fff;
 }
 
 .vscode-dark .light-only {
@@ -233,6 +249,7 @@
   white-space: pre-wrap;
   color: var(--vscode-editor-foreground);
   font-weight: 400;
+  background-color: transparent;
 }
 
 .vscode-dark .removed {
@@ -248,10 +265,12 @@
 
 .vscode-dark .added>code {
   color: #fff;
+  background-color: transparent;
 }
 
 .vscode-dark .removed>code {
   color: #fff;
+  background-color: transparent;
 }
 
 .suggestion-links {
