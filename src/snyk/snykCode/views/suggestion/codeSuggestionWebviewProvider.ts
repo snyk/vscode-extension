@@ -274,9 +274,9 @@ export class CodeSuggestionWebviewProvider
             <span id="severity-text"></span>
           </div>
           <div id="title" class="suggestion-title"></div>
-          <div id="meta" class="suggestion-metas">
-            <span id="navigateToIssue" class="clickable suggestion-position"></span>
-          </div>
+
+          <div id="meta" class="suggestion-metas"></div>
+
           <div class="learn learn__code">
             <img class="icon" src="${images['learn-icon']}" />
             <a class="learn--link"></a>
@@ -295,7 +295,7 @@ export class CodeSuggestionWebviewProvider
           <div id="suggestion-details" class="suggestion-details"></div>
         </section>
         <section class="actions row no-padding-top">
-          <button class="button read-more-btn">Read more</button>
+          <button class="read-more-btn">Read more</button>
         </section>
 
         <section class="delimiter-top">

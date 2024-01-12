@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
@@ -41,7 +41,7 @@ declare const acquireVsCodeApi: any;
   type Suggestion = {
     id: string;
     message: string;
-    severity: string;
+    severity: 'Low' | 'Medium' | 'High';
     leadURL?: string;
     rule: string;
     repoDatasetSize: number;
@@ -54,14 +54,35 @@ declare const acquireVsCodeApi: any;
     markers?: Marker[];
     cols: Point;
     rows: Point;
+    priorityScore: number;
+  };
+  type CurrentSeverity = {
+    value: number;
+    text: string;
   };
 
   const vscode = acquireVsCodeApi();
 
   const elements = {
-    readMoreBtn: document.querySelector('.read-more-btn') as HTMLElement,
-    suggestionDetails: document.querySelector('#suggestion-details') as HTMLElement,
-    suggestionDetailsContent: document.querySelector('.suggestion-details-content') as HTMLElement,
+    readMoreBtnElem: document.querySelector('.read-more-btn') as HTMLElement,
+    suggestionDetailsElem: document.querySelector('#suggestion-details') as HTMLElement,
+    suggestionDetailsContentElem: document.querySelector('.suggestion-details-content') as HTMLElement,
+    metaElem: document.getElementById('meta') as HTMLElement,
+
+    severityElem: document.getElementById('severity') as HTMLElement,
+    titleElem: document.getElementById('title') as HTMLElement,
+    descriptionElem: document.getElementById('description') as HTMLElement,
+
+    moreInfoElem: document.getElementById('lead-url') as HTMLElement,
+    suggestionPosition2Elem: document.getElementById('line-position2') as HTMLElement,
+    datasetElem: document.getElementById('dataset-number') as HTMLElement,
+    infoTopElem: document.getElementById('info-top') as HTMLElement,
+
+    exampleTopElem: document.getElementById('example-top') as HTMLElement,
+    exampleElem: document.getElementById('example') as HTMLElement,
+    noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
+    exNumElem: document.getElementById('example-number') as HTMLElement,
+    exNum2Elem: document.getElementById('example-number2') as HTMLElement,
   };
 
   let isReadMoreBtnEventBound = false;
@@ -161,18 +182,61 @@ declare const acquireVsCodeApi: any;
       line.appendChild(code);
     }
   }
-  function getCurrentSeverity() {
-    const stringMap = {
+
+  /**
+   * Transforms a severity string from a `Suggestion` object into a `CurrentSeverity` object.
+   *
+   * This function maps a severity string ('Low', 'Medium', 'High') to its corresponding
+   * numeric value. If the provided severity string is not one of the allowed values, the function
+   * returns `undefined`.
+   *
+   * @param {Suggestion['severity']} severity - The severity string to be mapped.
+   * @returns {CurrentSeverity | undefined} The mapped severity object, or undefined
+   */
+  function getCurrentSeverity(severity: Suggestion['severity']): CurrentSeverity | undefined {
+    const severityMap = {
       Low: 1,
       Medium: 2,
       High: 3,
     };
-    return suggestion
-      ? {
-          value: stringMap[suggestion.severity],
-          text: suggestion.severity,
-        }
-      : undefined;
+
+    const severityAllowedValues = Object.keys(severityMap);
+    if (!severityAllowedValues.includes(severity)) {
+      return undefined;
+    }
+
+    return {
+      value: severityMap[severity],
+      text: severity,
+    };
+  }
+
+  /**
+   * Toggles visibility of severity icons based on the current severity level.
+   *
+   * If `currentSeverity` is undefined, all icons are hidden.
+   * It also updates the title attribute of the `severity` element to the text
+   * representation of the current severity.
+   *
+   * @param {HTMLElement} severity - The HTML element containing severity icons.
+   * @param {CurrentSeverity | undefined} currentSeverity - The current severity object, or
+   *        undefined if there is no current severity.
+   */
+  function toggleSeverityIcons(severity: HTMLElement, currentSeverity: CurrentSeverity | undefined) {
+    const severityIcons = severity.querySelectorAll('img');
+    const validIconsIds: { [key: number]: string } = { 1: 'sev1', 2: 'sev2', 3: 'sev3' };
+
+    if (!currentSeverity) {
+      severityIcons.forEach(icon => (icon.className = 'icon hidden'));
+      return;
+    }
+
+    severity.setAttribute('title', currentSeverity.text);
+
+    severityIcons.forEach(icon => {
+      const currentIconId = validIconsIds[currentSeverity.value];
+      icon.className = icon.id === currentIconId ? 'icon' : 'icon hidden';
+    });
   }
 
   function fillLearnLink() {
@@ -193,80 +257,50 @@ declare const acquireVsCodeApi: any;
       return;
     }
 
+    exampleCount = 0;
+
+    showSuggestionMeta(suggestion);
     showSuggestionDetails(suggestion);
 
-    exampleCount = 0;
-    const currentSeverity = getCurrentSeverity();
-    const severity = document.getElementById('severity')!;
-    const title = document.getElementById('title')!;
-    const description = document.getElementById('description')!;
-    const meta = document.getElementById('meta')!;
-    let type = '';
+    const {
+      severityElem,
+      titleElem,
+      descriptionElem,
+      moreInfoElem,
+      suggestionPosition2Elem,
+      infoTopElem,
+      datasetElem,
+      exampleTopElem,
+      exampleElem,
+      noExamplesElem,
+      exNumElem,
+      exNum2Elem,
+    } = elements;
 
-    // Set issue type: vulnerability or issue
-    type = suggestion.isSecurityType ? 'vulnerability' : 'issue';
+    const currentSeverity = getCurrentSeverity(suggestion.severity);
 
-    // Remove existing meta
-    const metas = meta.querySelectorAll('.suggestion-meta');
-    metas.forEach(element => {
-      element.remove();
-    });
+    toggleSeverityIcons(severityElem, currentSeverity);
+    const suggestionTitle = suggestion.title.split(':')[0];
 
-    // Append CWEs
-    if (suggestion.cwe !== null && suggestion.cwe.length) {
-      // add the new CWEs
-      suggestion.cwe.forEach(cwe => {
-        meta.insertAdjacentHTML(
-          'afterbegin',
-          '<a href="https://cwe.mitre.org/data/definitions/' +
-            cwe.split('-')[1] +
-            '.html" class="suggestion-meta suggestion-cwe">' +
-            cwe +
-            '</a>',
-        );
-      });
+    // Manipulate DOM only if the title has changed
+    if (titleElem.innerText !== suggestionTitle) {
+      titleElem.innerText = suggestionTitle;
     }
 
-    // Append issue type in the meta section
-    meta.insertAdjacentHTML('afterbegin', '<span id="suggestion-type" class="suggestion-meta">' + type + '</span>');
+    descriptionElem.innerHTML = '';
 
-    // Append line number
-    const issuePosition = document.getElementById('navigateToIssue')!;
-    issuePosition.innerHTML = '';
-    issuePosition.insertAdjacentHTML(
-      'afterbegin',
-      'Position: line <a id="line-position">' + (Number(suggestion.rows[0]) + 1).toString() + '</a>',
-    );
-
-    if (currentSeverity && currentSeverity.text) {
-      severity.querySelectorAll('img').forEach(n => {
-        if (n.id.includes(currentSeverity.value)) {
-          n.className = 'icon';
-          severity.setAttribute('title', currentSeverity.text);
-        } else {
-          n.className = 'icon hidden';
-        }
-      });
-    } else {
-      severity.querySelectorAll('img').forEach(n => (n.className = 'icon hidden'));
-    }
-
-    title.innerText = suggestion.title.split(':')[0];
-
-    description.querySelectorAll('*').forEach(n => n.remove());
-    description.innerHTML = '';
     if (suggestion.markers && suggestion.markers.length) {
       let i = 0;
       for (const m of suggestion.markers) {
         const preText = suggestion.message.substring(i, m.msg[0]);
         const preMark = document.createTextNode(preText);
-        description.appendChild(preMark);
+        descriptionElem.appendChild(preMark);
         const mark = document.createElement('a');
         mark.className = 'mark-message clickable';
         mark.onclick = function () {
           navigateToIssue(undefined, m.pos[0]);
         };
-        description.appendChild(mark);
+        descriptionElem.appendChild(mark);
         const markMsg = document.createElement('span');
         markMsg.className = 'mark-string';
         markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
@@ -287,69 +321,117 @@ declare const acquireVsCodeApi: any;
       }
       const postText = suggestion.message.substring(i);
       const postMark = document.createTextNode(postText);
-      description.appendChild(postMark);
+      descriptionElem.appendChild(postMark);
     } else {
-      description.innerHTML = suggestion.message;
+      descriptionElem.innerHTML = suggestion.message;
     }
 
-    const moreInfo = document.getElementById('lead-url')!;
-    moreInfo.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
+    moreInfoElem.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
 
-    const suggestionPosition2 = document.getElementById('line-position2')!;
-    suggestionPosition2.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
+    suggestionPosition2Elem.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
 
-    const dataset = document.getElementById('dataset-number')!;
-    const infoTop = document.getElementById('info-top')!;
+    infoTopElem.classList.add('font-light');
     if (suggestion.repoDatasetSize) {
-      dataset.innerHTML = suggestion.repoDatasetSize.toString();
-      infoTop.className = 'font-light';
+      datasetElem.innerHTML = suggestion.repoDatasetSize.toString();
     } else {
-      infoTop.className = 'font-light hidden';
+      infoTopElem.classList.add('hidden');
     }
 
-    const exampleTop = document.getElementById('example-top')!;
-    const example = document.getElementById('example')!;
-    const noExamples = document.getElementById('info-no-examples')!;
     if (suggestion?.exampleCommitFixes?.length) {
-      exampleTop.className = 'row between';
-      example.className = '';
-      const exNum = document.getElementById('example-number')!;
-      exNum.innerHTML = suggestion.exampleCommitFixes.length.toString();
-      const exNum2 = document.getElementById('example-number2')!;
-      exNum2.innerHTML = suggestion.exampleCommitFixes.length.toString();
-      noExamples.className = 'hidden';
+      exampleTopElem.className = 'row between';
+      exampleElem.className = '';
+
+      exNumElem.innerHTML = suggestion.exampleCommitFixes.length.toString();
+
+      exNum2Elem.innerHTML = suggestion.exampleCommitFixes.length.toString();
+      noExamplesElem.className = 'hidden';
       showCurrentExample();
     } else {
-      exampleTop.className = 'row between hidden';
-      example.className = 'hidden';
-      noExamples.className = 'font-light';
+      exampleTopElem.className = 'row between hidden';
+      exampleElem.className = 'hidden';
+      noExamplesElem.className = 'font-light';
+    }
+  }
+
+  /**
+   * Constructs and displays the metadata section for a given suggestion.
+   * This includes the issue type (Vulnerability or Issue), the associated CWE information,
+   * the position of the issue in the code (line number), and the priority score if available.
+   *
+   * The line number is clickable and will trigger the navigateToIssue function when clicked.
+   *
+   * @param {Suggestion} suggestion - The suggestion object containing the details to be displayed.
+   */
+  function showSuggestionMeta(suggestion: Suggestion) {
+    const { metaElem } = elements;
+
+    // Clear previously metadata.
+    metaElem.querySelectorAll('.suggestion-meta').forEach(element => element.remove());
+
+    // Append issue type: 'Vulnerability' or 'Issue'.
+    const issueTypeElement = document.createElement('span');
+    issueTypeElement.className = 'suggestion-meta';
+    issueTypeElement.textContent = suggestion.isSecurityType ? 'Vulnerability' : 'Issue';
+    metaElem.appendChild(issueTypeElement);
+
+    // Append the CWE information and link to CWE definition.
+    if (suggestion.cwe) {
+      suggestion.cwe.forEach(cwe => {
+        const cweElement = document.createElement('a');
+        cweElement.className = 'suggestion-meta suggestion-cwe';
+        cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
+        cweElement.textContent = cwe;
+        metaElem.appendChild(cweElement);
+      });
+    }
+
+    // Append the issue code position.
+    // The line number triggers navigation to the issue location.
+    const issuePositionLineElement = document.createElement('span');
+    const linePositionAnchor = document.createElement('a');
+
+    issuePositionLineElement.className = 'suggestion-meta';
+    linePositionAnchor.id = 'navigateToIssue';
+    linePositionAnchor.textContent = ` ${Number(suggestion.rows[0]) + 1}`;
+    linePositionAnchor.href = 'javascript:void(0)';
+    linePositionAnchor.addEventListener('click', navigateToIssue.bind(undefined));
+    issuePositionLineElement.appendChild(document.createTextNode('Position: line '));
+    issuePositionLineElement.appendChild(linePositionAnchor);
+    metaElem.appendChild(issuePositionLineElement);
+
+    // Append the priority score if available.
+    if (suggestion.priorityScore !== undefined) {
+      const priorityScoreElement = document.createElement('span');
+      priorityScoreElement.className = 'suggestion-meta';
+      priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
+      metaElem.appendChild(priorityScoreElement);
     }
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const { suggestionDetails, readMoreBtn, suggestionDetailsContent } = elements;
+    const { suggestionDetailsElem, readMoreBtnElem, suggestionDetailsContentElem } = elements;
 
-    if (!suggestion || !suggestion.text || !suggestionDetails || !readMoreBtn) {
-      readMoreBtn.classList.add('hidden');
-      suggestionDetailsContent.classList.add('hidden');
+    if (!suggestion || !suggestion.text || !suggestionDetailsElem || !readMoreBtnElem) {
+      readMoreBtnElem.classList.add('hidden');
+      suggestionDetailsContentElem.classList.add('hidden');
       return;
     }
 
-    suggestionDetails.innerHTML = suggestion.text;
-    suggestionDetails.classList.add('collapsed');
-    readMoreBtn.classList.remove('hidden');
-    suggestionDetailsContent.classList.remove('hidden');
+    suggestionDetailsElem.innerHTML = suggestion.text;
+    suggestionDetailsElem.classList.add('collapsed');
+    readMoreBtnElem.classList.remove('hidden');
+    suggestionDetailsContentElem.classList.remove('hidden');
 
     if (!isReadMoreBtnEventBound) {
-      readMoreBtn.addEventListener('click', () => {
-        const isCollapsed = suggestionDetails.classList.contains('collapsed');
+      readMoreBtnElem.addEventListener('click', () => {
+        const isCollapsed = suggestionDetailsElem.classList.contains('collapsed');
 
         if (isCollapsed) {
-          suggestionDetails.classList.remove('collapsed');
-          readMoreBtn.textContent = 'Read less';
+          suggestionDetailsElem.classList.remove('collapsed');
+          readMoreBtnElem.textContent = 'Read less';
         } else {
-          suggestionDetails.classList.add('collapsed');
-          readMoreBtn.textContent = 'Read more';
+          suggestionDetailsElem.classList.add('collapsed');
+          readMoreBtnElem.textContent = 'Read more';
         }
       });
       isReadMoreBtnEventBound = true;
@@ -369,7 +451,6 @@ declare const acquireVsCodeApi: any;
     vscode.postMessage(message);
   }
 
-  document.getElementById('navigateToIssue')!.addEventListener('click', navigateToIssue.bind(undefined));
   document.getElementById('lead-url')!.addEventListener('click', navigateToLeadURL);
   document.getElementById('current-example')!.addEventListener('click', navigateToCurrentExample);
   document.getElementById('previous-example')!.addEventListener('click', previousExample);

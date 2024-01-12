@@ -78,6 +78,12 @@
   border: 2px solid var(--vscode-textLink-foreground);
   color: var(--vscode-textLink-foreground);
   cursor: pointer;
+  width: 130px;
+  border-radius: 3px;
+
+}.read-more-btn:hover, .read-more-btn:active  {
+  background: var(--vscode-textLink-foreground);
+  color: var(--vscode-button-foreground);
 }
 
 .cwe-list {
@@ -87,27 +93,36 @@
 }
 
 .suggestion-metas {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 16px;
   font-size: 1.3rem;
   line-height: 2rem;
 }
 
-.suggestion-meta,
-.suggestion-position {
-  display: inline-block;
-  padding: 0 8px;
-  border-right: 1px solid var(--vscode-input-border);
-  line-height: 1;
-  text-transform: capitalize;
+/* Style each meta element */
+.suggestion-meta {
+  position: relative;
+  align-items: center;
+}
+
+.suggestion-meta:not(:first-child)::before {
+  content: '';
+  border-left: 1px solid var(--vscode-input-border);
+  position: absolute;
+  left: -10px;
+  height: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.suggestion-meta {
+  border-right: none;
 }
 
 .suggestion-meta:first-child {
   padding-left: 0
-}
-
-.suggestion-position {
-  border: none;
-  padding-left: 5px;
-  text-transform: none;
 }
 
 .suggestion--header {
@@ -136,6 +151,16 @@
   width: 32px;
   height: 32px;
   color: var(--vscode-icon-foreground);
+}
+
+.vscode-dark .removed, .vscode-high-contrast:not(.vscode-high-contrast-light) .removed {
+  background-color: #542426;
+  color: #fff;
+}
+
+.vscode-dark .added, .vscode-high-contrast:not(.vscode-high-contrast-light) .added {
+  background-color: #1C4428;
+  color: #fff;
 }
 
 .vscode-dark .light-only {
@@ -224,6 +249,7 @@
   white-space: pre-wrap;
   color: var(--vscode-editor-foreground);
   font-weight: 400;
+  background-color: transparent;
 }
 
 .vscode-dark .removed {
@@ -239,10 +265,12 @@
 
 .vscode-dark .added>code {
   color: #fff;
+  background-color: transparent;
 }
 
 .vscode-dark .removed>code {
   color: #fff;
+  background-color: transparent;
 }
 
 .suggestion-links {
