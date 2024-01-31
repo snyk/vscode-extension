@@ -21,11 +21,11 @@ Snyk scans for the following types of issues:
 
 This page explains the installation of the Visual Studio Code extension. **After you complete the steps on this page**, continue by following the instructions in the other Visual Studio Code extension docs:
 
-* [Visual Studio extension configuration](https://docs.snyk.io/integrations/ide-tools/visual-studio-extension/visual-studio-extension-configuration)
-* [Visual Studio extension authentication](https://docs.snyk.io/ide-tools/visual-studio-extension/visual-studio-extension-authentication)
-* [Run an analysis with Visual Studio extension](https://docs.snyk.io/ide-tools/visual-studio-extension/run-an-analysis-with-visual-studio-extension)
-* [View analysis results from Visual Studio extension](https://docs.snyk.io/ide-tools/visual-studio-extension/view-analysis-results-from-visual-studio-extension)
-* [Troubleshooting and known issues with Visual Studio extension](https://docs.snyk.io/ide-tools/visual-studio-extension/troubleshooting-and-known-issues-with-visual-studio-extension)
+* [Visual Studio Code extension configuration](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-configuration)
+* [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-authentication)
+* [Run an analysis with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/run-an-analysis-with-visual-studio-code-extension)
+* [View analysis results from Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/view-analysis-results-from-visual-studio-code-extension)
+* [Troubleshooting and known issues with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/troubleshooting-for-visual-studio-code-extension)
 
 ## Supported languages, package managers, and frameworks
 
@@ -54,7 +54,7 @@ Follow these steps to install:
 * Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) and click **Install**.\
   For more information, see the [installation instructions](https://code.visualstudio.com/docs/editor/extension-marketplace#\_install-an-extension).
 * Configure the Snyk CLI (downloaded when the extension in installed); see [Visual Studio extension configuration](https://docs.snyk.io/integrations/ide-tools/visual-studio-extension/visual-studio-extension-configuration).
-* Authenticate with Snyk; see [Visual Studio extension authentication](https://docs.snyk.io/ide-tools/visual-studio-extension/visual-studio-extension-authentication). For additional information, including how to authenticate using your API token, see [Authenticate the CLI with your account](https://docs.snyk.io/snyk-cli/authenticate-the-cli-with-your-account).
+* Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-authentication). For additional information, including how to authenticate using your API token, see [Authenticate the CLI with your account](https://docs.snyk.io/snyk-cli/authenticate-the-cli-with-your-account).
 * Navigate back to the IDE; the first scan starts automatically.
 
 ## Support
