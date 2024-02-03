@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.2.3]
+
+### Fixed
+
+- Snyk Code: Added `isExampleLineEncoded` boolean flag to `CommitChangeLine` type to prevent re-encoding strings in the UI of the example code blocks.
+
 ## [2.2.2]
 
 ### Fixed
