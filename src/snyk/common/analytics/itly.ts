@@ -100,19 +100,14 @@ export class Iteratively implements IAnalytics {
 
   public flush = (): Promise<void> => itly.flush();
 
-  async identify(): Promise<void> {
+  async identify(userId: string): Promise<void> {
     if (!this.canReportEvents()) {
-      return;
-    }
-
-    if (!this.user.authenticatedId) {
-      this.logger.error('Tried to identify non-authenticated user');
       return;
     }
 
     // Calling identify is the preferred way to merge authenticated user with anonymous one,
     // see https://snyk.slack.com/archives/C01U2SPRB3Q/p1624276750134700?thread_ts=1624030602.128900&cid=C01U2SPRB3Q
-    itly.identify(this.user.authenticatedId, undefined, {
+    itly.identify(userId, undefined, {
       segment: {
         options: {
           anonymousId: this.user.anonymousId,
