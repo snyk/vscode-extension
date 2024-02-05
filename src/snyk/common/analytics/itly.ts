@@ -224,7 +224,7 @@ export class Iteratively implements IAnalytics {
   }
 
   enqueueEvent(eventFunction: () => void, mustBeAuthenticated = true): void {
-    if (!this.canReportEvents()) {
+    if (!this.canReportEvents() || !this.configuration.analyticsPermitted) {
       return;
     }
     if (mustBeAuthenticated && !this.user.authenticatedId) {

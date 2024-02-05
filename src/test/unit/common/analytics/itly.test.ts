@@ -42,4 +42,86 @@ suite('Iteratively', () => {
       });
     });
   });
+
+  suite('.enqueueEvent', () => {
+    test('Enqueues event if shouldReportEvents === true and analyticsPermitted === true', () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: true,
+          analyticsPermitted: true,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      let eventFunctionWasCalled = false;
+      iteratively.enqueueEvent(() => {
+        eventFunctionWasCalled = true;
+      }, false);
+      strictEqual(eventFunctionWasCalled, true);
+    });
+
+    test('Does not enqueue event if shouldReportEvents === false and analyticsPermitted === true', () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: false,
+          analyticsPermitted: true,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      let eventFunctionWasCalled = false;
+      iteratively.enqueueEvent(() => {
+        eventFunctionWasCalled = true;
+      }, false);
+      strictEqual(eventFunctionWasCalled, false);
+    });
+
+    test('Does not enqueue event if shouldReportEvents === true and analyticsPermitted === false', () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: true,
+          analyticsPermitted: false,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      let eventFunctionWasCalled = false;
+      iteratively.enqueueEvent(() => {
+        eventFunctionWasCalled = true;
+      }, false);
+      strictEqual(eventFunctionWasCalled, false);
+    });
+
+    test('Does not enqueue event if shouldReportEvents === false and analyticsPermitted === false', () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: false,
+          analyticsPermitted: false,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      let eventFunctionWasCalled = false;
+      iteratively.enqueueEvent(() => {
+        eventFunctionWasCalled = true;
+      }, false);
+      strictEqual(eventFunctionWasCalled, false);
+    });
+  });
 });
