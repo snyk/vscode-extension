@@ -101,7 +101,7 @@ export class Iteratively implements IAnalytics {
   public flush = (): Promise<void> => itly.flush();
 
   async identify(userId: string): Promise<void> {
-    if (!this.canReportEvents() || !this.configuration.analyticsPermitted) {
+    if (!this.allowedToReportEvents()) {
       return;
     }
 
@@ -219,7 +219,7 @@ export class Iteratively implements IAnalytics {
   }
 
   enqueueEvent(eventFunction: () => void, mustBeAuthenticated = true): void {
-    if (!this.canReportEvents() || !this.configuration.analyticsPermitted) {
+    if (!this.allowedToReportEvents()) {
       return;
     }
     if (mustBeAuthenticated && !this.user.authenticatedId) {
@@ -240,6 +240,10 @@ export class Iteratively implements IAnalytics {
     }
 
     return true;
+  }
+
+  private allowedToReportEvents(): boolean {
+    return this.canReportEvents() && this.configuration.analyticsPermitted;
   }
 
   private getAnonymousSegmentOptions(): TrackOptions {
