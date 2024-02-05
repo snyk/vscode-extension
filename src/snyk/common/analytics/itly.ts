@@ -101,7 +101,7 @@ export class Iteratively implements IAnalytics {
   public flush = (): Promise<void> => itly.flush();
 
   async identify(userId: string): Promise<void> {
-    if (!this.canReportEvents()) {
+    if (!this.canReportEvents() || !this.configuration.analyticsPermitted) {
       return;
     }
 

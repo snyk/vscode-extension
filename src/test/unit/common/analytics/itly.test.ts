@@ -1,4 +1,6 @@
 import { strictEqual } from 'assert';
+import * as sinon from 'sinon';
+import itly from '../../../../ampli';
 import { Iteratively } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { SnykConfiguration } from '../../../../snyk/common/configuration/snykConfiguration';
@@ -122,6 +124,91 @@ suite('Iteratively', () => {
         eventFunctionWasCalled = true;
       }, false);
       strictEqual(eventFunctionWasCalled, false);
+    });
+  });
+
+  suite('.identify', () => {
+    let identify: sinon.SinonSpy;
+    const user = new User();
+
+    setup(() => {
+      identify = sinon.spy(itly, 'identify');
+    });
+
+    teardown(() => {
+      identify.restore();
+    });
+
+    test('Identifies a user if shouldReportEvents === true and analyticsPermitted === true', async () => {
+      const iteratively = new Iteratively(
+        user,
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: true,
+          analyticsPermitted: true,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      await iteratively.identify('test');
+      strictEqual(identify.called, true);
+      strictEqual(identify.calledOnce, true);
+    });
+
+    test('Does not identify a user if shouldReportEvents === true and analyticsPermitted === false', async () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: true,
+          analyticsPermitted: false,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      await iteratively.identify('test');
+      strictEqual(identify.called, false);
+      strictEqual(identify.calledOnce, false);
+    });
+
+    test('Does not identify a user if shouldReportEvents === false and analyticsPermitted === true', async () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: false,
+          analyticsPermitted: true,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      await iteratively.identify('test');
+      strictEqual(identify.called, false);
+      strictEqual(identify.calledOnce, false);
+    });
+
+    test('Does not identify a user if shouldReportEvents === false and analyticsPermitted === false', async () => {
+      const iteratively = new Iteratively(
+        new User(),
+        new LoggerMock(),
+        {
+          ...config,
+          shouldReportEvents: false,
+          analyticsPermitted: false,
+        },
+        snykConfig,
+      );
+      iteratively.load();
+
+      await iteratively.identify('test');
+      strictEqual(identify.called, false);
+      strictEqual(identify.calledOnce, false);
     });
   });
 });
