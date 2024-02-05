@@ -58,6 +58,7 @@ type CommitChangeLine = {
   line: string;
   lineNumber: number;
   lineChange: 'removed' | 'added' | 'none';
+  isExampleLineEncoded?: boolean;
 };
 export type Marker = {
   msg: Point;

@@ -2,14 +2,19 @@ import he from 'he';
 import { ExampleCommitFix } from '../../common/languageServer/types';
 
 export const encodeExampleCommitFixes = (exampleCommitFixes: ExampleCommitFix[]): ExampleCommitFix[] => {
-  return exampleCommitFixes.map(exampleCommitFixes => {
+  return exampleCommitFixes.map(example => {
     return {
-      ...exampleCommitFixes,
-      lines: exampleCommitFixes.lines.map(line => {
-        return {
-          ...line,
-          line: he.encode(line.line),
-        };
+      ...example,
+      lines: example.lines.map(commitLine => {
+        if (!commitLine.isExampleLineEncoded) {
+          return {
+            ...commitLine,
+            line: he.encode(commitLine.line),
+            isExampleLineEncoded: true,
+          };
+        }
+
+        return commitLine;
       }),
     };
   });

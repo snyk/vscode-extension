@@ -27,6 +27,7 @@ declare const acquireVsCodeApi: any;
     line: string;
     lineNumber: number;
     lineChange: 'removed' | 'added' | 'none';
+    isExampleLineEncoded?: boolean;
   };
   type Marker = {
     msg: Point;
