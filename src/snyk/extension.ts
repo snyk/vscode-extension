@@ -121,14 +121,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.user = await User.getAnonymous(this.context, Logger);
 
-    this.analytics = new Iteratively(
-      this.user,
-      Logger,
-      configuration.shouldReportEvents,
-      configuration.analyticsPermitted,
-      configuration.isDevelopment,
-      snykConfiguration,
-    );
+    this.analytics = new Iteratively(this.user, Logger, configuration, snykConfiguration);
 
     SecretStorageAdapter.init(vscodeContext);
 
