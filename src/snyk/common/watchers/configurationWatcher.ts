@@ -30,7 +30,7 @@ class ConfigurationWatcher implements IWatcher {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === YES_TELEMETRY_SETTING) {
-      return this.analytics.setShouldReportEvents(configuration.shouldReportEvents);
+      this.analytics.load();
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {

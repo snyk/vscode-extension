@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.2.4]
+
+### Fixes
+
+- Changing the custom endpoints has an effect on whether we sent Amplitude events or not
+
 ## [2.2.3]
 
 ### Fixed

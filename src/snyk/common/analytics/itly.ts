@@ -8,7 +8,7 @@ import itly, {
   AnalysisIsTriggeredProperties as _AnalysisIsTriggeredProperties,
   QuickFixIsDisplayedProperties as _QuickFixIsDisplayedProperties,
 } from '../../../ampli';
-import { Configuration } from '../configuration/configuration';
+import { Configuration, IConfiguration } from '../configuration/configuration';
 import { SnykConfiguration } from '../configuration/snykConfiguration';
 import { IDE_NAME } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
@@ -37,7 +37,6 @@ export type QuickFixIsDisplayedProperties = _QuickFixIsDisplayedProperties & {
 export interface IAnalytics {
   load(): Iteratively | null;
   flush(): Promise<void>;
-  setShouldReportEvents(shouldReportEvents: boolean): void;
   identify(userId: string): Promise<void>;
   logIssueInTreeIsClicked(properties: IssueInTreeIsClickedProperties): void;
   logAnalysisIsReady(properties: AnalysisIsReadyProperties): void;
@@ -63,23 +62,15 @@ export class Iteratively implements IAnalytics {
   constructor(
     private readonly user: User,
     private logger: ILog,
-    private shouldReportEvents: boolean,
-    private analyticsPermitted: boolean,
-    private isDevelopment: boolean,
+    private configuration: IConfiguration,
     private snykConfiguration?: SnykConfiguration,
   ) {}
 
-  setShouldReportEvents(shouldReportEvents: boolean): void {
-    this.shouldReportEvents = shouldReportEvents;
-    this.load();
-  }
-
   load(): Iteratively | null {
-    if (!this.shouldReportEvents || !this.analyticsPermitted) {
-      this.logger.debug(`Analytics are disabled. No analytics will be collected.`);
+    if (!this.configuration.shouldReportEvents) {
+      this.logger.debug(`Analytics are disabled in Settings.`);
       return null;
     }
-    this.logger.debug(`Analytics are enabled. Analytics will be collected.`);
 
     const segmentWriteKey = this.snykConfiguration?.segmentWriteKey;
     if (!segmentWriteKey) {
@@ -88,12 +79,12 @@ export class Iteratively implements IAnalytics {
     }
 
     const segment = new SegmentPlugin(segmentWriteKey);
-    const isDevelopment = this.isDevelopment;
+    const isDevelopment = this.configuration.isDevelopment;
 
     if (!this.loaded) {
       try {
         itly.load({
-          disabled: !this.shouldReportEvents,
+          disabled: !this.configuration.shouldReportEvents,
           environment: isDevelopment ? 'development' : 'production',
           plugins: [segment, new ItlyErrorPlugin(this.logger)],
         });
@@ -109,19 +100,14 @@ export class Iteratively implements IAnalytics {
 
   public flush = (): Promise<void> => itly.flush();
 
-  async identify(): Promise<void> {
-    if (!this.canReportEvents()) {
-      return;
-    }
-
-    if (!this.user.authenticatedId) {
-      this.logger.error('Tried to identify non-authenticated user');
+  async identify(userId: string): Promise<void> {
+    if (!this.allowedToReportEvents()) {
       return;
     }
 
     // Calling identify is the preferred way to merge authenticated user with anonymous one,
     // see https://snyk.slack.com/archives/C01U2SPRB3Q/p1624276750134700?thread_ts=1624030602.128900&cid=C01U2SPRB3Q
-    itly.identify(this.user.authenticatedId, undefined, {
+    itly.identify(userId, undefined, {
       segment: {
         options: {
           anonymousId: this.user.anonymousId,
@@ -232,8 +218,8 @@ export class Iteratively implements IAnalytics {
     });
   }
 
-  private enqueueEvent(eventFunction: () => void, mustBeAuthenticated = true): void {
-    if (!this.canReportEvents()) {
+  enqueueEvent(eventFunction: () => void, mustBeAuthenticated = true): void {
+    if (!this.allowedToReportEvents()) {
       return;
     }
     if (mustBeAuthenticated && !this.user.authenticatedId) {
@@ -249,11 +235,15 @@ export class Iteratively implements IAnalytics {
       return false;
     }
 
-    if (!this.shouldReportEvents) {
+    if (!this.configuration.shouldReportEvents) {
       return false;
     }
 
     return true;
+  }
+
+  private allowedToReportEvents(): boolean {
+    return this.canReportEvents() && this.configuration.analyticsPermitted;
   }
 
   private getAnonymousSegmentOptions(): TrackOptions {
