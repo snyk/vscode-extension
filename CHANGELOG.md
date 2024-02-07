@@ -1,18 +1,18 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
-## [2.2.4]
+## [2.3.4]
 
 ### Fixes
 
 - Changing the custom endpoints has an effect on whether we sent Amplitude events or not
 
-## [2.2.3]
+## [2.3.3]
 
 ### Fixed
 
 - Snyk Code: Added `isExampleLineEncoded` boolean flag to `CommitChangeLine` type to prevent re-encoding strings in the UI of the example code blocks.
 
-## [2.2.2]
+## [2.3.2]
 
 ### Fixed
 
