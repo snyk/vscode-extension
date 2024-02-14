@@ -36,16 +36,6 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return 0;
   };
 
-  protected getDurationTreeNode(): TreeNode {
-    const ts = new Date(this.statusProvider.lastAnalysisTimestamp);
-    const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const day = ts.toLocaleDateString([], { year: '2-digit', month: '2-digit', day: '2-digit' });
-
-    return new TreeNode({
-      text: messages.duration(time, day),
-    });
-  }
-
   protected getNoSeverityFiltersSelectedTreeNode(): TreeNode | null {
     const anyFilterEnabled = Object.values<boolean>(this.configuration.severityFilter).find(enabled => !!enabled);
     if (anyFilterEnabled) {
@@ -81,6 +71,4 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
       },
     });
   }
-
-  protected abstract getFilteredIssues(issues: readonly unknown[]): readonly unknown[];
 }

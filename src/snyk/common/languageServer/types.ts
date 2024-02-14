@@ -5,6 +5,7 @@ export enum ScanProduct {
 }
 
 export type InProgress = 'inProgress';
+
 export enum ScanStatus {
   InProgress = 'inProgress',
   Success = 'success',
@@ -48,6 +49,7 @@ export type CodeIssueData = {
   rows: Point;
   isSecurityType: boolean;
   priorityScore: number;
+  hasAIFix: boolean;
 };
 
 export type ExampleCommitFix = {
@@ -114,4 +116,9 @@ export type IacIssueData = {
   path?: string[];
   resolve?: string;
   references?: string[];
+};
+
+export type AutofixUnifiedDiffSuggestion = {
+  fixId: string;
+  unifiedDiffsPerFile: { [key: string]: string };
 };
