@@ -48,6 +48,7 @@ export type CodeIssueData = {
   rows: Point;
   isSecurityType: boolean;
   priorityScore: number;
+  hasAIFix: boolean;
 };
 
 export type ExampleCommitFix = {
