@@ -1,5 +1,11 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.3.5]
+
+### Documentation
+
+- Updated the `README.md` file to correct and improve the links to the Visual Studio Code extension documentation.
+
 ## [2.3.4]
 
 ### Fixes
