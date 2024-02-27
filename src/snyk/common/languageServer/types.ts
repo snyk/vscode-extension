@@ -23,6 +23,7 @@ export type Issue<T> = {
   title: string;
   severity: IssueSeverity;
   filePath: string;
+  isIgnored?: boolean;
   additionalData: T;
 };
 

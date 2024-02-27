@@ -27,7 +27,8 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
   }
 
   filterIssues(issues: Issue<CodeIssueData>[]): Issue<CodeIssueData>[] {
-    return issues.filter(i => i.additionalData.isSecurityType == this.isSecurityType);
+    // TODO: check feature flag
+    return issues.filter(i => i.additionalData.isSecurityType == this.isSecurityType).filter(i => !i.isIgnored);
   }
 
   getRunTestMessage = () => messages.runTest;
