@@ -12,6 +12,7 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   IAC_ENABLED_SETTING,
+  IGNORES_FILTER_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
@@ -38,6 +39,8 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
     } else if (key === SEVERITY_FILTER_SETTING) {
+      return extension.viewManagerService.refreshAllViews();
+    } else if (key === IGNORES_FILTER_SETTING) {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();

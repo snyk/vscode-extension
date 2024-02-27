@@ -196,6 +196,26 @@
             "description": "Severity issues to display.",
             "scope": "window"
           },
+          "snyk.ignores": {
+            "type": "object",
+            "default": {
+              "showIgnored": true,
+              "showNotIgnored": true
+            },
+            "properties": {
+              "showIgnored": {
+                "type": "boolean",
+                "default": true
+              },
+              "showNotIgnored": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "Ignores",
+            "scope": "window"
+          },
           "snyk.trustedFolders": {
             "type": "array",
             "default": [],

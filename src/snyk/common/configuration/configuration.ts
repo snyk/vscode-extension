@@ -16,6 +16,7 @@ import {
   CONFIGURATION_IDENTIFIER,
   FEATURES_PREVIEW_SETTING,
   IAC_ENABLED_SETTING,
+  IGNORES_FILTER_SETTING,
   OSS_ENABLED_SETTING,
   SCANNING_MODE,
   SEVERITY_FILTER_SETTING,
@@ -42,6 +43,11 @@ export interface SeverityFilter {
   low: boolean;
 
   [severity: string]: boolean;
+}
+
+export interface IgnoresFilter {
+  showIgnored: boolean;
+  showNonIgnored: boolean;
 }
 
 export type PreviewFeatures = {
@@ -102,6 +108,8 @@ export interface IConfiguration {
   analyticsPermitted: boolean;
 
   severityFilter: SeverityFilter;
+
+  ignoresFilter: IgnoresFilter;
 
   scanningMode: string | undefined;
 
@@ -433,6 +441,20 @@ export class Configuration implements IConfiguration {
         high: true,
         medium: true,
         low: true,
+      }
+    );
+  }
+
+  get ignoresFilter(): IgnoresFilter {
+    const config = this.workspace.getConfiguration<IgnoresFilter>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(IGNORES_FILTER_SETTING),
+    );
+
+    return (
+      config ?? {
+        showIgnored: true,
+        showNonIgnored: true,
       }
     );
   }
