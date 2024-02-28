@@ -1,14 +1,9 @@
-import { AdvisorApiClient, IAdvisorApiClient } from '../../advisor/services/advisorApiClient';
-import AdvisorProvider from '../../advisor/services/advisorProvider';
-import { AdvisorService } from '../../advisor/services/advisorService';
 import { IAnalytics } from '../../common/analytics/itly';
 import { CommandController } from '../../common/commands/commandController';
-import { configuration } from '../../common/configuration/instance';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
-import { Logger } from '../../common/logger/logger';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
 import { LearnService } from '../../common/services/learnService';
@@ -45,17 +40,15 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
   protected ossService?: OssService;
-  protected advisorService?: AdvisorProvider;
+
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;
   protected ossVulnerabilityCountService: OssVulnerabilityCountService;
-  protected advisorScoreDisposable: AdvisorService;
+
   protected languageServer: ILanguageServer;
 
   protected notificationService: INotificationService;
   protected analytics: IAnalytics;
-
-  protected advisorApiClient: IAdvisorApiClient;
 
   snykCode: IProductService<CodeIssueData>;
   protected codeSettings: ICodeSettings;
@@ -78,7 +71,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();
-    this.advisorApiClient = new AdvisorApiClient(configuration, Logger);
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
     this.codeActionKindAdapter = new CodeActionKindAdapter();

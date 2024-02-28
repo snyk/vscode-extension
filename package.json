@@ -206,14 +206,7 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
-            "properties": {
-              "advisor": {
-                "type": "boolean",
-                "title": "Enable \"Snyk Advisor\"",
-                "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
-                "default": false
-              }
-            }
+            "properties": {}
           }
         }
       }

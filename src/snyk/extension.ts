@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import AdvisorProvider from './advisor/services/advisorProvider';
-import { AdvisorService } from './advisor/services/advisorService';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
@@ -8,7 +6,7 @@ import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { messages } from './cli/messages/messages';
-import { Iteratively } from './common/analytics/itly';
+import { Amplitude } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
@@ -121,7 +119,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.user = await User.getAnonymous(this.context, Logger);
 
-    this.analytics = new Iteratively(this.user, Logger, configuration, snykConfiguration);
+    this.analytics = new Amplitude(this.user, Logger, configuration, snykConfiguration);
 
     SecretStorageAdapter.init(vscodeContext);
 
@@ -154,7 +152,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
 
-    this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.downloadService = new DownloadService(
       this.context,
       configuration,
@@ -387,22 +384,6 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
     );
     this.ossVulnerabilityCountService.activate();
-
-    this.advisorScoreDisposable = new AdvisorService(
-      vsCodeWindow,
-      vsCodeLanguages,
-      this.advisorService,
-      Logger,
-      vsCodeWorkspace,
-      this.advisorApiClient,
-      new ThemeColorAdapter(),
-      new HoverAdapter(),
-      this.markdownStringAdapter,
-      configuration,
-    );
-
-    // noinspection ES6MissingAwait
-    void this.advisorScoreDisposable.activate();
 
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
