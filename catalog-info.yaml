@@ -4,8 +4,8 @@ metadata:
   name: vscode-extension
   annotations:
     github.com/project-slug: snyk/vscode-extension
-    github.com/team-slug: snyk/hammerhead
+    github.com/team-slug: snyk/ide
 spec:
   type: ide-plugin
   lifecycle: "-"
-  owner: hammerhead
+  owner: ide
