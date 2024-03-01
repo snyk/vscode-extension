@@ -16,7 +16,6 @@ suite('ExperimentService', () => {
 
     sinon.stub(SnykConfiguration, 'get').resolves({
       amplitudeExperimentApiKey: 'test',
-      segmentWriteKey: 'test',
     } as SnykConfiguration);
 
     fetchStub = sinon.stub();
@@ -57,7 +56,7 @@ suite('ExperimentService', () => {
       shouldReportEvents: true,
     } as unknown as IConfiguration;
 
-    const snykConfig = new SnykConfiguration('test', 'test', 'test');
+    const snykConfig = new SnykConfiguration('test', 'test');
     const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
     service.load();
 
@@ -74,7 +73,7 @@ suite('ExperimentService', () => {
       shouldReportEvents: true,
     } as unknown as IConfiguration;
 
-    const snykConfig = new SnykConfiguration('test', 'test', 'test');
+    const snykConfig = new SnykConfiguration('test', 'test');
     const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
     service.load();
 
