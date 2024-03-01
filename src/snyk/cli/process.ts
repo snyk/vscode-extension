@@ -63,10 +63,6 @@ export class CliProcess {
       SNYK_CFG_ORG: this.config.organization,
     } as NodeJS.ProcessEnv;
 
-    if (!this.config.shouldReportEvents) {
-      env = { ...env, SNYK_CFG_DISABLE_ANALYTICS: '1' };
-    }
-
     const vscodeProxy = getVsCodeProxy(this.workspace);
     if (vscodeProxy && !process.env.HTTP_PROXY && !process.env.HTTPS_PROXY) {
       env = {

@@ -45,8 +45,7 @@
   ],
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
-    "onWebviewPanel:snyk.views.suggestion.oss",
-    "*"
+    "onWebviewPanel:snyk.views.suggestion.oss"
   ],
   "main": "./out/extension.js",
   "types": "./out/extension.d.ts",
@@ -60,13 +59,6 @@
             "type": "boolean",
             "default": true,
             "markdownDescription": "Send error reports to Snyk",
-            "scope": "application"
-          },
-          "snyk.yesTelemetry": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "Send usage statistics to Snyk",
             "scope": "application"
           },
           "snyk.yesWelcomeNotification": {
@@ -207,14 +199,7 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
-            "properties": {
-              "advisor": {
-                "type": "boolean",
-                "title": "Enable \"Snyk Advisor\"",
-                "description": "Discover the health (maintenance, community, popularity & security) status of your open source packages.",
-                "default": false
-              }
-            }
+            "properties": {}
           }
         }
       }
@@ -395,7 +380,6 @@
   },
   "devDependencies": {
     "@amplitude/ampli": "^1.29.0",
-    "@types/analytics-node": "^3.1.4",
     "@types/babel__traverse": "^7.12.2",
     "@types/find-package-json": "^1.2.2",
     "@types/glob": "^8.1.0",
@@ -432,15 +416,10 @@
     "@babel/parser": "^7.12.11",
     "@babel/traverse": "^7.12.12",
     "@babel/types": "^7.12.12",
-    "@itly/plugin-amplitude-node": "^2.5.0",
-    "@itly/plugin-schema-validator": "^2.4.0",
-    "@itly/plugin-segment-node": "^2.4.0",
-    "@itly/sdk": "^2.3.1",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
     "@snyk/code-client": "^4.23.2",
-    "analytics-node": "^4.0.1",
-    "axios": "^1.6.3",
+    "axios": "^1.6.7",
     "glob": "^9.3.5",
     "he": "^1.2.0",
     "htmlparser2": "^7.2.0",

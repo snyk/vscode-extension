@@ -1,5 +1,4 @@
 import { snykMessages } from '../../base/messages/snykMessages';
-import { IAnalytics } from '../analytics/itly';
 import { IConfiguration } from '../configuration/configuration';
 import { VSCODE_VIEW_CONTAINER_COMMAND } from '../constants/commands';
 import { ErrorHandler } from '../error/errorHandler';
@@ -18,7 +17,6 @@ export class NotificationService implements INotificationService {
     private readonly window: IVSCodeWindow,
     private readonly commands: IVSCodeCommands,
     private readonly configuration: IConfiguration,
-    private readonly analytics: IAnalytics,
     private readonly logger: ILog,
   ) {}
 
@@ -40,7 +38,6 @@ export class NotificationService implements INotificationService {
 
     if (pressedButton === snykMessages.welcome.button) {
       await this.commands.executeCommand(VSCODE_VIEW_CONTAINER_COMMAND);
-      this.analytics.logWelcomeButtonIsClicked();
     }
 
     await this.configuration.hideWelcomeNotification();

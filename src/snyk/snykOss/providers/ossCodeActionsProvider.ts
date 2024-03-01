@@ -1,8 +1,6 @@
 import { CodeAction, Range, TextDocument, Uri } from 'vscode';
-import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
-import { IDE_NAME } from '../../common/constants/general';
 import { CodeActionsProvider } from '../../common/editor/codeActionsProvider';
 import { Issue, IssueSeverity, OssIssueData } from '../../common/languageServer/types';
 import { ProductResult } from '../../common/services/productService';
@@ -18,9 +16,8 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     private readonly codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
     issues: Readonly<ProductResult<OssIssueData>>,
-    analytics: IAnalytics,
   ) {
-    super(issues, codeActionKindAdapter, analytics);
+    super(issues, codeActionKindAdapter);
   }
 
   override provideCodeActions(
@@ -44,20 +41,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
       return;
     }
 
-    const codeActions = this.getActions(
-      folderPath,
-      document,
-      mostSevereVulnerability,
-      this.getIssueRange(mostSevereVulnerability),
-    );
-    const analyticsType = this.getAnalyticsActionTypes();
-
-    this.analytics.logQuickFixIsDisplayed({
-      quickFixType: analyticsType,
-      ide: IDE_NAME,
-    });
-
-    return codeActions;
+    return this.getActions(folderPath, document, mostSevereVulnerability, this.getIssueRange(mostSevereVulnerability));
   }
 
   getActions(
@@ -70,10 +54,6 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
 
     // returns list of actions, all new actions should be added to this list
     return [openIssueAction];
-  }
-
-  getAnalyticsActionTypes(): [string, ...string[]] & [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]] {
-    return ['Show Suggestion'];
   }
 
   // noop

@@ -1,5 +1,4 @@
 import { validate as uuidValidate } from 'uuid';
-import { IAnalytics } from '../../common/analytics/itly';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { SNYK_WORKSPACE_SCAN_COMMAND } from '../../common/constants/commands';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../common/constants/languageServer';
@@ -33,14 +32,12 @@ export class AuthenticationService implements IAuthenticationService {
     private readonly baseModule: IBaseSnykModule,
     private readonly configuration: IConfiguration,
     private readonly window: IVSCodeWindow,
-    private readonly analytics: IAnalytics,
     private readonly logger: ILog,
     private readonly clientAdapter: ILanguageClientAdapter,
     private commands: IVSCodeCommands,
   ) {}
 
   async initiateLogin(): Promise<void> {
-    this.analytics.logAuthenticateButtonIsClicked();
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
     await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, true);
   }

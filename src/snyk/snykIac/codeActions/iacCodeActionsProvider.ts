@@ -1,5 +1,4 @@
 import { CodeAction, Range, TextDocument } from 'vscode';
-import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { CodeActionsProvider } from '../../common/editor/codeActionsProvider';
@@ -17,9 +16,8 @@ export class IacCodeActionsProvider extends CodeActionsProvider<IacIssueData> {
     private readonly codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly languages: IVSCodeLanguages,
-    analytics: IAnalytics,
   ) {
-    super(issues, codeActionKindAdapter, analytics);
+    super(issues, codeActionKindAdapter);
   }
 
   getActions(folderPath: string, _: TextDocument, issue: Issue<IacIssueData>, range: Range): CodeAction[] {
@@ -27,10 +25,6 @@ export class IacCodeActionsProvider extends CodeActionsProvider<IacIssueData> {
 
     // returns list of actions, all new actions should be added to this list
     return [openIssueAction];
-  }
-
-  getAnalyticsActionTypes(): [string, ...string[]] & [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]] {
-    return ['Show Suggestion'];
   }
 
   getIssueRange(issue: Issue<IacIssueData>): Range {

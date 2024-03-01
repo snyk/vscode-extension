@@ -1,6 +1,5 @@
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { IAnalytics } from './analytics/itly';
 import { SNYK_GET_ACTIVE_USER } from './constants/commands';
 import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
 import { ErrorReporter } from './error/errorReporter';
@@ -15,7 +14,7 @@ export type UserDto = {
 
 export class User {
   private _authenticatedId?: string;
-  private logger?: ILog;
+  private readonly logger?: ILog;
 
   readonly anonymousId: string;
 
@@ -47,12 +46,10 @@ export class User {
     return crypto.createHash('sha256').update(this._authenticatedId).digest('hex');
   }
 
-  async identify(commandExecutor: IVSCodeCommands, analytics: IAnalytics): Promise<void> {
+  async identify(commandExecutor: IVSCodeCommands): Promise<void> {
     const user = await this.userMe(commandExecutor);
     if (user && user.id) {
       this._authenticatedId = user.id;
-
-      await analytics.identify(this._authenticatedId); // map the anonymousId onto authenticatedId
       ErrorReporter.identify(this);
     }
   }

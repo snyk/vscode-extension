@@ -24,7 +24,6 @@ export type ServerSettings = {
 
   // Reporting and telemetry
   sendErrorReports?: string;
-  enableTelemetry?: string;
 
   // Security and scanning settings
   filterSeverity?: SeverityFilter;
@@ -73,7 +72,6 @@ export class LanguageServerSettings {
       activateSnykCodeQuality: `${codeQualityEnabled}`,
       activateSnykOpenSource: `${ossEnabled}`,
       activateSnykIac: `${iacEnabled}`,
-      enableTelemetry: `${configuration.shouldReportEvents}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
       endpoint: configuration.snykOssApiEndpoint,

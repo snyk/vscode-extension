@@ -22,7 +22,6 @@ suite('LanguageServerSettings', () => {
     test('should generate server settings with default true values for undefined feature toggles', async () => {
       const mockUser = { anonymousId: 'anonymous-id' } as User;
       const mockConfiguration: IConfiguration = {
-        shouldReportEvents: true,
         shouldReportErrors: false,
         snykOssApiEndpoint: 'https://dev.snyk.io/api',
         organization: 'my-org',
@@ -45,7 +44,6 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(serverSettings.activateSnykIac, 'true');
       assert.strictEqual(serverSettings.deviceId, 'anonymous-id');
 
-      assert.strictEqual(serverSettings.enableTelemetry, 'true');
       assert.strictEqual(serverSettings.sendErrorReports, 'false');
       assert.strictEqual(serverSettings.cliPath, '/path/to/cli');
 

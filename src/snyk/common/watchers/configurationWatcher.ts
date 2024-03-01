@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import * as vscode from 'vscode';
 import { IExtension } from '../../base/modules/interfaces';
-import { IAnalytics } from '../analytics/itly';
 import { configuration } from '../configuration/instance';
 import { DEFAULT_LS_DEBOUNCE_INTERVAL, SNYK_TOKEN_KEY } from '../constants/general';
 import {
@@ -15,7 +14,6 @@ import {
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
-  YES_TELEMETRY_SETTING,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -24,13 +22,11 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(private readonly analytics: IAnalytics, private readonly logger: ILog) {}
+  constructor(private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
-    } else if (key === YES_TELEMETRY_SETTING) {
-      this.analytics.load();
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
     } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
@@ -67,7 +63,6 @@ class ConfigurationWatcher implements IWatcher {
       const change = [
         ADVANCED_ADVANCED_MODE_SETTING,
         ADVANCED_AUTOSCAN_OSS_SETTING,
-        YES_TELEMETRY_SETTING,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         CODE_QUALITY_ENABLED_SETTING,
