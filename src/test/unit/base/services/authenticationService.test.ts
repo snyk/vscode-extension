@@ -5,7 +5,6 @@ import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService, OAuthToken } from '../../../../snyk/base/services/authenticationService';
 import { ILoadingBadge } from '../../../../snyk/base/views/loadingBadge';
-import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../../snyk/common/constants/languageServer';
 import { SNYK_CONTEXT } from '../../../../snyk/common/constants/views';
@@ -68,27 +67,6 @@ suite('AuthenticationService', () => {
 
   teardown(() => sinon.restore());
 
-  test("Logs 'Authentication Button is Clicked' analytical event", async () => {
-    const logAuthenticateButtonIsClickedFake = sinon.fake();
-    const analytics = {
-      logAuthenticateButtonIsClicked: logAuthenticateButtonIsClickedFake,
-    } as unknown as IAnalytics;
-    const service = new AuthenticationService(
-      contextService,
-      baseModule,
-      config,
-      windowMock,
-      analytics,
-      new LoggerMock(),
-      languageClientAdapter,
-      {} as IVSCodeCommands,
-    );
-
-    await service.initiateLogin();
-
-    strictEqual(logAuthenticateButtonIsClickedFake.calledOnce, true);
-  });
-
   // TODO: the following two tests are more of integration tests, since the second requires access to the network layer. Move it to integration test as part of ROAD-625.
   test('getIpFamily returns undefined when IPv6 not supported', async () => {
     const ipv6ErrorCode = 'EADDRNOTAVAIL';
@@ -141,7 +119,6 @@ suite('AuthenticationService', () => {
       baseModule,
       config,
       windowMock,
-      {} as IAnalytics,
       new LoggerMock(),
       languageClientAdapter,
       {} as IVSCodeCommands,
@@ -160,7 +137,6 @@ suite('AuthenticationService', () => {
       baseModule,
       config,
       windowMock,
-      {} as IAnalytics,
       new LoggerMock(),
       languageClientAdapter,
       {} as IVSCodeCommands,
@@ -190,7 +166,6 @@ suite('AuthenticationService', () => {
         baseModule,
         config,
         windowMock,
-        {} as IAnalytics,
         new LoggerMock(),
         languageClientAdapter,
         {

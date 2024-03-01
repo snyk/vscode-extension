@@ -21,7 +21,6 @@ suite('Language Server: Middleware', () => {
   setup(() => {
     user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
-      shouldReportEvents: false,
       shouldReportErrors: false,
       snykOssApiEndpoint: 'https://dev.snyk.io/api',
       getAdditionalCliParameters: () => '',
@@ -86,7 +85,6 @@ suite('Language Server: Middleware', () => {
     assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
     assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
     assert.strictEqual(serverResult.organization, `${configuration.organization}`);
-    assert.strictEqual(serverResult.enableTelemetry, `${configuration.shouldReportEvents}`);
     assert.strictEqual(
       serverResult.manageBinariesAutomatically,
       `${configuration.isAutomaticDependencyManagementEnabled()}`,

@@ -1,7 +1,6 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { CodeAction, CodeActionContext, CodeActionKind, Range, TextDocument } from 'vscode';
-import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../../../snyk/common/commands/types';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../../../snyk/common/constants/commands';
 import { Issue, IssueSeverity, OssIssueData } from '../../../../snyk/common/languageServer/types';
@@ -12,7 +11,6 @@ import { OssCodeActionsProvider } from '../../../../snyk/snykOss/providers/ossCo
 
 suite('OSS code actions provider', () => {
   let ossActionsProvider: OssCodeActionsProvider;
-  let logQuickFixIsDisplayed: sinon.SinonSpy;
   let rangeMock: Range;
 
   setup(() => {
@@ -23,11 +21,6 @@ suite('OSS code actions provider', () => {
         additionalData: {},
       } as unknown as Issue<OssIssueData>,
     ]);
-
-    logQuickFixIsDisplayed = sinon.fake();
-    const analytics = {
-      logQuickFixIsDisplayed,
-    } as unknown as IAnalytics;
 
     const codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({
@@ -48,7 +41,6 @@ suite('OSS code actions provider', () => {
       codeActionAdapter,
       codeActionKindAdapter,
       ossResults,
-      analytics,
     );
   });
 
@@ -112,7 +104,6 @@ suite('OSS code actions provider', () => {
     const result = ossActionsProvider.provideCodeActions(document, clickedRange, context);
 
     // assert
-    sinon.assert.calledOnce(logQuickFixIsDisplayed);
     assert.deepStrictEqual(result, codeActions);
   });
 });

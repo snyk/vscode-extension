@@ -1,6 +1,5 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IAnalytics } from '../../../snyk/common/analytics/itly';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
@@ -45,7 +44,6 @@ suite('OSS Service', () => {
         registerCodeActionsProvider: sinon.fake(),
       } as unknown as IVSCodeLanguages,
       new LoggerMock(),
-      {} as IAnalytics,
     );
   });
 

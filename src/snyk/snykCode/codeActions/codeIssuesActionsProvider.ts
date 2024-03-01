@@ -1,5 +1,4 @@
 import { CodeAction, Range, TextDocument } from 'vscode';
-import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { CodeActionsProvider } from '../../common/editor/codeActionsProvider';
@@ -18,9 +17,8 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     private readonly codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly languages: IVSCodeLanguages,
-    analytics: IAnalytics,
   ) {
-    super(issues, codeActionKindAdapter, analytics);
+    super(issues, codeActionKindAdapter);
   }
 
   getActions(folderPath: string, document: TextDocument, issue: Issue<CodeIssueData>, range: Range): CodeAction[] {
@@ -30,10 +28,6 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
 
     // returns list of actions, all new actions should be added to this list
     return [openIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
-  }
-
-  getAnalyticsActionTypes(): [string, ...string[]] & [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]] {
-    return ['Show Suggestion', 'Ignore Suggestion In Line', 'Ignore Suggestion In File'];
   }
 
   getIssueRange(issue: Issue<CodeIssueData>): Range {

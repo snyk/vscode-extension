@@ -22,7 +22,6 @@ import {
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
-  YES_TELEMETRY_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
@@ -80,7 +79,6 @@ export interface IConfiguration {
   shouldAutoScanOss: boolean;
 
   shouldReportErrors: boolean;
-  shouldReportEvents: boolean;
   shouldShowWelcomeNotification: boolean;
 
   hideWelcomeNotification(): Promise<void>;
@@ -106,8 +104,6 @@ export interface IConfiguration {
   scanningMode: string | undefined;
 
   getSnykLanguageServerPath(): string | undefined;
-
-  setShouldReportEvents(b: boolean): Promise<void>;
 
   getTrustedFolders(): string[];
 
@@ -205,8 +201,7 @@ export class Configuration implements IConfiguration {
     const hostnameParts = endpoint.hostname.split('.');
     if (hostnameParts.length < 3) return false;
 
-    const isFedrampDomain = `${hostnameParts[2]}.${hostnameParts[3]}`.includes('snykgov.io');
-    return isFedrampDomain;
+    return `${hostnameParts[2]}.${hostnameParts[3]}`.includes('snykgov.io');
   }
 
   get analyticsPermitted(): boolean {
@@ -359,22 +354,6 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  get shouldReportEvents(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_TELEMETRY_SETTING),
-    );
-  }
-
-  async setShouldReportEvents(yesTelemetry: boolean): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_TELEMETRY_SETTING),
-      yesTelemetry,
-      true,
-    );
-  }
-
   get shouldShowWelcomeNotification(): boolean {
     return !!this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
@@ -494,6 +473,7 @@ export class Configuration implements IConfiguration {
       true,
     );
   }
+
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
 
   private static isSingleTenant(url: URL): boolean {

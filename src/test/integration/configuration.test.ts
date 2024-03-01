@@ -23,11 +23,9 @@ suite('Configuration', () => {
 
     await configuration.setToken(token);
     await configuration.setFeaturesConfiguration(featuresConfig);
-    await configuration.setShouldReportEvents(false);
 
     strictEqual(await configuration.getToken(), token);
     deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
-    strictEqual(configuration.shouldReportEvents, false);
     await configuration.setToken('');
   });
 });

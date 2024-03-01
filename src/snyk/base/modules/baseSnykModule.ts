@@ -1,4 +1,3 @@
-import { IAnalytics } from '../../common/analytics/itly';
 import { CommandController } from '../../common/commands/commandController';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
@@ -48,7 +47,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected languageServer: ILanguageServer;
 
   protected notificationService: INotificationService;
-  protected analytics: IAnalytics;
 
   snykCode: IProductService<CodeIssueData>;
   protected codeSettings: ICodeSettings;
