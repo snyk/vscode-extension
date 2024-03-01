@@ -1,5 +1,9 @@
 # Snyk Security - Code and Open Source Dependencies Changelog
 
+## [2.3.6
+### Changes
+- Removed Amplitude telemetry and corresponding setting from VSCode
+
 ## [2.3.5]
 
 ### Documentation
