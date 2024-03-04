@@ -412,9 +412,9 @@
   },
   "dependencies": {
     "@amplitude/experiment-node-server": "^1.8.2",
-    "@babel/parser": "^7.12.11",
-    "@babel/traverse": "^7.12.12",
-    "@babel/types": "^7.12.12",
+    "@babel/parser": "^7.23.9",
+    "@babel/traverse": "^7.23.9",
+    "@babel/types": "^7.23.9",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
     "@snyk/code-client": "^4.23.5",
