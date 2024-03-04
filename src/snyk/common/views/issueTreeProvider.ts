@@ -216,6 +216,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 
+  protected getAIFixableIssuesText(issuesCount: number): string {
+    return issuesCount > 0
+      ? `⚡️ There are ${issuesCount} issue${issuesCount === 1 ? '' : 's'} fixable using DeepCode AI`
+      : 'There are no isses fixable using DeepCode AI Fix';
+  }
+
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
     return `${dir} - ${issueCount} issue${issueCount === 1 ? '' : 's'}`;
   }
