@@ -417,7 +417,7 @@
     "@babel/types": "^7.12.12",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
-    "@snyk/code-client": "^4.23.2",
+    "@snyk/code-client": "^4.23.5",
     "axios": "^1.6.7",
     "glob": "^9.3.5",
     "he": "^1.2.0",
