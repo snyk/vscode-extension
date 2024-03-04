@@ -56,6 +56,7 @@ declare const acquireVsCodeApi: any;
     cols: Point;
     rows: Point;
     priorityScore: number;
+    hasAIFix: boolean;
   };
   type CurrentSeverity = {
     value: number;
@@ -65,7 +66,6 @@ declare const acquireVsCodeApi: any;
   const vscode = acquireVsCodeApi();
 
   const elements = {
-    readMoreBtnElem: document.querySelector('.read-more-btn') as HTMLElement,
     suggestionDetailsElem: document.querySelector('#suggestion-details') as HTMLElement,
     suggestionDetailsContentElem: document.querySelector('.suggestion-details-content') as HTMLElement,
     metaElem: document.getElementById('meta') as HTMLElement,
@@ -85,8 +85,6 @@ declare const acquireVsCodeApi: any;
     exNumElem: document.getElementById('example-number') as HTMLElement,
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
   };
-
-  let isReadMoreBtnEventBound = false;
 
   function navigateToUrl(url: string) {
     sendMessage({
@@ -306,12 +304,20 @@ declare const acquireVsCodeApi: any;
         markMsg.className = 'mark-string';
         markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
         mark.appendChild(markMsg);
+
         let markLineText = '[';
         let first = true;
+        let uniqueRows = new Set();
+
         for (const p of m.pos) {
           const rowStart = Number(p.rows[0]) + 1; // editors are 1-based
-          markLineText += (first ? '' : ', ') + ':' + rowStart.toString();
-          first = false;
+          const rowStartStr = ':' + rowStart.toString();
+
+          if (!uniqueRows.has(rowStartStr)) {
+            uniqueRows.add(rowStartStr);
+            markLineText += (first ? '' : ', ') + rowStartStr;
+            first = false;
+          }
         }
         markLineText += ']';
         const markLine = document.createElement('span');
@@ -379,7 +385,7 @@ declare const acquireVsCodeApi: any;
     if (suggestion.cwe) {
       suggestion.cwe.forEach(cwe => {
         const cweElement = document.createElement('a');
-        cweElement.className = 'suggestion-meta suggestion-cwe';
+        cweElement.className = 'suggestion-meta suggestion-cwe is-external';
         cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
         cweElement.textContent = cwe;
         metaElem.appendChild(cweElement);
@@ -404,39 +410,43 @@ declare const acquireVsCodeApi: any;
     if (suggestion.priorityScore !== undefined) {
       const priorityScoreElement = document.createElement('span');
       priorityScoreElement.className = 'suggestion-meta';
-      priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
+      priorityScoreElement.textContent = `Priority score: ${suggestion.priorityScore}`;
       metaElem.appendChild(priorityScoreElement);
+    }
+
+    console.log('hasAIFix: ' + suggestion.hasAIFix);
+    if (!suggestion.hasAIFix) {
+      document.querySelector('.ai-fix')?.classList.add('hidden');
+    } else {
+      document.querySelector('.ai-fix')?.classList.remove('hidden');
     }
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const { suggestionDetailsElem, readMoreBtnElem, suggestionDetailsContentElem } = elements;
-
-    if (!suggestion || !suggestion.text || !suggestionDetailsElem || !readMoreBtnElem) {
-      readMoreBtnElem.classList.add('hidden');
-      suggestionDetailsContentElem.classList.add('hidden');
-      return;
-    }
+    const { suggestionDetailsElem } = elements;
 
     suggestionDetailsElem.innerHTML = suggestion.text;
-    suggestionDetailsElem.classList.add('collapsed');
-    readMoreBtnElem.classList.remove('hidden');
-    suggestionDetailsContentElem.classList.remove('hidden');
 
-    if (!isReadMoreBtnEventBound) {
-      readMoreBtnElem.addEventListener('click', () => {
-        const isCollapsed = suggestionDetailsElem.classList.contains('collapsed');
+    let fixAnalysisTab = document.querySelector('.sn-fix-analysis') as HTMLElement;
+    let fixAnalysisContent = document.querySelector('.sn-fix-content') as HTMLElement;
+    let vulnOverviewTab = document.querySelector('.sn-vuln-overview') as HTMLElement;
+    let vulnOverviewContent = document.querySelector('.sn-vuln-content') as HTMLElement;
 
-        if (isCollapsed) {
-          suggestionDetailsElem.classList.remove('collapsed');
-          readMoreBtnElem.textContent = 'Read less';
-        } else {
-          suggestionDetailsElem.classList.add('collapsed');
-          readMoreBtnElem.textContent = 'Read more';
-        }
-      });
-      isReadMoreBtnEventBound = true;
-    }
+    let tabs = document.querySelector('.tabs-nav') as HTMLElement;
+    tabs?.addEventListener('click', (event: Event) => {
+      const target = event.target as Element;
+      if (target.classList.contains('sn-fix-analysis')) {
+        fixAnalysisTab.classList.add('is-selected');
+        fixAnalysisContent.classList.add('is-selected');
+        vulnOverviewTab.classList.remove('is-selected');
+        vulnOverviewContent.classList.remove('is-selected');
+      } else {
+        vulnOverviewContent.classList.add('is-selected');
+        vulnOverviewTab.classList.add('is-selected');
+        fixAnalysisTab.classList.remove('is-selected');
+        fixAnalysisContent.classList.remove('is-selected');
+      }
+    });
   }
 
   function sendMessage(message: {

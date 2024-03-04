@@ -25,8 +25,8 @@ ul {
   padding-left: var(--container-paddding);
 }
 
-body > *,
-form > * {
+body>*,
+form>* {
   margin-block-start: var(--input-margin-vertical);
   margin-block-end: var(--input-margin-vertical);
 }
@@ -35,8 +35,16 @@ form > * {
   outline-color: var(--vscode-focusBorder) !important;
 }
 
-a {
+p {
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
+a,
+.link {
+  cursor: pointer;
   color: var(--vscode-textLink-foreground);
+  fill: currentColor;
 }
 
 a:hover,
