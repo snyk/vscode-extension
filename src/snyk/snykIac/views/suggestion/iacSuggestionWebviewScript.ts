@@ -6,6 +6,8 @@
 /// <reference lib="dom" />
 // This script will be run within the webview itself
 
+declare const acquireVsCodeApi: any;
+
 // It cannot access the main VS Code APIs directly.
 (function () {
   // TODO: Redefine types until bundling is introduced into extension

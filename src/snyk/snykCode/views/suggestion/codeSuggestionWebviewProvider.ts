@@ -2,13 +2,21 @@ import _ from 'lodash';
 import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
+  SNYK_CODE_FIX_DIFFS_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
-import { CodeIssueData, ExampleCommitFix, Issue, Marker, Point } from '../../../common/languageServer/types';
+import {
+  AutofixUnifiedDiffSuggestion,
+  CodeIssueData,
+  ExampleCommitFix,
+  Issue,
+  Marker,
+  Point,
+} from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
@@ -205,6 +213,23 @@ export class CodeSuggestionWebviewProvider
           this.panel?.dispose();
           break;
         }
+        case 'getAutofixDiff': {
+          const { baseDir, uri } = args as {
+            baseDir: string;
+            uri: string;
+          };
+          const vscodeUri = vscode.Uri.file(uri);
+          console.log('getAutofixDiff', baseDir, vscodeUri, this.openIssueId); // TODO remove
+          const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
+            SNYK_CODE_FIX_DIFFS_COMMAND,
+            baseDir,
+            vscodeUri,
+            this.openIssueId,
+          );
+          console.log('posting diffs', diffs); // TODO remove
+          void this.panel?.webview.postMessage({ type: 'setAutofixDiff', args: diffs });
+          break;
+        }
         default: {
           throw new Error('Unknown message type');
         }
@@ -332,7 +357,36 @@ export class CodeSuggestionWebviewProvider
 
           <section class="delimiter-top" hidden>
             <p id="info-top" class="font-light">
-              This type of <span class="issue-type">issue</span> was fixed in <span id="dataset-number"></span> open source projects. Here are <span id="example-number"></span> examples:
+              This type of <span class="issue-type">issue</span> can be fixed by our AI. Here are <span id="diff-number"></span> diffs:
+            </p>
+            <div id="info-no-diffs" class="font-light">
+              There are no fix diffs for this issue.
+            </div>
+            <div id="diff-top" class="row between">
+              <div id="current-diff" class="repo clickable">
+                <img class="repo-icon icon" src="${images['icon-github']}"></img>
+                <span id="diff-link" class="repo-link"></span>
+              </div>
+              <div class="diffs-nav">
+                <span id="previous-diff" class="arrow" title="Previous diff">
+                  <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
+                  <img src=${images['arrow-left-light']} class="arrow-icon light-only"></img>
+                </span>
+                <span id="diff-text">
+                  diff <strong id="diff-counter">1</strong>/<span id="diff-number2"></span>
+                </span>
+                <span id="next-diff" class="arrow" title="Next diff">
+                  <img src=${images['arrow-right-dark']} class="arrow-icon dark-only"></img>
+                  <img src=${images['arrow-right-light']} class="arrow-icon light-only"></img>
+                </span>
+              </div>
+            </div>
+            <div id="diff"></div>
+          </section>
+
+          <section class="delimiter-top" hidden>
+            <p id="info-top" class="font-light">
+              This type of <span class="issue-type">issue</span> was fixed in <span id="dataset-number"></span> open source projects. Here are <span id="diff-number"></span> diffs:
             </p>
             <div id="info-no-examples" class="font-light">
               There are no fix examples for this issue.
