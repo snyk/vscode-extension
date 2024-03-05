@@ -7,7 +7,7 @@
 /// <reference lib="dom" />
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
-import { AutofixUnifiedDiffSuggestion } from '../../../common/languageServer/types';
+// import { AutofixUnifiedDiffSuggestion } from '../../../common/languageServer/types';
 
 declare const acquireVsCodeApi: any;
 
@@ -89,7 +89,7 @@ declare const acquireVsCodeApi: any;
 
     diffTopElem: document.getElementById('diff-top') as HTMLElement,
     diffElem: document.getElementById('diff') as HTMLElement,
-    noDiffsElem: document.getElementById('info-no-diff') as HTMLElement,
+    noDiffsElem: document.getElementById('info-no-diffs') as HTMLElement,
     diffNumElem: document.getElementById('diff-number') as HTMLElement,
     diffNum2Elem: document.getElementById('diff-number2') as HTMLElement,
 
@@ -404,8 +404,8 @@ declare const acquireVsCodeApi: any;
     diffTopElem.className = 'row between';
     diffElem.className = '';
 
-    diffNumElem.innerHTML = suggestion.diffs.length.toString();
-    diffNum2Elem.innerHTML = suggestion.diffs.length.toString();
+    diffNumElem.innerHTML = suggestion.diffs?.length.toString();
+    diffNum2Elem.innerHTML = suggestion.diffs?.length.toString();
     noDiffsElem.className = 'hidden';
     showCurrentDiff();
     // } else {
@@ -417,9 +417,7 @@ declare const acquireVsCodeApi: any;
     if (suggestion?.exampleCommitFixes?.length) {
       exampleTopElem.className = 'row between';
       exampleElem.className = '';
-
       exNumElem.innerHTML = suggestion.exampleCommitFixes.length.toString();
-
       exNum2Elem.innerHTML = suggestion.exampleCommitFixes.length.toString();
       noExamplesElem.className = 'hidden';
       showCurrentExample();

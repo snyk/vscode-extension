@@ -325,9 +325,8 @@ export class CodeSuggestionWebviewProvider
           </section>
 
           <section class="ai-fix">
-            <div class="sn-"
             <p>⚡ Fix this issue by generating a solution using DeepCode AI</p>
-            <button class="generate-ai-fix" hidden>Generate AI fix <span class="wide">using DeepCode AI</span></button>
+            <button class="generate-ai-fix">Generate AI fix <span class="wide">using DeepCode AI</span></button>
 
 
             <div class="sn-loading">
@@ -363,10 +362,6 @@ export class CodeSuggestionWebviewProvider
               There are no fix diffs for this issue.
             </div>
             <div id="diff-top" class="row between">
-              <div id="current-diff" class="repo clickable">
-                <img class="repo-icon icon" src="${images['icon-github']}"></img>
-                <span id="diff-link" class="repo-link"></span>
-              </div>
               <div class="diffs-nav">
                 <span id="previous-diff" class="arrow" title="Previous diff">
                   <img src=${images['arrow-left-dark']} class="arrow-icon dark-only"></img>
@@ -386,7 +381,7 @@ export class CodeSuggestionWebviewProvider
 
           <section class="delimiter-top" hidden>
             <p id="info-top" class="font-light">
-              This type of <span class="issue-type">issue</span> was fixed in <span id="dataset-number"></span> open source projects. Here are <span id="diff-number"></span> diffs:
+              This type of <span class="issue-type">issue</span> was fixed in <span id="dataset-number"></span> open source projects. Here are <span id="example-number"></span> examples:
             </p>
             <div id="info-no-examples" class="font-light">
               There are no fix examples for this issue.
