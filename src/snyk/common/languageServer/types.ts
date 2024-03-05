@@ -5,6 +5,7 @@ export enum ScanProduct {
 }
 
 export type InProgress = 'inProgress';
+
 export enum ScanStatus {
   InProgress = 'inProgress',
   Success = 'success',
@@ -115,4 +116,9 @@ export type IacIssueData = {
   path?: string[];
   resolve?: string;
   references?: string[];
+};
+
+export type AutofixUnifiedDiffSuggestion = {
+  fixId: string;
+  unifiedDiffsPerFile: { [key: string]: string };
 };

@@ -3,11 +3,9 @@ import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { ScanModeService } from '../../base/services/scanModeService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
-import { IssueUtils } from '../../snykCode/utils/issueUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssService } from '../../snykOss/ossService';
-import { IAnalytics } from '../analytics/itly';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_LOGIN_COMMAND,
@@ -16,7 +14,7 @@ import {
   SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL, IDE_NAME, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { COMMAND_DEBOUNCE_INTERVAL, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../languageServer/types';
@@ -45,7 +43,6 @@ export class CommandController {
     private window: IVSCodeWindow,
     private languageServer: ILanguageServer,
     private logger: ILog,
-    private analytics: IAnalytics,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -112,13 +109,6 @@ export class CommandController {
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
-
-      this.analytics.logIssueInTreeIsClicked({
-        ide: IDE_NAME,
-        issueId: decodeURIComponent(issue.id),
-        issueType: IssueUtils.getIssueType(issue.additionalData.isSecurityType),
-        severity: IssueUtils.issueSeverityAsText(issue.severity),
-      });
     } else if (arg.issueType == OpenCommandIssueType.OssVulnerability) {
       const issueArgs = arg.issue as CodeIssueCommandArg;
       const folderPath = issueArgs.folderPath;
@@ -136,13 +126,6 @@ export class CommandController {
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
-
-      this.analytics.logIssueInTreeIsClicked({
-        ide: IDE_NAME,
-        issueId: issue.id,
-        issueType: 'Open Source Vulnerability',
-        severity: IssueUtils.issueSeverityAsText(issue.severity),
-      });
     } else if (arg.issueType == OpenCommandIssueType.IacIssue) {
       const issueArgs = arg.issue as IacIssueCommandArg;
       const issue = this.iacService.getIssue(issueArgs.folderPath, issueArgs.id);
@@ -158,13 +141,6 @@ export class CommandController {
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
-
-      this.analytics.logIssueInTreeIsClicked({
-        ide: IDE_NAME,
-        issueId: issue.id,
-        issueType: 'Infrastructure as Code Issue',
-        severity: IssueUtils.issueSeverityAsText(issue.severity),
-      });
     }
   }
 

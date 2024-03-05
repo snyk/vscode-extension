@@ -45,7 +45,6 @@ suite('Language Server', () => {
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
       },
-      shouldReportEvents: true,
       shouldReportErrors: true,
       getSnykLanguageServerPath(): string {
         return path;
@@ -205,7 +204,6 @@ suite('Language Server', () => {
         activateSnykIac: 'true',
         token: 'testToken',
         cliPath: 'testPath',
-        enableTelemetry: 'true',
         sendErrorReports: 'true',
         integrationName: 'VS_CODE',
         integrationVersion: '0.0.0',

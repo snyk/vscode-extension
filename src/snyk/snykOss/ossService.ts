@@ -1,5 +1,4 @@
 import { Subscription } from 'rxjs';
-import { IAnalytics } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
@@ -27,7 +26,6 @@ export class OssService extends ProductService<OssIssueData> {
     languageServer: ILanguageServer,
     languages: IVSCodeLanguages,
     logger: ILog,
-    readonly analytics: IAnalytics,
   ) {
     super(
       extensionContext,
@@ -42,7 +40,7 @@ export class OssService extends ProductService<OssIssueData> {
     );
 
     this.registerCodeActionsProvider(
-      new OssCodeActionsProvider(languages, codeActionAdapter, codeActionKindAdapter, this.result, analytics),
+      new OssCodeActionsProvider(languages, codeActionAdapter, codeActionKindAdapter, this.result),
     );
   }
 

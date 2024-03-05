@@ -19,35 +19,6 @@ suite('CliProcess', () => {
     logger = new LoggerMock();
   });
 
-  test('Sets DISABLE_ANALYTICS when telemetry is off ', async () => {
-    const process = new CliProcess(
-      logger,
-      {
-        shouldReportEvents: false,
-        getToken: () => Promise.resolve(),
-        snykOssApiEndpoint: snykOssApiEndpoint,
-      } as IConfiguration,
-      emptyWorkspace,
-    );
-    const vars = await process.getProcessEnv();
-    strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), true);
-  });
-
-  test("Doesn't set DISABLE_ANALYTICS when telemetry is on ", async () => {
-    const process = new CliProcess(
-      logger,
-      {
-        shouldReportEvents: true,
-        getToken: () => Promise.resolve(),
-        snykOssApiEndpoint: snykOssApiEndpoint,
-      } as IConfiguration,
-      emptyWorkspace,
-    );
-    const vars = await process.getProcessEnv();
-
-    strictEqual(Object.keys(vars).includes('SNYK_CFG_DISABLE_ANALYTICS'), false);
-  });
-
   test('Sets correct integration name, version, token, API endpoint and organization', async () => {
     const token = 'fake-token';
     const snykOssApiEndpoint = 'https://snyk.io/api/';
@@ -102,7 +73,6 @@ suite('CliProcess', () => {
     const process = new CliProcess(
       logger,
       {
-        shouldReportEvents: true,
         getToken: () => Promise.resolve(),
         snykOssApiEndpoint: snykOssApiEndpoint,
       } as IConfiguration,

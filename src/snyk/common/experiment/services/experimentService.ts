@@ -42,11 +42,7 @@ export class ExperimentService {
 
     const variants = await this.fetchVariants(forceFetchVariants);
     const variant = variants[variantFlag];
-    if (variant?.value === 'on') {
-      return true;
-    }
-
-    return false;
+    return variant?.value === 'on';
   }
 
   private async fetchVariants(forceFetchVariants: boolean): Promise<Variants> {
@@ -67,5 +63,5 @@ export class ExperimentService {
     return this.variants;
   }
 
-  private canExperiment = this.configuration.shouldReportEvents;
+  private canExperiment = true;
 }

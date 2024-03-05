@@ -6,9 +6,7 @@ on:
 jobs:
   build:
     uses: snyk/vscode-extension/.github/workflows/ci.yaml@main
-    secrets:
-      ITERATIVELY_KEY: ${{ secrets.ITERATIVELY_KEY }}
-
+    
   release-preview:
     name: Release Preview
     runs-on: ubuntu-latest
@@ -24,14 +22,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify analytics events
-        run: npm run ampli:verify -- -t ${{ secrets.ITERATIVELY_KEY }}
-
         # Naming convention for the preview version means we can only release one preview per hour
       - name: Patch to preview version
         run: npm run patch-preview
         env:
-          SNYK_VSCE_SEGMENT_WRITE_KEY: ${{ secrets.SNYK_VSCE_SEGMENT_WRITE_KEY }}
           SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY: ${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}
           SNYK_VSCE_SENTRY_DSN_KEY: ${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}
 

@@ -1,6 +1,5 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IAnalytics } from '../../../../snyk/common/analytics/itly';
 import { SNYK_IGNORE_ISSUE_COMMAND, SNYK_OPEN_ISSUE_COMMAND } from '../../../../snyk/common/constants/commands';
 import { CodeIssueData, Issue } from '../../../../snyk/common/languageServer/types';
 import { WorkspaceFolderResult } from '../../../../snyk/common/services/productService';
@@ -12,7 +11,6 @@ import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;
-  let logQuickFixIsDisplayed: sinon.SinonSpy;
 
   setup(() => {
     const codeResults = new Map<string, WorkspaceFolderResult<CodeIssueData>>();
@@ -24,11 +22,6 @@ suite('Snyk Code actions provider', () => {
         },
       } as unknown as Issue<CodeIssueData>,
     ]);
-
-    logQuickFixIsDisplayed = sinon.fake();
-    const analytics = {
-      logQuickFixIsDisplayed,
-    } as unknown as IAnalytics;
 
     const codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({
@@ -51,7 +44,6 @@ suite('Snyk Code actions provider', () => {
       codeActionAdapter,
       codeActionKindAdapter,
       {} as IVSCodeLanguages,
-      analytics,
     );
   });
 
@@ -75,20 +67,5 @@ suite('Snyk Code actions provider', () => {
     strictEqual(codeActions[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
     strictEqual(codeActions[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
     strictEqual(codeActions[2].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
-  });
-
-  test("Logs 'Quick Fix is Displayed' analytical event", () => {
-    // arrange
-    const document = {
-      uri: {
-        fsPath: '//folderName//test.js',
-      },
-    } as unknown as TextDocument;
-
-    // act
-    issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
-
-    // verify
-    strictEqual(logQuickFixIsDisplayed.calledOnce, true);
   });
 });

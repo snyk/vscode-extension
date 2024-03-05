@@ -4,12 +4,10 @@ export class SnykConfiguration {
   private static readonly configFileName = 'snyk.config.json';
   private static readonly localConfigFileName = 'snyk.config.local.json';
 
-  readonly segmentWriteKey: string;
   readonly amplitudeExperimentApiKey: string;
   readonly sentryKey: string;
 
-  constructor(segmentWriteKey: string, amplitudeExperimentApiKey: string, sentryKey: string) {
-    this.segmentWriteKey = segmentWriteKey;
+  constructor(amplitudeExperimentApiKey: string, sentryKey: string) {
     this.amplitudeExperimentApiKey = amplitudeExperimentApiKey;
     this.sentryKey = sentryKey;
   }

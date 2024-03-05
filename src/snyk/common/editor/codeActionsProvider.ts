@@ -1,15 +1,6 @@
-import { IAnalytics, SupportedQuickFixProperties } from '../../common/analytics/itly';
-import { IDE_NAME } from '../../common/constants/general';
-import { Issue } from '../../common/languageServer/types';
-import { ICodeActionKindAdapter } from '../../common/vscode/codeAction';
-import {
-  CodeAction,
-  CodeActionContext,
-  CodeActionKind,
-  CodeActionProvider,
-  Range,
-  TextDocument,
-} from '../../common/vscode/types';
+import { Issue } from '../languageServer/types';
+import { ICodeActionKindAdapter } from '../vscode/codeAction';
+import { CodeAction, CodeActionContext, CodeActionProvider, Range, TextDocument } from '../vscode/types';
 import { ProductResult } from '../services/productService';
 
 export abstract class CodeActionsProvider<T> implements CodeActionProvider {
@@ -18,19 +9,11 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
   constructor(
     protected readonly issues: ProductResult<T>,
     private readonly codeActionKindAdapter: ICodeActionKindAdapter,
-    protected readonly analytics: IAnalytics,
   ) {}
 
   abstract getActions(folderPath: string, document: TextDocument, issue: Issue<T>, issueRange?: Range): CodeAction[];
 
-  abstract getAnalyticsActionTypes(): [string, ...string[]] &
-    [SupportedQuickFixProperties, ...SupportedQuickFixProperties[]];
-
   abstract getIssueRange(issue: Issue<T>): Range;
-
-  getProvidedCodeActionKinds(): CodeActionKind[] {
-    return this.providedCodeActionKinds;
-  }
 
   public provideCodeActions(
     document: TextDocument,
@@ -53,16 +36,8 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
         continue;
       }
 
-      const codeActions = this.getActions(folderPath, document, issue, range);
-      const analyticsType = this.getAnalyticsActionTypes();
-
-      this.analytics.logQuickFixIsDisplayed({
-        quickFixType: analyticsType,
-        ide: IDE_NAME,
-      });
-
       // returns list of actions, all new actions should be added to this list
-      return codeActions;
+      return this.getActions(folderPath, document, issue, range);
     }
 
     return undefined;

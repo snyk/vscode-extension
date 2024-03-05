@@ -21,6 +21,7 @@ yarn-error.log
 #################################
 .idea/
 *.iml
+.vscode/
 
 #################################
 # Logs and temp files           #

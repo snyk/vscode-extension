@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import AdvisorProvider from './advisor/services/advisorProvider';
-import { AdvisorService } from './advisor/services/advisorService';
 import { IExtension } from './base/modules/interfaces';
 import SnykLib from './base/modules/snykLib';
 import { AuthenticationService } from './base/services/authenticationService';
@@ -8,7 +6,6 @@ import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { messages } from './cli/messages/messages';
-import { Iteratively } from './common/analytics/itly';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
@@ -21,14 +18,13 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SETTINGS_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
+  SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
-import { MEMENTO_FIRST_INSTALL_DATE_KEY } from './common/constants/globalState';
 import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
@@ -53,7 +49,6 @@ import { CodeActionAdapter } from './common/vscode/codeAction';
 import { vsCodeCommands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
-import { HoverAdapter } from './common/vscode/hover';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
@@ -121,18 +116,10 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.user = await User.getAnonymous(this.context, Logger);
 
-    this.analytics = new Iteratively(this.user, Logger, configuration, snykConfiguration);
-
     SecretStorageAdapter.init(vscodeContext);
 
-    this.configurationWatcher = new ConfigurationWatcher(this.analytics, Logger);
-    this.notificationService = new NotificationService(
-      vsCodeWindow,
-      vsCodeCommands,
-      configuration,
-      this.analytics,
-      Logger,
-    );
+    this.configurationWatcher = new ConfigurationWatcher(Logger);
+    this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
 
@@ -142,7 +129,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this,
       configuration,
       vsCodeWindow,
-      this.analytics,
       Logger,
       languageClientAdapter,
       vsCodeCommands,
@@ -152,9 +138,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
-    this.scanModeService = new ScanModeService(this.contextService, configuration, this.analytics);
+    this.scanModeService = new ScanModeService(this.contextService, configuration);
 
-    this.advisorService = new AdvisorProvider(this.advisorApiClient, Logger);
     this.downloadService = new DownloadService(
       this.context,
       configuration,
@@ -197,7 +182,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       vsCodeLanguages,
       Logger,
-      this.analytics,
     );
 
     const ossSuggestionProvider = new OssDetailPanelProvider(
@@ -220,7 +204,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       vsCodeLanguages,
       Logger,
-      this.analytics,
     );
 
     const iacSuggestionProvider = new IacSuggestionWebviewProvider(
@@ -243,7 +226,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       vsCodeLanguages,
       Logger,
-      this.analytics,
     );
 
     this.commandController = new CommandController(
@@ -258,7 +240,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWindow,
       this.languageServer,
       Logger,
-      this.analytics,
     );
     this.registerCommands(vscodeContext);
 
@@ -301,10 +282,7 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: new EmptyTreeDataProvider(),
     });
 
-    vscodeContext.subscriptions.push(
-      welcomeTree.onDidChangeVisibility(e => this.onDidChangeWelcomeViewVisibility(e.visible)),
-      codeEnablementTree,
-    );
+    vscodeContext.subscriptions.push(codeEnablementTree);
 
     const ossIssueProvider = new OssIssueTreeProvider(
       this.viewManagerService,
@@ -363,10 +341,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
 
-    this.analytics.load();
     this.experimentService.load();
-
-    this.logPluginIsInstalled();
 
     this.initDependencyDownload();
 
@@ -383,26 +358,9 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       Logger,
       new EditorDecorator(vsCodeWindow, vsCodeLanguages, new ThemeColorAdapter()),
-      this.analytics,
       configuration,
     );
     this.ossVulnerabilityCountService.activate();
-
-    this.advisorScoreDisposable = new AdvisorService(
-      vsCodeWindow,
-      vsCodeLanguages,
-      this.advisorService,
-      Logger,
-      vsCodeWorkspace,
-      this.advisorApiClient,
-      new ThemeColorAdapter(),
-      new HoverAdapter(),
-      this.markdownStringAdapter,
-      configuration,
-    );
-
-    // noinspection ES6MissingAwait
-    void this.advisorScoreDisposable.activate();
 
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
@@ -418,22 +376,12 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
-    await this.analytics.flush();
     await ErrorReporter.flush();
   }
 
   public async restartLanguageServer(): Promise<void> {
     await this.languageServer.stop();
     await this.languageServer.start();
-  }
-
-  private logPluginIsInstalled(): void {
-    // Use memento until lifecycle hooks are implemented
-    // https://github.com/microsoft/vscode/issues/98732
-    if (!this.context.getGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY)) {
-      this.analytics.logPluginIsInstalled();
-      void this.context.updateGlobalStateValue(MEMENTO_FIRST_INSTALL_DATE_KEY, Date.now());
-    }
   }
 
   private initDependencyDownload(): DownloadService {

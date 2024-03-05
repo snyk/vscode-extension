@@ -4,9 +4,7 @@ on:
     branches:
       - 'main'
   workflow_call:
-    secrets:
-      ITERATIVELY_KEY:
-        required: true
+
 jobs:
   build:
     name: Build and Test

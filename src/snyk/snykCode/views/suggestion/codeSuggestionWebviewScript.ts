@@ -7,6 +7,8 @@
 /// <reference lib="dom" />
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
+import { AutofixUnifiedDiffSuggestion } from '../../../common/languageServer/types';
+
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
@@ -57,10 +59,16 @@ declare const acquireVsCodeApi: any;
     rows: Point;
     priorityScore: number;
     hasAIFix: boolean;
+    diffs: AutofixUnifiedDiffSuggestion[];
   };
   type CurrentSeverity = {
     value: number;
     text: string;
+  };
+
+  type AutofixUnifiedDiffSuggestion = {
+    fixId: string;
+    unifiedDiffsPerFile: { [key: string]: string };
   };
 
   const vscode = acquireVsCodeApi();
@@ -79,6 +87,12 @@ declare const acquireVsCodeApi: any;
     datasetElem: document.getElementById('dataset-number') as HTMLElement,
     infoTopElem: document.getElementById('info-top') as HTMLElement,
 
+    diffTopElem: document.getElementById('diff-top') as HTMLElement,
+    diffElem: document.getElementById('diff') as HTMLElement,
+    noDiffsElem: document.getElementById('info-no-diff') as HTMLElement,
+    diffNumElem: document.getElementById('diff-number') as HTMLElement,
+    diffNum2Elem: document.getElementById('diff-number2') as HTMLElement,
+
     exampleTopElem: document.getElementById('example-top') as HTMLElement,
     exampleElem: document.getElementById('example') as HTMLElement,
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
@@ -94,6 +108,7 @@ declare const acquireVsCodeApi: any;
   }
 
   let exampleCount = 0;
+  let diffCount = 0;
 
   // Try to restore the previous state
   let lesson: Lesson | null = vscode.getState()?.lesson || null;
@@ -105,6 +120,7 @@ declare const acquireVsCodeApi: any;
     if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
   }
+
   function navigateToIssue(_e: any, range: any) {
     if (!suggestion) return;
     sendMessage({
@@ -112,6 +128,7 @@ declare const acquireVsCodeApi: any;
       args: getSuggestionPosition(suggestion, range),
     });
   }
+
   function navigateToCurrentExample() {
     if (!suggestion?.exampleCommitFixes) return;
 
@@ -121,6 +138,7 @@ declare const acquireVsCodeApi: any;
       args: { url },
     });
   }
+
   function ignoreIssue(lineOnly: boolean) {
     if (!suggestion) return;
 
@@ -136,6 +154,7 @@ declare const acquireVsCodeApi: any;
       },
     });
   }
+
   function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
       uri: position?.file ?? suggestionParam.uri,
@@ -144,17 +163,48 @@ declare const acquireVsCodeApi: any;
       suggestionUri: suggestionParam.uri,
     };
   }
+
+  function nextDiff() {
+    if (!suggestion || !suggestion.diffs || diffCount >= suggestion.diffs.length - 1) return;
+    ++diffCount;
+    showCurrentDiff();
+  }
+
+  function previousDiff() {
+    if (!suggestion || !suggestion.diffs || diffCount <= 0) return;
+    --diffCount;
+    showCurrentDiff();
+  }
+
   function previousExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount <= 0) return;
     --exampleCount;
     showCurrentExample();
   }
+
   function nextExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount >= suggestion.exampleCommitFixes.length - 1)
       return;
     ++exampleCount;
     showCurrentExample();
   }
+
+  function showCurrentDiff() {
+    if (!suggestion?.diffs?.length || diffCount < 0 || diffCount >= suggestion.diffs.length) return;
+    const counter = document.getElementById('diff-counter')!;
+    counter.innerHTML = (diffCount + 1).toString();
+
+    const diffSuggestion = suggestion.diffs[diffCount];
+    const diff = document.getElementById('diff')!;
+    diff.querySelectorAll('*').forEach(n => n.remove());
+    const unifiedDiffElement = document.createElement('div');
+    unifiedDiffElement.className = `example-line`; // TODO add line color
+    diff.appendChild(unifiedDiffElement);
+    const code = document.createElement('code');
+    code.innerHTML = diffSuggestion.unifiedDiffsPerFile[suggestion.uri];
+    unifiedDiffElement.appendChild(code);
+  }
+
   function showCurrentExample() {
     if (
       !suggestion?.exampleCommitFixes?.length ||
@@ -272,6 +322,11 @@ declare const acquireVsCodeApi: any;
       exampleTopElem,
       exampleElem,
       noExamplesElem,
+      diffTopElem,
+      diffElem,
+      noDiffsElem,
+      diffNumElem,
+      diffNum2Elem,
       exNumElem,
       exNum2Elem,
     } = elements;
@@ -307,7 +362,7 @@ declare const acquireVsCodeApi: any;
 
         let markLineText = '[';
         let first = true;
-        let uniqueRows = new Set();
+        const uniqueRows = new Set();
 
         for (const p of m.pos) {
           const rowStart = Number(p.rows[0]) + 1; // editors are 1-based
@@ -343,6 +398,21 @@ declare const acquireVsCodeApi: any;
     } else {
       infoTopElem.classList.add('hidden');
     }
+
+    // TODO fix
+    // if (suggestion?.diffs?.length) {
+    diffTopElem.className = 'row between';
+    diffElem.className = '';
+
+    diffNumElem.innerHTML = suggestion.diffs.length.toString();
+    diffNum2Elem.innerHTML = suggestion.diffs.length.toString();
+    noDiffsElem.className = 'hidden';
+    showCurrentDiff();
+    // } else {
+    //   diffTopElem.className = 'row between hidden';
+    //   diffElem.className = 'hidden';
+    //   noDiffsElem.className = 'font-light';
+    // }
 
     if (suggestion?.exampleCommitFixes?.length) {
       exampleTopElem.className = 'row between';
@@ -414,7 +484,7 @@ declare const acquireVsCodeApi: any;
       metaElem.appendChild(priorityScoreElement);
     }
 
-    console.log('hasAIFix: ' + suggestion.hasAIFix);
+    console.log(`hasAIFix: ${suggestion.hasAIFix}`);
     if (!suggestion.hasAIFix) {
       document.querySelector('.ai-fix')?.classList.add('hidden');
     } else {
@@ -427,12 +497,12 @@ declare const acquireVsCodeApi: any;
 
     suggestionDetailsElem.innerHTML = suggestion.text;
 
-    let fixAnalysisTab = document.querySelector('.sn-fix-analysis') as HTMLElement;
-    let fixAnalysisContent = document.querySelector('.sn-fix-content') as HTMLElement;
-    let vulnOverviewTab = document.querySelector('.sn-vuln-overview') as HTMLElement;
-    let vulnOverviewContent = document.querySelector('.sn-vuln-content') as HTMLElement;
+    const fixAnalysisTab = document.querySelector('.sn-fix-analysis') as HTMLElement;
+    const fixAnalysisContent = document.querySelector('.sn-fix-content') as HTMLElement;
+    const vulnOverviewTab = document.querySelector('.sn-vuln-overview') as HTMLElement;
+    const vulnOverviewContent = document.querySelector('.sn-vuln-content') as HTMLElement;
 
-    let tabs = document.querySelector('.tabs-nav') as HTMLElement;
+    const tabs = document.querySelector('.tabs-nav') as HTMLElement;
     tabs?.addEventListener('click', (event: Event) => {
       const target = event.target as Element;
       if (target.classList.contains('sn-fix-analysis')) {
@@ -497,6 +567,13 @@ declare const acquireVsCodeApi: any;
       case 'getLesson': {
         lesson = vscode.getState()?.lesson || null;
         fillLearnLink();
+        break;
+      }
+      case 'setAutoFixDiffs': {
+        if (suggestion) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          suggestion.diffs = args;
+        }
         break;
       }
     }

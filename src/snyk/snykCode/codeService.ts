@@ -1,5 +1,4 @@
 import { Subscription } from 'rxjs';
-import { IAnalytics } from '../common/analytics/itly';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
@@ -27,7 +26,6 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     languageServer: ILanguageServer,
     languages: IVSCodeLanguages,
     logger: ILog,
-    readonly analytics: IAnalytics,
   ) {
     super(
       extensionContext,
@@ -42,7 +40,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     );
 
     this.registerCodeActionsProvider(
-      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, analytics),
+      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages),
     );
   }
 
