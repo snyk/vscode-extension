@@ -114,6 +114,8 @@ class SnykExtension extends SnykLib implements IExtension {
     // if set to true, the option to enable code is not shown in the initialization phase
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, true);
 
+    await this.contextService.setContext(SNYK_CONTEXT.IGNORES_ENABLED, true);
+
     // set the workspace context so that the text to add folders is only shown if really the case
     // initializing after LS startup and just before scan is too late
     const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();

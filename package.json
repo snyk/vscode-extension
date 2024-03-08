@@ -325,6 +325,11 @@
           "group": "navigation"
         },
         {
+          "command": "snyk.showIgnoredFindings",
+          "when": "view == 'snyk.views.analysis.code.security'",
+          "group": "navigation"
+        },
+        {
           "command": "snyk.settings",
           "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
@@ -390,6 +395,11 @@
       {
         "command": "snyk.showLsOutputChannel",
         "title": "Show Language Server Output Channel",
+        "category": "Snyk"
+      },
+      {
+        "command": "snyk.showIgnoredFindings",
+        "title": "Show Ignored Findings",
         "category": "Snyk"
       }
     ]
