@@ -484,9 +484,11 @@ declare const acquireVsCodeApi: any;
 
     console.log(`hasAIFix: ${suggestion.hasAIFix}`);
     if (!suggestion.hasAIFix) {
-      document.querySelector('.ai-fix')?.classList.add('hidden');
+      document.querySelector('.ai-fix')?.classList.add('is-hidden');
+      document.querySelector('.sn-community-fixes')?.classList.remove('is-hidden');
     } else {
-      document.querySelector('.ai-fix')?.classList.remove('hidden');
+      document.querySelector('.ai-fix')?.classList.remove('is-hidden');
+      document.querySelector('.sn-community-fixes')?.classList.add('is-hidden');
     }
   }
 
@@ -515,6 +517,36 @@ declare const acquireVsCodeApi: any;
         fixAnalysisContent.classList.remove('is-selected');
       }
     });
+  }
+
+  const generateAIButton = document.querySelector('.generate-ai-fix');
+  generateAIButton?.addEventListener('click', generateAIfix);
+
+  function toggleLoading(toggle: string) {
+    const loadingIndicator = document.querySelector('.sn-loading');
+    if (toggle === "show") {
+      loadingIndicator?.classList.remove('is-hidden');
+    } else {
+      loadingIndicator?.classList.add('is-hidden');
+    }
+  }
+
+  function toggleFixes(toggle: string) {
+    const fixesSection = document.querySelector('.sn-ai-fixes');
+    if (toggle === "show") {
+      fixesSection?.classList.remove('is-hidden');
+    } else {
+      fixesSection?.classList.add('is-hidden');
+    }
+  }
+
+  function generateAIfix() {
+    generateAIButton?.classList.add('is-hidden');
+    toggleLoading("show");
+    setTimeout(() => {
+      toggleFixes("show");
+      toggleLoading("hide");
+    }, 15000);
   }
 
   function sendMessage(message: {

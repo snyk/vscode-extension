@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity } from '../../common/languageServer/types';
+import { CodeIssueData, Issue, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
@@ -12,6 +12,9 @@ import { Command, Range } from '../../common/vscode/types';
 
 interface ISeverityCounts {
   [severity: string]: number;
+}
+interface IssueAdditionalData {
+  hasAIFix?: boolean;
 }
 
 export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
@@ -34,6 +37,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       }[severity] || NODE_ICONS.low
     );
   }
+
+  abstract getAIFix(issue: Issue<T>): boolean;
 
   abstract shouldShowTree(): boolean;
   abstract filterIssues(issues: Issue<T>[]): Issue<T>[];
@@ -75,7 +80,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       ];
     }
 
-    const [resultNodes, nIssues] = this.getResultNodes();
+    const [resultNodes, nIssues, AIFixVulnCoun] = this.getResultNodes();
     nodes.push(...resultNodes);
 
     const folderResults = Array.from(this.productService.result.values());
@@ -88,18 +93,23 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     const topNodes = [
       new TreeNode({
-        text: this.getIssueFoundText(nIssues),
+        text: this.getIssueFoundText(nIssues)
       }),
-      this.getDurationTreeNode(),
+      new TreeNode({
+        text: this.getAIFixableIssuesText(AIFixVulnCoun),
+      }),
+      // this.getDurationTreeNode(),
       this.getNoSeverityFiltersSelectedTreeNode(),
     ];
     nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return nodes;
   }
 
-  getResultNodes(): [TreeNode[], number] {
+  getResultNodes(): [TreeNode[], number, number | null] {
     const nodes: TreeNode[] = [];
     let totalVulnCount = 0;
+    let AIFixVulnCoun = 0;
+
 
     for (const result of this.productService.result.entries()) {
       const folderPath = result[0];
@@ -136,6 +146,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           totalVulnCount++;
           folderVulnCount++;
 
+          if (this.getAIFix(issue)) {
+            AIFixVulnCoun++;
+          }
+
           const issueRange = this.getIssueRange(issue);
           const params: {
             text: string;
@@ -155,7 +169,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
             internal: {
               severity: ProductIssueTreeProvider.getSeverityComparatorIndex(issue.severity),
             },
-            command: this.getOpenIssueCommand(issue, folderPath, file),
+            command: this.getOpenIssueCommand(issue, folderPath, file)
           };
           return new TreeNode(params);
         });
@@ -209,17 +223,17 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       }
     }
 
-    return [nodes, totalVulnCount];
+    return [nodes, totalVulnCount, AIFixVulnCoun];
   }
 
   protected getIssueFoundText(nIssues: number): string {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 
-  protected getAIFixableIssuesText(issuesCount: number): string {
-    return issuesCount > 0
-      ? `⚡️ There are ${issuesCount} issue${issuesCount === 1 ? '' : 's'} fixable using DeepCode AI`
-      : 'There are no isses fixable using DeepCode AI Fix';
+  protected getAIFixableIssuesText(issuesCount: number | null): string {
+    return (issuesCount && issuesCount > 0)
+      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'vulnerability' : 'vulnerabilities'} can be fixed using Snyk's DeepCode AI`
+      : 'There are no vulnerabilities fixable using DeepCode AI Fix';
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {

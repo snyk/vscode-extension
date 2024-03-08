@@ -39,8 +39,15 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   }
 
   protected getIssueFoundText(nIssues: number): string {
-    return `Snyk found ${
-      !nIssues ? 'no vulnerabilities! ✅' : `${nIssues} ${nIssues === 1 ? 'vulnerability' : 'vulnerabilities'}`
-    }`;
+    // return `Snyk found ${!nIssues ? 'no vulnerabilities! ✅' : `${nIssues} ${nIssues === 1 ? 'vulnerability' : 'vulnerabilities'}`
+    // }`;
+    let message = "";
+
+    if (nIssues <= 0) {
+      message = '✅ Congrats! No vulnerabilities found!';
+    } else {
+      message = nIssues === 1 ? `${nIssues} vulnerability found by Snyk`  : `✋ ${nIssues} vulnerabilities found by Snyk`;
+    }
+    return message;
   }
 }

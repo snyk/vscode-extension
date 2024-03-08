@@ -42,6 +42,10 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     return fixIcon + title;
   }
 
+  getAIFix(issue: Issue<CodeIssueData>): boolean {
+    return issue.additionalData.hasAIFix ? true : false;
+  }
+
   getIssueRange(issue: Issue<CodeIssueData>): Range {
     return IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
   }

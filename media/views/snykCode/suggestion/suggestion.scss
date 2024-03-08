@@ -20,10 +20,6 @@ button,
   justify-content: center;
 }
 
-.is-hidden {
-  display: none;
-}
-
 .icon {
   vertical-align: middle;
   width: 18px;
@@ -52,9 +48,15 @@ button,
   line-height: 1.6;
 }
 
+.sn-fix-wrapper {
+  padding: 3rem 4rem;
+  background-color: var(--vscode-editor-background);
+  border-radius: .8rem;
+}
+
 .generate-ai-fix {
   width: auto;
-  padding: 12px 16px;
+  padding: 8px 16px;
 }
 
 .suggestion-details {
@@ -359,9 +361,6 @@ button,
 
 .sn-loading {
   display: flex;
-  padding: 3rem 4rem;
-  background-color: var(--vscode-editor-background);
-  border-radius: .8rem;
   color: #fff;
 }
 
@@ -392,6 +391,7 @@ button,
 }
 
 .sn-loading-description {
+  margin-bottom: 0;
   opacity: .75
 }
 
@@ -574,8 +574,14 @@ button,
   }
 }
 
+
 @media (max-width: 600px) {
   .wide {
     display: none;
   }
+}
+
+
+.is-hidden {
+  display: none;
 }
