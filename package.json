@@ -1,7 +1,7 @@
 {
   "name": "snyk-vulnerability-scanner",
   "//": "Changing display name requires change in general.ts",
-  "displayName": "Snyk Security - Code, Open Source Dependencies, IaC Configurations",
+  "displayName": "Snyk Security",
   "version": "0.0.0",
   "description": "Easily find and fix vulnerabilities in your code, open source dependencies, infrastructure as code configurations with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
@@ -52,7 +52,7 @@
   "contributes": {
     "configuration": [
       {
-        "title": "Snyk Security - Code and Open Source Dependencies",
+        "title": "Snyk Security",
         "properties": {
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
