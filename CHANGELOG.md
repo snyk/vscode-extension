@@ -1,6 +1,12 @@
-# Snyk Security - Code and Open Source Dependencies Changelog
+# Snyk Security Changelog
 
-## [2.3.6
+## [2.3.7]
+
+### Fixes
+- fix: shortened plugin name to just Snyk Security
+
+## [2.3.6]
+
 ### Changes
 - Removed Amplitude telemetry and corresponding setting from VSCode
 
