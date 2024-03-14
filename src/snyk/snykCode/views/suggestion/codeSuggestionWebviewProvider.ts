@@ -229,7 +229,6 @@ export class CodeSuggestionWebviewProvider
         }
         case 'getAutofixDiffs': {
           const suggestion = args.suggestion as Suggestion
-          // const vscodeUri = vscode.Uri.file(uri);
           console.log('getAutofixDiffs', suggestion.folderPath, suggestion.uri, this.openIssueId); // TODO remove
           const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
             SNYK_CODE_FIX_DIFFS_COMMAND,
@@ -238,7 +237,7 @@ export class CodeSuggestionWebviewProvider
             this.openIssueId,
           );
           console.log('posting diffs', diffs); // TODO remove
-          void this.panel?.webview.postMessage({ type: 'setAutofixDiff', args: diffs });
+          void this.panel?.webview.postMessage({ type: 'setAutofixDiffs', args: diffs });
           break;
         }
         default: {
