@@ -482,7 +482,6 @@ declare const acquireVsCodeApi: any;
       metaElem.appendChild(priorityScoreElement);
     }
 
-    console.log(`hasAIFix: ${suggestion.hasAIFix}`);
     if (!suggestion.hasAIFix) {
       document.querySelector('.ai-fix')?.classList.add('is-hidden');
       document.querySelector('.sn-community-fixes')?.classList.remove('is-hidden');
@@ -545,8 +544,13 @@ declare const acquireVsCodeApi: any;
     toggleLoading("show");
     setTimeout(() => {
       toggleFixes("show");
+      const message = {
+        type: "getAutofixDiffs",
+        args: { suggestion }
+      }
+      sendMessage(message)
       toggleLoading("hide");
-    }, 15000);
+    }, 1500);
   }
 
   function sendMessage(message: {

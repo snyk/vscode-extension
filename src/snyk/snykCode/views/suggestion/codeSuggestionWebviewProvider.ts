@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { forEach } from 'lodash';
 import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
@@ -51,6 +51,7 @@ type Suggestion = {
   cols: Point;
   rows: Point;
   hasAIFix?: boolean;
+  folderPath?: string;
 };
 
 export class CodeSuggestionWebviewProvider
@@ -161,6 +162,17 @@ export class CodeSuggestionWebviewProvider
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
     const parsedDetails = marked.parse(issue.additionalData.text) as string;
+    // get the workspace folders
+    // look at the filepath and identify the folder that contains the filepath
+    let workspaceFolder = ""
+    for (let i = 0; i < this.workspace.getWorkspaceFolders.length; i++) {
+      const element = this.workspace.getWorkspaceFolders[i];
+      if (issue.filePath.startsWith(element)){
+        workspaceFolder = element;
+        break
+      }
+    }
+    this.workspace.getWorkspaceFolders
     return {
       id: issue.id,
       title: issue.title,
@@ -168,7 +180,8 @@ export class CodeSuggestionWebviewProvider
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
       text: parsedDetails,
-      hasAIFix: issue.additionalData.hasAIFix
+      hasAIFix: issue.additionalData.hasAIFix,
+      folderPath: workspaceFolder
     };
   }
 
@@ -215,16 +228,13 @@ export class CodeSuggestionWebviewProvider
           break;
         }
         case 'getAutofixDiff': {
-          const { baseDir, uri } = args as {
-            baseDir: string;
-            uri: string;
-          };
-          const vscodeUri = vscode.Uri.file(uri);
-          console.log('getAutofixDiff', baseDir, vscodeUri, this.openIssueId); // TODO remove
+          const suggestion = args as Suggestion
+          // const vscodeUri = vscode.Uri.file(uri);
+          console.log('getAutofixDiff', suggestion.folderPath, suggestion.uri, this.openIssueId); // TODO remove
           const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
             SNYK_CODE_FIX_DIFFS_COMMAND,
-            baseDir,
-            vscodeUri,
+            suggestion.folderPath,
+            suggestion.uri,
             this.openIssueId,
           );
           console.log('posting diffs', diffs); // TODO remove

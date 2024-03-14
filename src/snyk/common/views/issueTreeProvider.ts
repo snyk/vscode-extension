@@ -38,7 +38,13 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     );
   }
 
-  abstract getAIFix(issue: Issue<T>): boolean;
+  getAIFix(issue: Issue<T>): boolean {
+    const myIssue = issue as unknown as Issue<CodeIssueData>
+    if (myIssue.additionalData.hasAIFix) {
+      return true
+    }
+    return false
+  }
 
   abstract shouldShowTree(): boolean;
   abstract filterIssues(issues: Issue<T>[]): Issue<T>[];
@@ -232,8 +238,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   protected getAIFixableIssuesText(issuesCount: number | null): string {
     return (issuesCount && issuesCount > 0)
-      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'vulnerability' : 'vulnerabilities'} can be fixed using Snyk's DeepCode AI`
-      : 'There are no vulnerabilities fixable using DeepCode AI Fix';
+      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'vulnerability' : 'vulnerabilities'} can be fixed using DeepCode AI`
+      : 'There are no vulnerabilities fixable using DeepCode AI';
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
