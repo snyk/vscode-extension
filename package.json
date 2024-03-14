@@ -45,7 +45,8 @@
   ],
   "activationEvents": [
     "onWebviewPanel:snyk.views.suggestion.code",
-    "onWebviewPanel:snyk.views.suggestion.oss"
+    "onWebviewPanel:snyk.views.suggestion.oss",
+    "*"
   ],
   "main": "./out/extension.js",
   "types": "./out/extension.d.ts",
