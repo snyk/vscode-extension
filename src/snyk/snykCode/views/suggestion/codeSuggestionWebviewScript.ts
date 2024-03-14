@@ -60,7 +60,9 @@ declare const acquireVsCodeApi: any;
     priorityScore: number;
     hasAIFix: boolean;
     diffs: AutofixUnifiedDiffSuggestion[];
+    folderPath: string;
   };
+
   type CurrentSeverity = {
     value: number;
     text: string;

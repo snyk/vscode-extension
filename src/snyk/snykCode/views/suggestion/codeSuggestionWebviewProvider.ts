@@ -51,7 +51,7 @@ type Suggestion = {
   cols: Point;
   rows: Point;
   hasAIFix?: boolean;
-  folderPath?: string;
+  folderPath: string;
 };
 
 export class CodeSuggestionWebviewProvider
@@ -227,10 +227,10 @@ export class CodeSuggestionWebviewProvider
           this.panel?.dispose();
           break;
         }
-        case 'getAutofixDiff': {
-          const suggestion = args as Suggestion
+        case 'getAutofixDiffs': {
+          const suggestion = args.suggestion as Suggestion
           // const vscodeUri = vscode.Uri.file(uri);
-          console.log('getAutofixDiff', suggestion.folderPath, suggestion.uri, this.openIssueId); // TODO remove
+          console.log('getAutofixDiffs', suggestion.folderPath, suggestion.uri, this.openIssueId); // TODO remove
           const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
             SNYK_CODE_FIX_DIFFS_COMMAND,
             suggestion.folderPath,
