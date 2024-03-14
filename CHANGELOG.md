@@ -1,6 +1,10 @@
 # Snyk Security Changelog
 
-## [2.3.7]
+## [2.3.9]
+### Fixes
+- do not restrict activation of extension (auto-scan on startup)
+
+## [2.3.8]
 
 ### Fixes
 - fix: shortened plugin name to just Snyk Security
