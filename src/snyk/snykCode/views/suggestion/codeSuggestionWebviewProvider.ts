@@ -165,23 +165,21 @@ export class CodeSuggestionWebviewProvider
     // get the workspace folders
     // look at the filepath and identify the folder that contains the filepath
     let workspaceFolder = ""
-    for (let i = 0; i < this.workspace.getWorkspaceFolders.length; i++) {
-      const element = this.workspace.getWorkspaceFolders[i];
+    for (const element of this.workspace.getWorkspaceFolders()) {
       if (issue.filePath.startsWith(element)){
         workspaceFolder = element;
         break
       }
     }
-    this.workspace.getWorkspaceFolders
     return {
       id: issue.id,
       title: issue.title,
-      uri: issue.filePath,
+      uri: issue.filePath.replace(workspaceFolder + "/", ""),
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
       text: parsedDetails,
       hasAIFix: issue.additionalData.hasAIFix,
-      folderPath: workspaceFolder
+      folderPath: workspaceFolder,
     };
   }
 
