@@ -165,23 +165,21 @@ export class CodeSuggestionWebviewProvider
     // get the workspace folders
     // look at the filepath and identify the folder that contains the filepath
     let workspaceFolder = ""
-    for (let i = 0; i < this.workspace.getWorkspaceFolders.length; i++) {
-      const element = this.workspace.getWorkspaceFolders[i];
+    for (const element of this.workspace.getWorkspaceFolders()) {
       if (issue.filePath.startsWith(element)){
         workspaceFolder = element;
         break
       }
     }
-    this.workspace.getWorkspaceFolders
     return {
       id: issue.id,
       title: issue.title,
-      uri: issue.filePath,
+      uri: issue.filePath.replace(workspaceFolder + "/", ""),
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
       text: parsedDetails,
       hasAIFix: issue.additionalData.hasAIFix,
-      folderPath: workspaceFolder
+      folderPath: workspaceFolder,
     };
   }
 
@@ -229,7 +227,6 @@ export class CodeSuggestionWebviewProvider
         }
         case 'getAutofixDiffs': {
           const suggestion = args.suggestion as Suggestion
-          // const vscodeUri = vscode.Uri.file(uri);
           console.log('getAutofixDiffs', suggestion.folderPath, suggestion.uri, this.openIssueId); // TODO remove
           const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
             SNYK_CODE_FIX_DIFFS_COMMAND,
@@ -238,7 +235,7 @@ export class CodeSuggestionWebviewProvider
             this.openIssueId,
           );
           console.log('posting diffs', diffs); // TODO remove
-          void this.panel?.webview.postMessage({ type: 'setAutofixDiff', args: diffs });
+          void this.panel?.webview.postMessage({ type: 'setAutofixDiffs', args: diffs });
           break;
         }
         default: {

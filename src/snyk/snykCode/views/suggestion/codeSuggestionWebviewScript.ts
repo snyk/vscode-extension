@@ -552,7 +552,7 @@ declare const acquireVsCodeApi: any;
       }
       sendMessage(message)
       toggleLoading("hide");
-    }, 1500);
+    }, 15000);
   }
 
   function sendMessage(message: {
