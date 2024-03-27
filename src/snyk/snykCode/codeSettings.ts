@@ -13,7 +13,7 @@ export interface ICodeSettings {
   getSastSettings(): Promise<SastSettings | undefined>;
 }
 
-export type SastSettings = {
+type SastSettings = {
   sastEnabled: boolean;
   localCodeEngine: {
     enabled: boolean;

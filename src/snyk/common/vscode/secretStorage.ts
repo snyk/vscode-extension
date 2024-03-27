@@ -1,6 +1,6 @@
 import { ExtensionContext, Event, SecretStorage, SecretStorageChangeEvent } from './types';
 
-export interface ISecretStorageAdapter {
+interface ISecretStorageAdapter {
   get(key: string): Promise<string | undefined>;
   store(key: string, value: string): Promise<void>;
   delete(key: string): Promise<void>;

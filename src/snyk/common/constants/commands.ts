@@ -2,7 +2,6 @@
 export const VSCODE_GO_TO_SETTINGS_COMMAND = 'workbench.action.openSettings';
 export const VSCODE_VIEW_CONTAINER_COMMAND = 'workbench.view.extension.snyk';
 export const VSCODE_ADD_COMMENT_COMMAND = 'editor.action.addCommentLine';
-export const VSCODE_VIEW_OSS_VIEW_COMMAND = 'snyk.views.analysis.oss.focus';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
