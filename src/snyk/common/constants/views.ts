@@ -1,5 +1,4 @@
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
-export const SNYK_VIEW_FEATURES = 'snyk.views.features';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';

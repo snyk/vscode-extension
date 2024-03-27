@@ -38,7 +38,7 @@ export type InternalType = {
   isError?: boolean;
 };
 
-export interface INodeOptions {
+interface INodeOptions {
   text: string;
   description?: string;
   descriptionTail?: string;
@@ -56,7 +56,7 @@ export interface INodeOptions {
   internal?: InternalType;
 }
 
-export type INode = TreeItem & {
+type INode = TreeItem & {
   readonly internal: InternalType;
 };
 

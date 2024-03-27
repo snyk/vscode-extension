@@ -1,23 +1,9 @@
 import assert from 'assert';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { LanguageServerSettings, defaultToTrue } from '../../../../snyk/common/languageServer/settings';
+import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
 
 suite('LanguageServerSettings', () => {
-  suite('defaultToTrue', () => {
-    test('should return "true" for undefined values', () => {
-      assert.strictEqual(defaultToTrue(undefined), 'true');
-    });
-
-    test('should return "true" for truthy values', () => {
-      assert.strictEqual(defaultToTrue(true), 'true');
-    });
-
-    test('should return "false" for false values', () => {
-      assert.strictEqual(defaultToTrue(false), 'false');
-    });
-  });
-
   suite('fromConfiguration', () => {
     test('should generate server settings with default true values for undefined feature toggles', async () => {
       const mockUser = { anonymousId: 'anonymous-id' } as User;

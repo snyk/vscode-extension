@@ -16,23 +16,18 @@ export enum DiagnosticSeverity { // map of vscode.DiagnosticSeverity
 }
 
 export type DocumentSelector = vscode.DocumentSelector;
-export type DocumentFilter = vscode.DocumentFilter;
 export type HoverProvider = vscode.HoverProvider;
-export type ProviderResult<T> = vscode.ProviderResult<T>;
 export type TextEditor = vscode.TextEditor;
 export type TextDocument = vscode.TextDocument;
 export type TextDocumentShowOptions = vscode.TextDocumentShowOptions;
 export type ViewColumn = vscode.ViewColumn;
 export type Position = vscode.Position;
 export type Range = vscode.Range;
-export type Selection = vscode.Selection;
 export type SecretStorage = vscode.SecretStorage;
 export type SecretStorageChangeEvent = vscode.SecretStorageChangeEvent;
 export type Event<T> = vscode.Event<T>;
 export type Uri = vscode.Uri;
-export type MarkedString = vscode.MarkedString;
 export type MarkdownString = vscode.MarkdownString;
-export type Hover = vscode.Hover;
 export type CodeAction = vscode.CodeAction;
 export type CodeActionKind = vscode.CodeActionKind;
 export type CodeActionProvider = vscode.CodeActionProvider;
@@ -58,6 +53,5 @@ export type ConfigurationParams = lsc.ConfigurationParams;
 export type CancellationToken = lsc.CancellationToken;
 export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.HandlerSignature;
 export type ResponseError<D = void> = lsc.ResponseError<D>;
-export type InlineValueContext = lsc.InlineValueContext;
 export type InlineValueText = lsc.InlineValueText;
 export type LSPTextDocument = lst.TextDocument;

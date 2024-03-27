@@ -62,7 +62,7 @@ export async function getProxyOptions(
   };
 }
 
-export function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
+function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 

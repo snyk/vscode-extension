@@ -4,7 +4,6 @@ export enum ScanProduct {
   InfrastructureAsCode = 'iac',
 }
 
-export type InProgress = 'inProgress';
 export enum ScanStatus {
   InProgress = 'inProgress',
   Success = 'success',
@@ -99,7 +98,7 @@ export type OssIssueData = {
 
   details: string;
 };
-export type Identifiers = {
+type Identifiers = {
   CWE: string[];
   CVE: string[];
 };

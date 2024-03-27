@@ -31,7 +31,7 @@ export interface IVSCodeLanguages {
   ): Disposable;
 }
 
-export class VSCodeLanguages implements IVSCodeLanguages {
+class VSCodeLanguages implements IVSCodeLanguages {
   registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable {
     return vscode.languages.registerHoverProvider(selector, provider);
   }

@@ -4,7 +4,7 @@ import { CodeIssueData, IssueSeverity } from '../../common/languageServer/types'
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Diagnostic, Position, Range } from '../../common/vscode/types';
 
-export type IssuePlacementPosition = {
+type IssuePlacementPosition = {
   cols: {
     start: number;
     end: number;

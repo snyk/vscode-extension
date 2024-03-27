@@ -4,7 +4,7 @@ export interface IVSCodeCommands {
   executeCommand<T>(command: string, ...rest: unknown[]): Thenable<T | undefined>;
 }
 
-export class VSCodeCommands implements IVSCodeCommands {
+class VSCodeCommands implements IVSCodeCommands {
   executeCommand<T>(command: string, ...rest: unknown[]): Thenable<T | undefined> {
     return vscode.commands.executeCommand(command, ...rest);
   }
