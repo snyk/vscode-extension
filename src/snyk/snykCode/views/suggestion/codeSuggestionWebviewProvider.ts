@@ -1,4 +1,5 @@
-import _, { forEach } from 'lodash';
+import _ from 'lodash';
+import { relative } from "path"
 import { applyPatch } from 'diff';
 import { marked } from 'marked';
 import * as vscode from 'vscode';
@@ -22,7 +23,6 @@ import { ILog } from '../../../common/logger/interfaces';
 import { messages as learnMessages } from '../../../common/messages/learn';
 import { LearnService } from '../../../common/services/learnService';
 import { getNonce } from '../../../common/views/nonce';
-import { WebviewPanelSerializer } from '../../../common/views/webviewPanelSerializer';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
@@ -173,7 +173,7 @@ export class CodeSuggestionWebviewProvider
     return {
       id: issue.id,
       title: issue.title,
-      uri: issue.filePath.replace(workspaceFolder + '/', ''),
+      uri: relative(workspaceFolder, issue.filePath),
       severity: _.capitalize(issue.severity),
       ...issue.additionalData,
       text: parsedDetails,
@@ -439,7 +439,7 @@ export class CodeSuggestionWebviewProvider
 
           <section class="ai-fix">
             <p>⚡ Fix this issue by generating a solution using Snyk DeepCode AI</p>
-          
+
             <div class="sn-fix-wrapper">
               <button class="generate-ai-fix">✨ Generate fix <span class="wide">using Snyk DeepCode AI</span></button>
 
