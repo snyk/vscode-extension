@@ -6,9 +6,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
-// import { AutofixUnifiedDiffSuggestion } from '../../../common/languageServer/types';
-
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself

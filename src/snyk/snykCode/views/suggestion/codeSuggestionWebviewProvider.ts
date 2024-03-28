@@ -300,7 +300,6 @@ export class CodeSuggestionWebviewProvider
             } else console.error('No good');
           }
 
-          // void this.panel?.webview.postMessage({ type: 'asd', args: {} });
           break;
         }
         default: {
