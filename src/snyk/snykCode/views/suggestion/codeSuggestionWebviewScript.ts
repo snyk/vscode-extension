@@ -6,7 +6,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
@@ -56,16 +55,24 @@ declare const acquireVsCodeApi: any;
     cols: Point;
     rows: Point;
     priorityScore: number;
+    hasAIFix: boolean;
+    diffs: AutofixUnifiedDiffSuggestion[];
+    folderPath: string;
   };
+
   type CurrentSeverity = {
     value: number;
     text: string;
   };
 
+  type AutofixUnifiedDiffSuggestion = {
+    fixId: string;
+    unifiedDiffsPerFile: { [key: string]: string };
+  };
+
   const vscode = acquireVsCodeApi();
 
   const elements = {
-    readMoreBtnElem: document.querySelector('.read-more-btn') as HTMLElement,
     suggestionDetailsElem: document.querySelector('#suggestion-details') as HTMLElement,
     suggestionDetailsContentElem: document.querySelector('.suggestion-details-content') as HTMLElement,
     metaElem: document.getElementById('meta') as HTMLElement,
@@ -79,14 +86,18 @@ declare const acquireVsCodeApi: any;
     datasetElem: document.getElementById('dataset-number') as HTMLElement,
     infoTopElem: document.getElementById('info-top') as HTMLElement,
 
+    diffTopElem: document.getElementById('diff-top') as HTMLElement,
+    diffElem: document.getElementById('diff') as HTMLElement,
+    noDiffsElem: document.getElementById('info-no-diffs') as HTMLElement,
+    diffNumElem: document.getElementById('diff-number') as HTMLElement,
+    diffNum2Elem: document.getElementById('diff-number2') as HTMLElement,
+
     exampleTopElem: document.getElementById('example-top') as HTMLElement,
     exampleElem: document.getElementById('example') as HTMLElement,
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
     exNumElem: document.getElementById('example-number') as HTMLElement,
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
   };
-
-  let isReadMoreBtnEventBound = false;
 
   function navigateToUrl(url: string) {
     sendMessage({
@@ -96,6 +107,7 @@ declare const acquireVsCodeApi: any;
   }
 
   let exampleCount = 0;
+  let diffCount = 0;
 
   // Try to restore the previous state
   let lesson: Lesson | null = vscode.getState()?.lesson || null;
@@ -107,6 +119,7 @@ declare const acquireVsCodeApi: any;
     if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
   }
+
   function navigateToIssue(_e: any, range: any) {
     if (!suggestion) return;
     sendMessage({
@@ -114,6 +127,7 @@ declare const acquireVsCodeApi: any;
       args: getSuggestionPosition(suggestion, range),
     });
   }
+
   function navigateToCurrentExample() {
     if (!suggestion?.exampleCommitFixes) return;
 
@@ -123,6 +137,7 @@ declare const acquireVsCodeApi: any;
       args: { url },
     });
   }
+
   function ignoreIssue(lineOnly: boolean) {
     if (!suggestion) return;
 
@@ -138,6 +153,7 @@ declare const acquireVsCodeApi: any;
       },
     });
   }
+
   function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
       uri: position?.file ?? suggestionParam.uri,
@@ -146,17 +162,112 @@ declare const acquireVsCodeApi: any;
       suggestionUri: suggestionParam.uri,
     };
   }
+
+  function nextDiff() {
+    if (!suggestion || !suggestion.diffs || diffCount >= suggestion.diffs.length - 1) return;
+    ++diffCount;
+    showCurrentDiff();
+  }
+
+  function previousDiff() {
+    if (!suggestion || !suggestion.diffs || diffCount <= 0) return;
+    --diffCount;
+    showCurrentDiff();
+  }
+
+  function applyFix() {
+    if (!suggestion) return;
+    const diffSuggestion = suggestion.diffs[diffCount];
+    const fileUri = suggestion.folderPath + '/' + suggestion.uri;
+    const patch = diffSuggestion.unifiedDiffsPerFile[fileUri];
+
+    sendMessage({
+      type: 'applyGitDiff',
+      args: { fileUri, patch },
+    });
+  }
+
   function previousExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount <= 0) return;
     --exampleCount;
     showCurrentExample();
   }
+
   function nextExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount >= suggestion.exampleCommitFixes.length - 1)
       return;
     ++exampleCount;
     showCurrentExample();
   }
+
+  function showCurrentDiff() {
+    if (!suggestion?.diffs?.length || diffCount < 0 || diffCount >= suggestion.diffs.length) return;
+
+    const { diffTopElem, diffElem, noDiffsElem, diffNumElem, diffNum2Elem } = elements;
+    diffTopElem.className = 'row between';
+    diffElem.className = '';
+
+    diffNumElem.innerHTML = suggestion.diffs.length.toString();
+    diffNum2Elem.innerHTML = suggestion.diffs.length.toString();
+    noDiffsElem.className = 'hidden';
+
+    const counter = document.getElementById('diff-counter')!;
+    counter.innerText = (diffCount + 1).toString();
+
+    const diffSuggestion = suggestion.diffs[diffCount];
+    const diff = document.getElementById('diff')!;
+    diff.innerHTML = '';
+    diff.appendChild(
+      generateDiffHtml(diffSuggestion.unifiedDiffsPerFile[suggestion.folderPath + '/' + suggestion.uri]),
+    );
+  }
+
+  function generateDiffHtml(diffData: string) {
+    const codeLines = diffData.split('\n');
+    const codeBlocks = codeLines.reduce<{ [key: string]: string[] }>((acc, line) => {
+      if (line.trim().startsWith('@@ ')) {
+        const blockStartLineNumber = line.split(',')[0].split('-')[1];
+        acc[blockStartLineNumber] = [];
+      } else if (Object.keys(acc).length) {
+        const biggestBlockStartLineNumber = Math.max(...Object.keys(acc).map(lineNumber => parseInt(lineNumber)));
+        acc[biggestBlockStartLineNumber].push(line);
+      }
+      return acc;
+    }, {});
+
+    const diffHtml = document.createElement('div');
+    for (const [, lines] of Object.entries(codeBlocks).sort((a, b) => parseInt(a[0]) - parseInt(b[0]))) {
+      // const blockStart = document.createElement('div');
+      // blockStart.innerText = `Code starts at line ${blockStarLineNumber}`;
+      // diffHtml.appendChild(blockStart);
+      const blockDiv = document.createElement('div');
+      blockDiv.className = 'example';
+      // let lineNr = Number(blockStarLineNumber);
+      lines.forEach(line => {
+        const lineDiv = document.createElement('div');
+
+        if (line.startsWith('+')) {
+          line = line.replace('+', ' '); // ${lineNr}
+          lineDiv.className = 'example-line added';
+        } else if (line.startsWith('-')) {
+          line = line.replace('-', ' '); //` ${lineNr}`
+          lineDiv.className = 'example-line removed';
+        } else {
+          lineDiv.className = 'example-line none';
+        }
+
+        // lineNr++;
+
+        const lineCode = document.createElement('code');
+        lineCode.innerText = line;
+        lineDiv.appendChild(lineCode);
+        blockDiv.appendChild(lineDiv);
+      });
+      diffHtml.appendChild(blockDiv);
+    }
+    return diffHtml;
+  }
+
   function showCurrentExample() {
     if (
       !suggestion?.exampleCommitFixes?.length ||
@@ -306,12 +417,20 @@ declare const acquireVsCodeApi: any;
         markMsg.className = 'mark-string';
         markMsg.innerHTML = suggestion.message.substring(m.msg[0], m.msg[1] + 1);
         mark.appendChild(markMsg);
+
         let markLineText = '[';
         let first = true;
+        const uniqueRows = new Set();
+
         for (const p of m.pos) {
           const rowStart = Number(p.rows[0]) + 1; // editors are 1-based
-          markLineText += (first ? '' : ', ') + ':' + rowStart.toString();
-          first = false;
+          const rowStartStr = ':' + rowStart.toString();
+
+          if (!uniqueRows.has(rowStartStr)) {
+            uniqueRows.add(rowStartStr);
+            markLineText += (first ? '' : ', ') + rowStartStr;
+            first = false;
+          }
         }
         markLineText += ']';
         const markLine = document.createElement('span');
@@ -340,16 +459,14 @@ declare const acquireVsCodeApi: any;
 
     if (suggestion?.exampleCommitFixes?.length) {
       exampleTopElem.className = 'row between';
-      exampleElem.className = '';
-
+      exampleElem.classList.remove('hidden');
       exNumElem.innerHTML = suggestion.exampleCommitFixes.length.toString();
-
       exNum2Elem.innerHTML = suggestion.exampleCommitFixes.length.toString();
       noExamplesElem.className = 'hidden';
       showCurrentExample();
     } else {
       exampleTopElem.className = 'row between hidden';
-      exampleElem.className = 'hidden';
+      exampleElem.classList.add('hidden');
       noExamplesElem.className = 'font-light';
     }
   }
@@ -379,7 +496,7 @@ declare const acquireVsCodeApi: any;
     if (suggestion.cwe) {
       suggestion.cwe.forEach(cwe => {
         const cweElement = document.createElement('a');
-        cweElement.className = 'suggestion-meta suggestion-cwe';
+        cweElement.className = 'suggestion-meta suggestion-cwe is-external';
         cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
         cweElement.textContent = cwe;
         metaElem.appendChild(cweElement);
@@ -404,39 +521,93 @@ declare const acquireVsCodeApi: any;
     if (suggestion.priorityScore !== undefined) {
       const priorityScoreElement = document.createElement('span');
       priorityScoreElement.className = 'suggestion-meta';
-      priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
+      priorityScoreElement.textContent = `Priority score: ${suggestion.priorityScore}`;
       metaElem.appendChild(priorityScoreElement);
+    }
+
+    if (!suggestion.hasAIFix) {
+      document.querySelector('.ai-fix')?.classList.add('is-hidden');
+      document.querySelector('.sn-community-fixes')?.classList.remove('is-hidden');
+    } else {
+      document.querySelector('.ai-fix')?.classList.remove('is-hidden');
+      document.querySelector('.sn-community-fixes')?.classList.add('is-hidden');
     }
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const { suggestionDetailsElem, readMoreBtnElem, suggestionDetailsContentElem } = elements;
-
-    if (!suggestion || !suggestion.text || !suggestionDetailsElem || !readMoreBtnElem) {
-      readMoreBtnElem.classList.add('hidden');
-      suggestionDetailsContentElem.classList.add('hidden');
-      return;
-    }
+    const { suggestionDetailsElem } = elements;
 
     suggestionDetailsElem.innerHTML = suggestion.text;
-    suggestionDetailsElem.classList.add('collapsed');
-    readMoreBtnElem.classList.remove('hidden');
-    suggestionDetailsContentElem.classList.remove('hidden');
 
-    if (!isReadMoreBtnEventBound) {
-      readMoreBtnElem.addEventListener('click', () => {
-        const isCollapsed = suggestionDetailsElem.classList.contains('collapsed');
+    const fixAnalysisTab = document.querySelector('.sn-fix-analysis') as HTMLElement;
+    const fixAnalysisContent = document.querySelector('.sn-fix-content') as HTMLElement;
+    const vulnOverviewTab = document.querySelector('.sn-vuln-overview') as HTMLElement;
+    const vulnOverviewContent = document.querySelector('.sn-vuln-content') as HTMLElement;
 
-        if (isCollapsed) {
-          suggestionDetailsElem.classList.remove('collapsed');
-          readMoreBtnElem.textContent = 'Read less';
-        } else {
-          suggestionDetailsElem.classList.add('collapsed');
-          readMoreBtnElem.textContent = 'Read more';
-        }
-      });
-      isReadMoreBtnEventBound = true;
+    const tabs = document.querySelector('.tabs-nav') as HTMLElement;
+    tabs?.addEventListener('click', (event: Event) => {
+      const target = event.target as Element;
+      if (target.classList.contains('sn-fix-analysis')) {
+        fixAnalysisTab.classList.add('is-selected');
+        fixAnalysisContent.classList.add('is-selected');
+        vulnOverviewTab.classList.remove('is-selected');
+        vulnOverviewContent.classList.remove('is-selected');
+      } else {
+        vulnOverviewContent.classList.add('is-selected');
+        vulnOverviewTab.classList.add('is-selected');
+        fixAnalysisTab.classList.remove('is-selected');
+        fixAnalysisContent.classList.remove('is-selected');
+      }
+    });
+  }
+
+  const generateAIButton = document.querySelector('.generate-ai-fix');
+  generateAIButton?.addEventListener('click', generateAIfix);
+
+  function toggleFixWrapper(toggle: string) {
+    const loadingWrapper = document.querySelector('.sn-fix-wrapper');
+    if (toggle === 'show') {
+      loadingWrapper?.classList.remove('is-hidden');
+    } else {
+      loadingWrapper?.classList.add('is-hidden');
     }
+  }
+
+  function toggleLoading(toggle: string) {
+    const loadingIndicator = document.querySelector('.sn-loading');
+    if (toggle === 'show') {
+      loadingIndicator?.classList.remove('is-hidden');
+    } else {
+      loadingIndicator?.classList.add('is-hidden');
+    }
+  }
+
+  function toggleFixes(toggle: string) {
+    const fixesSection = document.querySelector('.sn-ai-fixes');
+    if (toggle === 'show') {
+      fixesSection?.classList.remove('is-hidden');
+    } else {
+      fixesSection?.classList.add('is-hidden');
+    }
+  }
+
+  function toggleAIFixError({ display }: { display: boolean }) {
+    const aiFixError = document.querySelector('.sn-ai-fix-error');
+    if (display) {
+      aiFixError?.classList.remove('is-hidden');
+    } else {
+      aiFixError?.classList.add('is-hidden');
+    }
+  }
+
+  function generateAIfix() {
+    generateAIButton?.classList.add('is-hidden');
+    toggleLoading('show');
+    const message = {
+      type: 'getAutofixDiffs',
+      args: { suggestion },
+    };
+    sendMessage(message);
   }
 
   function sendMessage(message: {
@@ -444,6 +615,7 @@ declare const acquireVsCodeApi: any;
     args:
       | { uri: any; rows: any; cols: any }
       | { url: any }
+      | { fileUri: string; patch: string }
       | { url: any }
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
@@ -455,6 +627,9 @@ declare const acquireVsCodeApi: any;
   document.getElementById('lead-url')!.addEventListener('click', navigateToLeadURL);
   document.getElementById('current-example')!.addEventListener('click', navigateToCurrentExample);
   document.getElementById('previous-example')!.addEventListener('click', previousExample);
+  document.getElementById('next-diff')!.addEventListener('click', nextDiff);
+  document.getElementById('previous-diff')!.addEventListener('click', previousDiff);
+  document.getElementById('apply-fix')!.addEventListener('click', applyFix);
   document.getElementById('next-example')!.addEventListener('click', nextExample);
   document.getElementById('ignore-line-issue')!.addEventListener('click', () => {
     ignoreIssue(true);
@@ -488,6 +663,23 @@ declare const acquireVsCodeApi: any;
         lesson = vscode.getState()?.lesson || null;
         fillLearnLink();
         break;
+      }
+      case 'setAutofixDiffs': {
+        if (suggestion) {
+          toggleFixes('show');
+          toggleLoading('hide');
+          toggleFixWrapper('hide');
+          const state = vscode.getState();
+          suggestion.diffs = args;
+          vscode.setState({ ...vscode.getState(), suggestion: { ...state.suggestion, diffs: args } });
+          showCurrentDiff();
+        }
+        break;
+      }
+      case 'setAutofixError': {
+        toggleLoading('hide');
+        toggleFixWrapper('hide');
+        toggleAIFixError({ display: true });
       }
     }
   });
