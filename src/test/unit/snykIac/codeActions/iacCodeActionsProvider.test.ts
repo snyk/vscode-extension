@@ -11,7 +11,6 @@ import { IacIssue } from '../../../../snyk/snykIac/issue';
 
 suite('IaC code actions provider', () => {
   let issuesActionsProvider: IacCodeActionsProvider;
-  let logQuickFixIsDisplayed: sinon.SinonSpy;
 
   setup(() => {
     const codeResults = new Map<string, WorkspaceFolderResult<IacIssueData>>();

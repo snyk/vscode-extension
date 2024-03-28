@@ -31,6 +31,7 @@ export class CliProcess {
       this.runningProcess = spawn(cliPath, args, { env: { ...process.env, ...processEnv }, cwd });
 
       this.runningProcess.stdout.setEncoding('utf8');
+      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
       this.runningProcess.stdout.on('data', (data: string | Buffer) => (output += data));
 
       this.runningProcess.on('error', err => {

@@ -11,7 +11,7 @@ export class EditorDecorator {
   private readonly fileDecorationMap: Map<string, LineDecorations>;
   private readonly editorLastCharacterIndex = Number.MAX_SAFE_INTEGER;
 
-  private updateTimeout: NodeJS.Timer | undefined = undefined;
+  private updateTimeout: NodeJS.Timeout | undefined = undefined;
 
   constructor(
     private readonly window: IVSCodeWindow,

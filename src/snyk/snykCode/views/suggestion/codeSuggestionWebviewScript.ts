@@ -444,7 +444,6 @@ declare const acquireVsCodeApi: any;
     args:
       | { uri: any; rows: any; cols: any }
       | { url: any }
-      | { url: any }
       | { url: string }
       | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
       | { suggestion: any };
