@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { relative } from "path"
+import { relative } from 'path';
 import { applyPatch } from 'diff';
 import { marked } from 'marked';
 import * as vscode from 'vscode';
@@ -55,6 +55,44 @@ type Suggestion = {
   hasAIFix?: boolean;
   folderPath: string;
 };
+
+type Message =
+  | {
+      type: 'openLocal';
+      args: {
+        uri: string;
+        cols: [number, number];
+        rows: [number, number];
+        suggestionUri: string;
+      };
+    }
+  | {
+      type: 'openBrowser';
+      args: {
+        url: string;
+      };
+    }
+  | {
+      type: 'ignoreIssue';
+      args: {
+        lineOnly: boolean;
+        message: string;
+        rule: string;
+        uri: string;
+        cols: [number, number];
+        rows: [number, number];
+      };
+    }
+  | {
+      type: 'getAutofixDiffs';
+      args: {
+        suggestion: Suggestion;
+      };
+    }
+  | {
+      type: 'applyGitDiff';
+      args: { patch: string; fileUri: string };
+    };
 
 export class CodeSuggestionWebviewProvider
   extends WebviewProvider<Issue<CodeIssueData>>
@@ -148,6 +186,7 @@ export class CodeSuggestionWebviewProvider
     this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
     // Handle messages from the webview
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
   }
 
@@ -182,7 +221,7 @@ export class CodeSuggestionWebviewProvider
     };
   }
 
-  private async handleMessage(message: any) {
+  private async handleMessage(message: Message) {
     try {
       const { type, args } = message;
       switch (type) {
@@ -200,19 +239,12 @@ export class CodeSuggestionWebviewProvider
           break;
         }
         case 'openBrowser': {
-          const { url } = args as { url: string };
+          const { url } = args;
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, url);
           break;
         }
         case 'ignoreIssue': {
-          const { lineOnly, message, rule, uri, cols, rows } = args as {
-            lineOnly: boolean;
-            message: string;
-            rule: string;
-            uri: string;
-            cols: [number, number];
-            rows: [number, number];
-          };
+          const { lineOnly, message, rule, uri, cols, rows } = args;
           const vscodeUri = vscode.Uri.file(uri);
           const range = IssueUtils.createVsCodeRangeFromRange(rows, cols, this.languages);
           await vscode.commands.executeCommand(SNYK_IGNORE_ISSUE_COMMAND, {
@@ -226,7 +258,7 @@ export class CodeSuggestionWebviewProvider
         }
         case 'getAutofixDiffs': {
           try {
-            const suggestion = args.suggestion as Suggestion;
+            const suggestion = args.suggestion;
             const diffs: AutofixUnifiedDiffSuggestion = await vscode.commands.executeCommand(
               SNYK_CODE_FIX_DIFFS_COMMAND,
               suggestion.folderPath,
@@ -330,8 +362,8 @@ export class CodeSuggestionWebviewProvider
     editor.setDecorations(highlightDecoration, decorationOptions);
 
     // scroll to first added line
-    let line = editor.document.lineAt(addedLineNumbers[0]);
-    let range = line.range;
+    const line = editor.document.lineAt(addedLineNumbers[0]);
+    const range = line.range;
     editor.revealRange(range, vscode.TextEditorRevealType.Default);
 
     // remove highlight on any of:

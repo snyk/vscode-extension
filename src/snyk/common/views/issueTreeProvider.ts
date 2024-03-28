@@ -1,7 +1,7 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../../common/configuration/configuration';
-import { CodeIssueData, Issue, IssueSeverity } from '../../common/languageServer/types';
+import { Issue, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
