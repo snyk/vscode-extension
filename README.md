@@ -10,7 +10,7 @@ Results appear in context, in line with the code in your IDE.
 
 This single plugin provides a Java vulnerability scanner, a custom code vulnerability scanner, and an open-source security scanner.
 
-In using the Visual Studio Code extension, you have the advantage of relying on the [Snyk Vulnerability Database](https://security.snyk.io/). You also have available the [Snyk Code AI Engine](https://docs.snyk.io/products/snyk-code/introducing-snyk-code/key-features/ai-engine).
+In using the Visual Studio Code extension, you have the advantage of relying on the [Snyk Vulnerability Database](https://security.snyk.io/). You also have available the [Snyk Code AI Engine](https://docs.snyk.io/scan-with-snyk/snyk-code#ai-engine).
 
 Snyk scans for the following types of issues:
 
