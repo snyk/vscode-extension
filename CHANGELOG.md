@@ -1,5 +1,9 @@
 # Snyk Security Changelog
 
+## [2.3.10]
+### Added
+- Added the [ Ignored ] text if the finding should be marked as ignored.
+
 ## [2.3.9]
 ### Fixes
 - do not restrict activation of extension (auto-scan on startup)
