@@ -39,6 +39,7 @@ suite('LearnService', () => {
       title: 'not used',
       severity: IssueSeverity.Critical,
       filePath: 'not used',
+      isIgnored: false,
     };
 
     await learnService.getCodeLesson(issue);
