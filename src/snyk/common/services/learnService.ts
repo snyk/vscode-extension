@@ -2,7 +2,7 @@ import { SNYK_GET_LESSON_COMMAND } from '../constants/commands';
 import { CodeIssueData, Issue } from '../languageServer/types';
 import { IVSCodeCommands } from '../vscode/commands';
 
-type Lesson = {
+export type Lesson = {
   url: string;
   title: string;
 };

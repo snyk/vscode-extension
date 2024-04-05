@@ -6,7 +6,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-explicit-any
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
@@ -51,21 +50,120 @@ declare const acquireVsCodeApi: any;
     title: string;
     text: string;
     isSecurityType: boolean;
-    uri: string;
     markers?: Marker[];
     cols: Point;
     rows: Point;
     priorityScore: number;
+    hasAIFix: boolean;
+    diffs: AutofixUnifiedDiffSuggestion[];
+    filePath: string;
   };
+
   type CurrentSeverity = {
     value: number;
     text: string;
   };
 
+  type AutofixUnifiedDiffSuggestion = {
+    fixId: string;
+    unifiedDiffsPerFile: { [key: string]: string };
+  };
+
+  type OpenLocalMessage = {
+    type: 'openLocal';
+    args: {
+      uri: string;
+      cols: [number, number];
+      rows: [number, number];
+      suggestionUri: string;
+    };
+  };
+
+  type IgnoreIssueMessage = {
+    type: 'ignoreIssue';
+    args: {
+      id: string;
+      severity: 'Low' | 'Medium' | 'High';
+      lineOnly: boolean;
+      message: string;
+      rule: string;
+      uri: string;
+      cols: [number, number];
+      rows: [number, number];
+    };
+  };
+
+  type OpenBrowserMessage = {
+    type: 'openBrowser';
+    args: {
+      url: string;
+    };
+  };
+
+  type GetAutofixDiffsMesssage = {
+    type: 'getAutofixDiffs';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type ApplyGitDiffMessage = {
+    type: 'applyGitDiff';
+    args: {
+      patch: string;
+      filePath: string;
+    };
+  };
+
+  type SetSuggestionMessage = {
+    type: 'set';
+    args: Suggestion;
+  };
+
+  type GetSuggestionMessage = {
+    type: 'get';
+  };
+
+  type SetLessonMessage = {
+    type: 'setLesson';
+    args: Lesson;
+  };
+
+  type GetLessonMessage = {
+    type: 'getLesson';
+  };
+
+  type SetAutofixDiffsMessage = {
+    type: 'setAutofixDiffs';
+    args: {
+      suggestion: Suggestion;
+      diffs: AutofixUnifiedDiffSuggestion[];
+    };
+  };
+
+  type SetAutofixErrorMessage = {
+    type: 'setAutofixError';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type SuggestionMessage =
+    | OpenLocalMessage
+    | OpenBrowserMessage
+    | IgnoreIssueMessage
+    | GetAutofixDiffsMesssage
+    | ApplyGitDiffMessage
+    | SetSuggestionMessage
+    | GetSuggestionMessage
+    | SetLessonMessage
+    | GetLessonMessage
+    | SetAutofixDiffsMessage
+    | SetAutofixErrorMessage;
+
   const vscode = acquireVsCodeApi();
 
   const elements = {
-    readMoreBtnElem: document.querySelector('.read-more-btn') as HTMLElement,
     suggestionDetailsElem: document.querySelector('#suggestion-details') as HTMLElement,
     suggestionDetailsContentElem: document.querySelector('.suggestion-details-content') as HTMLElement,
     metaElem: document.getElementById('meta') as HTMLElement,
@@ -79,6 +177,29 @@ declare const acquireVsCodeApi: any;
     datasetElem: document.getElementById('dataset-number') as HTMLElement,
     infoTopElem: document.getElementById('info-top') as HTMLElement,
 
+    diffTopElem: document.getElementById('diff-top') as HTMLElement,
+    diffElem: document.getElementById('diff') as HTMLElement,
+    noDiffsElem: document.getElementById('info-no-diffs') as HTMLElement,
+    diffNumElem: document.getElementById('diff-number') as HTMLElement,
+    diffNum2Elem: document.getElementById('diff-number2') as HTMLElement,
+    nextDiffElem: document.getElementById('next-diff') as HTMLElement,
+    previousDiffElem: document.getElementById('previous-diff') as HTMLElement,
+    diffSelectedIndexElem: document.getElementById('diff-counter') as HTMLElement,
+
+    applyFixButton: document.getElementById('apply-fix') as HTMLElement,
+    retryGenerateFixButton: document.getElementById('retry-generate-fix') as HTMLElement,
+    generateAIFixButton: document.getElementById('generate-ai-fix') as HTMLElement,
+
+    fixAnalysisTabElem: document.getElementById('fix-analysis-tab') as HTMLElement,
+    fixAnalysisContentElem: document.getElementById('fix-analysis-content') as HTMLElement,
+    vulnOverviewTabElem: document.getElementById('vuln-overview-tab') as HTMLElement,
+    vulnOverviewContentElem: document.getElementById('vuln-overview-content') as HTMLElement,
+
+    fixLoadingIndicatorElem: document.getElementById('fix-loading-indicator') as HTMLElement,
+    fixWrapperElem: document.getElementById('fix-wrapper') as HTMLElement,
+    fixSectionElem: document.getElementById('fixes-section') as HTMLElement,
+    fixErrorSectionElem: document.getElementById('fixes-error-section') as HTMLElement,
+
     exampleTopElem: document.getElementById('example-top') as HTMLElement,
     exampleElem: document.getElementById('example') as HTMLElement,
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
@@ -86,16 +207,16 @@ declare const acquireVsCodeApi: any;
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
   };
 
-  let isReadMoreBtnEventBound = false;
-
   function navigateToUrl(url: string) {
-    sendMessage({
+    const message: OpenBrowserMessage = {
       type: 'openBrowser',
       args: { url },
-    });
+    };
+    sendMessage(message);
   }
 
   let exampleCount = 0;
+  let diffSelectedIndex = 0;
 
   // Try to restore the previous state
   let lesson: Lesson | null = vscode.getState()?.lesson || null;
@@ -107,26 +228,32 @@ declare const acquireVsCodeApi: any;
     if (!suggestion?.leadURL) return;
     navigateToUrl(suggestion.leadURL);
   }
+
   function navigateToIssue(_e: any, range: any) {
     if (!suggestion) return;
-    sendMessage({
+    const message: OpenLocalMessage = {
       type: 'openLocal',
       args: getSuggestionPosition(suggestion, range),
-    });
+    };
+
+    sendMessage(message);
   }
+
   function navigateToCurrentExample() {
     if (!suggestion?.exampleCommitFixes) return;
 
     const url = suggestion.exampleCommitFixes[exampleCount].commitURL;
-    sendMessage({
+    const message: OpenBrowserMessage = {
       type: 'openBrowser',
       args: { url },
-    });
+    };
+    sendMessage(message);
   }
+
   function ignoreIssue(lineOnly: boolean) {
     if (!suggestion) return;
 
-    sendMessage({
+    const message: IgnoreIssueMessage = {
       type: 'ignoreIssue',
       args: {
         ...getSuggestionPosition(suggestion),
@@ -136,27 +263,149 @@ declare const acquireVsCodeApi: any;
         severity: suggestion.severity,
         lineOnly: lineOnly,
       },
-    });
+    };
+    sendMessage(message);
   }
+
   function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
     return {
-      uri: position?.file ?? suggestionParam.uri,
+      uri: position?.file ?? suggestionParam.filePath,
       rows: position ? position.rows : suggestionParam.rows,
       cols: position ? position.cols : suggestionParam.cols,
-      suggestionUri: suggestionParam.uri,
+      suggestionUri: suggestionParam.filePath,
     };
   }
+
+  function nextDiff() {
+    if (!suggestion || !suggestion.diffs || diffSelectedIndex >= suggestion.diffs.length - 1) return;
+    ++diffSelectedIndex;
+    showCurrentDiff();
+  }
+
+  function previousDiff() {
+    if (!suggestion || !suggestion.diffs || diffSelectedIndex <= 0) return;
+    --diffSelectedIndex;
+    showCurrentDiff();
+  }
+
+  function applyFix() {
+    if (!suggestion) return;
+    const diffSuggestion = suggestion.diffs[diffSelectedIndex];
+    const filePath = suggestion.filePath;
+    const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+
+    const message: ApplyGitDiffMessage = {
+      type: 'applyGitDiff',
+      args: { filePath, patch },
+    };
+    sendMessage(message);
+  }
+
+  function generateAIFix() {
+    if (!suggestion) {
+      return;
+    }
+
+    toggleElement(generateAIFixButton, 'hide');
+    toggleElement(fixLoadingIndicatorElem, 'show');
+    const message: GetAutofixDiffsMesssage = {
+      type: 'getAutofixDiffs',
+      args: { suggestion },
+    };
+    sendMessage(message);
+  }
+
+  function retryGenerateAIFix() {
+    console.log('retrying generate AI Fix');
+
+    toggleElement(fixWrapperElem, 'show');
+    toggleElement(fixErrorSectionElem, 'hide');
+
+    generateAIFix();
+  }
+
   function previousExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount <= 0) return;
     --exampleCount;
     showCurrentExample();
   }
+
   function nextExample() {
     if (!suggestion || !suggestion.exampleCommitFixes || exampleCount >= suggestion.exampleCommitFixes.length - 1)
       return;
     ++exampleCount;
     showCurrentExample();
   }
+
+  function showCurrentDiff() {
+    if (!suggestion?.diffs?.length || diffSelectedIndex < 0 || diffSelectedIndex >= suggestion.diffs.length) return;
+
+    const { diffTopElem, diffElem, noDiffsElem, diffNumElem, diffNum2Elem, diffSelectedIndexElem } = elements;
+
+    toggleElement(noDiffsElem, 'hide');
+    toggleElement(diffTopElem, 'show');
+    toggleElement(diffElem, 'show');
+
+    diffNumElem.innerText = suggestion.diffs.length.toString();
+    diffNum2Elem.innerText = suggestion.diffs.length.toString();
+
+    diffSelectedIndexElem.innerText = (diffSelectedIndex + 1).toString();
+
+    const diffSuggestion = suggestion.diffs[diffSelectedIndex];
+
+    const filePath = suggestion.filePath;
+    const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+
+    // clear all elements
+    while (diffElem.firstChild) {
+      diffElem.removeChild(diffElem.firstChild);
+    }
+    diffElem.appendChild(generateDiffHtml(patch));
+  }
+
+  function generateDiffHtml(patch: string): HTMLElement {
+    const codeLines = patch.split('\n');
+
+    // the first two lines are the file names
+    codeLines.shift();
+    codeLines.shift();
+
+    const diffHtml = document.createElement('div');
+    let blockDiv: HTMLElement | null = null;
+
+    for (const line of codeLines) {
+      if (line.startsWith('@@ ')) {
+        blockDiv = document.createElement('div');
+        blockDiv.className = 'example';
+
+        if (blockDiv) {
+          diffHtml.appendChild(blockDiv);
+        }
+      } else {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'code-line';
+
+        if (line.startsWith('+')) {
+          lineDiv.classList.add('added');
+        } else if (line.startsWith('-')) {
+          lineDiv.classList.add('removed');
+        } else {
+          lineDiv.classList.add('none');
+        }
+
+        const lineCode = document.createElement('code');
+        // if line is empty, we need to fallback to ' '
+        // to make sure it displays in the diff
+        lineCode.innerText = line.slice(1, line.length) || ' ';
+
+        lineDiv.appendChild(lineCode);
+        blockDiv?.appendChild(lineDiv);
+      }
+    }
+
+    return diffHtml;
+  }
+
   function showCurrentExample() {
     if (
       !suggestion?.exampleCommitFixes?.length ||
@@ -176,11 +425,25 @@ declare const acquireVsCodeApi: any;
     example.querySelectorAll('*').forEach(n => n.remove());
     for (const l of suggestion.exampleCommitFixes[exampleCount].lines) {
       const line = document.createElement('div');
-      line.className = `example-line ${l.lineChange}`;
+      line.className = `code-line ${l.lineChange}`;
       example.appendChild(line);
       const code = document.createElement('code');
       code.innerHTML = l.line;
       line.appendChild(code);
+    }
+  }
+
+  function toggleElement(element: Element | null, toggle: 'hide' | 'show') {
+    if (!element) {
+      return;
+    }
+
+    if (toggle === 'show') {
+      element.classList.remove('hidden');
+    } else if (toggle === 'hide') {
+      element.classList.add('hidden');
+    } else {
+      console.error('Unexpected toggle value', toggle);
     }
   }
 
@@ -327,30 +590,31 @@ declare const acquireVsCodeApi: any;
       descriptionElem.innerHTML = suggestion.message;
     }
 
-    moreInfoElem.className = suggestion.leadURL ? 'clickable' : 'clickable hidden';
+    toggleElement(moreInfoElem, suggestion.leadURL ? 'show' : 'hide');
 
-    suggestionPosition2Elem.innerHTML = (Number(suggestion.rows[0]) + 1).toString();
+    suggestionPosition2Elem.innerText = (Number(suggestion.rows[0]) + 1).toString();
 
     infoTopElem.classList.add('font-light');
     if (suggestion.repoDatasetSize) {
-      datasetElem.innerHTML = suggestion.repoDatasetSize.toString();
+      datasetElem.innerText = suggestion.repoDatasetSize.toString();
     } else {
-      infoTopElem.classList.add('hidden');
+      toggleElement(infoTopElem, 'hide');
     }
 
     if (suggestion?.exampleCommitFixes?.length) {
-      exampleTopElem.className = 'row between';
-      exampleElem.className = '';
+      toggleElement(exampleTopElem, 'show');
+      exNumElem.innerText = suggestion.exampleCommitFixes.length.toString();
+      exNum2Elem.innerText = suggestion.exampleCommitFixes.length.toString();
 
-      exNumElem.innerHTML = suggestion.exampleCommitFixes.length.toString();
+      toggleElement(exampleElem, 'show');
+      toggleElement(noExamplesElem, 'hide');
 
-      exNum2Elem.innerHTML = suggestion.exampleCommitFixes.length.toString();
-      noExamplesElem.className = 'hidden';
       showCurrentExample();
     } else {
-      exampleTopElem.className = 'row between hidden';
-      exampleElem.className = 'hidden';
+      toggleElement(exampleTopElem, 'hide');
       noExamplesElem.className = 'font-light';
+
+      toggleElement(exampleElem, 'hide');
     }
   }
 
@@ -379,7 +643,7 @@ declare const acquireVsCodeApi: any;
     if (suggestion.cwe) {
       suggestion.cwe.forEach(cwe => {
         const cweElement = document.createElement('a');
-        cweElement.className = 'suggestion-meta suggestion-cwe';
+        cweElement.className = 'suggestion-meta suggestion-cwe is-external';
         cweElement.href = `https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`;
         cweElement.textContent = cwe;
         metaElem.appendChild(cweElement);
@@ -404,50 +668,67 @@ declare const acquireVsCodeApi: any;
     if (suggestion.priorityScore !== undefined) {
       const priorityScoreElement = document.createElement('span');
       priorityScoreElement.className = 'suggestion-meta';
-      priorityScoreElement.textContent = `Priority Score: ${suggestion.priorityScore}`;
+      priorityScoreElement.textContent = `Priority score: ${suggestion.priorityScore}`;
       metaElem.appendChild(priorityScoreElement);
+    }
+
+    const fixesSection = document.querySelector('.ai-fix');
+    const communityFixesSection = document.querySelector('.sn-community-fixes');
+
+    if (!suggestion.hasAIFix) {
+      toggleElement(fixesSection, 'hide');
+      toggleElement(communityFixesSection, 'show');
+    } else {
+      toggleElement(fixesSection, 'show');
+      toggleElement(communityFixesSection, 'hide');
     }
   }
 
   function showSuggestionDetails(suggestion: Suggestion) {
-    const { suggestionDetailsElem, readMoreBtnElem, suggestionDetailsContentElem } = elements;
-
-    if (!suggestion || !suggestion.text || !suggestionDetailsElem || !readMoreBtnElem) {
-      readMoreBtnElem.classList.add('hidden');
-      suggestionDetailsContentElem.classList.add('hidden');
-      return;
-    }
+    const {
+      suggestionDetailsElem,
+      fixAnalysisTabElem,
+      fixAnalysisContentElem,
+      vulnOverviewTabElem,
+      vulnOverviewContentElem,
+    } = elements;
 
     suggestionDetailsElem.innerHTML = suggestion.text;
-    suggestionDetailsElem.classList.add('collapsed');
-    readMoreBtnElem.classList.remove('hidden');
-    suggestionDetailsContentElem.classList.remove('hidden');
 
-    if (!isReadMoreBtnEventBound) {
-      readMoreBtnElem.addEventListener('click', () => {
-        const isCollapsed = suggestionDetailsElem.classList.contains('collapsed');
+    fixAnalysisTabElem.addEventListener('click', () => {
+      fixAnalysisTabElem.classList.add('is-selected');
+      fixAnalysisContentElem.classList.add('is-selected');
+      vulnOverviewTabElem.classList.remove('is-selected');
+      vulnOverviewContentElem.classList.remove('is-selected');
+    });
 
-        if (isCollapsed) {
-          suggestionDetailsElem.classList.remove('collapsed');
-          readMoreBtnElem.textContent = 'Read less';
-        } else {
-          suggestionDetailsElem.classList.add('collapsed');
-          readMoreBtnElem.textContent = 'Read more';
-        }
-      });
-      isReadMoreBtnEventBound = true;
-    }
+    vulnOverviewTabElem.addEventListener('click', () => {
+      vulnOverviewContentElem.classList.add('is-selected');
+      vulnOverviewTabElem.classList.add('is-selected');
+      fixAnalysisTabElem.classList.remove('is-selected');
+      fixAnalysisContentElem.classList.remove('is-selected');
+    });
   }
 
-  function sendMessage(message: {
-    type: string;
-    args:
-      | { uri: any; rows: any; cols: any }
-      | { url: any }
-      | { url: string }
-      | { message: any; rule: any; id: any; severity: any; lineOnly: boolean; uri: any; rows: any; cols: any }
-      | { suggestion: any };
-  }) {
+  const {
+    generateAIFixButton,
+    retryGenerateFixButton,
+    applyFixButton,
+    nextDiffElem,
+    previousDiffElem,
+    fixSectionElem,
+    fixLoadingIndicatorElem,
+    fixWrapperElem,
+    fixErrorSectionElem,
+  } = elements;
+
+  generateAIFixButton?.addEventListener('click', generateAIFix);
+  retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
+  nextDiffElem.addEventListener('click', nextDiff);
+  previousDiffElem.addEventListener('click', previousDiff);
+  applyFixButton.addEventListener('click', applyFix);
+
+  function sendMessage(message: SuggestionMessage) {
     vscode.postMessage(message);
   }
 
@@ -464,21 +745,24 @@ declare const acquireVsCodeApi: any;
 
   // deepcode ignore InsufficientValidation: Content Security Policy applied in provider
   window.addEventListener('message', event => {
-    const { type, args } = event.data;
-    switch (type) {
+    const message = event.data as SuggestionMessage;
+    switch (message.type) {
       case 'set': {
-        suggestion = args;
+        suggestion = message.args;
         vscode.setState({ ...vscode.getState(), suggestion });
         showCurrentSuggestion();
         break;
       }
       case 'get': {
-        suggestion = vscode.getState()?.suggestion || {};
-        showCurrentSuggestion();
+        const newSuggestion = vscode.getState()?.suggestion || {};
+        if (newSuggestion != suggestion) {
+          suggestion = newSuggestion;
+          showCurrentSuggestion();
+        }
         break;
       }
       case 'setLesson': {
-        lesson = args;
+        lesson = message.args;
         vscode.setState({ ...vscode.getState(), lesson });
         fillLearnLink();
         break;
@@ -487,6 +771,30 @@ declare const acquireVsCodeApi: any;
         lesson = vscode.getState()?.lesson || null;
         fillLearnLink();
         break;
+      }
+      case 'setAutofixDiffs': {
+        if (suggestion?.id === message.args.suggestion.id) {
+          toggleElement(fixSectionElem, 'show');
+          toggleElement(fixLoadingIndicatorElem, 'hide');
+          toggleElement(fixWrapperElem, 'hide');
+
+          const { diffs } = message.args;
+          suggestion.diffs = diffs;
+
+          vscode.setState({ ...vscode.getState(), suggestion });
+          showCurrentDiff();
+        }
+        break;
+      }
+      case 'setAutofixError': {
+        const errorSuggestion = message.args.suggestion;
+
+        if (errorSuggestion.id != suggestion?.id) {
+          console.log('Got an error for a previously generated suggestion: ignoring');
+          break;
+        }
+        toggleElement(fixWrapperElem, 'hide');
+        toggleElement(fixErrorSectionElem, 'show');
       }
     }
   });

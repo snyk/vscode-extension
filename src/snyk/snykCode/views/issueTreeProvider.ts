@@ -10,6 +10,7 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { messages } from '../messages/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
+import { TreeNode } from '../../common/views/treeNode';
 
 export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
   constructor(
@@ -34,6 +35,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
 
   // The title in the tree is taken from the title for vulnerabilities and from the message for quality rules
   getIssueTitle(issue: Issue<CodeIssueData>): string {
+    const fixIcon = issue.additionalData.hasAIFix ? '⚡️' : '';
     const issueTitle = issue.additionalData.isSecurityType
       ? issue.title.split(':')[0]
       : issue.additionalData.message.split('.')[0];
@@ -43,7 +45,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
       prefixIgnored = '[ Ignored ] ';
     }
 
-    return prefixIgnored + issueTitle;
+    return fixIcon + prefixIgnored + issueTitle;
   }
 
   getIssueRange(issue: Issue<CodeIssueData>): Range {
@@ -66,5 +68,21 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
         } as OpenIssueCommandArg,
       ],
     };
+  }
+
+  isFixableIssue(issue: Issue<CodeIssueData>): boolean {
+    return issue.additionalData.hasAIFix;
+  }
+
+  getFixableIssuesNode(fixableIssueCount: number): TreeNode {
+    return new TreeNode({
+      text: this.getAIFixableIssuesText(fixableIssueCount),
+    });
+  }
+
+  private getAIFixableIssuesText(issuesCount: number): string {
+    return issuesCount > 0
+      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'vulnerability' : 'vulnerabilities'} can be fixed by Snyk DeepCode AI`
+      : 'There are no vulnerabilities fixable by Snyk DeepCode AI';
   }
 }

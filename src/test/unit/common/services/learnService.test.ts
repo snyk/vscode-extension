@@ -35,6 +35,7 @@ suite('LearnService', () => {
         rows: [1, 2],
         isSecurityType: true,
         priorityScore: 880,
+        hasAIFix: false,
       },
       title: 'not used',
       severity: IssueSeverity.Critical,
