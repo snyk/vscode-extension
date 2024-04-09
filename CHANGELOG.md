@@ -1,7 +1,10 @@
 # Snyk Security Changelog
 
-## [2.3.11]
-- update LS protocol version to support global ignore commands
+## [2.4.1]
+- updated the language server protocol version to 11 to support global ignores
+
+## [2.4.0]
+- Added the [ Ignored ] text if the finding should be marked as ignored.
 
 ## [2.3.10]
 ### Added
