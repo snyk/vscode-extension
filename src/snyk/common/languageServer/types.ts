@@ -23,6 +23,7 @@ export type Issue<T> = {
   severity: IssueSeverity;
   filePath: string;
   additionalData: T;
+  isIgnored: boolean;
 };
 
 export enum IssueSeverity {

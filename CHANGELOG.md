@@ -1,5 +1,15 @@
 # Snyk Security Changelog
 
+## [2.4.1]
+- updated the language server protocol version to 11 to support global ignores
+
+## [2.4.0]
+- Added the [ Ignored ] text if the finding should be marked as ignored.
+
+## [2.3.10]
+### Added
+- Added the [ Ignored ] text if the finding should be marked as ignored.
+
 ## [2.3.9]
 ### Fixes
 - do not restrict activation of extension (auto-scan on startup)
