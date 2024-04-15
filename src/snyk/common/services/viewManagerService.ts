@@ -5,9 +5,9 @@ import { configuration } from '../configuration/instance';
 import { REFRESH_VIEW_DEBOUNCE_INTERVAL } from '../constants/general';
 import { TreeNode } from '../views/treeNode';
 
-export type ViewType = TreeView<TreeNode>;
+type ViewType = TreeView<TreeNode>;
 
-export class ViewContainer {
+class ViewContainer {
   private container = new Map<string, ViewType>();
 
   get<T extends ViewType>(key: string): T | undefined {

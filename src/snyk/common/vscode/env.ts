@@ -7,7 +7,7 @@ export interface IVSCodeEnv {
   getAppHost(): string | undefined;
 }
 
-export class VSCodeEnv implements IVSCodeEnv {
+class VSCodeEnv implements IVSCodeEnv {
   getUiKind(): string {
     return vscode.UIKind[vscode.env.uiKind];
   }

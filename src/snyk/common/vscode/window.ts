@@ -38,7 +38,7 @@ export interface IVSCodeWindow {
 /**
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
-export class VSCodeWindow implements IVSCodeWindow {
+class VSCodeWindow implements IVSCodeWindow {
   getActiveTextEditor(): vscode.TextEditor | undefined {
     return vscode.window.activeTextEditor;
   }

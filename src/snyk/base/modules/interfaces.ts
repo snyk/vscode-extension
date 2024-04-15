@@ -29,6 +29,3 @@ export interface IExtension extends IBaseSnykModule, ISnykLib {
   activate(context: VSCodeExtensionContext): void;
   restartLanguageServer(): Promise<void>;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type errorType = Error | any;

@@ -13,8 +13,6 @@ export type OssIssueCommandArg = Issue<OssIssueData> & {
   folderPath: string;
 };
 
-export type OssResult = OssFileResult[] | OssFileResult;
-
 export type OssFileResult = OssResultBody | CliError;
 
 export type OssResultBody = {
@@ -49,27 +47,23 @@ export type OssVulnerability = {
   isUpgradable: boolean;
 };
 
-export type Identifiers = {
+type Identifiers = {
   CWE: string[];
   CVE: string[];
 };
 
-export enum OssSeverity {
+enum OssSeverity {
   Low = 'low',
   Medium = 'medium',
   High = 'high',
   Critical = 'critical',
 }
 
-export function capitalizeOssSeverity(ossSeverity: OssSeverity): Capitalize<OssSeverity> {
-  return _.capitalize(ossSeverity) as Capitalize<OssSeverity>;
-}
-
 export function isResultCliError(fileResult: OssFileResult): fileResult is CliError {
   return (fileResult as CliError).error !== undefined;
 }
 
-export function convertSeverity(severity: IssueSeverity): OssSeverity {
+function convertSeverity(severity: IssueSeverity): OssSeverity {
   switch (severity) {
     case IssueSeverity.Low:
       return OssSeverity.Low;
