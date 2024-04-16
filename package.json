@@ -412,7 +412,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@amplitude/experiment-node-server": "^1.8.2",
+    "@amplitude/experiment-node-server": "^1.9.0",
     "@babel/parser": "^7.23.9",
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
