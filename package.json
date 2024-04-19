@@ -260,12 +260,12 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\n👉 Please wait, the extension is loading...",
+        "contents": "👋 Welcome to Snyk for Visual Studio Code. \n⏱️ Please wait, the extension is loading...",
         "when": "!snyk:error && !snyk:initialized"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "Welcome to Snyk for Visual Studio Code. 👋\n👉 Connect with Snyk to start your first analysis!\nWhen scanning folder files, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\n[Trust workspace and connect](command:snyk.initiateLogin 'Connect with Snyk')\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
+        "contents": "👋 Welcome to Snyk for Visual Studio Code. \n👉 Connect with Snyk to start your first analysis!\nWhen scanning folder files, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\n[Trust workspace and connect](command:snyk.initiateLogin 'Connect with Snyk')\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn"
       },
       {
@@ -381,6 +381,7 @@
   "devDependencies": {
     "@amplitude/ampli": "^1.29.0",
     "@types/babel__traverse": "^7.12.2",
+    "@types/diff": "^5.0.9",
     "@types/find-package-json": "^1.2.2",
     "@types/glob": "^8.1.0",
     "@types/he": "^1.2.3",
@@ -420,6 +421,7 @@
     "@sentry/tracing": "^6.19.7",
     "@snyk/code-client": "^4.23.5",
     "axios": "^1.6.7",
+    "diff": "^5.2.0",
     "glob": "^9.3.5",
     "he": "^1.2.0",
     "htmlparser2": "^7.2.0",

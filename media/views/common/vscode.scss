@@ -9,6 +9,8 @@
   --input-padding-horizontal: 4px;
   --input-margin-vertical: 4px;
   --input-margin-horizontal: 0;
+  --button-padding-horizontal: 16px;
+  --button-padding-vertical: 6px;
 }
 
 body {
@@ -25,8 +27,8 @@ ul {
   padding-left: var(--container-paddding);
 }
 
-body > *,
-form > * {
+body>*,
+form>* {
   margin-block-start: var(--input-margin-vertical);
   margin-block-end: var(--input-margin-vertical);
 }
@@ -35,8 +37,16 @@ form > * {
   outline-color: var(--vscode-focusBorder) !important;
 }
 
-a {
+p {
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
+a,
+.link {
+  cursor: pointer;
   color: var(--vscode-textLink-foreground);
+  fill: currentColor;
 }
 
 a:hover,
@@ -51,8 +61,7 @@ code {
 
 button {
   border: none;
-  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  width: 100%;
+  padding: var(--button-padding-vertical) var(--button-padding-horizontal);
   text-align: center;
   outline: 1px solid transparent;
   outline-offset: 2px !important;

@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../../common/configuration/configuration';
 import { Issue, IssueSeverity } from '../../common/languageServer/types';
@@ -75,8 +75,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       ];
     }
 
-    const [resultNodes, nIssues] = this.getResultNodes();
-    nodes.push(...resultNodes);
+    nodes.push(...this.getResultNodes());
 
     const folderResults = Array.from(this.productService.result.values());
     const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
@@ -86,20 +85,42 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     nodes.sort(this.compareNodes);
 
-    const topNodes = [
+    const topNodes: (TreeNode | null)[] = [
       new TreeNode({
-        text: this.getIssueFoundText(nIssues),
+        text: this.getIssueFoundText(this.getTotalIssueCount()),
       }),
-      this.getDurationTreeNode(),
+      this.getFixableIssuesNode(this.getFixableCount()),
       this.getNoSeverityFiltersSelectedTreeNode(),
     ];
+
     nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return nodes;
   }
 
-  getResultNodes(): [TreeNode[], number] {
+  getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {
+    return null; // optionally overridden by products
+  }
+
+  getFilteredIssues(): Issue<T>[] {
+    const folderResults = Array.from(this.productService.result.values());
+    const successfulResults = flatten(folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)));
+    return this.filterIssues(successfulResults);
+  }
+
+  getTotalIssueCount(): number {
+    return this.getFilteredIssues().length;
+  }
+
+  getFixableCount(): number {
+    return this.getFilteredIssues().filter(issue => this.isFixableIssue(issue)).length;
+  }
+
+  isFixableIssue(_issue: Issue<T>) {
+    return false; // optionally overridden by products
+  }
+
+  getResultNodes(): TreeNode[] {
     const nodes: TreeNode[] = [];
-    let totalVulnCount = 0;
 
     for (const result of this.productService.result.entries()) {
       const folderPath = result[0];
@@ -133,7 +154,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
         const issueNodes = filteredIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
-          totalVulnCount++;
           folderVulnCount++;
 
           const issueRange = this.getIssueRange(issue);
@@ -209,7 +229,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       }
     }
 
-    return [nodes, totalVulnCount];
+    return nodes;
   }
 
   protected getIssueFoundText(nIssues: number): string {
@@ -218,12 +238,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
     return `${dir} - ${issueCount} issue${issueCount === 1 ? '' : 's'}`;
-  }
-
-  // todo: Obsolete. Remove after OSS scans migration to LS
-  protected getFilteredIssues(diagnostics: readonly unknown[]): readonly unknown[] {
-    // Diagnostics are already filtered by the analyzer
-    return diagnostics;
   }
 
   static getHighestSeverity(counts: ISeverityCounts): IssueSeverity {

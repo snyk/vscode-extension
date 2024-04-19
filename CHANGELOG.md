@@ -1,4 +1,6 @@
 # Snyk Security Changelog
+## [2.6.0]
+- Improve UX of AI fixes by adding previews and options
 
 ## [2.4.1]
 - updated the language server protocol version to 11 to support global ignores
