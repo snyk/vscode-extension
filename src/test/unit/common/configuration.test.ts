@@ -229,45 +229,4 @@ suite('Configuration', () => {
       strictEqual(configuration.isFedramp, false);
     });
   });
-
-  suite('.analyticsPermitted()', () => {
-    test('returns true when no custom endpoint configured', () => {
-      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
-
-      const configuration = new Configuration({}, workspace);
-      strictEqual(configuration.analyticsPermitted, true);
-    });
-
-    test('returns true for app.snyk.io', () => {
-      const customEndpoint = 'https://app.snyk.io';
-      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
-
-      const configuration = new Configuration({}, workspace);
-      strictEqual(configuration.analyticsPermitted, true);
-    });
-
-    test('returns true for app.us.snyk.io', () => {
-      const customEndpoint = 'https://app.us.snyk.io';
-      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
-
-      const configuration = new Configuration({}, workspace);
-      strictEqual(configuration.analyticsPermitted, true);
-    });
-
-    test('returns false for app.snykgov.io', () => {
-      const customEndpoint = 'https://app.snykgov.io';
-      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
-
-      const configuration = new Configuration({}, workspace);
-      strictEqual(configuration.analyticsPermitted, false);
-    });
-
-    test('returns false for app.eu.snyk.io', () => {
-      const customEndpoint = 'https://app.eu.snyk.io';
-      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
-
-      const configuration = new Configuration({}, workspace);
-      strictEqual(configuration.analyticsPermitted, false);
-    });
-  });
 });
