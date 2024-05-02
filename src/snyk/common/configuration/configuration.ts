@@ -45,6 +45,7 @@ export interface SeverityFilter {
 
 export type PreviewFeatures = {
   advisor: boolean | undefined;
+  snykCodeLsp: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -423,6 +424,7 @@ export class Configuration implements IConfiguration {
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
       advisor: false,
+      snykCodeLsp: false,
     };
 
     const userSetting =

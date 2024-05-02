@@ -186,12 +186,14 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getPreviewFeatures(), {
       advisor: false,
+      snykCodeLsp: false,
     } as PreviewFeatures);
   });
 
   test('Preview features: some features enabled', () => {
     const previewFeatures = {
       advisor: false,
+      snykCodeLsp: false,
     } as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 

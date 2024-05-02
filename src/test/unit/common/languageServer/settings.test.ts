@@ -14,6 +14,7 @@ suite('LanguageServerSettings', () => {
         // eslint-disable-next-line @typescript-eslint/require-await
         getToken: async () => 'snyk-token',
         getFeaturesConfiguration: () => ({}), // iacEnabled, codeSecurityEnabled, codeQualityEnabled are undefined
+        getPreviewFeatures: () => ({ snykCodeLsp: true }),
         getCliPath: () => '/path/to/cli',
         getAdditionalCliParameters: () => '--all-projects -d',
         getTrustedFolders: () => ['/trusted/path'],

@@ -34,6 +34,7 @@ suite('Language Server: Middleware', () => {
       getPreviewFeatures: () => {
         return {
           advisor: false,
+          snykCodeLsp: false,
         };
       },
       getFeaturesConfiguration() {
