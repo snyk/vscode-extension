@@ -30,6 +30,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
+  SNYK_VIEW_ANALYSIS_CODE_SECURITY_LANGUAGE_SERVER,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
@@ -74,8 +75,11 @@ import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvid
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
+import type { FeatureFlagStatus } from './common/types';
 
 class SnykExtension extends SnykLib implements IExtension {
+  private featureFlagStatus: FeatureFlagStatus | undefined;
+
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
@@ -243,36 +247,6 @@ class SnykExtension extends SnykLib implements IExtension {
     );
     this.registerCommands(vscodeContext);
 
-    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-    );
-
-    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-    );
-
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
-      treeDataProvider: codeSecurityIssueProvider,
-    });
-    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
-      treeDataProvider: codeQualityIssueProvider,
-    });
-
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
-      codeSecurityTree,
-      codeQualityTree,
-    );
-
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
@@ -365,6 +339,47 @@ class SnykExtension extends SnykLib implements IExtension {
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
+
+    // Fetch feature flag to determine whether to use the new LSP-based rendering.
+    this.featureFlagStatus = await vsCodeCommands.executeCommand<FeatureFlagStatus>(
+      'snyk.getFeatureFlagStatus',
+      'snykCodeConsistentIgnores',
+    );
+
+    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    // Choose view based on the feature flag status.
+    const SNYK_CODE_VIEW = this.featureFlagStatus?.ok
+      ? SNYK_VIEW_ANALYSIS_CODE_SECURITY_LANGUAGE_SERVER
+      : SNYK_VIEW_ANALYSIS_CODE_SECURITY;
+
+    const codeSecurityTree = vscode.window.createTreeView(SNYK_CODE_VIEW, {
+      treeDataProvider: codeSecurityIssueProvider,
+    });
+    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
+      treeDataProvider: codeQualityIssueProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_CODE_VIEW, codeSecurityIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
+      codeSecurityTree,
+      codeQualityTree,
+    );
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);

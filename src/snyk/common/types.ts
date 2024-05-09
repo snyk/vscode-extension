@@ -37,3 +37,8 @@ export function languageToString(language: Language): string {
       return PJSON;
   }
 }
+
+export type FeatureFlagStatus = {
+  ok: boolean;
+  userMessage?: string;
+};
