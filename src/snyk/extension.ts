@@ -75,6 +75,7 @@ import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabil
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import type { FeatureFlagStatus } from './common/types';
+import { CodeDetailPanelProvider } from './snykCode/views/suggestion/codeDetailPanelProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   private featureFlagStatus: FeatureFlagStatus | undefined;
@@ -173,9 +174,12 @@ class SnykExtension extends SnykLib implements IExtension {
       this.learnService,
     );
 
+    const codeDetailPanelProvider = new CodeDetailPanelProvider(vsCodeWindow, extensionContext, Logger);
+
     this.snykCode = new SnykCodeService(
       this.context,
       configuration,
+      codeDetailPanelProvider,
       codeSuggestionProvider,
       new CodeActionAdapter(),
       this.codeActionKindAdapter,

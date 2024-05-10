@@ -42,7 +42,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   constructor(
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
-    private readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
+    protected readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
     protected readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
