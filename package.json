@@ -238,11 +238,6 @@
           "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.security.languageServer",
-          "name": "Code Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
           "id": "snyk.views.analysis.configuration",
           "name": "Configuration Issues",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"

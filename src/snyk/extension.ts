@@ -30,7 +30,6 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
-  SNYK_VIEW_ANALYSIS_CODE_SECURITY_LANGUAGE_SERVER,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
@@ -362,12 +361,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
     );
 
-    // Choose view based on the feature flag status.
-    const SNYK_CODE_VIEW = this.featureFlagStatus?.ok
-      ? SNYK_VIEW_ANALYSIS_CODE_SECURITY_LANGUAGE_SERVER
-      : SNYK_VIEW_ANALYSIS_CODE_SECURITY;
-
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_CODE_VIEW, {
+    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
       treeDataProvider: codeSecurityIssueProvider,
     });
     const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
@@ -375,7 +369,7 @@ class SnykExtension extends SnykLib implements IExtension {
     });
 
     vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_CODE_VIEW, codeSecurityIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
       codeSecurityTree,
       codeQualityTree,
