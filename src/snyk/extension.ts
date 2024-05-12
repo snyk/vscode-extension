@@ -75,7 +75,6 @@ import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvid
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
-import { CodeDetailPanelProvider } from './snykCode/views/suggestion/codeDetailPanelProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -172,12 +171,9 @@ class SnykExtension extends SnykLib implements IExtension {
       this.learnService,
     );
 
-    const codeDetailPanelProvider = new CodeDetailPanelProvider(vsCodeWindow, extensionContext, Logger);
-
     this.snykCode = new SnykCodeService(
       this.context,
       configuration,
-      codeDetailPanelProvider,
       codeSuggestionProvider,
       new CodeActionAdapter(),
       this.codeActionKindAdapter,

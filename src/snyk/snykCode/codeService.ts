@@ -12,15 +12,11 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { SnykCodeActionsProvider } from './codeActions/codeIssuesActionsProvider';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
-import { CodeDetailPanelProvider } from './views/suggestion/codeDetailPanelProvider';
 
 export class SnykCodeService extends ProductService<CodeIssueData> {
-  private detailProvider: CodeDetailPanelProvider;
-
   constructor(
     extensionContext: ExtensionContext,
     config: IConfiguration,
-    detailProvider: CodeDetailPanelProvider,
     suggestionProvider: ICodeSuggestionWebviewProvider,
     readonly codeActionAdapter: ICodeActionAdapter,
     readonly codeActionKindAdapter: ICodeActionKindAdapter,
@@ -42,8 +38,6 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
       languages,
       logger,
     );
-
-    this.detailProvider = detailProvider;
 
     this.registerCodeActionsProvider(
       new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages),

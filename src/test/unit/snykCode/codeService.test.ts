@@ -14,7 +14,6 @@ import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/int
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { languagesMock } from '../mocks/languages.mock';
 import { LoggerMock } from '../mocks/logger.mock';
-import { CodeDetailPanelProvider } from '../../../snyk/snykCode/views/suggestion/codeDetailPanelProvider';
 
 suite('Code Service', () => {
   let ls: ILanguageServer;
@@ -32,7 +31,6 @@ suite('Code Service', () => {
     service = new SnykCodeService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as CodeDetailPanelProvider,
       {} as ICodeSuggestionWebviewProvider,
       {} as ICodeActionAdapter,
       {
