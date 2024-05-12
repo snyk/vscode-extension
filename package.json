@@ -200,13 +200,7 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
-            "properties": {
-              "snykCodeLsp": {
-                "type": "boolean",
-                "default": false,
-                "description": "Enable Snyk Code Panel Rendering via Language Server Protocol."
-              }
-            }
+            "properties": {}
           }
         }
       }

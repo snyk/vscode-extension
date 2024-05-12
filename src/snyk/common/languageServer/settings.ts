@@ -33,7 +33,6 @@ export type ServerSettings = {
   // Trusted folders feature
   enableTrustedFoldersFeature?: string;
   trustedFolders?: string[];
-  isSnykCodeLsp?: boolean;
 
   // Snyk integration settings
   integrationName?: string;
@@ -76,7 +75,6 @@ export class LanguageServerSettings {
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
-      isSnykCodeLsp: configuration.getPreviewFeatures().snykCodeLsp,
     };
   }
 }

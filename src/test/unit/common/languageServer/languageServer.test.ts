@@ -58,7 +58,6 @@ suite('Language Server', () => {
       getPreviewFeatures() {
         return {
           advisor: false,
-          snykCodeLsp: false,
         };
       },
       getFeaturesConfiguration() {
@@ -219,7 +218,6 @@ suite('Language Server', () => {
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
         scanningMode: 'auto',
-        isSnykCodeLsp: false,
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
