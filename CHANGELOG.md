@@ -1,4 +1,7 @@
 # Snyk Security Changelog
+## [2.6.1]
+- Improve the validation of the custom endpoint and change the default to https://api.snyk.io.
+
 ## [2.6.0]
 - Improve UX of AI fixes by adding previews and options
 

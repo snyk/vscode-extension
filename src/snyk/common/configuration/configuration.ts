@@ -56,7 +56,6 @@ export interface IConfiguration {
   source: string;
 
   authHost: string;
-  baseApiUrl: string;
 
   fetchAndSetFeatureFlag(flagName: string): Promise<void>;
 
@@ -106,8 +105,6 @@ export interface IConfiguration {
 
   isFedramp: boolean;
 
-  analyticsPermitted: boolean;
-
   severityFilter: SeverityFilter;
 
   scanningMode: string | undefined;
@@ -126,8 +123,6 @@ export class Configuration implements IConfiguration {
   private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
-  private readonly defaultBaseApiHost = 'https://api.snyk.io';
-  private readonly analyticsPermittedEnvironments = { 'app.snyk.io': true, 'app.us.snyk.io': true };
 
   private featureFlag: { [key: string]: boolean } = {};
 
@@ -232,13 +227,6 @@ export class Configuration implements IConfiguration {
     return `${hostnameParts[2]}.${hostnameParts[3]}`.includes('snykgov.io');
   }
 
-  get analyticsPermitted(): boolean {
-    if (!this.customEndpoint) return true;
-
-    const hostname = new URL(this.customEndpoint).hostname;
-    return hostname in this.analyticsPermittedEnvironments;
-  }
-
   get snykOssApiEndpoint(): string {
     if (this.customEndpoint) {
       return this.customEndpoint; // E.g. https://app.eu.snyk.io/api
@@ -318,10 +306,6 @@ export class Configuration implements IConfiguration {
 
   get source(): string {
     return Configuration.source;
-  }
-
-  get baseApiUrl(): string {
-    return this.defaultBaseApiHost;
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration {
