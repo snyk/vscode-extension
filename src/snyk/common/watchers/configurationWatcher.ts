@@ -11,10 +11,12 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   IAC_ENABLED_SETTING,
+  ADVANCED_ORGANIZATION_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
 } from '../constants/settings';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
@@ -25,6 +27,9 @@ class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
+    if (key === ADVANCED_ORGANIZATION_SETTING) {
+      await configuration.fetchAndSetFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    }
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === OSS_ENABLED_SETTING) {
@@ -63,6 +68,7 @@ class ConfigurationWatcher implements IWatcher {
       const change = [
         ADVANCED_ADVANCED_MODE_SETTING,
         ADVANCED_AUTOSCAN_OSS_SETTING,
+        ADVANCED_ORGANIZATION_SETTING,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         CODE_QUALITY_ENABLED_SETTING,

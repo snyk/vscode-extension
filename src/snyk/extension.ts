@@ -35,6 +35,7 @@ import {
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
+import { FEATURE_FLAGS } from './common/constants/featureFlags';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
@@ -74,12 +75,9 @@ import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvid
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
-import type { FeatureFlagStatus } from './common/types';
 import { CodeDetailPanelProvider } from './snykCode/views/suggestion/codeDetailPanelProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
-  private featureFlagStatus: FeatureFlagStatus | undefined;
-
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
@@ -344,10 +342,7 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.start();
 
     // Fetch feature flag to determine whether to use the new LSP-based rendering.
-    this.featureFlagStatus = await vsCodeCommands.executeCommand<FeatureFlagStatus>(
-      'snyk.getFeatureFlagStatus',
-      'snykCodeConsistentIgnores',
-    );
+    await configuration.fetchAndSetFeatureFlag(FEATURE_FLAGS.consistentIgnores);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
       this.viewManagerService,

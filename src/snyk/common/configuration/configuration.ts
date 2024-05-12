@@ -2,6 +2,7 @@ import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
 import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
+import { SNYK_FEATURE_FLAG_COMMAND } from '../constants/commands';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -26,6 +27,8 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { vsCodeCommands } from '../vscode/commands';
+import type { FeatureFlagStatus } from '../types';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
@@ -55,6 +58,12 @@ export interface IConfiguration {
 
   authHost: string;
   baseApiUrl: string;
+
+  fetchAndSetFeatureFlag(flagName: string): Promise<void>;
+
+  getFeatureFlag(flagName: string): boolean;
+
+  setFeatureFlag(flagName: string, value: boolean): void;
 
   getToken(): Promise<string | undefined>;
 
@@ -121,6 +130,8 @@ export class Configuration implements IConfiguration {
   private readonly defaultBaseApiHost = 'https://api.snyk.io';
   private readonly analyticsPermittedEnvironments = { 'app.snyk.io': true, 'app.us.snyk.io': true };
 
+  private featureFlag: { [key: string]: boolean } = {};
+
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
   getInsecure(): boolean {
@@ -138,6 +149,23 @@ export class Configuration implements IConfiguration {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
+  }
+
+  public async fetchAndSetFeatureFlag(flagName: string): Promise<void> {
+    try {
+      const ffStatus = await vsCodeCommands.executeCommand<FeatureFlagStatus>(SNYK_FEATURE_FLAG_COMMAND, flagName);
+      this.setFeatureFlag(flagName, ffStatus?.ok ?? false);
+    } catch (error) {
+      console.warn(`Failed to fetch feature flag ${flagName}: ${error}`);
+    }
+  }
+
+  getFeatureFlag(flagName: string): boolean {
+    return this.featureFlag[flagName] ?? false;
+  }
+
+  setFeatureFlag(flagName: string, value: boolean): void {
+    this.featureFlag[flagName] = value;
   }
 
   private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {
