@@ -248,6 +248,36 @@ class SnykExtension extends SnykLib implements IExtension {
     );
     this.registerCommands(vscodeContext);
 
+    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
+      this.viewManagerService,
+      this.contextService,
+      this.snykCode,
+      configuration,
+      vsCodeLanguages,
+    );
+
+    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
+      treeDataProvider: codeSecurityIssueProvider,
+    });
+    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
+      treeDataProvider: codeQualityIssueProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
+      codeSecurityTree,
+      codeQualityTree,
+    );
+
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
     const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
@@ -343,36 +373,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Fetch feature flag to determine whether to use the new LSP-based rendering.
     await configuration.fetchAndSetFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-
-    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-    );
-
-    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-    );
-
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
-      treeDataProvider: codeSecurityIssueProvider,
-    });
-    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
-      treeDataProvider: codeQualityIssueProvider,
-    });
-
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
-      codeSecurityTree,
-      codeQualityTree,
-    );
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
