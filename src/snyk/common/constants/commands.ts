@@ -24,6 +24,7 @@ export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 export const SNYK_CODE_FIX_DIFFS_COMMAND = 'snyk.code.fixDiffs';
+export const SNYK_FEATURE_FLAG_COMMAND = 'snyk.getFeatureFlagStatus';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

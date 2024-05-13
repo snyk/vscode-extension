@@ -51,6 +51,7 @@ export type CodeIssueData = {
   isSecurityType: boolean;
   priorityScore: number;
   hasAIFix: boolean;
+  details: string; // HTML from the LSP
 };
 
 export type ExampleCommitFix = {

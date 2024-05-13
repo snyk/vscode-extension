@@ -2,6 +2,7 @@ import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
 import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
+import { SNYK_FEATURE_FLAG_COMMAND } from '../constants/commands';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -53,6 +54,10 @@ export interface IConfiguration {
   source: string;
 
   authHost: string;
+
+  getFeatureFlag(flagName: string): boolean;
+
+  setFeatureFlag(flagName: string, value: boolean): void;
 
   getToken(): Promise<string | undefined>;
 
@@ -115,6 +120,8 @@ export class Configuration implements IConfiguration {
   private readonly defaultAuthHost = 'https://snyk.io';
   private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
 
+  private featureFlag: { [key: string]: boolean } = {};
+
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
   getInsecure(): boolean {
@@ -132,6 +139,14 @@ export class Configuration implements IConfiguration {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
+  }
+
+  getFeatureFlag(flagName: string): boolean {
+    return this.featureFlag[flagName] ?? false;
+  }
+
+  setFeatureFlag(flagName: string, value: boolean): void {
+    this.featureFlag[flagName] = value;
   }
 
   private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {

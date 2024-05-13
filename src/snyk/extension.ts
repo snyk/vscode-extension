@@ -35,6 +35,7 @@ import {
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
+import { FEATURE_FLAGS } from './common/constants/featureFlags';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
@@ -118,7 +119,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
 
-    this.configurationWatcher = new ConfigurationWatcher(Logger);
+    this.configurationWatcher = new ConfigurationWatcher(Logger, vsCodeCommands);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
@@ -365,6 +366,8 @@ class SnykExtension extends SnykLib implements IExtension {
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
+
+    // Fetch feature flag to determine whether to use the new LSP-based rendering.
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
