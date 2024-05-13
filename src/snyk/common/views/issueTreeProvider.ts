@@ -118,6 +118,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   isFixableIssue(_issue: Issue<T>) {
     return false; // optionally overridden by products
   }
+  
+  filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
+    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions))
+  }
 
   protected isVisibleIssue(_issue: Issue<T>, issueViewOptions: IssueViewOptions) {
     if (issueViewOptions.ignoredIssues && issueViewOptions.openIssues){
@@ -163,10 +167,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
         const fileSeverityCounts = this.initSeverityCounts();
 
-        // custom product-specific filtering
         const filteredIssues = this.filterIssues(fileIssues);
+        const visibleIssues = this.filterVisibleIssues(filteredIssues)
 
-        const issueNodes = filteredIssues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions)).map(issue => {
+        const issueNodes = visibleIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 
