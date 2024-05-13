@@ -1,4 +1,7 @@
 # Snyk Security Changelog
+## [2.7,1]
+- Add the Issue View Options panel to the Snyk Security Settings.
+
 ## [2.6.1]
 - Improve the validation of the custom endpoint and change the default to https://api.snyk.io.
 
