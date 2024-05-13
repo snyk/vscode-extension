@@ -11,7 +11,7 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   IAC_ENABLED_SETTING,
-  ADVANCED_ORGANIZATION_SETTING,
+  ADVANCED_ORGANIZATION,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
@@ -27,7 +27,7 @@ class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
-    if (key === ADVANCED_ORGANIZATION_SETTING) {
+    if (key === ADVANCED_ORGANIZATION) {
       await configuration.fetchAndSetFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     }
     if (key === ADVANCED_ADVANCED_MODE_SETTING) {
@@ -68,7 +68,7 @@ class ConfigurationWatcher implements IWatcher {
       const change = [
         ADVANCED_ADVANCED_MODE_SETTING,
         ADVANCED_AUTOSCAN_OSS_SETTING,
-        ADVANCED_ORGANIZATION_SETTING,
+        ADVANCED_ORGANIZATION,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         CODE_QUALITY_ENABLED_SETTING,
