@@ -1,6 +1,6 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
 import { Issue, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
@@ -119,6 +119,19 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false; // optionally overridden by products
   }
 
+  protected isVisibleIssue(_issue: Issue<T>, issueViewOptions: IssueViewOptions) {
+    if (issueViewOptions.ignoredIssues && issueViewOptions.openIssues){
+      return true
+    }
+    if (issueViewOptions.ignoredIssues) {
+       return _issue.isIgnored == true
+    }
+    if (issueViewOptions.openIssues){
+      return _issue.isIgnored != true
+    }
+    return false
+  }
+
   getResultNodes(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -150,9 +163,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
         const fileSeverityCounts = this.initSeverityCounts();
 
+        // custom product-specific filtering
         const filteredIssues = this.filterIssues(fileIssues);
 
-        const issueNodes = filteredIssues.map(issue => {
+        const issueNodes = filteredIssues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions)).map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 

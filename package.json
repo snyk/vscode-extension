@@ -160,6 +160,28 @@
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
           },
+          "snyk.issueViewOptions": {
+            "type": "object",
+            "default": {
+              "openIssues": true,
+              "ignoredIssues": true
+            },
+            "properties": {
+              "openIssues": {
+                "type": "boolean",
+                "description": "Open Issues",
+                "default": true
+              },
+              "ignoredIssues": {
+                "type": "boolean",
+                "description": "Ignored Issues",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "markdownDescription": "Ignores settings is currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
+            "scope": "window"
+          },
           "snyk.severity": {
             "type": "object",
             "default": {
