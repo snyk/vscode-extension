@@ -27,8 +27,6 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { vsCodeCommands } from '../vscode/commands';
-import type { FeatureFlagStatus } from '../types';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
@@ -56,8 +54,6 @@ export interface IConfiguration {
   source: string;
 
   authHost: string;
-
-  fetchAndSetFeatureFlag(flagName: string): Promise<void>;
 
   getFeatureFlag(flagName: string): boolean;
 
@@ -143,15 +139,6 @@ export class Configuration implements IConfiguration {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
-  }
-
-  public async fetchAndSetFeatureFlag(flagName: string): Promise<void> {
-    try {
-      const ffStatus = await vsCodeCommands.executeCommand<FeatureFlagStatus>(SNYK_FEATURE_FLAG_COMMAND, flagName);
-      this.setFeatureFlag(flagName, ffStatus?.ok ?? false);
-    } catch (error) {
-      console.warn(`Failed to fetch feature flag ${flagName}: ${error}`);
-    }
   }
 
   getFeatureFlag(flagName: string): boolean {
