@@ -118,22 +118,27 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   isFixableIssue(_issue: Issue<T>) {
     return false; // optionally overridden by products
   }
-  
+
   filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
-    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions))
+    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions));
   }
 
-  protected isVisibleIssue(_issue: Issue<T>, issueViewOptions: IssueViewOptions) {
-    if (issueViewOptions.ignoredIssues && issueViewOptions.openIssues){
-      return true
+  protected isVisibleIssue(issue: Issue<T>, issueViewOptions: IssueViewOptions) {
+    const { ignoredIssues: includeIgnoredIssues, openIssues: includeOpenIssues } = issueViewOptions;
+
+    // Show all issues
+    if (includeIgnoredIssues && includeOpenIssues) {
+      return true;
     }
-    if (issueViewOptions.ignoredIssues) {
-       return _issue.isIgnored == true
+
+    // Show issues based on options
+    if (includeIgnoredIssues) {
+      return issue.isIgnored;
     }
-    if (issueViewOptions.openIssues){
-      return _issue.isIgnored != true
+    if (includeOpenIssues) {
+      return !issue.isIgnored;
     }
-    return false
+    return false;
   }
 
   getResultNodes(): TreeNode[] {
@@ -168,7 +173,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         const fileSeverityCounts = this.initSeverityCounts();
 
         const filteredIssues = this.filterIssues(fileIssues);
-        const visibleIssues = this.filterVisibleIssues(filteredIssues)
+        const visibleIssues = this.filterVisibleIssues(filteredIssues);
 
         const issueNodes = visibleIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;

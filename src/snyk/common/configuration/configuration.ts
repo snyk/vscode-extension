@@ -36,11 +36,10 @@ export type FeaturesConfiguration = {
   iacEnabled: boolean | undefined;
 };
 
-
 export interface IssueViewOptions {
   ignoredIssues: boolean;
   openIssues: boolean;
-};
+}
 
 export interface SeverityFilter {
   critical: boolean;
@@ -421,7 +420,6 @@ export class Configuration implements IConfiguration {
       }
     );
   }
-
 
   get severityFilter(): SeverityFilter {
     const config = this.workspace.getConfiguration<SeverityFilter>(
