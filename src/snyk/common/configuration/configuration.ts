@@ -2,7 +2,6 @@ import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
 import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
-import { SNYK_FEATURE_FLAG_COMMAND } from '../constants/commands';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
