@@ -1,6 +1,10 @@
 # Snyk Security Changelog
-## [2.7,1]
+## [2.7.1]
 - Add the Issue View Options panel to the Snyk Security Settings.
+
+## [2.7.0]
+- Fetch Snyk Consistent Ignores feature flag from the Language Server
+- Conditionally render Code details panel from Language Server
 
 ## [2.6.1]
 - Improve the validation of the custom endpoint and change the default to https://api.snyk.io.

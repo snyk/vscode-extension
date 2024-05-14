@@ -32,6 +32,8 @@ import { readFileSync } from 'fs';
 import { TextDocument } from '../../../common/vscode/types';
 import { Suggestion, SuggestionMessage } from './types';
 import { WebviewPanelSerializer } from '../../../snykCode/views/webviewPanelSerializer';
+import { configuration } from '../../../common/configuration/instance';
+import { FEATURE_FLAGS } from '../../../common/constants/featureFlags';
 
 export class CodeSuggestionWebviewProvider
   extends WebviewProvider<Issue<CodeIssueData>>
@@ -88,9 +90,10 @@ export class CodeSuggestionWebviewProvider
   }
 
   async showPanel(issue: Issue<CodeIssueData>): Promise<void> {
+    const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+
     try {
       await this.focusSecondEditorGroup();
-
       if (this.panel) {
         this.panel.title = this.getTitle(issue);
         this.panel.reveal(vscode.ViewColumn.Two, true);
@@ -107,15 +110,19 @@ export class CodeSuggestionWebviewProvider
         this.registerListeners();
       }
 
-      issue.additionalData.exampleCommitFixes = encodeExampleCommitFixes(issue.additionalData.exampleCommitFixes);
+      if (isIgnoresEnabled) {
+        this.panel.webview.html = issue.additionalData.details;
+      } else {
+        issue.additionalData.exampleCommitFixes = encodeExampleCommitFixes(issue.additionalData.exampleCommitFixes);
 
-      this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
-      this.panel.iconPath = vscode.Uri.joinPath(
-        vscode.Uri.file(this.context.extensionPath),
-        'media',
-        'images',
-        'snyk-code.svg',
-      );
+        this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+        this.panel.iconPath = vscode.Uri.joinPath(
+          vscode.Uri.file(this.context.extensionPath),
+          'media',
+          'images',
+          'snyk-code.svg',
+        );
+      }
 
       void this.postSuggestMessage({ type: 'set', args: this.mapToModel(issue) });
       void this.postLearnLessonMessage(issue);
