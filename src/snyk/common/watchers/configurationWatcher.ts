@@ -12,6 +12,7 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   IAC_ENABLED_SETTING,
   ADVANCED_ORGANIZATION,
+  ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
@@ -42,6 +43,8 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
+    } else if (key === ISSUE_VIEW_OPTIONS_SETTING) {
+      extension.viewManagerService.refreshAllViews();
     } else if (key === SEVERITY_FILTER_SETTING) {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
@@ -81,6 +84,7 @@ class ConfigurationWatcher implements IWatcher {
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CUSTOM_LS_PATH,
         TRUSTED_FOLDERS,
+        ISSUE_VIEW_OPTIONS_SETTING,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

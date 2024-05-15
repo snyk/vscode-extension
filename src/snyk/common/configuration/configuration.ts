@@ -19,6 +19,7 @@ import {
   IAC_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
   SCANNING_MODE,
+  ISSUE_VIEW_OPTIONS_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
@@ -34,6 +35,11 @@ export type FeaturesConfiguration = {
   codeQualityEnabled: boolean | undefined;
   iacEnabled: boolean | undefined;
 };
+
+export interface IssueViewOptions {
+  ignoredIssues: boolean;
+  openIssues: boolean;
+}
 
 export interface SeverityFilter {
   critical: boolean;
@@ -100,6 +106,8 @@ export interface IConfiguration {
   getInsecure(): boolean;
 
   isFedramp: boolean;
+
+  issueViewOptions: IssueViewOptions;
 
   severityFilter: SeverityFilter;
 
@@ -396,6 +404,20 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_AUTOSCAN_OSS_SETTING),
+    );
+  }
+
+  get issueViewOptions(): IssueViewOptions {
+    const config = this.workspace.getConfiguration<IssueViewOptions>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ISSUE_VIEW_OPTIONS_SETTING),
+    );
+
+    return (
+      config ?? {
+        openIssues: true,
+        ignoredIssues: true,
+      }
     );
   }
 

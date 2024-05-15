@@ -1,6 +1,6 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
 import { Issue, IssueSeverity } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
@@ -119,6 +119,28 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false; // optionally overridden by products
   }
 
+  filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
+    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions));
+  }
+
+  protected isVisibleIssue(issue: Issue<T>, issueViewOptions: IssueViewOptions) {
+    const { ignoredIssues: includeIgnoredIssues, openIssues: includeOpenIssues } = issueViewOptions;
+
+    // Show all issues
+    if (includeIgnoredIssues && includeOpenIssues) {
+      return true;
+    }
+
+    // Show issues based on options
+    if (includeIgnoredIssues) {
+      return issue.isIgnored;
+    }
+    if (includeOpenIssues) {
+      return !issue.isIgnored;
+    }
+    return false;
+  }
+
   getResultNodes(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -151,8 +173,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         const fileSeverityCounts = this.initSeverityCounts();
 
         const filteredIssues = this.filterIssues(fileIssues);
+        const visibleIssues = this.filterVisibleIssues(filteredIssues);
 
-        const issueNodes = filteredIssues.map(issue => {
+        const issueNodes = visibleIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 
