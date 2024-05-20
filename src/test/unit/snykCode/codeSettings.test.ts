@@ -10,10 +10,13 @@ import { CodeSettings, ICodeSettings } from '../../../snyk/snykCode/codeSettings
 suite('Snyk Code Settings', () => {
   let settings: ICodeSettings;
   let setContextFake: SinonSpy;
+  let setFeatureFlagFake: SinonSpy;
   let contextService: IContextService;
+  let config: IConfiguration;
 
   setup(() => {
     setContextFake = sinon.fake();
+    setFeatureFlagFake = sinon.fake();
 
     contextService = {
       setContext: setContextFake,
@@ -23,7 +26,11 @@ suite('Snyk Code Settings', () => {
       viewContext: {},
     };
 
-    settings = new CodeSettings(contextService, {} as IConfiguration, {} as IOpenerService, {} as IVSCodeCommands);
+    config = {
+      setFeatureFlag: setFeatureFlagFake,
+    } as unknown as IConfiguration;
+
+    settings = new CodeSettings(contextService, config, {} as IOpenerService, {} as IVSCodeCommands);
   });
 
   teardown(() => {
