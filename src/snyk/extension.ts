@@ -74,6 +74,7 @@ import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvid
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
+import { FeatureFlagService } from './common/services/featureFlagService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -118,7 +119,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
 
-    this.configurationWatcher = new ConfigurationWatcher(Logger, vsCodeCommands);
+    this.featureFlagService = new FeatureFlagService(vsCodeCommands);
+    this.configurationWatcher = new ConfigurationWatcher(Logger);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
