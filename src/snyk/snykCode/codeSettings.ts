@@ -1,10 +1,8 @@
 import { IConfiguration } from '../common/configuration/configuration';
-import { SNYK_FEATURE_FLAG_COMMAND, SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
-import { FEATURE_FLAGS } from '../common/constants/featureFlags';
+import { SNYK_GET_SETTINGS_SAST_ENABLED } from '../common/constants/commands';
 import { SNYK_CONTEXT } from '../common/constants/views';
 import { IContextService } from '../common/services/contextService';
 import { IOpenerService } from '../common/services/openerService';
-import { FeatureFlagStatus } from '../common/types';
 import { IVSCodeCommands } from '../common/vscode/commands';
 
 export interface ICodeSettings {
@@ -45,10 +43,6 @@ export class CodeSettings implements ICodeSettings {
     }
     await this.contextService.setContext(SNYK_CONTEXT.CODE_ENABLED, codeEnabled);
     await this.contextService.setContext(SNYK_CONTEXT.CODE_LOCAL_ENGINE_ENABLED, localCodeEngineEnabled);
-
-    // TODO: There is a follow-up task to refactor this to use the new feature flag service
-    const isConsistentIgnoresEnabled = await this.fetchFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-    this.config.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, isConsistentIgnoresEnabled);
 
     return codeEnabled;
   }
@@ -98,19 +92,4 @@ export class CodeSettings implements ICodeSettings {
   }
 
   private sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
-
-  // TODO: There is a follow-up task to refactor this to use the new feature flag service
-  private async fetchFeatureFlag(flagName: string): Promise<boolean> {
-    try {
-      const ffStatus = await this.commandExecutor.executeCommand<FeatureFlagStatus>(
-        SNYK_FEATURE_FLAG_COMMAND,
-        flagName,
-      );
-      console.log('codeSettings.fetchFeatureFlag: ffStatus:', ffStatus);
-      return ffStatus?.ok ?? false;
-    } catch (error) {
-      console.warn(`Failed to fetch feature flag ${flagName}: ${error}`);
-      return false;
-    }
-  }
 }

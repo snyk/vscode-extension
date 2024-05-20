@@ -12,7 +12,6 @@ suite('Snyk Code Settings', () => {
   let setContextFake: SinonSpy;
   let setFeatureFlagFake: SinonSpy;
   let contextService: IContextService;
-  let config: IConfiguration;
 
   setup(() => {
     setContextFake = sinon.fake();
@@ -26,11 +25,7 @@ suite('Snyk Code Settings', () => {
       viewContext: {},
     };
 
-    config = {
-      setFeatureFlag: setFeatureFlagFake,
-    } as unknown as IConfiguration;
-
-    settings = new CodeSettings(contextService, config, {} as IOpenerService, {} as IVSCodeCommands);
+    settings = new CodeSettings(contextService, {} as IConfiguration, {} as IOpenerService, {} as IVSCodeCommands);
   });
 
   teardown(() => {

@@ -119,7 +119,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
 
-    this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     this.configurationWatcher = new ConfigurationWatcher(Logger);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
@@ -367,6 +366,10 @@ class SnykExtension extends SnykLib implements IExtension {
     // Wait for LS startup to finish before updating the codeEnabled context
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
+
+    // feature flags depend on the language server
+    this.featureFlagService = new FeatureFlagService(vsCodeCommands);
+    await this.setupFeatureFlags();
 
     // Fetch feature flag to determine whether to use the new LSP-based rendering.
 

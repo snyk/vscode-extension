@@ -22,7 +22,6 @@ import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
-import { IVSCodeCommands } from '../vscode/commands';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
