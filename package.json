@@ -105,7 +105,7 @@
             "type": "string",
             "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://api.eu.snyk.io`.",
             "scope": "window",
-            "pattern": "^(|(https?://)api.?[a-zA-Z0-9]{0,19}.(snyk|snykgov).io)$"
+            "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
           "snyk.advanced.organization": {
             "type": "string",

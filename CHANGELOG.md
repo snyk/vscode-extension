@@ -1,5 +1,8 @@
 # Snyk Security Changelog
-## [2.7.1]
+## [2.8.1]
+- Lower the strictness of custom endpoint regex validation so that single tenant APIs are allowed.
+
+## [2.8.0]
 - Add the Issue View Options panel to the Snyk Security Settings.
 
 ## [2.7.0]
