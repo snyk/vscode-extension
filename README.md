@@ -10,7 +10,7 @@ Results appear in context, in line with the code in your IDE.
 
 This single plugin provides a Java vulnerability scanner, a custom code vulnerability scanner, and an open-source security scanner.
 
-In using the Visual Studio Code extension, you have the advantage of relying on the [Snyk Vulnerability Database](https://security.snyk.io/). You also have available the [Snyk Code AI Engine](https://docs.snyk.io/products/snyk-code/introducing-snyk-code/key-features/ai-engine).
+In using the Visual Studio Code extension, you have the advantage of relying on the [Snyk Vulnerability Database](https://security.snyk.io/). You also have available the [Snyk Code AI Engine](https://docs.snyk.io/scan-with-snyk/snyk-code#ai-engine).
 
 Snyk scans for the following types of issues:
 
@@ -21,18 +21,18 @@ Snyk scans for the following types of issues:
 
 This page explains the installation of the Visual Studio Code extension. **After you complete the steps on this page**, continue by following the instructions in the other Visual Studio Code extension docs:
 
-* [Visual Studio Code extension configuration](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-configuration)
-* [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-authentication)
-* [Run an analysis with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/run-an-analysis-with-visual-studio-code-extension)
-* [View analysis results from Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/view-analysis-results-from-visual-studio-code-extension)
-* [Troubleshooting and known issues with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/troubleshooting-for-visual-studio-code-extension)
+* [Visual Studio Code extension configuration](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-configuration)
+* [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-authentication)
+* [Run an analysis with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/run-an-analysis-with-visual-studio-code-extension)
+* [View analysis results from Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/view-analysis-results-from-visual-studio-code-extension)
+* [Troubleshooting and known issues with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/view-analysis-results-from-visual-studio-code-extension)
 
 ## Supported languages, package managers, and frameworks
 
 Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go, Ruby, Python, Ruby, PHP, Scala, Swift, Objective-C, Kubernetes, Terraform, CloudFormation, Azure Resource Manager (ARM)
 
 * For Snyk Open Source, the VS Code extension supports all the languages and package managers supported by Snyk Open Source and the CLI.
-* For Snyk Code, the VS Code extension supports all the languages and frameworks supported by Snyk Code.
+* For Snyk Code, the VS Code extension supports all the languages and frameworks supported by Snyk Code. Before scanning your repositories with Snyk Code, ensure you have [enabled Snyk Code](../../../scan-with-snyk/snyk-code/configure-snyk-code.md).&#x20;
 
 See [Supported languages and frameworks](https://docs.snyk.io/scan-applications/supported-languages-and-frameworks) for more details.
 
@@ -42,7 +42,7 @@ You can use the Snyk Visual Studio Code extension in the following environments:
 
 * Linux: AMD64 and ARM64
 * Windows: 386 and AMD64
-* MacOS: AMD64 and ARM64
+* macOS: AMD64 and ARM64
 
 ## Install the extension
 
@@ -53,8 +53,8 @@ Follow these steps to install:
 * Open the settings or preferences in your IDE.
 * Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) and click **Install**.\
   For more information, see the [installation instructions](https://code.visualstudio.com/docs/editor/extension-marketplace#\_install-an-extension).
-* Configure the Snyk CLI (downloaded when the extension in installed); see [Visual Studio extension configuration](https://docs.snyk.io/integrations/ide-tools/visual-studio-extension/visual-studio-extension-configuration).
-* Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/ide-tools/visual-studio-code-extension/visual-studio-code-extension-authentication). For additional information, including how to authenticate using your API token, see [Authenticate the CLI with your account](https://docs.snyk.io/snyk-cli/authenticate-the-cli-with-your-account).
+* Configure the Snyk CLI (downloaded when the extension in installed); see [Visual Studio Code extension configuration](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-configuration).
+* Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-authentication). For additional information, including how to authenticate using your API token, see [Authenticate the CLI with your account](https://docs.snyk.io/snyk-cli/authenticate-the-cli-with-your-account).
 * Navigate back to the IDE; the first scan starts automatically.
 
 ## Support
