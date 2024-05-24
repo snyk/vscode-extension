@@ -61,7 +61,14 @@ jobs:
         run: npm ci
 
       - name: Package VSIX
-        run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ needs.publish.outputs.new-version }}
+        run: |
+          run: |
+          sed -i \
+              -e 's|${env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY}|${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}|g' \
+              -e 's|${env.SNYK_VSCE_SENTRY_DSN_KEY}|${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}|g' \
+              snyk.config.json
+
+          echo y | vsce package --no-git-tag-version --no-update-package-json ${{ needs.publish.outputs.new-version }}
 
       - name: Extract release notes
         id: extract-release-notes
