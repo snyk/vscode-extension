@@ -110,8 +110,24 @@ export class CodeSuggestionWebviewProvider
         this.registerListeners();
       }
 
+      this.panel.iconPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'images',
+        'snyk-code.svg',
+      );
+
       if (isIgnoresEnabled) {
-        this.panel.webview.html = issue.additionalData.details;
+        const styleUri = this.getWebViewUri('media', 'views', 'snykCode', 'suggestion', 'suggestion.css');
+        const headerEndValue = `<link href="${styleUri}" rel="stylesheet">`;
+
+        let html = issue.additionalData.details;
+        html = html.replace('${headerEnd}', headerEndValue);
+        // html = html.replace('<body class="snyk-ide">', "<body class='snyk-vscode'>");
+        html = html.replaceAll(/\$\{\w+\}/g, '');
+
+        const updateHtml = this.updateSecurityPolicyAndNonce(html, this.panel.webview);
+        this.panel.webview.html = updateHtml;
       } else {
         issue.additionalData.exampleCommitFixes = encodeExampleCommitFixes(issue.additionalData.exampleCommitFixes);
 
@@ -131,6 +147,25 @@ export class CodeSuggestionWebviewProvider
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
+  }
+
+  private updateSecurityPolicyAndNonce(html: string, webview: vscode.Webview): string {
+    const nonce = getNonce();
+    const securityPolicy = `
+         <meta
+           http-equiv="Content-Security-Policy"
+           content="default-src 'none'; style-src 'nonce-${nonce}'
+           ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">`;
+
+    html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]+>/, securityPolicy);
+    html = this.updateNonceInTag(html, 'style', nonce);
+    html = this.updateNonceInTag(html, 'script', nonce);
+    return html;
+  }
+
+  private updateNonceInTag(html: string, tagName: string, nonce: string): string {
+    const regex = new RegExp(`<${tagName} nonce="[^"]+">`, 'g');
+    return html.replace(regex, `<${tagName} nonce="${nonce}">`);
   }
 
   protected registerListeners(): void {
