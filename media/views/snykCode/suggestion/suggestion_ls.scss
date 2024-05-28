@@ -1,0 +1,76 @@
+.ignore-warning {
+    background: #FFF4ED;
+    color: #B6540B;
+    border: 1px solid #E27122;
+}
+
+.ignore-badge {
+    background: #FFF4ED;
+    color: #B6540B;
+    border: 1px solid #E27122;
+}
+
+.tabs-nav {}
+
+.tab-item {
+    color: var(--vscode-foreground);
+}
+
+.tab-item-icon path {
+    fill: var(--tab-item-github-icon-color);
+}
+
+.tab-item:hover {}
+
+.tab-item.is-selected {
+    border-bottom: 3px solid var(--vscode-focusBorder);
+}
+
+.tab-content {
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-input-border);
+}
+
+.example-line-number,
+.example-line>code {
+    color: var(--vscode-editor-foreground);
+}
+
+.example-line.added {
+    background-color: rgb(204, 255, 216);
+}
+
+.example-line.removed {
+    background-color: rgb(255, 215, 213);
+}
+
+.vscode-dark .example-line.removed {
+    background-color: rgba(84, 36, 38, 1);
+    color: #fff;
+}
+
+.vscode-dark .example-line.added {
+    background-color: rgba(28, 68, 40, 1);
+    color: #fff;
+}
+
+.vscode-dark .example-line.added>code {
+    color: #fff;
+    background-color: transparent;
+}
+
+.vscode-dark .example-line.removed>code {
+    color: #fff;
+    background-color: transparent;
+}
+
+.vscode-high-contrast:not(.vscode-high-contrast-light) .example-line.removed {
+    background-color: #542426;
+    color: #fff;
+}
+
+.vscode-dark .added,
+.vscode-high-contrast:not(.vscode-high-contrast-light) .example-line.added {
+    background-color: #1C4428;
+    color: #fff;
+}        
