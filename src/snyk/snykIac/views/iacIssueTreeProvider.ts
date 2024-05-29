@@ -48,7 +48,7 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     return `${dir} - ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`;
   }
 
-  getIssueFoundText(nIssues: number): string {
+  getIssueFoundText(nIssues: number, _: number): string {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} ${nIssues === 1 ? 'issue' : 'issues'}`}`;
   }
 

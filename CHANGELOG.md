@@ -1,4 +1,7 @@
 # Snyk Security Changelog
+## [2.8.2]
+- Add warning messages in the Tree View for the issue view options used in consistent ignores.
+
 ## [2.8.1]
 - Lower the strictness of custom endpoint regex validation so that single tenant APIs are allowed.
 
