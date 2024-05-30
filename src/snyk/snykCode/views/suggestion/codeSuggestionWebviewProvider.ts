@@ -128,7 +128,9 @@ export class CodeSuggestionWebviewProvider
           'suggestion_ls.css',
         );
         const ideStyle = readFileSync(ideStylePath.path, 'utf8');
-        html = html.replace('${ideStyle}', ideStyle);
+        html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
+        const nonce = getNonce();
+        html = html.replaceAll('${nonce}', nonce);
 
         this.panel.webview.html = html;
       } else {
