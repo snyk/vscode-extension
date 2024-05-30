@@ -8,6 +8,7 @@ import { IViewManagerService } from '../../common/services/viewManagerService';
 import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IssueTreeProvider } from './issueTreeProvider';
+import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
 
 export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   constructor(
@@ -46,7 +47,10 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       } else {
         text = `✋ ${nIssues} vulnerabilities found by Snyk`;
       }
-      text += `, ${ignoredIssueCount} ignored`;
+      const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+      if (isIgnoresEnabled) {
+        text += `, ${ignoredIssueCount} ignored`;
+      }
       return text;
     } else {
       return '✅ Congrats! No vulnerabilities found!';

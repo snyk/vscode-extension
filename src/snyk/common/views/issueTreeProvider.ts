@@ -9,6 +9,8 @@ import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodePro
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command, Range } from '../../common/vscode/types';
+import { configuration } from '../configuration/instance';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
