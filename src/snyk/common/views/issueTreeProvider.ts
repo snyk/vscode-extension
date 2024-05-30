@@ -115,7 +115,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   getFilteredIssues(): Issue<T>[] {
     const folderResults = Array.from(this.productService.result.values());
-    const successfulResults = flatten(folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)));
+    const successfulResults = flatten<Issue<T>>(
+      folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)),
+    );
     return this.filterIssues(successfulResults);
   }
 
