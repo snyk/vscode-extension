@@ -14,6 +14,7 @@
 
 .tab-item {
     color: var(--vscode-foreground);
+    border-bottom: 1px solid transparent;
 }
 
 .tab-item-icon path {
@@ -28,7 +29,18 @@
 
 .tab-content {
     background-color: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-input-border);
+}
+
+.ignore-details-header,
+.data-flow-header,
+.example-fixes-header {
+  text-transform: uppercase;
+}
+
+.ignore-details-tab,
+.fix-analysis-tab,
+.vuln-overview-tab {
+  text-transform: uppercase;
 }
 
 .example-line-number,
