@@ -110,8 +110,29 @@ export class CodeSuggestionWebviewProvider
         this.registerListeners();
       }
 
+      this.panel.iconPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'images',
+        'snyk-code.svg',
+      );
+
       if (isIgnoresEnabled) {
-        this.panel.webview.html = issue.additionalData.details;
+        let html = issue.additionalData.details;
+        const ideStylePath = vscode.Uri.joinPath(
+          vscode.Uri.file(this.context.extensionPath),
+          'media',
+          'views',
+          'snykCode',
+          'suggestion',
+          'suggestion_ls.css',
+        );
+        const ideStyle = readFileSync(ideStylePath.path, 'utf8');
+        html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
+        const nonce = getNonce();
+        html = html.replaceAll('${nonce}', nonce);
+
+        this.panel.webview.html = html;
       } else {
         issue.additionalData.exampleCommitFixes = encodeExampleCommitFixes(issue.additionalData.exampleCommitFixes);
 

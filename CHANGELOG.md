@@ -1,5 +1,7 @@
 # Snyk Security Changelog
-## [2.8.2]
+
+## [2.9.2]
+- Injects custom styling for the HTML panel used by Snyk Code for consistent ignores.
 - Add warning messages in the Tree View for the issue view options used in consistent ignores.
 
 ## [2.8.1]
