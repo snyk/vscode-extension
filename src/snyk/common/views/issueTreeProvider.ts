@@ -9,8 +9,6 @@ import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodePro
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command, Range } from '../../common/vscode/types';
-import { configuration } from '../configuration/instance';
-import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -97,7 +95,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       this.getFixableIssuesNode(this.getFixableCount()),
     ];
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
-    if (noSeverityFiltersSelectedWarning != null) {
+    if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
     } else {
       const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(
