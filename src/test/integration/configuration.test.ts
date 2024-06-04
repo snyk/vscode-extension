@@ -1,30 +1,38 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import { FeaturesConfiguration } from '../../snyk/common/configuration/configuration';
 import { configuration } from '../../snyk/common/configuration/instance';
+import vscode from 'vscode';
+import { ADVANCED_CUSTOM_ENDPOINT } from '../../snyk/common/constants/settings';
+import { extensionContext } from '../../snyk/common/vscode/extensionContext';
 
 suite('Configuration', () => {
-  test('configuration constants differ between DEV and PROD', () => {
-    process.env.SNYK_VSCE_DEVELOPMENT = '';
+  test('settings change is reflected', async () => {
+    await vscode.workspace.getConfiguration().update(ADVANCED_CUSTOM_ENDPOINT, '');
     strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
-    strictEqual(configuration.authHost, 'https://snyk.io');
+    strictEqual(configuration.snykCodeUrl, 'https://app.snyk.io/manage/snyk-code?from=vscode');
+    strictEqual(configuration.authHost, 'https://app.snyk.io');
 
-    process.env.SNYK_VSCE_DEVELOPMENT = '1';
+    await vscode.workspace.getConfiguration().update(ADVANCED_CUSTOM_ENDPOINT, 'https://api.snyk.io');
+    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
+    strictEqual(configuration.snykCodeUrl, 'https://app.snyk.io/manage/snyk-code?from=vscode');
+    strictEqual(configuration.authHost, 'https://app.snyk.io');
+
+    await vscode.workspace.getConfiguration().update(ADVANCED_CUSTOM_ENDPOINT, 'https://api.dev.snyk.io');
     strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.dev.snyk.io');
-    strictEqual(configuration.authHost, 'https://dev.snyk.io');
+    strictEqual(configuration.snykCodeUrl, 'https://app.dev.snyk.io/manage/snyk-code?from=vscode');
+    strictEqual(configuration.authHost, 'https://app.dev.snyk.io');
   });
 
   test('configuration change is reflected', async () => {
-    const token = 'fake-token';
     const featuresConfig = {
       ossEnabled: true,
       codeSecurityEnabled: true,
       codeQualityEnabled: false,
+      iacEnabled: true,
     } as FeaturesConfiguration;
 
-    await configuration.setToken(token);
     await configuration.setFeaturesConfiguration(featuresConfig);
 
-    strictEqual(await configuration.getToken(), token);
     deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
     await configuration.setToken('');
   });
