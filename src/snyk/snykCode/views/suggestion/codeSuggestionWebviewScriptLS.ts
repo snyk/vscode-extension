@@ -69,11 +69,7 @@
     type: 'get';
   };
 
-  type SuggestionMessage =
-    | OpenLocalMessage
-    | IgnoreIssueMessage
-    | SetSuggestionMessage
-    | GetSuggestionMessage
+  type SuggestionMessage = OpenLocalMessage | IgnoreIssueMessage | SetSuggestionMessage | GetSuggestionMessage;
 
   const vscode = acquireVsCodeApi();
 
@@ -81,11 +77,14 @@
     vscode.postMessage(message);
   }
 
-  function navigateToIssue(_e: any, range: any) {
+  function navigateToIssue(_e: any, position: MarkerPosition) {
     if (!suggestion) return;
     const message: OpenLocalMessage = {
       type: 'openLocal',
-      args: getSuggestionPosition(suggestion, range),
+      args: {
+        ...getSuggestionPosition(suggestion, position),
+        suggestionUri: suggestion.filePath,
+      },
     };
 
     sendMessage(message);
@@ -110,27 +109,30 @@
     sendMessage(message);
   }
 
-  function getSuggestionPosition(suggestionParam: Suggestion, position?: { file: string; rows: any; cols: any }) {
+  function getSuggestionPosition(suggestionParam: Suggestion, position?: MarkerPosition) {
     return {
       uri: position?.file ?? suggestionParam.filePath,
       rows: position ? position.rows : suggestionParam.rows,
       cols: position ? position.cols : suggestionParam.cols,
-      suggestionUri: suggestionParam.filePath,
     };
   }
-  
-  const dataFlows = document.getElementsByClassName('data-flow-clickable-row')
-  for(let i = 0; i < dataFlows.length; i++) {
-    dataFlows[i].addEventListener('click', (e) => {
+
+  const dataFlows = document.getElementsByClassName('data-flow-clickable-row');
+  for (let i = 0; i < dataFlows.length; i++) {
+    dataFlows[i].addEventListener('click', e => {
       if (!suggestion) {
         return;
       }
-      const markers = suggestion.markers
+      const markers = suggestion.markers;
       if (!markers) {
         return;
       }
-      navigateToIssue(e, { file: suggestion?.filePath, rows: markers[i]?.pos[0].rows, cols: markers[i].pos[0].cols } )
-    });    
+      navigateToIssue(e, {
+        file: suggestion.filePath,
+        rows: markers[i].pos[0].rows,
+        cols: markers[i].pos[0].cols,
+      });
+    });
   }
   document.getElementById('ignore-line-issue')!.addEventListener('click', () => {
     ignoreIssue(true);
