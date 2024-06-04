@@ -22,7 +22,7 @@ suite('Language Server: Middleware', () => {
     user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
       shouldReportErrors: false,
-      snykOssApiEndpoint: 'https://dev.snyk.io/api',
+      snykApiEndpoint: 'https://dev.snyk.io/api',
       getAdditionalCliParameters: () => '',
       organization: 'org',
       getToken: () => Promise.resolve('token'),
@@ -81,7 +81,7 @@ suite('Language Server: Middleware', () => {
     assert.strictEqual(serverResult.activateSnykCodeQuality, 'true');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
     assert.strictEqual(serverResult.activateSnykIac, 'true');
-    assert.strictEqual(serverResult.endpoint, configuration.snykOssApiEndpoint);
+    assert.strictEqual(serverResult.endpoint, configuration.snykApiEndpoint);
     assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
     assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
     assert.strictEqual(serverResult.organization, `${configuration.organization}`);

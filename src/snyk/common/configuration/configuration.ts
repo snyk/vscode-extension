@@ -79,7 +79,7 @@ export interface IConfiguration {
 
   getAdditionalCliParameters(): string | undefined;
 
-  snykOssApiEndpoint: string;
+  snykApiEndpoint: string;
   shouldShowOssBackgroundScanNotification: boolean;
 
   hideOssBackgroundScanNotification(): Promise<void>;
@@ -123,8 +123,8 @@ export interface IConfiguration {
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
   private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
-  private readonly defaultAuthHost = 'https://snyk.io';
-  private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
+  private readonly defaultAuthHost = 'https://app.snyk.io';
+  private readonly defaultApiEndpoint = 'https://api.snyk.io';
 
   private featureFlag: { [key: string]: boolean } = {};
 
@@ -173,6 +173,7 @@ export class Configuration implements IConfiguration {
   get authHost(): string {
     if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
+      url.host = url.host.replace('api', 'app');
       return `${url.protocol}//${url.host}`;
     }
 
@@ -201,23 +202,16 @@ export class Configuration implements IConfiguration {
     return `${hostnameParts[2]}.${hostnameParts[3]}`.includes('snykgov.io');
   }
 
-  get snykOssApiEndpoint(): string {
+  get snykApiEndpoint(): string {
     if (this.customEndpoint) {
-      return this.customEndpoint; // E.g. https://app.eu.snyk.io/api
+      return this.customEndpoint;
     }
 
-    return this.defaultOssApiEndpoint;
+    return this.defaultApiEndpoint;
   }
 
   get snykCodeUrl(): string {
     const authUrl = new URL(this.authHost);
-
-    if (Configuration.isSingleTenant(authUrl)) {
-      authUrl.pathname = authUrl.pathname.replace('api', '');
-    } else {
-      authUrl.host = `app.${authUrl.host}`;
-    }
-
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
@@ -460,8 +454,4 @@ export class Configuration implements IConfiguration {
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
-
-  private static isSingleTenant(url: URL): boolean {
-    return url.host.startsWith('app') && url.host.endsWith('snyk.io');
-  }
 }

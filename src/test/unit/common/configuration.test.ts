@@ -48,15 +48,14 @@ suite('Configuration', () => {
     sinon.restore();
   });
 
-  test('Snyk Code: code url respects custom endpoint configuration', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://custom.endpoint.com/api');
+  test('Snyk Code URL: respects custom endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://custom.endpoint.com');
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.endpoint.com/manage/snyk-code?from=vscode');
   });
-
-  test('Snyk Code: code url respects single tenant endpoint configuration', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://app.custom.snyk.io/api');
+  test('Snyk Code URL: respects single tenant endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.snyk.io');
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.snyk.io/manage/snyk-code?from=vscode');
@@ -67,16 +66,16 @@ suite('Configuration', () => {
 
     const configuration = new Configuration({}, workspace);
 
-    strictEqual(configuration.snykOssApiEndpoint, 'https://snyk.io/api/v1');
+    strictEqual(configuration.snykApiEndpoint, 'https://snyk.io/api/v1');
   });
 
-  test('Snyk OSS: API endpoint returns custom endpoint when set', () => {
-    const customEndpoint = 'http://custom.endpoint.com/api';
+  test('API endpoint: returns custom endpoint when set', () => {
+    const customEndpoint = 'http://custom.endpoint.com';
     const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, customEndpoint);
 
     const configuration = new Configuration({}, workspace);
 
-    strictEqual(configuration.snykOssApiEndpoint, customEndpoint);
+    strictEqual(configuration.snykApiEndpoint, customEndpoint);
   });
 
   test('Preview features: not enabled', () => {

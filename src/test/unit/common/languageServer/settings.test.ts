@@ -9,7 +9,7 @@ suite('LanguageServerSettings', () => {
       const mockUser = { anonymousId: 'anonymous-id' } as User;
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
-        snykOssApiEndpoint: 'https://dev.snyk.io/api',
+        snykApiEndpoint: 'https://dev.snyk.io/api',
         organization: 'my-org',
         // eslint-disable-next-line @typescript-eslint/require-await
         getToken: async () => 'snyk-token',

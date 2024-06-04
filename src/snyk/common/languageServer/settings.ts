@@ -61,7 +61,7 @@ export class LanguageServerSettings {
       activateSnykIac: `${iacEnabled}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
-      endpoint: configuration.snykOssApiEndpoint,
+      endpoint: configuration.snykApiEndpoint,
       organization: configuration.organization,
       token: await configuration.getToken(),
       automaticAuthentication: 'false',
