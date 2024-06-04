@@ -247,7 +247,7 @@ export class CodeSuggestionWebviewProvider
             const issueId = suggestion.id;
 
             const diffs: AutofixUnifiedDiffSuggestion[] = await vscode.commands.executeCommand(
-              SNYK_CODE_FIX_DIFFS_COMMAND,
+              "snyk.dummyCommand",
               folderPath,
               relativePath,
               issueId,
