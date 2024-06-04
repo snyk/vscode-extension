@@ -85,13 +85,25 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     nodes.sort(this.compareNodes);
 
+    const totalIssueCount = this.getTotalIssueCount();
+    const ignoredIssueCount = this.getIgnoredCount();
+
     const topNodes: (TreeNode | null)[] = [
       new TreeNode({
-        text: this.getIssueFoundText(this.getTotalIssueCount()),
+        text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
       }),
       this.getFixableIssuesNode(this.getFixableCount()),
-      this.getNoSeverityFiltersSelectedTreeNode(),
     ];
+    const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
+    if (noSeverityFiltersSelectedWarning !== null) {
+      topNodes.push(noSeverityFiltersSelectedWarning);
+    } else {
+      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(
+        totalIssueCount,
+        ignoredIssueCount,
+      );
+      topNodes.push(noIssueViewOptionSelectedWarning);
+    }
 
     nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return nodes;
@@ -103,7 +115,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   getFilteredIssues(): Issue<T>[] {
     const folderResults = Array.from(this.productService.result.values());
-    const successfulResults = flatten(folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)));
+    const successfulResults = flatten<Issue<T>>(
+      folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)),
+    );
     return this.filterIssues(successfulResults);
   }
 
@@ -113,6 +127,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   getFixableCount(): number {
     return this.getFilteredIssues().filter(issue => this.isFixableIssue(issue)).length;
+  }
+
+  getIgnoredCount(): number {
+    const ignoredIssues = this.getFilteredIssues().filter(issue => issue.isIgnored);
+    return ignoredIssues.length;
   }
 
   isFixableIssue(_issue: Issue<T>) {
@@ -255,7 +274,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return nodes;
   }
 
-  protected getIssueFoundText(nIssues: number): string {
+  protected getIssueFoundText(nIssues: number, _: number): string {
     return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
   }
 

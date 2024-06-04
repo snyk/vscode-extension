@@ -2,10 +2,13 @@ import _ from 'lodash';
 import * as path from 'path';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
-import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../constants/commands';
+import { SNYK_SHOW_LS_OUTPUT_COMMAND, VSCODE_GO_TO_SETTINGS_COMMAND } from '../constants/commands';
 import { messages } from '../messages/analysisMessages';
 import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
+import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { configuration } from '../configuration/instance';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
   constructor(protected readonly configuration: IConfiguration, private statusProvider: AnalysisStatusProvider) {
@@ -45,6 +48,51 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return new TreeNode({
       text: messages.allSeverityFiltersDisabled,
     });
+  }
+
+  protected getNoIssueViewOptionsSelectedTreeNode(numIssues: number, ignoredIssueCount: number): TreeNode | null {
+    const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    if (!isIgnoresEnabled) {
+      return null;
+    }
+
+    const anyOptionEnabled = Object.values<boolean>(this.configuration.issueViewOptions).find(enabled => !!enabled);
+    if (!anyOptionEnabled) {
+      return new TreeNode({
+        text: messages.allIssueViewOptionsDisabled,
+      });
+    }
+
+    if (numIssues === 0) {
+      return null;
+    }
+
+    // if only ignored issues are enabled, then let the customer know to adjust their settings
+    if (numIssues === ignoredIssueCount && !this.configuration.issueViewOptions.ignoredIssues) {
+      return new TreeNode({
+        text: messages.ignoredIssueViewOptionDisabled,
+        command: {
+          command: VSCODE_GO_TO_SETTINGS_COMMAND,
+          title: '',
+          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`],
+        },
+      });
+    }
+
+    // if only open issues are enabled, then let the customer know to adjust their settings
+    if (ignoredIssueCount === 0 && !this.configuration.issueViewOptions.openIssues) {
+      return new TreeNode({
+        text: messages.openIssueViewOptionDisabled,
+        command: {
+          command: VSCODE_GO_TO_SETTINGS_COMMAND,
+          title: '',
+          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`],
+        },
+      });
+    }
+
+    // if all options are enabled we don't want to show a warning
+    return null;
   }
 
   protected getErrorEncounteredTreeNode(scanPath?: string): TreeNode {

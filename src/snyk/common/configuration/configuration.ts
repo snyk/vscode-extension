@@ -38,6 +38,8 @@ export type FeaturesConfiguration = {
 export interface IssueViewOptions {
   ignoredIssues: boolean;
   openIssues: boolean;
+
+  [option: string]: boolean;
 }
 
 export interface SeverityFilter {
