@@ -125,10 +125,21 @@ export class CodeSuggestionWebviewProvider
           'views',
           'snykCode',
           'suggestion',
-          'suggestion_ls.css',
+          'suggestionLS.css',
         );
         const ideStyle = readFileSync(ideStylePath.path, 'utf8');
+        const ideScriptPath = vscode.Uri.joinPath(
+          vscode.Uri.file(this.context.extensionPath),
+          'out',
+          'snyk',
+          'snykCode',
+          'views',
+          'suggestion',
+          'codeSuggestionWebviewScriptLS.js',
+        );
+        const ideScript = readFileSync(ideScriptPath.path, 'utf8');
         html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
+        html = html.replace('${ideScript}', '<script nonce=${nonce}>' + ideScript + '</script>');
         const nonce = getNonce();
         html = html.replaceAll('${nonce}', nonce);
 

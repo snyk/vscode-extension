@@ -1,10 +1,13 @@
 # Snyk Security Changelog
 
-## [2.9.2]
-- Injects custom styling for the HTML panel used by Snyk Code for consistent ignores.
+## [2.11.0]
 - Add warning messages in the Tree View for the issue view options used in consistent ignores.
+- Add Data Flow and Ignore Footer intractions for Consistent Ignores flows.
 
-## [2.8.1]
+## [2.10.0]
+- Injects custom styling for the HTML panel used by Snyk Code for consistent ignores.
+
+## [2.9.0]
 - Lower the strictness of custom endpoint regex validation so that single tenant APIs are allowed.
 
 ## [2.8.0]
