@@ -836,7 +836,7 @@ declare const acquireVsCodeApi: any;
       case 'setExplain': {
         console.log("IN SET EXPLAIN CASE");
         const { explainText } = elements;
-        explainText.innerText = message.args.suggestion;
+        explainText.innerText = JSON.parse(message.args.suggestion)["explanation"]
         break;
       }
       case 'setAutofixError': {

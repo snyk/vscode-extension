@@ -207,7 +207,7 @@ export class CodeSuggestionWebviewProvider
       const args = [`${ruleKey} "${ruleMessage}" "${derivation}"`];
       // const child = spawn('/home/berkay.berabi/query_explain.sh', [ruleKey, ruleMessage, derivation], { shell: "bash" });
       const child = spawn('/home/berkay.berabi/query_explain.sh', args, { shell: true });
-      console.log('Executing command:', child.spawnargs.join(' '));
+      // console.log('Executing command:', child.spawnargs.join(' '));
 
 
       let stdoutData = '';
@@ -338,7 +338,7 @@ export class CodeSuggestionWebviewProvider
           console.log("derivation: ", derivation);
 
           var explanation: string = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
-          console.log("explanation after for: ", explanation);
+          console.log("explanation after for: ", explanation.toString());
           void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
 
           break;
