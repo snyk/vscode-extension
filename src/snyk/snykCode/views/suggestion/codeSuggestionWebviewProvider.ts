@@ -202,6 +202,37 @@ export class CodeSuggestionWebviewProvider
     };
   }
 
+  private async promisifySpawn(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const child = spawn('/bin/sh', ['-c', '/home/berkay.berabi/query_explain.sh']);
+
+      let stdoutData = '';
+      let stderrData = '';
+
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', (data) => {
+        stdoutData += data.toString();
+      });
+
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', (data) => {
+        stderrData += data.toString();
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          resolve(stdoutData);
+        } else {
+          reject(new Error(`Process exited with code ${code}\n${stderrData}`));
+        }
+      });
+
+      child.on('error', (err) => {
+        reject(err);
+      });
+    });
+  }
+
   private async handleMessage(message: SuggestionMessage) {
     try {
       switch (message.type) {
@@ -272,14 +303,9 @@ export class CodeSuggestionWebviewProvider
 
           // const { suggestion } = message.args;
 
-          const child = spawn('/bin/sh', ['-c', '/home/berkay.berabi/query_explain.sh']);
-          var explanation = "";
-          for await (const chunk of child.stdout) {
-            console.log('stdout chunk: ' + chunk);
-            explanation += chunk;
-          }
+          var explanation: string = await this.promisifySpawn();
           console.log("explanation after for: ", explanation);
-          // void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
+          void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
 
           break;
         }
