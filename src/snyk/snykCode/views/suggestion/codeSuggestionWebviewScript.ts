@@ -10,7 +10,7 @@ declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
-(function () {
+(function() {
   // TODO: Redefine types until bundling is introduced into extension
   // https://stackoverflow.com/a/56938089/1713082
   type Lesson = {
@@ -107,6 +107,20 @@ declare const acquireVsCodeApi: any;
     };
   };
 
+  type GetExplainMessage = {
+    type: 'getExplain';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type SetExplainMessage = {
+    type: 'setExplain';
+    args: {
+      suggestion: string;
+    };
+  };
+
   type ApplyGitDiffMessage = {
     type: 'applyGitDiff';
     args: {
@@ -153,6 +167,8 @@ declare const acquireVsCodeApi: any;
     | OpenBrowserMessage
     | IgnoreIssueMessage
     | GetAutofixDiffsMesssage
+    | GetExplainMessage
+    | SetExplainMessage
     | ApplyGitDiffMessage
     | SetSuggestionMessage
     | GetSuggestionMessage
@@ -189,6 +205,9 @@ declare const acquireVsCodeApi: any;
     applyFixButton: document.getElementById('apply-fix') as HTMLElement,
     retryGenerateFixButton: document.getElementById('retry-generate-fix') as HTMLElement,
     generateAIFixButton: document.getElementById('generate-ai-fix') as HTMLElement,
+    generateAIExplainButton: document.getElementById('generate-ai-explain') as HTMLElement,
+    explainTextSection: document.getElementById('info-explanation') as HTMLElement,
+    explainText: document.getElementById("explain-text") as HTMLElement,
 
     fixAnalysisTabElem: document.getElementById('fix-analysis-tab') as HTMLElement,
     fixAnalysisContentElem: document.getElementById('fix-analysis-content') as HTMLElement,
@@ -223,6 +242,7 @@ declare const acquireVsCodeApi: any;
   fillLearnLink();
   let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
   showCurrentSuggestion();
+  let explanation: string = "";
 
   function navigateToLeadURL() {
     if (!suggestion?.leadURL) return;
@@ -313,6 +333,31 @@ declare const acquireVsCodeApi: any;
       args: { suggestion },
     };
     sendMessage(message);
+  }
+
+  // import { $ } from "bun";
+  function generateAIExplain() {
+    console.log("EXPLANATION FUNCTION CALLED AFTER CLICK!!!!");
+    if (!suggestion) {
+      return;
+    }
+    const message: GetExplainMessage = {
+      type: 'getExplain',
+      args: { suggestion },
+    };
+    sendMessage(message);
+    // const output = await $`ls -l`.text();
+    // console.log(output);
+    // exec('./home/berkay.berabi/query_explain', (err, output) => {
+    // // once the command has completed, the callback function is called
+    // if (err) {
+    //     // log and return if we encounter an error
+    //     console.error("could not execute command: ", err)
+    //     return
+    // }
+    // // log the output received from the command
+    // console.log("Output: \n", output)
+    // })
   }
 
   function retryGenerateAIFix() {
@@ -561,7 +606,7 @@ declare const acquireVsCodeApi: any;
         descriptionElem.appendChild(preMark);
         const mark = document.createElement('a');
         mark.className = 'mark-message clickable';
-        mark.onclick = function () {
+        mark.onclick = function() {
           navigateToIssue(undefined, m.pos[0]);
         };
         descriptionElem.appendChild(mark);
@@ -712,6 +757,7 @@ declare const acquireVsCodeApi: any;
 
   const {
     generateAIFixButton,
+    generateAIExplainButton,
     retryGenerateFixButton,
     applyFixButton,
     nextDiffElem,
@@ -722,6 +768,7 @@ declare const acquireVsCodeApi: any;
     fixErrorSectionElem,
   } = elements;
 
+  generateAIExplainButton?.addEventListener('click', generateAIExplain);
   generateAIFixButton?.addEventListener('click', generateAIFix);
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   nextDiffElem.addEventListener('click', nextDiff);
@@ -784,6 +831,12 @@ declare const acquireVsCodeApi: any;
           vscode.setState({ ...vscode.getState(), suggestion });
           showCurrentDiff();
         }
+        break;
+      }
+      case 'setExplain': {
+        console.log("IN SET EXPLAIN CASE");
+        const { explainText } = elements;
+        explainText.innerText = message.args.suggestion;
         break;
       }
       case 'setAutofixError': {

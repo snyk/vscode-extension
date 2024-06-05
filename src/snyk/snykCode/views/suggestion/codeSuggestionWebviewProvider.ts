@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { spawn } from 'child_process';
 import { relative } from 'path';
 import { applyPatch } from 'diff';
 import { marked } from 'marked';
@@ -34,11 +35,12 @@ import { Suggestion, SuggestionMessage } from './types';
 import { WebviewPanelSerializer } from '../../../snykCode/views/webviewPanelSerializer';
 import { configuration } from '../../../common/configuration/instance';
 import { FEATURE_FLAGS } from '../../../common/constants/featureFlags';
+// import { $ } from "bun";
+
 
 export class CodeSuggestionWebviewProvider
   extends WebviewProvider<Issue<CodeIssueData>>
-  implements ICodeSuggestionWebviewProvider
-{
+  implements ICodeSuggestionWebviewProvider {
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
   private issue: Issue<CodeIssueData> | undefined;
@@ -264,6 +266,24 @@ export class CodeSuggestionWebviewProvider
           break;
         }
 
+        case 'getExplain': {
+          this.logger.info('GENERATING EXPLAIN');
+          console.log("GENERATING EXPLAIN");
+
+          // const { suggestion } = message.args;
+
+          const child = spawn('/bin/sh', ['-c', '/home/berkay.berabi/query_explain.sh']);
+          var explanation = "";
+          for await (const chunk of child.stdout) {
+            console.log('stdout chunk: ' + chunk);
+            explanation += chunk;
+          }
+          console.log("explanation after for: ", explanation);
+          // void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
+
+          break;
+        }
+
         case 'applyGitDiff': {
           const { patch, filePath } = message.args;
 
@@ -448,8 +468,20 @@ export class CodeSuggestionWebviewProvider
             </div>
           </section>
 
+          <section id="explain-wrapper" class="ai-explain">
+            <p>⚡ Explain this particular vulnerability using Snyk DeepCode AI Explain</p>
+
+            <div class="sn-explain-wrapper">
+              <button id="generate-ai-explain" class="generate-ai-explain">✨ Generate explanation <span class="wide">using Snyk DeepCode AI Explain</span></button>
+            </div>
+            <div id="info-explanation" class="font-light">
+              Here is the detailed explanation of the vulnerability: <span id="explain-text">
+            </div>
+          </section>
+
+
           <section id="fix-wrapper" class="ai-fix">
-            <p>⚡ Fix this issue by generating a solution using Snyk DeepCode AI</p>
+            <p>⚡ Berkay Berabi Fix this issue by generating a solution using Snyk DeepCode AI</p>
 
             <div class="sn-fix-wrapper">
               <button id="generate-ai-fix" class="generate-ai-fix">✨ Generate fix <span class="wide">using Snyk DeepCode AI</span></button>
