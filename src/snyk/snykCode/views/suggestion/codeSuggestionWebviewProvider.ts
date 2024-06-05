@@ -35,7 +35,6 @@ import { Suggestion, SuggestionMessage } from './types';
 import { WebviewPanelSerializer } from '../../../snykCode/views/webviewPanelSerializer';
 import { configuration } from '../../../common/configuration/instance';
 import { FEATURE_FLAGS } from '../../../common/constants/featureFlags';
-// import { $ } from "bun";
 
 
 export class CodeSuggestionWebviewProvider
@@ -202,9 +201,14 @@ export class CodeSuggestionWebviewProvider
     };
   }
 
-  private async promisifySpawn(): Promise<string> {
+  private async promisifySpawn(ruleKey: string, ruleMessage: string, derivation: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const child = spawn('/bin/sh', ['-c', '/home/berkay.berabi/query_explain.sh']);
+      // const args = ['--rule_key', ruleKey, '--rule_message', ruleMessage, '--derivation', derivation]
+      const args = [`${ruleKey} "${ruleMessage}" "${derivation}"`];
+      // const child = spawn('/home/berkay.berabi/query_explain.sh', [ruleKey, ruleMessage, derivation], { shell: "bash" });
+      const child = spawn('/home/berkay.berabi/query_explain.sh', args, { shell: true });
+      console.log('Executing command:', child.spawnargs.join(' '));
+
 
       let stdoutData = '';
       let stderrData = '';
@@ -223,7 +227,7 @@ export class CodeSuggestionWebviewProvider
         if (code === 0) {
           resolve(stdoutData);
         } else {
-          reject(new Error(`Process exited with code ${code}\n${stderrData}`));
+          reject(new Error(`Process exited with code ${code}\n${stderrData} `));
         }
       });
 
@@ -301,9 +305,39 @@ export class CodeSuggestionWebviewProvider
           this.logger.info('GENERATING EXPLAIN');
           console.log("GENERATING EXPLAIN");
 
-          // const { suggestion } = message.args;
+          const { suggestion } = message.args;
+          // console.log("suggestion: ", suggestion);
 
-          var explanation: string = await this.promisifySpawn();
+          const filePath = suggestion.filePath;
+          const fileContent = readFileSync(filePath, 'utf8');
+          // console.log("fileContent: ", fileContent);
+          const ruleKey = suggestion.rule;
+          const ruleMessage = suggestion.message;
+
+          let derivationLineNumbers: Set<number> = new Set<number>();
+          for (const markerLocation of suggestion.markers!) {
+            // console.log("markerLocation: ", markerLocation);
+            for (const markerPos of markerLocation.pos) {
+              // console.log("markerPos: ", markerPos);
+              const lines = markerPos.rows;
+              for (const line of lines) {
+                // console.log("line", line);
+                derivationLineNumbers.add(line + 1);
+              }
+            }
+            markerLocation.pos
+          }
+          console.log("derivation lines: ", ...derivationLineNumbers);
+
+          let derivationLines: string[] = [];
+          let fileLines: string[] = fileContent.split("\n");
+          for (const derivationLineNumber of derivationLineNumbers) {
+            derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
+          }
+          let derivation = derivationLines.join(",");
+          console.log("derivation: ", derivation);
+
+          var explanation: string = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
           console.log("explanation after for: ", explanation);
           void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
 
@@ -324,7 +358,7 @@ export class CodeSuggestionWebviewProvider
           const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.path === filePath);
 
           if (!editor) {
-            throw Error(`Editor with file not found: ${filePath}`);
+            throw Error(`Editor with file not found: ${filePath} `);
           }
 
           const editorEndLine = editor.document.lineCount;
@@ -429,7 +463,7 @@ export class CodeSuggestionWebviewProvider
       ['arrow-right-light', 'svg'],
       ['learn-icon', 'svg'],
     ].reduce<Record<string, string>>((accumulator: Record<string, string>, [name, ext]) => {
-      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
+      const uri = this.getWebViewUri('media', 'images', `${name}.${ext} `);
       if (!uri) throw new Error('Image missing.');
       accumulator[name] = uri.toString();
       return accumulator;
@@ -496,18 +530,16 @@ export class CodeSuggestionWebviewProvider
 
           <section id="explain-wrapper" class="ai-explain">
             <p>⚡ Explain this particular vulnerability using Snyk DeepCode AI Explain</p>
-
             <div class="sn-explain-wrapper">
               <button id="generate-ai-explain" class="generate-ai-explain">✨ Generate explanation <span class="wide">using Snyk DeepCode AI Explain</span></button>
             </div>
             <div id="info-explanation" class="font-light">
-              Here is the detailed explanation of the vulnerability: <span id="explain-text">
+              <span id="explain-text">
             </div>
           </section>
 
-
           <section id="fix-wrapper" class="ai-fix">
-            <p>⚡ Berkay Berabi Fix this issue by generating a solution using Snyk DeepCode AI</p>
+            <p>⚡ Fix this issue by generating a solution using Snyk DeepCode AI</p>
 
             <div class="sn-fix-wrapper">
               <button id="generate-ai-fix" class="generate-ai-fix">✨ Generate fix <span class="wide">using Snyk DeepCode AI</span></button>
