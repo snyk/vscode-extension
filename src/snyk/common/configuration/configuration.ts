@@ -58,7 +58,6 @@ export type PreviewFeatures = {
 export interface IConfiguration {
   shouldShowAdvancedView: boolean;
   isDevelopment: boolean;
-  source: string;
 
   authHost: string;
 
@@ -268,14 +267,6 @@ export class Configuration implements IConfiguration {
     });
   }
 
-  static get source(): string {
-    return IDE_NAME_SHORT;
-  }
-
-  get source(): string {
-    return Configuration.source;
-  }
-
   getFeaturesConfiguration(): FeaturesConfiguration {
     const ossEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
@@ -472,9 +463,5 @@ export class Configuration implements IConfiguration {
 
   private static isSingleTenant(url: URL): boolean {
     return url.host.startsWith('app') && url.host.endsWith('snyk.io');
-  }
-
-  private removeTrailingSlash(str: string) {
-    return str.replace(/\/$/, '');
   }
 }
