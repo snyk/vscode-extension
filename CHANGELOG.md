@@ -1,13 +1,14 @@
 # Snyk Security Changelog
 
+## [2.12.0]
+- Renders the AI Fix panel and adds more custom styling for VSCode.
+- Adds position line interaction.
 
-## [2.10.2]
-- Remove snyk/codeclient dependancy.
-
-## [2.10.1]
+## [2.11.0]
 - Add warning messages in the Tree View for the issue view options used in consistent ignores.
 - Add Data Flow and Ignore Footer intractions for Consistent Ignores flows.
 - Fix endpoint computation based on custom endpoint.
+- Remove snyk/codeclient dependancy.
 
 ## [2.10.0]
 - Injects custom styling for the HTML panel used by Snyk Code for consistent ignores.
