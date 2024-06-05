@@ -48,43 +48,6 @@ suite('Configuration', () => {
     sinon.restore();
   });
 
-  test('Snyk Code: production base url is returned when not in development', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
-    const configuration = new Configuration(
-      {
-        SNYK_VSCE_DEVELOPMENT: '',
-      },
-      workspace,
-    );
-
-    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
-  });
-
-  test('Snyk Code: development base url is returned when in development', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
-    const configuration = new Configuration(
-      {
-        SNYK_VSCE_DEVELOPMENT: '1',
-      },
-      workspace,
-    );
-    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.snyk.io');
-  });
-
-  test('Snyk Code: base url respects custom endpoint configuration', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'http://custom.endpoint.com');
-    const configuration = new Configuration({}, workspace);
-
-    strictEqual(configuration.snykCodeBaseURL, 'http://deeproxy.custom.endpoint.com');
-  });
-
-  test('Snyk Code: base url respects single tenant endpoint configuration', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://app.custom.snyk.io/api');
-    const configuration = new Configuration({}, workspace);
-
-    strictEqual(configuration.snykCodeBaseURL, 'https://deeproxy.custom.snyk.io');
-  });
-
   test('Snyk Code: code url respects custom endpoint configuration', () => {
     const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://custom.endpoint.com/api');
     const configuration = new Configuration({}, workspace);
@@ -97,18 +60,6 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.snyk.io/manage/snyk-code?from=vscode');
-  });
-
-  test('Snyk Code: Custom base url is returned when in development and custom url specified', () => {
-    const customUrl = 'https://custom.url';
-    const configuration = new Configuration(
-      {
-        SNYK_VSCE_DEVELOPMENT: '1',
-        SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL: customUrl,
-      },
-      workspaceStub,
-    );
-    strictEqual(configuration.snykCodeBaseURL, customUrl);
   });
 
   test('Snyk Code: token returns snyk.io token when not in development', async () => {

@@ -75,7 +75,6 @@ export interface IConfiguration {
   clearToken(): Promise<void>;
 
   snykCodeToken: Promise<string | undefined>;
-  snykCodeBaseURL: string;
   snykCodeUrl: string;
 
   organization: string | undefined;
@@ -164,25 +163,6 @@ export class Configuration implements IConfiguration {
 
   get isDevelopment(): boolean {
     return !!this.processEnv.SNYK_VSCE_DEVELOPMENT;
-  }
-
-  get snykCodeBaseURL(): string {
-    if (this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL) {
-      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL;
-    } else if (this.customEndpoint) {
-      const url = new URL(this.customEndpoint);
-
-      if (Configuration.isSingleTenant(url)) {
-        url.host = url.host.replace('app', 'deeproxy');
-      } else {
-        url.host = `deeproxy.${url.host}`;
-      }
-      url.pathname = url.pathname.replace('api', '');
-
-      return this.removeTrailingSlash(url.toString());
-    }
-
-    return this.defaultSnykCodeBaseURL;
   }
 
   private get customEndpoint(): string | undefined {
