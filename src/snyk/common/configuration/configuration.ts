@@ -300,6 +300,12 @@ export class Configuration implements IConfiguration {
   async setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void> {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
+      this.getConfigName(OSS_ENABLED_SETTING),
+      config?.ossEnabled,
+      true,
+    );
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
       config?.codeSecurityEnabled,
       true,
@@ -308,6 +314,12 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
       config?.codeQualityEnabled,
+      true,
+    );
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(IAC_ENABLED_SETTING),
+      config?.iacEnabled,
       true,
     );
   }

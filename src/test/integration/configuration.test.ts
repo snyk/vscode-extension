@@ -22,10 +22,10 @@ suite('Configuration', () => {
 
   test('configuration change is reflected', async () => {
     const featuresConfig = {
-      ossEnabled: true,
-      codeSecurityEnabled: true,
+      ossEnabled: false,
+      codeSecurityEnabled: false,
       codeQualityEnabled: false,
-      iacEnabled: true,
+      iacEnabled: false,
     } as FeaturesConfiguration;
 
     await configuration.setFeaturesConfiguration(featuresConfig);
