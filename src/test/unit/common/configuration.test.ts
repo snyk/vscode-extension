@@ -62,56 +62,6 @@ suite('Configuration', () => {
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.snyk.io/manage/snyk-code?from=vscode');
   });
 
-  test('Snyk Code: token returns snyk.io token when not in development', async () => {
-    const token = 'snyk-token';
-
-    const secretStorageStoreStub = sinon.stub(extensionContext.secrets, 'store').resolves();
-    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').resolves(token);
-
-    const configuration = new Configuration(process.env, workspaceStub);
-    await configuration.setToken(token);
-
-    strictEqual(await configuration.snykCodeToken, token);
-    secretStorageStoreStub.calledWith(SNYK_TOKEN_KEY, token);
-    strictEqual(secretStorageGetStub.calledOnce, true);
-  });
-
-  test('Snyk Code: token should be cleared if the retrieval method throws', async () => {
-    const token = 'snyk-token';
-
-    sinon.stub(extensionContext.secrets, 'store').resolves();
-    const secretStorageDeleteStub = sinon.stub(extensionContext.secrets, 'delete').resolves();
-    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').rejects('cannot get token');
-
-    const configuration = new Configuration(process.env, workspaceStub);
-    await configuration.setToken(token);
-
-    strictEqual(await configuration.snykCodeToken, '');
-    strictEqual(secretStorageGetStub.calledOnce, true);
-    strictEqual(secretStorageDeleteStub.calledOnce, true);
-  });
-
-  test('Snyk Code: token returns Snyk Code token when in development', async () => {
-    const token = 'test-token';
-    const snykCodeToken = 'snykCode-token';
-
-    const secretStorageStoreStub = sinon.stub(extensionContext.secrets, 'store').resolves();
-    const secretStorageGetStub = sinon.stub(extensionContext.secrets, 'get').resolves(token);
-
-    const configuration = new Configuration(
-      {
-        SNYK_VSCE_DEVELOPMENT: '1',
-        SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN: snykCodeToken,
-      },
-      workspaceStub,
-    );
-    await configuration.setToken(token);
-
-    strictEqual(await configuration.snykCodeToken, snykCodeToken);
-    secretStorageStoreStub.calledWith('snyk.token', token);
-    strictEqual(secretStorageGetStub.called, false);
-  });
-
   test('Snyk OSS: API endpoint returns default endpoint when no custom set', () => {
     const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
 

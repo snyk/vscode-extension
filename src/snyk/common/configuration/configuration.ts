@@ -74,7 +74,6 @@ export interface IConfiguration {
 
   clearToken(): Promise<void>;
 
-  snykCodeToken: Promise<string | undefined>;
   snykCodeUrl: string;
 
   organization: string | undefined;
@@ -241,13 +240,6 @@ export class Configuration implements IConfiguration {
           resolve('');
         });
     });
-  }
-
-  get snykCodeToken(): Promise<string | undefined> {
-    if (this.isDevelopment && this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN) {
-      return Promise.resolve(this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN);
-    }
-    return this.getToken();
   }
 
   async setToken(token: string | undefined): Promise<void> {
