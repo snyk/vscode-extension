@@ -49,11 +49,12 @@ suite('Configuration', () => {
   });
 
   test('Snyk Code URL: respects custom endpoint configuration', () => {
-    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://custom.endpoint.com');
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.endpoint.com');
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.endpoint.com/manage/snyk-code?from=vscode');
   });
+
   test('Snyk Code URL: respects single tenant endpoint configuration', () => {
     const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.snyk.io');
     const configuration = new Configuration({}, workspace);
@@ -61,12 +62,19 @@ suite('Configuration', () => {
     strictEqual(configuration.snykCodeUrl, 'https://app.custom.snyk.io/manage/snyk-code?from=vscode');
   });
 
-  test('Snyk OSS: API endpoint returns default endpoint when no custom set', () => {
+  test('Snyk Code URL: respects FedRAMP endpoint configuration', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.snykgov.io');
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.snykCodeUrl, 'https://app.custom.snykgov.io/manage/snyk-code?from=vscode');
+  });
+
+  test('API endpoint: returns default endpoint when no custom set', () => {
     const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_ENDPOINT, undefined);
 
     const configuration = new Configuration({}, workspace);
 
-    strictEqual(configuration.snykApiEndpoint, 'https://snyk.io/api/v1');
+    strictEqual(configuration.snykApiEndpoint, 'https://api.snyk.io');
   });
 
   test('API endpoint: returns custom endpoint when set', () => {
