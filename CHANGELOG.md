@@ -1,6 +1,9 @@
 # Snyk Security Changelog
 
 
+## [2.10.2]
+- Remove snyk/codeclient dependancy.
+
 ## [2.10.1]
 - Add warning messages in the Tree View for the issue view options used in consistent ignores.
 - Add Data Flow and Ignore Footer intractions for Consistent Ignores flows.
