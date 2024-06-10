@@ -1,6 +1,4 @@
-import * as dns from 'dns';
-import { getIpFamily } from '../../../../snyk/snykCode/utils/ip';
-import { rejects, strictEqual } from 'assert';
+import { rejects } from 'assert';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService, OAuthToken } from '../../../../snyk/base/services/authenticationService';
@@ -66,26 +64,6 @@ suite('AuthenticationService', () => {
   });
 
   teardown(() => sinon.restore());
-
-  // TODO: the following two tests are more of integration tests, since the second requires access to the network layer. Move it to integration test as part of ROAD-625.
-  test('getIpFamily returns undefined when IPv6 not supported', async () => {
-    const ipv6ErrorCode = 'EADDRNOTAVAIL';
-
-    sinon.stub(dns, 'lookup').callsFake((_hostname, callback) => {
-      callback(
-        {
-          code: ipv6ErrorCode,
-          errno: ipv6ErrorCode,
-        } as unknown as Error,
-        '',
-        6,
-      );
-    });
-
-    const ipFamily = await getIpFamily('https://dev.snyk.io');
-
-    strictEqual(ipFamily, undefined);
-  });
 
   test("Doesn't call setToken when token is empty", async () => {
     const service = new AuthenticationService(
