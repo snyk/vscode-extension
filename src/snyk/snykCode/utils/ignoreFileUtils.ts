@@ -12,7 +12,9 @@ export const createDCIgnore = async (
   window: IVSCodeWindow,
   uriAdapter: IUriAdapter,
 ): Promise<void> => {
-  const content: Buffer = Buffer.from(custom ? dcIgnoreConstant.DCIGNORE_DRAFTS.custom : dcIgnoreConstant.DCIGNORE_DRAFTS.default);
+  const content: Buffer = Buffer.from(
+    custom ? dcIgnoreConstant.DCIGNORE_DRAFTS.custom : dcIgnoreConstant.DCIGNORE_DRAFTS.default,
+  );
   const filePath = `${path}/${dcIgnoreConstant.DCIGNORE_FILENAME}`;
   const openPath = uriAdapter.file(filePath);
   // We don't want to override the dcignore file with an empty one.

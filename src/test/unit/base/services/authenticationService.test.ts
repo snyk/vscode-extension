@@ -1,4 +1,4 @@
-import * as dns from 'dns'
+import * as dns from 'dns';
 import { getIpFamily } from '../../../../snyk/snykCode/utils/ip';
 import { rejects, strictEqual } from 'assert';
 import sinon from 'sinon';
@@ -72,11 +72,15 @@ suite('AuthenticationService', () => {
     const ipv6ErrorCode = 'EADDRNOTAVAIL';
 
     sinon.stub(dns, 'lookup').callsFake((_hostname, callback) => {
-      callback( {
-        code: ipv6ErrorCode,
-        errno: ipv6ErrorCode,
-      } as unknown as Error,'', 6);
-  });
+      callback(
+        {
+          code: ipv6ErrorCode,
+          errno: ipv6ErrorCode,
+        } as unknown as Error,
+        '',
+        6,
+      );
+    });
 
     const ipFamily = await getIpFamily('https://dev.snyk.io');
 
