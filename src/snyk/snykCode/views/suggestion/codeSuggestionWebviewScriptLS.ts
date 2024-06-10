@@ -178,10 +178,10 @@
       navigateToIssue(i);
     });
   }
-  document.getElementById('ignore-line-issue')!.addEventListener('click', () => {
+  document.getElementById('ignore-line-issue')?.addEventListener('click', () => {
     ignoreIssue(true);
   });
-  document.getElementById('ignore-file-issue')!.addEventListener('click', () => {
+  document.getElementById('ignore-file-issue')?.addEventListener('click', () => {
     ignoreIssue(false);
   });
   document.getElementById('position-line')!.addEventListener('click', () => {
