@@ -440,6 +440,7 @@
     "@babel/parser": "^7.23.9",
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
+    "@deepcode/dcignore": "^1.0.4",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
     "axios": "^1.7.2",
