@@ -40,3 +40,14 @@ jobs:
 
       - name: Run unit tests
         run: npm run test:unit
+
+      - name: Run integration tests
+        run: |
+          sudo apt-get install xvfb
+          xvfb-run --auto-servernum npm run test:integration
+        if: runner.os == 'Linux'
+      - name: Run integration tests
+        run: npm run test:integration
+        if: runner.os != 'Linux'
+
+

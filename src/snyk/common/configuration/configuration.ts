@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
-import { IDE_NAME_SHORT, SNYK_TOKEN_KEY } from '../constants/general';
+import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -58,7 +58,6 @@ export type PreviewFeatures = {
 export interface IConfiguration {
   shouldShowAdvancedView: boolean;
   isDevelopment: boolean;
-  source: string;
 
   authHost: string;
 
@@ -74,15 +73,13 @@ export interface IConfiguration {
 
   clearToken(): Promise<void>;
 
-  snykCodeToken: Promise<string | undefined>;
-  snykCodeBaseURL: string;
   snykCodeUrl: string;
 
   organization: string | undefined;
 
   getAdditionalCliParameters(): string | undefined;
 
-  snykOssApiEndpoint: string;
+  snykApiEndpoint: string;
   shouldShowOssBackgroundScanNotification: boolean;
 
   hideOssBackgroundScanNotification(): Promise<void>;
@@ -126,8 +123,8 @@ export interface IConfiguration {
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
   private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
-  private readonly defaultAuthHost = 'https://snyk.io';
-  private readonly defaultOssApiEndpoint = `${this.defaultAuthHost}/api/v1`;
+  private readonly defaultAuthHost = 'https://app.snyk.io';
+  private readonly defaultApiEndpoint = 'https://api.snyk.io';
 
   private featureFlag: { [key: string]: boolean } = {};
 
@@ -166,25 +163,6 @@ export class Configuration implements IConfiguration {
     return !!this.processEnv.SNYK_VSCE_DEVELOPMENT;
   }
 
-  get snykCodeBaseURL(): string {
-    if (this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL) {
-      return this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_BASE_URL;
-    } else if (this.customEndpoint) {
-      const url = new URL(this.customEndpoint);
-
-      if (Configuration.isSingleTenant(url)) {
-        url.host = url.host.replace('app', 'deeproxy');
-      } else {
-        url.host = `deeproxy.${url.host}`;
-      }
-      url.pathname = url.pathname.replace('api', '');
-
-      return this.removeTrailingSlash(url.toString());
-    }
-
-    return this.defaultSnykCodeBaseURL;
-  }
-
   private get customEndpoint(): string | undefined {
     return this.workspace.getConfiguration<string>(
       CONFIGURATION_IDENTIFIER,
@@ -195,6 +173,7 @@ export class Configuration implements IConfiguration {
   get authHost(): string {
     if (this.customEndpoint) {
       const url = new URL(this.customEndpoint);
+      url.host = url.host.replace('api', 'app');
       return `${url.protocol}//${url.host}`;
     }
 
@@ -223,23 +202,16 @@ export class Configuration implements IConfiguration {
     return `${hostnameParts[2]}.${hostnameParts[3]}`.includes('snykgov.io');
   }
 
-  get snykOssApiEndpoint(): string {
+  get snykApiEndpoint(): string {
     if (this.customEndpoint) {
-      return this.customEndpoint; // E.g. https://app.eu.snyk.io/api
+      return this.customEndpoint;
     }
 
-    return this.defaultOssApiEndpoint;
+    return this.defaultApiEndpoint;
   }
 
   get snykCodeUrl(): string {
     const authUrl = new URL(this.authHost);
-
-    if (Configuration.isSingleTenant(authUrl)) {
-      authUrl.pathname = authUrl.pathname.replace('api', '');
-    } else {
-      authUrl.host = `app.${authUrl.host}`;
-    }
-
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
@@ -261,13 +233,6 @@ export class Configuration implements IConfiguration {
           resolve('');
         });
     });
-  }
-
-  get snykCodeToken(): Promise<string | undefined> {
-    if (this.isDevelopment && this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN) {
-      return Promise.resolve(this.processEnv.SNYK_VSCE_DEVELOPMENT_SNYKCODE_TOKEN);
-    }
-    return this.getToken();
   }
 
   async setToken(token: string | undefined): Promise<void> {
@@ -294,14 +259,6 @@ export class Configuration implements IConfiguration {
           reject(error);
         });
     });
-  }
-
-  static get source(): string {
-    return IDE_NAME_SHORT;
-  }
-
-  get source(): string {
-    return Configuration.source;
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration {
@@ -343,6 +300,12 @@ export class Configuration implements IConfiguration {
   async setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void> {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
+      this.getConfigName(OSS_ENABLED_SETTING),
+      config?.ossEnabled,
+      true,
+    );
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
       config?.codeSecurityEnabled,
       true,
@@ -351,6 +314,12 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
       config?.codeQualityEnabled,
+      true,
+    );
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(IAC_ENABLED_SETTING),
+      config?.iacEnabled,
       true,
     );
   }
@@ -497,12 +466,4 @@ export class Configuration implements IConfiguration {
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
-
-  private static isSingleTenant(url: URL): boolean {
-    return url.host.startsWith('app') && url.host.endsWith('snyk.io');
-  }
-
-  private removeTrailingSlash(str: string) {
-    return str.replace(/\/$/, '');
-  }
 }

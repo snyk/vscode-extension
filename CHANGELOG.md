@@ -1,8 +1,10 @@
 # Snyk Security Changelog
 
-## [2.11.0]
+
+## [2.10.1]
 - Add warning messages in the Tree View for the issue view options used in consistent ignores.
 - Add Data Flow and Ignore Footer intractions for Consistent Ignores flows.
+- Fix endpoint computation based on custom endpoint.
 
 ## [2.10.0]
 - Injects custom styling for the HTML panel used by Snyk Code for consistent ignores.
