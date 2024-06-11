@@ -203,11 +203,8 @@ export class CodeSuggestionWebviewProvider
 
   private async promisifySpawn(ruleKey: string, ruleMessage: string, derivation: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      // const args = ['--rule_key', ruleKey, '--rule_message', ruleMessage, '--derivation', derivation]
       const args = [`${ruleKey} "${ruleMessage}" "${derivation}"`];
-      // const child = spawn('/home/berkay.berabi/query_explain.sh', [ruleKey, ruleMessage, derivation], { shell: "bash" });
       const child = spawn('/home/berkay.berabi/query_explain.sh', args, { shell: true });
-      // console.log('Executing command:', child.spawnargs.join(' '));
 
 
       let stdoutData = '';
@@ -310,7 +307,7 @@ export class CodeSuggestionWebviewProvider
 
           const filePath = suggestion.filePath;
           const fileContent = readFileSync(filePath, 'utf8');
-          // console.log("fileContent: ", fileContent);
+
           const ruleKey = suggestion.rule;
           const ruleMessage = suggestion.message;
 
@@ -337,8 +334,14 @@ export class CodeSuggestionWebviewProvider
           let derivation = derivationLines.join(",");
           console.log("derivation: ", derivation);
 
-          var explanation: string = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
-          console.log("explanation after for: ", explanation.toString());
+          var explanation: string = ""
+          try {
+            derivation = derivation.replace(/\t/g, "  ");
+            explanation = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
+          } catch (error) {
+            console.error("Got error from server: ", error);
+          }
+          // console.log("explanation after for: ", explanation.toString());
           void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
 
           break;
