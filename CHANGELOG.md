@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.12.1]
+- Fix Code Suggestion rendering issue on Windows.
+
 ## [2.12.0]
 - Renders the AI Fix panel and adds more custom styling for VSCode.
 - Adds position line interaction.
