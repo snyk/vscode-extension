@@ -286,14 +286,14 @@ export class CodeSuggestionWebviewProvider
           }
           const edit = new vscode.WorkspaceEdit();
 
-          const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.path === filePath);
+          const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.fsPath === filePath);
 
           if (!editor) {
             throw Error(`Editor with file not found: ${filePath}`);
           }
 
           const editorEndLine = editor.document.lineCount;
-          edit.replace(vscode.Uri.parse(filePath), new vscode.Range(0, 0, editorEndLine, 0), patchedContent);
+          edit.replace(vscode.Uri.file(filePath), new vscode.Range(0, 0, editorEndLine, 0), patchedContent);
 
           const success = await vscode.workspace.applyEdit(edit);
           if (!success) {
