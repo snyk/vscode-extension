@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.12.2]
+- Fix applying AI fixes on Windows.
+
 ## [2.12.1]
 - Fix Code Suggestion rendering issue on Windows.
 
