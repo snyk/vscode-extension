@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.12.2]
+- Add CSS rules for `.light-only` and `.dark-only` to the LSP implementation. This allows the LSP to apply different styles based on the current theme.
+
 ## [2.12.1]
 - Fix applying AI fixes on Windows.
 
