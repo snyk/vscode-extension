@@ -117,7 +117,7 @@ body {
 .vscode-high-contrast:not(.vscode-high-contrast-light) .example-line.added {
     background-color: #1C4428;
     color: #fff;
-}        
+}
 
 .ignore-action-container {
     background-color: var(--vscode-editor-background);
@@ -139,4 +139,14 @@ body {
 
 .sn-fix-wrapper {
     background-color: var(--vscode-editor-background);
+}
+
+.vscode-dark .light-only,
+.vscode-high-contrast:not(.vscode-high-contrast-light) .light-only {
+  display: none;
+}
+
+.vscode-light .dark-only,
+.vscode-high-contrast.vscode-high-contrast-light .dark-only {
+  display: none;
 }
