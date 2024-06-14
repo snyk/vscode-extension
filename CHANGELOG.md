@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.12.3]
+- update to LS protocol version 12
+
 ## [2.12.2]
 - Add CSS rules for `.light-only` and `.dark-only` to the LSP implementation. This allows the LSP to apply different styles based on the current theme.
 
