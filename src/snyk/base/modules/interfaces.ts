@@ -22,6 +22,7 @@ export interface IBaseSnykModule {
 export interface ISnykLib {
   enableCode(): Promise<void>;
   checkAdvancedMode(): Promise<void>;
+  setupFeatureFlags(): Promise<void>;
 }
 
 export interface IExtension extends IBaseSnykModule, ISnykLib {

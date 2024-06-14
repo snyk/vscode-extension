@@ -7,6 +7,7 @@ import { Logger } from '../../common/logger/logger';
 import { vsCodeCommands } from '../../common/vscode/commands';
 import BaseSnykModule from './baseSnykModule';
 import { ISnykLib } from './interfaces';
+import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
 
 export default class SnykLib extends BaseSnykModule implements ISnykLib {
   private async runFullScan_(): Promise<void> {
@@ -47,6 +48,11 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
 
   async checkAdvancedMode(): Promise<void> {
     await this.contextService.setContext(SNYK_CONTEXT.ADVANCED, configuration.shouldShowAdvancedView);
+  }
+
+  async setupFeatureFlags(): Promise<void> {
+    const isEnabled = await this.featureFlagService.fetchFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, isEnabled);
   }
 
   protected async setWorkspaceContext(workspacePaths: string[]): Promise<void> {

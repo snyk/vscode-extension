@@ -5,6 +5,7 @@ import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
+import { FeatureFlagService } from '../../common/services/featureFlagService';
 import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
@@ -39,6 +40,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
   protected ossService?: OssService;
+  protected featureFlagService: FeatureFlagService;
 
   protected commandController: CommandController;
   protected scanModeService: ScanModeService;

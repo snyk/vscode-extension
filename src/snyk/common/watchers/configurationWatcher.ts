@@ -17,25 +17,19 @@ import {
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
 } from '../constants/settings';
-import { FEATURE_FLAGS } from '../constants/featureFlags';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
-import { IVSCodeCommands } from '../vscode/commands';
-import { SNYK_FEATURE_FLAG_COMMAND } from '../constants/commands';
-import { FeatureFlagStatus } from '../types';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(private readonly logger: ILog, private commandExecutor: IVSCodeCommands) {}
+  constructor(private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ORGANIZATION) {
-      const isEnabled = await this.fetchFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-      configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, isEnabled);
-    }
-    if (key === ADVANCED_ADVANCED_MODE_SETTING) {
+      return extension.setupFeatureFlags();
+    } else if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
@@ -101,19 +95,6 @@ class ConfigurationWatcher implements IWatcher {
         return extension.runScan();
       }
     });
-  }
-
-  private async fetchFeatureFlag(flagName: string): Promise<boolean> {
-    try {
-      const ffStatus = await this.commandExecutor.executeCommand<FeatureFlagStatus>(
-        SNYK_FEATURE_FLAG_COMMAND,
-        flagName,
-      );
-      return ffStatus?.ok ?? false;
-    } catch (error) {
-      console.warn(`Failed to fetch feature flag ${flagName}: ${error}`);
-      return false;
-    }
   }
 }
 
