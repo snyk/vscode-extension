@@ -1,12 +1,13 @@
 # Snyk Security Changelog
 
 ## [2.12.2]
-- update to LS protocol version 12
 - Refactors the feature flag logic into its own service.
+- Fix multi-file links in the DataFlow HTML panel.
 
 ## [2.12.1]
 - Fix applying AI fixes on Windows.
 - Add CSS rules for `.light-only` and `.dark-only` to the LSP implementation. This allows the LSP to apply different styles based on the current theme.
+- Update to LS protocol version 12.
 
 ## [2.12.0]
 - Fix Code Suggestion rendering issue on Windows.

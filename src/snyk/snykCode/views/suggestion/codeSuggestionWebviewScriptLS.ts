@@ -120,19 +120,10 @@
     vscode.postMessage(message);
   }
 
-  function navigateToIssue(i: number) {
+  function navigateToIssue(position?: MarkerPosition) {
     if (!suggestion) {
       return;
     }
-    const markers = suggestion.markers;
-    if (!markers) {
-      return;
-    }
-    const position = {
-      file: suggestion.filePath,
-      rows: markers[i].pos[0].rows,
-      cols: markers[i].pos[0].cols,
-    };
 
     const message: OpenLocalMessage = {
       type: 'openLocal',
@@ -175,7 +166,20 @@
   const dataFlows = document.getElementsByClassName('data-flow-clickable-row');
   for (let i = 0; i < dataFlows.length; i++) {
     dataFlows[i].addEventListener('click', () => {
-      navigateToIssue(i);
+      const rows: Point = [
+        parseInt(dataFlows[i].getAttribute('start-line')!),
+        parseInt(dataFlows[i].getAttribute('end-line')!),
+      ];
+      const cols: Point = [
+        parseInt(dataFlows[i].getAttribute('start-character')!),
+        parseInt(dataFlows[i].getAttribute('end-character')!),
+      ];
+      const position = {
+        file: dataFlows[i].getAttribute('file-path')!,
+        rows: rows,
+        cols: cols,
+      };
+      navigateToIssue(position);
     });
   }
   document.getElementById('ignore-line-issue')?.addEventListener('click', () => {
@@ -185,7 +189,7 @@
     ignoreIssue(false);
   });
   document.getElementById('position-line')!.addEventListener('click', () => {
-    navigateToIssue(0);
+    navigateToIssue();
   });
 
   function toggleElement(element: Element | null, toggle: 'hide' | 'show') {
