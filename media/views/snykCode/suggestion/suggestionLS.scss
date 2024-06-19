@@ -35,16 +35,16 @@ body {
 }
 
 .tab-item {
-    color: var(--vscode-foreground);
+    color: var(--vscode-panelTitle-inactiveForeground);
     border-bottom: 1px solid transparent;
 }
 
 .tab-item-icon path {
-    fill: var(--tab-item-github-icon-color);
+    fill: var(--vscode-foreground);
 }
 
-
 .tab-item.is-selected {
+    color: var(--vscode-foreground);
     border-bottom: 3px solid var(--vscode-focusBorder);
 }
 
@@ -124,6 +124,7 @@ body {
     background-color: var(--vscode-editor-background);
     background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.075));
     box-shadow: 0 -1px 3px rgba(0, 0, 0, .05);
+    border-top: 1px solid var(--vscode-input-border);
 }
 
 .ignore-button.secondary {
