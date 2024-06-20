@@ -326,7 +326,7 @@ class SnykExtension extends SnykLib implements IExtension {
     vscode.workspace.onDidChangeWorkspaceFolders(e => {
       this.workspaceTrust.resetTrustedFoldersCache();
       e.removed.forEach(folder => {
-        this.snykCode.resetResult(folder.uri.path);
+        this.snykCode.resetResult(folder.uri.fsPath);
       });
       this.runScan(false);
     });

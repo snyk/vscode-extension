@@ -317,7 +317,7 @@ export class CodeSuggestionWebviewProvider
 
   private setupCloseOnSave(filePath: string) {
     vscode.workspace.onDidSaveTextDocument((e: TextDocument) => {
-      if (e.uri.path == filePath) {
+      if (e.uri.fsPath == filePath) {
         this.panel?.dispose();
       }
     });
@@ -329,7 +329,7 @@ export class CodeSuggestionWebviewProvider
       backgroundColor: 'rgba(0,255,0,0.3)',
     });
 
-    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.path === filePath);
+    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.fsPath === filePath);
     if (!editor) {
       return; // No open editor found with the target file
     }
@@ -362,7 +362,7 @@ export class CodeSuggestionWebviewProvider
     };
 
     const documentEventHandler = (document: TextDocument) => {
-      if (document.uri.path == filePath) {
+      if (document.uri.fsPath == filePath) {
         removeHighlights();
       }
     };
