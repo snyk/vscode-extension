@@ -65,6 +65,10 @@ body {
     padding-bottom: 0px;
 }
 
+.data-flow-text {
+  font-family: "Courier New", Courier, monospace;
+}
+
 .ignore-details-tab,
 .fix-analysis-tab,
 .vuln-overview-tab {
@@ -77,8 +81,12 @@ body {
 }
 
 .example-line-number,
-.example-line>code {
+.example-line > code {
     color: var(--vscode-editor-foreground);
+}
+
+.example-line > code {
+  font-family: "Courier New", Courier, monospace;
 }
 
 .example-line.added {
