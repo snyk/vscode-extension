@@ -168,7 +168,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      this.learnService,
     );
 
     this.snykCode = new SnykCodeService(
