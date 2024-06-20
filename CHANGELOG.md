@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.12.3]
+- Fix a bug in AI Applyfix on Windows.
+
 ## [2.12.2]
 - Refactors the feature flag logic into its own service.
 - Fix multi-file links in the DataFlow HTML panel.
