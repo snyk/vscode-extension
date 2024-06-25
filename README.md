@@ -38,6 +38,10 @@ See [Supported languages and frameworks](https://docs.snyk.io/scan-applications/
 
 ## Supported operating systems and architecture
 
+
+Snyk plugins are not supported on any operating system that has reached End Of Life (EOL) with the distributor.&#x20;
+
+
 You can use the Snyk Visual Studio Code extension in the following environments:
 
 * Linux: AMD64 and ARM64
