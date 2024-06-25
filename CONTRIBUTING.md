@@ -43,8 +43,6 @@ To test for analytics, experimentation and error reporting integrations, create 
 The code is organized in folders grouped by [feature](https://phauer.com/2020/package-by-feature/), unless it's product unrelated code. The overall layering tree loks like that:
 
 ```
-├── ampli
-│   └── Amplitude CLI generated code.
 ├── snyk
 │   ├── common
 │   │   ├── Common code that is shared between different products.
@@ -68,37 +66,3 @@ The code is organized in folders grouped by [feature](https://phauer.com/2020/pa
 ### Explore the VS Code API
 
 You can open the full set of our API when you open the file `node_modules/@types/vscode/index.d.ts`.
-
-### Usage with local package `@snyk/code-client`
-
-In order to test plugin with local package `@snyk/code-client` you should make the following steps.
-
-1. Clone package repository:
-
-```shell script
-$ git clone https://github.com/snyk/code-client.git
-```
-
-2. Go to the package folder, install dependencies, build package and create symlink:
-
-```shell script
-$ cd tsc
-$ npm install
-$ npm run build
-$ npm link
-```
-
-3. Go to the extension folder and install package from local symlink:
-
-```shell script
-$ cd vscode-extension
-$ npm link @snyk/code-client
-```
-
-After that you can add package to your `package.json`:
-
-```json
-"dependencies": {
- "@snyk/code-client": "^2.4.1"
-}
-```
