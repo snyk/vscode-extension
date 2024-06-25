@@ -2,6 +2,7 @@
 
 ## [2.12.3]
 - Fix a bug in AI Applyfix on Windows.
+- Changes some of the colours used in the HTML panel so it's consistent with designs.
 
 ## [2.12.2]
 - Refactors the feature flag logic into its own service.
