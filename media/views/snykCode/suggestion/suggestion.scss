@@ -38,6 +38,8 @@ body {
   height: 100%;
   margin: 0;
   font-size: 1.4rem;
+  overflow-y: auto;
+  height: calc(100vh - 80px); /* 80px is the height of the footer */
 }
 
 .suggestion-title {
