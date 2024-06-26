@@ -19,7 +19,7 @@ jobs:
       - checkout
       - install
       - prodsec/security_scans:
-          mode: upload
+          mode: auto
           open-source-additional-arguments: --exclude=mocked_data
           iac-scan: disabled
 
