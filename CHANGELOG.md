@@ -1,6 +1,9 @@
 # Snyk Security Changelog
 
-## [2.12.4]
+### [2.13.1]
+- Refactor the Suggestion Panel for OSS so it's more secure and will be supported in other IDEs
+
+## [2.13.0]
 - Fix `.suggestion` class to ensure it is scrollable and not overlapped by the `.suggestion-actions` fixed element. This change prevents the suggestion content from being hidden.
 - transmit required protocol version to language server
 - Remove unused stylesheet and refactor stylesheets
