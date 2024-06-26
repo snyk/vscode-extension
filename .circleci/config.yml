@@ -1,7 +1,27 @@
 version: 2.1
 
 orbs:
-  prodsec: snyk/prodsec-orb@1.0
+  prodsec: snyk/prodsec-orb@1
+
+commands:
+  install:
+    steps:
+      - run:
+          name: Install
+          command: npm ci
+
+jobs:
+  security-scans:
+    resource_class: small
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - checkout
+      - install
+      - prodsec/security_scans:
+          mode: auto
+          open-source-additional-arguments: --exclude=mocked_data
+          iac-scan: disabled
 
 workflows:
   version: 2
@@ -11,4 +31,11 @@ workflows:
           name: Scan repository for secrets
           context:
             - snyk-bot-slack
-          channel: hammerhead-alerts
+          channel: snyk-on-snyk-devex_ide
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - security-scans:
+          context: devex_ide
