@@ -1,39 +1,11 @@
 @import '../../common/webview';
 
-.suggestion {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-}
-
 .suggestion .suggestion-text {
   padding: 0.4rem 0;
   margin-bottom: 0.8rem;
   font-size: 1.8rem;
   font-weight: 500;
   line-height: 2.4rem;
-}
-
-.severity {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 0;
-  float: left;
-  margin: 0 1rem 0 0;
-  text-align: center;
-}
-
-.severity .icon {
-  width: 32px;
-  height: 32px;
-}
-
-.icon {
-  vertical-align: middle;
-  width: 16px;
-  height: 16px;
 }
 
 .identifiers {
@@ -49,43 +21,11 @@
   display: none;
 }
 
-.clickable:hover {
-  cursor: pointer;
-}
-
 .delimiter {
-  width: 0;
-  height: 1.3rem;
-  margin: 0 0.8rem 0 0.8rem;
   border-right:1px solid var(--vscode-input-border);
-  line-height: 1rem;
-}
-
-.summary .summary-item {
-  display: flex;
-  margin: 0.3em 0 0.3em 0;
-}
-
-.summary .label {
-  width: 160px;
-}
-
-.summary .content {
-  flex: 70%;
-}
-
-.summary .remediation {
-  margin-bottom: 1.6rem
-}
-
-.summary .detailed-path:last-child .remediation {
-  margin-bottom: 0
 }
 
 .vulnerability-overview pre {
-  padding: 8px 16px;
-  overflow-x: auto;
-  border-radius: 4px;
   font-size: var(--vscode-editor-font-size);
   font-family: var(--vscode-editor-font-family);
   background-color: var(--vscode-editor-background);
