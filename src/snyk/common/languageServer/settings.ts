@@ -39,7 +39,7 @@ export type ServerSettings = {
   integrationName?: string;
   integrationVersion?: string;
   deviceId?: string;
-  requiredProtocolVersion ?: string;
+  requiredProtocolVersion?: string;
 };
 
 export class LanguageServerSettings {
