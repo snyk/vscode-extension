@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
+import { PROTOCOL_VERSION } from '../constants/languageServer';
 
 export type ServerSettings = {
   // Feature toggles
@@ -38,6 +39,7 @@ export type ServerSettings = {
   integrationName?: string;
   integrationVersion?: string;
   deviceId?: string;
+  requiredProtocolVersion?: string;
 };
 
 export class LanguageServerSettings {
@@ -75,6 +77,7 @@ export class LanguageServerSettings {
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
+      requiredProtocolVersion: `${PROTOCOL_VERSION}`,
     };
   }
 }
