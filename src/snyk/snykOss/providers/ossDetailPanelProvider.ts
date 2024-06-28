@@ -11,6 +11,7 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IVSCodeWindow } from '../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../constants/messages';
+import { readFileSync } from 'fs';
 
 export class OssDetailPanelProvider
   extends WebviewProvider<Issue<OssIssueData>>
@@ -78,17 +79,32 @@ export class OssDetailPanelProvider
       }, {});
 
       const displayMode = 'dark';
+
+      let html = issue.additionalData.details;
+
+      // Add the style
+      const ideStylePath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'views',
+        'oss',
+        'suggestion',
+        'suggestion.css',
+      );
+      const ideStyle = readFileSync(ideStylePath.fsPath, 'utf8');
+      const nonce = getNonce();
+
+      // TODO: remove after the stable CLI release at the end of cycle 5
       const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
       const headerEndValue = `<link href="${styleUri}" rel="stylesheet">`;
       const serverityIconName = `${displayMode}-${issue.severity}-severity`;
-      const nonce = getNonce();
-
-      let html = issue.additionalData.details;
       html = html.replace('${headerEnd}', headerEndValue);
       html = html.replaceAll('${cspSource}', this.panel.webview.cspSource);
-      html = html.replaceAll('${nonce}', nonce);
       html = html.replace('${severityIcon}', images[serverityIconName]);
       html = html.replace('${learnIcon}', images['learn-icon']);
+      // TODO: end remove
+      html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
+      html = html.replaceAll('${nonce}', nonce);
       html = html.replaceAll(/\$\{\w+\}/g, '');
       this.panel.webview.html = html;
       this.panel.iconPath = vscode.Uri.joinPath(

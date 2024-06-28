@@ -4,6 +4,7 @@
 - Fix `.suggestion` class to ensure it is scrollable and not overlapped by the `.suggestion-actions` fixed element. This change prevents the suggestion content from being hidden.
 - transmit required protocol version to language server
 - Remove unused stylesheet and refactor stylesheets
+- Refactor the Suggestion Panel for OSS so it's more secure and will be supported in other IDEs
 
 ## [2.12.3]
 - Fix a bug in AI Applyfix on Windows.
