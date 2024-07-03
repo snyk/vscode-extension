@@ -36,6 +36,10 @@ suite('Language Server', () => {
 
   setup(() => {
     configurationMock = {
+      useTokenAuthentication(): boolean {
+        return false;
+      },
+
       getInsecure(): boolean {
         return true;
       },
@@ -223,6 +227,7 @@ suite('Language Server', () => {
         insecure: 'true',
         requiredProtocolVersion: '12',
         scanningMode: 'auto',
+        authenticationMethod: 'oauth',
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

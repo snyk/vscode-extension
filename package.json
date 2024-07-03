@@ -107,6 +107,12 @@
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
+          "snyk.advanced.useTokenAuthentication": {
+            "type": "boolean",
+            "markdownDescription": "Use token authentication. It is recommended to keep this turned off, as the default OAuth2 authentication is more secure.",
+            "scope": "window",
+            "default": false
+          },
           "snyk.advanced.organization": {
             "type": "string",
             "markdownDescription": "Specifies an organization slug name to run tests for that organization. \n\nNote: The slug name can be extracted from the URL of your organization in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`. If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
