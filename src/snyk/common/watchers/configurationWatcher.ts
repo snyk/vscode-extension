@@ -16,6 +16,7 @@ import {
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
+  DELTA_FINDINGS,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -44,6 +45,10 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_CUSTOM_LS_PATH) {
+      // Language Server client must sync config changes before we can restart
+      return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+    }
+    else if (key === DELTA_FINDINGS) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
     } else if (key === TRUSTED_FOLDERS) {
@@ -79,6 +84,7 @@ class ConfigurationWatcher implements IWatcher {
         ADVANCED_CUSTOM_LS_PATH,
         TRUSTED_FOLDERS,
         ISSUE_VIEW_OPTIONS_SETTING,
+        DELTA_FINDINGS
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

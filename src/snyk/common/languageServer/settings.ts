@@ -40,6 +40,7 @@ export type ServerSettings = {
   integrationVersion?: string;
   deviceId?: string;
   requiredProtocolVersion?: string;
+  enableDeltaFindings?: string;
 };
 
 export class LanguageServerSettings {
@@ -61,6 +62,7 @@ export class LanguageServerSettings {
       activateSnykCodeQuality: `${codeQualityEnabled}`,
       activateSnykOpenSource: `${ossEnabled}`,
       activateSnykIac: `${iacEnabled}`,
+      enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: configuration.getCliPath(),
       endpoint: configuration.snykApiEndpoint,
