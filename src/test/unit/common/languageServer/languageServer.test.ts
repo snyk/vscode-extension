@@ -39,6 +39,9 @@ suite('Language Server', () => {
       getInsecure(): boolean {
         return true;
       },
+      getDeltaFindingsEnabled(): boolean {
+        return false;
+      },
       getCliPath(): string | undefined {
         return path;
       },
