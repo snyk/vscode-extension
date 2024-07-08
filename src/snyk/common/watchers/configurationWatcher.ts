@@ -80,7 +80,7 @@ class ConfigurationWatcher implements IWatcher {
         ADVANCED_CUSTOM_LS_PATH,
         TRUSTED_FOLDERS,
         ISSUE_VIEW_OPTIONS_SETTING,
-        DELTA_FINDINGS
+        DELTA_FINDINGS,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

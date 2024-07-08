@@ -226,10 +226,9 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    return this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
-    ) ?? false;
+    return (
+      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
+    );
   }
 
   async getToken(): Promise<string | undefined> {
