@@ -203,6 +203,7 @@ suite('Language Server', () => {
       const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
         activateSnykCodeQuality: 'true',
+        enableDeltaFindings: 'false',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
         token: 'testToken',

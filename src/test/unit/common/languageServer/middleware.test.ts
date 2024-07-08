@@ -31,6 +31,9 @@ suite('Language Server: Middleware', () => {
       getInsecure(): boolean {
         return true;
       },
+      getDeltaFindingsEnabled(): boolean {
+        return false;
+      },
       getPreviewFeatures: () => {
         return {
           advisor: false,
