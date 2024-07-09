@@ -111,7 +111,7 @@
             "type": "boolean",
             "markdownDescription": "Use token authentication. It is recommended to keep this turned off, as the default OAuth2 authentication is more secure.",
             "scope": "window",
-            "default": false
+            "default": true
           },
           "snyk.advanced.organization": {
             "type": "string",
