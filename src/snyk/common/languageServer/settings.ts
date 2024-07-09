@@ -20,6 +20,7 @@ export type ServerSettings = {
   // Authentication and parameters
   token?: string;
   automaticAuthentication?: string;
+  authenticationMethod?: string;
   additionalParams?: string;
   manageBinariesAutomatically?: string;
 
@@ -57,6 +58,11 @@ export class LanguageServerSettings {
       ? true
       : featuresConfiguration.codeQualityEnabled;
 
+    let authenticationMethod = 'oauth';
+    if (configuration.useTokenAuthentication()) {
+      authenticationMethod = 'token';
+    }
+
     return {
       activateSnykCodeSecurity: `${codeSecurityEnabled}`,
       activateSnykCodeQuality: `${codeQualityEnabled}`,
@@ -80,6 +86,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
+      authenticationMethod: authenticationMethod,
     };
   }
 }

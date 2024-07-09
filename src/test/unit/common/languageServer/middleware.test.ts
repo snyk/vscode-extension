@@ -21,6 +21,9 @@ suite('Language Server: Middleware', () => {
   setup(() => {
     user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
+      useTokenAuthentication(): boolean {
+        return false;
+      },
       shouldReportErrors: false,
       snykApiEndpoint: 'https://dev.snyk.io/api',
       getAdditionalCliParameters: () => '',

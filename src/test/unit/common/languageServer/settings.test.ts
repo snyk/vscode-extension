@@ -13,6 +13,9 @@ suite('LanguageServerSettings', () => {
         organization: 'my-org',
         // eslint-disable-next-line @typescript-eslint/require-await
         getToken: async () => 'snyk-token',
+        useTokenAuthentication(): boolean {
+          return false;
+        },
         getFeaturesConfiguration: () => ({}), // iacEnabled, codeSecurityEnabled, codeQualityEnabled are undefined
         getCliPath: () => '/path/to/cli',
         getAdditionalCliParameters: () => '--all-projects -d',

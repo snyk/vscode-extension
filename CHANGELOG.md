@@ -1,7 +1,11 @@
 # Snyk Security Changelog
 
-### [2.13.1]
+## [2.13.2]
+- allow to select oauth2 authentication
+
+## [2.13.1]
 - Refactor the Suggestion Panel for OSS so it's more secure and will be supported in other IDEs
+- allow to select OAuth2 as authentication
 
 ## [2.13.0]
 - Fix `.suggestion` class to ensure it is scrollable and not overlapped by the `.suggestion-actions` fixed element. This change prevents the suggestion content from being hidden.
