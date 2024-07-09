@@ -24,6 +24,7 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
+  DELTA_FINDINGS,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -118,6 +119,8 @@ export interface IConfiguration {
   setTrustedFolders(trustedFolders: string[]): Promise<void>;
 
   setEndpoint(endpoint: string): Promise<void>;
+
+  getDeltaFindingsEnabled(): boolean;
 }
 
 export class Configuration implements IConfiguration {
@@ -219,6 +222,12 @@ export class Configuration implements IConfiguration {
     return this.workspace.getConfiguration<string>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    );
+  }
+
+  getDeltaFindingsEnabled(): boolean {
+    return (
+      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
     );
   }
 

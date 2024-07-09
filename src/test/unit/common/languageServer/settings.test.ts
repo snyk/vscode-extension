@@ -18,6 +18,7 @@ suite('LanguageServerSettings', () => {
         getAdditionalCliParameters: () => '--all-projects -d',
         getTrustedFolders: () => ['/trusted/path'],
         getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
         isAutomaticDependencyManagementEnabled: () => true,
         severityFilter: { critical: true, high: true, medium: true, low: false },
         scanningMode: 'scan-mode',

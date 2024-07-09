@@ -39,6 +39,9 @@ suite('Language Server', () => {
       getInsecure(): boolean {
         return true;
       },
+      getDeltaFindingsEnabled(): boolean {
+        return false;
+      },
       getCliPath(): string | undefined {
         return path;
       },
@@ -200,6 +203,7 @@ suite('Language Server', () => {
       const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
         activateSnykCodeQuality: 'true',
+        enableDeltaFindings: 'false',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
         token: 'testToken',
