@@ -18,19 +18,6 @@ body {
     text-transform: capitalize;
 }
 
-// TODO: remove ignore styling at the end of cycle 5 2025
-.ignore-warning {
-    background: #FFF4ED;
-    color: #B6540B;
-    border: 1px solid #E27122;
-}
-
-.ignore-badge {
-    background: #FFF4ED;
-    color: #B6540B;
-    border: 1px solid #E27122;
-}
-
 .data-flow-clickable-row {
     color: var(--vscode-textLink-foreground);
 }
