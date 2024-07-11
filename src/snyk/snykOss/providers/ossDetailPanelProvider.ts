@@ -94,15 +94,6 @@ export class OssDetailPanelProvider
       const ideStyle = readFileSync(ideStylePath.fsPath, 'utf8');
       const nonce = getNonce();
 
-      // TODO: remove after the stable CLI release at the end of cycle 5
-      const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css');
-      const headerEndValue = `<link href="${styleUri}" rel="stylesheet">`;
-      const serverityIconName = `${displayMode}-${issue.severity}-severity`;
-      html = html.replace('${headerEnd}', headerEndValue);
-      html = html.replaceAll('${cspSource}', this.panel.webview.cspSource);
-      html = html.replace('${severityIcon}', images[serverityIconName]);
-      html = html.replace('${learnIcon}', images['learn-icon']);
-      // TODO: end remove
       html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
       html = html.replaceAll('${nonce}', nonce);
       html = html.replaceAll(/\$\{\w+\}/g, '');
