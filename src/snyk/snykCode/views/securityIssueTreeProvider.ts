@@ -42,13 +42,13 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   protected getIssueFoundText(nIssues: number, ignoredIssueCount: number): string {
     if (nIssues > 0) {
       let text;
-      
+
       if (nIssues === 1) {
         text = `${nIssues} vulnerability found by Snyk`;
       } else {
         text = `✋ ${nIssues} vulnerabilities found by Snyk`;
       }
-    
+
       const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
       if (isIgnoresEnabled) {
         text += `, ${ignoredIssueCount} ignored`;
