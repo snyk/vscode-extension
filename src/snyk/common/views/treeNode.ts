@@ -7,7 +7,7 @@ export interface INodeIcon {
   ['dark']: string;
 }
 
-type NODE_ICON_TYPE = 'critical' | 'high' | 'medium' | 'low' | 'error';
+type NODE_ICON_TYPE = 'critical' | 'high' | 'medium' | 'low' | 'error' | 'branch';
 
 export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
   critical: {
@@ -29,6 +29,10 @@ export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
   error: {
     light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
+  },
+  branch: {
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch_icon.svg'),
+    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch_icon.svg'),
   },
 };
 

@@ -8,6 +8,7 @@ import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssService } from '../../snykOss/ossService';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_SET_BASE_BRANCH_COMMAND,
   SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
@@ -58,6 +59,10 @@ export class CommandController {
 
   async setToken(): Promise<void> {
     await this.executeCommand(SNYK_SET_TOKEN_COMMAND, this.authService.setToken.bind(this.authService));
+  }
+
+  async setBaseBranch(): Promise<void> {
+    await this.executeCommand(SNYK_SET_BASE_BRANCH_COMMAND, this.authService.setBaseBranch.bind(this.authService));
   }
 
   async openLocal(path: Uri, range?: Range): Promise<void> {

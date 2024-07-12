@@ -49,6 +49,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     filteredIssues?: Issue<T>[],
   ): Command;
 
+  abstract setBaseBranchCommand(): Command;
+
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -89,6 +91,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     const ignoredIssueCount = this.getIgnoredCount();
 
     const topNodes: (TreeNode | null)[] = [
+      this.getBaseBranch(),
       new TreeNode({
         text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
       }),
@@ -107,6 +110,20 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return nodes;
+  }
+
+  getBaseBranch(): TreeNode | null {
+    const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
+
+    //TODO: get the actual base branch from Snyk Language Server
+    if (deltaFindingsEnabled) {
+      return new TreeNode({
+        text: 'Base branch: main',
+        icon: NODE_ICONS.branch,
+        command: this.setBaseBranchCommand(),
+      });
+    }
+    return null;
   }
 
   getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {

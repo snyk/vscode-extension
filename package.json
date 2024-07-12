@@ -342,6 +342,12 @@
         "icon": "$(run)"
       },
       {
+        "command": "snyk.setBaseBranch",
+        "title": "Set Base Branch",
+        "category": "Snyk",
+        "icon": "$(sign-in)"
+      },
+      {
         "command": "snyk.settings",
         "title": "Settings",
         "category": "Snyk",
