@@ -1,6 +1,7 @@
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
+export const SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA = 'snyk.views.analysis.code.security.delta';
 export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';

@@ -31,6 +31,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
+  SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
@@ -124,6 +125,11 @@ class SnykExtension extends SnykLib implements IExtension {
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
+
+    const previewFeatures = configuration.getPreviewFeatures();
+    if (previewFeatures.deltaFindings) {
+      await this.contextService.setContext(SNYK_CONTEXT.DELTA_FINDINGS_ENABLED, true);
+    }
 
     const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
@@ -261,7 +267,11 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
     );
 
-    const codeSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_SECURITY, {
+    const securityCodeView = previewFeatures.deltaFindings
+      ? SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA
+      : SNYK_VIEW_ANALYSIS_CODE_SECURITY;
+
+    const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
       treeDataProvider: codeSecurityIssueProvider,
     });
     const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
@@ -269,7 +279,7 @@ class SnykExtension extends SnykLib implements IExtension {
     });
 
     vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_SECURITY, codeSecurityIssueProvider),
+      vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
       codeSecurityTree,
       codeQualityTree,

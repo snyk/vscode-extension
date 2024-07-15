@@ -54,6 +54,7 @@ export interface SeverityFilter {
 
 export type PreviewFeatures = {
   advisor: boolean | undefined;
+  deltaFindings: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -423,6 +424,7 @@ export class Configuration implements IConfiguration {
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
       advisor: false,
+      deltaFindings: false,
     };
 
     const userSetting =

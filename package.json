@@ -252,7 +252,12 @@
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:deltaFindingsEnabled"
+        },
+        {
+          "id": "snyk.views.analysis.code.security.delta",
+          "name": "Code Security - New Issues",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && snyk:deltaFindingsEnabled"
         },
         {
           "id": "snyk.views.analysis.configuration",
