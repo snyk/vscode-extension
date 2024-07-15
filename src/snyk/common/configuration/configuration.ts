@@ -24,7 +24,6 @@ import {
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
-  ADVANCED_USE_TOKEN_AUTHENTICATION,
   DELTA_FINDINGS,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
@@ -62,10 +61,6 @@ export interface IConfiguration {
   isDevelopment: boolean;
 
   authHost: string;
-
-  useTokenAuthentication(): boolean;
-
-  setUseTokenAuthentication(useTokenAuth: boolean): void;
 
   getFeatureFlag(flagName: string): boolean;
 
@@ -130,6 +125,7 @@ export interface IConfiguration {
 
 export class Configuration implements IConfiguration {
   // These attributes are used in tests
+  private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://app.snyk.io';
   private readonly defaultApiEndpoint = 'https://api.snyk.io';
 
@@ -140,23 +136,6 @@ export class Configuration implements IConfiguration {
   getInsecure(): boolean {
     const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
     return !strictSSL;
-  }
-
-  useTokenAuthentication(): boolean {
-    const useTokenAuth = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_USE_TOKEN_AUTHENTICATION),
-    );
-    return useTokenAuth ?? false;
-  }
-
-  async setUseTokenAuthentication(useTokenAuth: boolean): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_USE_TOKEN_AUTHENTICATION),
-      useTokenAuth,
-      true,
-    );
   }
 
   static async getVersion(): Promise<string> {
