@@ -18,6 +18,8 @@ type ProductData = {
   productName: string;
 };
 class MockProductService extends ProductService<ProductData> {
+  productType: ScanProduct;
+
   subscribeToLsScanMessages(): Subscription {
     return this.languageServer.scan$.subscribe((scan: Scan<unknown>) => {
       super.handleLsScanMessage(scan as Scan<ProductData>);

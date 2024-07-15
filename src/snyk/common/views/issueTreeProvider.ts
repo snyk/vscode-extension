@@ -1,10 +1,10 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, ScanProduct } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
-import { IProductService } from '../../common/services/productService';
+import { IProductService, ProductService } from '../../common/services/productService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
@@ -91,12 +91,17 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     const ignoredIssueCount = this.getIgnoredCount();
 
     const topNodes: (TreeNode | null)[] = [
-      this.getBaseBranch(),
       new TreeNode({
         text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
       }),
       this.getFixableIssuesNode(this.getFixableCount()),
     ];
+
+    const isSnykCodeProduct = (this.productService as ProductService<T>).getSnykProductType() === ScanProduct.Code;
+    if (isSnykCodeProduct) {
+      topNodes.unshift(this.getBaseBranch());
+    }
+
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);

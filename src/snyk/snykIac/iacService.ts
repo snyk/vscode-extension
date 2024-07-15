@@ -14,6 +14,8 @@ import { IacCodeActionsProvider } from './codeActions/iacCodeActionsProvider';
 import { IIacSuggestionWebviewProvider } from './views/interfaces';
 
 export class IacService extends ProductService<IacIssueData> {
+  public readonly productType = ScanProduct.InfrastructureAsCode;
+
   constructor(
     extensionContext: ExtensionContext,
     config: IConfiguration,

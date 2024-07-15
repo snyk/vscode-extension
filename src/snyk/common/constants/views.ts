@@ -21,6 +21,7 @@ export const SNYK_CONTEXT = {
   ERROR: 'error',
   MODE: 'mode',
   ADVANCED: 'advanced',
+  DELTA_FINDINGS_ENABLED: 'deltaFindingsEnabled',
 };
 
 export const SNYK_ERROR_CODES = {

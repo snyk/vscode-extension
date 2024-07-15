@@ -14,6 +14,8 @@ import { SnykCodeActionsProvider } from './codeActions/codeIssuesActionsProvider
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
 
 export class SnykCodeService extends ProductService<CodeIssueData> {
+  public readonly productType = ScanProduct.Code;
+
   constructor(
     extensionContext: ExtensionContext,
     config: IConfiguration,
