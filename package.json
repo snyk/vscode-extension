@@ -267,7 +267,12 @@
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:deltaFindingsEnabled"
+        },
+        {
+          "id": "snyk.views.analysis.code.quality.delta",
+          "name": "Code Quality - New Issues",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && snyk:deltaFindingsEnabled"
         },
         {
           "id": "snyk.views.analysis.code.enablement",

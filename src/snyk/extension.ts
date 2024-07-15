@@ -30,6 +30,7 @@ import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
+  SNYK_VIEW_ANALYSIS_CODE_QUALITY_WITH_DELTA,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA,
   SNYK_VIEW_ANALYSIS_IAC,
@@ -267,20 +268,24 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
     );
 
-    const securityCodeView = previewFeatures.deltaFindings
-      ? SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA
-      : SNYK_VIEW_ANALYSIS_CODE_SECURITY;
+    let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
+    let codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
+    if (previewFeatures.deltaFindings) {
+      securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA;
+      codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY_WITH_DELTA;
+    }
 
     const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
       treeDataProvider: codeSecurityIssueProvider,
     });
-    const codeQualityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_QUALITY, {
+
+    const codeQualityTree = vscode.window.createTreeView(codeQualityView, {
       treeDataProvider: codeQualityIssueProvider,
     });
 
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_CODE_QUALITY, codeQualityIssueProvider),
+      vscode.window.registerTreeDataProvider(codeQualityView, codeQualityIssueProvider),
       codeSecurityTree,
       codeQualityTree,
     );
