@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as vscode from 'vscode';
 
 import { IVSCodeLanguages } from '../../snyk/common/vscode/languages';
-import { CodeIssueData } from '../../snyk/common/languageServer/types';
+import { CodeIssueData, ScanProduct } from '../../snyk/common/languageServer/types';
 import { IContextService } from '../../snyk/common/services/contextService';
 import { IProductService } from '../../snyk/common/services/productService';
 import { IssueTreeProvider } from '../../snyk/snykCode/views/issueTreeProvider';
@@ -30,6 +30,7 @@ suite('Code Issue Tree Provider', () => {
       result: {
         values: () => [[]],
       },
+      getSnykProductType: () => ScanProduct.Code,
     } as unknown as IProductService<CodeIssueData>;
     configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
     languages = {} as unknown as IVSCodeLanguages;
