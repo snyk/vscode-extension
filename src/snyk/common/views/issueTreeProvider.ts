@@ -124,7 +124,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     if (deltaFindingsEnabled) {
       return new TreeNode({
         text: 'Base branch: main',
-        icon: NODE_ICONS.pencil,
+        icon: NODE_ICONS.branch,
         command: this.setBaseBranchCommand(),
       });
     }

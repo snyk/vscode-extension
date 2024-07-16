@@ -35,7 +35,7 @@ export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch_icon.svg'),
   },
   pencil: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch_icon.svg'),
+    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'pencil.svg'),
     dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'pencil.svg'),
   },
 };
