@@ -49,7 +49,10 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
   }
 
   getIssueFoundText(nIssues: number, _: number): string {
-    return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} ${nIssues === 1 ? 'issue' : 'issues'}`}`;
+    if (!nIssues) {
+      return '✅ Congrats! No issues found!';
+    }
+    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
   }
 
   filterIssues(issues: Issue<IacIssueData>[]): Issue<IacIssueData>[] {

@@ -44,7 +44,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       let text;
 
       if (nIssues === 1) {
-        text = `${nIssues} vulnerability found by Snyk`;
+        text = `${nIssues} issue found by Snyk`;
       } else {
         text = `✋ ${nIssues} vulnerabilities found by Snyk`;
       }
@@ -55,7 +55,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       }
       return text;
     } else {
-      return '✅ Congrats! No vulnerabilities found!';
+      return '✅ Congrats! No issues found!';
     }
   }
 }

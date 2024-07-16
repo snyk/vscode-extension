@@ -23,7 +23,7 @@ export const messages = {
   treeView: {
     cookingDependencies: 'Scanning...',
     runTest: 'Run scan for Open Source security vulnerabilities.',
-    noVulnerabilitiesFound: ' ✅ Congrats! Snyk found no vulnerabilities.',
+    noVulnerabilitiesFound: ' ✅ Congrats! No issues found!',
     singleVulnerabilityFound: 'Snyk found 1 vulnerability',
     vulnerability: 'vulnerability',
     vulnerabilities: 'vulnerabilities',

@@ -82,7 +82,7 @@ suite('Code Issue Tree Provider', () => {
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
     strictEqual(rootChildren.length, 2);
-    strictEqual(rootChildren[0].label, 'Snyk found no issues! ✅');
+    strictEqual(rootChildren[0].label, '✅ Congrats! No issues found!');
     strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
   });
 
