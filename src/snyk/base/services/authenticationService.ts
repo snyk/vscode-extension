@@ -17,8 +17,6 @@ export interface IAuthenticationService {
 
   setToken(): Promise<void>;
 
-  setBaseBranch(): Promise<void>;
-
   updateToken(token: string): Promise<void>;
 }
 
@@ -64,17 +62,6 @@ export class AuthenticationService implements IAuthenticationService {
     if (!token) return;
     await this.configuration.setToken(token);
     return await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
-  }
-
-  //TODO: move this function to another service
-  async setBaseBranch(): Promise<void> {
-    const branch = await this.window.showInputBox({
-      //TODO: replace 'main' with the list of local branches
-      placeHolder: 'main',
-    });
-
-    //TODO: capture the value of branch, and send this to Snyk Language Server.
-    return;
   }
 
   validateToken(token: string) {

@@ -19,7 +19,6 @@ import {
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
-  SNYK_SET_BASE_BRANCH_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
@@ -425,7 +424,6 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
-      vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, () => this.commandController.setBaseBranch()),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),

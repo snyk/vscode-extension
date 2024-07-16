@@ -49,8 +49,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     filteredIssues?: Issue<T>[],
   ): Command;
 
-  abstract setBaseBranchCommand(): Command;
-
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -125,7 +123,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       return new TreeNode({
         text: 'Base branch: main',
         icon: NODE_ICONS.branch,
-        command: this.setBaseBranchCommand(),
       });
     }
     return null;

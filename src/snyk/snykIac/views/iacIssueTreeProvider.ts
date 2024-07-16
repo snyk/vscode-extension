@@ -2,7 +2,7 @@ import { Command, Range } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
-import { SNYK_OPEN_ISSUE_COMMAND, SNYK_SET_BASE_BRANCH_COMMAND } from '../../common/constants/commands';
+import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IacIssueData, Issue } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
@@ -79,13 +79,6 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
           } as IacIssueCommandArg,
         } as OpenIssueCommandArg,
       ],
-    };
-  }
-
-  setBaseBranchCommand(): Command {
-    return {
-      command: SNYK_SET_BASE_BRANCH_COMMAND,
-      title: '',
     };
   }
 }

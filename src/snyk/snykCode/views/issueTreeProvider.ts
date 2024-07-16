@@ -1,7 +1,7 @@
 import { Command, Range } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { SNYK_OPEN_ISSUE_COMMAND, SNYK_SET_BASE_BRANCH_COMMAND } from '../../common/constants/commands';
+import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { CodeIssueData, Issue } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
@@ -67,13 +67,6 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
           } as CodeIssueCommandArg,
         } as OpenIssueCommandArg,
       ],
-    };
-  }
-
-  setBaseBranchCommand(): Command {
-    return {
-      command: SNYK_SET_BASE_BRANCH_COMMAND,
-      title: '',
     };
   }
 
