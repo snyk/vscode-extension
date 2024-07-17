@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.14.0]
+- Add UI components for selecting a base branch for delta findings for Code and Code Quality behind a feature flag.
+
 ### [2.13.1]
 - Refactor the Suggestion Panel for OSS so it's more secure and will be supported in other IDEs
 

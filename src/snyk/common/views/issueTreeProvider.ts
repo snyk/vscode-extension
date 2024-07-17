@@ -1,10 +1,10 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, ScanProduct } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
-import { IProductService } from '../../common/services/productService';
+import { IProductService, ProductService } from '../../common/services/productService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
@@ -94,6 +94,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       }),
       this.getFixableIssuesNode(this.getFixableCount()),
     ];
+
+    const isSnykCodeProduct = (this.productService as ProductService<T>).getSnykProductType() === ScanProduct.Code;
+    if (isSnykCodeProduct) {
+      topNodes.unshift(this.getBaseBranch());
+    }
+
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
@@ -107,6 +113,19 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
     return nodes;
+  }
+
+  getBaseBranch(): TreeNode | null {
+    const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
+
+    //TODO: get the actual base branch from Snyk Language Server
+    if (deltaFindingsEnabled) {
+      return new TreeNode({
+        text: 'Base branch: main',
+        icon: NODE_ICONS.branch,
+      });
+    }
+    return null;
   }
 
   getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {
@@ -275,7 +294,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   protected getIssueFoundText(nIssues: number, _: number): string {
-    return `Snyk found ${!nIssues ? 'no issues! ✅' : `${nIssues} issue${nIssues === 1 ? '' : 's'}`}`;
+    if (!nIssues) {
+      return '✅ Congrats! No issues found!';
+    }
+    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {

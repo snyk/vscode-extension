@@ -14,6 +14,8 @@ import { IOssSuggestionWebviewProvider } from './interfaces';
 import { OssCodeActionsProvider } from './providers/ossCodeActionsProvider';
 
 export class OssService extends ProductService<OssIssueData> {
+  public readonly productType = ScanProduct.OpenSource;
+
   constructor(
     extensionContext: ExtensionContext,
     config: IConfiguration,

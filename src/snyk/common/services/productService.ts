@@ -4,7 +4,7 @@ import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, Scan, ScanStatus } from '../languageServer/types';
+import { Issue, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from '../services/viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
@@ -29,6 +29,8 @@ export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
 }
 
 export abstract class ProductService<T> extends AnalysisStatusProvider implements IProductService<T> {
+  abstract readonly productType: ScanProduct;
+
   private _result: ProductResult<T>;
   readonly newResultAvailable$ = new Subject<void>();
 
@@ -58,6 +60,10 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   abstract subscribeToLsScanMessages(): Subscription;
 
   abstract refreshTreeView(): void;
+
+  public getSnykProductType(): ScanProduct {
+    return this.productType;
+  }
 
   registerCodeActionsProvider(provider: CodeActionsProvider<T>) {
     this.languages.registerCodeActionsProvider({ scheme: 'file', language: '*' }, provider);
