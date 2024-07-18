@@ -223,6 +223,7 @@ suite('Language Server', () => {
         insecure: 'true',
         requiredProtocolVersion: '12',
         scanningMode: 'auto',
+        folderConfigs: []
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
