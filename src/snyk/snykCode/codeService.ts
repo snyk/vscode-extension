@@ -42,7 +42,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     );
 
     this.registerCodeActionsProvider(
-      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages),
+      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, config),
     );
   }
 

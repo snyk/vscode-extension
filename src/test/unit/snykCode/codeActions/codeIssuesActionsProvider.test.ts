@@ -8,12 +8,18 @@ import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { CodeActionContext, CodeActionKind, Range, TextDocument } from '../../../../snyk/common/vscode/types';
 import { SnykCodeActionsProvider } from '../../../../snyk/snykCode/codeActions/codeIssuesActionsProvider';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FEATURE_FLAGS } from '../../../../snyk/common/constants/featureFlags';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;
+  let configuration: IConfiguration;
+  let codeResults: Map<string, WorkspaceFolderResult<CodeIssueData>>;
+  let codeActionAdapter: ICodeActionAdapter;
+  let codeActionKindAdapter: ICodeActionKindAdapter;
 
   setup(() => {
-    const codeResults = new Map<string, WorkspaceFolderResult<CodeIssueData>>();
+    codeResults = new Map<string, WorkspaceFolderResult<CodeIssueData>>();
     codeResults.set('folderName', [
       {
         filePath: '//folderName//test.js',
@@ -23,13 +29,13 @@ suite('Snyk Code actions provider', () => {
       } as unknown as Issue<CodeIssueData>,
     ]);
 
-    const codeActionAdapter = {
+    codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({
         command: {},
       }),
     } as ICodeActionAdapter;
 
-    const codeActionKindAdapter = {
+    codeActionKindAdapter = {
       getQuickFix: sinon.fake(),
     } as ICodeActionKindAdapter;
 
@@ -39,11 +45,18 @@ suite('Snyk Code actions provider', () => {
 
     sinon.stub(IssueUtils, 'createVsCodeRange').returns(rangeMock);
 
+    configuration = {
+      getFeatureFlag(_: string): boolean {
+        return true;
+      },
+    } as IConfiguration;
+
     issuesActionsProvider = new SnykCodeActionsProvider(
       codeResults,
       codeActionAdapter,
       codeActionKindAdapter,
       {} as IVSCodeLanguages,
+      configuration,
     );
   });
 
@@ -51,7 +64,36 @@ suite('Snyk Code actions provider', () => {
     sinon.restore();
   });
 
-  test('Provides code actions', () => {
+  test('Provides code actions, inline ignores disabled', () => {
+    // arrange
+    const document = {
+      uri: {
+        fsPath: '//folderName//test.js',
+      },
+    } as unknown as TextDocument;
+
+    issuesActionsProvider = new SnykCodeActionsProvider(
+      codeResults,
+      codeActionAdapter,
+      codeActionKindAdapter,
+      {} as IVSCodeLanguages,
+      {
+        getFeatureFlag(_: string): boolean {
+          return false;
+        },
+      } as IConfiguration,
+    );
+
+    // act
+    const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
+
+    // verify
+    strictEqual(codeActions?.length, 2);
+    strictEqual(codeActions[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
+    strictEqual(codeActions[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
+  });
+
+  test('Provides code actions, inline ignores enabled', () => {
     // arrange
     const document = {
       uri: {
