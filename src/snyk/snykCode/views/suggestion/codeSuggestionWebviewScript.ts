@@ -6,6 +6,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
+import { GetShowInlineIgnoresButtonFeatureFlagMessage } from './types';
+
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
@@ -57,6 +59,7 @@ declare const acquireVsCodeApi: any;
     hasAIFix: boolean;
     diffs: AutofixUnifiedDiffSuggestion[];
     filePath: string;
+    showInlineIgnoresButton: boolean;
   };
 
   type CurrentSeverity = {
@@ -148,6 +151,17 @@ declare const acquireVsCodeApi: any;
     };
   };
 
+  type GetShowInlineIgnoresButtonFeatureFlagMessage = {
+    type: 'getShowInlineIgnoresButtonFeatureFlag';
+  };
+
+  type SetShowInlineIgnoresButtonMessage = {
+    type: 'setShowInlineIgnoresButton';
+    args: {
+      enabled: boolean;
+    };
+  };
+
   type SuggestionMessage =
     | OpenLocalMessage
     | OpenBrowserMessage
@@ -159,7 +173,9 @@ declare const acquireVsCodeApi: any;
     | SetLessonMessage
     | GetLessonMessage
     | SetAutofixDiffsMessage
-    | SetAutofixErrorMessage;
+    | SetAutofixErrorMessage
+    | GetShowInlineIgnoresButtonFeatureFlagMessage
+    | SetShowInlineIgnoresButtonMessage;
 
   const vscode = acquireVsCodeApi();
 
@@ -205,6 +221,8 @@ declare const acquireVsCodeApi: any;
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
     exNumElem: document.getElementById('example-number') as HTMLElement,
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
+
+    inlineIgnoresButton: document.getElementById('ignore-line-issue') as HTMLElement,
   };
 
   function navigateToUrl(url: string) {
@@ -454,7 +472,7 @@ declare const acquireVsCodeApi: any;
    * numeric value. If the provided severity string is not one of the allowed values, the function
    * returns `undefined`.
    *
-   * @param {Suggestion['severity']} severity - The severity string to be mapped.
+   * @param {Suggestion["severity"]} severity - The severity string to be mapped.
    * @returns {CurrentSeverity | undefined} The mapped severity object, or undefined
    */
   function getCurrentSeverity(severity: Suggestion['severity']): CurrentSeverity | undefined {
@@ -616,6 +634,11 @@ declare const acquireVsCodeApi: any;
 
       toggleElement(exampleElem, 'hide');
     }
+
+    const message: GetShowInlineIgnoresButtonFeatureFlagMessage = {
+      type: 'getShowInlineIgnoresButtonFeatureFlag',
+    };
+    sendMessage(message);
   }
 
   /**
@@ -720,6 +743,7 @@ declare const acquireVsCodeApi: any;
     fixLoadingIndicatorElem,
     fixWrapperElem,
     fixErrorSectionElem,
+    inlineIgnoresButton,
   } = elements;
 
   generateAIFixButton?.addEventListener('click', generateAIFix);
@@ -795,6 +819,16 @@ declare const acquireVsCodeApi: any;
         }
         toggleElement(fixWrapperElem, 'hide');
         toggleElement(fixErrorSectionElem, 'show');
+        break;
+      }
+
+      case 'setShowInlineIgnoresButton': {
+        let toggle: 'hide' | 'show' = 'show';
+        if (!message.args.enabled) {
+          toggle = 'hide';
+        }
+        toggleElement(inlineIgnoresButton, toggle);
+        break;
       }
     }
   });

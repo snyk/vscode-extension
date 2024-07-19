@@ -99,6 +99,17 @@ export type SetAutofixErrorMessage = {
   };
 };
 
+export type GetShowInlineIgnoresButtonFeatureFlagMessage = {
+  type: 'getShowInlineIgnoresButtonFeatureFlag';
+};
+
+export type SetShowInlineIgnoresButtonMessage = {
+  type: 'setShowInlineIgnoresButton';
+  args: {
+    enabled: boolean;
+  };
+};
+
 export type SuggestionMessage =
   | OpenLocalMessage
   | OpenBrowserMessage
@@ -110,4 +121,6 @@ export type SuggestionMessage =
   | SetLessonMessage
   | GetLessonMessage
   | SetAutofixDiffsMessage
-  | SetAutofixErrorMessage;
+  | SetAutofixErrorMessage
+  | GetShowInlineIgnoresButtonFeatureFlagMessage
+  | SetShowInlineIgnoresButtonMessage;

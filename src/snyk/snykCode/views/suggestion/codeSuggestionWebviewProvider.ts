@@ -30,7 +30,12 @@ import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
 import { readFileSync } from 'fs';
 import { TextDocument } from '../../../common/vscode/types';
-import { Suggestion, SuggestionMessage } from './types';
+import {
+  GetShowInlineIgnoresButtonFeatureFlagMessage,
+  SetShowInlineIgnoresButtonMessage,
+  Suggestion,
+  SuggestionMessage,
+} from './types';
 import { WebviewPanelSerializer } from '../../../snykCode/views/webviewPanelSerializer';
 import { configuration } from '../../../common/configuration/instance';
 import { FEATURE_FLAGS } from '../../../common/constants/featureFlags';
@@ -305,7 +310,18 @@ export class CodeSuggestionWebviewProvider
 
           break;
         }
+        case 'getShowInlineIgnoresButtonFeatureFlag': {
+          const enabled = configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore);
+          message = {
+            type: 'getShowInlineIgnoresButtonFeatureFlag',
+            args: {
+              enabled: enabled,
+            },
+          } as GetShowInlineIgnoresButtonFeatureFlagMessage;
 
+          void this.postSuggestMessage(message);
+          break;
+        }
         default: {
           throw new Error('Unknown message type');
         }
