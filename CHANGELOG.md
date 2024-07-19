@@ -1,5 +1,9 @@
 # Snyk Security Changelog
 
+## [2.15.0]
+- Sync with LS to retrieve and persist folderConfigs changes.
+- Add command to select the base branch.
+
 ## [2.14.0]
 - Add UI components for selecting a base branch for delta findings for Code and Code Quality behind a feature flag.
 
