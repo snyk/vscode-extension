@@ -286,15 +286,14 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
       const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
+      const baseBranchNode = this.getBaseBranch(uri.fsPath);
       if (folderVulnCount == 0) {
+        this.addBaseBranchNode(baseBranchNode, nodes);
         continue;
       }
-      const baseBranchNode = this.getBaseBranch(uri.fsPath);
       // flatten results if single workspace folder
       if (this.productService.result.size == 1) {
-        if (baseBranchNode) {
-          nodes.unshift(baseBranchNode);
-        }
+        this.addBaseBranchNode(baseBranchNode, nodes);
         nodes.push(...fileNodes);
       } else {
         const folderNode = new TreeNode({
@@ -307,14 +306,19 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
             severity: ProductIssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
           },
         });
-        if (baseBranchNode) {
-          fileNodes.unshift(baseBranchNode);
-        }
+        this.addBaseBranchNode(baseBranchNode, fileNodes);
         nodes.push(folderNode);
       }
     }
 
     return nodes;
+  }
+
+  private addBaseBranchNode(baseBranchNode: TreeNode | undefined, nodes: TreeNode[]) {
+    if (!baseBranchNode) {
+      return;
+    }
+    nodes.unshift(baseBranchNode);
   }
 
   protected getIssueFoundText(nIssues: number, _: number): string {
