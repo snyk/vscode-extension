@@ -108,12 +108,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       topNodes.push(noIssueViewOptionSelectedWarning);
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
+
     const baseBranchNodeIndex = nodes.findIndex(node => {
       const label = node.label as string;
-      if (!label) {
-        return false;
-      }
-      return label.toLowerCase().indexOf('base branch') > -1;
+      return label?.toLowerCase().indexOf('base branch') !== -1;
     });
 
     if (baseBranchNodeIndex > -1) {
@@ -292,7 +290,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         continue;
       }
       // flatten results if single workspace folder
-      if (this.productService.result.size == 1) {
+      if (this.productService.result.size === 1) {
         this.addBaseBranchNode(baseBranchNode, nodes);
         nodes.push(...fileNodes);
       } else {

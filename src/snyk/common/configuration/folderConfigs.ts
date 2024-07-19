@@ -28,7 +28,7 @@ export class FolderConfigs implements IFolderConfigs {
   }
 
   async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
-    let folderConfig = this.getFolderConfig(config, folderPath);
+    const folderConfig = this.getFolderConfig(config, folderPath);
 
     if (!folderConfig) {
       return;
@@ -51,7 +51,7 @@ export class FolderConfigs implements IFolderConfigs {
     await this.setFolderConfig(config, folderConfig);
   }
 
-  validateBranchName(branchName: string, branchList: string[]): boolean {
+  private validateBranchName(branchName: string, branchList: string[]): boolean {
     return branchList.includes(branchName);
   }
 
