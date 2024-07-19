@@ -1,10 +1,11 @@
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { IConfiguration } from '../configuration/configuration';
+import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CLI_PATH,
+  SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
@@ -118,7 +119,7 @@ export class LanguageServer implements ILanguageServer {
     };
 
     // Create the language client and start the client.
-    this.client = this.languageClientAdapter.create('Snyk LS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
+    this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     try {
       // Start the client. This will also launch the server
@@ -134,6 +135,12 @@ export class LanguageServer implements ILanguageServer {
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token }: { token: string }) => {
       this.authenticationService.updateToken(token).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
+    });
+
+    client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
+      this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
       });
     });

@@ -217,6 +217,11 @@
             "default": [],
             "description": "Folders to trust for Snyk scans."
           },
+          "snyk.folderConfigs": {
+            "type": "array",
+            "default": [],
+            "description": "Folder configuration for Snyk scans."
+          },
           "snyk.features.preview": {
             "type": "object",
             "default": {},

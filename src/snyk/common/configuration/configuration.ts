@@ -25,6 +25,7 @@ import {
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
   DELTA_FINDINGS,
+  FOLDER_CONFIGS,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -34,6 +35,12 @@ export type FeaturesConfiguration = {
   codeSecurityEnabled: boolean | undefined;
   codeQualityEnabled: boolean | undefined;
   iacEnabled: boolean | undefined;
+};
+
+export type FolderConfig = {
+  folderPath: string;
+  baseBranch: string;
+  localBranches: string[] | undefined;
 };
 
 export interface IssueViewOptions {
@@ -122,6 +129,10 @@ export interface IConfiguration {
   setEndpoint(endpoint: string): Promise<void>;
 
   getDeltaFindingsEnabled(): boolean;
+
+  getFolderConfigs(): FolderConfig[];
+
+  setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -463,6 +474,13 @@ export class Configuration implements IConfiguration {
     );
   }
 
+  getFolderConfigs(): FolderConfig[] {
+    return (
+      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
+      []
+    );
+  }
+
   get scanningMode(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(SCANNING_MODE));
   }
@@ -472,6 +490,15 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(TRUSTED_FOLDERS),
       trustedFolders,
+      true,
+    );
+  }
+
+  async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(FOLDER_CONFIGS),
+      folderConfigs,
       true,
     );
   }

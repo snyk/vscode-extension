@@ -11,6 +11,7 @@ import { messages } from '../messages/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
 import { TreeNode } from '../../common/views/treeNode';
+import { IFolderConfigs } from '../../common/configuration/folderConfigs';
 
 export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
   constructor(
@@ -19,8 +20,9 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     protected configuration: IConfiguration,
     protected languages: IVSCodeLanguages,
     protected readonly isSecurityType: boolean,
+    protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, codeService, configuration, languages);
+    super(contextService, codeService, configuration, languages, folderConfigs);
   }
 
   shouldShowTree(): boolean {

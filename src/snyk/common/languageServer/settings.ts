@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import { Configuration, IConfiguration, SeverityFilter } from '../configuration/configuration';
+import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 
@@ -41,6 +41,7 @@ export type ServerSettings = {
   deviceId?: string;
   requiredProtocolVersion?: string;
   enableDeltaFindings?: string;
+  folderConfigs: FolderConfig[];
 };
 
 export class LanguageServerSettings {
@@ -80,6 +81,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
+      folderConfigs: configuration.getFolderConfigs(),
     };
   }
 }

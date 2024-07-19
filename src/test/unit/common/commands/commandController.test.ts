@@ -13,6 +13,8 @@ import { OssService } from '../../../../snyk/snykOss/ossService';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 
 suite('CommandController', () => {
   const sleep = util.promisify(setTimeout);
@@ -32,6 +34,8 @@ suite('CommandController', () => {
       windowMock,
       new LanguageServerMock(),
       new LoggerMock(),
+      {} as IConfiguration,
+      {} as IFolderConfigs,
     );
   });
 

@@ -27,6 +27,8 @@ import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
+import { IFolderConfigs } from '../configuration/folderConfigs';
+import { IConfiguration } from '../configuration/configuration';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -43,6 +45,8 @@ export class CommandController {
     private window: IVSCodeWindow,
     private languageServer: ILanguageServer,
     private logger: ILog,
+    private configuration: IConfiguration,
+    private folderConfigs: IFolderConfigs,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -74,6 +78,9 @@ export class CommandController {
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
+  }
+  async setBaseBranch(folderPath: string): Promise<void> {
+    await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
   }
 
   openSettings(): void {

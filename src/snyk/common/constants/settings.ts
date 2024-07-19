@@ -24,6 +24,7 @@ export const ADVANCED_CUSTOM_LS_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.lan
 export const ISSUE_VIEW_OPTIONS_SETTING = `${CONFIGURATION_IDENTIFIER}.issueViewOptions`;
 export const SEVERITY_FILTER_SETTING = `${CONFIGURATION_IDENTIFIER}.severity`;
 export const TRUSTED_FOLDERS = `${CONFIGURATION_IDENTIFIER}.trustedFolders`;
+export const FOLDER_CONFIGS = `${CONFIGURATION_IDENTIFIER}.folderConfigs`;
 export const SCANNING_MODE = `${CONFIGURATION_IDENTIFIER}.scanningMode`;
 
 export const DELTA_FINDINGS = `${FEATURES_PREVIEW_SETTING}.deltaFindings`;

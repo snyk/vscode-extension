@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
 
@@ -20,6 +20,9 @@ suite('LanguageServerSettings', () => {
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,
         isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs(): FolderConfig[] {
+          return [];
+        },
         severityFilter: { critical: true, high: true, medium: true, low: false },
         scanningMode: 'scan-mode',
       } as IConfiguration;

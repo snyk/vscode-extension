@@ -18,6 +18,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
+  SNYK_SET_BASE_BRANCH_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
@@ -248,6 +249,8 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWindow,
       this.languageServer,
       Logger,
+      configuration,
+      this.folderConfigs,
     );
     this.registerCommands(vscodeContext);
 
@@ -257,6 +260,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
@@ -265,6 +269,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
@@ -306,6 +311,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
@@ -323,6 +329,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.iacService,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     const iacSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_IAC, {
@@ -440,6 +447,9 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
       vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, () => this.commandController.showLsOutputChannel()),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
+      vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
+        this.commandController.setBaseBranch(folderPath),
+      ),
     );
   }
 }
