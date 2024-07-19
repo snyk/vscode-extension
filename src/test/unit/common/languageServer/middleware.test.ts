@@ -1,7 +1,7 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
-import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
@@ -49,6 +49,9 @@ suite('Language Server: Middleware', () => {
         low: true,
       },
       getTrustedFolders: () => ['/trusted/test/folder'],
+      getFolderConfigs(): FolderConfig[] {
+        return [];
+      },
     } as IConfiguration;
   });
 

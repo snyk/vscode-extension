@@ -4,7 +4,7 @@ import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
-import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -16,6 +16,7 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
+import { FolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -74,6 +75,9 @@ suite('Language Server', () => {
       },
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
+      },
+      getFolderConfigs(): FolderConfig[] {
+        return [];
       },
       scanningMode: 'auto',
     } as IConfiguration;
