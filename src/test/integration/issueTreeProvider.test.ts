@@ -10,11 +10,13 @@ import { strictEqual } from 'assert';
 import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
 import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings';
+import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
 
 suite('Code Issue Tree Provider', () => {
   let contextService: IContextService;
   let codeService: IProductService<CodeIssueData>;
   let languages: IVSCodeLanguages;
+  let folderConfigs: IFolderConfigs;
 
   let issueTreeProvider: IssueTreeProvider;
 
@@ -34,6 +36,7 @@ suite('Code Issue Tree Provider', () => {
     } as unknown as IProductService<CodeIssueData>;
     configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
     languages = {} as unknown as IVSCodeLanguages;
+    folderConfigs = {} as unknown as IFolderConfigs;
   });
 
   teardown(() => {
@@ -60,7 +63,7 @@ suite('Code Issue Tree Provider', () => {
       },
     } as unknown as IProductService<CodeIssueData>;
 
-    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true);
+    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true, folderConfigs);
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
@@ -77,7 +80,7 @@ suite('Code Issue Tree Provider', () => {
       },
     } as unknown as IProductService<CodeIssueData>;
 
-    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true);
+    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true, folderConfigs);
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
@@ -111,7 +114,7 @@ suite('Code Issue Tree Provider', () => {
       ignoredIssues: true,
     });
     configuration.issueViewOptions.openIssues = false;
-    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true);
+    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true, folderConfigs);
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
@@ -149,7 +152,7 @@ suite('Code Issue Tree Provider', () => {
       openIssues: true,
       ignoredIssues: false,
     });
-    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true);
+    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true, folderConfigs);
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
@@ -187,7 +190,7 @@ suite('Code Issue Tree Provider', () => {
       openIssues: false,
       ignoredIssues: false,
     });
-    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true);
+    issueTreeProvider = new IssueTreeProvider(contextService, localCodeService, configuration, languages, true, folderConfigs);
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();

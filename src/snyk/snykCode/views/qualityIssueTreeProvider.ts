@@ -1,4 +1,5 @@
 import { IConfiguration } from '../../common/configuration/configuration';
+import { IFolderConfigs } from '../../common/configuration/folderConfigs';
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { CodeIssueData } from '../../common/languageServer/types';
@@ -16,8 +17,9 @@ export class CodeQualityIssueTreeProvider extends IssueTreeProvider {
     protected codeService: IProductService<CodeIssueData>,
     protected configuration: IConfiguration,
     protected languages: IVSCodeLanguages,
+    protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, codeService, configuration, languages, false);
+    super(contextService, codeService, configuration, languages, false, folderConfigs);
   }
 
   getRootChildren(): TreeNode[] {

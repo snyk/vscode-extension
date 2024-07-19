@@ -9,6 +9,7 @@ import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodePro
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command, Range } from '../../common/vscode/types';
+import { IFolderConfigs } from '../configuration/folderConfigs';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -20,6 +21,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
     protected readonly languages: IVSCodeLanguages,
+    protected readonly folderConfigs: IFolderConfigs,
   ) {
     super(configuration, productService);
   }
@@ -82,7 +84,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     if (allFailed) {
       return nodes;
     }
-
     nodes.sort(this.compareNodes);
 
     const totalIssueCount = this.getTotalIssueCount();
@@ -95,11 +96,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       this.getFixableIssuesNode(this.getFixableCount()),
     ];
 
-    const isSnykCodeProduct = (this.productService as ProductService<T>).getSnykProductType() === ScanProduct.Code;
-    if (isSnykCodeProduct) {
-      topNodes.unshift(this.getBaseBranch());
-    }
-
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
@@ -110,22 +106,20 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       );
       topNodes.push(noIssueViewOptionSelectedWarning);
     }
+    const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
+    const baseIndex = nodes.findIndex(node => {
+      if (!node.label) {
+        return false;
+      }
+      return node.label.toString().toLowerCase().indexOf("base branch") > -1;
+  });
 
-    nodes.unshift(...topNodes.filter((n): n is TreeNode => n !== null));
-    return nodes;
-  }
-
-  getBaseBranch(): TreeNode | null {
-    const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
-
-    //TODO: get the actual base branch from Snyk Language Server
-    if (deltaFindingsEnabled) {
-      return new TreeNode({
-        text: 'Base branch: main',
-        icon: NODE_ICONS.branch,
-      });
+    if (baseIndex > -1) {
+        nodes.splice(baseIndex + 1, 0, ...validTopNodes);
+    } else {
+        nodes.unshift(...validTopNodes);
     }
-    return null;
+    return nodes;
   }
 
   getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {
@@ -179,6 +173,17 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false;
   }
 
+  getBaseBranch(folderPath: string): TreeNode | undefined {
+    const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
+    const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
+    if (deltaFindingsEnabled && config) {
+      return new TreeNode({
+        text: 'Base branch: ' + config.baseBranch,
+        icon: NODE_ICONS.branch,
+      });
+    }
+  }
+
   getResultNodes(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -188,6 +193,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
       const uri = vscode.Uri.file(folderPath);
       const shortFolderPath = uri.path.split('/');
+      // TODO: this might need to be changed to uri.fspath
       const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
@@ -271,9 +277,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       if (folderVulnCount == 0) {
         continue;
       }
-
+      const baseBranchNode = this.getBaseBranch(uri.fsPath);
       // flatten results if single workspace folder
       if (this.productService.result.size == 1) {
+        if (baseBranchNode) {
+          nodes.unshift(baseBranchNode);
+        }
         nodes.push(...fileNodes);
       } else {
         const folderNode = new TreeNode({
@@ -286,6 +295,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
             severity: ProductIssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
           },
         });
+        if (baseBranchNode) {
+          fileNodes.unshift(baseBranchNode);
+        }
         nodes.push(folderNode);
       }
     }

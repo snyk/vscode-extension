@@ -257,6 +257,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
@@ -265,6 +266,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs,
     );
 
     let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
@@ -306,6 +308,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.ossService,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs
     );
 
     const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
@@ -323,6 +326,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.iacService,
       configuration,
       vsCodeLanguages,
+      this.folderConfigs
     );
 
     const iacSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_IAC, {

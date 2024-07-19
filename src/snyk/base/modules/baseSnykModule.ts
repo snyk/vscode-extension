@@ -1,4 +1,5 @@
 import { CommandController } from '../../common/commands/commandController';
+import { FolderConfigs, IFolderConfigs } from '../../common/configuration/folderConfigs';
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
@@ -63,6 +64,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected markdownStringAdapter: IMarkdownStringAdapter;
   readonly workspaceTrust: IWorkspaceTrust;
   readonly codeActionKindAdapter: ICodeActionKindAdapter;
+  readonly folderConfigs: IFolderConfigs;
 
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
@@ -74,6 +76,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
     this.markdownStringAdapter = new MarkdownStringAdapter();
     this.workspaceTrust = new WorkspaceTrust();
     this.codeActionKindAdapter = new CodeActionKindAdapter();
+    this.folderConfigs = new FolderConfigs();
   }
 
   abstract runScan(): Promise<void>;
