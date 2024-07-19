@@ -108,17 +108,18 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       topNodes.push(noIssueViewOptionSelectedWarning);
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
-    const baseIndex = nodes.findIndex(node => {
-      if (!node.label) {
+    const baseBranchNodeIndex = nodes.findIndex(node => {
+      const label = node.label as string;
+      if (!label) {
         return false;
       }
-      return node.label.toString().toLowerCase().indexOf("base branch") > -1;
-  });
+      return label.toLowerCase().indexOf('base branch') > -1;
+    });
 
-    if (baseIndex > -1) {
-        nodes.splice(baseIndex + 1, 0, ...validTopNodes);
+    if (baseBranchNodeIndex > -1) {
+      nodes.splice(baseBranchNodeIndex + 1, 0, ...validTopNodes);
     } else {
-        nodes.unshift(...validTopNodes);
+      nodes.unshift(...validTopNodes);
     }
     return nodes;
   }
@@ -175,6 +176,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   getBaseBranch(folderPath: string): TreeNode | undefined {
+    const isSnykCodeProduct = (this.productService as ProductService<T>).getSnykProductType() === ScanProduct.Code;
+    if (!isSnykCodeProduct) {
+      return;
+    }
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
 
@@ -186,7 +191,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           command: SNYK_SET_BASE_BRANCH_COMMAND,
           title: 'Choose Base Branch',
           arguments: [folderPath],
-        }
+        },
       });
     }
   }

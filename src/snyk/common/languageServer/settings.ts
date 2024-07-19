@@ -81,7 +81,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: configuration.getFolderConfigs()
+      folderConfigs: configuration.getFolderConfigs(),
     };
   }
 }

@@ -37,7 +37,6 @@ export type FeaturesConfiguration = {
   iacEnabled: boolean | undefined;
 };
 
-
 export type FolderConfig = {
   folderPath: string;
   baseBranch: string;
@@ -477,7 +476,8 @@ export class Configuration implements IConfiguration {
 
   getFolderConfigs(): FolderConfig[] {
     return (
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) || []
+      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
+      []
     );
   }
 

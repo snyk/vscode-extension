@@ -35,7 +35,7 @@ suite('CommandController', () => {
       new LanguageServerMock(),
       new LoggerMock(),
       {} as IConfiguration,
-      {} as IFolderConfigs
+      {} as IFolderConfigs,
     );
   });
 

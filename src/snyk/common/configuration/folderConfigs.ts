@@ -4,7 +4,7 @@ import { FolderConfig, IConfiguration } from './configuration';
 export interface IFolderConfigs {
   getFolderConfigs(config: IConfiguration): ReadonlyArray<FolderConfig>;
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined;
-  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void;
+  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void>;
   setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
   resetFolderConfigsCache(): void;
 }
@@ -27,10 +27,10 @@ export class FolderConfigs implements IFolderConfigs {
     return folderConfigs;
   }
 
-  async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string) : Promise<void> {
+  async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
     let folderConfig = this.getFolderConfig(config, folderPath);
 
-    if (!folderConfig){
+    if (!folderConfig) {
       return;
     }
 
@@ -39,7 +39,7 @@ export class FolderConfigs implements IFolderConfigs {
       validateInput: input => {
         const valid = this.validateBranchName(input, folderConfig.localBranches ?? []);
         if (!valid) {
-          return 'The chosen branch name doesn\'t exist.';
+          return "The chosen branch name doesn't exist.";
         }
       },
     });
@@ -48,17 +48,19 @@ export class FolderConfigs implements IFolderConfigs {
     }
 
     folderConfig.baseBranch = branchName;
-    this.setFolderConfig(config, folderConfig);
+    await this.setFolderConfig(config, folderConfig);
   }
 
   validateBranchName(branchName: string, branchList: string[]): boolean {
     return branchList.includes(branchName);
   }
 
-  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig){
+  async setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void> {
     const currentFolderConfigs = this.getFolderConfigs(config);
-    const finalFolderConfigs = currentFolderConfigs.map(i => i.folderPath === folderConfig.folderPath ? folderConfig : i);
-    config.setFolderConfigs(finalFolderConfigs);
+    const finalFolderConfigs = currentFolderConfigs.map(i =>
+      i.folderPath === folderConfig.folderPath ? folderConfig : i,
+    );
+    await config.setFolderConfigs(finalFolderConfigs);
   }
 
   resetFolderConfigsCache() {

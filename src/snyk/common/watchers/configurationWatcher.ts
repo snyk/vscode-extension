@@ -82,7 +82,7 @@ class ConfigurationWatcher implements IWatcher {
         TRUSTED_FOLDERS,
         ISSUE_VIEW_OPTIONS_SETTING,
         DELTA_FINDINGS,
-        FOLDER_CONFIGS
+        FOLDER_CONFIGS,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

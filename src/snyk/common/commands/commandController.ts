@@ -79,8 +79,8 @@ export class CommandController {
       ErrorHandler.handle(e, this.logger);
     }
   }
-  async setBaseBranch(folderPath:string): Promise<void> {
-    this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
+  async setBaseBranch(folderPath: string): Promise<void> {
+    await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
   }
 
   openSettings(): void {
