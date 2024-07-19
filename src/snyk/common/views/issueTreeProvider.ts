@@ -10,6 +10,7 @@ import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/view
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { Command, Range } from '../../common/vscode/types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
+import { SNYK_SET_BASE_BRANCH_COMMAND } from '../constants/commands';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -176,10 +177,16 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   getBaseBranch(folderPath: string): TreeNode | undefined {
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
+
     if (deltaFindingsEnabled && config) {
       return new TreeNode({
         text: 'Base branch: ' + config.baseBranch,
         icon: NODE_ICONS.branch,
+        command: {
+          command: SNYK_SET_BASE_BRANCH_COMMAND,
+          title: 'Choose Base Branch',
+          arguments: [folderPath],
+        }
       });
     }
   }

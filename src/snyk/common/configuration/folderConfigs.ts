@@ -5,7 +5,7 @@ export interface IFolderConfigs {
   getFolderConfigs(config: IConfiguration): ReadonlyArray<FolderConfig>;
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined;
   setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void;
-  //setBranch(config: IConfiguration, folderPath: string, branchName: string): void;
+  setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
   resetFolderConfigsCache(): void;
 }
 
@@ -27,20 +27,33 @@ export class FolderConfigs implements IFolderConfigs {
     return folderConfigs;
   }
 
-  // async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string) : Promise<void> {
-  //   const branchName = await window.showInputBox({
-  //     placeHolder: '',
-  //     // validateInput: _input => {
-  //     //   return;
-  //     // },
-  //   });
-  //   let folderConfig = this.getFolderConfig(config, folderPath);
-  //   if (!folderConfig || !branchName) {
-  //     return;
-  //   }
-  //   folderConfig.baseBranch = branchName;
-  //   this.setFolderConfig(config, folderConfig);
-  // }
+  async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string) : Promise<void> {
+    let folderConfig = this.getFolderConfig(config, folderPath);
+
+    if (!folderConfig){
+      return;
+    }
+
+    const branchName = await window.showInputBox({
+      placeHolder: '',
+      validateInput: input => {
+        const valid = this.validateBranchName(input, folderConfig.localBranches ?? []);
+        if (!valid) {
+          return 'The chosen branch name doesn\'t exist.';
+        }
+      },
+    });
+    if (!branchName) {
+      return;
+    }
+
+    folderConfig.baseBranch = branchName;
+    this.setFolderConfig(config, folderConfig);
+  }
+
+  validateBranchName(branchName: string, branchList: string[]): boolean {
+    return branchList.includes(branchName);
+  }
 
   setFolderConfig(config: IConfiguration, folderConfig: FolderConfig){
     const currentFolderConfigs = this.getFolderConfigs(config);
