@@ -10,6 +10,8 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { FILE_IGNORE_ACTION_NAME, IGNORE_ISSUE_ACTION_NAME } from '../constants/analysis';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
+import { IConfiguration } from '../../common/configuration/configuration';
+import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
 
 export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> {
   constructor(
@@ -17,6 +19,7 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     private readonly codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly languages: IVSCodeLanguages,
+    private readonly configuration: IConfiguration,
   ) {
     super(issues, codeActionKindAdapter);
   }
@@ -26,8 +29,14 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
     const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
 
+    const actions = [openIssueAction, fileIgnoreIssueAction];
+
+    if (this.configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore)) {
+      actions.push(ignoreIssueAction);
+    }
+
     // returns list of actions, all new actions should be added to this list
-    return [openIssueAction, ignoreIssueAction, fileIgnoreIssueAction];
+    return actions;
   }
 
   getIssueRange(issue: Issue<CodeIssueData>): Range {
