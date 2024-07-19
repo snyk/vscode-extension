@@ -17,4 +17,9 @@ export class FeatureFlagService {
       return false;
     }
   }
+
+  async fetchFeatureFlagWithoutErrorHandling(flagName: string): Promise<boolean> {
+    const ffStatus = await this.commandExecutor.executeCommand<FeatureFlagStatus>(SNYK_FEATURE_FLAG_COMMAND, flagName);
+    return ffStatus?.ok ?? false;
+  }
 }

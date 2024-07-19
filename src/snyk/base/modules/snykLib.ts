@@ -51,8 +51,19 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   }
 
   async setupFeatureFlags(): Promise<void> {
-    const isEnabled = await this.featureFlagService.fetchFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    let isEnabled = await this.featureFlagService.fetchFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, isEnabled);
+
+    try {
+      isEnabled = await this.featureFlagService.fetchFeatureFlagWithoutErrorHandling(
+        FEATURE_FLAGS.snykCodeInlineIgnore,
+      );
+    } catch (err) {
+      // if we cannot get the feature flag, we default to true for
+      // minimal disruption of the existing customer feature
+      isEnabled = true;
+    }
+    configuration.setFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore, isEnabled);
   }
 
   protected async setWorkspaceContext(workspacePaths: string[]): Promise<void> {
