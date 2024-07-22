@@ -6,8 +6,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 
-import { GetShowInlineIgnoresButtonFeatureFlagMessage } from './types';
-
 declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
