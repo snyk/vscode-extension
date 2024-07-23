@@ -149,17 +149,6 @@ declare const acquireVsCodeApi: any;
     };
   };
 
-  type GetShowInlineIgnoresButtonFeatureFlagMessage = {
-    type: 'getShowInlineIgnoresButtonFeatureFlag';
-  };
-
-  type SetShowInlineIgnoresButtonMessage = {
-    type: 'setShowInlineIgnoresButton';
-    args: {
-      enabled: boolean;
-    };
-  };
-
   type SuggestionMessage =
     | OpenLocalMessage
     | OpenBrowserMessage
@@ -171,9 +160,7 @@ declare const acquireVsCodeApi: any;
     | SetLessonMessage
     | GetLessonMessage
     | SetAutofixDiffsMessage
-    | SetAutofixErrorMessage
-    | GetShowInlineIgnoresButtonFeatureFlagMessage
-    | SetShowInlineIgnoresButtonMessage;
+    | SetAutofixErrorMessage;
 
   const vscode = acquireVsCodeApi();
 
@@ -219,8 +206,6 @@ declare const acquireVsCodeApi: any;
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
     exNumElem: document.getElementById('example-number') as HTMLElement,
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
-
-    inlineIgnoresButton: document.getElementById('ignore-line-issue') as HTMLElement,
   };
 
   function navigateToUrl(url: string) {
@@ -632,11 +617,6 @@ declare const acquireVsCodeApi: any;
 
       toggleElement(exampleElem, 'hide');
     }
-
-    const message: GetShowInlineIgnoresButtonFeatureFlagMessage = {
-      type: 'getShowInlineIgnoresButtonFeatureFlag',
-    };
-    sendMessage(message);
   }
 
   /**
@@ -741,7 +721,6 @@ declare const acquireVsCodeApi: any;
     fixLoadingIndicatorElem,
     fixWrapperElem,
     fixErrorSectionElem,
-    inlineIgnoresButton,
   } = elements;
 
   generateAIFixButton?.addEventListener('click', generateAIFix);
@@ -817,15 +796,6 @@ declare const acquireVsCodeApi: any;
         }
         toggleElement(fixWrapperElem, 'hide');
         toggleElement(fixErrorSectionElem, 'show');
-        break;
-      }
-
-      case 'setShowInlineIgnoresButton': {
-        let toggle: 'hide' | 'show' = 'show';
-        if (!message.args.enabled) {
-          toggle = 'hide';
-        }
-        toggleElement(inlineIgnoresButton, toggle);
         break;
       }
     }
