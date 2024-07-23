@@ -29,9 +29,10 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     const ignoreIssueAction = this.createIgnoreIssueAction(document, issue, range, false);
     const fileIgnoreIssueAction = this.createIgnoreIssueAction(document, issue, range, true);
 
-    const actions = [openIssueAction, fileIgnoreIssueAction];
+    const actions = [openIssueAction];
 
     if (this.configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore)) {
+      actions.push(fileIgnoreIssueAction);
       actions.push(ignoreIssueAction);
     }
 
