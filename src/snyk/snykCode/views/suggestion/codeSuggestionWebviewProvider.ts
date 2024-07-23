@@ -199,6 +199,7 @@ export class CodeSuggestionWebviewProvider
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
     const parsedDetails = marked.parse(issue.additionalData.text) as string;
+    const showInlineIgnoresButton = configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore);
 
     return {
       id: issue.id,
@@ -208,6 +209,7 @@ export class CodeSuggestionWebviewProvider
       text: parsedDetails,
       hasAIFix: issue.additionalData.hasAIFix,
       filePath: issue.filePath,
+      showInlineIgnoresButton,
     };
   }
 
