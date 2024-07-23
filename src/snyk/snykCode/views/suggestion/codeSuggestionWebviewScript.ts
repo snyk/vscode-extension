@@ -206,6 +206,8 @@ declare const acquireVsCodeApi: any;
     noExamplesElem: document.getElementById('info-no-examples') as HTMLElement,
     exNumElem: document.getElementById('example-number') as HTMLElement,
     exNum2Elem: document.getElementById('example-number2') as HTMLElement,
+
+    footerInlineIgnoresButtons: document.querySelector('.suggestion-actions') as HTMLElement,
   };
 
   function navigateToUrl(url: string) {
@@ -629,10 +631,13 @@ declare const acquireVsCodeApi: any;
    * @param {Suggestion} suggestion - The suggestion object containing the details to be displayed.
    */
   function showSuggestionMeta(suggestion: Suggestion) {
-    const { metaElem } = elements;
+    const { metaElem, footerInlineIgnoresButtons } = elements;
 
     // Clear previously metadata.
     metaElem.querySelectorAll('.suggestion-meta').forEach(element => element.remove());
+
+    // Hide the inline ignores button if the feature flag is disabled.
+    footerInlineIgnoresButtons.style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
 
     // Append issue type: 'Vulnerability' or 'Issue'.
     const issueTypeElement = document.createElement('span');
