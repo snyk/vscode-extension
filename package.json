@@ -53,8 +53,34 @@
   "contributes": {
     "configuration": [
       {
+        "id": "snyk",
         "title": "Snyk Security",
+        "properties": {}
+      },
+      {
+        "id": "generalSettings",
+        "title": "General Settings",
+        "order": 1,
         "properties": {
+          "snyk.advanced.tokenStorage": {
+            "type": "string",
+            "enum": [
+              "Always use VS Code's secret storage"
+            ],
+            "default": "Always use VS Code's secret storage",
+            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
+          },
+          "snyk.advanced.customEndpoint": {
+            "type": "string",
+            "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://api.eu.snyk.io`.",
+            "scope": "window",
+            "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
+          },
+          "snyk.advanced.organization": {
+            "type": "string",
+            "markdownDescription": "Specifies an organization slug name to run tests for that organization. \n\nNote: The slug name can be extracted from the URL of your organization in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`. If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
+            "scope": "window"
+          },
           "snyk.yesCrashReport": {
             "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
             "type": "boolean",
@@ -76,66 +102,18 @@
             "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
             "scope": "application"
           },
-          "snyk.advanced.autoScanOpenSourceSecurity": {
-            "type": "boolean",
-            "default": false,
-            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
-            "scope": "application"
-          },
-          "snyk.scanningMode": {
-            "type": "string",
-            "enum": [
-              "auto",
-              "manual"
-            ],
-            "enumDescriptions": [
-              "Scan automatically in the background.",
-              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command."
-            ],
-            "default": "auto",
-            "title": "Snyk Code scanning mode",
-            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
-          },
-          "snyk.advanced.additionalParameters": {
-            "type": "string",
-            "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
-            "scope": "window"
-          },
-          "snyk.advanced.customEndpoint": {
-            "type": "string",
-            "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://api.eu.snyk.io`.",
-            "scope": "window",
-            "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
-          },
-          "snyk.advanced.organization": {
-            "type": "string",
-            "markdownDescription": "Specifies an organization slug name to run tests for that organization. \n\nNote: The slug name can be extracted from the URL of your organization in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`. If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
-            "scope": "window"
-          },
-          "snyk.advanced.tokenStorage": {
-            "type": "string",
-            "enum": [
-              "Always use VS Code's secret storage"
-            ],
-            "default": "Always use VS Code's secret storage",
-            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
-          },
-          "snyk.advanced.automaticDependencyManagement": {
-            "type": "boolean",
-            "default": true,
-            "scope": "machine",
-            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
-          },
-          "snyk.advanced.cliPath": {
-            "type": "string",
-            "scope": "machine",
-            "markdownDescription": "Sets path to Snyk CLI extension dependency."
-          },
-          "snyk.advanced.languageServerPath": {
-            "type": "string",
-            "scope": "machine",
-            "markdownDescription": "Sets path to Snyk Language Server (requires restart)."
-          },
+          "snyk.trustedFolders": {
+            "type": "array",
+            "default": [],
+            "description": "Folders to trust for Snyk scans."
+          }
+        }
+      },
+      {
+        "id": "productSelection",
+        "title": "Product Selection",
+        "order": 2,
+        "properties": {
           "snyk.features.openSourceSecurity": {
             "type": "boolean",
             "title": "Snyk Open Source security issues",
@@ -159,29 +137,14 @@
             "title": "Snyk Infrastructure as Code issues",
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
-          },
-          "snyk.issueViewOptions": {
-            "type": "object",
-            "default": {
-              "openIssues": true,
-              "ignoredIssues": true
-            },
-            "properties": {
-              "openIssues": {
-                "type": "boolean",
-                "description": "Open Issues",
-                "default": true
-              },
-              "ignoredIssues": {
-                "type": "boolean",
-                "description": "Ignored Issues",
-                "default": true
-              }
-            },
-            "additionalProperties": false,
-            "markdownDescription": "Ignores settings is currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
-            "scope": "window"
-          },
+          }
+        }
+      },
+      {
+        "id": "severitySelection",
+        "title": "Severity Selection",
+        "order": 3,
+        "properties": {
           "snyk.severity": {
             "type": "object",
             "default": {
@@ -211,18 +174,107 @@
             "additionalProperties": false,
             "description": "Severity issues to display.",
             "scope": "window"
+          }
+        }
+      },
+      {
+        "id": "projectSettings",
+        "title": "Project Settings",
+        "order": 4,
+        "properties": {
+          "snyk.advanced.additionalParameters": {
+            "type": "string",
+            "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
+            "scope": "window"
+          }
+        }
+      },
+      {
+        "id": "executableSettings",
+        "title": "Executable Settings",
+        "order": 5,
+        "properties": {
+          "snyk.advanced.autoScanOpenSourceSecurity": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
+            "scope": "application"
           },
-          "snyk.trustedFolders": {
-            "type": "array",
-            "default": [],
-            "description": "Folders to trust for Snyk scans."
+          "snyk.advanced.automaticDependencyManagement": {
+            "type": "boolean",
+            "default": true,
+            "scope": "machine",
+            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
+          },
+          "snyk.advanced.cliPath": {
+            "type": "string",
+            "scope": "machine",
+            "markdownDescription": "Sets path to Snyk CLI extension dependency."
+          },
+          "snyk.advanced.languageServerPath": {
+            "type": "string",
+            "scope": "machine",
+            "markdownDescription": "Sets path to Snyk Language Server (requires restart)."
+          }
+        }
+      },
+      {
+        "id": "userExperience",
+        "title": "User Experience",
+        "order": 6,
+        "properties": {
+          "snyk.scanningMode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "enumDescriptions": [
+              "Scan automatically in the background.",
+              "Do not scan automatically, only scan when you run the `Snyk: Rescan` command."
+            ],
+            "default": "auto",
+            "title": "Snyk Code scanning mode",
+            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
+          }
+        }
+      },
+      {
+        "id": "advanced",
+        "title": "Advanced",
+        "order": 7,
+        "properties": {
+          "snyk.issueViewOptions": {
+            "order": 1,
+            "type": "object",
+            "default": {
+              "openIssues": true,
+              "ignoredIssues": true
+            },
+            "properties": {
+              "openIssues": {
+                "type": "boolean",
+                "description": "Open Issues",
+                "default": true
+              },
+              "ignoredIssues": {
+                "type": "boolean",
+                "description": "Ignored Issues",
+                "default": true
+              }
+            },
+            "additionalProperties": false,
+            "markdownDescription": "Ignores settings is currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
+            "scope": "window"
           },
           "snyk.folderConfigs": {
+            "order": 2,
             "type": "array",
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
           "snyk.features.preview": {
+            "order": 3,
             "type": "object",
             "default": {},
             "title": "Preview feature toggles",
