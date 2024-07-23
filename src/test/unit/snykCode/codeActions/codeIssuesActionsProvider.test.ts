@@ -88,9 +88,8 @@ suite('Snyk Code actions provider', () => {
     const codeActions = issuesActionsProvider.provideCodeActions(document, {} as Range, {} as CodeActionContext);
 
     // verify
-    strictEqual(codeActions?.length, 2);
+    strictEqual(codeActions?.length, 1);
     strictEqual(codeActions[0].command?.command, SNYK_OPEN_ISSUE_COMMAND);
-    strictEqual(codeActions[1].command?.command, SNYK_IGNORE_ISSUE_COMMAND);
   });
 
   test('Provides code actions, inline ignores enabled', () => {
