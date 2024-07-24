@@ -225,7 +225,7 @@ suite('Language Server', () => {
         enableTrustedFoldersFeature: 'true',
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
-        requiredProtocolVersion: '12',
+        requiredProtocolVersion: '13',
         scanningMode: 'auto',
         folderConfigs: [],
       };
