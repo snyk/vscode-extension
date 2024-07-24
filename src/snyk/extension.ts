@@ -127,8 +127,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.statusBarItem.show();
 
-    const previewFeatures = configuration.getPreviewFeatures();
-    if (previewFeatures.deltaFindings) {
+    const isDeltaEnabled = configuration.getDeltaFindingsEnabled();
+    if (isDeltaEnabled) {
       await this.contextService.setContext(SNYK_CONTEXT.DELTA_FINDINGS_ENABLED, true);
     }
 
@@ -274,7 +274,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
     let codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
-    if (previewFeatures.deltaFindings) {
+
+    if (isDeltaEnabled) {
       securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA;
       codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY_WITH_DELTA;
     }

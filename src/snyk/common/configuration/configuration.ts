@@ -30,6 +30,8 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
+const NEWISSUES = 'NetNewIssues';
+
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
@@ -61,7 +63,6 @@ export interface SeverityFilter {
 
 export type PreviewFeatures = {
   advisor: boolean | undefined;
-  deltaFindings: boolean | undefined;
 };
 
 export interface IConfiguration {
@@ -238,9 +239,11 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    return (
-      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
+    const selectionValue = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(DELTA_FINDINGS),
     );
+    return selectionValue === NEWISSUES;
   }
 
   async getToken(): Promise<string | undefined> {
@@ -435,7 +438,6 @@ export class Configuration implements IConfiguration {
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
       advisor: false,
-      deltaFindings: false,
     };
 
     const userSetting =

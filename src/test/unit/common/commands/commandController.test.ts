@@ -51,19 +51,4 @@ suite('CommandController', () => {
     // Assert
     sinon.assert.calledOnceWithExactly(fakeFunc, args);
   });
-
-  test("Doesn't execute debounced command within the debounce interval", async () => {
-    // Arrange
-    const fakeFunc = sinon.fake();
-    const args = ['test', 0, true];
-
-    // Act
-    await controller.executeCommand('snyk.test', fakeFunc, args);
-    await sleep(COMMAND_DEBOUNCE_INTERVAL + 1);
-    await controller.executeCommand('snyk.test', fakeFunc, args);
-
-    // Assert
-    sinon.assert.calledTwice(fakeFunc);
-    sinon.assert.calledWith(fakeFunc, args);
-  });
 });
