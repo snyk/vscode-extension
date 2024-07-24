@@ -1,7 +1,17 @@
 # Snyk Security Changelog
 
-## [2.15.1]
+## [2.16.1]
 - updated the language server protocol version to 13 to support delta findings.
+
+## [2.16.0]
+- Reorganize settings page into categorized sections:
+  - General Settings
+  - Product Selection
+  - Severity Selection
+  - Project Settings
+  - Executable Settings
+  - User Experience
+  - Advanced
 
 ## [2.15.0]
 - Sync with LS to retrieve and persist folderConfigs changes.
