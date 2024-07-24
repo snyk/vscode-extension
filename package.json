@@ -284,11 +284,11 @@
           },
           "snyk.netNewVsKnownIssues": {
             "type": "string",
-            "default": "KnownIssues",
+            "default": "Known issues",
             "description": "Specifies whether to see only net new issues or known issues. Only applies to Code Security and Code Quality.",
             "enum": [
-              "KnownIssues",
-              "NetNewIssues"
+              "Known issues",
+              "Net new issues"
             ],
             "enumDescriptions": [
               "Shows all issues that have been identified, including both new and existing issues.",
