@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { set } from 'lodash';
 import path from 'path';
 import { URL } from 'url';
 import { SNYK_TOKEN_KEY } from '../constants/general';
@@ -26,6 +26,7 @@ import {
   YES_WELCOME_NOTIFICATION_SETTING,
   DELTA_FINDINGS,
   FOLDER_CONFIGS,
+  ADVANCED_AUTHENTICATION_METHOD,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -76,6 +77,10 @@ export interface IConfiguration {
   getToken(): Promise<string | undefined>;
 
   setToken(token: string | undefined): Promise<void>;
+
+  getAuthenticationMethod(): string;
+
+  setAuthenticationMethod(method: string): void;
 
   setCliPath(cliPath: string): Promise<void>;
 
@@ -239,6 +244,33 @@ export class Configuration implements IConfiguration {
   getDeltaFindingsEnabled(): boolean {
     return (
       this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
+    );
+  }
+
+  getAuthenticationMethod(): string {
+    const setting = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
+    );
+    if (setting != 'Token Authentication') {
+      return 'oauth';
+    } else {
+      return 'token';
+    }
+  }
+
+  setAuthenticationMethod(method: string) {
+    if (!method) return;
+    if (method === 'Token Authentication') {
+      method = 'token';
+    } else {
+      method = 'oauth';
+    }
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
+      method,
+      true,
     );
   }
 
