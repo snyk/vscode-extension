@@ -78,7 +78,7 @@
           },
           "snyk.advanced.organization": {
             "type": "string",
-            "markdownDescription": "Specifies an organization slug name to run tests for that organization. \n\nNote: The slug name can be extracted from the URL of your organization in the Snyk UI: `https://app.snyk.io/org/[orgslugname]`. If not specified, preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
+            "markdownDescription": "Specifies an organization ID to run tests for that organization.\n\nRetrieve the organization ID from the organization settings in the Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` and copy the ID from the **Organization ID** section.\n\nNote: If not specified, the preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
             "scope": "window"
           },
           "snyk.yesCrashReport": {
