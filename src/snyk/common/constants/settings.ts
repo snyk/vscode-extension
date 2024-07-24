@@ -27,4 +27,4 @@ export const TRUSTED_FOLDERS = `${CONFIGURATION_IDENTIFIER}.trustedFolders`;
 export const FOLDER_CONFIGS = `${CONFIGURATION_IDENTIFIER}.folderConfigs`;
 export const SCANNING_MODE = `${CONFIGURATION_IDENTIFIER}.scanningMode`;
 
-export const DELTA_FINDINGS = `${FEATURES_PREVIEW_SETTING}.deltaFindings`;
+export const DELTA_FINDINGS = `${CONFIGURATION_IDENTIFIER}.netNewVsKnownIssues`;
