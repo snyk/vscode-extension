@@ -30,7 +30,7 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
-const NEWISSUES = 'Net new Issues';
+const NEWISSUES = 'Net new issues';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
