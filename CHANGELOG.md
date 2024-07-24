@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.16.1]
+- updated the language server protocol version to 13 to support delta findings.
+
 ## [2.16.0]
 - Reorganize settings page into categorized sections:
   - General Settings
