@@ -1,5 +1,15 @@
 # Snyk Security Changelog
 
+## [2.16.0]
+- Reorganize settings page into categorized sections:
+  - General Settings
+  - Product Selection
+  - Severity Selection
+  - Project Settings
+  - Executable Settings
+  - User Experience
+  - Advanced
+
 ## [2.15.0]
 - Sync with LS to retrieve and persist folderConfigs changes.
 - Add command to select the base branch.
