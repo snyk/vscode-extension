@@ -30,8 +30,6 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 
-const NEWISSUES = 'Net new issues';
-
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
@@ -239,11 +237,9 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    const selectionValue = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
+    return (
+      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
     );
-    return selectionValue === NEWISSUES;
   }
 
   async getToken(): Promise<string | undefined> {
