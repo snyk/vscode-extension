@@ -242,10 +242,10 @@
             "propertyNames": true,
             "properties": {}
           },
-          "snyk.netNewVsKnownIssues": {
+          "snyk.netNewVsAllIssues": {
             "type": "string",
             "default": "All issues",
-            "description": "Specifies whether to see only net new issues or known issues. Only applies to Code Security and Code Quality.",
+            "description": "Specifies whether to see only net new issues or all issues. Only applies to Code Security and Code Quality.",
             "enum": [
               "All issues",
               "Net new issues"
@@ -254,7 +254,7 @@
               "Shows all issues, including both new and existing issues.",
               "Shows only new issues that have been introduced in the latest scan."
             ],
-            "markdownDescription": "Specifies whether to see only net new issues or known issues. Only applies to Code Security and Code Quality.\n\nNote: this is an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details."
+            "markdownDescription": "Specifies whether to see only net new issues or all issues. Only applies to Code Security and Code Quality.\n\nNote: this is an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details."
           }
         }
       },
