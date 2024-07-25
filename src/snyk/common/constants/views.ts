@@ -16,6 +16,7 @@ export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
 export const SNYK_CONTEXT = {
   INITIALIZED: 'initialized', // default to loading state (notLoading = false when boolean is initialized)
   LOGGEDIN: 'loggedIn',
+  AUTHENTICATION_METHOD_CHANGED: 'authMethodChanged',
   AUTHENTICATING: 'authenticating',
   CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',

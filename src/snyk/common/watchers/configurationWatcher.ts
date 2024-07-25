@@ -18,12 +18,14 @@ import {
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
   FOLDER_CONFIGS,
+  ADVANCED_AUTHENTICATION_METHOD,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
+import { SNYK_CONTEXT } from '../constants/views';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
@@ -45,6 +47,11 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
+    } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
+      await configuration.clearToken();
+      await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+      await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
+      return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_LS_PATH) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
@@ -81,6 +88,7 @@ class ConfigurationWatcher implements IWatcher {
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CUSTOM_LS_PATH,
+        ADVANCED_AUTHENTICATION_METHOD,
         TRUSTED_FOLDERS,
         ISSUE_VIEW_OPTIONS_SETTING,
         DELTA_FINDINGS,

@@ -49,7 +49,7 @@ export class AuthenticationService implements IAuthenticationService {
 
   async setToken(): Promise<void> {
     const token = await this.window.showInputBox({
-      placeHolder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      placeHolder: 'UUID for API Token or OAuth2 Token',
       password: true,
       validateInput: token => {
         const valid = this.validateToken(token);
@@ -91,6 +91,7 @@ export class AuthenticationService implements IAuthenticationService {
       await this.configuration.setToken(token);
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+      await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, false);
 
       this.baseModule.loadingBadge.setLoadingBadge(false);
       await this.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
