@@ -24,7 +24,6 @@ import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
-import { SNYK_CONTEXT } from '../constants/views';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
@@ -51,8 +50,7 @@ class ConfigurationWatcher implements IWatcher {
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
     } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
       extension.viewManagerService.refreshAllViews();
-    }
-    else if (key === TRUSTED_FOLDERS) {
+    } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
     }
