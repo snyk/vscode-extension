@@ -37,6 +37,9 @@ suite('Language Server', () => {
 
   setup(() => {
     configurationMock = {
+      getAuthenticationMethod(): string {
+        return 'oauth';
+      },
       getInsecure(): boolean {
         return true;
       },
@@ -228,6 +231,7 @@ suite('Language Server', () => {
         requiredProtocolVersion: '13',
         scanningMode: 'auto',
         folderConfigs: [],
+        authenticationMethod: 'oauth',
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

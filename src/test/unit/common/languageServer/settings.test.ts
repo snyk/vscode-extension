@@ -23,6 +23,9 @@ suite('LanguageServerSettings', () => {
         getFolderConfigs(): FolderConfig[] {
           return [];
         },
+        getAuthenticationMethod(): string {
+          return 'oauth';
+        },
         severityFilter: { critical: true, high: true, medium: true, low: false },
         scanningMode: 'scan-mode',
       } as IConfiguration;
