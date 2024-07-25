@@ -45,10 +45,12 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
-    } else if (key === ADVANCED_CUSTOM_LS_PATH || key === DELTA_FINDINGS) {
+    } else if (key === ADVANCED_CUSTOM_LS_PATH) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
-    } else if (key === TRUSTED_FOLDERS || key === FOLDER_CONFIGS) {
+    } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
+      extension.viewManagerService.refreshAllViews();
+    } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
     }
