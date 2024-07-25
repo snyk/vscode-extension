@@ -58,8 +58,8 @@
         "properties": {}
       },
       {
-        "id": "generalSettings",
-        "title": "General Settings",
+        "id": "account",
+        "title": "Snyk Account",
         "order": 1,
         "properties": {
           "snyk.advanced.tokenStorage": {
@@ -87,65 +87,44 @@
             "default": true,
             "markdownDescription": "Send error reports to Snyk",
             "scope": "application"
-          },
-          "snyk.yesWelcomeNotification": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "Show welcome notification after installation and restart",
-            "scope": "application"
-          },
-          "snyk.yesBackgroundOssNotification": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
-            "scope": "application"
-          },
-          "snyk.trustedFolders": {
-            "type": "array",
-            "default": [],
-            "description": "Folders to trust for Snyk scans."
           }
         }
       },
       {
-        "id": "productSelection",
-        "title": "Product Selection",
+        "id": "scan",
+        "title": "Scan Configuration",
         "order": 2,
         "properties": {
           "snyk.features.openSourceSecurity": {
+            "order": 1,
             "type": "boolean",
             "title": "Snyk Open Source security issues",
             "description": "Find and fix open source vulnerabilities.",
             "default": true
           },
           "snyk.features.codeSecurity": {
+            "order": 2,
             "type": "boolean",
             "title": "Snyk Code security issues",
             "description": "Find and fix vulnerabilities in your application code in real time.",
             "default": true
           },
           "snyk.features.codeQuality": {
+            "order": 3,
             "type": "boolean",
             "title": "Snyk Code quality issues",
             "description": "Find and fix code quality issues in your application code in real time.",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {
+            "order": 4,
             "type": "boolean",
             "title": "Snyk Infrastructure as Code issues",
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
-          }
-        }
-      },
-      {
-        "id": "severitySelection",
-        "title": "Severity Selection",
-        "order": 3,
-        "properties": {
+          },
           "snyk.severity": {
+            "order": 5,
             "type": "object",
             "default": {
               "critical": true,
@@ -174,15 +153,9 @@
             "additionalProperties": false,
             "description": "Severity issues to display.",
             "scope": "window"
-          }
-        }
-      },
-      {
-        "id": "projectSettings",
-        "title": "Project Settings",
-        "order": 4,
-        "properties": {
+          },
           "snyk.advanced.additionalParameters": {
+            "order": 6,
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
             "scope": "window"
@@ -190,40 +163,12 @@
         }
       },
       {
-        "id": "executableSettings",
-        "title": "Executable Settings",
-        "order": 5,
-        "properties": {
-          "snyk.advanced.autoScanOpenSourceSecurity": {
-            "type": "boolean",
-            "default": false,
-            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
-            "scope": "application"
-          },
-          "snyk.advanced.automaticDependencyManagement": {
-            "type": "boolean",
-            "default": true,
-            "scope": "machine",
-            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
-          },
-          "snyk.advanced.cliPath": {
-            "type": "string",
-            "scope": "machine",
-            "markdownDescription": "Sets path to Snyk CLI extension dependency."
-          },
-          "snyk.advanced.languageServerPath": {
-            "type": "string",
-            "scope": "machine",
-            "markdownDescription": "Sets path to Snyk Language Server (requires restart)."
-          }
-        }
-      },
-      {
         "id": "userExperience",
         "title": "User Experience",
-        "order": 6,
+        "order": 3,
         "properties": {
           "snyk.scanningMode": {
+            "order": 1,
             "type": "string",
             "enum": [
               "auto",
@@ -236,13 +181,28 @@
             "default": "auto",
             "title": "Snyk Code scanning mode",
             "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
+          },
+          "snyk.advanced.autoScanOpenSourceSecurity": {
+            "order": 2,
+            "type": "boolean",
+            "default": false,
+            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
+            "scope": "application"
+          },
+          "snyk.yesBackgroundOssNotification": {
+            "order": 3,
+            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
+            "scope": "application"
           }
         }
       },
       {
-        "id": "advanced",
-        "title": "Advanced",
-        "order": 7,
+        "id": "experimental",
+        "title": "Experimental",
+        "order": 4,
         "properties": {
           "snyk.issueViewOptions": {
             "order": 1,
@@ -295,6 +255,51 @@
               "Shows only new issues that have been introduced in the latest scan, filtering out previously known issues."
             ],
             "markdownDescription": "Specifies whether to see only net new issues or known issues. Only applies to Code Security and Code Quality.\n\nNote: this is an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details."
+          }
+        }
+      },
+      {
+        "id": "initialization",
+        "title": "Initialization",
+        "order": 5,
+        "properties": {
+          "snyk.yesWelcomeNotification": {
+            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show welcome notification after installation and restart",
+            "scope": "application"
+          },
+          "snyk.trustedFolders": {
+            "type": "array",
+            "default": [],
+            "description": "Folders to trust for Snyk scans."
+          }
+        }
+      },
+      {
+        "id": "cli",
+        "title": "CLI & Language Server",
+        "order": 6,
+        "properties": {
+          "snyk.advanced.automaticDependencyManagement": {
+            "order": 1,
+            "type": "boolean",
+            "default": true,
+            "scope": "machine",
+            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
+          },
+          "snyk.advanced.cliPath": {
+            "order": 2,
+            "type": "string",
+            "scope": "machine",
+            "markdownDescription": "Sets path to Snyk CLI extension dependency."
+          },
+          "snyk.advanced.languageServerPath": {
+            "order": 3,
+            "type": "string",
+            "scope": "machine",
+            "markdownDescription": "Sets path to Snyk Language Server (requires restart)."
           }
         }
       }
