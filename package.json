@@ -328,12 +328,7 @@
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:deltaFindingsEnabled"
-        },
-        {
-          "id": "snyk.views.analysis.code.security.delta",
-          "name": "Code Security - New Issues",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && snyk:deltaFindingsEnabled"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.configuration",
@@ -343,12 +338,7 @@
         {
           "id": "snyk.views.analysis.code.quality",
           "name": "Code Quality",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:deltaFindingsEnabled"
-        },
-        {
-          "id": "snyk.views.analysis.code.quality.delta",
-          "name": "Code Quality - New Issues",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && snyk:deltaFindingsEnabled"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",

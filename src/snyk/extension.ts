@@ -30,9 +30,7 @@ import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
   SNYK_VIEW_ANALYSIS_CODE_QUALITY,
-  SNYK_VIEW_ANALYSIS_CODE_QUALITY_WITH_DELTA,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
-  SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
@@ -126,11 +124,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
-
-    const isDeltaEnabled = configuration.getDeltaFindingsEnabled();
-    if (isDeltaEnabled) {
-      await this.contextService.setContext(SNYK_CONTEXT.DELTA_FINDINGS_ENABLED, true);
-    }
 
     const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
@@ -274,11 +267,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
     let codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
-
-    if (isDeltaEnabled) {
-      securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY_WITH_DELTA;
-      codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY_WITH_DELTA;
-    }
 
     const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
       treeDataProvider: codeSecurityIssueProvider,
