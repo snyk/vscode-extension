@@ -80,8 +80,6 @@ export interface IConfiguration {
 
   getAuthenticationMethod(): string;
 
-  setAuthenticationMethod(method: string): void;
-
   setCliPath(cliPath: string): Promise<void>;
 
   clearToken(): Promise<void>;
@@ -257,21 +255,6 @@ export class Configuration implements IConfiguration {
     } else {
       return 'token';
     }
-  }
-
-  setAuthenticationMethod(method: string) {
-    if (!method) return;
-    if (method === 'Token Authentication') {
-      method = 'token';
-    } else {
-      method = 'oauth';
-    }
-    return this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
-      method,
-      true,
-    );
   }
 
   async getToken(): Promise<string | undefined> {
