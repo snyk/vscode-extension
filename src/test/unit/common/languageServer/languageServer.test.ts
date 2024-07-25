@@ -16,7 +16,6 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import { FolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
