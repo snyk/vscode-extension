@@ -231,6 +231,7 @@ suite('Language Server', () => {
         scanningMode: 'auto',
         folderConfigs: [],
         authenticationMethod: 'oauth',
+        enableSnykOSSQuickFixCodeActions: 'false',
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
