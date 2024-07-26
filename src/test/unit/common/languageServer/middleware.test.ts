@@ -37,10 +37,11 @@ suite('Language Server: Middleware', () => {
       getDeltaFindingsEnabled(): boolean {
         return false;
       },
-      getPreviewFeatures: () => {
-        return {
-          advisor: false,
-        };
+      getPreviewFeatures() {
+        return { advisor: false, ossQuickfixes: false };
+      },
+      getOssQuickFixCodeActionsEnabled(): boolean {
+        return false;
       },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;

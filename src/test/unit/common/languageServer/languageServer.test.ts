@@ -61,13 +61,17 @@ suite('Language Server', () => {
       isAutomaticDependencyManagementEnabled() {
         return true;
       },
-      getPreviewFeatures() {
-        return {
-          advisor: false,
-        };
+      getOssQuickFixCodeActionsEnabled() {
+        return false;
       },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
+      },
+      getPreviewFeatures() {
+        return {
+          advisor: false,
+          ossQuickfixes: false,
+        };
       },
       severityFilter: {
         critical: true,
@@ -231,6 +235,7 @@ suite('Language Server', () => {
         scanningMode: 'auto',
         folderConfigs: [],
         authenticationMethod: 'oauth',
+        enableSnykOSSQuickFixCodeActions: 'false',
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
 
@@ -22,6 +22,12 @@ suite('LanguageServerSettings', () => {
         isAutomaticDependencyManagementEnabled: () => true,
         getFolderConfigs(): FolderConfig[] {
           return [];
+        },
+        getPreviewFeatures(): PreviewFeatures {
+          return { advisor: false, ossQuickfixes: false };
+        },
+        getOssQuickFixCodeActionsEnabled(): boolean {
+          return false;
         },
         getAuthenticationMethod(): string {
           return 'oauth';
