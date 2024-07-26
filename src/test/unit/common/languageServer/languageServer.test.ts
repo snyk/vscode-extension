@@ -67,6 +67,12 @@ suite('Language Server', () => {
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
       },
+      getPreviewFeatures() {
+        return {
+          advisor: false,
+          ossQuickfixes: false,
+        };
+      },
       severityFilter: {
         critical: true,
         high: true,

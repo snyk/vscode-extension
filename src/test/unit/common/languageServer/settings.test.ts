@@ -26,6 +26,9 @@ suite('LanguageServerSettings', () => {
         getPreviewFeatures(): PreviewFeatures {
           return { advisor: false, ossQuickfixes: false };
         },
+        getOssQuickFixCodeActionsEnabled(): boolean {
+          return false;
+        },
         getAuthenticationMethod(): string {
           return 'oauth';
         },

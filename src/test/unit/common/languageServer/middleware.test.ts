@@ -40,6 +40,9 @@ suite('Language Server: Middleware', () => {
       getPreviewFeatures() {
         return { advisor: false, ossQuickfixes: false };
       },
+      getOssQuickFixCodeActionsEnabled(): boolean {
+        return false;
+      },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
       },
