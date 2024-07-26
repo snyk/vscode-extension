@@ -250,7 +250,7 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
     );
-    if (setting != 'Token Authentication') {
+    if (setting?.toLowerCase() != 'token authentication') {
       return 'oauth';
     } else {
       return 'token';

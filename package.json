@@ -64,17 +64,17 @@
         "properties": {
           "snyk.advanced.authenticationMethod": {
             "type": "string",
-            "default": "OAuth2 Authentication",
-            "description": "Specifies whether to authenticate with OAuth2 or with an API token. It is recommended to use OAuth2 authentication, as it provides enhanced security.",
+            "default": "OAuth2 authentication",
+            "description": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security.",
             "enum": [
-              "OAuth2 Authentication",
-              "Token Authentication"
+              "OAuth2 authentication",
+              "Token authentication"
             ],
             "enumDescriptions": [
-              "Uses OAuth2 to authenticate",
+              "Uses the OAuth2 authentication",
               "Uses the legacy Snyk Token authentication."
             ],
-            "markdownDescription": "Specifies whether to authenticate with OAuth2 or with an API token. It is recommended to use OAuth2 authentication, as it provides enhanced security."
+            "markdownDescription": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security."
           },
           "snyk.advanced.tokenStorage": {
             "type": "string",

@@ -48,7 +48,6 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
-      await configuration.clearToken();
       await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
       await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
       return extension.viewManagerService.refreshAllViews();
