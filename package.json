@@ -64,7 +64,7 @@
         "properties": {
           "snyk.advanced.authenticationMethod": {
             "type": "string",
-            "default": "OAuth2 authentication",
+            "default": "Token authentication",
             "description": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security.",
             "enum": [
               "OAuth2 authentication",
