@@ -85,7 +85,7 @@ export class LanguageServerSettings {
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
       folderConfigs: configuration.getFolderConfigs(),
-      enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
+      enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
     };
   }
 }

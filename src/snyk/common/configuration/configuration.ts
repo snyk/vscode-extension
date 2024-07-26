@@ -133,6 +133,8 @@ export interface IConfiguration {
 
   getDeltaFindingsEnabled(): boolean;
 
+  getOssQuickFixCodeActionsEnabled(): boolean;
+
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
@@ -147,6 +149,10 @@ export class Configuration implements IConfiguration {
   private featureFlag: { [key: string]: boolean } = {};
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+
+  getOssQuickFixCodeActionsEnabled(): boolean {
+    return this.getPreviewFeatures().ossQuickfixes ?? false;
+  }
 
   getInsecure(): boolean {
     const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;

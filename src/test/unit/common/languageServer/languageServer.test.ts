@@ -62,9 +62,7 @@ suite('Language Server', () => {
         return true;
       },
       getPreviewFeatures() {
-        return {
-          advisor: false,
-        };
+        return { advisor: false, ossQuickfixes: false };
       },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
