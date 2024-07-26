@@ -61,7 +61,7 @@ suite('Language Server', () => {
       isAutomaticDependencyManagementEnabled() {
         return true;
       },
-      getOssQuickFixCodeActionsEnabled () {
+      getOssQuickFixCodeActionsEnabled() {
         return false;
       },
       getFeaturesConfiguration() {
