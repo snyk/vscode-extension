@@ -43,6 +43,7 @@ export type ServerSettings = {
   requiredProtocolVersion?: string;
   enableDeltaFindings?: string;
   folderConfigs: FolderConfig[];
+  enableSnykOSSQuickFixCodeActions: string;
 };
 
 export class LanguageServerSettings {
@@ -84,6 +85,7 @@ export class LanguageServerSettings {
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
       folderConfigs: configuration.getFolderConfigs(),
+      enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
     };
   }
 }
