@@ -20,6 +20,7 @@ export type ServerSettings = {
   // Authentication and parameters
   token?: string;
   automaticAuthentication?: string;
+  authenticationMethod?: string;
   additionalParams?: string;
   manageBinariesAutomatically?: string;
 
@@ -70,6 +71,7 @@ export class LanguageServerSettings {
       organization: configuration.organization,
       token: await configuration.getToken(),
       automaticAuthentication: 'false',
+      authenticationMethod: configuration.getAuthenticationMethod(),
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
       filterSeverity: configuration.severityFilter,

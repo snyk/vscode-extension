@@ -62,6 +62,20 @@
         "title": "Snyk Account",
         "order": 1,
         "properties": {
+          "snyk.advanced.authenticationMethod": {
+            "type": "string",
+            "default": "OAuth2 authentication",
+            "description": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security.",
+            "enum": [
+              "OAuth2 authentication",
+              "Token authentication"
+            ],
+            "enumDescriptions": [
+              "Uses the OAuth2 authentication",
+              "Uses the legacy Snyk Token authentication."
+            ],
+            "markdownDescription": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security."
+          },
           "snyk.advanced.tokenStorage": {
             "type": "string",
             "enum": [
@@ -304,7 +318,7 @@
         {
           "id": "snyk.views.welcome",
           "name": "Snyk",
-          "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound"
+          "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authenticationChanged"
         },
         {
           "id": "snyk.views.analysis.oss",
@@ -345,13 +359,18 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Welcome to Snyk for Visual Studio Code. \n⏱️ Please wait, the extension is loading...",
+        "contents": "👋 Welcome to Snyk for Visual Studio Code.\n⏱️ Please wait, the extension is loading...",
         "when": "!snyk:error && !snyk:initialized"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Welcome to Snyk for Visual Studio Code. \n👉 Connect with Snyk to start your first analysis!\nWhen scanning folder files, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\n[Trust workspace and connect](command:snyk.initiateLogin 'Connect with Snyk')\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).",
-        "when": "!snyk:error && snyk:initialized && !snyk:loggedIn"
+        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')",
+        "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && !snyk:authMethodChanged"
+      },
+      {
+        "view": "snyk.views.welcome",
+        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')",
+        "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && snyk:authMethodChanged"
       },
       {
         "view": "snyk.views.welcome",

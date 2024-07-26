@@ -5,6 +5,7 @@ import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
+  ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_PATH,
@@ -14,18 +15,18 @@ import {
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
+  DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
+  FOLDER_CONFIGS,
   IAC_ENABLED_SETTING,
+  ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
   SCANNING_MODE,
-  ISSUE_VIEW_OPTIONS_SETTING,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
-  DELTA_FINDINGS,
-  FOLDER_CONFIGS,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -76,6 +77,8 @@ export interface IConfiguration {
   getToken(): Promise<string | undefined>;
 
   setToken(token: string | undefined): Promise<void>;
+
+  getAuthenticationMethod(): string;
 
   setCliPath(cliPath: string): Promise<void>;
 
@@ -240,6 +243,18 @@ export class Configuration implements IConfiguration {
     return (
       this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS)) ?? false
     );
+  }
+
+  getAuthenticationMethod(): string {
+    const setting = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
+    );
+    if (setting?.toLowerCase() != 'token authentication') {
+      return 'oauth';
+    } else {
+      return 'token';
+    }
   }
 
   async getToken(): Promise<string | undefined> {

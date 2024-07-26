@@ -16,7 +16,6 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import { FolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -37,6 +36,9 @@ suite('Language Server', () => {
 
   setup(() => {
     configurationMock = {
+      getAuthenticationMethod(): string {
+        return 'oauth';
+      },
       getInsecure(): boolean {
         return true;
       },
@@ -228,6 +230,7 @@ suite('Language Server', () => {
         requiredProtocolVersion: '13',
         scanningMode: 'auto',
         folderConfigs: [],
+        authenticationMethod: 'oauth',
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

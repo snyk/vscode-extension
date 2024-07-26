@@ -1,3 +1,5 @@
+// see https://code.visualstudio.com/api/references/contribution-points#contributes.viewsWelcome
+
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
@@ -14,6 +16,7 @@ export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
 export const SNYK_CONTEXT = {
   INITIALIZED: 'initialized', // default to loading state (notLoading = false when boolean is initialized)
   LOGGEDIN: 'loggedIn',
+  AUTHENTICATION_METHOD_CHANGED: 'authMethodChanged',
   AUTHENTICATING: 'authenticating',
   CODE_ENABLED: 'codeEnabled',
   CODE_LOCAL_ENGINE_ENABLED: 'codeLocalEngineEnabled',
