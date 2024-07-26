@@ -61,8 +61,8 @@ suite('Language Server', () => {
       isAutomaticDependencyManagementEnabled() {
         return true;
       },
-      getPreviewFeatures() {
-        return { advisor: false, ossQuickfixes: false };
+      getOssQuickFixCodeActionsEnabled () {
+        return false;
       },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
