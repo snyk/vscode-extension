@@ -1,8 +1,10 @@
 # Snyk Security Changelog
 
-## [2.16.1]
+## [2.17.0]
 - updated the language server protocol version to 13 to support delta findings.
 - added setting for choosing authentication method
+- renamed vulnerabilities to issues
+- only display DeepCode AI fix tree node when issues were found
 
 ## [2.16.0]
 - Reorganize settings page into categorized sections:
