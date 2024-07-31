@@ -76,7 +76,7 @@ suite('Code Issue Tree Provider', () => {
     const rootChildren = issueTreeProvider.getRootChildren();
     strictEqual(rootChildren.length, 2);
     strictEqual(rootChildren[0].label, 'Snyk found 1 issue');
-    strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
+    strictEqual(rootChildren[1].label, 'There are no issues fixable by Snyk DeepCode AI');
   });
 
   test('getRootChildren returns a root child for no results', () => {
@@ -98,9 +98,8 @@ suite('Code Issue Tree Provider', () => {
 
     sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
     const rootChildren = issueTreeProvider.getRootChildren();
-    strictEqual(rootChildren.length, 2);
+    strictEqual(rootChildren.length, 1);
     strictEqual(rootChildren[0].label, '✅ Congrats! No issues found!');
-    strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
   });
 
   test('getRootChildren returns a root child for only open but not visible issues', async () => {
@@ -141,7 +140,7 @@ suite('Code Issue Tree Provider', () => {
     const rootChildren = issueTreeProvider.getRootChildren();
     strictEqual(rootChildren.length, 3);
     strictEqual(rootChildren[0].label, 'Snyk found 1 issue');
-    strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
+    strictEqual(rootChildren[1].label, 'There are no issues fixable by Snyk DeepCode AI');
     strictEqual(rootChildren[2].label, 'Adjust your Issue View Options to see open issues.');
     await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
       openIssues: true,
@@ -186,7 +185,7 @@ suite('Code Issue Tree Provider', () => {
     const rootChildren = issueTreeProvider.getRootChildren();
     strictEqual(rootChildren.length, 3);
     strictEqual(rootChildren[0].label, 'Snyk found 1 issue');
-    strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
+    strictEqual(rootChildren[1].label, 'There are no issues fixable by Snyk DeepCode AI');
     strictEqual(rootChildren[2].label, 'Adjust your Issue View Options to see ignored issues.');
     await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
       openIssues: true,
@@ -231,7 +230,7 @@ suite('Code Issue Tree Provider', () => {
     const rootChildren = issueTreeProvider.getRootChildren();
     strictEqual(rootChildren.length, 3);
     strictEqual(rootChildren[0].label, 'Snyk found 1 issue');
-    strictEqual(rootChildren[1].label, 'There are no vulnerabilities fixable by Snyk DeepCode AI');
+    strictEqual(rootChildren[1].label, 'There are no issues fixable by Snyk DeepCode AI');
     strictEqual(rootChildren[2].label, 'Adjust your Issue View Options to see all issues.');
     await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
       openIssues: true,
