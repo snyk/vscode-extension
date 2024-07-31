@@ -38,7 +38,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
-    return `${dir} - ${issueCount} ${issueCount === 1 ? 'vulnerability' : 'vulnerabilities'}`;
+    return `${dir} - ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`;
   }
 
   protected getIssueFoundText(nIssues: number, ignoredIssueCount: number): string {
@@ -48,7 +48,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       if (nIssues === 1) {
         text = `${nIssues} issue found by Snyk`;
       } else {
-        text = `✋ ${nIssues} vulnerabilities found by Snyk`;
+        text = `✋ ${nIssues} issues found by Snyk`;
       }
 
       const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);

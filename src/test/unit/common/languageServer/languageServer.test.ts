@@ -61,9 +61,6 @@ suite('Language Server', () => {
       isAutomaticDependencyManagementEnabled() {
         return true;
       },
-      getOssQuickFixCodeActionsEnabled() {
-        return false;
-      },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
       },
@@ -256,7 +253,7 @@ suite('Language Server', () => {
       const initOptions = await languageServer.getInitializationOptions();
 
       strictEqual(initOptions.activateSnykCodeQuality, `true`);
-      strictEqual(initOptions.activateSnykCodeQuality, `true`);
+      strictEqual(initOptions.activateSnykCodeSecurity, `true`);
     });
 
     ['auto', 'manual'].forEach(expectedScanningMode => {

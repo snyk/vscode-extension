@@ -84,7 +84,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
 
   private getAIFixableIssuesText(issuesCount: number): string {
     return issuesCount > 0
-      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'vulnerability' : 'vulnerabilities'} can be fixed by Snyk DeepCode AI`
-      : 'There are no vulnerabilities fixable by Snyk DeepCode AI';
+      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'issue' : 'issues'} can be fixed by Snyk DeepCode AI`
+      : 'There are no issues fixable by Snyk DeepCode AI';
   }
 }

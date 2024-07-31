@@ -14,7 +14,7 @@ export function getOssIssueCommandArg(
     // TODO: marked.parse does not sanitize the HTML. See: https://marked.js.org/#usage
     overviewHtml = marked.parse(vuln.additionalData.description) as string;
   } catch (error) {
-    overviewHtml = '<p>There was a problem rendering the vulnerability overview</p>';
+    overviewHtml = '<p>There was a problem rendering the issue overview</p>';
   }
 
   return {

@@ -1,4 +1,4 @@
 export const messages = {
   getLessonError: 'Failed to get Snyk Learn lesson',
-  lessonButtonTitle: 'Learn about this vulnerability',
+  lessonButtonTitle: 'Learn about this issue',
 };

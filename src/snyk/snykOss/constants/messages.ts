@@ -22,11 +22,11 @@ export const messages = {
   },
   treeView: {
     cookingDependencies: 'Scanning...',
-    runTest: 'Run scan for Open Source security vulnerabilities.',
+    runTest: 'Run scan for Open Source security issues.',
     noVulnerabilitiesFound: ' ✅ Congrats! No issues found!',
-    singleVulnerabilityFound: 'Snyk found 1 vulnerability',
-    vulnerability: 'vulnerability',
-    vulnerabilities: 'vulnerabilities',
-    multipleVulnerabilitiesFound: (issueCount: number): string => `Snyk found ${issueCount} vulnerabilities`,
+    issue: 'issue',
+    issues: 'issues',
+    singleVulnerabilityFound: 'Snyk found 1 issue',
+    multipleVulnerabilitiesFound: (issueCount: number): string => `Snyk found ${issueCount} issues`,
   },
 };

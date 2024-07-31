@@ -54,7 +54,7 @@ export class OssDetailPanelProvider
       } else {
         this.panel = vscode.window.createWebviewPanel(
           SNYK_VIEW_SUGGESTION_OSS,
-          'Snyk OSS Vulnerability',
+          'Snyk OSS issue',
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
