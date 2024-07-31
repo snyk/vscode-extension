@@ -39,12 +39,15 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   abstract shouldShowTree(): boolean;
+
   abstract filterIssues(issues: Issue<T>[]): Issue<T>[];
 
   abstract getRunTestMessage(): string;
+
   abstract getIssueTitle(issue: Issue<T>): string;
 
   abstract getIssueRange(issue?: Issue<T>): Range | undefined;
+
   abstract getOpenIssueCommand(
     issue: Issue<T>,
     folderPath: string,
@@ -94,8 +97,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       new TreeNode({
         text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
       }),
-      this.getFixableIssuesNode(this.getFixableCount()),
     ];
+
+    if (totalIssueCount > 0) {
+      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
+    }
 
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {

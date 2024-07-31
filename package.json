@@ -3,7 +3,7 @@
   "//": "Changing display name requires change in general.ts",
   "displayName": "Snyk Security",
   "version": "0.0.0",
-  "description": "Easily find and fix vulnerabilities in your code, open source dependencies, infrastructure as code configurations with fast and accurate scans.",
+  "description": "Easily find and fix issues in your code, open source dependencies, infrastructure as code configurations with fast and accurate scans.",
   "icon": "media/images/readme/snyk_extension_icon.png",
   "publisher": "snyk-security",
   "homepage": "https://snyk.io",
@@ -113,21 +113,21 @@
             "order": 1,
             "type": "boolean",
             "title": "Snyk Open Source security issues",
-            "description": "Find and fix open source vulnerabilities.",
+            "description": "Find and fix open source dependency issues.",
             "default": true
           },
           "snyk.features.codeSecurity": {
             "order": 2,
             "type": "boolean",
             "title": "Snyk Code security issues",
-            "description": "Find and fix vulnerabilities in your application code in real time.",
+            "description": "Find and fix security issues in your application code in real time.",
             "default": true
           },
           "snyk.features.codeQuality": {
             "order": 3,
             "type": "boolean",
             "title": "Snyk Code quality issues",
-            "description": "Find and fix code quality issues in your application code in real time.",
+            "description": "Find and fix quality issues in your application code in real time.",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {
@@ -200,7 +200,7 @@
             "order": 2,
             "type": "boolean",
             "default": false,
-            "description": "Run Snyk Open Source Security vulnerability analysis in automatic mode.",
+            "description": "Run Snyk Open Source Security analysis in automatic mode.",
             "scope": "application"
           },
           "snyk.yesBackgroundOssNotification": {
@@ -208,7 +208,7 @@
             "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Show scan notification for critical Open Source Security vulnerabilities when Snyk view is hidden",
+            "markdownDescription": "Show scan notification for critical Open Source Security issues when Snyk view is hidden",
             "scope": "application"
           }
         }

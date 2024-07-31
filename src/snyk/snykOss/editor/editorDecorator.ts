@@ -57,7 +57,7 @@ export class EditorDecorator {
           module.line - 1,
           this.editorLastCharacterIndex,
         ),
-        renderOptions: getRenderOptions('Fetching vulnerabilities...', this.themeColorAdapter),
+        renderOptions: getRenderOptions('Fetching issues...', this.themeColorAdapter),
       };
     }
 
