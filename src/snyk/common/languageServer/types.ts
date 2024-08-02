@@ -4,6 +4,13 @@ export enum ScanProduct {
   InfrastructureAsCode = 'iac',
 }
 
+export enum LsScanProduct {
+  Code = 'Snyk Code',
+  OpenSource = 'Snyk Open Source',
+  InfrastructureAsCode = 'Snyk IaC',
+  Unknown = '',
+}
+
 export type InProgress = 'inProgress';
 
 export enum ScanStatus {
