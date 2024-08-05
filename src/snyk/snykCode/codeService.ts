@@ -12,6 +12,7 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { SnykCodeActionsProvider } from './codeActions/codeIssuesActionsProvider';
 import { ICodeSuggestionWebviewProvider } from './views/interfaces';
+import { IDiagnosticsIssueProvider } from '../common/services/diagnosticsService';
 
 export class SnykCodeService extends ProductService<CodeIssueData> {
   public readonly productType = ScanProduct.Code;
@@ -27,6 +28,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
     languages: IVSCodeLanguages,
+    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<CodeIssueData>,
     logger: ILog,
   ) {
     super(
@@ -38,6 +40,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
       workspaceTrust,
       languageServer,
       languages,
+      diagnosticsIssueProvider,
       logger,
     );
 

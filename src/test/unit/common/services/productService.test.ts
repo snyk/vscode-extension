@@ -13,6 +13,7 @@ import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
+import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 type ProductData = {
   productName: string;
@@ -55,6 +56,7 @@ suite('Product Service', () => {
       new WorkspaceTrust(),
       ls,
       {} as IVSCodeLanguages,
+      {} as IDiagnosticsIssueProvider<ProductData>,
       new LoggerMock(),
     );
   });
