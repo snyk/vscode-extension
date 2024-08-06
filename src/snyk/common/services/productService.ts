@@ -183,42 +183,4 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       this.refreshTreeView();
     }
   }
-  private getIssuesFromDiagnostics(product: ScanProduct): Issue<T>[] {
-    let allDiagnostics = vscode.languages.getDiagnostics();
-    const diagnosticsSource = this.productToLsProduct(product);
-
-    // Filter and flatten the diagnostics list
-    // Also filter only when diagnostic.data exists
-    let filteredDiagnostics = allDiagnostics.flatMap(([_, diagnostics]) => {
-      return diagnostics.filter(
-        diagnostic => diagnostic.source === diagnosticsSource && diagnostic.hasOwnProperty('data'),
-      );
-    });
-    let issues = filteredDiagnostics.map(this.mapDiagnosticToIssue);
-    return issues;
-  }
-
-  private productToLsProduct(product: ScanProduct): LsScanProduct {
-    switch (product) {
-      case ScanProduct.Code:
-        return LsScanProduct.Code;
-      case ScanProduct.InfrastructureAsCode:
-        return LsScanProduct.InfrastructureAsCode;
-      case ScanProduct.OpenSource:
-        return LsScanProduct.OpenSource;
-      default:
-        return LsScanProduct.Unknown;
-    }
-  }
-
-  private mapDiagnosticToIssue(diagnostic: any): Issue<T> {
-    return {
-      id: diagnostic.data.id,
-      title: diagnostic.data.title,
-      severity: diagnostic.data.severity,
-      filePath: diagnostic.data.filePath,
-      additionalData: diagnostic.data.additionalData,
-      isIgnored: diagnostic.data.isIgnored,
-    };
-  }
 }
