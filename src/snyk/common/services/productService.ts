@@ -1,11 +1,10 @@
-import * as vscode from 'vscode';
 import { Subject, Subscription } from 'rxjs';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, LsScanProduct, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
+import { Issue, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from '../services/viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
