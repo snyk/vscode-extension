@@ -56,7 +56,9 @@ suite('Product Service', () => {
       new WorkspaceTrust(),
       ls,
       {} as IVSCodeLanguages,
-      {} as IDiagnosticsIssueProvider<ProductData>,
+      {
+        getIssuesFromDiagnostics: () => [],
+      } as IDiagnosticsIssueProvider<ProductData>,
       new LoggerMock(),
     );
   });

@@ -44,9 +44,7 @@ suite('OSS Service', () => {
       {
         registerCodeActionsProvider: sinon.fake(),
       } as unknown as IVSCodeLanguages,
-      {
-
-      } as unknown as IDiagnosticsIssueProvider<OssIssueData>,
+      {} as unknown as IDiagnosticsIssueProvider<OssIssueData>,
       new LoggerMock(),
     );
   });
