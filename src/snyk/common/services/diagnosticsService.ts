@@ -4,8 +4,8 @@ import { Issue, LsScanProduct, ScanProduct } from '../languageServer/types';
 // This is a workaround until the LanguageClient package adds data to the Diagnostic type
 // according to https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic
 // Since 3.16 the property data was introduced
-class Diagnostic316 extends vscode.Diagnostic {
-  data?: any;
+class Diagnostic316<T> extends vscode.Diagnostic {
+  data: Issue<T>;
 }
 
 export interface IDiagnosticsIssueProvider<T> {
@@ -21,11 +21,11 @@ export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T>
     // Also filter only when diagnostic.data exists
     const filteredDiagnostics = allDiagnostics.flatMap(([_, diagnostics]) => {
       return diagnostics.filter(
-        (diagnostic): diagnostic is Diagnostic316 =>
+        (diagnostic): diagnostic is Diagnostic316<T> =>
           diagnostic.source === diagnosticsSource && diagnostic.hasOwnProperty('data'),
       );
     });
-    const issues = filteredDiagnostics.map(diagnostic => diagnostic.data as Issue<T>);
+    const issues = filteredDiagnostics.map(diagnostic => diagnostic.data);
     return issues;
   }
 
