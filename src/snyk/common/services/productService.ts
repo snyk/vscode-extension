@@ -12,6 +12,7 @@ import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeLanguages } from '../vscode/languages';
 import { Disposable } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { IDiagnosticsIssueProvider } from './diagnosticsService';
 
 export type WorkspaceFolderResult<T> = Issue<T>[] | Error;
 export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder
@@ -50,6 +51,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
     readonly languages: IVSCodeLanguages,
+    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<T>,
     private readonly logger: ILog,
   ) {
     super();
@@ -166,7 +168,8 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     this.runningScanCount--;
 
     if (scanMsg.status == ScanStatus.Success) {
-      this._result.set(scanMsg.folderPath, scanMsg.issues);
+      const issues = this.diagnosticsIssueProvider.getIssuesFromDiagnostics(scanMsg.product);
+      this._result.set(scanMsg.folderPath, issues);
     } else {
       this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
     }

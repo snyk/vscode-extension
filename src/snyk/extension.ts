@@ -76,6 +76,8 @@ import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabil
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
+import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
+import { CodeIssueData, IacIssueData, OssIssueData, ScanProduct } from './common/languageServer/types';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -183,6 +185,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
+      new DiagnosticsIssueProvider<CodeIssueData>(),
       Logger,
     );
 
@@ -205,6 +208,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
+      new DiagnosticsIssueProvider<OssIssueData>(),
       Logger,
     );
 
@@ -227,6 +231,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
+      new DiagnosticsIssueProvider<IacIssueData>(),
       Logger,
     );
 

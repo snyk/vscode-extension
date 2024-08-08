@@ -1,6 +1,9 @@
 # Snyk Security Changelog
 
-## [2.17.0]
+## [2.16.2]
+- updated the language server protocol version to 14 to support new communication model.
+
+## [2.16.1]
 - updated the language server protocol version to 13 to support delta findings.
 - added setting for choosing authentication method
 - renamed vulnerabilities to issues
