@@ -125,6 +125,7 @@ export type IacIssueData = {
   path?: string[];
   resolve?: string;
   references?: string[];
+  details: string;
 };
 
 export type AutofixUnifiedDiffSuggestion = {

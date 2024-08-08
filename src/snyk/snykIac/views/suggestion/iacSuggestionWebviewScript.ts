@@ -26,6 +26,7 @@
     path?: string[];
     resolve?: string;
     references?: string[];
+    details: string;
   };
 
   let issue = {} as ConfigurationIssue;
