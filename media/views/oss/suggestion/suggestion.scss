@@ -22,7 +22,7 @@
 }
 
 .delimiter {
-  border-right:1px solid var(--vscode-input-border);
+  border-right: 1px solid var(--vscode-input-border);
 }
 
 .vulnerability-overview pre {
@@ -36,4 +36,14 @@
   color: var(--vscode-foreground);
   font-size: var(--vscode-editor-font-size);
   font-family: var(--vscode-editor-font-family);
+}
+
+/* High-contrast dark mode */
+.vscode-high-contrast:not(.vscode-high-contrast-light) .vulnerability-overview code {
+  color: var(--vscode-editor-background);
+}
+
+/* High-contrast light mode */
+.vscode-high-contrast.vscode-high-contrast-light .vulnerability-overview code {
+  color: var(--vscode-editor-background);
 }

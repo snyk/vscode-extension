@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.16.3]
+- fix readability of `code` elements within the **overview** section when using high-contrast themes (both dark and light). Text color now matches the background.
+
 ## [2.16.2]
 - updated the language server protocol version to 14 to support new communication model.
 
