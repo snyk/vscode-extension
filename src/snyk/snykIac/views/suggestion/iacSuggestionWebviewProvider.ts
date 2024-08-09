@@ -64,9 +64,9 @@ export class IacSuggestionWebviewProvider
         this.registerListeners();
       }
 
-      const detailHtmlFromLS = issue.additionalData.details;
-      if (detailHtmlFromLS) {
-        this.panel.webview.html = this.getHtmlFromLanguageServer(detailHtmlFromLS);
+      const customUIContent = issue.additionalData.customUIContent;
+      if (customUIContent) {
+        this.panel.webview.html = this.getHtmlFromLanguageServer(customUIContent);
       } else {
         this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
       }
