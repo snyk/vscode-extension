@@ -75,11 +75,15 @@ export class AuthenticationService implements IAuthenticationService {
         oauthToken.access_token.length > 0 &&
         Date.parse(oauthToken.expiry) > Date.now() &&
         oauthToken.refresh_token.length > 0;
-      this.logger.debug(`Token ${token} parsed`);
+      this.logger.debug(`Token ${this.maskToken(token)} parsed`);
     } catch (e) {
-      this.logger.warn(`Token ${token} is not a valid uuid or json string: ${e}`);
+      this.logger.warn(`Token ${this.maskToken(token)} is not a valid uuid or json string: ${e}`);
     }
     return valid;
+  }
+
+  private maskToken(token: string): string {
+    return `${token.slice(0, 4)}****${token.slice(-4)}`;
   }
 
   async updateToken(token: string): Promise<void> {
