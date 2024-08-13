@@ -12,6 +12,7 @@ import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { messages as errorMessages } from '../../messages/error';
+import { readFileSync } from 'fs';
 // import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 // import { IssueUtils } from '../../utils/issueUtils';
 // import { ICodeSuggestionWebviewProvider } from '../interfaces';
@@ -63,7 +64,13 @@ export class IacSuggestionWebviewProvider
         this.registerListeners();
       }
 
-      this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+      const customUIContent = issue.additionalData.customUIContent;
+      if (customUIContent) {
+        this.panel.webview.html = this.getHtmlFromLanguageServer(customUIContent);
+      } else {
+        this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+      }
+
       this.panel.iconPath = vscode.Uri.joinPath(
         vscode.Uri.file(this.context.extensionPath),
         'media',
@@ -77,6 +84,30 @@ export class IacSuggestionWebviewProvider
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
+  }
+
+  private getHtmlFromLanguageServer(html: string): string {
+    const nonce = getNonce();
+    const ideStylePath = vscode.Uri.joinPath(
+      vscode.Uri.file(this.context.extensionPath),
+      'media',
+      'views',
+      'snykCode', // TODO: check with design
+      'suggestion',
+      'suggestionLS.css',
+    );
+
+    const ideStyle = readFileSync(ideStylePath.fsPath, 'utf8');
+    // nonce-ideNonce is a placeholder defined in the Language Server
+    // to be replaced with the local nonce in the <meta /> tag.
+    html = html.replace(/nonce-ideNonce/g, `nonce-${nonce}`);
+    // data-ide-style is a placeholder defined in the Language Server
+    // to be replaced with the custom IDE styles.
+    html = html.replace(
+      '<style nonce="ideNonce" data-ide-style></style>',
+      `<style nonce="${nonce}">${ideStyle}</style>`,
+    );
+    return html;
   }
 
   protected registerListeners(): void {

@@ -525,7 +525,7 @@
     "@deepcode/dcignore": "^1.0.4",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.19.7",
-    "axios": "^1.7.2",
+    "axios": "^1.7.3",
     "diff": "^5.2.0",
     "glob": "^9.3.5",
     "he": "^1.2.0",
