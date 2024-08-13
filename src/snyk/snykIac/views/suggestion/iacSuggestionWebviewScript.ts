@@ -26,6 +26,7 @@
     path?: string[];
     resolve?: string;
     references?: string[];
+    customUIContent: string;
   };
 
   let issue = {} as ConfigurationIssue;
