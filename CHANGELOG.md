@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.17.0]
+- render IaC via Language Server
+
 ## [2.16.3]
 - fix readability of `code` elements within the **overview** section when using high-contrast themes (both dark and light). Text color now matches the background.
 
