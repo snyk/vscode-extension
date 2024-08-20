@@ -2,38 +2,42 @@
 @import '../../common/webview';
 
 body {
-    position: relative;
-    display: inline-flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    font-size: 1.4rem;
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+section {
+  padding: 20px 0;
 }
 
 .severity-title {
-    font-size: 1.6rem;
-    font-weight: 500;
-    line-height: 2.4rem;
-    text-transform: capitalize;
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 2.4rem;
+  text-transform: capitalize;
 }
 
 .data-flow-clickable-row {
-    color: var(--vscode-textLink-foreground);
+  color: var(--vscode-textLink-foreground);
 }
 
 .tab-item {
-    color: var(--vscode-panelTitle-inactiveForeground);
-    border-bottom: 1px solid transparent;
+  color: var(--vscode-panelTitle-inactiveForeground);
+  border-bottom: 1px solid transparent;
 }
 
 .tab-item-icon path {
-    fill: var(--vscode-foreground);
+  fill: var(--vscode-foreground);
 }
 
 .tab-item.is-selected {
-    color: var(--vscode-foreground);
-    border-bottom: 3px solid var(--vscode-focusBorder);
+  color: var(--vscode-foreground);
+  border-bottom: 3px solid var(--vscode-focusBorder);
 }
 
 .ignore-details-header,
@@ -47,14 +51,14 @@ body {
 .data-flow-clickable-row,
 .data-flow-delimiter,
 .data-flow-text {
-    background-color: transparent;
-    border-color: transparent;
-    padding-top: 0px;
-    padding-bottom: 0px;
+  background-color: transparent;
+  border-color: transparent;
+  padding-top: 0px;
+  padding-bottom: 0px;
 }
 
 .data-flow-text {
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .ignore-details-tab,
@@ -64,68 +68,68 @@ body {
 }
 
 .example {
-    border: 1px solid var(--vscode-input-border);
-    background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  background-color: var(--vscode-editor-background);
 }
 
 .example-line-number,
 .example-line > code {
-    color: var(--vscode-editor-foreground);
+  color: var(--vscode-editor-foreground);
 }
 
 .example-line > code {
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .example-line.added {
-    background-color: rgb(204, 255, 216);
+  background-color: rgb(204, 255, 216);
 }
 
 .example-line.removed {
-    background-color: rgb(255, 215, 213);
+  background-color: rgb(255, 215, 213);
 }
 
 .vscode-dark .example-line.removed {
-    background-color: rgba(84, 36, 38, 1);
-    color: #fff;
+  background-color: rgba(84, 36, 38, 1);
+  color: #fff;
 }
 
 .vscode-dark .example-line.added {
-    background-color: rgba(28, 68, 40, 1);
-    color: #fff;
+  background-color: rgba(28, 68, 40, 1);
+  color: #fff;
 }
 
-.vscode-dark .example-line.added>code {
-    color: #fff;
-    background-color: transparent;
+.vscode-dark .example-line.added > code {
+  color: #fff;
+  background-color: transparent;
 }
 
-.vscode-dark .example-line.removed>code {
-    color: #fff;
-    background-color: transparent;
+.vscode-dark .example-line.removed > code {
+  color: #fff;
+  background-color: transparent;
 }
 
 .vscode-high-contrast:not(.vscode-high-contrast-light) .example-line.removed {
-    background-color: #542426;
-    color: #fff;
+  background-color: #542426;
+  color: #fff;
 }
 
 .vscode-dark .added,
 .vscode-high-contrast:not(.vscode-high-contrast-light) .example-line.added {
-    background-color: #1C4428;
-    color: #fff;
+  background-color: #1c4428;
+  color: #fff;
 }
 
 .ignore-action-container {
-    background-color: var(--vscode-editor-background);
-    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.075));
-    box-shadow: 0 -1px 3px rgba(0, 0, 0, .05);
-    border-top: 1px solid var(--vscode-input-border);
+  background-color: var(--vscode-editor-background);
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.075));
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--vscode-input-border);
 }
 
 .ignore-button.secondary {
-    border: 1px solid var(--vscode-textLink-foreground);
-    color: var(--vscode-textLink-foreground);
+  border: 1px solid var(--vscode-textLink-foreground);
+  color: var(--vscode-textLink-foreground);
 }
 
 .ignore-button.secondary:hover,
@@ -136,7 +140,7 @@ body {
 }
 
 .sn-fix-wrapper {
-    background-color: var(--vscode-editor-background);
+  background-color: var(--vscode-editor-background);
 }
 
 .vscode-dark .light-only,

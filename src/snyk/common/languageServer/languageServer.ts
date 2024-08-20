@@ -5,6 +5,7 @@ import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CLI_PATH,
+  SNYK_DIAGNOSTICS_OVERVIEW,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -24,6 +25,11 @@ import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+
+type DiagnosticOverview = {
+  product: 'oss' | 'code' | 'iac';
+  html: string;
+};
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -178,6 +184,10 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
+    });
+
+    client.onNotification(SNYK_DIAGNOSTICS_OVERVIEW, (diagnosticOverview: DiagnosticOverview) => {
+      this.logger.info(`Diagnostics overview for ${diagnosticOverview.product}: ${diagnosticOverview.html}`);
     });
   }
 
