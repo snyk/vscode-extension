@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.18.0]
+- Added base branch selection for IaC and OSS
+
 ## [2.17.0]
 - render IaC via Language Server
 

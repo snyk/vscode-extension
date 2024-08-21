@@ -180,10 +180,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   getBaseBranch(folderPath: string): TreeNode | undefined {
-    const isSnykCodeProduct = (this.productService as ProductService<T>).getSnykProductType() === ScanProduct.Code;
-    if (!isSnykCodeProduct) {
-      return;
-    }
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
 
@@ -318,7 +314,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return nodes;
   }
 
-  private addBaseBranchNode(baseBranchNode: TreeNode | undefined, nodes: TreeNode[]) {
+  addBaseBranchNode(baseBranchNode: TreeNode | undefined, nodes: TreeNode[]) {
     if (!baseBranchNode) {
       return;
     }
