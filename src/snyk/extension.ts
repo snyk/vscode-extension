@@ -309,6 +309,11 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: ossIssueProvider,
     });
 
+    // Example: Setting a badge on the Snyk icon in the activity bar
+    ossSecurityTree.badge = {
+      value: 42,
+      tooltip: `42 issues found`,
+    };
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
