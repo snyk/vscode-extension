@@ -33,6 +33,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
+  SNYK_VIEW_DIAGNOSTICS_OVERVIEW,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -78,9 +79,15 @@ import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCo
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
+import { SnykDiagnosticsWebviewViewProvider } from './common/views/diagnosticsOverviewWebviewProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
+    const diagnosticsOverviewWebviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
+    vscodeContext.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(SNYK_VIEW_DIAGNOSTICS_OVERVIEW, diagnosticsOverviewWebviewProvider),
+    );
+
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
 
@@ -309,11 +316,6 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: ossIssueProvider,
     });
 
-    // Example: Setting a badge on the Snyk icon in the activity bar
-    ossSecurityTree.badge = {
-      value: 42,
-      tooltip: `42 issues found`,
-    };
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,

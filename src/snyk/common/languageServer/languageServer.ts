@@ -25,6 +25,7 @@ import { LsExecutable } from './lsExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+import { SnykDiagnosticsWebviewViewProvider } from '../views/diagnosticsOverviewWebviewProvider';
 
 type DiagnosticOverview = {
   product: 'oss' | 'code' | 'iac';
@@ -188,6 +189,8 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_DIAGNOSTICS_OVERVIEW, (diagnosticOverview: DiagnosticOverview) => {
       this.logger.info(`Diagnostics overview for ${diagnosticOverview.product}: ${diagnosticOverview.html}`);
+      const diagnosticsOverviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
+      diagnosticsOverviewProvider.updateWebviewContent(diagnosticOverview.html);
     });
   }
 
