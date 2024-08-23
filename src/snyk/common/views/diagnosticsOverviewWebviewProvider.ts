@@ -4,6 +4,7 @@ export type DiagnosticsOverview = {
   product: 'oss' | 'code' | 'iac';
   html: string;
   folderPath: string;
+  folderHash: string;
 };
 
 export class SnykDiagnosticsWebviewViewProvider implements vscode.WebviewViewProvider {

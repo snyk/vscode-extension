@@ -26,11 +26,7 @@ import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { SnykDiagnosticsWebviewViewProvider } from '../views/diagnosticsOverviewWebviewProvider';
-
-type DiagnosticOverview = {
-  product: 'oss' | 'code' | 'iac';
-  html: string;
-};
+import type { DiagnosticsOverview } from '../views/diagnosticsOverviewWebviewProvider';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -187,7 +183,7 @@ export class LanguageServer implements ILanguageServer {
       this.scan$.next(scan);
     });
 
-    client.onNotification(SNYK_DIAGNOSTICS_OVERVIEW, (diagnosticOverview: DiagnosticOverview) => {
+    client.onNotification(SNYK_DIAGNOSTICS_OVERVIEW, (diagnosticOverview: DiagnosticsOverview) => {
       this.logger.info(`Diagnostics overview for ${diagnosticOverview.product}: ${diagnosticOverview.html}`);
       const diagnosticsOverviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
       diagnosticsOverviewProvider.updateWebviewContent(diagnosticOverview.html);
