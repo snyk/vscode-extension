@@ -310,11 +310,26 @@
           "id": "snyk",
           "title": "Snyk",
           "icon": "media/images/snyk_extension_icon_new.svg"
+        },
+        {
+          "id": "diagnosticsOverview",
+          "title": "Diagnostics Overview",
+          "icon": "$(gear)"
         }
       ]
     },
     "views": {
       "snyk": [
+        {
+          "type": "webview",
+          "id": "snyk.views.diagnosticsOverview",
+          "name": "Diagnostics Overview",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error",
+          "contextualTitle": "Diagnostics Overview Tree View",
+          "icon": "$(gear)",
+          "initialSize": 6,
+          "visibility": "visible"
+        },
         {
           "id": "snyk.views.welcome",
           "name": "Snyk",

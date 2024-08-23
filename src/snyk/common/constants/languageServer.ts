@@ -13,3 +13,4 @@ export const SNYK_CLI_PATH = '$/snyk.isAvailableCli';
 export const SNYK_ADD_TRUSTED_FOLDERS = '$/snyk.addTrustedFolders';
 export const SNYK_SCAN = '$/snyk.scan';
 export const SNYK_FOLDERCONFIG = '$/snyk.folderConfigs';
+export const SNYK_DIAGNOSTICS_OVERVIEW = '$/snyk.diagnosticsOverview';

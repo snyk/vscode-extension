@@ -10,6 +10,7 @@ export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
 export const SNYK_VIEW_SUGGESTION_IAC = 'snyk.views.suggestion.iac';
 export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
+export const SNYK_VIEW_DIAGNOSTICS_OVERVIEW = 'snyk.views.diagnosticsOverview';
 
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
