@@ -1,18 +1,18 @@
-import { Subject, Subscription } from 'rxjs';
-import { AnalysisStatusProvider } from '../analysis/statusProvider';
-import { IConfiguration } from '../configuration/configuration';
-import { IWorkspaceTrust } from '../configuration/trustedFolders';
-import { CodeActionsProvider } from '../editor/codeActionsProvider';
-import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
-import { ILog } from '../logger/interfaces';
-import { IViewManagerService } from '../services/viewManagerService';
-import { IProductWebviewProvider } from '../views/webviewProvider';
-import { ExtensionContext } from '../vscode/extensionContext';
-import { IVSCodeLanguages } from '../vscode/languages';
-import { Disposable } from '../vscode/types';
-import { IVSCodeWorkspace } from '../vscode/workspace';
-import { IDiagnosticsIssueProvider } from './diagnosticsIssueProvider';
+import {Subject, Subscription} from 'rxjs';
+import {AnalysisStatusProvider} from '../analysis/statusProvider';
+import {IConfiguration} from '../configuration/configuration';
+import {IWorkspaceTrust} from '../configuration/trustedFolders';
+import {CodeActionsProvider} from '../editor/codeActionsProvider';
+import {ILanguageServer} from '../languageServer/languageServer';
+import {Issue, Scan, ScanProduct, ScanStatus} from '../languageServer/types';
+import {ILog} from '../logger/interfaces';
+import {IViewManagerService} from './viewManagerService';
+import {IProductWebviewProvider} from '../views/webviewProvider';
+import {ExtensionContext} from '../vscode/extensionContext';
+import {IVSCodeLanguages} from '../vscode/languages';
+import {Disposable} from '../vscode/types';
+import {IVSCodeWorkspace} from '../vscode/workspace';
+import {IDiagnosticsIssueProvider} from './diagnosticsIssueProvider';
 
 export type WorkspaceFolderResult<T> = Issue<T>[] | Error;
 export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder

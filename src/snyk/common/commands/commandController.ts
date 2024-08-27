@@ -17,7 +17,7 @@ import {
 import { COMMAND_DEBOUNCE_INTERVAL, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
-import {CodeIssueData, IacIssueData, OssIssueData} from '../languageServer/types';
+import {CodeIssueData, IacIssueData} from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
