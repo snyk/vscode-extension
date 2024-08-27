@@ -17,7 +17,7 @@ import {
 import { COMMAND_DEBOUNCE_INTERVAL, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { CodeIssueData, IacIssueData } from '../languageServer/types';
+import {CodeIssueData, IacIssueData, OssIssueData} from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
@@ -29,6 +29,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
 import { IConfiguration } from '../configuration/configuration';
+import {IDiagnosticsIssueProvider} from "../services/diagnosticsIssueProvider";
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -47,7 +48,8 @@ export class CommandController {
     private logger: ILog,
     private configuration: IConfiguration,
     private folderConfigs: IFolderConfigs,
-  ) {}
+    private diagnosticsProvider: IDiagnosticsIssueProvider,
+    ) {}
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
@@ -157,6 +159,7 @@ export class CommandController {
 
   showLsOutputChannel(): void {
     // To get an instance of an OutputChannel use createOutputChannel.
+
     return this.languageServer.showOutputChannel();
   }
 

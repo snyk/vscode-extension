@@ -12,7 +12,7 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { IacCodeActionsProvider } from './codeActions/iacCodeActionsProvider';
 import { IIacSuggestionWebviewProvider } from './views/interfaces';
-import { IDiagnosticsIssueProvider } from '../common/services/diagnosticsService';
+import { IDiagnosticsIssueProvider } from '../common/services/diagnosticsIssueProvider';
 
 export class IacService extends ProductService<IacIssueData> {
   public readonly productType = ScanProduct.InfrastructureAsCode;
@@ -28,7 +28,7 @@ export class IacService extends ProductService<IacIssueData> {
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
     languages: IVSCodeLanguages,
-    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<IacIssueData>,
+    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider,
     logger: ILog,
   ) {
     super(

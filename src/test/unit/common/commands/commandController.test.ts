@@ -15,6 +15,7 @@ import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
+import {IDiagnosticsIssueProvider} from "../../../../snyk/common/services/diagnosticsIssueProvider";
 
 suite('CommandController', () => {
   const sleep = util.promisify(setTimeout);
@@ -22,21 +23,18 @@ suite('CommandController', () => {
   let controller: CommandController;
 
   setup(() => {
-    controller = new CommandController(
-      {} as IOpenerService,
-      {} as IAuthenticationService,
+    controller = new CommandController({} as IOpenerService, {} as IAuthenticationService,
       {} as IProductService<CodeIssueData>,
       {} as IProductService<IacIssueData>,
       {} as OssService,
       {} as ScanModeService,
       {} as IVSCodeWorkspace,
-      {} as IVSCodeCommands,
-      windowMock,
+      {} as IVSCodeCommands, windowMock,
       new LanguageServerMock(),
       new LoggerMock(),
       {} as IConfiguration,
       {} as IFolderConfigs,
-    );
+      {} as IDiagnosticsIssueProvider);
   });
 
   test('Executes debounced command when larger than debounce pause', async () => {

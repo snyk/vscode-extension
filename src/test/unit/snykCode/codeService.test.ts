@@ -14,7 +14,7 @@ import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/int
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { languagesMock } from '../mocks/languages.mock';
 import { LoggerMock } from '../mocks/logger.mock';
-import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsService';
+import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsIssueProvider';
 
 suite('Code Service', () => {
   let ls: ILanguageServer;
@@ -44,7 +44,7 @@ suite('Code Service', () => {
       new WorkspaceTrust(),
       ls,
       languagesMock,
-      {} as IDiagnosticsIssueProvider<CodeIssueData>,
+      {} as IDiagnosticsIssueProvider,
       new LoggerMock(),
     );
   });
