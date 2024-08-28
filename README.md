@@ -29,12 +29,11 @@ This page explains the installation of the Visual Studio Code extension. **After
 
 ## Supported languages, package managers, and frameworks
 
-Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go, Ruby, Python, Ruby, PHP, Scala, Swift, Objective-C, Kubernetes, Terraform, CloudFormation, Azure Resource Manager (ARM)
+Snyk Open Source and Snyk Code support a wide range of package managers, programming languages, and software frameworks.&#x20;
 
-* For Snyk Open Source, the VS Code extension supports all the languages and package managers supported by Snyk Open Source and the CLI.
-* For Snyk Code, the VS Code extension supports all the languages and frameworks supported by Snyk Code. Before scanning your repositories with Snyk Code, ensure you have [enabled Snyk Code](../../../scan-with-snyk/snyk-code/configure-snyk-code.md).&#x20;
+For specific details, see [Supported languages, package managers, and frameworks](https://docs.snyk.io/supported-languages-package-managers-and-frameworks).
 
-See [Supported languages and frameworks](https://docs.snyk.io/scan-applications/supported-languages-and-frameworks) for more details.
+Note that the list evolves continually, as Snyk adds new capabilities to support the latest technology stack.
 
 ## Supported operating systems and architecture
 
@@ -50,7 +49,7 @@ You can use the Snyk Visual Studio Code extension in the following environments:
 
 ## Install the extension
 
-The Snyk Visual Studio Code extension is available for installation on the [Visual Studio code marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner).
+The Snyk Visual Studio Code extension is available for installation on the [Visual Studio Code marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner).
 
 Follow these steps to install:
 
