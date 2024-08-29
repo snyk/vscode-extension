@@ -14,7 +14,7 @@ import { IOssSuggestionWebviewProvider } from '../../../snyk/snykOss/interfaces'
 import { OssService } from '../../../snyk/snykOss/ossService';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { LoggerMock } from '../mocks/logger.mock';
-import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsIssueProvider';
+import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsService';
 
 suite('OSS Service', () => {
   let ls: ILanguageServer;
@@ -44,7 +44,7 @@ suite('OSS Service', () => {
       {
         registerCodeActionsProvider: sinon.fake(),
       } as unknown as IVSCodeLanguages,
-      {} as unknown as IDiagnosticsIssueProvider,
+      {} as unknown as IDiagnosticsIssueProvider<OssIssueData>,
       new LoggerMock(),
     );
   });

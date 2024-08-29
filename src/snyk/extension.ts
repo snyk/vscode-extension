@@ -5,7 +5,6 @@ import { AuthenticationService } from './base/services/authenticationService';
 import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
-import { messages } from './cli/messages/messages';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
@@ -77,7 +76,8 @@ import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabil
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
-import { DiagnosticsIssueProvider } from './common/services/diagnosticsIssueProvider';
+import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
+import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -126,7 +126,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
-    const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
 
     const languageClientAdapter = new LanguageClientAdapter();
     this.authService = new AuthenticationService(
@@ -186,7 +185,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
-      diagnosticsIssueProvider,
+      new DiagnosticsIssueProvider<CodeIssueData>(),
       Logger,
     );
 
@@ -209,7 +208,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
-      diagnosticsIssueProvider,
+      new DiagnosticsIssueProvider<OssIssueData>(),
       Logger,
     );
 
@@ -232,7 +231,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
-      diagnosticsIssueProvider,
+      new DiagnosticsIssueProvider<IacIssueData>(),
       Logger,
     );
 
@@ -250,7 +249,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       configuration,
       this.folderConfigs,
-      diagnosticsIssueProvider,
     );
     this.registerCommands(vscodeContext);
 

@@ -12,7 +12,7 @@ import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { IOssSuggestionWebviewProvider } from './interfaces';
 import { OssCodeActionsProvider } from './providers/ossCodeActionsProvider';
-import { IDiagnosticsIssueProvider } from '../common/services/diagnosticsIssueProvider';
+import { IDiagnosticsIssueProvider } from '../common/services/diagnosticsService';
 
 export class OssService extends ProductService<OssIssueData> {
   public readonly productType = ScanProduct.OpenSource;
@@ -28,7 +28,7 @@ export class OssService extends ProductService<OssIssueData> {
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
     languages: IVSCodeLanguages,
-    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider,
+    readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<OssIssueData>,
     logger: ILog,
   ) {
     super(

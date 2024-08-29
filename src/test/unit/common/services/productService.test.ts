@@ -13,12 +13,11 @@ import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
-import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsIssueProvider';
+import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 type ProductData = {
   productName: string;
 };
-
 class MockProductService extends ProductService<ProductData> {
   productType: ScanProduct;
 
@@ -59,8 +58,7 @@ suite('Product Service', () => {
       {} as IVSCodeLanguages,
       {
         getIssuesFromDiagnostics: () => [],
-        getDiagnostics: () => [],
-      } as IDiagnosticsIssueProvider,
+      } as IDiagnosticsIssueProvider<ProductData>,
       new LoggerMock(),
     );
   });

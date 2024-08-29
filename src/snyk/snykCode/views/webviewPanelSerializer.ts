@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { WebviewProvider } from '../../../snyk/common/views/webviewProvider';
-import { Logger } from '../../common/logger/logger';
 
 export class WebviewPanelSerializer<Provider extends WebviewProvider<State>, State>
   implements vscode.WebviewPanelSerializer

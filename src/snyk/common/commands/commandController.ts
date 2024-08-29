@@ -29,7 +29,6 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
 import { IConfiguration } from '../configuration/configuration';
-import { IDiagnosticsIssueProvider } from '../services/diagnosticsIssueProvider';
 
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
@@ -48,7 +47,6 @@ export class CommandController {
     private logger: ILog,
     private configuration: IConfiguration,
     private folderConfigs: IFolderConfigs,
-    private diagnosticsProvider: IDiagnosticsIssueProvider,
   ) {}
 
   openBrowser(url: string): unknown {
@@ -159,7 +157,6 @@ export class CommandController {
 
   showLsOutputChannel(): void {
     // To get an instance of an OutputChannel use createOutputChannel.
-
     return this.languageServer.showOutputChannel();
   }
 
