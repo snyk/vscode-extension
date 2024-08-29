@@ -20,7 +20,7 @@ import {
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_SET_BASE_BRANCH_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
-  SNYK_SETTINGS_COMMAND,
+  SNYK_SETTINGS_COMMAND, SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
@@ -408,7 +408,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      Logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(err)}`);
+      void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge)
     });
 
     return this.downloadService;
@@ -443,6 +443,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
         this.commandController.setBaseBranch(folderPath),
       ),
+      vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
+        let err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error
+        vscode.window.showErrorMessage(err.message)
+      })
     );
   }
 }
