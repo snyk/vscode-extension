@@ -2,8 +2,10 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * 2' # every Tuesday at 9 am UTC
+    branches:
+      - main
+  # schedule: TODO: align release schedule with CLI
+  #   - cron: '0 9 * * 2' # every Tuesday at 9 am UTC
 
 jobs:
   build:
