@@ -1,20 +1,20 @@
 import * as vscode from 'vscode';
-import {Issue, LsScanProduct, ScanProduct} from '../languageServer/types';
+import { CodeIssueData, IacIssueData, Issue, LsScanProduct, OssIssueData, ScanProduct } from '../languageServer/types';
 
 // This is a workaround until the LanguageClient package adds data to the Diagnostic type
 // according to https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic
 // Since 3.16 the property data was introduced
 class Diagnostic316 extends vscode.Diagnostic {
-  data: any
+  data: Issue<CodeIssueData | OssIssueData | IacIssueData>;
 }
 
 export interface IDiagnosticsIssueProvider {
-  getIssuesFromDiagnostics(product: ScanProduct): Issue<any>[];
+  getIssuesFromDiagnostics(product: ScanProduct): Issue<CodeIssueData | OssIssueData | IacIssueData>[];
 
   getDiagnostics(product: ScanProduct): Diagnostic316[];
 }
 
-export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider {
+export class DiagnosticsIssueProvider implements IDiagnosticsIssueProvider {
   getDiagnostics(product: ScanProduct): Diagnostic316[] {
     const allDiagnostics = vscode.languages.getDiagnostics();
     const diagnosticsSource = this.productToLsProduct(product);
@@ -22,15 +22,12 @@ export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider {
     // Filter and flatten the diagnostics list
     // Also filter only when diagnostic.data exists
     return allDiagnostics.flatMap(([_, diagnostics]) => {
-      return diagnostics.filter(
-        (diagnostic): diagnostic is Diagnostic316 =>
-          diagnostic.source === diagnosticsSource,
-      );
+      return diagnostics.filter((diagnostic): diagnostic is Diagnostic316 => diagnostic.source === diagnosticsSource);
     });
   }
 
-  getIssuesFromDiagnostics(product: ScanProduct): Issue<T>[] {
-    const filteredDiagnostics = this.getDiagnostics(product).filter((diagnostic) => diagnostic.data);
+  getIssuesFromDiagnostics(product: ScanProduct): Issue<CodeIssueData | OssIssueData | IacIssueData>[] {
+    const filteredDiagnostics = this.getDiagnostics(product).filter(diagnostic => diagnostic.data);
     return filteredDiagnostics.map(diagnostic => diagnostic.data);
   }
 

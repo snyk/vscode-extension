@@ -1,8 +1,8 @@
-import {ILoadingBadge} from '../../base/views/loadingBadge';
-import {SNYK_CONTEXT} from '../constants/views';
-import {ILog} from '../logger/interfaces';
-import {IContextService} from '../services/contextService';
-import {ErrorReporter, Tags} from './errorReporter';
+import { ILoadingBadge } from '../../base/views/loadingBadge';
+import { SNYK_CONTEXT } from '../constants/views';
+import { ILog } from '../logger/interfaces';
+import { IContextService } from '../services/contextService';
+import { ErrorReporter, Tags } from './errorReporter';
 
 /**
  * General error handler.

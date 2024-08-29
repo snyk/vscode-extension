@@ -1,19 +1,19 @@
-import {strictEqual} from 'assert';
-import {Subscription} from 'rxjs';
+import { strictEqual } from 'assert';
+import { Subscription } from 'rxjs';
 import sinon from 'sinon';
-import {IConfiguration} from '../../../../snyk/common/configuration/configuration';
-import {WorkspaceTrust} from '../../../../snyk/common/configuration/trustedFolders';
-import {ILanguageServer} from '../../../../snyk/common/languageServer/languageServer';
-import {Issue, Scan, ScanProduct, ScanStatus} from '../../../../snyk/common/languageServer/types';
-import {IProductService, ProductService} from '../../../../snyk/common/services/productService';
-import {IViewManagerService} from '../../../../snyk/common/services/viewManagerService';
-import {IProductWebviewProvider} from '../../../../snyk/common/views/webviewProvider';
-import {ExtensionContext} from '../../../../snyk/common/vscode/extensionContext';
-import {IVSCodeLanguages} from '../../../../snyk/common/vscode/languages';
-import {IVSCodeWorkspace} from '../../../../snyk/common/vscode/workspace';
-import {LanguageServerMock} from '../../mocks/languageServer.mock';
-import {LoggerMock} from '../../mocks/logger.mock';
-import {IDiagnosticsIssueProvider} from '../../../../snyk/common/services/diagnosticsIssueProvider';
+import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
+import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import { Issue, Scan, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
+import { IProductService, ProductService } from '../../../../snyk/common/services/productService';
+import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
+import { IProductWebviewProvider } from '../../../../snyk/common/views/webviewProvider';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
+import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+import { LanguageServerMock } from '../../mocks/languageServer.mock';
+import { LoggerMock } from '../../mocks/logger.mock';
+import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsIssueProvider';
 
 type ProductData = {
   productName: string;
