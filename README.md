@@ -57,7 +57,7 @@ Follow these steps to install:
 * Navigate to the [Snyk Extension on the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) and click **Install**.\
   For more information, see the [installation instructions](https://code.visualstudio.com/docs/editor/extension-marketplace#\_install-an-extension).
 * Configure the Snyk CLI (downloaded when the extension in installed); see [Visual Studio Code extension configuration](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-configuration).
-* Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-authentication). For additional information, including how to authenticate using your API token, see [Authenticate the CLI with your account](https://docs.snyk.io/snyk-cli/authenticate-the-cli-with-your-account).
+* Authenticate with Snyk; see [Visual Studio Code extension authentication](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/visual-studio-code-extension-authentication).
 * Navigate back to the IDE; the first scan starts automatically.
 
 ## Support
