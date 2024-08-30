@@ -1,5 +1,5 @@
 import { ILoadingBadge } from '../../base/views/loadingBadge';
-import { SNYK_CONTEXT, SNYK_ERROR_CODES } from '../constants/views';
+import { SNYK_CONTEXT } from '../constants/views';
 import { ILog } from '../logger/interfaces';
 import { IContextService } from '../services/contextService';
 import { ErrorReporter, Tags } from './errorReporter';
@@ -17,7 +17,7 @@ export class ErrorHandler {
     contextService: IContextService,
     loadingBadge: ILoadingBadge,
   ): Promise<void> {
-    await contextService.setContext(SNYK_CONTEXT.ERROR, SNYK_ERROR_CODES.BLOCKING);
+    await contextService.setContext(SNYK_CONTEXT.ERROR, error);
     loadingBadge.setLoadingBadge(true);
     ErrorHandler.handle(error, logger);
   }

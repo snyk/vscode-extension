@@ -16,6 +16,7 @@ export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 export const SNYK_SHOW_LS_OUTPUT_COMMAND = 'snyk.showLsOutputChannel';
+export const SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND = 'snyk.showErrorFromContext';
 export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
 export const SNYK_GET_SETTINGS_SAST_ENABLED = 'snyk.getSettingsSastEnabled';
 export const SNYK_SET_BASE_BRANCH_COMMAND = 'snyk.setBaseBranch';

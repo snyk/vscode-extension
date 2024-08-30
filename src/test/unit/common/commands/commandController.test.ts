@@ -3,7 +3,6 @@ import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { ScanModeService } from '../../../../snyk/base/services/scanModeService';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
-import { COMMAND_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
 import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IProductService } from '../../../../snyk/common/services/productService';

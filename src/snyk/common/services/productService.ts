@@ -6,7 +6,7 @@ import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { Issue, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
-import { IViewManagerService } from '../services/viewManagerService';
+import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeLanguages } from '../vscode/languages';
