@@ -184,9 +184,22 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_DIAGNOSTICS_OVERVIEW, (diagnosticOverview: DiagnosticsOverview) => {
-      this.logger.info(`Diagnostics overview for ${diagnosticOverview.product}: ${diagnosticOverview.html}`);
-      const diagnosticsOverviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
-      diagnosticsOverviewProvider.updateWebviewContent(diagnosticOverview.html);
+      void (async () => {
+        this.logger.info(`Diagnostics overview for ${diagnosticOverview.product}`);
+
+        const diagnosticsOverviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
+
+        if (!diagnosticsOverviewProvider) {
+          this.logger.error('Diagnostics Webview Provider was not initialized.');
+          return;
+        }
+
+        try {
+          await diagnosticsOverviewProvider.updateWebviewContent(diagnosticOverview.html);
+        } catch (error) {
+          this.logger.error('Failed to update diagnostics overview');
+        }
+      })();
     });
   }
 

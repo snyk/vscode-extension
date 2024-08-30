@@ -83,10 +83,16 @@ import { SnykDiagnosticsWebviewViewProvider } from './common/views/diagnosticsOv
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
-    const diagnosticsOverviewWebviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance();
-    vscodeContext.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(SNYK_VIEW_DIAGNOSTICS_OVERVIEW, diagnosticsOverviewWebviewProvider),
-    );
+    const diagnosticsOverviewWebviewProvider = SnykDiagnosticsWebviewViewProvider.getInstance(vscodeContext);
+    if (!diagnosticsOverviewWebviewProvider) {
+      console.log('Diagnostics Overview not initialized.');
+    } else {
+      vscodeContext.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(SNYK_VIEW_DIAGNOSTICS_OVERVIEW, diagnosticsOverviewWebviewProvider),
+      );
+    }
+
+    SnykDiagnosticsWebviewViewProvider.getInstance(vscodeContext);
 
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
