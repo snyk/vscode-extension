@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as vscode from 'vscode';
+import * as cheerio from 'cheerio';
 import path from 'path';
 
 const JsScriptPath = 'out/snyk/common/views/diagnosticsOverviewWebviewScript.js';
@@ -45,6 +46,12 @@ export class SnykDiagnosticsWebviewViewProvider implements vscode.WebviewViewPro
       html = html
         .replace(/data-ide-style><\/style>/, `data-ide-style></style>`) // Inject local CSS when needed like ${jsContent} below
         .replace(/class="ide-script"><\/script>/, `class="ide-script">${jsContent}</script>`);
+
+      // Load the modified HTML into Cheerio
+      const $ = cheerio.load(html);
+      const folderName = $('p.folder-name').text();
+      console.log(`Folder Name: ${folderName}`);
+
       this.webviewView.webview.html = html;
     }
   }
