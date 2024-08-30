@@ -27,10 +27,6 @@ export const SNYK_CONTEXT = {
   DELTA_FINDINGS_ENABLED: 'deltaFindingsEnabled',
 };
 
-export const SNYK_ERROR_CODES = {
-  BLOCKING: 'blocking',
-};
-
 export const SNYK_ANALYSIS_STATUS = {
   FILTERS: 'Supported extentions',
   COLLECTING: 'Collecting files',

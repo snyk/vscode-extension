@@ -5,7 +5,6 @@ import { AuthenticationService } from './base/services/authenticationService';
 import { ScanModeService } from './base/services/scanModeService';
 import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
-import { messages } from './cli/messages/messages';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
@@ -21,6 +20,7 @@ import {
   SNYK_SET_BASE_BRANCH_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_SETTINGS_COMMAND,
+  SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
@@ -77,7 +77,7 @@ import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvid
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
-import { CodeIssueData, IacIssueData, OssIssueData, ScanProduct } from './common/languageServer/types';
+import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -270,8 +270,8 @@ class SnykExtension extends SnykLib implements IExtension {
       this.folderConfigs,
     );
 
-    let securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
-    let codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
+    const securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
+    const codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
 
     const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
       treeDataProvider: codeSecurityIssueProvider,
@@ -409,7 +409,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   private initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      Logger.error(`${messages.lsDownloadFailed} ${ErrorHandler.stringifyError(err)}`);
+      void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
     });
 
     return this.downloadService;
@@ -444,6 +444,10 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
         this.commandController.setBaseBranch(folderPath),
       ),
+      vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
+        const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;
+        void vscode.window.showErrorMessage(err.message);
+      }),
     );
   }
 }
