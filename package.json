@@ -168,11 +168,26 @@
             "description": "Severity issues to display.",
             "scope": "window"
           },
+          "snyk.allIssuesVsNetNewIssues": {
+            "type": "string",
+            "default": "All issues",
+            "description": "Specifies whether to see all issues or only net new issues. Only applies to Code Security and Code Quality.",
+            "enum": [
+              "All issues",
+              "Net new issues"
+            ],
+            "enumDescriptions": [
+              "Shows all issues that have been identified, including both new and existing issues.",
+              "Shows only new issues that have been introduced in the latest scan, filtering out previously known issues."
+            ],
+            "markdownDescription": "Specifies whether to see all issues or only net new issues. Only applies to Code Security and Code Quality.\n\n",
+            "order": 6
+          },
           "snyk.advanced.additionalParameters": {
-            "order": 6,
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
-            "scope": "window"
+            "scope": "window",
+            "order": 7
           }
         }
       },
