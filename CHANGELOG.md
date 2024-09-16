@@ -1,10 +1,10 @@
 # Snyk Security Changelog
 
 ## [2.19.0]
-- Moved delta scan preview setting to settings page.
-
-## [2.18.0]
 - Added base branch selection for IaC and OSS
+
+## [2.18.2]
+- Update Language Server Protocol version to 15.
 
 ## [2.17.0]
 - render IaC via Language Server
