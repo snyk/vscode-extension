@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.19.1]
+- Update Language Server Protocol version to 15.
+
 ## [2.19.0]
 - Moved delta scan preview setting to settings page.
 
