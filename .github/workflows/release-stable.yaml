@@ -34,7 +34,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches: main,fix.*
+          release_branches: main,fix.*,chore.*
           default_bump: patch
 
       - name: Add Credentials
