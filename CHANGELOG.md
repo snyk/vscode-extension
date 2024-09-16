@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.19.0]
+- Update Language Server Protocol version to 15.
+
 ## [2.18.0]
 - Added base branch selection for IaC and OSS
 
