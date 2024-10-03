@@ -171,7 +171,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       const issues = this.diagnosticsIssueProvider.getIssuesFromDiagnostics(scanMsg.product);
       this._result.set(scanMsg.folderPath, issues);
     } else {
-      this._result.set(scanMsg.folderPath, new Error('Failed to analyze.'));
+      this._result.set(scanMsg.folderPath, new Error(scanMsg.errorMessage));
     }
 
     if (this.runningScanCount <= 0) {

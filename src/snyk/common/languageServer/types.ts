@@ -24,6 +24,7 @@ export type Scan<T> = {
   product: ScanProduct;
   status: ScanStatus;
   issues: Issue<T>[];
+  errorMessage: string;
 };
 
 export type Issue<T> = {

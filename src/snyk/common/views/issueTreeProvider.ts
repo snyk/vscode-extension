@@ -209,6 +209,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
+      if (folderResult instanceof Error && folderResult.message === 'repository does not exist') {
+        nodes.push(this.getFaultyRepositoryErrorTreeNode(folderName, folderResult.toString()));
+        continue;
+      }
+
       if (folderResult instanceof Error) {
         nodes.push(this.getErrorEncounteredTreeNode(folderName));
         continue;
