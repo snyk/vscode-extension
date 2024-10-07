@@ -171,7 +171,7 @@
           "snyk.allIssuesVsNetNewIssues": {
             "type": "string",
             "default": "All issues",
-            "description": "Specifies whether to see all issues or only net new issues. Only applies to Code Security and Code Quality.",
+            "description": "Specifies whether to see all issues or only net new issues. \nNet new issues returns the delta issues between the selected base branch and the local files. Only works in a git repository.\n\n",
             "enum": [
               "All issues",
               "Net new issues"
@@ -180,7 +180,7 @@
               "Shows all issues that have been identified, including both new and existing issues.",
               "Shows only new issues that have been introduced in the latest scan, filtering out previously known issues."
             ],
-            "markdownDescription": "Specifies whether to see all issues or only net new issues. Only applies to Code Security and Code Quality.\n\n",
+            "markdownDescription": "Specifies whether to see all issues or only net new issues. \nNet new issues returns the delta issues between the selected base branch and the local files. Only works in a git repository.\n\n",
             "order": 6
           },
           "snyk.advanced.additionalParameters": {

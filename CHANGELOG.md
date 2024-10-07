@@ -1,10 +1,8 @@
 # Snyk Security Changelog
 
-## [2.20.0]
-- new error message in UI when net new scan is done on an invalid repository. Net new scans only work on Git.
-
 ## [2.19.0]
 - Moved delta scan preview setting to settings page.
+- New error message in UI when net new scan is done on an invalid repository. Net new scans only work on Git.
 
 ## [2.18.2]
 - Update Language Server Protocol version to 15.
