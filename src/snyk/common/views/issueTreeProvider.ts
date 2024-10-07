@@ -1,7 +1,7 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity, ScanProduct } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, ScanProduct, LsErrorMessage } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService, ProductService } from '../../common/services/productService';
@@ -209,7 +209,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
-      if (folderResult instanceof Error && folderResult.message === 'repository does not exist') {
+      if (folderResult instanceof Error && folderResult.message === LsErrorMessage.repositoryInvalidError) {
         nodes.push(this.getFaultyRepositoryErrorTreeNode(folderName, folderResult.toString()));
         continue;
       }
