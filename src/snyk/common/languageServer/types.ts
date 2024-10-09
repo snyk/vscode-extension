@@ -11,8 +11,6 @@ export enum LsScanProduct {
   Unknown = '',
 }
 
-//export type InProgress = 'inProgress';
-
 export enum ScanStatus {
   InProgress = 'inProgress',
   Success = 'success',
