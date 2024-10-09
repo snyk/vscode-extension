@@ -59,6 +59,7 @@ suite('OSS Service', () => {
       folderPath: 'test/path',
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, true);
@@ -71,6 +72,7 @@ suite('OSS Service', () => {
       folderPath: 'test/path',
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);
