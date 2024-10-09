@@ -59,6 +59,7 @@ suite('Code Service', () => {
       folderPath: 'test/path',
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);

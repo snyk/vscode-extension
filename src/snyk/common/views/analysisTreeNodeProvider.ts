@@ -110,6 +110,21 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     });
   }
 
+  protected getFaultyRepositoryErrorTreeNode(scanPath?: string, errorMessage?: string): TreeNode {
+    return new TreeNode({
+      icon: NODE_ICONS.error,
+      text: scanPath ? path.basename(scanPath) : messages.scanFailed,
+      description: errorMessage,
+      internal: {
+        isError: true,
+      },
+      command: {
+        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
+        title: 'errorMessage',
+      },
+    });
+  }
+
   protected getNoWorkspaceTrustTreeNode(): TreeNode {
     return new TreeNode({
       text: messages.noWorkspaceTrust,

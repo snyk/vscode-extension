@@ -11,12 +11,14 @@ export enum LsScanProduct {
   Unknown = '',
 }
 
-export type InProgress = 'inProgress';
-
 export enum ScanStatus {
   InProgress = 'inProgress',
   Success = 'success',
   Error = 'error',
+}
+
+export enum LsErrorMessage {
+  repositoryInvalidError = 'repository does not exist',
 }
 
 export type Scan<T> = {
@@ -24,6 +26,7 @@ export type Scan<T> = {
   product: ScanProduct;
   status: ScanStatus;
   issues: Issue<T>[];
+  errorMessage: string;
 };
 
 export type Issue<T> = {
