@@ -163,7 +163,6 @@ declare const acquireVsCodeApi: any;
     | SetLessonMessage
     | GetLessonMessage;
 
-
   const vscode = acquireVsCodeApi();
 
   const elements = {
@@ -298,7 +297,7 @@ declare const acquireVsCodeApi: any;
     const diffSuggestion = suggestion.diffs[diffSelectedIndex];
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
-    const fixId = suggestion.id
+    const fixId = suggestion.id;
 
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',

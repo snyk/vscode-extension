@@ -306,7 +306,7 @@ export class CodeSuggestionWebviewProvider
           this.highlightAddedCode(filePath, patch);
           this.setupCloseOnSave(filePath);
 
-          vscode.commands.executeCommand(SNYK_CODE_SUBMIT_FIX_FEEDBACK, fixId, 'FIX_APPLIED');
+          await vscode.commands.executeCommand(SNYK_CODE_SUBMIT_FIX_FEEDBACK, fixId, 'FIX_APPLIED');
 
           break;
         }
