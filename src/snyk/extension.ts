@@ -94,12 +94,13 @@ class SnykExtension extends SnykLib implements IExtension {
 
     try {
       await this.initializeExtension(vscodeContext, snykConfiguration);
-      await this.configureGitHandlers();
+      this.configureGitHandlers();
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
   }
 
+  // @ts-nocheck: we use any to prevent loading types from external extension
   private configureGitHandlers(): void {
     // Get the Git extension
     const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
@@ -113,7 +114,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Check if there are any repositories
     const repositories = git?.repositories;
-
     if (!repositories || repositories.length === 0) {
       return;
     }
