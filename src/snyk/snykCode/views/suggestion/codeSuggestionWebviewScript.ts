@@ -113,6 +113,7 @@ declare const acquireVsCodeApi: any;
     args: {
       patch: string;
       filePath: string;
+      fixId: string;
     };
   };
 
@@ -154,13 +155,14 @@ declare const acquireVsCodeApi: any;
     | OpenBrowserMessage
     | IgnoreIssueMessage
     | GetAutofixDiffsMesssage
+    | SetAutofixDiffsMessage
+    | SetAutofixErrorMessage
     | ApplyGitDiffMessage
     | SetSuggestionMessage
     | GetSuggestionMessage
     | SetLessonMessage
-    | GetLessonMessage
-    | SetAutofixDiffsMessage
-    | SetAutofixErrorMessage;
+    | GetLessonMessage;
+
 
   const vscode = acquireVsCodeApi();
 
@@ -187,9 +189,9 @@ declare const acquireVsCodeApi: any;
     previousDiffElem: document.getElementById('previous-diff') as HTMLElement,
     diffSelectedIndexElem: document.getElementById('diff-counter') as HTMLElement,
 
+    generateAIFixButton: document.getElementById('generate-ai-fix') as HTMLElement,
     applyFixButton: document.getElementById('apply-fix') as HTMLElement,
     retryGenerateFixButton: document.getElementById('retry-generate-fix') as HTMLElement,
-    generateAIFixButton: document.getElementById('generate-ai-fix') as HTMLElement,
 
     fixAnalysisTabElem: document.getElementById('fix-analysis-tab') as HTMLElement,
     fixAnalysisContentElem: document.getElementById('fix-analysis-content') as HTMLElement,
@@ -296,10 +298,11 @@ declare const acquireVsCodeApi: any;
     const diffSuggestion = suggestion.diffs[diffSelectedIndex];
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+    const fixId = suggestion.id
 
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',
-      args: { filePath, patch },
+      args: { filePath, patch, fixId },
     };
     sendMessage(message);
   }

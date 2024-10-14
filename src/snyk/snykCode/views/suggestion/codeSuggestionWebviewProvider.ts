@@ -278,10 +278,16 @@ export class CodeSuggestionWebviewProvider
         }
 
         case 'applyGitDiff': {
-          const { patch, filePath } = message.args;
+          const { patch, filePath, fixId } = message.args;
 
           const fileContent = readFileSync(filePath, 'utf8');
           const patchedContent = applyPatch(fileContent, patch);
+
+          await vscode.commands.executeCommand(
+            SNYK_CODE_FIX_DIFFS_COMMAND,
+            fixId,
+            "FIX_APPLIED",
+          );
 
           if (!patchedContent) {
             throw Error('Failed to apply patch');

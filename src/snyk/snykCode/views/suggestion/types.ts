@@ -64,6 +64,7 @@ export type ApplyGitDiffMessage = {
   args: {
     patch: string;
     filePath: string;
+    fixId: string;
   };
 };
 

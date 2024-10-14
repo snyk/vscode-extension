@@ -86,6 +86,7 @@
     args: {
       patch: string;
       filePath: string;
+      fixId: string;
     };
   };
 
@@ -239,10 +240,11 @@
     const diffSuggestion = suggestion.diffs[diffSelectedIndex];
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+    const fixId = suggestion.id;
 
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',
-      args: { filePath, patch },
+      args: { filePath, patch, fixId },
     };
     sendMessage(message);
   }
