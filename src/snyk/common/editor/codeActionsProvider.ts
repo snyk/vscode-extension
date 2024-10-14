@@ -24,9 +24,7 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
       return undefined;
     }
 
-    for (const result of this.issues.entries()) {
-      const folderPath = result[0];
-      const issues = result[1];
+    for (const [folderPath, issues] of this.issues.entries()) {
       if (issues instanceof Error || !issues) {
         continue;
       }
@@ -36,10 +34,11 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
         continue;
       }
 
-      // returns list of actions, all new actions should be added to this list
+      // If an issue is found, return the actions
       return this.getActions(folderPath, document, issue, range);
     }
 
+    // If no issues were found after checking all entries, return undefined
     return undefined;
   }
 

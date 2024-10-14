@@ -16,6 +16,7 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
+import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -228,7 +229,7 @@ suite('Language Server', () => {
         enableTrustedFoldersFeature: 'true',
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
-        requiredProtocolVersion: '15',
+        requiredProtocolVersion: PROTOCOL_VERSION.toString(),
         scanningMode: 'auto',
         folderConfigs: [],
         authenticationMethod: 'oauth',
