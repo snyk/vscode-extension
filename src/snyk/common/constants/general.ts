@@ -9,3 +9,5 @@ export const COMMAND_DEBOUNCE_INTERVAL = 200; // 200 milliseconds
 export const DEFAULT_SCAN_DEBOUNCE_INTERVAL = 1000; // 1 second
 export const DEFAULT_LS_DEBOUNCE_INTERVAL = 1000; // 1 second
 export const REFRESH_VIEW_DEBOUNCE_INTERVAL = 200; // 200 milliseconds
+export const InMemory = 'inMemory';
+export const Persisted = 'persisted';

@@ -476,6 +476,11 @@
         "command": "snyk.showLsOutputChannel",
         "title": "Show Language Server Output Channel",
         "category": "Snyk"
+      },
+      {
+        "command": "snyk.clearPersistedCache",
+        "title": "Clear Persisted Cache",
+        "category": "Snyk"
       }
     ]
   },
