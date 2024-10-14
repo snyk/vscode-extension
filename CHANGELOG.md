@@ -5,6 +5,7 @@
 - New error message in UI when net new scan is done on an invalid repository. Net new scans only work on Git.
 - Clear in Memory cache when branch is changed.
 - Added Clear Persisted Cache command.
+- Add support for ai fix feedback analytic when pressing apply on a fix.
 
 ## [2.18.2]
 - Update Language Server Protocol version to 15.
