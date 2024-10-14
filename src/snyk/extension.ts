@@ -81,6 +81,7 @@ import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
+import { GitAPI, GitExtension, Repository } from './common/git';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -100,26 +101,25 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  // @ts-nocheck: we use any to prevent loading types from external extension
   private configureGitHandlers(): void {
     // Get the Git extension
-    const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+    const gitExtension = vscode.extensions.getExtension<GitExtension>('vscode.git')?.exports;
 
     if (!gitExtension) {
       return;
     }
 
     // Get the API from the Git extension
-    const git = gitExtension.getAPI(1);
+    const git: GitAPI = gitExtension.getAPI(1);
 
     // Check if there are any repositories
-    const repositories = git?.repositories;
+    const repositories: Repository[] = git?.repositories;
     if (!repositories || repositories.length === 0) {
       return;
     }
-    const previousBranches = new Map<any, string | undefined>();
+    const previousBranches = new Map<Repository, string | undefined>();
     // Register event listener for changes in each repository
-    repositories.forEach((repo: any) => {
+    repositories.forEach((repo: Repository) => {
       let previousBranch = repo.state.HEAD?.name;
       previousBranches.set(repo, previousBranch);
       repo.state.onDidChange(async () => {
