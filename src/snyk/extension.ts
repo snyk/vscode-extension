@@ -100,7 +100,7 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  async configureGitHandlers(): Promise<void> {
+  private configureGitHandlers(): void {
     // Get the Git extension
     const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 
@@ -463,7 +463,10 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
-      vscode.commands.registerCommand(SNYK_CLEAR_PERSISTED_CACHE_COMMAND, async () => await this.cacheService.clearCache("", Persisted)),
+      vscode.commands.registerCommand(
+        SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
+        async () => await this.cacheService.clearCache('', Persisted),
+      ),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),
