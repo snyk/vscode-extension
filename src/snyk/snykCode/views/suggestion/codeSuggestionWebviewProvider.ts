@@ -5,6 +5,7 @@ import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
   SNYK_CODE_FIX_DIFFS_COMMAND,
+  SNYK_CODE_SUBMIT_FIX_FEEDBACK,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -283,12 +284,6 @@ export class CodeSuggestionWebviewProvider
           const fileContent = readFileSync(filePath, 'utf8');
           const patchedContent = applyPatch(fileContent, patch);
 
-          await vscode.commands.executeCommand(
-            SNYK_CODE_FIX_DIFFS_COMMAND,
-            fixId,
-            "FIX_APPLIED",
-          );
-
           if (!patchedContent) {
             throw Error('Failed to apply patch');
           }
@@ -310,6 +305,8 @@ export class CodeSuggestionWebviewProvider
 
           this.highlightAddedCode(filePath, patch);
           this.setupCloseOnSave(filePath);
+
+          vscode.commands.executeCommand(SNYK_CODE_SUBMIT_FIX_FEEDBACK, fixId, 'FIX_APPLIED');
 
           break;
         }
