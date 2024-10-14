@@ -20,13 +20,14 @@ export const SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND = 'snyk.showErrorFromContext';
 export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
 export const SNYK_GET_SETTINGS_SAST_ENABLED = 'snyk.getSettingsSastEnabled';
 export const SNYK_SET_BASE_BRANCH_COMMAND = 'snyk.setBaseBranch';
-// commands
 export const SNYK_LOGIN_COMMAND = 'snyk.login';
 export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 export const SNYK_CODE_FIX_DIFFS_COMMAND = 'snyk.code.fixDiffs';
 export const SNYK_FEATURE_FLAG_COMMAND = 'snyk.getFeatureFlagStatus';
+export const SNYK_CLEAR_CACHE_COMMAND = 'snyk.clearCache';
+export const SNYK_CLEAR_PERSISTED_CACHE_COMMAND = 'snyk.clearPersistedCache';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

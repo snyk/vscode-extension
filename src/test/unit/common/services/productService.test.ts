@@ -73,6 +73,7 @@ suite('Product Service', () => {
       folderPath: 'test/path',
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, true);
@@ -86,12 +87,14 @@ suite('Product Service', () => {
       folderPath,
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
     ls.scan$.next({
       product: ScanProduct.InfrastructureAsCode,
       folderPath,
       issues: [],
       status: ScanStatus.Success,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);
@@ -105,12 +108,14 @@ suite('Product Service', () => {
       folderPath,
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: 'Scan failed',
     });
     ls.scan$.next({
       product: ScanProduct.InfrastructureAsCode,
       folderPath,
       issues: [],
       status: ScanStatus.Error,
+      errorMessage: 'Scan failed',
     });
 
     strictEqual(service.isAnalysisRunning, false);
@@ -125,18 +130,21 @@ suite('Product Service', () => {
       folderPath: folder1Path,
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
     ls.scan$.next({
       product: ScanProduct.InfrastructureAsCode,
       folderPath: folder2Path,
       issues: [],
       status: ScanStatus.InProgress,
+      errorMessage: '',
     });
     ls.scan$.next({
       product: ScanProduct.InfrastructureAsCode,
       folderPath: folder1Path,
       issues: [],
       status: ScanStatus.Success,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, true);
@@ -146,6 +154,7 @@ suite('Product Service', () => {
       folderPath: folder2Path,
       issues: [],
       status: ScanStatus.Success,
+      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);

@@ -4,6 +4,7 @@ import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trus
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
+import { IClearCacheService } from '../../common/services/CacheService';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
 import { FeatureFlagService } from '../../common/services/featureFlagService';
@@ -36,6 +37,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected configurationWatcher: IWatcher;
 
   readonly contextService: IContextService;
+  cacheService: IClearCacheService;
   readonly openerService: IOpenerService;
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
