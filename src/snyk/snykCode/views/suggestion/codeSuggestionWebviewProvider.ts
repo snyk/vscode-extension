@@ -53,7 +53,7 @@ export class CodeSuggestionWebviewProvider
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
     private readonly learnService: LearnService,
-    private commandExecutor: IVSCodeCommands
+    private commandExecutor: IVSCodeCommands,
   ) {
     super(context, logger);
   }
@@ -121,38 +121,37 @@ export class CodeSuggestionWebviewProvider
         'snyk-code.svg',
       );
       // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
-        let html: string = '';
-        if (issue.additionalData.details) {
-          html = issue.additionalData.details;
-        }
-        else {
-          html = await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id) ?? "";
-        }
-        const ideStylePath = vscode.Uri.joinPath(
-          vscode.Uri.file(this.context.extensionPath),
-          'media',
-          'views',
-          'snykCode',
-          'suggestion',
-          'suggestionLS.css',
-        );
-        const ideStyle = readFileSync(ideStylePath.fsPath, 'utf8');
-        const ideScriptPath = vscode.Uri.joinPath(
-          vscode.Uri.file(this.context.extensionPath),
-          'out',
-          'snyk',
-          'snykCode',
-          'views',
-          'suggestion',
-          'codeSuggestionWebviewScriptLS.js',
-        );
-        const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
-        html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
-        html = html.replace('${ideScript}', '<script nonce=${nonce}>' + ideScript + '</script>');
-        const nonce = getNonce();
-        html = html.replaceAll('${nonce}', nonce);
+      let html: string = '';
+      if (issue.additionalData.details) {
+        html = issue.additionalData.details;
+      } else {
+        html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
+      }
+      const ideStylePath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'media',
+        'views',
+        'snykCode',
+        'suggestion',
+        'suggestionLS.css',
+      );
+      const ideStyle = readFileSync(ideStylePath.fsPath, 'utf8');
+      const ideScriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'out',
+        'snyk',
+        'snykCode',
+        'views',
+        'suggestion',
+        'codeSuggestionWebviewScriptLS.js',
+      );
+      const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
+      html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
+      html = html.replace('${ideScript}', '<script nonce=${nonce}>' + ideScript + '</script>');
+      const nonce = getNonce();
+      html = html.replaceAll('${nonce}', nonce);
 
-        this.panel.webview.html = html;
+      this.panel.webview.html = html;
       void this.postSuggestMessage({ type: 'set', args: this.mapToModel(issue) });
       void this.postLearnLessonMessage(issue);
 

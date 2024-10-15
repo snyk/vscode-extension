@@ -77,15 +77,13 @@ export class OssDetailPanelProvider
         return accumulator;
       }, {});
 
-      let html : string = "";
+      let html: string = '';
       // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
       if (issue.additionalData.details) {
         html = issue.additionalData.details;
+      } else {
+        html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
       }
-      else {
-        html = await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id) ?? "";
-      }
-
 
       // Add the style
       const ideStylePath = vscode.Uri.joinPath(

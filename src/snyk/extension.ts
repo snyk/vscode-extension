@@ -210,7 +210,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       vsCodeWorkspace,
       this.learnService,
-      vsCodeCommands
+      vsCodeCommands,
     );
 
     this.snykCode = new SnykCodeService(
@@ -234,7 +234,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      vsCodeCommands
+      vsCodeCommands,
     );
 
     this.ossService = new OssService(
@@ -258,7 +258,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      vsCodeCommands
+      vsCodeCommands,
     );
 
     this.iacService = new IacService(

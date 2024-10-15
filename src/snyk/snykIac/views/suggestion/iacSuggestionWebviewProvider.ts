@@ -32,7 +32,7 @@ export class IacSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
-    private commandExecutor: IVSCodeCommands
+    private commandExecutor: IVSCodeCommands,
   ) {
     super(context, logger);
   }
@@ -66,11 +66,11 @@ export class IacSuggestionWebviewProvider
         this.registerListeners();
       }
       // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
-      let html: string = "";
+      let html: string = '';
       if (issue.additionalData.customUIContent) {
         html = issue.additionalData.customUIContent;
       } else {
-        html = await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id) ?? "";
+        html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
       }
       this.panel.webview.html = this.getHtmlFromLanguageServer(html);
 
