@@ -39,6 +39,7 @@
     filePath: string;
     hasAIFix: boolean;
     diffs: AutofixUnifiedDiffSuggestion[];
+    showInlineIgnoresButton: boolean;
   };
 
   type OpenLocalMessage = {
@@ -135,7 +136,6 @@
 
     sendMessage(message);
   }
-
   let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
 
   function ignoreIssue(lineOnly: boolean) {
@@ -210,6 +210,11 @@
   const applyFixButton = document.getElementById('apply-fix') as HTMLElement;
   const retryGenerateFixButton = document.getElementById('retry-generate-fix') as HTMLElement;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
+
+  const ignoreContainerElements = document.getElementsByClassName('ignore-action-container')
+  if(ignoreContainerElements) {
+    (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
+  }
 
   function generateAIFix() {
     if (!suggestion) {
