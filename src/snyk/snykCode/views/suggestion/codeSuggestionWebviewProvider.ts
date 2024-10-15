@@ -5,6 +5,7 @@ import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
   SNYK_CODE_FIX_DIFFS_COMMAND,
+  SNYK_CODE_SUBMIT_FIX_FEEDBACK,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -277,7 +278,7 @@ export class CodeSuggestionWebviewProvider
         }
 
         case 'applyGitDiff': {
-          const { patch, filePath } = message.args;
+          const { patch, filePath, fixId } = message.args;
 
           const fileContent = readFileSync(filePath, 'utf8');
           const patchedContent = applyPatch(fileContent, patch);
@@ -304,6 +305,11 @@ export class CodeSuggestionWebviewProvider
           this.highlightAddedCode(filePath, patch);
           this.setupCloseOnSave(filePath);
 
+          try {
+            await vscode.commands.executeCommand(SNYK_CODE_SUBMIT_FIX_FEEDBACK, fixId, 'FIX_APPLIED');
+          } catch (e) {
+            throw new Error('Error in submit fix feedback');
+          }
           break;
         }
 
