@@ -266,9 +266,8 @@ export class CodeSuggestionWebviewProvider
               relativePath,
               issueId,
             );
-            if (diffs.length === 0) {
-              throw Error('Unable to generate a relevant fix');
-            }
+            // todo(berkay.berabi): Here if suggestions are empty, we should post a different type of message that
+            // will show the user correct information, namely: we tried but no fixes available for now.
 
             void this.postSuggestMessage({ type: 'setAutofixDiffs', args: { suggestion, diffs } });
           } catch (error) {
