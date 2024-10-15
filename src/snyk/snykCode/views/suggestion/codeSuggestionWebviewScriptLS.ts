@@ -5,6 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
+declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
