@@ -12,15 +12,13 @@ import { IVSCodeWindow } from '../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import { messages } from '../constants/messages';
 import { readFileSync } from 'fs';
+import { SNYK_GENERATE_ISSUE_DESCRIPTION } from '../../common/constants/commands';
+import { IVSCodeCommands } from '../../common/vscode/commands';
 
 export class OssDetailPanelProvider
   extends WebviewProvider<Issue<OssIssueData>>
   implements IWebViewProvider<Issue<OssIssueData>>
 {
-  protected getHtmlForWebview(_webview: vscode.Webview): string {
-    throw new Error('Method not implemented.');
-  }
-
   // For consistency reasons, the single source of truth for the current suggestion is the
   // panel state. The following field is only used in
   private issue: Issue<OssIssueData> | undefined;
@@ -31,6 +29,7 @@ export class OssDetailPanelProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private commandExecutor: IVSCodeCommands,
   ) {
     super(context, logger);
   }
@@ -78,9 +77,15 @@ export class OssDetailPanelProvider
         return accumulator;
       }, {});
 
-      const displayMode = 'dark';
+      let html : string = "";
+      // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
+      if (issue.additionalData.details) {
+        html = issue.additionalData.details;
+      }
+      else {
+        html = await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id) ?? "";
+      }
 
-      let html = issue.additionalData.details;
 
       // Add the style
       const ideStylePath = vscode.Uri.joinPath(
