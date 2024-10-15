@@ -25,12 +25,14 @@ Code changes require extension reload when run in debug.
 ## Run tests and debug
 
 - Unit tests
-
   - Run `npm run test:unit` for a single execution, `npm run test:unit:watch` to watch for changes.
   - Make sure to re-run the command to pick up new files, if new `**.test.ts` is added.
 
 - Integration tests
   - Run `npm run test:integration`.
+
+- Run Lint
+  - npm `npm run lint`
 
 You can debug tests via VS Code debugger, selecting "Extension Unit Tests" or "Extension Integration Tests" respectively.
 

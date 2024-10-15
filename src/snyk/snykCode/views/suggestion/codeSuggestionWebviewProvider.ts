@@ -309,7 +309,7 @@ export class CodeSuggestionWebviewProvider
           try {
             await vscode.commands.executeCommand(SNYK_CODE_SUBMIT_FIX_FEEDBACK, fixId, 'FIX_APPLIED');
           } catch (e) {
-              throw new Error('Error in submit fix feedback');
+            throw new Error('Error in submit fix feedback');
           }
           break;
         }
