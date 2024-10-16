@@ -30,7 +30,6 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
     if (this.panel) this.panel.dispose();
     this.panel = panel;
     this.registerListeners();
-    this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
   }
 
   abstract showPanel(suggestion: ViewModel, ...args: unknown[]): Promise<void>;
@@ -76,6 +75,5 @@ export abstract class WebviewProvider<ViewModel> implements IWebViewProvider<Vie
     }
   }
 
-  protected abstract getHtmlForWebview(webview: vscode.Webview): string;
   abstract activate(): void;
 }
