@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
+import { SNYK_GENERATE_ISSUE_DESCRIPTION, SNYK_OPEN_BROWSER_COMMAND } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_IAC } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { IacIssueData, Issue } from '../../../common/languageServer/types';
@@ -13,6 +13,7 @@ import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { messages as errorMessages } from '../../messages/error';
 import { readFileSync } from 'fs';
+import { IVSCodeCommands } from '../../../common/vscode/commands';
 // import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
 // import { IssueUtils } from '../../utils/issueUtils';
 // import { ICodeSuggestionWebviewProvider } from '../interfaces';
@@ -31,6 +32,7 @@ export class IacSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
+    private commandExecutor: IVSCodeCommands,
   ) {
     super(context, logger);
   }
@@ -63,13 +65,14 @@ export class IacSuggestionWebviewProvider
         );
         this.registerListeners();
       }
-
-      const customUIContent = issue.additionalData.customUIContent;
-      if (customUIContent) {
-        this.panel.webview.html = this.getHtmlFromLanguageServer(customUIContent);
+      // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
+      let html: string = '';
+      if (issue.additionalData.customUIContent) {
+        html = issue.additionalData.customUIContent;
       } else {
-        this.panel.webview.html = this.getHtmlForWebview(this.panel.webview);
+        html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
       }
+      this.panel.webview.html = this.getHtmlFromLanguageServer(html);
 
       this.panel.iconPath = vscode.Uri.joinPath(
         vscode.Uri.file(this.context.extensionPath),
@@ -142,92 +145,5 @@ export class IacSuggestionWebviewProvider
     } catch (e) {
       ErrorHandler.handle(e, this.logger, errorMessages.suggestionViewShowFailed);
     }
-  }
-
-  protected getHtmlForWebview(webview: vscode.Webview): string {
-    const images: Record<string, string> = [
-      ['dark-critical-severity', 'svg'],
-      ['dark-high-severity', 'svg'],
-      ['dark-medium-severity', 'svg'],
-      ['dark-low-severity', 'svg'],
-    ].reduce((accumulator: Record<string, string>, [name, ext]) => {
-      const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
-      if (!uri) throw new Error('Image missing.');
-      accumulator[name] = uri.toString();
-      return accumulator;
-    }, {});
-
-    const scriptUri = this.getWebViewUri(
-      'out',
-      'snyk',
-      'snykIac',
-      'views',
-      'suggestion',
-      'iacSuggestionWebviewScript.js',
-    );
-    const styleUri = this.getWebViewUri('media', 'views', 'oss', 'suggestion', 'suggestion.css'); // make it common
-
-    const nonce = getNonce();
-
-    return `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-				<!--
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
-
-				<link href="${styleUri}" rel="stylesheet">
-			</head>
-			<body>
-        <div class="suggestion">
-          <section class="suggestion--header">
-            <div class="severity">
-              <img id="lowl" class="icon light-only hidden" src="${images['dark-low-severity']}" />
-              <img id="lowd" class="icon dark-only hidden" src="${images['dark-low-severity']}" />
-              <img id="mediuml" class="icon light-only hidden" src="${images['dark-medium-severity']}" />
-              <img id="mediumd" class="icon dark-only hidden" src="${images['dark-medium-severity']}" />
-              <img id="highl" class="icon light-only hidden" src="${images['dark-high-severity']}" />
-              <img id="highd" class="icon dark-only hidden" src="${images['dark-high-severity']}" />
-              <img id="criticall" class="icon light-only hidden" src="${images['dark-critical-severity']}" />
-              <img id="criticald" class="icon dark-only hidden" src="${images['dark-critical-severity']}" />
-              <span id="severity-text"></span>
-            </div>
-            <div class="suggestion-text"></div>
-            <div class="identifiers"></div>
-          </section>
-          <section class="delimiter-top summary">
-            <div class="summary-item description">
-              <div class="label font-light">Description</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item impact">
-              <div class="label font-light">Impact</div>
-              <div class="content"></div>
-            </div>
-            <div class="summary-item path">
-              <div class="label font-light">Path</div>
-              <div class="content">
-                <code></code>
-              </div>
-            </div>
-          </section>
-        </div>
-          <section class="delimiter-top">
-            <h2>Remediation</h2>
-            <div class="remediation" class="font-light"></div>
-          </section>
-          <section class="delimiter-top hidden references">
-            <h2>References</h2>
-            <div class="reference-links" class="font-light"></div>
-          </section>
-        </div>
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
   }
 }
