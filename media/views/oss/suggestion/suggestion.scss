@@ -1,7 +1,7 @@
 @import '../../common/webview';
 
 :root {
-  font-size: --vscode-editor-font-size/0.85;
+  font-size: var(--vscode-editor-font-size);
 }
 
 .vscode-dark .light-only {

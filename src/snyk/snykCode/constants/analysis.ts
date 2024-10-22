@@ -10,5 +10,5 @@ export const FILE_IGNORE_ACTION_NAME = 'Ignore this suggestion in current file (
 export const DIAGNOSTICS_OSS_COLLECTION_NAME = 'Snyk Open Source Security';
 export const DIAGNOSTICS_OSS_COLLECTION_NAME_LS = 'Snyk Open Source';
 
-export const WEBVIEW_PANEL_SECURITY_TITLE = 'Snyk Code Vulnerability';
+export const WEBVIEW_PANEL_SECURITY_TITLE = 'Snyk Code Issue';
 export const WEBVIEW_PANEL_QUALITY_TITLE = 'Snyk Code Issue';
