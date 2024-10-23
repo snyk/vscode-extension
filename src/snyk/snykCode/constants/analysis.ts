@@ -11,4 +11,3 @@ export const DIAGNOSTICS_OSS_COLLECTION_NAME = 'Snyk Open Source Security';
 export const DIAGNOSTICS_OSS_COLLECTION_NAME_LS = 'Snyk Open Source';
 
 export const WEBVIEW_PANEL_SECURITY_TITLE = 'Snyk Code Issue';
-export const WEBVIEW_PANEL_QUALITY_TITLE = 'Snyk Code Issue';
