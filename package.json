@@ -171,16 +171,15 @@
           "snyk.allIssuesVsNetNewIssues": {
             "type": "string",
             "default": "All issues",
-            "description": "Specifies whether to see all issues or only net new issues. Net new issues requires a Git repository, where it compares findings with those in the base branch.",
+            "description": "Specifies whether to see all issues or only net new issues. Net new issues option requires a Git repository, where it compares findings with those in the base branch.",
             "enum": [
               "All issues",
               "Net new issues"
             ],
             "enumDescriptions": [
               "Shows all issues that have been identified, including both new and existing issues.",
-              "Shows only new issues that have been introduced in the latest scan, filtering out previously known issues."
+              "Shows only new issues filtering out previously known issues in a base branch"
             ],
-            "markdownDescription": "Specifies whether to see all issues or only net new issues. Net new issues a Git repository, where it compares findings with those in the base branch.\n\n",
             "order": 6
           },
           "snyk.advanced.additionalParameters": {
@@ -475,6 +474,11 @@
       {
         "command": "snyk.showLsOutputChannel",
         "title": "Show Language Server Output Channel",
+        "category": "Snyk"
+      },
+      {
+        "command": "snyk.clearPersistedCache",
+        "title": "Clear Persisted Cache",
         "category": "Snyk"
       }
     ]

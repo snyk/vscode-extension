@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
 // This script will be run within the webview itself
-
 // It cannot access the main VS Code APIs directly.
 (function () {
   // TODO: Redefine types until bundling is introduced into extension
@@ -30,7 +29,6 @@
   };
 
   let issue = {} as ConfigurationIssue;
-
   const vscode = acquireVsCodeApi();
 
   function navigateToUrl(url: string) {

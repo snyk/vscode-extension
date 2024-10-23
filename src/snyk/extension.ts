@@ -10,6 +10,7 @@ import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
+  SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -78,6 +79,9 @@ import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCo
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
+import { ClearCacheService } from './common/services/CacheService';
+import { InMemory, Persisted } from './common/constants/general';
+import { GitAPI, GitExtension, Repository } from './common/git';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -91,9 +95,42 @@ class SnykExtension extends SnykLib implements IExtension {
 
     try {
       await this.initializeExtension(vscodeContext, snykConfiguration);
+      this.configureGitHandlers();
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
+  }
+
+  private configureGitHandlers(): void {
+    // Get the Git extension
+    const gitExtension = vscode.extensions.getExtension<GitExtension>('vscode.git')?.exports;
+
+    if (!gitExtension) {
+      return;
+    }
+
+    // Get the API from the Git extension
+    const git: GitAPI = gitExtension.getAPI(1);
+
+    // Check if there are any repositories
+    const repositories: Repository[] = git?.repositories;
+    if (!repositories || repositories.length === 0) {
+      return;
+    }
+    const previousBranches = new Map<Repository, string | undefined>();
+    // Register event listener for changes in each repository
+    repositories.forEach((repo: Repository) => {
+      let previousBranch = repo.state.HEAD?.name;
+      previousBranches.set(repo, previousBranch);
+      repo.state.onDidChange(async () => {
+        const currentBranch = repo.state.HEAD?.name;
+        const storedPreviousBranch = previousBranches.get(repo);
+        if (currentBranch !== storedPreviousBranch) {
+          await this.cacheService.clearCache(repo.rootUri.toString(), InMemory);
+          previousBranches.set(repo, currentBranch);
+        }
+      });
+    });
   }
 
   private async getSnykConfiguration(): Promise<SnykConfiguration | undefined> {
@@ -139,6 +176,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     this.learnService = new LearnService(vsCodeCommands);
+    this.cacheService = new ClearCacheService(vsCodeCommands);
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
@@ -172,6 +210,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       vsCodeWorkspace,
       this.learnService,
+      vsCodeCommands,
     );
 
     this.snykCode = new SnykCodeService(
@@ -195,6 +234,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
+      vsCodeCommands,
     );
 
     this.ossService = new OssService(
@@ -218,6 +258,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
+      vsCodeCommands,
     );
 
     this.iacService = new IacService(
@@ -425,6 +466,10 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
+      vscode.commands.registerCommand(
+        SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
+        async () => await this.cacheService.clearCache('', Persisted),
+      ),
       vscode.commands.registerCommand(SNYK_ENABLE_CODE_COMMAND, () =>
         this.commandController.executeCommand(SNYK_ENABLE_CODE_COMMAND, () => this.enableCode()),
       ),

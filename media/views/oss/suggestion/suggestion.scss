@@ -1,16 +1,7 @@
 @import '../../common/webview';
 
-.suggestion .suggestion-text {
-  padding: 0.4rem 0;
-  margin-bottom: 0.8rem;
-  font-size: 1.8rem;
-  font-weight: 500;
-  line-height: 2.4rem;
-}
-
-.identifiers {
-  font-size: 1.3rem;
-  line-height: 2rem;
+:root {
+  font-size: var(--vscode-editor-font-size);
 }
 
 .vscode-dark .light-only {

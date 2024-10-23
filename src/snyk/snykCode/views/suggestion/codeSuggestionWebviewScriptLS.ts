@@ -5,6 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /// <reference lib="dom" />
+declare const acquireVsCodeApi: any;
 
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
@@ -39,6 +40,7 @@
     filePath: string;
     hasAIFix: boolean;
     diffs: AutofixUnifiedDiffSuggestion[];
+    showInlineIgnoresButton: boolean;
   };
 
   type OpenLocalMessage = {
@@ -86,6 +88,7 @@
     args: {
       patch: string;
       filePath: string;
+      fixId: string;
     };
   };
 
@@ -135,7 +138,6 @@
 
     sendMessage(message);
   }
-
   let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
 
   function ignoreIssue(lineOnly: boolean) {
@@ -211,6 +213,11 @@
   const retryGenerateFixButton = document.getElementById('retry-generate-fix') as HTMLElement;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
+  const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
+  if (ignoreContainerElements) {
+    (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
+  }
+
   function generateAIFix() {
     if (!suggestion) {
       return;
@@ -239,10 +246,11 @@
     const diffSuggestion = suggestion.diffs[diffSelectedIndex];
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+    const fixId = suggestion.id;
 
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',
-      args: { filePath, patch },
+      args: { filePath, patch, fixId },
     };
     sendMessage(message);
   }
