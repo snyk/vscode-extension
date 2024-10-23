@@ -23,10 +23,9 @@ import { ExtensionContext } from '../../../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../common/vscode/languages';
 import { IVSCodeWindow } from '../../../common/vscode/window';
 import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
-import { WEBVIEW_PANEL_QUALITY_TITLE, WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
+import { WEBVIEW_PANEL_SECURITY_TITLE } from '../../constants/analysis';
 import { messages as errorMessages } from '../../messages/error';
 import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
-import { encodeExampleCommitFixes } from '../../utils/htmlEncoder';
 import { generateDecorationOptions } from '../../utils/patchUtils';
 import { IssueUtils } from '../../utils/issueUtils';
 import { ICodeSuggestionWebviewProvider } from '../interfaces';
@@ -99,12 +98,12 @@ export class CodeSuggestionWebviewProvider
     try {
       await this.focusSecondEditorGroup();
       if (this.panel) {
-        this.panel.title = this.getTitle(issue);
+        this.panel.title = this.getTitle();
         this.panel.reveal(vscode.ViewColumn.Two, true);
       } else {
         this.panel = vscode.window.createWebviewPanel(
           SNYK_VIEW_SUGGESTION_CODE,
-          this.getTitle(issue),
+          this.getTitle(),
           {
             viewColumn: vscode.ViewColumn.Two,
             preserveFocus: true,
@@ -376,7 +375,7 @@ export class CodeSuggestionWebviewProvider
     ];
   }
 
-  private getTitle(issue: Issue<CodeIssueData>): string {
-    return issue.additionalData.isSecurityType ? WEBVIEW_PANEL_SECURITY_TITLE : WEBVIEW_PANEL_QUALITY_TITLE;
+  private getTitle(): string {
+    return WEBVIEW_PANEL_SECURITY_TITLE;
   }
 }
