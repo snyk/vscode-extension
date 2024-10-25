@@ -92,7 +92,10 @@ export class AuthenticationService implements IAuthenticationService {
     } else {
       if (!this.validateToken(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
 
-      await this.configuration.setEndpoint(apiUrl);
+      if (apiUrl !== null && apiUrl !== undefined && apiUrl.trim().length > 0) {
+        await this.configuration.setEndpoint(apiUrl);
+      }
+
       await this.configuration.setToken(token);
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
       await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);

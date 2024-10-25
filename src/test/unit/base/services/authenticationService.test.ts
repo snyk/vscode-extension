@@ -182,7 +182,7 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
 
       await service.updateTokenAndEndpoint(oauthTokenString, apiUrl);
-      sinon.assert.calledWith(setEndpointSpy, apiUrl)
+      sinon.assert.calledWith(setEndpointSpy, apiUrl);
       sinon.assert.calledWith(setTokenSpy, oauthTokenString);
     });
 
