@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.19.2]
+- Update download endpoint to downloads.snyk.io.
+
 ## [2.19.1]
 - Adjust OSS panel font size.
 
