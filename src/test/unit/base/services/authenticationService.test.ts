@@ -102,7 +102,7 @@ suite('AuthenticationService', () => {
     sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
-  suite('.updateToken()', () => {
+  suite('.updateTokenAndEndpoint()', () => {
     let service: AuthenticationService;
     const setLoadingBadgeFake = sinon.fake();
 
