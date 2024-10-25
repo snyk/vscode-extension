@@ -20,6 +20,7 @@ suite('AuthenticationService', () => {
   let languageClientAdapter: ILanguageClientAdapter;
   let languageClientSendNotification: sinon.SinonSpy;
   let setContextSpy: sinon.SinonSpy;
+  let setEndpointSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
   let previewFeaturesSpy: sinon.SinonSpy;
@@ -38,6 +39,7 @@ suite('AuthenticationService', () => {
   setup(() => {
     baseModule = {} as IBaseSnykModule;
     setContextSpy = sinon.fake();
+    setEndpointSpy = sinon.fake();
     setTokenSpy = sinon.fake();
     clearTokenSpy = sinon.fake();
     languageClientSendNotification = sinon.fake();
@@ -57,6 +59,7 @@ suite('AuthenticationService', () => {
 
     config = {
       authHost: '',
+      setEndpoint: setEndpointSpy,
       setToken: setTokenSpy,
       clearToken: clearTokenSpy,
       getPreviewFeatures: previewFeaturesSpy,
@@ -131,6 +134,7 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
       await service.updateTokenAndEndpoint(token, apiUrl);
 
+      sinon.assert.calledWith(setEndpointSpy, apiUrl);
       sinon.assert.calledWith(setTokenSpy, token);
     });
 
@@ -178,6 +182,7 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
 
       await service.updateTokenAndEndpoint(oauthTokenString, apiUrl);
+      sinon.assert.calledWith(setEndpointSpy, apiUrl)
       sinon.assert.calledWith(setTokenSpy, oauthTokenString);
     });
 
@@ -186,6 +191,7 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
 
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
+
       sinon.assert.notCalled(setTokenSpy);
     });
 
