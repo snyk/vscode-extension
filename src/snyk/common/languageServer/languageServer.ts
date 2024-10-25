@@ -133,8 +133,8 @@ export class LanguageServer implements ILanguageServer {
   }
 
   private registerListeners(client: LanguageClient): void {
-    client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token }: { token: string }) => {
-      this.authenticationService.updateToken(token).catch((error: Error) => {
+    client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
+      this.authenticationService.updateTokenAndEndpoint(token, apiUrl).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
       });
     });
