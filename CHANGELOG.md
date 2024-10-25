@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.20.0]
+- If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
+
 ## [2.19.1]
 - Adjust OSS panel font size.
 
