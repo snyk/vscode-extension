@@ -59,7 +59,6 @@ export class DownloadService {
   }
 
   async update(): Promise<boolean> {
-    // let language server manage CLI downloads, but download LS here
     const platform = await CliExecutable.getCurrentWithArch();
     const version = await this.lsApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
     const lsInstalled = await this.isCliInstalled();
