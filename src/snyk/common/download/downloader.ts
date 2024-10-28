@@ -1,53 +1,45 @@
 import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
-import { mkdirSync } from 'fs';
 import * as fsPromises from 'fs/promises';
-import path from 'path';
 import * as stream from 'stream';
 import { Progress } from 'vscode';
 import { Checksum } from '../../cli/checksum';
-import { CliExecutable } from '../../cli/cliExecutable';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
-import { LsExecutable } from '../languageServer/lsExecutable';
-import { IStaticLsApi } from '../languageServer/staticLsApi';
-import { LsSupportedPlatform } from '../languageServer/supportedPlatforms';
+import { IStaticCliApi } from '../../cli/staticCliApi';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { ILog } from '../logger/interfaces';
 import { CancellationToken } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
+import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
+import { ExtensionContext } from '../vscode/extensionContext';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
 export class Downloader {
   constructor(
     private readonly configuration: IConfiguration,
-    private readonly lsApi: IStaticLsApi,
+    private readonly cliApi: IStaticCliApi,
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
+    private readonly extensionContext: ExtensionContext
   ) {}
-
   /**
    * Downloads LS. Existing executable is deleted.
    */
-  async download(): Promise<CliExecutable | LsExecutable | null> {
-    const lsPlatform = LsExecutable.getCurrentWithArch();
-    if (lsPlatform === null) {
+  async download(): Promise<CliExecutable | null> {
+    const platform = await CliExecutable.getCurrentWithArch();
+    if (platform === null) {
       return Promise.reject(!messages.notSupported);
     }
-    return await this.getLsExecutable(lsPlatform);
+    return await this.getCliExecutable(platform);
   }
 
-  private async getLsExecutable(lsPlatform: LsSupportedPlatform): Promise<LsExecutable | null> {
-    const lsPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
-    const lsDir = path.dirname(lsPath);
-    mkdirSync(lsDir, { recursive: true });
-    if (await this.binaryExists(lsPath)) {
-      await this.deleteFileAtPath(lsPath);
-    }
-
-    const lsVersion = (await this.lsApi.getMetadata()).version;
-    const sha256 = await this.lsApi.getSha256Checksum(lsPlatform);
-    const checksum = await this.downloadLs(lsPath, lsPlatform, sha256);
+  private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
+    const cliPath = await CliExecutable.getPath(this.extensionContext.extensionPath, await this.configuration.getCliPath());
+    const lsVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const sha256 = await this.cliApi.getSha256Checksum(lsVersion, platform);
+    const checksum = await this.downloadCli(cliPath, platform, sha256);
 
     if (!checksum) {
       return null;
@@ -58,16 +50,7 @@ export class Downloader {
       return Promise.reject(messages.integrityCheckFailed);
     }
 
-    return new LsExecutable(lsVersion, checksum);
-  }
-
-  private async binaryExists(filePath: string): Promise<boolean> {
-    try {
-      await fsPromises.access(filePath);
-      return true;
-    } catch {
-      return false;
-    }
+    return new CliExecutable(lsVersion, checksum);
   }
 
   private async deleteFileAtPath(filePath: string): Promise<void> {
@@ -78,25 +61,25 @@ export class Downloader {
     }
   }
 
-  public async downloadLs(
-    lsPath: string,
-    platform: LsSupportedPlatform,
+  public async downloadCli(
+    cliPath: string,
+    platform: CliSupportedPlatform,
     expectedChecksum: string,
   ): Promise<Checksum | null> {
     const hash = new Checksum(expectedChecksum);
 
     return this.window.withProgress(messages.progressTitle, async (progress, token) => {
       const [request, requestToken]: [response: Promise<DownloadAxiosResponse>, cancelToken: CancelTokenSource] =
-        await this.lsApi.downloadBinary(platform);
+        await this.cliApi.downloadBinary(platform);
 
       token.onCancellationRequested(async () => {
         requestToken.cancel();
         this.logger.info(messages.downloadCanceled);
-        await this.deleteFileAtPath(lsPath);
+        await this.deleteFileAtPath(cliPath);
       });
 
       progress.report({ increment: 0 });
-      return await this.doDownload(requestToken, token, lsPath, request, hash, progress);
+      return await this.doDownload(requestToken, token, cliPath, request, hash, progress);
     });
   }
 

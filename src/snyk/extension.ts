@@ -41,7 +41,7 @@ import { ErrorHandler } from './common/error/errorHandler';
 import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
-import { StaticLsApi } from './common/languageServer/staticLsApi';
+import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
 import { LearnService } from './common/services/learnService';
@@ -50,7 +50,7 @@ import { User } from './common/user';
 import { CodeActionAdapter } from './common/vscode/codeAction';
 import { vsCodeCommands } from './common/vscode/commands';
 import { vsCodeEnv } from './common/vscode/env';
-import { extensionContext } from './common/vscode/extensionContext';
+import { ExtensionContext, extensionContext } from './common/vscode/extensionContext';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
@@ -87,7 +87,6 @@ class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
-
     const snykConfiguration = await this.getSnykConfiguration();
     if (snykConfiguration) {
       await ErrorReporter.init(configuration, snykConfiguration, extensionContext.extensionPath, vsCodeEnv, Logger);
@@ -99,6 +98,10 @@ class SnykExtension extends SnykLib implements IExtension {
     } catch (e) {
       ErrorHandler.handle(e, Logger);
     }
+  }
+
+  public static getExtensionContext(): ExtensionContext {
+    return extensionContext;
   }
 
   private configureGitHandlers(): void {
@@ -185,7 +188,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.downloadService = new DownloadService(
       this.context,
       configuration,
-      new StaticLsApi(vsCodeWorkspace, configuration, Logger),
+      new StaticCliApi(vsCodeWorkspace, configuration, Logger),
       vsCodeWindow,
       Logger,
     );
@@ -201,6 +204,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      this.context,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -432,7 +436,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
-
     // Actually start analysis
     this.runScan();
   }
@@ -443,12 +446,16 @@ class SnykExtension extends SnykLib implements IExtension {
     await ErrorReporter.flush();
   }
 
+  public async stopLanguageServer(): Promise<void> {
+    await this.languageServer.stop();
+  }
+
   public async restartLanguageServer(): Promise<void> {
     await this.languageServer.stop();
     await this.languageServer.start();
   }
 
-  private initDependencyDownload(): DownloadService {
+  public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
     });

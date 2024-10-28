@@ -2,8 +2,8 @@ import { strictEqual } from 'assert';
 import os from 'os';
 import path from 'path';
 import sinon from 'sinon';
-import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
-import { LsSupportedPlatform } from '../../../../snyk/common/languageServer/supportedPlatforms';
+import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
+import { LsSupportedPlatform } from '../../../../snyk/cli/supportedPlatforms';
 
 suite('LsExecutable', () => {
   teardown(() => {
@@ -11,29 +11,18 @@ suite('LsExecutable', () => {
   });
 
   test('Returns correct filename for different platforms', () => {
-    strictEqual(LsExecutable.getFilename('darwinAmd64'), 'snyk-ls_darwin_amd64');
-    strictEqual(LsExecutable.getFilename('darwinArm64'), 'snyk-ls_darwin_arm64');
-    strictEqual(LsExecutable.getFilename('linux386'), 'snyk-ls_linux_386');
-    strictEqual(LsExecutable.getFilename('linuxAmd64'), 'snyk-ls_linux_amd64');
-    strictEqual(LsExecutable.getFilename('linuxArm64'), 'snyk-ls_linux_arm64');
-    strictEqual(LsExecutable.getFilename('windows386'), 'snyk-ls_windows_386.exe');
-    strictEqual(LsExecutable.getFilename('windowsAmd64'), 'snyk-ls_windows_amd64.exe');
-  });
-
-  test('Returns correct versioned filename for different platforms', () => {
-    const version = '20220101.101010';
-    strictEqual(LsExecutable.getVersionedFilename('darwinAmd64', version), `snyk-ls_${version}_darwin_amd64`);
-    strictEqual(LsExecutable.getVersionedFilename('darwinArm64', version), `snyk-ls_${version}_darwin_arm64`);
-    strictEqual(LsExecutable.getVersionedFilename('linux386', version), `snyk-ls_${version}_linux_386`);
-    strictEqual(LsExecutable.getVersionedFilename('linuxAmd64', version), `snyk-ls_${version}_linux_amd64`);
-    strictEqual(LsExecutable.getVersionedFilename('linuxArm64', version), `snyk-ls_${version}_linux_arm64`);
-    strictEqual(LsExecutable.getVersionedFilename('windows386', version), `snyk-ls_${version}_windows_386.exe`);
-    strictEqual(LsExecutable.getVersionedFilename('windowsAmd64', version), `snyk-ls_${version}_windows_amd64.exe`);
+    strictEqual(CliExecutable.getFileName('darwinAmd64'), 'snyk-ls_darwin_amd64');
+    strictEqual(CliExecutable.getFileName('darwinArm64'), 'snyk-ls_darwin_arm64');
+    strictEqual(CliExecutable.getFileName('linux386'), 'snyk-ls_linux_386');
+    strictEqual(CliExecutable.getFileName('linuxAmd64'), 'snyk-ls_linux_amd64');
+    strictEqual(CliExecutable.getFileName('linuxArm64'), 'snyk-ls_linux_arm64');
+    strictEqual(CliExecutable.getFileName('windows386'), 'snyk-ls_windows_386.exe');
+    strictEqual(CliExecutable.getFileName('windowsAmd64'), 'snyk-ls_windows_amd64.exe');
   });
 
   test('Returns correct paths', () => {
     const homedirStub = sinon.stub(os, 'homedir');
-    const getCurrentWithArchStub = sinon.stub(LsExecutable, 'getCurrentWithArch');
+    const getCurrentWithArchStub = sinon.stub(CliExecutable, 'getCurrentWithArch');
 
     // DarwinAmd64
     let macOSPlatform: LsSupportedPlatform = 'darwinAmd64';
@@ -41,17 +30,17 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(macOSPlatform);
     homedirStub.returns(homedir);
 
-    let expectedFilename = LsExecutable.getFilename(macOSPlatform);
+    let expectedFilename = CliExecutable.getFileName(macOSPlatform);
     let expectedCliPath = path.join(homedir, '/Library/Application Support/', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // DarwinArm64
     macOSPlatform = 'darwinArm64';
     getCurrentWithArchStub.returns(macOSPlatform);
 
-    expectedFilename = LsExecutable.getFilename(macOSPlatform);
+    expectedFilename = CliExecutable.getFileName(macOSPlatform);
     expectedCliPath = path.join(homedir, '/Library/Application Support/', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // Linux386
     let linuxPlatform: LsSupportedPlatform = 'linux386';
@@ -59,25 +48,25 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(linuxPlatform);
     homedirStub.returns(homedir);
 
-    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedFilename = CliExecutable.getFileName(linuxPlatform);
     expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // LinuxAmd64
     linuxPlatform = 'linuxAmd64';
     getCurrentWithArchStub.returns(linuxPlatform);
 
-    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedFilename = CliExecutable.getFileName(linuxPlatform);
     expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // LinuxArm64
     linuxPlatform = 'linuxArm64';
     getCurrentWithArchStub.returns(linuxPlatform);
 
-    expectedFilename = LsExecutable.getFilename(linuxPlatform);
+    expectedFilename = CliExecutable.getFileName(linuxPlatform);
     expectedCliPath = path.join(homedir, '/.local/share/', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // Windows386
     let windowsPlatform: LsSupportedPlatform = 'windows386';
@@ -85,22 +74,22 @@ suite('LsExecutable', () => {
     getCurrentWithArchStub.returns(windowsPlatform);
     homedirStub.returns(homedir);
 
-    expectedFilename = LsExecutable.getFilename(windowsPlatform);
+    expectedFilename = CliExecutable.getFileName(windowsPlatform);
     expectedCliPath = path.join(homedir, '\\AppData\\Local\\', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
 
     // WindowsAmd64
     windowsPlatform = 'windowsAmd64';
     getCurrentWithArchStub.returns(windowsPlatform);
 
-    expectedFilename = LsExecutable.getFilename(windowsPlatform);
+    expectedFilename = CliExecutable.getFileName(windowsPlatform);
     expectedCliPath = path.join(homedir, '\\AppData\\Local\\', 'snyk-ls', expectedFilename);
-    strictEqual(LsExecutable.getPath(), expectedCliPath);
+    strictEqual(CliExecutable.getPath(), expectedCliPath);
   });
 
   test('Return custom path, if provided', () => {
     const customPath = '/path/to/cli';
-    strictEqual(LsExecutable.getPath(customPath), customPath);
+    strictEqual(CliExecutable.getPath(customPath), customPath);
   });
 
   test('Returns correct platform architecture', () => {
@@ -110,28 +99,28 @@ suite('LsExecutable', () => {
     // OSX
     platformStub.returns('darwin');
     archStub.returns('x64');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'darwinAmd64');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'darwinAmd64');
 
     archStub.returns('arm64');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'darwinArm64');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'darwinArm64');
 
     // Linux
     platformStub.returns('linux');
     archStub.returns('x64');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'linuxAmd64');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'linuxAmd64');
 
     archStub.returns('arm64');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'linuxArm64');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'linuxArm64');
 
     archStub.returns('ia32');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'linux386');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'linux386');
 
     // Windows
     platformStub.returns('win32');
     archStub.returns('x64');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'windowsAmd64');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'windowsAmd64');
 
     archStub.returns('ia32');
-    strictEqual(LsExecutable.getCurrentWithArch(), 'windows386');
+    strictEqual(CliExecutable.getCurrentWithArch(), 'windows386');
   });
 });

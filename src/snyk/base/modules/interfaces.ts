@@ -1,5 +1,6 @@
 import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IContextService } from '../../common/services/contextService';
+import { DownloadService } from '../../common/services/downloadService';
 import { IOpenerService } from '../../common/services/openerService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
@@ -28,5 +29,7 @@ export interface ISnykLib {
 export interface IExtension extends IBaseSnykModule, ISnykLib {
   context: ExtensionContext | undefined;
   activate(context: VSCodeExtensionContext): void;
+  stopLanguageServer(): Promise<void>;
   restartLanguageServer(): Promise<void>;
+  initDependencyDownload(): DownloadService;
 }

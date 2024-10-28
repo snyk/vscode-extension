@@ -7,7 +7,6 @@ import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
-  ADVANCED_CUSTOM_LS_PATH,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   IAC_ENABLED_SETTING,
@@ -19,6 +18,8 @@ import {
   DELTA_FINDINGS,
   FOLDER_CONFIGS,
   ADVANCED_AUTHENTICATION_METHOD,
+  ADVANCED_CLI_PATH,
+  ADVANCED_CLI_RELEASE_CHANNEL,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -51,9 +52,13 @@ class ConfigurationWatcher implements IWatcher {
       await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
       await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
       return extension.viewManagerService.refreshAllViews();
-    } else if (key === ADVANCED_CUSTOM_LS_PATH) {
+    } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+    } else if(key === ADVANCED_CLI_RELEASE_CHANNEL) {
+      await extension.stopLanguageServer();
+      extension.initDependencyDownload();
+      return;
     } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
       extension.viewManagerService.refreshAllViews();
     } else if (key === TRUSTED_FOLDERS) {
@@ -86,7 +91,8 @@ class ConfigurationWatcher implements IWatcher {
         IAC_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
-        ADVANCED_CUSTOM_LS_PATH,
+        ADVANCED_CLI_PATH,
+        ADVANCED_CLI_RELEASE_CHANNEL,
         ADVANCED_AUTHENTICATION_METHOD,
         TRUSTED_FOLDERS,
         ISSUE_VIEW_OPTIONS_SETTING,

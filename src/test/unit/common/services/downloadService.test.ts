@@ -4,14 +4,14 @@ import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import {
-  MEMENTO_LS_CHECKSUM,
+  MEMENTO_CLI_CHECKSUM,
   MEMENTO_LS_LAST_UPDATE_DATE,
-  MEMENTO_LS_PROTOCOL_VERSION,
+  MEMENTO_CLI_VERSION,
 } from '../../../../snyk/common/constants/globalState';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { Downloader } from '../../../../snyk/common/download/downloader';
-import { LsExecutable } from '../../../../snyk/common/languageServer/lsExecutable';
-import { IStaticLsApi } from '../../../../snyk/common/languageServer/staticLsApi';
+import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
+import { IStaticCliApi } from '../../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { Platform } from '../../../../snyk/common/platform';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -21,7 +21,7 @@ import { windowMock } from '../../mocks/window.mock';
 
 suite('DownloadService', () => {
   let logger: ILog;
-  let lsApi: IStaticLsApi;
+  let lsApi: IStaticCliApi;
   let context: ExtensionContext;
   let downloader: Downloader;
   let configuration: IConfiguration;
@@ -138,7 +138,7 @@ suite('DownloadService', () => {
 
     sinon.stub(Platform, 'getCurrent').returns('darwin');
     sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
-    sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.0', new Checksum(latestChecksumStr)));
+    sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.0', new Checksum(latestChecksumStr)));
 
     const updated = await service.update();
 
@@ -151,9 +151,9 @@ suite('DownloadService', () => {
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
-    contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION).returns(PROTOCOL_VERSION);
 
-    sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.0', new Checksum('test')));
+    sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.0', new Checksum('test')));
 
     const updated = await service.update();
 
@@ -166,7 +166,7 @@ suite('DownloadService', () => {
 
     const threeDaysInMs = 3 * 24 * 3600 * 1000;
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(Date.now() - threeDaysInMs);
-    contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION - 1);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION).returns(PROTOCOL_VERSION - 1);
 
     stubSuccessDownload(apigetSha256Checksum, downloader);
 
@@ -182,7 +182,7 @@ suite('DownloadService', () => {
       getSnykLanguageServerPath: () => 'abc/d',
     } as unknown as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
-    contextGetGlobalStateValue.withArgs(MEMENTO_LS_CHECKSUM).returns(undefined);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns(undefined);
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_LAST_UPDATE_DATE).returns(undefined);
 
     stub(CliExecutable, 'exists').resolves(true);
@@ -223,5 +223,5 @@ function stubSuccessDownload(apigetSha256Checksum: sinon.SinonStub, downloader: 
 
   sinon.stub(Platform, 'getCurrent').returns('darwin');
   sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
-  sinon.stub(downloader, 'download').resolves(new LsExecutable('1.0.1', new Checksum(latestChecksumStr)));
+  sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.1', new Checksum(latestChecksumStr)));
 }
