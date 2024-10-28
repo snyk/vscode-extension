@@ -20,6 +20,7 @@ suite('AuthenticationService', () => {
   let languageClientAdapter: ILanguageClientAdapter;
   let languageClientSendNotification: sinon.SinonSpy;
   let setContextSpy: sinon.SinonSpy;
+  let setEndpointSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
   let previewFeaturesSpy: sinon.SinonSpy;
@@ -38,6 +39,7 @@ suite('AuthenticationService', () => {
   setup(() => {
     baseModule = {} as IBaseSnykModule;
     setContextSpy = sinon.fake();
+    setEndpointSpy = sinon.fake();
     setTokenSpy = sinon.fake();
     clearTokenSpy = sinon.fake();
     languageClientSendNotification = sinon.fake();
@@ -57,6 +59,7 @@ suite('AuthenticationService', () => {
 
     config = {
       authHost: '',
+      setEndpoint: setEndpointSpy,
       setToken: setTokenSpy,
       clearToken: clearTokenSpy,
       getPreviewFeatures: previewFeaturesSpy,
@@ -102,7 +105,7 @@ suite('AuthenticationService', () => {
     sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
-  suite('.updateToken()', () => {
+  suite('.updateTokenAndEndpoint()', () => {
     let service: AuthenticationService;
     const setLoadingBadgeFake = sinon.fake();
 
@@ -126,15 +129,17 @@ suite('AuthenticationService', () => {
       );
     });
 
-    test('sets the token when a valid token is provided', async () => {
+    test('sets the token and endpoint when a valid token is provided', async () => {
       const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
-      await service.updateToken(token);
+      const apiUrl = 'https://api.snyk.io';
+      await service.updateTokenAndEndpoint(token, apiUrl);
 
+      sinon.assert.calledWith(setEndpointSpy, apiUrl);
       sinon.assert.calledWith(setTokenSpy, token);
     });
 
     test('logs out if token is empty', async () => {
-      await service.updateToken('');
+      await service.updateTokenAndEndpoint('', '');
 
       sinon.assert.called(clearTokenSpy);
       sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
@@ -142,7 +147,8 @@ suite('AuthenticationService', () => {
 
     test('sets the proper contexts when setting new token', async () => {
       const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
-      await service.updateToken(token);
+      const apiUrl = 'https://api.snyk.io';
+      await service.updateTokenAndEndpoint(token, apiUrl);
 
       sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, true);
       sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
@@ -150,15 +156,17 @@ suite('AuthenticationService', () => {
 
     test('sets the loading badge status when setting new token', async () => {
       const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
-      await service.updateToken(token);
+      const apiUrl = 'https://api.snyk.io';
+      await service.updateTokenAndEndpoint(token, apiUrl);
 
       sinon.assert.calledWith(setLoadingBadgeFake, false);
     });
 
     test('errors when invalid token is provided', async () => {
       const invalidToken = 'thisTokenIsNotValid';
+      const apiUrl = 'https://api.snyk.io';
 
-      await rejects(service.updateToken(invalidToken));
+      await rejects(service.updateTokenAndEndpoint(invalidToken, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
 
@@ -171,15 +179,19 @@ suite('AuthenticationService', () => {
         refresh_token: 'refresh_token',
       };
       const oauthTokenString = JSON.stringify(oauthToken);
+      const apiUrl = 'https://api.snyk.io';
 
-      await service.updateToken(oauthTokenString);
+      await service.updateTokenAndEndpoint(oauthTokenString, apiUrl);
+      sinon.assert.calledWith(setEndpointSpy, apiUrl);
       sinon.assert.calledWith(setTokenSpy, oauthTokenString);
     });
 
     test('fails with error on non oauth token json string', async () => {
       const oauthTokenString = '{}';
+      const apiUrl = 'https://api.snyk.io';
 
-      await rejects(service.updateToken(oauthTokenString));
+      await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
+
       sinon.assert.notCalled(setTokenSpy);
     });
 
@@ -192,8 +204,9 @@ suite('AuthenticationService', () => {
         refresh_token: 'refresh_token',
       };
       const oauthTokenString = JSON.stringify(oauthToken);
+      const apiUrl = 'https://api.snyk.io';
 
-      await rejects(service.updateToken(oauthTokenString));
+      await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
   });

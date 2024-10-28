@@ -17,7 +17,7 @@ export interface IAuthenticationService {
 
   setToken(): Promise<void>;
 
-  updateToken(token: string): Promise<void>;
+  updateTokenAndEndpoint(token: string, apiUrl: string): Promise<void>;
 }
 
 export type OAuthToken = {
@@ -86,11 +86,15 @@ export class AuthenticationService implements IAuthenticationService {
     return `${token.slice(0, 4)}****${token.slice(-4)}`;
   }
 
-  async updateToken(token: string): Promise<void> {
+  async updateTokenAndEndpoint(token: string, apiUrl: string): Promise<void> {
     if (!token) {
       await this.initiateLogout();
     } else {
       if (!this.validateToken(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
+
+      if (apiUrl !== null && apiUrl !== undefined && apiUrl.trim().length > 0) {
+        await this.configuration.setEndpoint(apiUrl);
+      }
 
       await this.configuration.setToken(token);
       await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
