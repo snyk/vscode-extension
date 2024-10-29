@@ -5,7 +5,7 @@ import { Checksum } from '../../../snyk/cli/checksum';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { Downloader } from '../../../snyk/common/download/downloader';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
-import { IStaticCliApi, CliMetadata } from '../../../snyk/cli/staticCliApi';
+import { IStaticCliApi } from '../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
 import { windowMock } from '../mocks/window.mock';
@@ -19,19 +19,6 @@ suite('LS Downloader (LS)', () => {
     lsApi = {
       getDownloadUrl: sinon.fake(),
       downloadBinary: sinon.fake(),
-      getMetadata(): Promise<CliMetadata> {
-        return Promise.resolve({
-          commit: 'abc',
-          date: '01.01.2001',
-          // eslint-disable-next-line camelcase
-          previous_tag: '',
-          // eslint-disable-next-line camelcase
-          project_name: 'testProject',
-          runtime: 'darwin',
-          tag: 'v20010101.010101',
-          version: 'v20010101.010101',
-        });
-      },
       getSha256Checksum: sinon.fake(),
     };
     logger = new LoggerMock();

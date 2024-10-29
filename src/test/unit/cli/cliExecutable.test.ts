@@ -10,9 +10,11 @@ suite('CliExecutable', () => {
   });
 
   test('Returns correct filename for different platforms', () => {
-    strictEqual(CliExecutable.getFilename('linux'), 'snyk-linux');
-    strictEqual(CliExecutable.getFilename('darwin'), 'snyk-macos');
-    strictEqual(CliExecutable.getFilename('win32'), 'snyk-win.exe');
+    strictEqual(CliExecutable.getFileName('linux'), 'snyk-linux');
+    strictEqual(CliExecutable.getFileName('linux_alpine'), 'snyk-alpine');
+    strictEqual(CliExecutable.getFileName('macos'), 'snyk-macos');
+    strictEqual(CliExecutable.getFileName('macos_arm64'), 'snyk-macos-arm64');
+    strictEqual(CliExecutable.getFileName('windows'), 'snyk-win.exe');
   });
 
   test('Returns correct extension paths', () => {
