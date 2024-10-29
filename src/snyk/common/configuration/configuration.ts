@@ -156,10 +156,7 @@ export class Configuration implements IConfiguration {
 
   private featureFlag: { [key: string]: boolean } = {};
 
-  constructor(
-    private processEnv: NodeJS.ProcessEnv = process.env,
-    private workspace: IVSCodeWorkspace
-  ) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
     return this.workspace.updateConfiguration(

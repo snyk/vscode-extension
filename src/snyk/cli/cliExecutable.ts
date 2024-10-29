@@ -30,8 +30,8 @@ export class CliExecutable {
 
   static async getCurrentWithArch(): Promise<CliSupportedPlatform> {
     let platform = '';
-    let osName = os.platform().toString().toLowerCase();
-    let archName = os.arch().toLowerCase();
+    const osName = os.platform().toString().toLowerCase();
+    const archName = os.arch().toLowerCase();
     if (osName === 'linux') {
       if (await this.isAlpine()) {
         platform = 'linux_alpine';

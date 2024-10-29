@@ -22,7 +22,7 @@ export class Downloader {
     private readonly cliApi: IStaticCliApi,
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
-    private readonly extensionContext: ExtensionContext
+    private readonly extensionContext: ExtensionContext,
   ) {}
   /**
    * Downloads LS. Existing executable is deleted.
@@ -36,7 +36,10 @@ export class Downloader {
   }
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
-    const cliPath = await CliExecutable.getPath(this.extensionContext.extensionPath, await this.configuration.getCliPath());
+    const cliPath = await CliExecutable.getPath(
+      this.extensionContext.extensionPath,
+      await this.configuration.getCliPath(),
+    );
     const lsVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
     const sha256 = await this.cliApi.getSha256Checksum(lsVersion, platform);
     const checksum = await this.downloadCli(cliPath, platform, sha256);

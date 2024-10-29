@@ -51,7 +51,7 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
-    private extensionContext: ExtensionContext
+    private extensionContext: ExtensionContext,
   ) {
     this.downloadService = downloadService;
   }
@@ -79,7 +79,10 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    const cliBinaryPath = await CliExecutable.getPath(this.extensionContext.extensionPath, await this.configuration.getCliPath());
+    const cliBinaryPath = await CliExecutable.getPath(
+      this.extensionContext.extensionPath,
+      await this.configuration.getCliPath(),
+    );
 
     // log level is set to info by default
     let logLevel = 'info';
@@ -147,7 +150,7 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_CLI_PATH, async ({ cliPath }: { cliPath: string }) =>  {
+    client.onNotification(SNYK_CLI_PATH, async ({ cliPath }: { cliPath: string }) => {
       if (!cliPath) {
         ErrorHandler.handle(
           new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
@@ -186,7 +189,11 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user, this.extensionContext);
+    const settings = await LanguageServerSettings.fromConfiguration(
+      this.configuration,
+      this.user,
+      this.extensionContext,
+    );
     return settings;
   }
 

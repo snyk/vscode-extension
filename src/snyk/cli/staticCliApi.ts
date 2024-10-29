@@ -27,7 +27,7 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   getDownloadUrl(version: string, platform: CliSupportedPlatform): string {
-    if(!version.startsWith('v')) {
+    if (!version.startsWith('v')) {
       version = `v${version}`;
     }
     const downloadUrl = `${this.configuration.getCliBaseDownloadUrl()}/cli/${version}/${this.getFileName(platform)}`;
@@ -69,7 +69,7 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
-    const fileName = await this.getFileName(platform);
+    const fileName = this.getFileName(platform);
     const { data } = await axios.get<string>(
       `${this.getSha256DownloadUrl(version, platform)}`,
       await getAxiosConfig(this.workspace, this.configuration, this.logger),
