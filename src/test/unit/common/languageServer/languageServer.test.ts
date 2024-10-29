@@ -10,18 +10,14 @@ import { ServerSettings } from '../../../../snyk/common/languageServer/settings'
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
-import {
-  ExtensionContext,
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-} from '../../../../snyk/common/vscode/types';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -92,7 +88,7 @@ suite('Language Server', () => {
         return [];
       },
       scanningMode: 'auto',
-    } as IConfiguration;
+    } as unknown as IConfiguration;
 
     extensionContextMock = {
       extensionPath: 'test/path',
@@ -148,7 +144,7 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
-      extensionContextMock
+      extensionContextMock,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -198,7 +194,7 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
-      extensionContextMock
+      extensionContextMock,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -224,6 +220,7 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
+        extensionContextMock,
       );
     });
 
@@ -269,6 +266,7 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
+        extensionContextMock,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

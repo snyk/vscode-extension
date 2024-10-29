@@ -12,11 +12,13 @@ import type {
   ResponseError,
 } from '../../../../snyk/common/vscode/types';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { extensionContextMock } from '../../mocks/extensionContext.mock';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
   let user: User;
+  let extensionContextMock: ExtensionContext;
+  let contextGetGlobalStateValue: sinon.SinonStub;
 
   setup(() => {
     user = { anonymousId: 'anonymous-id' } as User;
@@ -56,7 +58,16 @@ suite('Language Server: Middleware', () => {
       getFolderConfigs(): FolderConfig[] {
         return [];
       },
-    } as IConfiguration;
+    } as unknown as IConfiguration;
+    extensionContextMock = {
+      extensionPath: 'test/path',
+      getGlobalStateValue: contextGetGlobalStateValue,
+      updateGlobalStateValue: sinon.fake(),
+      setContext: sinon.fake(),
+      subscriptions: [],
+      addDisposables: sinon.fake(),
+      getExtensionUri: sinon.fake(),
+    } as unknown as ExtensionContext;
   });
 
   teardown(() => {
@@ -64,7 +75,7 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware(configuration, user);
+    const middleware = new LanguageClientMiddleware(configuration, user, extensionContextMock);
     const params: ConfigurationParams = {
       items: [
         {
@@ -101,14 +112,14 @@ suite('Language Server: Middleware', () => {
     );
     assert.strictEqual(
       serverResult.cliPath,
-      CliExecutable.getPath(extensionContextMock.extensionPath, configuration.getCliPath()),
+      CliExecutable.getPath(extensionContextMock.extensionPath, await configuration.getCliPath()),
     );
     assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
     assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware(configuration, user);
+    const middleware = new LanguageClientMiddleware(configuration, user, extensionContextMock);
     const params: ConfigurationParams = {
       items: [
         {

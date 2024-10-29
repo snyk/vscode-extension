@@ -9,25 +9,34 @@ import { IStaticCliApi } from '../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
 import { windowMock } from '../mocks/window.mock';
+import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 
 suite('LS Downloader (LS)', () => {
   let logger: ILog;
-  let lsApi: IStaticCliApi;
+  let cliApi: IStaticCliApi;
   let configuration: IConfiguration;
-
+  let extensionContextMock: ExtensionContext;
   setup(() => {
-    lsApi = {
-      getDownloadUrl: sinon.fake(),
+    cliApi = {
+      getLatestCliVersion: sinon.fake(),
       downloadBinary: sinon.fake(),
       getSha256Checksum: sinon.fake(),
     };
     logger = new LoggerMock();
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getSnykLanguageServerPath(): string {
+      getCliPath(): string {
         return 'abc/d';
       },
-    } as IConfiguration;
+    } as unknown as IConfiguration;
+    extensionContextMock = {
+      extensionPath: 'test/path',
+      updateGlobalStateValue: sinon.fake(),
+      setContext: sinon.fake(),
+      subscriptions: [],
+      addDisposables: sinon.fake(),
+      getExtensionUri: sinon.fake(),
+    } as unknown as ExtensionContext;
   });
 
   // noinspection DuplicatedCode
@@ -36,30 +45,30 @@ suite('LS Downloader (LS)', () => {
   });
 
   test('Download of LS fails if platform is not supported', async () => {
-    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
+    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
     sinon.stub(CliExecutable, 'getCurrentWithArch').throws(new Error());
     await rejects(() => downloader.download());
   });
 
   test('Download of LS removes executable, if it exists', async () => {
-    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
+    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
 
-    sinon.stub(CliExecutable, 'getCurrentWithArch').returns('darwinArm64');
+    sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
     sinon.stub(fs, 'access').returns(Promise.resolve());
     const unlink = sinon.stub(fs, 'unlink');
 
     await downloader.download();
-    const lsPath = CliExecutable.getPath(configuration.getSnykLanguageServerPath());
+    const cliPath = await CliExecutable.getPath((await configuration.getCliPath()) as string);
 
-    strictEqual(unlink.calledOnceWith(lsPath), true);
+    strictEqual(unlink.calledOnceWith(cliPath), true);
   });
 
   test('Rejects downloaded LS when integrity check fails', async () => {
-    const downloader = new Downloader(configuration, lsApi, windowMock, logger);
-    sinon.stub(CliExecutable, 'getCurrentWithArch').returns('darwinAmd64');
+    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
+    sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
     sinon.stub(fs);
 
-    sinon.stub(downloader, 'downloadLs').resolves(new Checksum('test'));
+    sinon.stub(downloader, 'downloadCli').resolves(new Checksum('test'));
 
     await rejects(() => downloader.download());
   });
