@@ -534,7 +534,7 @@ export class Configuration implements IConfiguration {
     const extensionContext = SnykExtension.getExtensionContext();
     if (!cliPath && extensionContext) {
       cliPath = await CliExecutable.getPath(SnykExtension.getExtensionContext().extensionPath);
-      this.setCliPath(cliPath);
+      await this.setCliPath(cliPath);
     }
     return cliPath;
   }

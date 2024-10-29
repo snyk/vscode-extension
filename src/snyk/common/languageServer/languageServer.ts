@@ -150,7 +150,7 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_CLI_PATH, async ({ cliPath }: { cliPath: string }) => {
+    client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
       if (!cliPath) {
         ErrorHandler.handle(
           new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
@@ -160,18 +160,24 @@ export class LanguageServer implements ILanguageServer {
         return;
       }
 
-      const currentCliPath = await this.configuration.getCliPath();
-      if (currentCliPath != cliPath) {
-        this.logger.info('Setting Snyk CLI path to: ' + cliPath);
-        void this.configuration
-          .setCliPath(cliPath)
-          .then(() => {
-            this.cliReady$.next(cliPath);
-          })
-          .catch((error: Error) => {
-            ErrorHandler.handle(error, this.logger, error.message);
-          });
-      }
+      this.configuration
+        .getCliPath()
+        .then(currentCliPath => {
+          if (currentCliPath != cliPath) {
+            this.logger.info('Setting Snyk CLI path to: ' + cliPath);
+            void this.configuration
+              .setCliPath(cliPath)
+              .then(() => {
+                this.cliReady$.next(cliPath);
+              })
+              .catch((error: Error) => {
+                ErrorHandler.handle(error, this.logger, error.message);
+              });
+          }
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
