@@ -150,36 +150,6 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-      if (!cliPath) {
-        ErrorHandler.handle(
-          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
-          this.logger,
-          "CLI path wasn't provided by language server on notification",
-        );
-        return;
-      }
-
-      this.configuration
-        .getCliPath()
-        .then(currentCliPath => {
-          if (currentCliPath != cliPath) {
-            this.logger.info('Setting Snyk CLI path to: ' + cliPath);
-            void this.configuration
-              .setCliPath(cliPath)
-              .then(() => {
-                this.cliReady$.next(cliPath);
-              })
-              .catch((error: Error) => {
-                ErrorHandler.handle(error, this.logger, error.message);
-              });
-          }
-        })
-        .catch((error: Error) => {
-          ErrorHandler.handle(error, this.logger, error.message);
-        });
-    });
-
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
       this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
