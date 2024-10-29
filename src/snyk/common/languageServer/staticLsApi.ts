@@ -29,7 +29,7 @@ export interface IStaticLsApi {
 }
 
 export class StaticLsApi implements IStaticLsApi {
-  private readonly baseUrl = `https://static.snyk.io/snyk-ls/${PROTOCOL_VERSION}`;
+  private readonly baseUrl = `https://downloads.snyk.io/snyk-ls/${PROTOCOL_VERSION}`;
 
   constructor(
     private readonly workspace: IVSCodeWorkspace,
