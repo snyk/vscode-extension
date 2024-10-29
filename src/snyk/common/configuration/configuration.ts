@@ -32,7 +32,7 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { CliExecutable } from '../../cli/cliExecutable';
-import SnykExtension from '../../extension';
+import { extensionContext } from '../vscode/extensionContext';
 
 const NEWISSUES = 'Net new issues';
 
@@ -321,7 +321,6 @@ export class Configuration implements IConfiguration {
   }
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
-    const extensionContext = SnykExtension.getExtensionContext();
     if (!cliPath && extensionContext) {
       cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
     }
@@ -531,9 +530,8 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_PATH),
     );
-    const extensionContext = SnykExtension.getExtensionContext();
     if (!cliPath && extensionContext) {
-      cliPath = await CliExecutable.getPath(SnykExtension.getExtensionContext().extensionPath);
+      cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
       await this.setCliPath(cliPath);
     }
     return cliPath;

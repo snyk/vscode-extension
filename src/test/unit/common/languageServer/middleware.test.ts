@@ -32,7 +32,7 @@ suite('Language Server: Middleware', () => {
       organization: 'org',
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliPath: () => '/path/to/cli',
+      getCliPath: (): Promise<string> => Promise.resolve('/path/to/cli'),
       getInsecure(): boolean {
         return true;
       },
@@ -58,7 +58,7 @@ suite('Language Server: Middleware', () => {
       getFolderConfigs(): FolderConfig[] {
         return [];
       },
-    } as unknown as IConfiguration;
+    } as IConfiguration;
     extensionContextMock = {
       extensionPath: 'test/path',
       getGlobalStateValue: contextGetGlobalStateValue,
@@ -112,7 +112,7 @@ suite('Language Server: Middleware', () => {
     );
     assert.strictEqual(
       serverResult.cliPath,
-      CliExecutable.getPath(extensionContextMock.extensionPath, await configuration.getCliPath()),
+      await CliExecutable.getPath(extensionContextMock.extensionPath, await configuration.getCliPath()),
     );
     assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
     assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());

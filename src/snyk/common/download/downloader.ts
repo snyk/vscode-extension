@@ -40,6 +40,9 @@ export class Downloader {
       this.extensionContext.extensionPath,
       await this.configuration.getCliPath(),
     );
+    if (await this.binaryExists(cliPath)) {
+      await this.deleteFileAtPath(cliPath);
+    }
     const lsVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
     const sha256 = await this.cliApi.getSha256Checksum(lsVersion, platform);
     const checksum = await this.downloadCli(cliPath, platform, sha256);
@@ -54,6 +57,15 @@ export class Downloader {
     }
 
     return new CliExecutable(lsVersion, checksum);
+  }
+
+  private async binaryExists(filePath: string): Promise<boolean> {
+    try {
+      await fsPromises.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async deleteFileAtPath(filePath: string): Promise<void> {

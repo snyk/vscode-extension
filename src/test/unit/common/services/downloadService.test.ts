@@ -47,9 +47,9 @@ suite('DownloadService', () => {
 
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCustomCliPath: () => undefined,
-      getSnykLanguageServerPath: () => 'ab/c',
-    } as unknown as IConfiguration;
+      getCliReleaseChannel: () => "stable",
+      getCliPath: () => Promise.resolve("path/to/cli"),
+    } as IConfiguration;
 
     downloader = new Downloader(configuration, lsApi, windowMock, logger, context);
   });
@@ -61,9 +61,9 @@ suite('DownloadService', () => {
   test('Tries to download LS if not installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCustomCliPath: () => undefined,
-      getSnykLanguageServerPath: () => 'abc/d',
-    } as unknown as IConfiguration;
+      getCliReleaseChannel: () => "stable",
+      getCliPath: () => Promise.resolve("path/to/cli"),
+    } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
@@ -76,9 +76,9 @@ suite('DownloadService', () => {
   test('Tries to update LS if installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCustomCliPath: () => undefined,
-      getSnykLanguageServerPath: () => 'abc/d',
-    } as unknown as IConfiguration;
+      getCliReleaseChannel: () => "stable",
+      getCliPath: () => Promise.resolve("path/to/cli"),
+    } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(true);
     const downloadSpy = stub(service, 'download');
@@ -93,9 +93,9 @@ suite('DownloadService', () => {
   test("Doesn't download LS if automatic dependency management disabled", async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => false,
-      getCustomCliPath: () => undefined,
-      getSnykLanguageServerPath: () => 'abc/d',
-    } as unknown as IConfiguration;
+      getCliReleaseChannel: () => "stable",
+      getCliPath: () => Promise.resolve("path/to/cli"),
+    } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(false);
     const downloadSpy = stub(service, 'download');

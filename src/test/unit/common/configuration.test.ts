@@ -3,7 +3,6 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
-import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
 import {
   ADVANCED_CUSTOM_ENDPOINT,
   FEATURES_PREVIEW_SETTING,

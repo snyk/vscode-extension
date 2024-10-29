@@ -5,6 +5,10 @@ export class Platform {
     return os.platform();
   }
 
+  static getArch(): string {
+    return os.arch();
+  }
+
   static getVersion(): string {
     return `${os.release()}-${os.arch}`;
   }

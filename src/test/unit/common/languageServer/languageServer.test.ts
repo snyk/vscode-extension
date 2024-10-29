@@ -57,9 +57,6 @@ suite('Language Server', () => {
         return Promise.resolve('testToken');
       },
       shouldReportErrors: true,
-      getSnykLanguageServerPath(): string {
-        return path;
-      },
       getAdditionalCliParameters() {
         return '--all-projects -d';
       },
@@ -88,7 +85,7 @@ suite('Language Server', () => {
         return [];
       },
       scanningMode: 'auto',
-    } as unknown as IConfiguration;
+    } as IConfiguration;
 
     extensionContextMock = {
       extensionPath: 'test/path',

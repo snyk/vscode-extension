@@ -100,10 +100,6 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  public static getExtensionContext(): ExtensionContext {
-    return extensionContext;
-  }
-
   private configureGitHandlers(): void {
     // Get the Git extension
     const gitExtension = vscode.extensions.getExtension<GitExtension>('vscode.git')?.exports;

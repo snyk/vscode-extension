@@ -1,8 +1,8 @@
-import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import { CliSupportedPlatform } from './supportedPlatforms';
 import { Checksum } from './checksum';
+import { Platform } from '../common/platform';
 
 export class CliExecutable {
   public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
@@ -30,8 +30,8 @@ export class CliExecutable {
 
   static async getCurrentWithArch(): Promise<CliSupportedPlatform> {
     let platform = '';
-    const osName = os.platform().toString().toLowerCase();
-    const archName = os.arch().toLowerCase();
+    const osName = Platform.getCurrent().toString().toLowerCase();
+    const archName = Platform.getArch().toLowerCase();
     if (osName === 'linux') {
       if (await this.isAlpine()) {
         platform = 'linux_alpine';

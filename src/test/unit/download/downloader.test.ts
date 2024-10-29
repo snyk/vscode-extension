@@ -25,10 +25,11 @@ suite('LS Downloader (LS)', () => {
     logger = new LoggerMock();
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliPath(): string {
-        return 'abc/d';
+      getCliReleaseChannel: () => "stable",
+      getCliPath(): Promise<string> {
+        return Promise.resolve('abc/d');
       },
-    } as unknown as IConfiguration;
+    } as IConfiguration;
     extensionContextMock = {
       extensionPath: 'test/path',
       updateGlobalStateValue: sinon.fake(),
@@ -58,8 +59,7 @@ suite('LS Downloader (LS)', () => {
     const unlink = sinon.stub(fs, 'unlink');
 
     await downloader.download();
-    const cliPath = await CliExecutable.getPath((await configuration.getCliPath()) as string);
-
+    const cliPath = await configuration.getCliPath() ?? "";
     strictEqual(unlink.calledOnceWith(cliPath), true);
   });
 
