@@ -20,22 +20,23 @@ suite('CliExecutable', () => {
   test('Returns correct extension paths', async () => {
     const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
 
-    const stub = sinon.stub(Platform, 'getCurrent').returns('darwin');
+    const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
     let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
 
-    sinon.stub(Platform, 'getArch').returns('arm64');
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
-
-    stub.returns('linux');
+    osStub.returns('linux');
     expectedCliPath = path.join(unixExtensionDir, 'snyk-linux');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
 
     const winExtensionDir = `C:\\Users\\user\\.vscode\\extensions`;
-    stub.returns('win32');
+    osStub.returns('win32');
     expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
     strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
+
+    osStub.returns('darwin');
+    sinon.stub(Platform, 'getArch').returns('arm64');
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
   });
 
   test('Return custom path, if provided', async () => {
