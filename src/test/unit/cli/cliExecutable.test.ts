@@ -21,6 +21,7 @@ suite('CliExecutable', () => {
     const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
 
     const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
+    const archStub = sinon.stub(Platform, 'getArch').returns('x64');
     let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
 
@@ -34,7 +35,7 @@ suite('CliExecutable', () => {
     strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
 
     osStub.returns('darwin');
-    sinon.stub(Platform, 'getArch').returns('arm64');
+    archStub.returns('arm64')
     expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
   });
