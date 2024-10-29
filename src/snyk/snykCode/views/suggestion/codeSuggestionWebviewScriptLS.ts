@@ -246,7 +246,7 @@ declare const acquireVsCodeApi: any;
     const diffSuggestion = suggestion.diffs[diffSelectedIndex];
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
-    const fixId = suggestion.id;
+    const fixId = diffSuggestion.fixId;
 
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',
