@@ -47,8 +47,8 @@ suite('DownloadService', () => {
 
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => "stable",
-      getCliPath: () => Promise.resolve("path/to/cli"),
+      getCliReleaseChannel: () => 'stable',
+      getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
 
     downloader = new Downloader(configuration, lsApi, windowMock, logger, context);
@@ -61,8 +61,8 @@ suite('DownloadService', () => {
   test('Tries to download LS if not installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => "stable",
-      getCliPath: () => Promise.resolve("path/to/cli"),
+      getCliReleaseChannel: () => 'stable',
+      getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     const downloadSpy = stub(service, 'download');
@@ -76,8 +76,8 @@ suite('DownloadService', () => {
   test('Tries to update LS if installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => "stable",
-      getCliPath: () => Promise.resolve("path/to/cli"),
+      getCliReleaseChannel: () => 'stable',
+      getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(true);
@@ -93,8 +93,8 @@ suite('DownloadService', () => {
   test("Doesn't download LS if automatic dependency management disabled", async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => false,
-      getCliReleaseChannel: () => "stable",
-      getCliPath: () => Promise.resolve("path/to/cli"),
+      getCliReleaseChannel: () => 'stable',
+      getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(false);

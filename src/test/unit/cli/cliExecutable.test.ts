@@ -17,7 +17,7 @@ suite('CliExecutable', () => {
     strictEqual(CliExecutable.getFileName('windows'), 'snyk-win.exe');
   });
 
-  test('Returns correct extension paths', async() => {
+  test('Returns correct extension paths', async () => {
     const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
 
     const stub = sinon.stub(Platform, 'getCurrent').returns('darwin');
