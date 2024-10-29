@@ -2,6 +2,9 @@
 
 ## [2.20.0]
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
+- Added CLI release channel.
+- Added option to change base URL to download CLI.
+- Run Snyk language Server from the CLI extension.
 
 ## [2.19.1]
 - Adjust OSS panel font size.

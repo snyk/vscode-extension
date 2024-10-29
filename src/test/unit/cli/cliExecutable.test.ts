@@ -35,7 +35,7 @@ suite('CliExecutable', () => {
     strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
 
     osStub.returns('darwin');
-    archStub.returns('arm64')
+    archStub.returns('arm64');
     expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
   });
