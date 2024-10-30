@@ -1,10 +1,11 @@
 # Snyk Security Changelog
 
 ## [2.20.0]
+- disable hovers over issues
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
 
 ## [2.19.1]
-- Adjust OSS panel font size.
+- Adjust OSS panel font size
 
 ## [2.19.0]
 - Moved delta scan preview setting to settings page.
