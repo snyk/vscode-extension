@@ -44,6 +44,7 @@ export type ServerSettings = {
   enableDeltaFindings?: string;
   folderConfigs: FolderConfig[];
   enableSnykOSSQuickFixCodeActions: string;
+  hoverVerbosity: number;
 };
 
 export class LanguageServerSettings {
@@ -86,6 +87,7 @@ export class LanguageServerSettings {
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
       folderConfigs: configuration.getFolderConfigs(),
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
+      hoverVerbosity: 1
     };
   }
 }
