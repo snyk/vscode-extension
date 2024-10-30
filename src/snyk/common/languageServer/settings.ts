@@ -87,7 +87,7 @@ export class LanguageServerSettings {
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
       folderConfigs: configuration.getFolderConfigs(),
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
-      hoverVerbosity: 1
+      hoverVerbosity: 0,
     };
   }
 }

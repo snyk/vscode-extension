@@ -120,7 +120,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const previousBranches = new Map<Repository, string | undefined>();
     // Register event listener for changes in each repository
     repositories.forEach((repo: Repository) => {
-      let previousBranch = repo.state.HEAD?.name;
+      const previousBranch = repo.state.HEAD?.name;
       previousBranches.set(repo, previousBranch);
       repo.state.onDidChange(async () => {
         const currentBranch = repo.state.HEAD?.name;
