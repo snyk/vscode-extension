@@ -18,22 +18,22 @@ export class DownloadService {
   constructor(
     private readonly extensionContext: ExtensionContext,
     private readonly configuration: IConfiguration,
-    private readonly lsApi: IStaticCliApi,
+    private readonly cliApi: IStaticCliApi,
     readonly window: IVSCodeWindow,
     private readonly logger: ILog,
     downloader?: Downloader,
   ) {
-    this.downloader = downloader ?? new Downloader(configuration, lsApi, window, logger, this.extensionContext);
+    this.downloader = downloader ?? new Downloader(configuration, cliApi, window, logger, this.extensionContext);
   }
 
   async downloadOrUpdate(): Promise<boolean> {
-    const lsInstalled = await this.isCliInstalled();
+    const cliInstalled = await this.isCliInstalled();
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
       this.downloadReady$.next();
       return false;
     }
 
-    if (!lsInstalled) {
+    if (!cliInstalled) {
       const downloaded = await this.download();
       this.downloadReady$.next();
       return downloaded;
@@ -60,11 +60,11 @@ export class DownloadService {
 
   async update(): Promise<boolean> {
     const platform = await CliExecutable.getCurrentWithArch();
-    const version = await this.lsApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
-    const lsInstalled = await this.isCliInstalled();
+    const version = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const cliInstalled = await this.isCliInstalled();
     const cliVersionHasUpdated = this.hasCliVersionUpdated(version);
     const needsUpdate = cliVersionHasUpdated;
-    if (!lsInstalled || needsUpdate) {
+    if (!cliInstalled || needsUpdate) {
       const updateAvailable = await this.isCliUpdateAvailable(platform);
       if (!updateAvailable) {
         return false;
@@ -83,18 +83,18 @@ export class DownloadService {
   }
 
   async isCliInstalled() {
-    const lsExecutableExists = await CliExecutable.exists(
+    const cliExecutableExists = await CliExecutable.exists(
       this.extensionContext.extensionPath,
       await this.configuration.getCliPath(),
     );
-    const lsChecksumWritten = !!this.getCliChecksum();
+    const cliChecksumWritten = !!this.getCliChecksum();
 
-    return lsExecutableExists && lsChecksumWritten;
+    return cliExecutableExists && cliChecksumWritten;
   }
 
   private async isCliUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
-    const version = await this.lsApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
-    const latestChecksum = await this.lsApi.getSha256Checksum(version, platform);
+    const version = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
     const path = await CliExecutable.getPath(
       this.extensionContext.extensionPath,
       await this.configuration.getCliPath(),

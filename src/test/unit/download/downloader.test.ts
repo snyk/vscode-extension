@@ -11,7 +11,7 @@ import { LoggerMock } from '../mocks/logger.mock';
 import { windowMock } from '../mocks/window.mock';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 
-suite('LS Downloader (LS)', () => {
+suite('CLI Downloader (CLI)', () => {
   let logger: ILog;
   let cliApi: IStaticCliApi;
   let configuration: IConfiguration;
@@ -45,13 +45,13 @@ suite('LS Downloader (LS)', () => {
     sinon.restore();
   });
 
-  test('Download of LS fails if platform is not supported', async () => {
+  test('Download of CLI fails if platform is not supported', async () => {
     const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
     sinon.stub(CliExecutable, 'getCurrentWithArch').throws(new Error());
     await rejects(() => downloader.download());
   });
 
-  test('Download of LS removes executable, if it exists', async () => {
+  test('Download of CLI removes executable, if it exists', async () => {
     const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
 
     sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
@@ -63,7 +63,7 @@ suite('LS Downloader (LS)', () => {
     strictEqual(unlink.calledOnceWith(cliPath), true);
   });
 
-  test('Rejects downloaded LS when integrity check fails', async () => {
+  test('Rejects downloaded CLI when integrity check fails', async () => {
     const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
     sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
     sinon.stub(fs);

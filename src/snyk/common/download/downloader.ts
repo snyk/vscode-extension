@@ -25,7 +25,7 @@ export class Downloader {
     private readonly extensionContext: ExtensionContext,
   ) {}
   /**
-   * Downloads LS. Existing executable is deleted.
+   * Downloads CLI. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | null> {
     const platform = await CliExecutable.getCurrentWithArch();
@@ -43,8 +43,8 @@ export class Downloader {
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);
     }
-    const lsVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
-    const sha256 = await this.cliApi.getSha256Checksum(lsVersion, platform);
+    const cliVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const sha256 = await this.cliApi.getSha256Checksum(cliVersion, platform);
     const checksum = await this.downloadCli(cliPath, platform, sha256);
 
     if (!checksum) {
@@ -56,7 +56,7 @@ export class Downloader {
       return Promise.reject(messages.integrityCheckFailed);
     }
 
-    return new CliExecutable(lsVersion, checksum);
+    return new CliExecutable(cliVersion, checksum);
   }
 
   private async binaryExists(filePath: string): Promise<boolean> {

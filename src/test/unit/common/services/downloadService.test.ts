@@ -14,7 +14,7 @@ import { windowMock } from '../../mocks/window.mock';
 
 suite('DownloadService', () => {
   let logger: ILog;
-  let lsApi: IStaticCliApi;
+  let cliApi: IStaticCliApi;
   let context: ExtensionContext;
   let downloader: Downloader;
   let configuration: IConfiguration;
@@ -27,7 +27,7 @@ suite('DownloadService', () => {
     contextGetGlobalStateValue = sinon.stub();
     apigetSha256Checksum = sinon.stub();
 
-    lsApi = {
+    cliApi = {
       getLatestCliVersion: sinon.fake(),
       downloadBinary: sinon.fake(),
       getSha256Checksum: apigetSha256Checksum,
@@ -51,20 +51,20 @@ suite('DownloadService', () => {
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
 
-    downloader = new Downloader(configuration, lsApi, windowMock, logger, context);
+    downloader = new Downloader(configuration, cliApi, windowMock, logger, context);
   });
 
   teardown(() => {
     sinon.restore();
   });
 
-  test('Tries to download LS if not installed', async () => {
+  test('Tries to download CLI if not installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
       getCliReleaseChannel: () => 'stable',
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
-    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
     await service.downloadOrUpdate();
@@ -73,13 +73,13 @@ suite('DownloadService', () => {
     strictEqual(updateSpy.called, false);
   });
 
-  test('Tries to update LS if installed', async () => {
+  test('Tries to update CLI if installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
       getCliReleaseChannel: () => 'stable',
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
-    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(true);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
@@ -90,13 +90,13 @@ suite('DownloadService', () => {
     strictEqual(updateSpy.calledOnce, true);
   });
 
-  test("Doesn't download LS if automatic dependency management disabled", async () => {
+  test("Doesn't download CLI if automatic dependency management disabled", async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => false,
       getCliReleaseChannel: () => 'stable',
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
-    const service = new DownloadService(context, configuration, lsApi, windowMock, logger, downloader);
+    const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
     stub(service, 'isCliInstalled').resolves(false);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
