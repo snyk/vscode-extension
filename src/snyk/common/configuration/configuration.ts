@@ -321,7 +321,7 @@ export class Configuration implements IConfiguration {
   }
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
-    if (!cliPath && extensionContext) {
+    if (!cliPath) {
       cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
     }
     return this.workspace.updateConfiguration(
@@ -530,7 +530,7 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_PATH),
     );
-    if (!cliPath && extensionContext) {
+    if (!cliPath) {
       cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
       await this.setCliPath(cliPath);
     }

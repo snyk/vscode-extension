@@ -7,14 +7,18 @@ import { Platform } from '../common/platform';
 export class CliExecutable {
   public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
     linux: 'snyk-linux',
+    linux_arm64: 'snyk-linux-arm64',
     linux_alpine: 'snyk-alpine',
+    linux_alpine_arm64: 'snyk-alpine-arm64',
     macos: 'snyk-macos',
     macos_arm64: 'snyk-macos-arm64',
     windows: 'snyk-win.exe',
+    windows_arm64: 'snyk-win.exe',
   };
   constructor(public readonly version: string, public readonly checksum: Checksum) {}
 
   static async getPath(extensionDir: string, customPath?: string): Promise<string> {
+    // check if custom path is file
     if (customPath) {
       return customPath;
     }
@@ -29,9 +33,19 @@ export class CliExecutable {
   }
 
   static async getCurrentWithArch(): Promise<CliSupportedPlatform> {
-    let platform = '';
     const osName = Platform.getCurrent().toString().toLowerCase();
-    const archName = Platform.getArch().toLowerCase();
+    let archSuffix = Platform.getArch().toLowerCase();
+    if (archSuffix !== 'arm64') {
+      archSuffix = '';
+    }
+
+    const platform = await this.getPlatformName(osName);
+
+    return (platform + archSuffix) as CliSupportedPlatform;
+  }
+
+  static async getPlatformName(osName: string): Promise<string> {
+    let platform = '';
     if (osName === 'linux') {
       if (await this.isAlpine()) {
         platform = 'linux_alpine';
@@ -39,19 +53,14 @@ export class CliExecutable {
         platform = 'linux';
       }
     } else if (osName === 'darwin') {
-      if (archName === 'arm64') {
-        platform = 'macos_arm64';
-      } else {
-        platform = 'macos';
-      }
-    } else if (osName.includes('win')) {
+      platform = 'macos';
+    } else if (osName === 'win32') {
       platform = 'windows';
     }
     if (!platform) {
       throw new Error(`${osName} is unsupported.`);
     }
-
-    return platform as CliSupportedPlatform;
+    return platform;
   }
 
   static async exists(extensionDir: string, customPath?: string): Promise<boolean> {

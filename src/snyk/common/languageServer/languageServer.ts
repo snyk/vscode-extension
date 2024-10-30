@@ -4,7 +4,6 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
-  SNYK_CLI_PATH,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
