@@ -34,14 +34,14 @@ export class CliExecutable {
 
   static async getCurrentWithArch(): Promise<CliSupportedPlatform> {
     const osName = Platform.getCurrent().toString().toLowerCase();
-    let archSuffix = Platform.getArch().toLowerCase();
-    if (archSuffix !== 'arm64') {
-      archSuffix = '';
-    }
-
+    const archSuffix = Platform.getArch().toLowerCase();
     const platform = await this.getPlatformName(osName);
 
-    return (platform + archSuffix) as CliSupportedPlatform;
+    let cliName = platform;
+    if (archSuffix === 'arm64') {
+      cliName = `${platform}_${archSuffix}`;
+    }
+    return cliName as CliSupportedPlatform;
   }
 
   static async getPlatformName(osName: string): Promise<string> {

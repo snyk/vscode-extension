@@ -24,6 +24,7 @@ suite('CliExecutable', () => {
 
     const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
     const archStub = sinon.stub(Platform, 'getArch').returns('x64');
+    const fsStub = sinon.stub(fs, 'access').returns(Promise.reject());
 
     let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
@@ -32,10 +33,10 @@ suite('CliExecutable', () => {
     expectedCliPath = path.join(unixExtensionDir, 'snyk-linux');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
 
-    sinon.stub(fs, 'access').returns(Promise.resolve());
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux-alpine');
+    fsStub.returns(Promise.resolve());
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
-    sinon.stub(fs, 'access').returns(Promise.reject());
+    fsStub.returns(Promise.reject());
 
     osStub.returns('win32');
     expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
@@ -52,10 +53,10 @@ suite('CliExecutable', () => {
     expectedCliPath = path.join(unixExtensionDir, 'snyk-linux-arm64');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
 
-    sinon.stub(fs, 'access').returns(Promise.resolve());
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux-alpine-arm64');
+    fsStub.returns(Promise.resolve());
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine-arm64');
     strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
-    sinon.stub(fs, 'access').returns(Promise.reject());
+    fsStub.returns(Promise.reject());
 
     osStub.returns('win32');
     expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
