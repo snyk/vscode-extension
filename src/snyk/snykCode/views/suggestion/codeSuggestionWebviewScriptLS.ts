@@ -273,7 +273,9 @@ declare const acquireVsCodeApi: any;
   const diffTopElem = document.getElementById('diff-top') as HTMLElement;
   const diffElem = document.getElementById('diff') as HTMLElement;
   const noDiffsElem = document.getElementById('info-no-diffs') as HTMLElement;
-
+  if (noDiffsElem) {
+    noDiffsElem.innerText = "We couldn't determine any fixes for this issue.";
+  }
   const diffNumElem = document.getElementById('diff-number') as HTMLElement;
   const diffNum2Elem = document.getElementById('diff-number2') as HTMLElement;
 
@@ -292,11 +294,20 @@ declare const acquireVsCodeApi: any;
   }
 
   function showCurrentDiff() {
+    if (!suggestion?.diffs?.length) {
+      toggleElement(noDiffsElem, 'show');
+      toggleElement(diffTopElem, 'hide');
+      toggleElement(diffElem, 'hide');
+      toggleElement(applyFixButton, 'hide');
+      return;
+    }
+
     if (!suggestion?.diffs?.length || diffSelectedIndex < 0 || diffSelectedIndex >= suggestion.diffs.length) return;
 
     toggleElement(noDiffsElem, 'hide');
     toggleElement(diffTopElem, 'show');
     toggleElement(diffElem, 'show');
+    toggleElement(applyFixButton, 'show');
 
     diffNumElem.innerText = suggestion.diffs.length.toString();
     diffNum2Elem.innerText = suggestion.diffs.length.toString();
