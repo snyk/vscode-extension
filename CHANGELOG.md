@@ -3,6 +3,11 @@
 ## [2.20.0]
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
 
+## [2.19.2]
+- Update download endpoint to downloads.snyk.io.
+- Send correct FixId to AI Fix endpoint.
+- Hide AI Fix div if no fixes found.
+
 ## [2.19.1]
 - Adjust OSS panel font size.
 
