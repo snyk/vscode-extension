@@ -139,7 +139,7 @@ suite('Configuration', () => {
     });
 
     test('CLI Path: Returns default path if empty', async () => {
-      let workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '');
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '');
 
       const configuration = new Configuration({}, workspace);
       sinon.stub(Platform, 'getCurrent').returns('linux');
@@ -150,7 +150,7 @@ suite('Configuration', () => {
     });
 
     test('CLI Path: Returns Snyk LS path', async () => {
-      let workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_LS_PATH, '/path/to/ls');
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_LS_PATH, '/path/to/ls');
 
       const configuration = new Configuration({}, workspace);
 
@@ -159,7 +159,7 @@ suite('Configuration', () => {
     });
 
     test('CLI Path: Returns CLI Path if set', async () => {
-      let workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '/path/to/cli');
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '/path/to/cli');
 
       const configuration = new Configuration({}, workspace);
 
