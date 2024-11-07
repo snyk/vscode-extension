@@ -38,7 +38,6 @@ import {
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
-import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticLsApi } from './common/languageServer/staticLsApi';
@@ -89,9 +88,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.context = extensionContext;
 
     const snykConfiguration = await this.getSnykConfiguration();
-    if (snykConfiguration) {
-      await ErrorReporter.init(configuration, snykConfiguration, extensionContext.extensionPath, vsCodeEnv, Logger);
-    }
 
     try {
       await this.initializeExtension(vscodeContext, snykConfiguration);
@@ -396,8 +392,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
-
-    this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
+    this.checkAdvancedMode().catch(err => Logger.error(err));
 
     this.experimentService.load();
 
@@ -440,7 +435,6 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
-    await ErrorReporter.flush();
   }
 
   public async restartLanguageServer(): Promise<void> {
