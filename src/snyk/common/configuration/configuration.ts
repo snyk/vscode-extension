@@ -12,6 +12,7 @@ import {
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -132,6 +133,8 @@ export interface IConfiguration {
 
   scanningMode: string | undefined;
 
+  getSnykLanguageServerPath(): string | undefined;
+
   getTrustedFolders(): string[];
 
   setTrustedFolders(trustedFolders: string[]): Promise<void>;
@@ -195,6 +198,13 @@ export class Configuration implements IConfiguration {
 
   getOssQuickFixCodeActionsEnabled(): boolean {
     return this.getPreviewFeatures().ossQuickfixes ?? false;
+  }
+
+  getSnykLanguageServerPath(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    );
   }
 
   getInsecure(): boolean {
@@ -531,12 +541,23 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ADVANCED_CLI_PATH),
     );
     if (!cliPath) {
-      cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
+      cliPath = await this.determineCliPath();
       await this.setCliPath(cliPath);
     }
     return cliPath;
   }
 
+  async determineCliPath(): Promise<string> {
+      // if CLI Path is empty and Automatic Dependency management is disabled
+      // But Snyk-LS path is set, we will set CLI Path to Snyk LS path.
+      // This is a workaround that should be removed after the release of v2.20.0
+      const defaultPath = await CliExecutable.getPath(extensionContext.extensionPath);
+      const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
+      const snykLsPath = this.getSnykLanguageServerPath();
+      if(!isAutomaticDependencyManagementEnabled && snykLsPath)
+        return snykLsPath;
+      return defaultPath;
+  }
   getTrustedFolders(): string[] {
     return (
       this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []

@@ -18,8 +18,11 @@ export class CliExecutable {
   constructor(public readonly version: string, public readonly checksum: Checksum) {}
 
   static async getPath(extensionDir: string, customPath?: string): Promise<string> {
-    // check if custom path is file
     if (customPath) {
+      const stats = await fs.stat(customPath);
+      if (stats.isDirectory()) {
+        throw new Error('CLI custom path is a directory.');
+      }
       return customPath;
     }
 
