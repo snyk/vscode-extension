@@ -392,6 +392,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
+    // eslint-disable-next-line  @typescript-eslint/no-unsafe-argument
     this.checkAdvancedMode().catch(err => Logger.error(err));
 
     this.experimentService.load();

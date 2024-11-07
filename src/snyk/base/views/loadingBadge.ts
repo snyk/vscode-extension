@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SNYK_VIEW_WELCOME } from '../../common/constants/views';
 import { IPendingTask, PendingTask } from '../pendingTask';
+import { Logger } from '../../common/logger/logger';
 
 export interface ILoadingBadge {
   setLoadingBadge(value: boolean): void;
@@ -27,7 +28,11 @@ export class LoadingBadge implements ILoadingBadge {
       const self = this;
       vscode.window
         .withProgress({ location: { viewId: SNYK_VIEW_WELCOME } }, () => self.getProgressBadgePromise())
-        .then(() => undefined);
+        .then(
+          () => undefined,
+          // eslint-disable-next-line  @typescript-eslint/no-unsafe-argument
+          error => Logger.error(error),
+        );
     } else if (this.progressBadge && !this.progressBadge.isCompleted) {
       this.progressBadge.complete();
     }
