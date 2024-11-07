@@ -1,7 +1,9 @@
 # Snyk Security Changelog
 
 ## [2.20.0]
+- disable hovers over issues
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
+- Delete sentry reporting.
 
 ## [2.19.2]
 - Update download endpoint to downloads.snyk.io.
@@ -9,7 +11,7 @@
 - Hide AI Fix div if no fixes found.
 
 ## [2.19.1]
-- Adjust OSS panel font size.
+- Adjust OSS panel font size
 
 ## [2.19.0]
 - Moved delta scan preview setting to settings page.

@@ -16,7 +16,7 @@ export class LearnService {
     const ecosystem = ruleSplit[0];
     const additionalData = issue.additionalData;
     let cwe = '';
-    if (additionalData.cwe.length > 0) {
+    if (additionalData?.cwe?.length) {
       cwe = additionalData.cwe[0];
     }
 
