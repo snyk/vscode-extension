@@ -19,10 +19,6 @@ export class CliExecutable {
 
   static async getPath(extensionDir: string, customPath?: string): Promise<string> {
     if (customPath) {
-      const stats = await fs.stat(customPath);
-      if (stats.isDirectory()) {
-        throw new Error('CLI custom path is a directory.');
-      }
       return customPath;
     }
 

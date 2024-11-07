@@ -551,11 +551,11 @@ export class Configuration implements IConfiguration {
       // if CLI Path is empty and Automatic Dependency management is disabled
       // But Snyk-LS path is set, we will set CLI Path to Snyk LS path.
       // This is a workaround that should be removed after the release of v2.20.0
-      const defaultPath = await CliExecutable.getPath(extensionContext.extensionPath);
       const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
       const snykLsPath = this.getSnykLanguageServerPath();
       if(!isAutomaticDependencyManagementEnabled && snykLsPath)
         return snykLsPath;
+      const defaultPath = await CliExecutable.getPath(extensionContext.extensionPath);
       return defaultPath;
   }
   getTrustedFolders(): string[] {

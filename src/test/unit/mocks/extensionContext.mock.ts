@@ -4,6 +4,6 @@ export const extensionContextMock = {
   secrets: {
     store: (_key: string, _value: string) => Promise.resolve(),
     get: () => Promise.resolve(),
-    delete: () => Promise.resolve(),
   },
+  extensionPath: 'path/to/extension',
 } as unknown as ExtensionContext;
