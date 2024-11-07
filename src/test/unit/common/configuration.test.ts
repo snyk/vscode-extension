@@ -16,6 +16,7 @@ import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { Platform } from '../../../snyk/common/platform';
+import path from 'path';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
@@ -146,7 +147,9 @@ suite('Configuration', () => {
       sinon.stub(Platform, 'getArch').returns('x64');
 
       const cliPath = await configuration.getCliPath();
-      strictEqual(cliPath, 'path/to/extension/snyk-linux');
+
+      const expectedCliPath = path.join('path/to/extension/', 'snyk-linux');
+      strictEqual(cliPath, expectedCliPath);
     });
 
     test('CLI Path: Returns Snyk LS path', async () => {
