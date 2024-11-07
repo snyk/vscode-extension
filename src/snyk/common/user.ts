@@ -2,7 +2,6 @@ import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { SNYK_GET_ACTIVE_USER } from './constants/commands';
 import { MEMENTO_ANONYMOUS_ID } from './constants/globalState';
-import { ErrorReporter } from './error/errorReporter';
 import { IVSCodeCommands } from './vscode/commands';
 import { ExtensionContext } from './vscode/extensionContext';
 import { ILog } from './logger/interfaces';
@@ -50,7 +49,6 @@ export class User {
     const user = await this.userMe(commandExecutor);
     if (user && user.id) {
       this._authenticatedId = user.id;
-      ErrorReporter.identify(this);
     }
   }
 

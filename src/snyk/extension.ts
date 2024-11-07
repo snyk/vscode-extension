@@ -38,7 +38,6 @@ import {
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
-import { ErrorReporter } from './common/error/errorReporter';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
@@ -88,9 +87,6 @@ class SnykExtension extends SnykLib implements IExtension {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
     const snykConfiguration = await this.getSnykConfiguration();
-    if (snykConfiguration) {
-      await ErrorReporter.init(configuration, snykConfiguration, extensionContext.extensionPath, vsCodeEnv, Logger);
-    }
 
     try {
       await this.initializeExtension(vscodeContext, snykConfiguration);
@@ -119,7 +115,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const previousBranches = new Map<Repository, string | undefined>();
     // Register event listener for changes in each repository
     repositories.forEach((repo: Repository) => {
-      let previousBranch = repo.state.HEAD?.name;
+      const previousBranch = repo.state.HEAD?.name;
       previousBranches.set(repo, previousBranch);
       repo.state.onDidChange(async () => {
         const currentBranch = repo.state.HEAD?.name;
@@ -396,8 +392,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
-
-    this.checkAdvancedMode().catch(err => ErrorReporter.capture(err));
+    // eslint-disable-next-line  @typescript-eslint/no-unsafe-argument
+    this.checkAdvancedMode().catch(err => Logger.error(err));
 
     this.experimentService.load();
 
@@ -439,7 +435,6 @@ class SnykExtension extends SnykLib implements IExtension {
   public async deactivate(): Promise<void> {
     this.ossVulnerabilityCountService.dispose();
     await this.languageServer.stop();
-    await ErrorReporter.flush();
   }
 
   public async stopLanguageServer(): Promise<void> {
