@@ -9,7 +9,6 @@ import { CodeActionContext, CodeActionKind, Range, TextDocument } from '../../..
 import { SnykCodeActionsProvider } from '../../../../snyk/snykCode/codeActions/codeIssuesActionsProvider';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { FEATURE_FLAGS } from '../../../../snyk/common/constants/featureFlags';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;

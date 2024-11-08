@@ -16,8 +16,7 @@ import { IConfiguration } from '../../../../snyk/common/configuration/configurat
 import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 
 suite('CommandController', () => {
-  const sleep = util.promisify(setTimeout);
-
+  util.promisify(setTimeout);
   let controller: CommandController;
 
   setup(() => {

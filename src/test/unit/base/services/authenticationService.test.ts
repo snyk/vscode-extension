@@ -25,17 +25,6 @@ suite('AuthenticationService', () => {
   let clearTokenSpy: sinon.SinonSpy;
   let previewFeaturesSpy: sinon.SinonSpy;
 
-  const NEEDLE_DEFAULT_TIMEOUT = 1000;
-
-  const overrideNeedleTimeoutOptions = {
-    // eslint-disable-next-line camelcase
-    open_timeout: NEEDLE_DEFAULT_TIMEOUT,
-    // eslint-disable-next-line camelcase
-    response_timeout: NEEDLE_DEFAULT_TIMEOUT,
-    // eslint-disable-next-line camelcase
-    read_timeout: NEEDLE_DEFAULT_TIMEOUT,
-  };
-
   setup(() => {
     baseModule = {} as IBaseSnykModule;
     setContextSpy = sinon.fake();

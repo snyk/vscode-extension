@@ -7,9 +7,9 @@ export class AnalyticsEvent implements AbstractAnalyticsEvent {
   private readonly targetId: string;
   private readonly timestampMs: number;
   private readonly durationMs: number;
-  private readonly results: Map<string, any>;
-  private readonly errors: any[];
-  private readonly extension: Map<string, any>;
+  private readonly results: Map<string, unknown>;
+  private readonly errors: unknown[];
+  private readonly extension: Map<string, unknown>;
 
   constructor(
     deviceId: string,
@@ -19,9 +19,9 @@ export class AnalyticsEvent implements AbstractAnalyticsEvent {
     targetId: string = 'pkg:filesystem/scrubbed',
     timestampMs: number = Date.now(),
     durationMs: number = 0,
-    results: Map<string, any> = new Map<string, any>(),
-    errors: any[] = [],
-    extension: Map<string, any> = new Map<string, any>(),
+    results: Map<string, unknown> = new Map<string, unknown>(),
+    errors: unknown[] = [],
+    extension: Map<string, unknown> = new Map<string, unknown>(),
   ) {
     this.interactionType = interactionType;
     this.category = category;
@@ -29,9 +29,9 @@ export class AnalyticsEvent implements AbstractAnalyticsEvent {
     this.targetId = targetId ?? 'pkg:filesystem/scrubbed';
     this.timestampMs = timestampMs ?? Date.now();
     this.durationMs = durationMs ?? 0;
-    this.results = results ?? new Map<string, any>();
+    this.results = results ?? new Map<string, unknown>();
     this.errors = errors ?? [];
-    this.extension = extension ?? new Map<string, any>();
+    this.extension = extension ?? new Map<string, unknown>();
     if (deviceId && deviceId.length > 0) {
       this.extension.set('device_id', deviceId);
     }
@@ -61,15 +61,15 @@ export class AnalyticsEvent implements AbstractAnalyticsEvent {
     return this.durationMs;
   }
 
-  public getResults(): Map<string, any> {
+  public getResults(): Map<string, unknown> {
     return this.results;
   }
 
-  public getErrors(): any[] {
+  public getErrors(): unknown[] {
     return this.errors;
   }
 
-  public getExtension(): Map<string, any> {
+  public getExtension(): Map<string, unknown> {
     return this.extension;
   }
 }

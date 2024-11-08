@@ -96,8 +96,11 @@ suite('OSS code actions provider', () => {
 
     sinon.stub(ossActionsProvider, 'getIssueRange').returns(rangeMock);
     // stubbing private methods workaround is to cast to any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(ossActionsProvider, <any>'getVulnerabilities').returns(vulnerabilities);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(ossActionsProvider, <any>'getMostSevereVulnerability').returns(mostSevereVulnerability);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(ossActionsProvider, <any>'getActions').returns(codeActions);
 
     // act

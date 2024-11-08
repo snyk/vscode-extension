@@ -62,8 +62,7 @@ export class OssDetailPanelProvider
         );
         this.registerListeners();
       }
-
-      const images: Record<string, string> = [
+      [
         ['icon-code', 'svg'],
         ['dark-critical-severity', 'svg'],
         ['dark-high-severity', 'svg'],
@@ -76,7 +75,6 @@ export class OssDetailPanelProvider
         accumulator[name] = uri.toString();
         return accumulator;
       }, {});
-
       let html: string = '';
       // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
       if (issue.additionalData.details) {
