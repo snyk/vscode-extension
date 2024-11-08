@@ -82,6 +82,8 @@ import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
+import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, MEMENTO_LS_CHECKSUM } from './common/constants/globalState';
+import { ANALYTICS_PLUGIN_INSTALLED_SENT, CONFIGURATION_IDENTIFIER } from './common/constants/settings';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -433,12 +435,15 @@ class SnykExtension extends SnykLib implements IExtension {
     // start analytics sender and send plugin installed event
     const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, this.commandController);
 
-    if (!configuration.getAnalyticsPluginInstalledSent()) {
+    const pluginInstalledSent =
+      extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
+
+    if (!pluginInstalledSent) {
       const category = [];
       category.push('install');
       const pluginInstalleEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
       analyticsSender.logEvent(pluginInstalleEvent, () => {
-        void configuration.setAnalyticsPluginInstalledSent(true);
+        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
       });
     }
 

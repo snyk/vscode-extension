@@ -31,6 +31,7 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { MEMENTO_LS_CHECKSUM } from '../constants/globalState';
 
 const NEWISSUES = 'Net new issues';
 
@@ -141,10 +142,6 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
-
-  getAnalyticsPluginInstalledSent(): boolean;
-
-  setAnalyticsPluginInstalledSent(b: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -154,22 +151,6 @@ export class Configuration implements IConfiguration {
   private featureFlag: { [key: string]: boolean } = {};
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
-
-  getAnalyticsPluginInstalledSent(): boolean {
-    const sent = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ANALYTICS_PLUGIN_INSTALLED_SENT),
-    );
-    return sent ?? false;
-  }
-
-  async setAnalyticsPluginInstalledSent(b: boolean): Promise<void> {
-    return this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ANALYTICS_PLUGIN_INSTALLED_SENT),
-      b,
-    );
-  }
 
   getOssQuickFixCodeActionsEnabled(): boolean {
     return this.getPreviewFeatures().ossQuickfixes ?? false;
