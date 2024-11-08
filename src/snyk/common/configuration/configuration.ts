@@ -12,6 +12,7 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  ANALYTICS_PLUGIN_INSTALLED_SENT,
   CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
@@ -140,6 +141,10 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+
+  getAnalyticsPluginInstalledSent(): boolean;
+
+  setAnalyticsPluginInstalledSent(b: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -151,6 +156,22 @@ export class Configuration implements IConfiguration {
   private featureFlag: { [key: string]: boolean } = {};
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+
+  getAnalyticsPluginInstalledSent(): boolean {
+    const sent = this.workspace.getConfiguration<boolean>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ANALYTICS_PLUGIN_INSTALLED_SENT),
+    );
+    return sent ?? false;
+  }
+
+  async setAnalyticsPluginInstalledSent(b: boolean): Promise<void> {
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ANALYTICS_PLUGIN_INSTALLED_SENT),
+      b,
+    );
+  }
 
   getOssQuickFixCodeActionsEnabled(): boolean {
     return this.getPreviewFeatures().ossQuickfixes ?? false;

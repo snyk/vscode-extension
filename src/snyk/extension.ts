@@ -81,6 +81,8 @@ import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServ
 import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
+import { AnalyticsSender } from './common/analytics/AnalyticsSender';
+import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -428,6 +430,18 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
+
+    // start analytics sender and send plugin installed event
+    const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, this.commandController);
+
+    if (!configuration.getAnalyticsPluginInstalledSent()) {
+      const category = [];
+      category.push('install');
+      const pluginInstalleEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+      analyticsSender.logEvent(pluginInstalleEvent, () => {
+        void configuration.setAnalyticsPluginInstalledSent(true);
+      });
+    }
 
     // Actually start analysis
     this.runScan();
