@@ -82,8 +82,7 @@ import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
-import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, MEMENTO_LS_CHECKSUM } from './common/constants/globalState';
-import { ANALYTICS_PLUGIN_INSTALLED_SENT, CONFIGURATION_IDENTIFIER } from './common/constants/settings';
+import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
