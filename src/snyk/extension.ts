@@ -48,7 +48,6 @@ import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter } from './common/vscode/codeAction';
 import { vsCodeCommands } from './common/vscode/commands';
-import { vsCodeEnv } from './common/vscode/env';
 import { extensionContext } from './common/vscode/extensionContext';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages } from './common/vscode/languages';
@@ -383,7 +382,7 @@ class SnykExtension extends SnykLib implements IExtension {
       e.removed.forEach(folder => {
         this.snykCode.resetResult(folder.uri.fsPath);
       });
-      this.runScan(false);
+      this.runScan();
     });
 
     this.editorsWatcher.activate(this);
