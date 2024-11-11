@@ -88,6 +88,18 @@ class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
+    var extensionId = vscodeContext.extension.id;
+    // Get the current extension's name
+    // If the extension name includes "preview", set the release channel to "preview"
+    if (extensionId && extensionId.includes("preview")) {
+        const config = vscode.workspace.getConfiguration();
+        config.update(
+            "snyk.advanced.cliReleaseChannel",
+            "preview",
+            vscode.ConfigurationTarget.Global // or ConfigurationTarget.Workspace for workspace-specific settings
+        );
+    }
+
     const snykConfiguration = await this.getSnykConfiguration();
 
     try {
