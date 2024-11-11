@@ -143,8 +143,6 @@ export interface IConfiguration {
 }
 
 export class Configuration implements IConfiguration {
-  // These attributes are used in tests
-  private readonly defaultSnykCodeBaseURL = 'https://deeproxy.snyk.io';
   private readonly defaultAuthHost = 'https://app.snyk.io';
   private readonly defaultApiEndpoint = 'https://api.snyk.io';
 

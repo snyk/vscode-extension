@@ -234,7 +234,7 @@ suite('Language Server', () => {
         folderConfigs: [],
         authenticationMethod: 'oauth',
         enableSnykOSSQuickFixCodeActions: 'false',
-        hoverVerbosity: 0,
+        hoverVerbosity: 1,
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);

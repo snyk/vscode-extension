@@ -3,7 +3,6 @@ import { FeaturesConfiguration } from '../../snyk/common/configuration/configura
 import { configuration } from '../../snyk/common/configuration/instance';
 import vscode from 'vscode';
 import { ADVANCED_CUSTOM_ENDPOINT } from '../../snyk/common/constants/settings';
-import { extensionContext } from '../../snyk/common/vscode/extensionContext';
 
 suite('Configuration', () => {
   test('settings change is reflected', async () => {
