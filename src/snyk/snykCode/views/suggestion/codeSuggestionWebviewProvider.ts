@@ -93,8 +93,6 @@ export class CodeSuggestionWebviewProvider
   }
 
   async showPanel(issue: Issue<CodeIssueData>): Promise<void> {
-    const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-
     try {
       await this.focusSecondEditorGroup();
       if (this.panel) {
@@ -120,7 +118,7 @@ export class CodeSuggestionWebviewProvider
         'snyk-code.svg',
       );
       // TODO: delete this when SNYK_GENERATE_ISSUE_DESCRIPTION command is in stable CLI.
-      let html: string = '';
+      let html: string;
       if (issue.additionalData.details) {
         html = issue.additionalData.details;
       } else {

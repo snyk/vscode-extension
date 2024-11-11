@@ -81,6 +81,9 @@ import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServ
 import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
+import { AnalyticsSender } from './common/analytics/AnalyticsSender';
+import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
+import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -381,7 +384,7 @@ class SnykExtension extends SnykLib implements IExtension {
       e.removed.forEach(folder => {
         this.snykCode.resetResult(folder.uri.fsPath);
       });
-      this.runScan(false);
+      this.runScan();
     });
 
     this.editorsWatcher.activate(this);
@@ -420,6 +423,10 @@ class SnykExtension extends SnykLib implements IExtension {
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
 
+    // initialize contexts
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
+
+    // Fetch feature flag to determine whether to use the new LSP-based rendering.
     // feature flags depend on the language server
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
@@ -428,8 +435,27 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
+    this.sendPluginInstalledEvent();
+
     // Actually start analysis
     this.runScan();
+  }
+
+  private sendPluginInstalledEvent() {
+    // start analytics sender and send plugin installed event
+    const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
+
+    const pluginInstalledSent =
+      extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
+
+    if (!pluginInstalledSent) {
+      const category = [];
+      category.push('install');
+      const pluginInstalleEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+      analyticsSender.logEvent(pluginInstalleEvent, () => {
+        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+      });
+    }
   }
 
   public async deactivate(): Promise<void> {

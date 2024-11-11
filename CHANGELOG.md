@@ -1,12 +1,13 @@
 # Snyk Security Changelog
 
 ## [2.20.0]
-- disable hovers over issues
+- reduce hover verbosity to only title and description
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
 - Added CLI release channel.
 - Added option to change base URL to download CLI.
 - Run Snyk language Server from the CLI extension.
 - Delete sentry reporting.
+- send analytics event "plugin installed" the first time the extension is started
 
 ## [2.19.2]
 - Update download endpoint to downloads.snyk.io.

@@ -10,12 +10,10 @@ import { CodeSettings, ICodeSettings } from '../../../snyk/snykCode/codeSettings
 suite('Snyk Code Settings', () => {
   let settings: ICodeSettings;
   let setContextFake: SinonSpy;
-  let setFeatureFlagFake: SinonSpy;
   let contextService: IContextService;
 
   setup(() => {
     setContextFake = sinon.fake();
-    setFeatureFlagFake = sinon.fake();
 
     contextService = {
       setContext: setContextFake,

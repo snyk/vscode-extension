@@ -1,10 +1,10 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity, ScanProduct, LsErrorMessage } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, LsErrorMessage } from '../../common/languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../../common/services/contextService';
-import { IProductService, ProductService } from '../../common/services/productService';
+import { IProductService } from '../../common/services/productService';
 import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
 import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';

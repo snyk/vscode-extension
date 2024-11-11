@@ -151,7 +151,6 @@ export interface IConfiguration {
 }
 
 export class Configuration implements IConfiguration {
-  // These attributes are used in tests
   private readonly defaultAuthHost = 'https://app.snyk.io';
   private readonly defaultApiEndpoint = 'https://api.snyk.io';
   private readonly defaultCliBaseDownloadUrl = 'https://downloads.snyk.io';
