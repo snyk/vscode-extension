@@ -4,7 +4,9 @@ import { ILog } from '../logger/interfaces';
 import { IConfiguration } from '../configuration/configuration';
 import { sleep } from '@amplitude/experiment-node-server/dist/src/util/time';
 import { IVSCodeCommands } from '../vscode/commands';
-import { SNYK_REPORT_ANALTYICS } from '../constants/commands';
+import { SNYK_REPORT_ANALYTICS } from '../constants/commands';
+import { IContextService } from '../services/contextService';
+import { SNYK_CONTEXT } from '../constants/views';
 
 interface EventPair {
   event: AbstractAnalyticsEvent;
@@ -17,15 +19,13 @@ export interface AbstractAnalyticsEvent {}
 export class AnalyticsSender {
   private static instance: AnalyticsSender;
   private eventQueue: EventPair[] = [];
-  private configuration: IConfiguration;
-  private logger: ILog;
-  private commandExecutor: IVSCodeCommands;
 
-  private constructor(logger: ILog, configuration: IConfiguration, commandExecutor: IVSCodeCommands) {
-    this.logger = logger;
-    this.configuration = configuration;
-    this.commandExecutor = commandExecutor;
-
+  constructor(
+    private logger: ILog,
+    private configuration: IConfiguration,
+    private commandExecutor: IVSCodeCommands,
+    private contextService: IContextService,
+  ) {
     void this.start();
   }
 
@@ -33,9 +33,10 @@ export class AnalyticsSender {
     logger: ILog,
     configuration: IConfiguration,
     commandExecutor: IVSCodeCommands,
+    contextService: IContextService,
   ): AnalyticsSender {
     if (!AnalyticsSender.instance) {
-      AnalyticsSender.instance = new AnalyticsSender(logger, configuration, commandExecutor);
+      AnalyticsSender.instance = new AnalyticsSender(logger, configuration, commandExecutor, contextService);
     }
     return AnalyticsSender.instance;
   }
@@ -45,10 +46,14 @@ export class AnalyticsSender {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
       const authToken = await this.configuration.getToken();
+      const initialized: boolean = (this.contextService.viewContext[SNYK_CONTEXT.INITIALIZED] as boolean) ?? false;
+      const hasEvents = this.eventQueue.length > 0;
+      const authenticated = authToken && authToken.trim() !== '';
+      const iAmTired = !(initialized && authenticated && hasEvents);
 
-      if (this.eventQueue.length === 0 || !authToken || authToken.trim() === '') {
+      if (iAmTired) {
         // eslint-disable-next-line no-await-in-loop
-        await sleep(1000);
+        await sleep(5000);
         continue;
       }
 
@@ -56,10 +61,8 @@ export class AnalyticsSender {
       for (let i = 0; i < copyForSending.length; i++) {
         const eventPair = copyForSending[i];
         try {
-          const args = [];
-          args.push(eventPair.event);
           // eslint-disable-next-line no-await-in-loop
-          await this.commandExecutor.executeCommand(SNYK_REPORT_ANALTYICS, args);
+          await this.commandExecutor.executeCommand(SNYK_REPORT_ANALYTICS, JSON.stringify(eventPair.event));
           eventPair.callback();
         } catch (error) {
           // eslint-disable-next-line @typescript-eslint/no-base-to-string

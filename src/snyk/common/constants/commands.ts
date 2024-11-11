@@ -30,7 +30,7 @@ export const SNYK_FEATURE_FLAG_COMMAND = 'snyk.getFeatureFlagStatus';
 export const SNYK_CLEAR_CACHE_COMMAND = 'snyk.clearCache';
 export const SNYK_CLEAR_PERSISTED_CACHE_COMMAND = 'snyk.clearPersistedCache';
 export const SNYK_GENERATE_ISSUE_DESCRIPTION = 'snyk.generateIssueDescription';
-export const SNYK_REPORT_ANALTYICS = 'snyk.reportAnalytics';
+export const SNYK_REPORT_ANALYTICS = 'snyk.reportAnalytics';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

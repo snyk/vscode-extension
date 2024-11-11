@@ -30,7 +30,6 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { MEMENTO_LS_CHECKSUM } from '../constants/globalState';
 
 const NEWISSUES = 'Net new issues';
 
