@@ -1,5 +1,6 @@
 import { strictEqual } from 'assert';
 import path from 'path';
+import fs from 'fs/promises';
 import sinon from 'sinon';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { Platform } from '../../../snyk/common/platform';
@@ -10,30 +11,60 @@ suite('CliExecutable', () => {
   });
 
   test('Returns correct filename for different platforms', () => {
-    strictEqual(CliExecutable.getFilename('linux'), 'snyk-linux');
-    strictEqual(CliExecutable.getFilename('darwin'), 'snyk-macos');
-    strictEqual(CliExecutable.getFilename('win32'), 'snyk-win.exe');
+    strictEqual(CliExecutable.getFileName('linux'), 'snyk-linux');
+    strictEqual(CliExecutable.getFileName('linux_alpine'), 'snyk-alpine');
+    strictEqual(CliExecutable.getFileName('macos'), 'snyk-macos');
+    strictEqual(CliExecutable.getFileName('macos_arm64'), 'snyk-macos-arm64');
+    strictEqual(CliExecutable.getFileName('windows'), 'snyk-win.exe');
   });
 
-  test('Returns correct extension paths', () => {
+  test('Returns correct extension paths', async () => {
     const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
-
-    const stub = sinon.stub(Platform, 'getCurrent').returns('darwin');
-    let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
-    strictEqual(CliExecutable.getPath(unixExtensionDir), expectedCliPath);
-
-    stub.returns('linux');
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux');
-    strictEqual(CliExecutable.getPath(unixExtensionDir), expectedCliPath);
-
     const winExtensionDir = `C:\\Users\\user\\.vscode\\extensions`;
-    stub.returns('win32');
+
+    const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
+    const archStub = sinon.stub(Platform, 'getArch').returns('x64');
+    const fsStub = sinon.stub(fs, 'access').returns(Promise.reject());
+
+    let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+
+    osStub.returns('linux');
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+
+    fsStub.returns(Promise.resolve());
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    fsStub.returns(Promise.reject());
+
+    osStub.returns('win32');
     expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
-    strictEqual(CliExecutable.getPath(winExtensionDir), expectedCliPath);
+    strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
+
+    // test arm64
+    archStub.returns('arm64');
+
+    osStub.returns('darwin');
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+
+    osStub.returns('linux');
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux-arm64');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+
+    fsStub.returns(Promise.resolve());
+    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine-arm64');
+    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    fsStub.returns(Promise.reject());
+
+    osStub.returns('win32');
+    expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
+    strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
   });
 
-  test('Return custom path, if provided', () => {
+  test('Return custom path, if provided', async () => {
     const customPath = '/path/to/cli';
-    strictEqual(CliExecutable.getPath('', customPath), customPath);
+    strictEqual(await CliExecutable.getPath('', customPath), customPath);
   });
 });

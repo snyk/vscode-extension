@@ -8,7 +8,9 @@ import {
   ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
+  ADVANCED_CLI_BASE_DOWNLOAD_URL,
   ADVANCED_CLI_PATH,
+  ADVANCED_CLI_RELEASE_CHANNEL,
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
@@ -30,6 +32,8 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { CliExecutable } from '../../cli/cliExecutable';
+import { extensionContext } from '../vscode/extensionContext';
 
 const NEWISSUES = 'Net new issues';
 
@@ -85,6 +89,9 @@ export interface IConfiguration {
 
   setCliPath(cliPath: string): Promise<void>;
 
+  setCliReleaseChannel(releaseChannel: string): Promise<void>;
+  setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void>;
+
   clearToken(): Promise<void>;
 
   snykCodeUrl: string;
@@ -113,8 +120,9 @@ export interface IConfiguration {
 
   isAutomaticDependencyManagementEnabled(): boolean;
 
-  getCliPath(): string | undefined;
-
+  getCliPath(): Promise<string | undefined>;
+  getCliReleaseChannel(): string;
+  getCliBaseDownloadUrl(): string;
   getInsecure(): boolean;
 
   isFedramp: boolean;
@@ -145,13 +153,57 @@ export interface IConfiguration {
 export class Configuration implements IConfiguration {
   private readonly defaultAuthHost = 'https://app.snyk.io';
   private readonly defaultApiEndpoint = 'https://api.snyk.io';
+  private readonly defaultCliBaseDownloadUrl = 'https://downloads.snyk.io';
+  private readonly defaultCliReleaseChannel = 'stable';
 
   private featureFlag: { [key: string]: boolean } = {};
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  async setCliReleaseChannel(releaseChannel: string): Promise<void> {
+    if (!releaseChannel) return;
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
+      releaseChannel,
+      true,
+    );
+  }
+  async setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void> {
+    if (!baseDownloadUrl) return;
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL),
+      baseDownloadUrl,
+      true,
+    );
+  }
+
+  getCliReleaseChannel(): string {
+    return (
+      this.workspace.getConfiguration<string>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
+      ) ?? this.defaultCliReleaseChannel
+    );
+  }
+  getCliBaseDownloadUrl(): string {
+    return (
+      this.workspace.getConfiguration<string>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL),
+      ) ?? this.defaultCliBaseDownloadUrl
+    );
+  }
 
   getOssQuickFixCodeActionsEnabled(): boolean {
     return this.getPreviewFeatures().ossQuickfixes ?? false;
+  }
+
+  getSnykLanguageServerPath(): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
+    );
   }
 
   getInsecure(): boolean {
@@ -239,13 +291,6 @@ export class Configuration implements IConfiguration {
     return `${authUrl.toString()}manage/snyk-code?from=vscode`;
   }
 
-  getSnykLanguageServerPath(): string | undefined {
-    return this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
-    );
-  }
-
   getDeltaFindingsEnabled(): boolean {
     const selectionValue = this.workspace.getConfiguration<string>(
       CONFIGURATION_IDENTIFIER,
@@ -285,7 +330,9 @@ export class Configuration implements IConfiguration {
   }
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
-    if (!cliPath) return;
+    if (!cliPath) {
+      cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
+    }
     return this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_PATH),
@@ -487,10 +534,28 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getCliPath(): string | undefined {
-    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_CLI_PATH));
+  async getCliPath(): Promise<string | undefined> {
+    let cliPath = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_PATH),
+    );
+    if (!cliPath) {
+      cliPath = await this.determineCliPath();
+      await this.setCliPath(cliPath);
+    }
+    return cliPath;
   }
 
+  async determineCliPath(): Promise<string> {
+    // if CLI Path is empty and Automatic Dependency management is disabled
+    // But Snyk-LS path is set, we will set CLI Path to Snyk LS path.
+    // This is a workaround that should be removed after the release of v2.20.0
+    const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
+    const snykLsPath = this.getSnykLanguageServerPath();
+    if (!isAutomaticDependencyManagementEnabled && snykLsPath) return snykLsPath;
+    const defaultPath = await CliExecutable.getPath(extensionContext.extensionPath);
+    return defaultPath;
+  }
   getTrustedFolders(): string[] {
     return (
       this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []

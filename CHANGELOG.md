@@ -3,6 +3,10 @@
 ## [2.20.0]
 - reduce hover verbosity to only title and description
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.
+- Added CLI release channel.
+- Added option to change base URL to download CLI.
+- Run Snyk language Server from the CLI extension.
+- Change default CLI download path to be in extension directory.
 - Delete sentry reporting.
 - send analytics event "plugin installed" the first time the extension is started
 

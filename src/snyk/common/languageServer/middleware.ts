@@ -1,5 +1,6 @@
 import { IConfiguration } from '../../common/configuration/configuration';
 import { User } from '../user';
+import { ExtensionContext } from '../vscode/extensionContext';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -19,7 +20,7 @@ type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration, private user: User) {}
+  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -40,7 +41,11 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+      const serverSettings = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        this.user,
+        this.extensionContext,
+      );
       return [serverSettings];
     },
   };

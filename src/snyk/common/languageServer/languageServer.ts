@@ -4,7 +4,6 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
-  SNYK_CLI_PATH,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -20,10 +19,11 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { LsExecutable } from './lsExecutable';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+import { ExtensionContext } from '../vscode/extensionContext';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -50,6 +50,7 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
+    private extensionContext: ExtensionContext,
   ) {
     this.downloadService = downloadService;
   }
@@ -77,7 +78,10 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    const lsBinaryPath = LsExecutable.getPath(this.configuration.getSnykLanguageServerPath());
+    const cliBinaryPath = await CliExecutable.getPath(
+      this.extensionContext.extensionPath,
+      await this.configuration.getCliPath(),
+    );
 
     // log level is set to info by default
     let logLevel = 'info';
@@ -92,10 +96,10 @@ export class LanguageServer implements ILanguageServer {
     logLevel = process.env.SNYK_LOG_LEVEL ?? logLevel;
 
     const args = ['language-server', '-l', logLevel];
-    this.logger.info(`Snyk Language Server - path: ${lsBinaryPath}`);
+    this.logger.info(`Snyk Language Server - path: ${cliBinaryPath}`);
     this.logger.info(`Snyk Language Server - args: ${args}`);
     const serverOptions: ServerOptions = {
-      command: lsBinaryPath,
+      command: cliBinaryPath,
       args: args,
       options: {
         env: processEnv,
@@ -110,7 +114,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.configuration, this.user),
+      middleware: new LanguageClientMiddleware(this.configuration, this.user, this.extensionContext),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
@@ -145,30 +149,6 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_CLI_PATH, ({ cliPath }: { cliPath: string }) => {
-      if (!cliPath) {
-        ErrorHandler.handle(
-          new Error("CLI path wasn't provided by language server on $/snyk.isAvailableCli notification " + cliPath),
-          this.logger,
-          "CLI path wasn't provided by language server on notification",
-        );
-        return;
-      }
-
-      const currentCliPath = this.configuration.getCliPath();
-      if (currentCliPath != cliPath) {
-        this.logger.info('Setting Snyk CLI path to: ' + cliPath);
-        void this.configuration
-          .setCliPath(cliPath)
-          .then(() => {
-            this.cliReady$.next(cliPath);
-          })
-          .catch((error: Error) => {
-            ErrorHandler.handle(error, this.logger, error.message);
-          });
-      }
-    });
-
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
       this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
@@ -184,7 +164,11 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+    const settings = await LanguageServerSettings.fromConfiguration(
+      this.configuration,
+      this.user,
+      this.extensionContext,
+    );
     return settings;
   }
 

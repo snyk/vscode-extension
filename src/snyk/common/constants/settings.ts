@@ -20,6 +20,8 @@ export const ADVANCED_ORGANIZATION = `${CONFIGURATION_IDENTIFIER}.advanced.organ
 export const ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT = `${CONFIGURATION_IDENTIFIER}.advanced.automaticDependencyManagement`;
 export const ADVANCED_CLI_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.cliPath`;
 export const ADVANCED_CUSTOM_LS_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.languageServerPath`;
+export const ADVANCED_CLI_BASE_DOWNLOAD_URL = `${CONFIGURATION_IDENTIFIER}.advanced.cliBaseDownloadUrl`;
+export const ADVANCED_CLI_RELEASE_CHANNEL = `${CONFIGURATION_IDENTIFIER}.advanced.cliReleaseChannel`;
 export const ADVANCED_AUTHENTICATION_METHOD = `${CONFIGURATION_IDENTIFIER}.advanced.authenticationMethod`;
 
 export const ISSUE_VIEW_OPTIONS_SETTING = `${CONFIGURATION_IDENTIFIER}.issueViewOptions`;

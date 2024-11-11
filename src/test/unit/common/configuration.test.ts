@@ -3,30 +3,30 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
-import { SNYK_TOKEN_KEY } from '../../../snyk/common/constants/general';
 import {
+  ADVANCED_CLI_PATH,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_CUSTOM_LS_PATH,
   FEATURES_PREVIEW_SETTING,
   SCANNING_MODE,
 } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
-import { ExtensionContext } from '../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
+import { extensionContext } from '../../../snyk/common/vscode/extensionContext';
+import { Platform } from '../../../snyk/common/platform';
+import path from 'path';
 
 suite('Configuration', () => {
   let workspaceStub: IVSCodeWorkspace;
-  let extensionContext: ExtensionContext;
 
   setup(() => {
     const tokenConfigSection = 'token';
 
     let token = '';
-
-    extensionContext = extensionContextMock;
-    SecretStorageAdapter.init(extensionContext);
-
+    SecretStorageAdapter.init(extensionContextMock);
+    extensionContext.setContext(extensionContextMock);
     const stub = sinon.stub().returns({
       getConfiguration(_configurationIdentifier, _section) {
         if (_section === tokenConfigSection) return token;
@@ -137,6 +137,37 @@ suite('Configuration', () => {
       const configuration = new Configuration({}, workspace);
 
       strictEqual(configuration.isFedramp, false);
+    });
+
+    test('CLI Path: Returns default path if empty', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '');
+
+      const configuration = new Configuration({}, workspace);
+      sinon.stub(Platform, 'getCurrent').returns('linux');
+      sinon.stub(Platform, 'getArch').returns('x64');
+
+      const cliPath = await configuration.getCliPath();
+
+      const expectedCliPath = path.join('path/to/extension/', 'snyk-linux');
+      strictEqual(cliPath, expectedCliPath);
+    });
+
+    test('CLI Path: Returns Snyk LS path', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CUSTOM_LS_PATH, '/path/to/ls');
+
+      const configuration = new Configuration({}, workspace);
+
+      const cliPath = await configuration.getCliPath();
+      strictEqual(cliPath, '/path/to/ls');
+    });
+
+    test('CLI Path: Returns CLI Path if set', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_PATH, '/path/to/cli');
+
+      const configuration = new Configuration({}, workspace);
+
+      const cliPath = await configuration.getCliPath();
+      strictEqual(cliPath, '/path/to/cli');
     });
   });
 });

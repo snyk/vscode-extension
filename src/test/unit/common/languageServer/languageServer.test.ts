@@ -17,6 +17,7 @@ import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
+import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -25,6 +26,7 @@ suite('Language Server', () => {
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
+  let extensionContextMock: ExtensionContext;
   const path = 'testPath';
   const logger = {
     info(_msg: string) {},
@@ -34,6 +36,8 @@ suite('Language Server', () => {
       fail(msg);
     },
   } as unknown as LoggerMock;
+
+  let contextGetGlobalStateValue: sinon.SinonStub;
 
   setup(() => {
     configurationMock = {
@@ -46,16 +50,13 @@ suite('Language Server', () => {
       getDeltaFindingsEnabled(): boolean {
         return false;
       },
-      getCliPath(): string | undefined {
-        return path;
+      getCliPath(): Promise<string | undefined> {
+        return Promise.resolve(path);
       },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
       },
       shouldReportErrors: true,
-      getSnykLanguageServerPath(): string {
-        return path;
-      },
       getAdditionalCliParameters() {
         return '--all-projects -d';
       },
@@ -85,6 +86,16 @@ suite('Language Server', () => {
       },
       scanningMode: 'auto',
     } as IConfiguration;
+
+    extensionContextMock = {
+      extensionPath: 'test/path',
+      getGlobalStateValue: contextGetGlobalStateValue,
+      updateGlobalStateValue: sinon.fake(),
+      setContext: sinon.fake(),
+      subscriptions: [],
+      addDisposables: sinon.fake(),
+      getExtensionUri: sinon.fake(),
+    } as unknown as ExtensionContext;
 
     downloadServiceMock = {
       downloadReady$: new ReplaySubject<void>(1),
@@ -130,6 +141,7 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
+      extensionContextMock,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -179,6 +191,7 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
+      extensionContextMock,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -204,6 +217,7 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
+        extensionContextMock,
       );
     });
 
@@ -250,6 +264,7 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
+        extensionContextMock,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

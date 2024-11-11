@@ -39,7 +39,8 @@ import {
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ExperimentService } from './common/experiment/services/experimentService';
-import { StaticLsApi } from './common/languageServer/staticLsApi';
+import { LanguageServer } from './common/languageServer/languageServer';
+import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
 import { LearnService } from './common/services/learnService';
@@ -82,13 +83,11 @@ import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
 import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
-import { LanguageServer } from './common/languageServer/languageServer';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
-
     const snykConfiguration = await this.getSnykConfiguration();
 
     try {
@@ -183,7 +182,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.downloadService = new DownloadService(
       this.context,
       configuration,
-      new StaticLsApi(vsCodeWorkspace, configuration, Logger),
+      new StaticCliApi(vsCodeWorkspace, configuration, Logger),
       vsCodeWindow,
       Logger,
     );
@@ -199,6 +198,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      this.context,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -430,6 +430,10 @@ class SnykExtension extends SnykLib implements IExtension {
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
 
+    // Fetch feature flag to determine whether to use the new LSP-based rendering.
+
+    // initialize contexts
+    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
     this.sendPluginInstalledEvent();
 
     // Actually start analysis
@@ -458,12 +462,16 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.stop();
   }
 
+  public async stopLanguageServer(): Promise<void> {
+    await this.languageServer.stop();
+  }
+
   public async restartLanguageServer(): Promise<void> {
     await this.languageServer.stop();
     await this.languageServer.start();
   }
 
-  private initDependencyDownload(): DownloadService {
+  public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
     });
