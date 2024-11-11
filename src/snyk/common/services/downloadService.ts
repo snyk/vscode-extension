@@ -2,7 +2,7 @@ import { ReplaySubject } from 'rxjs';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
-import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_VERSION } from '../constants/globalState';
+import { MEMENTO_CLI_CHECKSUM, MEMENTO_CLI_VERSION, MEMENTO_LS_PROTOCOL_VERSION } from '../constants/globalState';
 import { Downloader } from '../download/downloader';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { IStaticCliApi } from '../../cli/staticCliApi';
@@ -10,6 +10,7 @@ import { ILog } from '../logger/interfaces';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
+import { PROTOCOL_VERSION } from '../constants/languageServer';
 
 export class DownloadService {
   readonly downloadReady$ = new ReplaySubject<void>(1);
@@ -63,7 +64,7 @@ export class DownloadService {
     const version = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
     const cliInstalled = await this.isCliInstalled();
     const cliVersionHasUpdated = this.hasCliVersionUpdated(version);
-    const needsUpdate = cliVersionHasUpdated;
+    const needsUpdate = cliVersionHasUpdated || this.hasLspVersionUpdated();
     if (!cliInstalled || needsUpdate) {
       const updateAvailable = await this.isCliUpdateAvailable(platform);
       if (!updateAvailable) {
@@ -76,6 +77,7 @@ export class DownloadService {
 
       await this.setCliChecksum(executable.checksum);
       await this.setCliVersion(executable.version);
+      await this.setCurrentLspVersion();
       this.logger.info(messages.downloadFinished(executable.version));
       return true;
     }
@@ -116,6 +118,19 @@ export class DownloadService {
 
   private async setCliVersion(cliVersion: string): Promise<void> {
     await this.extensionContext.updateGlobalStateValue(MEMENTO_CLI_VERSION, cliVersion);
+  }
+
+  private hasLspVersionUpdated(): boolean {
+    const currentProtoclVersion = this.getLsProtocolVersion();
+    return currentProtoclVersion != PROTOCOL_VERSION;
+  }
+
+  private async setCurrentLspVersion(): Promise<void> {
+    await this.extensionContext.updateGlobalStateValue(MEMENTO_LS_PROTOCOL_VERSION, PROTOCOL_VERSION);
+  }
+
+  private getLsProtocolVersion() {
+    return this.extensionContext.getGlobalStateValue<number>(MEMENTO_LS_PROTOCOL_VERSION);
   }
 
   private hasCliVersionUpdated(cliVersion: string): boolean {
