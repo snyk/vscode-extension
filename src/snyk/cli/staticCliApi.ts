@@ -55,7 +55,8 @@ export class StaticCliApi implements IStaticCliApi {
 
   async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]> {
     const axiosCancelToken = axios.CancelToken.source();
-    const latestCliVersion = await this.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
 
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 

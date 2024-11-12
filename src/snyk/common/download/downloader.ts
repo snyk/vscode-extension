@@ -43,7 +43,8 @@ export class Downloader {
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);
     }
-    const cliVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    const cliVersion = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
     const sha256 = await this.cliApi.getSha256Checksum(cliVersion, platform);
     const checksum = await this.downloadCli(cliPath, platform, sha256);
 

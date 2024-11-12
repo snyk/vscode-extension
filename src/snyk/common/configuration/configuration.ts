@@ -77,6 +77,8 @@ export interface IConfiguration {
 
   authHost: string;
 
+  getExtensionId(): string;
+  setExtensionId(extensionId: string): void;
   getFeatureFlag(flagName: string): boolean;
 
   setFeatureFlag(flagName: string, value: boolean): void;
@@ -121,7 +123,7 @@ export interface IConfiguration {
   isAutomaticDependencyManagementEnabled(): boolean;
 
   getCliPath(): Promise<string | undefined>;
-  getCliReleaseChannel(): string;
+  getCliReleaseChannel(): Promise<string>;
   getCliBaseDownloadUrl(): string;
   getInsecure(): boolean;
 
@@ -157,8 +159,15 @@ export class Configuration implements IConfiguration {
   private readonly defaultCliReleaseChannel = 'stable';
 
   private featureFlag: { [key: string]: boolean } = {};
+  private extensionId: string;
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  getExtensionId(): string {
+    return this.extensionId;
+  }
+  setExtensionId(extensionId: string): void {
+    this.extensionId = extensionId;
+  }
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
     return this.workspace.updateConfiguration(
@@ -178,13 +187,21 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getCliReleaseChannel(): string {
-    return (
-      this.workspace.getConfiguration<string>(
-        CONFIGURATION_IDENTIFIER,
-        this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
-      ) ?? this.defaultCliReleaseChannel
+  async getCliReleaseChannel(): Promise<string> {
+    let releaseChannel = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
     );
+    if (!releaseChannel) {
+      var extensionId = this.getExtensionId();
+      if (extensionId && extensionId.includes('preview')) {
+        await this.setCliReleaseChannel('preview');
+        releaseChannel = 'preview';
+      } else {
+        releaseChannel = this.defaultCliReleaseChannel;
+      }
+    }
+    return releaseChannel;
   }
   getCliBaseDownloadUrl(): string {
     return (
