@@ -197,7 +197,8 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
     );
     const extensionId = this.getExtensionId();
-    if (extensionId && extensionId.includes('preview')) {
+    // If Extension is preview and has default value of release Channel we override it to preview.
+    if (extensionId && extensionId.includes('preview') && releaseChannel === this.defaultCliReleaseChannel) {
       await this.setCliReleaseChannel('preview');
       releaseChannel = 'preview';
     } else if (!releaseChannel) {
