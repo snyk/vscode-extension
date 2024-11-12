@@ -200,7 +200,7 @@ export class Configuration implements IConfiguration {
     if (extensionId && extensionId.includes('preview')) {
       await this.setCliReleaseChannel('preview');
       releaseChannel = 'preview';
-    } else {
+    } else if (!releaseChannel) {
       releaseChannel = this.defaultCliReleaseChannel;
     }
     return releaseChannel;
