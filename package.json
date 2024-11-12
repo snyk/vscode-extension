@@ -313,6 +313,7 @@
           "snyk.advanced.cliReleaseChannel": {
             "order": 3,
             "type": "string",
+            "default": "stable",
             "enum": [
               "stable",
               "rc",

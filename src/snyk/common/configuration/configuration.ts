@@ -162,12 +162,15 @@ export class Configuration implements IConfiguration {
   private extensionId: string;
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+
   getExtensionId(): string {
     return this.extensionId;
   }
+
   setExtensionId(extensionId: string): void {
     this.extensionId = extensionId;
   }
+
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
     return this.workspace.updateConfiguration(
@@ -177,6 +180,7 @@ export class Configuration implements IConfiguration {
       true,
     );
   }
+
   async setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void> {
     if (!baseDownloadUrl) return;
     return this.workspace.updateConfiguration(
@@ -192,17 +196,16 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
     );
-    if (!releaseChannel) {
-      const extensionId = this.getExtensionId();
-      if (extensionId && extensionId.includes('preview')) {
-        await this.setCliReleaseChannel('preview');
-        releaseChannel = 'preview';
-      } else {
-        releaseChannel = this.defaultCliReleaseChannel;
-      }
+    const extensionId = this.getExtensionId();
+    if (extensionId && extensionId.includes('preview')) {
+      await this.setCliReleaseChannel('preview');
+      releaseChannel = 'preview';
+    } else {
+      releaseChannel = this.defaultCliReleaseChannel;
     }
     return releaseChannel;
   }
+
   getCliBaseDownloadUrl(): string {
     return (
       this.workspace.getConfiguration<string>(

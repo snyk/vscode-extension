@@ -7,8 +7,8 @@ import { getAxiosConfig } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
-import { ErrorHandler } from '../common/error/errorHandler';
 import { Logger } from '../common/logger/logger';
+import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
@@ -54,8 +54,8 @@ export class StaticCliApi implements IStaticCliApi {
       data = data.replace('\n', '');
       return data;
     } catch (e) {
-      ErrorHandler.handle(e, Logger);
-      return '';
+      Logger.error(e);
+      throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
 

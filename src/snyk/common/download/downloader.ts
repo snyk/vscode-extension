@@ -13,7 +13,7 @@ import { CancellationToken } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
-import { ErrorHandler } from '../error/errorHandler';
+import { ERRORS } from '../constants/errors';
 import { Logger } from '../logger/logger';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
@@ -30,18 +30,16 @@ export class Downloader {
    * Downloads CLI. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | null> {
-    const platform = await CliExecutable.getCurrentWithArch();
-    if (platform === null) {
-      return Promise.reject(!messages.notSupported);
-    }
-    let cliExecutable: CliExecutable | null;
     try {
-      cliExecutable = await this.getCliExecutable(platform);
+      const platform = await CliExecutable.getCurrentWithArch();
+      if (platform === null) {
+        return Promise.reject(!messages.notSupported);
+      }
+      return await this.getCliExecutable(platform);
     } catch (e) {
-      ErrorHandler.handle(e, Logger);
-      return null;
+      Logger.error(e);
+      throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
-    return cliExecutable;
   }
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
