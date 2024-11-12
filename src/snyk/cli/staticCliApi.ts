@@ -7,7 +7,6 @@ import { getAxiosConfig } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
-import { Logger } from '../common/logger/logger';
 import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
@@ -55,7 +54,7 @@ export class StaticCliApi implements IStaticCliApi {
       return data;
     } catch (e) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      Logger.error(e);
+      this.logger.error(e);
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }

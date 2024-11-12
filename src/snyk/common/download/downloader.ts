@@ -14,7 +14,6 @@ import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
-import { Logger } from '../logger/logger';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
@@ -38,7 +37,7 @@ export class Downloader {
       return await this.getCliExecutable(platform);
     } catch (e) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      Logger.error(e);
+      this.logger.error(e);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
