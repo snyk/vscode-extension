@@ -84,7 +84,7 @@ export class CommandController {
   }
 
   openSettings(): void {
-    void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`);
+    void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${this.configuration.getExtensionId()}`);
   }
 
   async createDCIgnore(custom = false, uriAdapter: IUriAdapter, path?: string): Promise<void> {
