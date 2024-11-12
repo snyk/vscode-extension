@@ -63,6 +63,9 @@ export class DownloadService {
     const platform = await CliExecutable.getCurrentWithArch();
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const version = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
+    if (!version) {
+      return false;
+    }
     const cliInstalled = await this.isCliInstalled();
     const cliVersionHasUpdated = this.hasCliVersionUpdated(version);
     const needsUpdate = cliVersionHasUpdated || this.hasLspVersionUpdated();
@@ -98,6 +101,9 @@ export class DownloadService {
   private async isCliUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const version = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
+    if (!version) {
+      return false;
+    }
     const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
     const path = await CliExecutable.getPath(
       this.extensionContext.extensionPath,
