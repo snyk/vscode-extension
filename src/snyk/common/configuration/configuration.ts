@@ -193,7 +193,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
     );
     if (!releaseChannel) {
-      var extensionId = this.getExtensionId();
+      const extensionId = this.getExtensionId();
       if (extensionId && extensionId.includes('preview')) {
         await this.setCliReleaseChannel('preview');
         releaseChannel = 'preview';
