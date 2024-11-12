@@ -37,6 +37,7 @@ export class Downloader {
       }
       return await this.getCliExecutable(platform);
     } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       Logger.error(e);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
