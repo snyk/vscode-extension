@@ -11,7 +11,6 @@ import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { ERRORS } from '../constants/errors';
 
 export class DownloadService {
   readonly downloadReady$ = new ReplaySubject<void>(1);
