@@ -14,7 +14,7 @@ import {
   SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
-import { COMMAND_DEBOUNCE_INTERVAL, SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
+import { COMMAND_DEBOUNCE_INTERVAL } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../languageServer/types';
@@ -79,6 +79,7 @@ export class CommandController {
       ErrorHandler.handle(e, this.logger);
     }
   }
+
   async setBaseBranch(folderPath: string): Promise<void> {
     await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
   }
