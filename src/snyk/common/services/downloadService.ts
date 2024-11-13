@@ -29,7 +29,6 @@ export class DownloadService {
   }
 
   async downloadOrUpdate(): Promise<boolean> {
-    throw new Error(ERRORS.DOWNLOAD_FAILED);
     const cliInstalled = await this.isCliInstalled();
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
       this.downloadReady$.next();
