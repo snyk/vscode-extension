@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
 import {
   ADVANCED_CLI_PATH,
+  ADVANCED_CLI_RELEASE_CHANNEL,
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   FEATURES_PREVIEW_SETTING,
@@ -168,6 +169,33 @@ suite('Configuration', () => {
 
       const cliPath = await configuration.getCliPath();
       strictEqual(cliPath, '/path/to/cli');
+    });
+
+    test('CLI Release Channel: Return preview if extension is preview and release channel is default', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_RELEASE_CHANNEL, 'stable');
+
+      const configuration = new Configuration({}, workspace);
+      configuration.setExtensionId('snyk-vulnerability-scanner-preview');
+      const cliReleaseChannel = await configuration.getCliReleaseChannel();
+      strictEqual(cliReleaseChannel, 'preview');
+    });
+
+    test('CLI Release Channel: Return current release channel without change if extension is not preview', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_RELEASE_CHANNEL, 'stable');
+
+      const configuration = new Configuration({}, workspace);
+      configuration.setExtensionId('snyk-vulnerability-scanner');
+      const cliReleaseChannel = await configuration.getCliReleaseChannel();
+      strictEqual(cliReleaseChannel, 'stable');
+    });
+
+    test('CLI Release Channel: Return current version if release channel not stable and extension is preview', async () => {
+      const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_RELEASE_CHANNEL, 'v1.1294.0');
+
+      const configuration = new Configuration({}, workspace);
+      configuration.setExtensionId('snyk-vulnerability-scanner-preview');
+      const cliReleaseChannel = await configuration.getCliReleaseChannel();
+      strictEqual(cliReleaseChannel, 'v1.1294.0');
     });
   });
 });

@@ -155,7 +155,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.user = await User.getAnonymous(this.context, Logger);
 
     SecretStorageAdapter.init(vscodeContext);
-
+    configuration.setExtensionId(vscodeContext.extension.id);
     this.configurationWatcher = new ConfigurationWatcher(Logger);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
@@ -474,8 +474,8 @@ class SnykExtension extends SnykLib implements IExtension {
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
+      void this.notificationService.showErrorNotification((err as Error).message);
     });
-
     return this.downloadService;
   }
 
@@ -514,7 +514,7 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;
-        void vscode.window.showErrorMessage(err.message);
+        void this.notificationService.showErrorNotification(err.message);
       }),
     );
   }

@@ -25,7 +25,7 @@ suite('CLI Downloader (CLI)', () => {
     logger = new LoggerMock();
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => 'stable',
+      getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath(): Promise<string> {
         return Promise.resolve('abc/d');
       },

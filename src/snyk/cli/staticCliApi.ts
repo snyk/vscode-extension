@@ -7,6 +7,7 @@ import { getAxiosConfig } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
+import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
@@ -44,18 +45,24 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   async getLatestCliVersion(releaseChannel: string): Promise<string> {
-    let { data } = await axios.get<string>(
-      this.getLatestVersionDownloadUrl(releaseChannel),
-      await getAxiosConfig(this.workspace, this.configuration, this.logger),
-    );
-    data = data.replace('\n', '');
-    if (data == '') return Promise.reject(new Error('CLI Version not found'));
-    return data;
+    try {
+      let { data } = await axios.get<string>(
+        this.getLatestVersionDownloadUrl(releaseChannel),
+        await getAxiosConfig(this.workspace, this.configuration, this.logger),
+      );
+      data = data.replace('\n', '');
+      return data;
+    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      this.logger.error(e);
+      throw Error(ERRORS.DOWNLOAD_FAILED);
+    }
   }
 
   async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]> {
     const axiosCancelToken = axios.CancelToken.source();
-    const latestCliVersion = await this.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
 
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 

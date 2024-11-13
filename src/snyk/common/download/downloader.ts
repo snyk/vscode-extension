@@ -13,6 +13,7 @@ import { CancellationToken } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
+import { ERRORS } from '../constants/errors';
 
 export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
@@ -28,11 +29,17 @@ export class Downloader {
    * Downloads CLI. Existing executable is deleted.
    */
   async download(): Promise<CliExecutable | null> {
-    const platform = await CliExecutable.getCurrentWithArch();
-    if (platform === null) {
-      return Promise.reject(!messages.notSupported);
+    try {
+      const platform = await CliExecutable.getCurrentWithArch();
+      if (platform === null) {
+        return Promise.reject(!messages.notSupported);
+      }
+      return await this.getCliExecutable(platform);
+    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      this.logger.error(e);
+      throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
-    return await this.getCliExecutable(platform);
   }
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
@@ -43,7 +50,8 @@ export class Downloader {
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);
     }
-    const cliVersion = await this.cliApi.getLatestCliVersion(this.configuration.getCliReleaseChannel());
+    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    const cliVersion = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
     const sha256 = await this.cliApi.getSha256Checksum(cliVersion, platform);
     const checksum = await this.downloadCli(cliPath, platform, sha256);
 

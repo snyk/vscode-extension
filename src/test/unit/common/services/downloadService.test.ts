@@ -47,7 +47,7 @@ suite('DownloadService', () => {
 
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => 'stable',
+      getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
 
@@ -61,7 +61,7 @@ suite('DownloadService', () => {
   test('Tries to download CLI if not installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => 'stable',
+      getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
@@ -76,7 +76,7 @@ suite('DownloadService', () => {
   test('Tries to update CLI if installed', async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
-      getCliReleaseChannel: () => 'stable',
+      getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
@@ -93,7 +93,7 @@ suite('DownloadService', () => {
   test("Doesn't download CLI if automatic dependency management disabled", async () => {
     configuration = {
       isAutomaticDependencyManagementEnabled: () => false,
-      getCliReleaseChannel: () => 'stable',
+      getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);

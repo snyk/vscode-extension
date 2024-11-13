@@ -7,12 +7,17 @@ import { Platform } from '../common/platform';
 export class CliExecutable {
   public static filenameSuffixes: Record<CliSupportedPlatform, string> = {
     linux: 'snyk-linux',
+    // eslint-disable-next-line camelcase
     linux_arm64: 'snyk-linux-arm64',
+    // eslint-disable-next-line camelcase
     linux_alpine: 'snyk-alpine',
+    // eslint-disable-next-line camelcase
     linux_alpine_arm64: 'snyk-alpine-arm64',
     macos: 'snyk-macos',
+    // eslint-disable-next-line camelcase
     macos_arm64: 'snyk-macos-arm64',
     windows: 'snyk-win.exe',
+    // eslint-disable-next-line camelcase
     windows_arm64: 'snyk-win.exe',
   };
   constructor(public readonly version: string, public readonly checksum: Checksum) {}
@@ -22,8 +27,8 @@ export class CliExecutable {
       return customPath;
     }
 
-    const platform = await this.getCurrentWithArch();
-    const fileName = this.getFileName(platform);
+    const platform = await CliExecutable.getCurrentWithArch();
+    const fileName = CliExecutable.getFileName(platform);
     return path.join(extensionDir, fileName);
   }
 
@@ -34,7 +39,7 @@ export class CliExecutable {
   static async getCurrentWithArch(): Promise<CliSupportedPlatform> {
     const osName = Platform.getCurrent().toString().toLowerCase();
     const archSuffix = Platform.getArch().toLowerCase();
-    const platform = await this.getPlatformName(osName);
+    const platform = await CliExecutable.getPlatformName(osName);
 
     let cliName = platform;
     if (archSuffix === 'arm64') {
@@ -46,7 +51,7 @@ export class CliExecutable {
   static async getPlatformName(osName: string): Promise<string> {
     let platform = '';
     if (osName === 'linux') {
-      if (await this.isAlpine()) {
+      if (await CliExecutable.isAlpine()) {
         platform = 'linux_alpine';
       } else {
         platform = 'linux';
@@ -69,10 +74,12 @@ export class CliExecutable {
       .catch(() => false);
   }
 
-  static isAlpine(): Promise<boolean> {
-    return fs
-      .access('/etc/alpine-release')
-      .then(() => true)
-      .catch(() => false);
+  static async isAlpine(): Promise<boolean> {
+    try {
+      await fs.access('/etc/alpine-release');
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
