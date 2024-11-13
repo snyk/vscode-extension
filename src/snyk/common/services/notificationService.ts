@@ -11,6 +11,7 @@ export interface INotificationService {
   init(): Promise<void>;
 
   showErrorNotification(message: string): Promise<void>;
+
   showErrorNotificationWithLinkAction(message: string, actionText: string, actionLink: string): Promise<void>;
 }
 
@@ -46,7 +47,11 @@ export class NotificationService implements INotificationService {
   }
 
   async showErrorNotification(message: string): Promise<void> {
-    await this.window.showErrorMessage(message);
+    await this.showErrorNotificationWithLinkAction(
+      message,
+      'Show Documentation',
+      'https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/troubleshooting-for-visual-studio-code-extension',
+    );
   }
 
   async showErrorNotificationWithLinkAction(message: string, actionText: string, actionLink: string): Promise<void> {

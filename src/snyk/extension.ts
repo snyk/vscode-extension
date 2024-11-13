@@ -473,13 +473,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      void this.notificationService.showErrorNotificationWithLinkAction(
-        (err as Error).message,
-        'Show documentation',
-        'https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/troubleshooting-for-visual-studio-code-extension',
-      );
+      void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
+      void this.notificationService.showErrorNotification((err as Error).message);
     });
-
     return this.downloadService;
   }
 
@@ -518,7 +514,7 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;
-        void vscode.window.showErrorMessage(err.message);
+        void this.notificationService.showErrorNotification(err.message);
       }),
     );
   }
