@@ -11,6 +11,7 @@ import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { ERRORS } from '../constants/errors';
 
 export class DownloadService {
   readonly downloadReady$ = new ReplaySubject<void>(1);
@@ -28,6 +29,7 @@ export class DownloadService {
   }
 
   async downloadOrUpdate(): Promise<boolean> {
+    throw new Error(ERRORS.DOWNLOAD_FAILED);
     const cliInstalled = await this.isCliInstalled();
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
       this.downloadReady$.next();

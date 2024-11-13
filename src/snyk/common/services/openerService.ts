@@ -6,7 +6,6 @@ export interface IOpenerService {
   openBrowserUrl(url: string): Promise<void>;
 }
 
-// TODO: use Language Server to open browser urls
 export class OpenerService {
   async openBrowserUrl(url: string): Promise<void> {
     try {

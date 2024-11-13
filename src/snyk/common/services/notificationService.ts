@@ -1,6 +1,6 @@
 import { snykMessages } from '../../base/messages/snykMessages';
 import { IConfiguration } from '../configuration/configuration';
-import { VSCODE_VIEW_CONTAINER_COMMAND } from '../constants/commands';
+import { SNYK_OPEN_BROWSER_COMMAND, VSCODE_VIEW_CONTAINER_COMMAND } from '../constants/commands';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
@@ -9,7 +9,9 @@ import { IVSCodeWindow } from '../vscode/window';
 
 export interface INotificationService {
   init(): Promise<void>;
+
   showErrorNotification(message: string): Promise<void>;
+  showErrorNotificationWithLinkAction(message: string, actionText: string, actionLink: string): Promise<void>;
 }
 
 export class NotificationService implements INotificationService {
@@ -45,5 +47,16 @@ export class NotificationService implements INotificationService {
 
   async showErrorNotification(message: string): Promise<void> {
     await this.window.showErrorMessage(message);
+  }
+
+  async showErrorNotificationWithLinkAction(message: string, actionText: string, actionLink: string): Promise<void> {
+    await this.window
+      .showErrorMessage(message, actionText)
+      .then(async selectedAction => {
+        if (selectedAction == actionText) {
+          await this.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, actionLink);
+        }
+      })
+      .catch(err => ErrorHandler.handle(err, this.logger, 'error occurred during error handling'));
   }
 }
