@@ -473,7 +473,6 @@ class SnykExtension extends SnykLib implements IExtension {
 
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      // void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotificationWithLinkAction(
         (err as Error).message,
         'Show documentation',
