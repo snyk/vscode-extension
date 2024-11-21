@@ -215,7 +215,7 @@ declare const acquireVsCodeApi: any;
 
   const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
   if (ignoreContainerElements) {
-    toggleElement((ignoreContainerElements[0] as HTMLElement), "show");
+    toggleElement(ignoreContainerElements[0] as HTMLElement, 'show');
     (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
   }
 
