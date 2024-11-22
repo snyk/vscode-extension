@@ -106,10 +106,8 @@ export class IacSuggestionWebviewProvider
     html = html.replace(/nonce-ideNonce/g, `nonce-${nonce}`);
     // data-ide-style is a placeholder defined in the Language Server
     // to be replaced with the custom IDE styles.
-    html = html.replace(
-      '<style nonce="ideNonce" data-ide-style></style>',
-      `<style nonce="${nonce}">${ideStyle}</style>`,
-    );
+    html = html.replace('${ideStyle}', `<style nonce="${nonce}">${ideStyle}</style>`);
+    html = html.replace('${ideScript}', '');
     return html;
   }
 
