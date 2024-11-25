@@ -147,7 +147,7 @@ export class CodeSuggestionWebviewProvider
       html = html.replace('${ideScript}', '<script nonce=${nonce}>' + ideScript + '</script>');
       const nonce = getNonce();
       html = html.replaceAll('${nonce}', nonce);
-
+      html = html.replace("--default-font: ", "--default-font: var(--vscode-font-family) ,");
       this.panel.webview.html = html;
       void this.postSuggestMessage({ type: 'set', args: this.mapToModel(issue) });
       void this.postLearnLessonMessage(issue);

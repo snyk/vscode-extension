@@ -11,30 +11,12 @@
 .vscode-light .dark-only {
   display: none;
 }
-
 body {
   font-size: var(--vscode-editor-font-size);
 }
 
 h2 {
   font-size: 1.2rem;
-}
-
-.delimiter {
-  border-right: 1px solid var(--vscode-input-border);
-}
-
-.vulnerability-overview pre {
-  font-size: var(--vscode-editor-font-size);
-  font-family: var(--vscode-editor-font-family);
-  background-color: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-input-border);
-}
-
-.vulnerability-overview code {
-  color: var(--vscode-foreground);
-  font-size: var(--vscode-editor-font-size);
-  font-family: var(--vscode-editor-font-family);
 }
 
 /* High-contrast dark mode */
