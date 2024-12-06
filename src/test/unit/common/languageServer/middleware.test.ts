@@ -112,7 +112,7 @@ suite('Language Server: Middleware', () => {
     );
     assert.strictEqual(
       serverResult.cliPath,
-      await CliExecutable.getPath(extensionContextMock.extensionPath, await configuration.getCliPath()),
+      await configuration.getCliPath(),
     );
     assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
     assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());

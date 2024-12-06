@@ -1,5 +1,6 @@
 import { strictEqual } from 'assert';
 import path from 'path';
+import os from 'os';
 import fs from 'fs/promises';
 import sinon from 'sinon';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
@@ -19,52 +20,62 @@ suite('CliExecutable', () => {
   });
 
   test('Returns correct extension paths', async () => {
-    const unixExtensionDir = '/Users/user/.vscode/extensions/snyk-security.snyk-vulnerability-scanner-1.1.0';
-    const winExtensionDir = `C:\\Users\\user\\.vscode\\extensions`;
+    const homedirStub = sinon.stub(os, 'homedir');
+    const unixExtensionDir = '/.local/share/snyk/vscode-cli';
+    const macOsExtensionDir = '/Library/Application Support/snyk/vscode-cli';
+    const winExtensionDir = `\\AppData\\Local\\snyk\\vscode-cli`;
 
     const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
     const archStub = sinon.stub(Platform, 'getArch').returns('x64');
     const fsStub = sinon.stub(fs, 'access').returns(Promise.reject());
+    let homedir = '/home/user';
+    homedirStub.returns(homedir);
 
-    let expectedCliPath = path.join(unixExtensionDir, 'snyk-macos');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    let expectedCliPath = path.join(Platform.getHomeDir(), macOsExtensionDir, 'snyk-macos');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     osStub.returns('linux');
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-linux');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     fsStub.returns(Promise.resolve());
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-alpine');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
     fsStub.returns(Promise.reject());
 
     osStub.returns('win32');
-    expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
-    strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
+    homedir = 'C:\\Users\\user';
+    homedirStub.returns(homedir);    
+    expectedCliPath = path.join(Platform.getHomeDir(), winExtensionDir, 'snyk-win.exe');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     // test arm64
     archStub.returns('arm64');
 
     osStub.returns('darwin');
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-macos-arm64');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    homedir = '/home/user';
+    homedirStub.returns(homedir);        
+    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-macos-arm64');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     osStub.returns('linux');
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-linux-arm64');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-linux-arm64');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     fsStub.returns(Promise.resolve());
-    expectedCliPath = path.join(unixExtensionDir, 'snyk-alpine-arm64');
-    strictEqual(await CliExecutable.getPath(unixExtensionDir), expectedCliPath);
+    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-alpine-arm64');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
     fsStub.returns(Promise.reject());
 
     osStub.returns('win32');
-    expectedCliPath = path.join(winExtensionDir, 'snyk-win.exe');
-    strictEqual(await CliExecutable.getPath(winExtensionDir), expectedCliPath);
+    homedir = 'C:\\Users\\user';
+    homedirStub.returns(homedir);        
+    expectedCliPath = path.join(Platform.getHomeDir(), winExtensionDir, 'snyk-win.exe');
+    strictEqual(await CliExecutable.getPath(), expectedCliPath);
   });
 
   test('Return custom path, if provided', async () => {
     const customPath = '/path/to/cli';
-    strictEqual(await CliExecutable.getPath('', customPath), customPath);
+    strictEqual(await CliExecutable.getPath(customPath), customPath);
   });
 });

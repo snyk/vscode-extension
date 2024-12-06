@@ -149,7 +149,7 @@ suite('Configuration', () => {
 
       const cliPath = await configuration.getCliPath();
 
-      const expectedCliPath = path.join('path/to/extension/', 'snyk-linux');
+      const expectedCliPath = path.join(Platform.getHomeDir(), '.local/share/snyk/vscode-cli', 'snyk-linux');
       strictEqual(cliPath, expectedCliPath);
     });
 

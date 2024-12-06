@@ -49,7 +49,6 @@ suite('LanguageServerSettings', () => {
       const serverSettings = await LanguageServerSettings.fromConfiguration(
         mockConfiguration,
         mockUser,
-        extensionContextMock,
       );
 
       assert.strictEqual(serverSettings.activateSnykCodeSecurity, 'true');
