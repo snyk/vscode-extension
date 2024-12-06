@@ -91,7 +91,6 @@ export class DownloadService {
   async isCliInstalled() {
     const cliExecutableExists = await CliExecutable.exists(
       this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
     );
     const cliChecksumWritten = !!this.getCliChecksum();
 
@@ -105,10 +104,7 @@ export class DownloadService {
       return false;
     }
     const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
-    const path = await CliExecutable.getPath(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
+    const path = await this.configuration.getCliPath();
 
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);

@@ -43,10 +43,7 @@ export class Downloader {
   }
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
-    const cliPath = await CliExecutable.getPath(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
+    const cliPath = await this.configuration.getCliPath();
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);
     }

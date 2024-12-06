@@ -78,10 +78,7 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    const cliBinaryPath = await CliExecutable.getPath(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
+    const cliBinaryPath = await this.configuration.getCliPath();
 
     // log level is set to info by default
     let logLevel = 'info';
@@ -167,7 +164,6 @@ export class LanguageServer implements ILanguageServer {
     const settings = await LanguageServerSettings.fromConfiguration(
       this.configuration,
       this.user,
-      this.extensionContext,
     );
     return settings;
   }
