@@ -286,7 +286,7 @@ declare const acquireVsCodeApi: any;
   function nextDiff() {
     if (!suggestion || !suggestion.diffs || diffSelectedIndex >= suggestion.diffs.length - 1) return;
     ++diffSelectedIndex;
-    applyFixButton.disabled = diffSelectedIndex == lastAppliedFix
+    applyFixButton.disabled = diffSelectedIndex == lastAppliedFix;
     showCurrentDiff();
   }
 
