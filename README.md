@@ -35,7 +35,7 @@ When the extension is installed, it automatically downloads the [Snyk CLI,](http
 
 Continue by following the instructions in the other Visual Studio Code extension docs:
 
-* [Visual Studio Code extension configuration](https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/visual-studio-code-extension-authentication)
+* [Visual Studio Code extension configuration](visual-studio-code-extension-configuration.md)
 * [Visual Studio Code extension authentication](https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/visual-studio-code-extension-authentication)
 * [Visual Studio Code Workspace trust](https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/workspace-trust)
 * [Run an analysis with Visual Studio Code extension](https://docs.snyk.io/integrate-with-snyk/use-snyk-in-your-ide/visual-studio-code-extension/run-an-analysis-with-visual-studio-code-extension)
