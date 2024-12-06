@@ -209,7 +209,7 @@ declare const acquireVsCodeApi: any;
   }
 
   // different AI fix buttons
-  const applyFixButton = document.getElementById('apply-fix') as HTMLElement;
+  const applyFixButton = document.getElementById('apply-fix') as HTMLButtonElement;
   const retryGenerateFixButton = document.getElementById('retry-generate-fix') as HTMLElement;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
@@ -248,7 +248,8 @@ declare const acquireVsCodeApi: any;
     const filePath = suggestion.filePath;
     const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
     const fixId = diffSuggestion.fixId;
-
+    lastAppliedFix = diffSelectedIndex;
+    applyFixButton.disabled = true;
     const message: ApplyGitDiffMessage = {
       type: 'applyGitDiff',
       args: { filePath, patch, fixId },
@@ -281,16 +282,18 @@ declare const acquireVsCodeApi: any;
   const diffNum2Elem = document.getElementById('diff-number2') as HTMLElement;
 
   let diffSelectedIndex = 0;
-
+  let lastAppliedFix = -1;
   function nextDiff() {
     if (!suggestion || !suggestion.diffs || diffSelectedIndex >= suggestion.diffs.length - 1) return;
     ++diffSelectedIndex;
+    applyFixButton.disabled = diffSelectedIndex == lastAppliedFix;
     showCurrentDiff();
   }
 
   function previousDiff() {
     if (!suggestion || !suggestion.diffs || diffSelectedIndex <= 0) return;
     --diffSelectedIndex;
+    applyFixButton.disabled = diffSelectedIndex == lastAppliedFix;
     showCurrentDiff();
   }
 
