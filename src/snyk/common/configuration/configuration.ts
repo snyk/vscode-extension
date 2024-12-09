@@ -33,7 +33,6 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { CliExecutable } from '../../cli/cliExecutable';
-import { extensionContext } from '../vscode/extensionContext';
 
 const NEWISSUES = 'Net new issues';
 
@@ -161,7 +160,7 @@ export class Configuration implements IConfiguration {
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
 
   getExtensionId(): string {
     return this.extensionId;
