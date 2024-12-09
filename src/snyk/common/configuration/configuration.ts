@@ -33,7 +33,6 @@ import {
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { CliExecutable } from '../../cli/cliExecutable';
-import { extensionContext } from '../vscode/extensionContext';
 
 const NEWISSUES = 'Net new issues';
 
@@ -122,7 +121,7 @@ export interface IConfiguration {
 
   isAutomaticDependencyManagementEnabled(): boolean;
 
-  getCliPath(): Promise<string | undefined>;
+  getCliPath(): Promise<string>;
   getCliReleaseChannel(): Promise<string>;
   getCliBaseDownloadUrl(): string;
   getInsecure(): boolean;
@@ -352,7 +351,7 @@ export class Configuration implements IConfiguration {
 
   async setCliPath(cliPath: string | undefined): Promise<void> {
     if (!cliPath) {
-      cliPath = await CliExecutable.getPath(extensionContext.extensionPath);
+      cliPath = await CliExecutable.getPath();
     }
     return this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
@@ -555,7 +554,7 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  async getCliPath(): Promise<string | undefined> {
+  async getCliPath(): Promise<string> {
     let cliPath = this.workspace.getConfiguration<string>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_PATH),
@@ -574,7 +573,7 @@ export class Configuration implements IConfiguration {
     const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
     const snykLsPath = this.getSnykLanguageServerPath();
     if (!isAutomaticDependencyManagementEnabled && snykLsPath) return snykLsPath;
-    const defaultPath = await CliExecutable.getPath(extensionContext.extensionPath);
+    const defaultPath = await CliExecutable.getPath();
     return defaultPath;
   }
   getTrustedFolders(): string[] {

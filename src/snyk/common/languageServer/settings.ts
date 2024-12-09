@@ -3,8 +3,6 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { CliExecutable } from '../../cli/cliExecutable';
-import { ExtensionContext } from '../vscode/extensionContext';
 
 export type ServerSettings = {
   // Feature toggles
@@ -50,11 +48,7 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(
-    configuration: IConfiguration,
-    user: User,
-    extensionContext: ExtensionContext,
-  ): Promise<ServerSettings> {
+  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
@@ -74,7 +68,7 @@ export class LanguageServerSettings {
       activateSnykIac: `${iacEnabled}`,
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
-      cliPath: await CliExecutable.getPath(extensionContext.extensionPath, await configuration.getCliPath()),
+      cliPath: await configuration.getCliPath(),
       endpoint: configuration.snykApiEndpoint,
       organization: configuration.organization,
       token: await configuration.getToken(),

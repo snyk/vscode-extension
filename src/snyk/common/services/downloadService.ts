@@ -1,4 +1,5 @@
 import { ReplaySubject } from 'rxjs';
+import * as fsPromises from 'fs/promises';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
@@ -89,10 +90,7 @@ export class DownloadService {
   }
 
   async isCliInstalled() {
-    const cliExecutableExists = await CliExecutable.exists(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
+    const cliExecutableExists = await CliExecutable.exists(this.extensionContext.extensionPath);
     const cliChecksumWritten = !!this.getCliChecksum();
 
     return cliExecutableExists && cliChecksumWritten;
@@ -105,11 +103,17 @@ export class DownloadService {
       return false;
     }
     const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
-    const path = await CliExecutable.getPath(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
-
+    const path = await this.configuration.getCliPath();
+    // migration for moving from default extension path to xdg dirs.
+    if (CliExecutable.isPathInExtensionDirectory(this.extensionContext.extensionPath, path)) {
+      try {
+        await fsPromises.unlink(path);
+      } catch {
+        // eslint-disable-next-line no-empty
+      }
+      await this.configuration.setCliPath(await CliExecutable.getPath());
+      return true;
+    }
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);
     if (checksum.verify()) {

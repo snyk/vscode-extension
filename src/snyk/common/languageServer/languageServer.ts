@@ -78,10 +78,7 @@ export class LanguageServer implements ILanguageServer {
       };
     }
 
-    const cliBinaryPath = await CliExecutable.getPath(
-      this.extensionContext.extensionPath,
-      await this.configuration.getCliPath(),
-    );
+    const cliBinaryPath = await this.configuration.getCliPath();
 
     // log level is set to info by default
     let logLevel = 'info';
@@ -164,11 +161,7 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(
-      this.configuration,
-      this.user,
-      this.extensionContext,
-    );
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
     return settings;
   }
 

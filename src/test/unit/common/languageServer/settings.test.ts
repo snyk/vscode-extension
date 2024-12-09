@@ -46,11 +46,7 @@ suite('LanguageServerSettings', () => {
         scanningMode: 'scan-mode',
       } as unknown as IConfiguration;
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(
-        mockConfiguration,
-        mockUser,
-        extensionContextMock,
-      );
+      const serverSettings = await LanguageServerSettings.fromConfiguration(mockConfiguration, mockUser);
 
       assert.strictEqual(serverSettings.activateSnykCodeSecurity, 'true');
       assert.strictEqual(serverSettings.activateSnykCodeQuality, 'true');
