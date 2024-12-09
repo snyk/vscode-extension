@@ -20,7 +20,7 @@ type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) {}
+  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) { }
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (

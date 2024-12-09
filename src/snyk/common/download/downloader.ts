@@ -26,7 +26,7 @@ export class Downloader {
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
     private readonly extensionContext: ExtensionContext,
-  ) {}
+  ) { }
   /**
    * Downloads CLI. Existing executable is deleted.
    */
