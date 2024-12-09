@@ -3,7 +3,6 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { ExtensionContext } from '../vscode/extensionContext';
 
 export type ServerSettings = {
   // Feature toggles
