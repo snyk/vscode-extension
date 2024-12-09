@@ -23,7 +23,6 @@ suite('CliExecutable', () => {
     const homedirStub = sinon.stub(os, 'homedir');
     const unixExtensionDir = '/.local/share/snyk/vscode-cli';
     const macOsExtensionDir = '/Library/Application Support/snyk/vscode-cli';
-    const winExtensionDir = `\\AppData\\Local\\snyk\\vscode-cli`;
 
     const osStub = sinon.stub(Platform, 'getCurrent').returns('darwin');
     const archStub = sinon.stub(Platform, 'getArch').returns('x64');
@@ -45,17 +44,18 @@ suite('CliExecutable', () => {
 
     osStub.returns('win32');
     homedir = 'C:\\Users\\user';
-    homedirStub.returns(homedir);    
-    expectedCliPath = path.join(Platform.getHomeDir(), winExtensionDir, 'snyk-win.exe');
-    strictEqual(await CliExecutable.getPath(), expectedCliPath);
+    homedirStub.returns(homedir);
+    expectedCliPath = path.join(Platform.getHomeDir(), '\\AppData\\Local\\', 'snyk', 'vscode-cli', 'snyk-win.exe');
+    const actualPath = await CliExecutable.getPath();
+    strictEqual(actualPath, expectedCliPath);
 
     // test arm64
     archStub.returns('arm64');
 
     osStub.returns('darwin');
     homedir = '/home/user';
-    homedirStub.returns(homedir);        
-    expectedCliPath = path.join(Platform.getHomeDir(), unixExtensionDir, 'snyk-macos-arm64');
+    homedirStub.returns(homedir);
+    expectedCliPath = path.join(Platform.getHomeDir(), macOsExtensionDir, 'snyk-macos-arm64');
     strictEqual(await CliExecutable.getPath(), expectedCliPath);
 
     osStub.returns('linux');
@@ -69,8 +69,8 @@ suite('CliExecutable', () => {
 
     osStub.returns('win32');
     homedir = 'C:\\Users\\user';
-    homedirStub.returns(homedir);        
-    expectedCliPath = path.join(Platform.getHomeDir(), winExtensionDir, 'snyk-win.exe');
+    homedirStub.returns(homedir);
+    expectedCliPath = path.join(Platform.getHomeDir(), '\\AppData\\Local\\', 'snyk', 'vscode-cli', 'snyk-win.exe');
     strictEqual(await CliExecutable.getPath(), expectedCliPath);
   });
 
