@@ -160,7 +160,7 @@ export class Configuration implements IConfiguration {
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
   getExtensionId(): string {
     return this.extensionId;
