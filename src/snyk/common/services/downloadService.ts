@@ -90,9 +90,7 @@ export class DownloadService {
   }
 
   async isCliInstalled() {
-    const cliExecutableExists = await CliExecutable.exists(
-      this.extensionContext.extensionPath,
-    );
+    const cliExecutableExists = await CliExecutable.exists(this.extensionContext.extensionPath);
     const cliChecksumWritten = !!this.getCliChecksum();
 
     return cliExecutableExists && cliChecksumWritten;
@@ -111,6 +109,7 @@ export class DownloadService {
       try {
         await fsPromises.unlink(path);
       } catch {
+        // eslint-disable-next-line no-empty
       }
       await this.configuration.setCliPath(await CliExecutable.getPath());
       return true;

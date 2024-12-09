@@ -37,7 +37,7 @@ export class CliExecutable {
     windows_arm64: 'snyk-win.exe',
   };
 
-  constructor(public readonly version: string, public readonly checksum: Checksum) { }
+  constructor(public readonly version: string, public readonly checksum: Checksum) {}
 
   static async getPath(customPath?: string): Promise<string> {
     if (customPath) {

@@ -26,7 +26,7 @@ export class Downloader {
     private readonly window: IVSCodeWindow,
     private readonly logger: ILog,
     private readonly extensionContext: ExtensionContext,
-  ) { }
+  ) {}
   /**
    * Downloads CLI. Existing executable is deleted.
    */
@@ -46,7 +46,7 @@ export class Downloader {
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
     const cliPath = await this.configuration.getCliPath();
-    const cliDir = path.dirname(cliPath);;
+    const cliDir = path.dirname(cliPath);
     mkdirSync(cliDir, { recursive: true });
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);

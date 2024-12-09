@@ -20,7 +20,7 @@ type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) { }
+  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -41,10 +41,7 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        this.user,
-      );
+      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
       return [serverSettings];
     },
   };

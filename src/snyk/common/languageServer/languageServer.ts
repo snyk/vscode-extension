@@ -161,10 +161,7 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(
-      this.configuration,
-      this.user,
-    );
+    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
     return settings;
   }
 

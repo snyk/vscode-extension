@@ -110,10 +110,7 @@ suite('Language Server: Middleware', () => {
       serverResult.manageBinariesAutomatically,
       `${configuration.isAutomaticDependencyManagementEnabled()}`,
     );
-    assert.strictEqual(
-      serverResult.cliPath,
-      await configuration.getCliPath(),
-    );
+    assert.strictEqual(serverResult.cliPath, await configuration.getCliPath());
     assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
     assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());
   });
