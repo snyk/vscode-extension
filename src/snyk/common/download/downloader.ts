@@ -1,5 +1,6 @@
 import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as fsPromises from 'fs/promises';
 import * as stream from 'stream';
 import { mkdirSync } from 'fs';
@@ -45,7 +46,8 @@ export class Downloader {
 
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
     const cliPath = await this.configuration.getCliPath();
-    mkdirSync(cliPath, { recursive: true });
+    const cliDir = path.dirname(cliPath);;
+    mkdirSync(cliDir, { recursive: true });
     if (await this.binaryExists(cliPath)) {
       await this.deleteFileAtPath(cliPath);
     }

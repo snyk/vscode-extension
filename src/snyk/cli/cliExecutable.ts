@@ -86,6 +86,13 @@ export class CliExecutable {
     return platform;
   }
 
+  public static isPathInExtensionDirectory(dirPath: string, filePath: string): boolean {
+    const normalizedDir = path.resolve(dirPath) + path.sep;
+    const normalizedFile = path.resolve(filePath);
+
+    return normalizedFile.toLowerCase().startsWith(normalizedDir.toLowerCase());
+  }
+
   static async exists(customPath?: string): Promise<boolean> {
     return fs
       .access(await CliExecutable.getPath(customPath))

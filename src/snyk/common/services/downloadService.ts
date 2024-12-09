@@ -1,4 +1,5 @@
 import { ReplaySubject } from 'rxjs';
+import * as fsPromises from 'fs/promises';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
@@ -105,7 +106,15 @@ export class DownloadService {
     }
     const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
     const path = await this.configuration.getCliPath();
-
+    // migration for moving from default extension path to xdg dirs.
+    if (CliExecutable.isPathInExtensionDirectory(this.extensionContext.extensionPath, path)) {
+      try {
+        await fsPromises.unlink(path);
+      } catch {
+      }
+      await this.configuration.setCliPath(await CliExecutable.getPath());
+      return true;
+    }
     // Update is available if fetched checksum not matching the current one
     const checksum = await Checksum.getChecksumOf(path, latestChecksum);
     if (checksum.verify()) {
