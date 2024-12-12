@@ -1,45 +1,5 @@
 @import '../../common/webview';
 
-body {
-    position: relative;
-    display: inline-flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-}
-
-.severity-title {
-    font-weight: 500;
-    line-height: 2.4rem;
-    text-transform: capitalize;
-}
-
-.data-flow-clickable-row {
-    color: var(--vscode-textLink-foreground);
-}
-
-.tab-item {
-    color: var(--vscode-panelTitle-inactiveForeground);
-    border-bottom: 1px solid transparent;
-}
-
-.tab-item-icon path {
-    fill: var(--vscode-foreground);
-}
-
-.tab-item.is-selected {
-    color: var(--vscode-foreground);
-    border-bottom: 3px solid var(--vscode-focusBorder);
-}
-
-.ignore-details-header,
-.data-flow-header,
-.ai-fix-header,
-.example-fixes-header {
-  text-transform: uppercase;
-}
-
 .data-flow-number{
   background-color: var(--vscode-editor-background);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.075));
