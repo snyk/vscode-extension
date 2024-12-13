@@ -1,10 +1,11 @@
 @import '../../common/webview';
 
-.data-flow-number{
-  background-color: var(--vscode-editor-background);
+.vscode-dark .data-flow-number{
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.075));
 }
-
+.vscode-light .data-flow-number{
+  background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
+}
 .data-flow-text {
   font-family: "Courier New", Courier, monospace;
 }
