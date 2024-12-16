@@ -9,6 +9,7 @@
 - Change default CLI download path to be in extension directory.
 - Delete sentry reporting.
 - send analytics event "plugin installed" the first time the extension is started
+- Allow `${workspaceFolder}` in `trustedFolders` and `folderConfigs`
 
 ## [2.19.2]
 - Update download endpoint to downloads.snyk.io.
