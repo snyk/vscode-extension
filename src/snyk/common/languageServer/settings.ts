@@ -3,6 +3,7 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { vsCodeWorkspace } from '../vscode/workspace';
 
 export type ServerSettings = {
   // Feature toggles
@@ -80,12 +81,29 @@ export class LanguageServerSettings {
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
       enableTrustedFoldersFeature: 'true',
-      trustedFolders: configuration.getTrustedFolders(),
+      trustedFolders: configuration.getTrustedFolders().map((value, _index, _array) => {
+        const wf = vsCodeWorkspace.getWorkspaceFolders()?.[0];
+        if (wf) {
+          return value.replace('${workspaceFolder}', wf);
+        } else {
+          return value;
+        }
+      }),
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: configuration.getFolderConfigs(),
+      folderConfigs: configuration.getFolderConfigs().map((value, _index, _array) => {
+        const wf = vsCodeWorkspace.getWorkspaceFolders()?.[0];
+        if (wf) {
+          return {
+            folderPath: value.folderPath.replace('${workspaceFolder}', wf),
+            baseBranch: value.baseBranch,
+            localBranches: value.localBranches,
+          };
+        }
+        return value;
+      }),
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
       hoverVerbosity: 1,
     };
