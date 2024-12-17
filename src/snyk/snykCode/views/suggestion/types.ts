@@ -59,6 +59,13 @@ export type GetAutofixDiffsMesssage = {
   };
 };
 
+export type GetAIExplanationMessage = {
+  type: 'getAIExplanation';
+  args: {
+    suggestion: Suggestion;
+  };
+};
+
 export type ApplyGitDiffMessage = {
   type: 'applyGitDiff';
   args: {
@@ -106,6 +113,7 @@ export type SuggestionMessage =
   | OpenBrowserMessage
   | IgnoreIssueMessage
   | GetAutofixDiffsMesssage
+  | GetAIExplanationMessage
   | ApplyGitDiffMessage
   | SetSuggestionMessage
   | GetSuggestionMessage

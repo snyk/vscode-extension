@@ -83,6 +83,13 @@ declare const acquireVsCodeApi: any;
     };
   };
 
+  type GetAIExplanationMessage = {
+    type: 'GetAIExplanationMessage';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
   type ApplyGitDiffMessage = {
     type: 'applyGitDiff';
     args: {
@@ -113,6 +120,7 @@ declare const acquireVsCodeApi: any;
     | SetSuggestionMessage
     | GetSuggestionMessage
     | GetAutofixDiffsMesssage
+    | GetAIExplanationMessage
     | ApplyGitDiffMessage
     | SetAutofixDiffsMessage
     | SetAutofixErrorMessage;
@@ -213,10 +221,24 @@ declare const acquireVsCodeApi: any;
   const retryGenerateFixButton = document.getElementById('retry-generate-fix') as HTMLElement;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
+  // AI Explain buttons
+  const generateAIExplanationButton = document.getElementById('explain-fix') as HTMLButtonElement;
+
   const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
   if (ignoreContainerElements) {
     toggleElement(ignoreContainerElements[0] as HTMLElement, 'show');
     (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
+  }
+
+  function generateAIExplanation() {
+    toggleElement(generateAIExplanationButton, 'hide');
+    // toggleElement(fixLoadingIndicatorElem, 'show');
+    const message: GetAIExplanationMessage = {
+      type: 'GetAIExplanation',
+      args: { suggestion },
+    };
+    sendMessage(message);
+
   }
 
   function generateAIFix() {
@@ -260,6 +282,8 @@ declare const acquireVsCodeApi: any;
   generateAIFixButton?.addEventListener('click', generateAIFix);
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   applyFixButton?.addEventListener('click', applyFix);
+
+  generateAIFixButton?.addEventListener('click', generateAIExplanation);
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
