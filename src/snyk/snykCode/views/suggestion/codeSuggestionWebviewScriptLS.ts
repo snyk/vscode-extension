@@ -84,7 +84,7 @@ declare const acquireVsCodeApi: any;
   };
 
   type GetAIExplanationMessage = {
-    type: 'GetAIExplanationMessage';
+    type: 'getAIExplanation';
     args: {
       suggestion: Suggestion;
     };
@@ -231,10 +231,14 @@ declare const acquireVsCodeApi: any;
   }
 
   function generateAIExplanation() {
-    toggleElement(generateAIExplanationButton, 'hide');
+    console.log("inside generateAIExplanation callback");
+    if (!suggestion) {
+      return;
+    }
+    // toggleElement(generateAIExplanationButton, 'hide');
     // toggleElement(fixLoadingIndicatorElem, 'show');
     const message: GetAIExplanationMessage = {
-      type: 'GetAIExplanation',
+      type: 'getAIExplanation',
       args: { suggestion },
     };
     sendMessage(message);
@@ -283,7 +287,7 @@ declare const acquireVsCodeApi: any;
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   applyFixButton?.addEventListener('click', applyFix);
 
-  generateAIFixButton?.addEventListener('click', generateAIExplanation);
+  generateAIExplanationButton?.addEventListener('click', generateAIExplanation);
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
@@ -327,6 +331,7 @@ declare const acquireVsCodeApi: any;
       toggleElement(diffTopElem, 'hide');
       toggleElement(diffElem, 'hide');
       toggleElement(applyFixButton, 'hide');
+      toggleElement(generateAIExplanationButton, 'hide');
       return;
     }
 
@@ -336,6 +341,7 @@ declare const acquireVsCodeApi: any;
     toggleElement(diffTopElem, 'show');
     toggleElement(diffElem, 'show');
     toggleElement(applyFixButton, 'show');
+    toggleElement(generateAIExplanationButton, 'show');
 
     diffNumElem.innerText = suggestion.diffs.length.toString();
     diffNum2Elem.innerText = suggestion.diffs.length.toString();

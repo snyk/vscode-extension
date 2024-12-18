@@ -10,6 +10,7 @@ import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
+  SNYK_CODE_GENERATE_AI_EXPLANATION_COMMAND,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -302,6 +303,65 @@ export class CodeSuggestionWebviewProvider
           } catch (e) {
             throw new Error('Error in submit fix feedback');
           }
+          break;
+        }
+        case 'getAIExplanation': {
+          this.logger.info('GENERATING EXPLAIN');
+          console.log("GENERATING EXPLAIN");
+          const { suggestion } = message.args;
+          const filePath = suggestion.filePath;
+          const folderPath = this.getWorkspaceFolderPath(filePath);
+          const relativePath = relative(folderPath, filePath);
+
+          const issueId = suggestion.id;
+
+          const fileContent = readFileSync(filePath, 'utf8');
+
+          const ruleKey = suggestion.rule;
+          const ruleMessage = suggestion.message;
+
+          let derivationLineNumbers: Set<number> = new Set<number>();
+          for (const markerLocation of suggestion.markers!) {
+            // console.log("markerLocation: ", markerLocation);
+            for (const markerPos of markerLocation.pos) {
+              // console.log("markerPos: ", markerPos);
+              const lines = markerPos.rows;
+              for (const line of lines) {
+                // console.log("line", line);
+                derivationLineNumbers.add(line + 1);
+              }
+            }
+            markerLocation.pos
+          }
+          console.log("derivation lines: ", ...derivationLineNumbers);
+
+          let derivationLines: string[] = [];
+          let fileLines: string[] = fileContent.split("\n");
+          for (const derivationLineNumber of derivationLineNumbers) {
+            derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
+          }
+          let derivation = derivationLines.join(",");
+          console.log("derivation: ", derivation);
+
+          var explanation: string = ""
+          explanation = await vscode.commands.executeCommand(
+            SNYK_CODE_GENERATE_AI_EXPLANATION_COMMAND,
+            folderPath,
+            relativePath,
+            issueId,
+          );
+          console.log("GOT EXPLANATION: ", explanation);
+
+          // void this.postSuggestMessage({ type: 'setAutofixDiffs', args: { suggestion, diffs } });
+          // try {
+          //   derivation = derivation.replace(/\t/g, "  ");
+          //   explanation = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
+          // } catch (error) {
+          //   console.error("Got error from server: ", error);
+          // }
+          // console.log("explanation after for: ", explanation.toString());
+          // void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
+
           break;
         }
 
