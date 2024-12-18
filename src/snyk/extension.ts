@@ -36,6 +36,7 @@ import {
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
+  SNYK_VIEW_SUMMARY,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
 import { ExperimentService } from './common/experiment/services/experimentService';
@@ -73,6 +74,7 @@ import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
 import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
+import { SummaryTreeDataProvider } from './common/snykAIFixPlan/summaryProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
@@ -354,6 +356,17 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
+    );
+
+    const summaryProvider = new SummaryTreeDataProvider();
+
+    const summarySecurityTree = vscode.window.createTreeView(SNYK_VIEW_SUMMARY, {
+      treeDataProvider: summaryProvider,
+    });
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_SUMMARY, summaryProvider),
+      summarySecurityTree,
     );
 
     const iacIssueProvider = new IacIssueTreeProvider(

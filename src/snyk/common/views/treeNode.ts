@@ -72,6 +72,8 @@ export class TreeNode extends TreeItem implements INode {
   readonly internal: InternalType;
   private parent: TreeNode | undefined;
   private children: TreeNode[] | undefined;
+  icon: INodeIcon | ThemeIcon | undefined;
+  text: any;
 
   constructor(options: INodeOptions) {
     const collapsed =

@@ -347,13 +347,18 @@
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authenticationChanged"
         },
         {
+          "id": "snyk.views.summary",
+          "name": "Summary",
+          "when": "snyk:loggedIn"
+        },
+        {
           "id": "snyk.views.analysis.oss",
-          "name": "Open Source Security",
+          "name": "Dependencies Issues",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.security",
-          "name": "Code Security",
+          "name": "Code Security Issues",
           "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
@@ -363,7 +368,7 @@
         },
         {
           "id": "snyk.views.analysis.code.quality",
-          "name": "Code Quality",
+          "name": "Code Quality Issues",
           "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
