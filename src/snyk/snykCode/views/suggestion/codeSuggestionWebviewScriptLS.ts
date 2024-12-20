@@ -83,8 +83,29 @@ declare const acquireVsCodeApi: any;
     };
   };
 
-  type GetAIExplanationMessage = {
-    type: 'getAIExplanation';
+  type GenerateFixExplanationMessage = {
+    type: 'generateFixExplanation';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type GenerateVulnerabilityExplanationMessage = {
+    type: 'generateVulnerabilityExplanation';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type SetFixExplanationMessage = {
+    type: 'setFixExplanation';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type SetVulnerabilityExplanationMessage = {
+    type: 'setVulnerabilityExplanation';
     args: {
       suggestion: Suggestion;
     };
@@ -120,7 +141,10 @@ declare const acquireVsCodeApi: any;
     | SetSuggestionMessage
     | GetSuggestionMessage
     | GetAutofixDiffsMesssage
-    | GetAIExplanationMessage
+    | GenerateFixExplanationMessage
+    | GenerateVulnerabilityExplanationMessage
+    | SetVulnerabilityExplanationMessage
+    | SetFixExplanationMessage
     | ApplyGitDiffMessage
     | SetAutofixDiffsMessage
     | SetAutofixErrorMessage;
@@ -222,7 +246,8 @@ declare const acquireVsCodeApi: any;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
   // AI Explain buttons
-  const generateAIExplanationButton = document.getElementById('explain-fix') as HTMLButtonElement;
+  const generateVulnerabilityExplanationButton = document.getElementById('generate-vulnerability-explanation-button') as HTMLButtonElement;
+  const generateFixExplanationButton = document.getElementById('generate-fix-explanation-button') as HTMLButtonElement;
 
   const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
   if (ignoreContainerElements) {
@@ -230,19 +255,32 @@ declare const acquireVsCodeApi: any;
     (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
   }
 
-  function generateAIExplanation() {
-    console.log("inside generateAIExplanation callback");
+  function generateVulnerabilityExplanation() {
+    console.log("inside generateVulnerabilityExplanation callback");
     if (!suggestion) {
       return;
     }
     // toggleElement(generateAIExplanationButton, 'hide');
     // toggleElement(fixLoadingIndicatorElem, 'show');
-    const message: GetAIExplanationMessage = {
-      type: 'getAIExplanation',
+    const message: GenerateVulnerabilityExplanationMessage = {
+      type: 'generateVulnerabilityExplanation',
       args: { suggestion },
     };
     sendMessage(message);
+  }
 
+  function generateFixExplanation() {
+    console.log("inside generateFixExplanation callback");
+    if (!suggestion) {
+      return;
+    }
+    // toggleElement(generateAIExplanationButton, 'hide');
+    // toggleElement(fixLoadingIndicatorElem, 'show');
+    const message: GenerateFixExplanationMessage = {
+      type: 'generateFixExplanation',
+      args: { suggestion },
+    };
+    sendMessage(message);
   }
 
   function generateAIFix() {
@@ -287,7 +325,15 @@ declare const acquireVsCodeApi: any;
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   applyFixButton?.addEventListener('click', applyFix);
 
-  generateAIExplanationButton?.addEventListener('click', generateAIExplanation);
+  // AI Explain elements
+  generateVulnerabilityExplanationButton?.addEventListener('click', generateVulnerabilityExplanation);
+  generateFixExplanationButton?.addEventListener('click', generateFixExplanation);
+
+  // generateVulnerabilityExplanationButton: document.getElementById('generate-vulnerability-explanation-button') as HTMLElement;
+  // vulnerabilityExplainationTextSection: document.getElementById('info-vulnerability-explanation') as HTMLElement;
+  // vulnerabilityExplainationText: document.getElementById("vulnerability-explanation-text") as HTMLElement;
+
+  // generateVulnerabilityExplanationButton?.addEventListener('click', generateAIExplanation);
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
@@ -331,7 +377,7 @@ declare const acquireVsCodeApi: any;
       toggleElement(diffTopElem, 'hide');
       toggleElement(diffElem, 'hide');
       toggleElement(applyFixButton, 'hide');
-      toggleElement(generateAIExplanationButton, 'hide');
+      // toggleElement(generateAIExplanationButton, 'hide');
       return;
     }
 
@@ -341,7 +387,7 @@ declare const acquireVsCodeApi: any;
     toggleElement(diffTopElem, 'show');
     toggleElement(diffElem, 'show');
     toggleElement(applyFixButton, 'show');
-    toggleElement(generateAIExplanationButton, 'show');
+    // toggleElement(generateAIExplanationButton, 'show');
 
     diffNumElem.innerText = suggestion.diffs.length.toString();
     diffNum2Elem.innerText = suggestion.diffs.length.toString();
@@ -442,6 +488,18 @@ declare const acquireVsCodeApi: any;
         }
         toggleElement(fixWrapperElem, 'hide');
         toggleElement(fixErrorSectionElem, 'show');
+      }
+      case 'setVulnerabilityExplanation': {
+        console.log("IN SET EXPLAIN CASE");
+        // const { explainText } = elements;
+        // explainText.innerText = JSON.parse(message.args.suggestion)["explanation"]
+        break;
+      }
+      case 'setFixExplanation': {
+        console.log("IN SET EXPLAIN CASE");
+        // const { explainText } = elements;
+        // explainText.innerText = JSON.parse(message.args.suggestion)["explanation"]
+        break;
       }
     }
   });

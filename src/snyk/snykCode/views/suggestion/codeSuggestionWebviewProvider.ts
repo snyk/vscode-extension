@@ -10,7 +10,7 @@ import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_CODE_GENERATE_AI_EXPLANATION_COMMAND,
+  SNYK_CODE_GENERATE_AI_EXPLANATION
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -305,9 +305,9 @@ export class CodeSuggestionWebviewProvider
           }
           break;
         }
-        case 'getAIExplanation': {
-          this.logger.info('GENERATING EXPLAIN');
-          console.log("GENERATING EXPLAIN");
+        case 'generateVulnerabilityExplanation': {
+          this.logger.info('case generateVulnerabilityExplanation');
+          console.log("case generateVulnerabilityExplanation");
           const { suggestion } = message.args;
           const filePath = suggestion.filePath;
           const folderPath = this.getWorkspaceFolderPath(filePath);
@@ -341,14 +341,15 @@ export class CodeSuggestionWebviewProvider
             derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
           }
           let derivation = derivationLines.join(",");
+          derivation = derivation.replace(/\t/g, "  ");
           console.log("derivation: ", derivation);
 
           var explanation: string = ""
           explanation = await vscode.commands.executeCommand(
-            SNYK_CODE_GENERATE_AI_EXPLANATION_COMMAND,
-            folderPath,
-            relativePath,
-            issueId,
+            SNYK_CODE_GENERATE_AI_EXPLANATION,
+            derivation,
+            ruleKey,
+            ruleMessage,
           );
           console.log("GOT EXPLANATION: ", explanation);
 
@@ -362,6 +363,30 @@ export class CodeSuggestionWebviewProvider
           // console.log("explanation after for: ", explanation.toString());
           // void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
 
+          break;
+        }
+        case 'generateFixExplanation': {
+          this.logger.info('case generateFixExplanation');
+          console.log("case generateFixExplanation");
+          const { suggestion } = message.args;
+          const filePath = suggestion.filePath;
+          const folderPath = this.getWorkspaceFolderPath(filePath);
+          const relativePath = relative(folderPath, filePath);
+
+          const issueId = suggestion.id;
+
+          const fileContent = readFileSync(filePath, 'utf8');
+
+          // const ruleKey = suggestion.rule;
+          // const ruleMessage = suggestion.message;
+          var explanation: string = ""
+          explanation = await vscode.commands.executeCommand(
+            SNYK_CODE_GENERATE_AI_EXPLANATION,
+            folderPath,
+            relativePath,
+            issueId,
+          );
+          console.log("GOT EXPLANATION: ", explanation);
           break;
         }
 

@@ -59,8 +59,15 @@ export type GetAutofixDiffsMesssage = {
   };
 };
 
-export type GetAIExplanationMessage = {
-  type: 'getAIExplanation';
+export type GenerateFixExplanationMessage = {
+  type: 'generateFixExplanation';
+  args: {
+    suggestion: Suggestion;
+  };
+};
+
+export type GenerateVulnerabilityExplanationMessage = {
+  type: 'generateVulnerabilityExplanation';
   args: {
     suggestion: Suggestion;
   };
@@ -108,12 +115,29 @@ export type SetAutofixErrorMessage = {
   };
 };
 
+export type SetVulnerabilityExplanation = {
+  type: 'setVulnerabilityExplanation';
+  args: {
+    suggestion: Suggestion;
+  };
+};
+
+export type SetFixExplanation = {
+  type: 'setFixExplanation';
+  args: {
+    suggestion: Suggestion;
+  };
+};
+
 export type SuggestionMessage =
   | OpenLocalMessage
   | OpenBrowserMessage
   | IgnoreIssueMessage
   | GetAutofixDiffsMesssage
-  | GetAIExplanationMessage
+  | GenerateVulnerabilityExplanationMessage
+  | GenerateFixExplanationMessage
+  | SetVulnerabilityExplanation
+  | SetFixExplanation
   | ApplyGitDiffMessage
   | SetSuggestionMessage
   | GetSuggestionMessage
