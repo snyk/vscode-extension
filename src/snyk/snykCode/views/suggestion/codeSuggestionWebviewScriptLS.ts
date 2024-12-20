@@ -100,14 +100,14 @@ declare const acquireVsCodeApi: any;
   type SetFixExplanationMessage = {
     type: 'setFixExplanation';
     args: {
-      suggestion: Suggestion;
+      explanation: string;
     };
   };
 
   type SetVulnerabilityExplanationMessage = {
     type: 'setVulnerabilityExplanation';
     args: {
-      suggestion: Suggestion;
+      explanation: string;
     };
   };
 
@@ -260,8 +260,6 @@ declare const acquireVsCodeApi: any;
     if (!suggestion) {
       return;
     }
-    // toggleElement(generateAIExplanationButton, 'hide');
-    // toggleElement(fixLoadingIndicatorElem, 'show');
     const message: GenerateVulnerabilityExplanationMessage = {
       type: 'generateVulnerabilityExplanation',
       args: { suggestion },
@@ -274,8 +272,6 @@ declare const acquireVsCodeApi: any;
     if (!suggestion) {
       return;
     }
-    // toggleElement(generateAIExplanationButton, 'hide');
-    // toggleElement(fixLoadingIndicatorElem, 'show');
     const message: GenerateFixExplanationMessage = {
       type: 'generateFixExplanation',
       args: { suggestion },

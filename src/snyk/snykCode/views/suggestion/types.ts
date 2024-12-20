@@ -118,14 +118,14 @@ export type SetAutofixErrorMessage = {
 export type SetVulnerabilityExplanation = {
   type: 'setVulnerabilityExplanation';
   args: {
-    suggestion: Suggestion;
+    explanation: string;
   };
 };
 
 export type SetFixExplanation = {
   type: 'setFixExplanation';
   args: {
-    suggestion: Suggestion;
+    explanation: string;
   };
 };
 

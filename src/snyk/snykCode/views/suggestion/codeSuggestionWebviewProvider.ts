@@ -322,12 +322,9 @@ export class CodeSuggestionWebviewProvider
 
           let derivationLineNumbers: Set<number> = new Set<number>();
           for (const markerLocation of suggestion.markers!) {
-            // console.log("markerLocation: ", markerLocation);
             for (const markerPos of markerLocation.pos) {
-              // console.log("markerPos: ", markerPos);
               const lines = markerPos.rows;
               for (const line of lines) {
-                // console.log("line", line);
                 derivationLineNumbers.add(line + 1);
               }
             }
@@ -351,17 +348,9 @@ export class CodeSuggestionWebviewProvider
             ruleKey,
             ruleMessage,
           );
-          console.log("GOT EXPLANATION: ", explanation);
+          console.log("got vulnerability explanation: ", explanation);
 
-          // void this.postSuggestMessage({ type: 'setAutofixDiffs', args: { suggestion, diffs } });
-          // try {
-          //   derivation = derivation.replace(/\t/g, "  ");
-          //   explanation = await this.promisifySpawn(ruleKey, ruleMessage, derivation);
-          // } catch (error) {
-          //   console.error("Got error from server: ", error);
-          // }
-          // console.log("explanation after for: ", explanation.toString());
-          // void this.postSuggestMessage({ type: 'setExplain', args: { suggestion: explanation } });
+          void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { explanation: explanation } });
 
           break;
         }
@@ -386,7 +375,7 @@ export class CodeSuggestionWebviewProvider
             relativePath,
             issueId,
           );
-          console.log("GOT EXPLANATION: ", explanation);
+          console.log("got fix explanation: ", explanation);
           break;
         }
 
