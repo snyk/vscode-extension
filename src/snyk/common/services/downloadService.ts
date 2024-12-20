@@ -115,10 +115,15 @@ export class DownloadService {
       return true;
     }
     // Update is available if fetched checksum not matching the current one
-    const checksum = await Checksum.getChecksumOf(path, latestChecksum);
-    if (checksum.verify()) {
-      this.logger.info(messages.isLatest);
-      return false;
+    try {
+      const checksum = await Checksum.getChecksumOf(path, latestChecksum);
+      if (checksum.verify()) {
+        this.logger.info(messages.isLatest);
+        return false;
+      }
+    } catch {
+      // if checksum check fails; force an update
+      return true;
     }
 
     return true;
