@@ -100,14 +100,14 @@ declare const acquireVsCodeApi: any;
   type SetFixExplanationMessage = {
     type: 'setFixExplanation';
     args: {
-      explanation: string;
+      suggestion: string;
     };
   };
 
   type SetVulnerabilityExplanationMessage = {
     type: 'setVulnerabilityExplanation';
     args: {
-      explanation: string;
+      suggestion: string;
     };
   };
 
@@ -249,6 +249,11 @@ declare const acquireVsCodeApi: any;
   const generateVulnerabilityExplanationButton = document.getElementById('generate-vulnerability-explanation-button') as HTMLButtonElement;
   const generateFixExplanationButton = document.getElementById('generate-fix-explanation-button') as HTMLButtonElement;
 
+  // const vulnerabilityExplainationTextSection = document.getElementById() as HTMLElement;
+  // const fixExplanationTextSection = document.getElementById() as HTMLElement
+  const vulnerabilityExplanationText = document.getElementById('vuln-explain-text') as HTMLElement;
+  const fixExplanationText = document.getElementById('fix-explain-text') as HTMLElement;
+
   const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
   if (ignoreContainerElements) {
     toggleElement(ignoreContainerElements[0] as HTMLElement, 'show');
@@ -321,15 +326,9 @@ declare const acquireVsCodeApi: any;
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   applyFixButton?.addEventListener('click', applyFix);
 
-  // AI Explain elements
   generateVulnerabilityExplanationButton?.addEventListener('click', generateVulnerabilityExplanation);
   generateFixExplanationButton?.addEventListener('click', generateFixExplanation);
 
-  // generateVulnerabilityExplanationButton: document.getElementById('generate-vulnerability-explanation-button') as HTMLElement;
-  // vulnerabilityExplainationTextSection: document.getElementById('info-vulnerability-explanation') as HTMLElement;
-  // vulnerabilityExplainationText: document.getElementById("vulnerability-explanation-text") as HTMLElement;
-
-  // generateVulnerabilityExplanationButton?.addEventListener('click', generateAIExplanation);
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
@@ -486,15 +485,15 @@ declare const acquireVsCodeApi: any;
         toggleElement(fixErrorSectionElem, 'show');
       }
       case 'setVulnerabilityExplanation': {
-        console.log("IN SET EXPLAIN CASE");
-        // const { explainText } = elements;
-        // explainText.innerText = JSON.parse(message.args.suggestion)["explanation"]
+        console.log("vscode: in setVulnerabilityExplanation: ", message.args.suggestion);
+        vulnerabilityExplanationText.innerText = message.args.suggestion as string;
+        console.log("vscode: changed html value for vuln explanation");
         break;
       }
       case 'setFixExplanation': {
-        console.log("IN SET EXPLAIN CASE");
-        // const { explainText } = elements;
-        // explainText.innerText = JSON.parse(message.args.suggestion)["explanation"]
+        console.log("vscode: in setFixExplanation: ", message.args.suggestion);
+        fixExplanationText.innerText = message.args.suggestion as string;
+        console.log("vscode: changed html value for fix explanation");
         break;
       }
     }

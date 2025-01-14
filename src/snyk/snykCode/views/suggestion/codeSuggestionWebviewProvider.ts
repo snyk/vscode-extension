@@ -310,10 +310,10 @@ export class CodeSuggestionWebviewProvider
           console.log("case generateVulnerabilityExplanation");
           const { suggestion } = message.args;
           const filePath = suggestion.filePath;
-          const folderPath = this.getWorkspaceFolderPath(filePath);
-          const relativePath = relative(folderPath, filePath);
+          // const folderPath = this.getWorkspaceFolderPath(filePath);
+          // const relativePath = relative(folderPath, filePath);
 
-          const issueId = suggestion.id;
+          // const issueId = suggestion.id;
 
           const fileContent = readFileSync(filePath, 'utf8');
 
@@ -341,16 +341,18 @@ export class CodeSuggestionWebviewProvider
           derivation = derivation.replace(/\t/g, "  ");
           console.log("derivation: ", derivation);
 
+          const diff = "";
           var explanation: string = ""
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
             derivation,
             ruleKey,
             ruleMessage,
+            diff
           );
-          console.log("got vulnerability explanation: ", explanation);
+          console.log("vscode: got vulnerability explanation: ", explanation);
 
-          void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { explanation: explanation } });
+          void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { suggestion: explanation } });
 
           break;
         }
@@ -363,8 +365,9 @@ export class CodeSuggestionWebviewProvider
           const relativePath = relative(folderPath, filePath);
 
           const issueId = suggestion.id;
+          const diff = "some random diff";
 
-          const fileContent = readFileSync(filePath, 'utf8');
+          // const fileContent = readFileSync(filePath, 'utf8');
 
           // const ruleKey = suggestion.rule;
           // const ruleMessage = suggestion.message;
@@ -374,8 +377,11 @@ export class CodeSuggestionWebviewProvider
             folderPath,
             relativePath,
             issueId,
+            diff
           );
-          console.log("got fix explanation: ", explanation);
+          console.log("vscode: got fix explanation: ", explanation);
+          void this.postSuggestMessage({ type: 'setFixExplanation', args: { suggestion: explanation } });
+
           break;
         }
 
