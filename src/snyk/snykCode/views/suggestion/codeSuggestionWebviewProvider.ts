@@ -359,18 +359,16 @@ export class CodeSuggestionWebviewProvider
         case 'generateFixExplanation': {
           this.logger.info('case generateFixExplanation');
           console.log("case generateFixExplanation");
-          const { suggestion } = message.args;
+          const { suggestion, diff} = message.args;
           const filePath = suggestion.filePath;
           const folderPath = this.getWorkspaceFolderPath(filePath);
           const relativePath = relative(folderPath, filePath);
 
           const issueId = suggestion.id;
-          const diff = "some random diff";
+          // const diff = "some random diff";
+          // const diff = message.args.diff;
+          console.log("vscode: got fix explanation: ", diff);
 
-          // const fileContent = readFileSync(filePath, 'utf8');
-
-          // const ruleKey = suggestion.rule;
-          // const ruleMessage = suggestion.message;
           var explanation: string = ""
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,

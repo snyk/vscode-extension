@@ -63,6 +63,7 @@ export type GenerateFixExplanationMessage = {
   type: 'generateFixExplanation';
   args: {
     suggestion: Suggestion;
+    diff: string;
   };
 };
 

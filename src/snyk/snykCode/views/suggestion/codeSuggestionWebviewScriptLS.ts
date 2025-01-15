@@ -87,6 +87,7 @@ declare const acquireVsCodeApi: any;
     type: 'generateFixExplanation';
     args: {
       suggestion: Suggestion;
+      diff: string;
     };
   };
 
@@ -277,9 +278,12 @@ declare const acquireVsCodeApi: any;
     if (!suggestion) {
       return;
     }
+    const diffSuggestion = suggestion.diffs[diffSelectedIndex];
+    const filePath = suggestion.filePath;
+    const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
     const message: GenerateFixExplanationMessage = {
       type: 'generateFixExplanation',
-      args: { suggestion },
+      args: { suggestion, diff: patch },
     };
     sendMessage(message);
   }
