@@ -306,21 +306,14 @@ export class CodeSuggestionWebviewProvider
           break;
         }
         case 'generateVulnerabilityExplanation': {
-          this.logger.info('case generateVulnerabilityExplanation');
-          console.log("case generateVulnerabilityExplanation");
+          this.logger.info('generating vulnerability explanation');
           const { suggestion } = message.args;
           const filePath = suggestion.filePath;
-          // const folderPath = this.getWorkspaceFolderPath(filePath);
-          // const relativePath = relative(folderPath, filePath);
-
-          // const issueId = suggestion.id;
-
           const fileContent = readFileSync(filePath, 'utf8');
-
           const ruleKey = suggestion.rule;
           const ruleMessage = suggestion.message;
 
-          let derivationLineNumbers: Set<number> = new Set<number>();
+          const derivationLineNumbers: Set<number> = new Set<number>();
           for (const markerLocation of suggestion.markers!) {
             for (const markerPos of markerLocation.pos) {
               const lines = markerPos.rows;
@@ -338,37 +331,33 @@ export class CodeSuggestionWebviewProvider
             derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
           }
           let derivation = derivationLines.join(',');
-          derivation = derivation.replace(/\t/g, "  ");
-          console.log("derivation: ", derivation);
+          derivation = derivation.replace(/\t/g, '  ');
+          console.log('derivation: ', derivation);
 
-          let explanation: string = ""
+          let explanation: string = '';
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
             derivation,
             ruleKey,
             ruleMessage,
-            /* diff */ ""
+            /* diff */ ''
           );
-          console.log("vscode: got vulnerability explanation: ", explanation);
+          console.log('vscode: got vulnerability explanation: ', explanation);
 
           void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { suggestion: explanation } });
 
           break;
         }
         case 'generateFixExplanation': {
-          this.logger.info('case generateFixExplanation');
-          console.log("case generateFixExplanation");
-          const { suggestion, diff} = message.args;
+          this.logger.info('generating fix explanation');
+          const { suggestion, diff } = message.args;
           const filePath = suggestion.filePath;
           const folderPath = this.getWorkspaceFolderPath(filePath);
           const relativePath = relative(folderPath, filePath);
 
           const issueId = suggestion.id;
-          // const diff = "some random diff";
-          // const diff = message.args.diff;
-          console.log("vscode: got fix explanation: ", diff);
 
-          var explanation: string = ""
+          let explanation: string = '';
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
             folderPath,
@@ -376,7 +365,7 @@ export class CodeSuggestionWebviewProvider
             issueId,
             diff
           );
-          console.log("vscode: got fix explanation: ", explanation);
+          console.log('vscode: got fix explanation: ', explanation);
           void this.postSuggestMessage({ type: 'setFixExplanation', args: { suggestion: explanation } });
 
           break;
