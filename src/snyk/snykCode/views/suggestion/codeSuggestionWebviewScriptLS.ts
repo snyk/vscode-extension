@@ -486,7 +486,7 @@ declare const acquireVsCodeApi: any;
       }
       case 'setVulnerabilityExplanation': {
         console.log('vscode: in setVulnerabilityExplanation: ', message.args.explanation);
-        vulnerabilityExplanationText.innerText = message.args.explanation as string;
+        vulnerabilityExplanationText.innerText = message.args.explanation;
         break;
       }
       case 'setFixExplanation': {
