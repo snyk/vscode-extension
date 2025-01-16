@@ -101,14 +101,14 @@ declare const acquireVsCodeApi: any;
   type SetFixExplanationMessage = {
     type: 'setFixExplanation';
     args: {
-      suggestion: string;
+      explanation: string;
     };
   };
 
   type SetVulnerabilityExplanationMessage = {
     type: 'setVulnerabilityExplanation';
     args: {
-      suggestion: string;
+      explanation: string;
     };
   };
 
@@ -489,14 +489,14 @@ declare const acquireVsCodeApi: any;
         break;
       }
       case 'setVulnerabilityExplanation': {
-        console.log('vscode: in setVulnerabilityExplanation: ', message.args.suggestion);
-        vulnerabilityExplanationText.innerText = message.args.suggestion as string;
+        console.log('vscode: in setVulnerabilityExplanation: ', message.args.explanation);
+        vulnerabilityExplanationText.innerText = message.args.explanation as string;
         console.log('vscode: changed html value for vuln explanation');
         break;
       }
       case 'setFixExplanation': {
-        console.log('vscode: in setFixExplanation: ', message.args.suggestion);
-        fixExplanationText.innerText = message.args.suggestion;
+        console.log('vscode: in setFixExplanation: ', message.args.explanation);
+        fixExplanationText.innerText = message.args.explanation;
         console.log('vscode: changed html value for fix explanation');
         break;
       }

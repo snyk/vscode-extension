@@ -116,14 +116,14 @@ export type SetAutofixErrorMessage = {
   };
 };
 
-export type SetVulnerabilityExplanation = {
+export type SetVulnerabilityExplanationMessage = {
   type: 'setVulnerabilityExplanation';
   args: {
     explanation: string;
   };
 };
 
-export type SetFixExplanation = {
+export type SetFixExplanationMessage = {
   type: 'setFixExplanation';
   args: {
     explanation: string;
@@ -137,8 +137,8 @@ export type SuggestionMessage =
   | GetAutofixDiffsMesssage
   | GenerateVulnerabilityExplanationMessage
   | GenerateFixExplanationMessage
-  | SetVulnerabilityExplanation
-  | SetFixExplanation
+  | SetVulnerabilityExplanationMessage
+  | SetFixExplanationMessage
   | ApplyGitDiffMessage
   | SetSuggestionMessage
   | GetSuggestionMessage
