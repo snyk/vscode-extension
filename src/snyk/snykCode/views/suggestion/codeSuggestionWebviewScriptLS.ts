@@ -252,8 +252,6 @@ declare const acquireVsCodeApi: any;
   ) as HTMLButtonElement;
   const generateFixExplanationButton = document.getElementById('generate-fix-explanation-button') as HTMLButtonElement;
 
-  // const vulnerabilityExplainationTextSection = document.getElementById() as HTMLElement;
-  // const fixExplanationTextSection = document.getElementById() as HTMLElement
   const vulnerabilityExplanationText = document.getElementById('vuln-explain-text') as HTMLElement;
   const fixExplanationText = document.getElementById('fix-explain-text') as HTMLElement;
 
@@ -264,7 +262,6 @@ declare const acquireVsCodeApi: any;
   }
 
   function generateVulnerabilityExplanation() {
-    console.log('inside generateVulnerabilityExplanation callback');
     if (!suggestion) {
       return;
     }
@@ -276,7 +273,6 @@ declare const acquireVsCodeApi: any;
   }
 
   function generateFixExplanation() {
-    console.log('inside generateFixExplanation callback');
     if (!suggestion) {
       return;
     }
@@ -491,13 +487,11 @@ declare const acquireVsCodeApi: any;
       case 'setVulnerabilityExplanation': {
         console.log('vscode: in setVulnerabilityExplanation: ', message.args.explanation);
         vulnerabilityExplanationText.innerText = message.args.explanation as string;
-        console.log('vscode: changed html value for vuln explanation');
         break;
       }
       case 'setFixExplanation': {
         console.log('vscode: in setFixExplanation: ', message.args.explanation);
         fixExplanationText.innerText = message.args.explanation;
-        console.log('vscode: changed html value for fix explanation');
         break;
       }
     }

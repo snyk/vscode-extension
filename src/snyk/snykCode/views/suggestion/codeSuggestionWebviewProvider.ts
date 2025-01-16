@@ -310,8 +310,6 @@ export class CodeSuggestionWebviewProvider
           const { suggestion } = message.args;
           const filePath = suggestion.filePath;
           const fileContent = readFileSync(filePath, 'utf8');
-          const ruleKey = suggestion.rule;
-          const ruleMessage = suggestion.message;
 
           const derivationLineNumbers: Set<number> = new Set<number>();
           for (const markerLocation of suggestion.markers!) {
@@ -338,8 +336,8 @@ export class CodeSuggestionWebviewProvider
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
             derivation,
-            ruleKey,
-            ruleMessage,
+            suggestion.rule,
+            suggestion.message,
             /* diff */ '',
           );
           console.log('vscode: got vulnerability explanation: ', explanation);
@@ -351,18 +349,13 @@ export class CodeSuggestionWebviewProvider
         case 'generateFixExplanation': {
           this.logger.info('generating fix explanation');
           const { suggestion, diff } = message.args;
-          const filePath = suggestion.filePath;
-          const folderPath = this.getWorkspaceFolderPath(filePath);
-          const relativePath = relative(folderPath, filePath);
-
-          const issueId = suggestion.id;
 
           let explanation: string = '';
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
-            folderPath,
-            relativePath,
-            issueId,
+            /* derivation */ '',
+            suggestion.rule,
+            /* ruleMessage */ '',
             diff,
           );
           console.log('vscode: got fix explanation: ', explanation);
