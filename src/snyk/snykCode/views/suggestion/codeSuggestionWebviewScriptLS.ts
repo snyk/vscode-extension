@@ -376,7 +376,6 @@ declare const acquireVsCodeApi: any;
       toggleElement(diffTopElem, 'hide');
       toggleElement(diffElem, 'hide');
       toggleElement(applyFixButton, 'hide');
-      // toggleElement(generateAIExplanationButton, 'hide');
       return;
     }
 
@@ -386,7 +385,6 @@ declare const acquireVsCodeApi: any;
     toggleElement(diffTopElem, 'show');
     toggleElement(diffElem, 'show');
     toggleElement(applyFixButton, 'show');
-    // toggleElement(generateAIExplanationButton, 'show');
 
     diffNumElem.innerText = suggestion.diffs.length.toString();
     diffNum2Elem.innerText = suggestion.diffs.length.toString();

@@ -10,7 +10,7 @@ import {
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_CODE_GENERATE_AI_EXPLANATION
+  SNYK_CODE_GENERATE_AI_EXPLANATION,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -328,27 +328,26 @@ export class CodeSuggestionWebviewProvider
                 derivationLineNumbers.add(line + 1);
               }
             }
-            markerLocation.pos
+            markerLocation.pos;
           }
-          console.log("derivation lines: ", ...derivationLineNumbers);
+          console.log('derivation lines: ', ...derivationLineNumbers);
 
-          let derivationLines: string[] = [];
-          let fileLines: string[] = fileContent.split("\n");
+          const derivationLines: string[] = [];
+          let fileLines: string[] = fileContent.split('\n');
           for (const derivationLineNumber of derivationLineNumbers) {
             derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
           }
-          let derivation = derivationLines.join(",");
+          let derivation = derivationLines.join(',');
           derivation = derivation.replace(/\t/g, "  ");
           console.log("derivation: ", derivation);
 
-          const diff = "";
-          var explanation: string = ""
+          let explanation: string = ""
           explanation = await vscode.commands.executeCommand(
             SNYK_CODE_GENERATE_AI_EXPLANATION,
             derivation,
             ruleKey,
             ruleMessage,
-            diff
+            /* diff */ ""
           );
           console.log("vscode: got vulnerability explanation: ", explanation);
 
