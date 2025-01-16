@@ -247,7 +247,9 @@ declare const acquireVsCodeApi: any;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
   // AI Explain buttons
-  const generateVulnerabilityExplanationButton = document.getElementById('generate-vulnerability-explanation-button') as HTMLButtonElement;
+  const generateVulnerabilityExplanationButton = document.getElementById(
+    'generate-vulnerability-explanation-button',
+  ) as HTMLButtonElement;
   const generateFixExplanationButton = document.getElementById('generate-fix-explanation-button') as HTMLButtonElement;
 
   // const vulnerabilityExplainationTextSection = document.getElementById() as HTMLElement;
@@ -262,7 +264,7 @@ declare const acquireVsCodeApi: any;
   }
 
   function generateVulnerabilityExplanation() {
-    console.log("inside generateVulnerabilityExplanation callback");
+    console.log('inside generateVulnerabilityExplanation callback');
     if (!suggestion) {
       return;
     }
@@ -274,7 +276,7 @@ declare const acquireVsCodeApi: any;
   }
 
   function generateFixExplanation() {
-    console.log("inside generateFixExplanation callback");
+    console.log('inside generateFixExplanation callback');
     if (!suggestion) {
       return;
     }
@@ -332,7 +334,6 @@ declare const acquireVsCodeApi: any;
 
   generateVulnerabilityExplanationButton?.addEventListener('click', generateVulnerabilityExplanation);
   generateFixExplanationButton?.addEventListener('click', generateFixExplanation);
-
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
@@ -485,17 +486,18 @@ declare const acquireVsCodeApi: any;
         }
         toggleElement(fixWrapperElem, 'hide');
         toggleElement(fixErrorSectionElem, 'show');
+        break;
       }
       case 'setVulnerabilityExplanation': {
-        console.log("vscode: in setVulnerabilityExplanation: ", message.args.suggestion);
+        console.log('vscode: in setVulnerabilityExplanation: ', message.args.suggestion);
         vulnerabilityExplanationText.innerText = message.args.suggestion as string;
-        console.log("vscode: changed html value for vuln explanation");
+        console.log('vscode: changed html value for vuln explanation');
         break;
       }
       case 'setFixExplanation': {
-        console.log("vscode: in setFixExplanation: ", message.args.suggestion);
-        fixExplanationText.innerText = message.args.suggestion as string;
-        console.log("vscode: changed html value for fix explanation");
+        console.log('vscode: in setFixExplanation: ', message.args.suggestion);
+        fixExplanationText.innerText = message.args.suggestion;
+        console.log('vscode: changed html value for fix explanation');
         break;
       }
     }

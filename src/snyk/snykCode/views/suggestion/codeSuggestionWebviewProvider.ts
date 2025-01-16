@@ -326,7 +326,7 @@ export class CodeSuggestionWebviewProvider
           console.log('derivation lines: ', ...derivationLineNumbers);
 
           const derivationLines: string[] = [];
-          let fileLines: string[] = fileContent.split('\n');
+          const fileLines: string[] = fileContent.split('\n');
           for (const derivationLineNumber of derivationLineNumbers) {
             derivationLines.push(fileLines.at(derivationLineNumber - 1)!);
           }
@@ -340,11 +340,11 @@ export class CodeSuggestionWebviewProvider
             derivation,
             ruleKey,
             ruleMessage,
-            /* diff */ ''
+            /* diff */ '',
           );
           console.log('vscode: got vulnerability explanation: ', explanation);
 
-          void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { suggestion: explanation } });
+          void this.postSuggestMessage({ type: 'setVulnerabilityExplanation', args: { explanation: explanation } });
 
           break;
         }
@@ -363,10 +363,10 @@ export class CodeSuggestionWebviewProvider
             folderPath,
             relativePath,
             issueId,
-            diff
+            diff,
           );
           console.log('vscode: got fix explanation: ', explanation);
-          void this.postSuggestMessage({ type: 'setFixExplanation', args: { suggestion: explanation } });
+          void this.postSuggestMessage({ type: 'setFixExplanation', args: { explanation: explanation } });
 
           break;
         }
