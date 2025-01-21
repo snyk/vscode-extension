@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as vscode from 'vscode';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
@@ -8,6 +9,7 @@ import {
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
+  SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -24,6 +26,7 @@ import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
+import { SummaryWebviewViewProvider } from '../views/summaryWebviewProvider';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -37,6 +40,7 @@ export interface ILanguageServer {
 }
 
 export class LanguageServer implements ILanguageServer {
+  [x: string]: any;
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
@@ -156,6 +160,27 @@ export class LanguageServer implements ILanguageServer {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
     });
+
+    client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
+      this.logger.info(`Summary html ${scanSummary}: ${scanSummary}.`);
+      this.updateSummaryPanel(scanSummary).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
+      });
+    });
+  }
+
+  protected async updateSummaryPanel(scanSummary: string): Promise<void> {
+    const SummaryProvider = SummaryWebviewViewProvider.getInstance();
+
+    if (!SummaryProvider) {
+      this.logger.error('Summary Webview Provider was not initialized.');
+      return;
+    }
+    try {
+      await SummaryProvider.updateWebviewContent(scanSummary);
+    } catch (error) {
+      this.logger.error('Failed to update Summary panel');
+    }
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

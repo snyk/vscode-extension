@@ -347,6 +347,13 @@
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authenticationChanged"
         },
         {
+          "type": "webview",
+          "id": "snyk.views.summary",
+          "name": "SUMMARY",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error",
+          "content": "${scanSummaryHtml}"
+        },
+        {
           "id": "snyk.views.analysis.oss",
           "name": "Open Source Security",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
