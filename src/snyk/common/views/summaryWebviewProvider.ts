@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-
-export abstract class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
+import { getNonce } from './nonce';
+export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
   private static instance: SummaryWebviewViewProvider;
   private webviewView: vscode.WebviewView | undefined;
   private context: vscode.ExtensionContext;
@@ -9,13 +9,13 @@ export abstract class SummaryWebviewViewProvider implements vscode.WebviewViewPr
     this.context = context;
   }
 
-  public static getInstance(context?: vscode.ExtensionContext): SummaryWebviewViewProvider | undefined {
+  public static getInstance(extensionContext?: vscode.ExtensionContext): SummaryWebviewViewProvider | undefined {
     if (!SummaryWebviewViewProvider.instance) {
-      if (!context) {
+      if (!extensionContext) {
         console.log('ExtensionContext is required for the first initialization of SnykDiagnosticsWebviewViewProvider');
         return undefined;
       } else {
-        SummaryWebviewViewProvider.instance = new SummaryWebviewViewProvider(context);
+        SummaryWebviewViewProvider.instance = new SummaryWebviewViewProvider(extensionContext);
       }
     }
     return SummaryWebviewViewProvider.instance;
@@ -30,10 +30,9 @@ export abstract class SummaryWebviewViewProvider implements vscode.WebviewViewPr
 
   public updateWebviewContent(html: string) {
     if (this.webviewView) {
-      //const jsContent = await this.getLocalScripts();
-      html = html
-        .replace(/data-ide-style><\/style>/, `data-ide-style></style>`) // Inject local CSS when needed like ${jsContent} below
-        .replace(/class="ide-script"><\/script>/, `class="ide-script">${jsContent}</script>`);
+      const nonce = getNonce()
+      html = html.replace('${ideScript}', `<script nonce=${nonce}>` + "" + '</script>');
+      html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + "" + '</style>');
 
       // Load the modified HTML into Cheerio
 

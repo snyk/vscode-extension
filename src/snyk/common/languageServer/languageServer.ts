@@ -171,7 +171,6 @@ export class LanguageServer implements ILanguageServer {
 
   protected async updateSummaryPanel(scanSummary: string): Promise<void> {
     const SummaryProvider = SummaryWebviewViewProvider.getInstance();
-
     if (!SummaryProvider) {
       this.logger.error('Summary Webview Provider was not initialized.');
       return;

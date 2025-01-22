@@ -34,6 +34,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
+  SNYK_VIEW_SUMMARY,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -83,9 +84,20 @@ import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
 import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
+import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
+    const diagnosticsOverviewWebviewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
+    if (!diagnosticsOverviewWebviewProvider) {
+      console.log('Diagnostics Overview not initialized.');
+    } else {
+      vscodeContext.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, diagnosticsOverviewWebviewProvider),
+      );
+    }
+
+    SummaryWebviewViewProvider.getInstance(vscodeContext);
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
     const snykConfiguration = await this.getSnykConfiguration();
