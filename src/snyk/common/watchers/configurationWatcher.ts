@@ -60,7 +60,7 @@ class ConfigurationWatcher implements IWatcher {
       extension.initDependencyDownload();
       return;
     } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
-      extension.viewManagerService.refreshAllViews();
+      return extension.viewManagerService.refreshAllViews();
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
