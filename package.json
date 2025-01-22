@@ -424,12 +424,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         }
       ],
