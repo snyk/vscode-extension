@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import * as vscode from 'vscode';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
