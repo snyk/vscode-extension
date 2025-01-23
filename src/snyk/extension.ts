@@ -25,6 +25,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
 import {
@@ -524,6 +525,9 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
         this.commandController.setBaseBranch(folderPath),
+      ),
+      vscode.commands.registerCommand(SNYK_TOGGLE_DELTA, (isEnabled: boolean) =>
+        this.commandController.toggleDelta(isEnabled),
       ),
       vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;

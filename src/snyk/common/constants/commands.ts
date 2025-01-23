@@ -20,6 +20,7 @@ export const SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND = 'snyk.showErrorFromContext';
 export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
 export const SNYK_GET_SETTINGS_SAST_ENABLED = 'snyk.getSettingsSastEnabled';
 export const SNYK_SET_BASE_BRANCH_COMMAND = 'snyk.setBaseBranch';
+export const SNYK_TOGGLE_DELTA = 'snyk.toggleDelta';
 export const SNYK_LOGIN_COMMAND = 'snyk.login';
 export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';

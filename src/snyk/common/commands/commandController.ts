@@ -47,7 +47,7 @@ export class CommandController {
     private logger: ILog,
     private configuration: IConfiguration,
     private folderConfigs: IFolderConfigs,
-  ) {}
+  ) { }
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
@@ -82,6 +82,10 @@ export class CommandController {
 
   async setBaseBranch(folderPath: string): Promise<void> {
     await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
+  }
+
+  async toggleDelta(isEnabled: boolean): Promise<void> {
+    await this.configuration.setDeltaFindingsEnabled(isEnabled);
   }
 
   openSettings(): void {

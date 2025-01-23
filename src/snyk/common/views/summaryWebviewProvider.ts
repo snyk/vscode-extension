@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
+import { readFileSync } from 'fs';
 import { getNonce } from './nonce';
+import { SummaryMessage } from '../languageServer/types';
+import { SNYK_TOGGLE_DELTA } from '../constants/commands';
 export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
   private static instance: SummaryWebviewViewProvider;
   private webviewView: vscode.WebviewView | undefined;
@@ -26,13 +29,38 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
     };
+    this.webviewView.webview.onDidReceiveMessage(
+      (msg: SummaryMessage) => this.handleMessage(msg));
+  }
+
+  private async handleMessage(message: SummaryMessage) {
+    try {
+      switch (message.type) {
+        case 'sendSummaryParams': {
+          const { summary } = message.args;
+          await vscode.commands.executeCommand(SNYK_TOGGLE_DELTA, summary.toggleDelta);
+          break;
+        }
+      }
+    } catch (error) {
+    }
   }
 
   public updateWebviewContent(html: string) {
     if (this.webviewView) {
       const nonce = getNonce();
-      html = html.replace('${ideScript}', `<script nonce=${nonce}>` + '' + '</script>');
+      const ideScriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'out',
+        'snyk',
+        'common',
+        'views',
+        'summaryWebviewScript.js',
+      );
+      const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
+
       html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + '' + '</style>');
+      html = html.replace('${ideScript}', `<script nonce=${nonce}>` + ideScript + '</script>');
 
       // Load the modified HTML into Cheerio
 
