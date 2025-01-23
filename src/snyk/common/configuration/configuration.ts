@@ -368,7 +368,7 @@ export class Configuration implements IConfiguration {
     if (!isEnabled) {
       deltaValue = ALLISSUES;
     }
-    this.workspace.updateConfiguration(
+    await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(DELTA_FINDINGS),
       deltaValue,
