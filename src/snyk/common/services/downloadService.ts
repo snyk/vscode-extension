@@ -90,7 +90,7 @@ export class DownloadService {
   }
 
   async isCliInstalled() {
-    const cliExecutableExists = await CliExecutable.exists(this.extensionContext.extensionPath);
+    const cliExecutableExists = await CliExecutable.exists(await this.configuration.getCliPath());
     const cliChecksumWritten = !!this.getCliChecksum();
 
     return cliExecutableExists && cliChecksumWritten;
