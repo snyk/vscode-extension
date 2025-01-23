@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { getNonce } from './nonce';
 import { SummaryMessage } from '../languageServer/types';
 import { SNYK_TOGGLE_DELTA } from '../constants/commands';
+import { Logger } from '../logger/logger';
 export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
   private static instance: SummaryWebviewViewProvider;
   private webviewView: vscode.WebviewView | undefined;
@@ -41,7 +42,9 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
           break;
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      Logger.error(error);
+    }
   }
 
   public updateWebviewContent(html: string) {
