@@ -30,14 +30,13 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
 
   public updateWebviewContent(html: string) {
     if (this.webviewView) {
-      const nonce = getNonce()
-      html = html.replace('${ideScript}', `<script nonce=${nonce}>` + "" + '</script>');
-      html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + "" + '</style>');
+      const nonce = getNonce();
+      html = html.replace('${ideScript}', `<script nonce=${nonce}>` + '' + '</script>');
+      html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + '' + '</style>');
 
       // Load the modified HTML into Cheerio
 
       this.webviewView.webview.html = html;
     }
   }
-
 }

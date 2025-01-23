@@ -88,12 +88,12 @@ import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvide
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
-    const diagnosticsOverviewWebviewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
-    if (!diagnosticsOverviewWebviewProvider) {
-      console.log('Diagnostics Overview not initialized.');
+    const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
+    if (!summaryWebviewViewProvider) {
+      console.log('Summary panel not initialized.');
     } else {
       vscodeContext.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, diagnosticsOverviewWebviewProvider),
+        vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, summaryWebviewViewProvider),
       );
     }
 

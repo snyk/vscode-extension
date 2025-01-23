@@ -163,20 +163,19 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.logger.info(`Summary html ${scanSummary}: ${scanSummary}.`);
-      this.updateSummaryPanel(scanSummary).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
-      });
+      this.updateSummaryPanel(scanSummary);
     });
   }
 
-  protected async updateSummaryPanel(scanSummary: string): Promise<void> {
+  protected updateSummaryPanel(scanSummary: string) {
     const SummaryProvider = SummaryWebviewViewProvider.getInstance();
+
     if (!SummaryProvider) {
       this.logger.error('Summary Webview Provider was not initialized.');
       return;
     }
     try {
-      await SummaryProvider.updateWebviewContent(scanSummary);
+      SummaryProvider.updateWebviewContent(scanSummary);
     } catch (error) {
       this.logger.error('Failed to update Summary panel');
     }
