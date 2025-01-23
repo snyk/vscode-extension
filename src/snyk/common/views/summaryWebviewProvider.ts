@@ -43,6 +43,7 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       Logger.error(error);
     }
   }
