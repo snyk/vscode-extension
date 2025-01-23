@@ -29,8 +29,7 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
     };
-    this.webviewView.webview.onDidReceiveMessage(
-      (msg: SummaryMessage) => this.handleMessage(msg));
+    this.webviewView.webview.onDidReceiveMessage((msg: SummaryMessage) => this.handleMessage(msg));
   }
 
   private async handleMessage(message: SummaryMessage) {
@@ -42,8 +41,7 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
           break;
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   public updateWebviewContent(html: string) {
@@ -61,8 +59,6 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
 
       html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + '' + '</style>');
       html = html.replace('${ideScript}', `<script nonce=${nonce}>` + ideScript + '</script>');
-
-      // Load the modified HTML into Cheerio
 
       this.webviewView.webview.html = html;
     }

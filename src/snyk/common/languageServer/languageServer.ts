@@ -40,7 +40,6 @@ export interface ILanguageServer {
 }
 
 export class LanguageServer implements ILanguageServer {
-  [x: string]: any;
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
@@ -162,7 +161,6 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
-      this.logger.info(`Summary html ${scanSummary}: ${scanSummary}.`);
       this.updateSummaryPanel(scanSummary);
     });
   }

@@ -9,7 +9,6 @@
 // This script will be run within the webview itself
 // It cannot access the main VS Code APIs directly.
 (function () {
-
   type SummaryMessage = {
     type: 'sendSummaryParams';
     args: {
@@ -35,14 +34,13 @@
 
   function toggleDelta(toggle: boolean) {
     const summary: Summary = {
-      toggleDelta: toggle
+      toggleDelta: toggle,
     };
 
     const message: SummaryMessage = {
       type: 'sendSummaryParams',
-      args: { summary }
-    }
+      args: { summary },
+    };
     sendMessage(message);
   }
-
 })();
