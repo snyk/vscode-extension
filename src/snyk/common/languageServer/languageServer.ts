@@ -20,12 +20,11 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
-import { SummaryWebviewViewProvider } from '../views/summaryWebviewProvider';
+import { ISummaryProviderService } from '../../base/summary/authenticationService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -53,6 +52,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly logger: ILog,
     private downloadService: DownloadService,
     private extensionContext: ExtensionContext,
+    private summaryProvider: ISummaryProviderService
   ) {
     this.downloadService = downloadService;
   }
@@ -160,23 +160,10 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
-      this.updateSummaryPanel(scanSummary);
+      this.summaryProvider.updateSummaryPanel(scanSummary);
     });
   }
 
-  protected updateSummaryPanel(scanSummary: string) {
-    const SummaryProvider = SummaryWebviewViewProvider.getInstance();
-
-    if (!SummaryProvider) {
-      this.logger.error('Summary Webview Provider was not initialized.');
-      return;
-    }
-    try {
-      SummaryProvider.updateWebviewContent(scanSummary);
-    } catch (error) {
-      this.logger.error('Failed to update Summary panel');
-    }
-  }
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
