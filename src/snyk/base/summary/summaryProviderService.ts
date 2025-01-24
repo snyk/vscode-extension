@@ -9,7 +9,7 @@ export class SummaryProviderService implements ISummaryProviderService {
   constructor(
     private readonly logger: ILog,
     private readonly summaryWebviewViewProvider: SummaryWebviewViewProvider | undefined,
-  ) { }
+  ) {}
   public updateSummaryPanel(scanSummary: string) {
     if (!this.summaryWebviewViewProvider) {
       this.logger.error('Summary Webview Provider was not initialized.');

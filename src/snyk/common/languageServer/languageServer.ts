@@ -24,7 +24,7 @@ import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
-import { ISummaryProviderService } from '../../base/summary/authenticationService';
+import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -52,7 +52,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly logger: ILog,
     private downloadService: DownloadService,
     private extensionContext: ExtensionContext,
-    private summaryProvider: ISummaryProviderService
+    private summaryProvider: ISummaryProviderService,
   ) {
     this.downloadService = downloadService;
   }
@@ -163,7 +163,6 @@ export class LanguageServer implements ILanguageServer {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
   }
-
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
