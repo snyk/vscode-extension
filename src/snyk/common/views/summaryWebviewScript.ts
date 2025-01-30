@@ -17,7 +17,7 @@ type Summary = {
 const vscode = acquireVsCodeApi();
 
 const summary: Summary = {
-  // @ts-ignore
+  // @ts-expect-error
   toggleDelta: isEnabled,
 };
 
