@@ -63,6 +63,7 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
 
       html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + '' + '</style>');
       html = html.replace('${ideFunc}', ideScript);
+      html = html.replace('${ideScript}', '');
       html = html.replace(/\${nonce}/g, nonce);
 
       this.webviewView.webview.html = html;
