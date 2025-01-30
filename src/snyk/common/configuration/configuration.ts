@@ -35,6 +35,7 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { CliExecutable } from '../../cli/cliExecutable';
 
 const NEWISSUES = 'Net new issues';
+const ALLISSUES = 'All issues';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
@@ -143,6 +144,7 @@ export interface IConfiguration {
   setEndpoint(endpoint: string): Promise<void>;
 
   getDeltaFindingsEnabled(): boolean;
+  setDeltaFindingsEnabled(isEnabled: boolean): Promise<void>;
 
   getOssQuickFixCodeActionsEnabled(): boolean;
 
@@ -357,6 +359,19 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_PATH),
       cliPath,
+      true,
+    );
+  }
+
+  async setDeltaFindingsEnabled(isEnabled: boolean): Promise<void> {
+    let deltaValue = NEWISSUES;
+    if (!isEnabled) {
+      deltaValue = ALLISSUES;
+    }
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(DELTA_FINDINGS),
+      deltaValue,
       true,
     );
   }

@@ -18,6 +18,7 @@ import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -142,6 +143,7 @@ suite('Language Server', () => {
       logger,
       downloadServiceMock,
       extensionContextMock,
+      {} as ISummaryProviderService,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -192,6 +194,7 @@ suite('Language Server', () => {
       new LoggerMock(),
       downloadServiceMock,
       extensionContextMock,
+      {} as ISummaryProviderService,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -218,6 +221,7 @@ suite('Language Server', () => {
         new LoggerMock(),
         downloadServiceMock,
         extensionContextMock,
+        {} as ISummaryProviderService,
       );
     });
 
@@ -265,6 +269,7 @@ suite('Language Server', () => {
         new LoggerMock(),
         downloadServiceMock,
         extensionContextMock,
+        {} as ISummaryProviderService,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

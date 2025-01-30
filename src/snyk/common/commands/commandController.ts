@@ -84,6 +84,10 @@ export class CommandController {
     await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
   }
 
+  async toggleDelta(isEnabled: boolean): Promise<void> {
+    await this.configuration.setDeltaFindingsEnabled(isEnabled);
+  }
+
   openSettings(): void {
     void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${this.configuration.getExtensionId()}`);
   }

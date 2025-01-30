@@ -25,6 +25,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
 import {
@@ -34,6 +35,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
+  SNYK_VIEW_SUMMARY,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
@@ -83,9 +85,22 @@ import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
 import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
+import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
+import { SummaryProviderService } from './base/summary/summaryProviderService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
+    const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
+    if (!summaryWebviewViewProvider) {
+      console.log('Summary panel not initialized.');
+    } else {
+      this.summaryProviderService = new SummaryProviderService(Logger, summaryWebviewViewProvider);
+      vscodeContext.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, summaryWebviewViewProvider),
+      );
+    }
+
+    SummaryWebviewViewProvider.getInstance(vscodeContext);
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
     const snykConfiguration = await this.getSnykConfiguration();
@@ -199,6 +214,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       this.downloadService,
       this.context,
+      this.summaryProviderService,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -498,6 +514,7 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
+        await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
@@ -511,6 +528,9 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
         this.commandController.setBaseBranch(folderPath),
+      ),
+      vscode.commands.registerCommand(SNYK_TOGGLE_DELTA, (isEnabled: boolean) =>
+        this.commandController.toggleDelta(isEnabled),
       ),
       vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;

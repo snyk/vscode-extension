@@ -8,6 +8,7 @@ import {
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
+  SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -19,11 +20,11 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
+import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -51,6 +52,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly logger: ILog,
     private downloadService: DownloadService,
     private extensionContext: ExtensionContext,
+    private summaryProvider: ISummaryProviderService,
   ) {
     this.downloadService = downloadService;
   }
@@ -155,6 +157,10 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
+    });
+
+    client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
+      this.summaryProvider.updateSummaryPanel(scanSummary);
     });
   }
 

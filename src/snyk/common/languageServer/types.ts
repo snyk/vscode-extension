@@ -135,3 +135,14 @@ export type AutofixUnifiedDiffSuggestion = {
   fixId: string;
   unifiedDiffsPerFile: { [key: string]: string };
 };
+
+export type Summary = {
+  toggleDelta: boolean;
+};
+
+export type SummaryMessage = {
+  type: string;
+  args: {
+    summary: Summary;
+  };
+};
