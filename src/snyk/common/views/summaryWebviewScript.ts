@@ -17,7 +17,7 @@ type Summary = {
 const vscode = acquireVsCodeApi();
 
 const summary: Summary = {
-  // @ts-expect-error
+  // @ts-expect-error this will be injected in a func coming from LS that has isEnabled as arg.
   toggleDelta: isEnabled,
 };
 
