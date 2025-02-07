@@ -167,8 +167,8 @@ export class CodeSuggestionWebviewProvider
       const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
       html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
       html = html.replace('${ideScript}', ideScript);
-      html = html.replace('${ideGenerateAIFix}', generateAiFixScript)
-      html = html.replace('${ideApplyAIFix}', applyAiFixScript)
+      html = html.replace('${ideGenerateAIFix}', generateAiFixScript);
+      html = html.replace('${ideApplyAIFix}', applyAiFixScript);
       const nonce = getNonce();
       html = html.replaceAll('${nonce}', nonce);
       html = html.replace('--default-font: ', '--default-font: var(--vscode-font-family) ,');
