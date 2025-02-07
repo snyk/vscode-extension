@@ -14,6 +14,7 @@ type SummaryMessage = {
 type Summary = {
   toggleDelta: boolean;
 };
+// @ts-expect-error
 const vscode = acquireVsCodeApi();
 
 const summary: Summary = {
