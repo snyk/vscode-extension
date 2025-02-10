@@ -165,7 +165,7 @@ export class CodeSuggestionWebviewProvider
       const generateAiFixScript = readFileSync(ideGenerateAiFixScriptPath.fsPath, 'utf8');
       const applyAiFixScript = readFileSync(ideApplyFixScriptPath.fsPath, 'utf8');
       const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
-      html = html.replace('${ideStyle}',ideStyle);
+      html = html.replace('${ideStyle}', ideStyle);
       html = html.replace('${ideScript}', ideScript);
       html = html.replace('${ideGenerateAIFix}', generateAiFixScript);
       html = html.replace('${ideApplyAIFix}', applyAiFixScript);
