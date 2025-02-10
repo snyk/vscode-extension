@@ -30,6 +30,8 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
     };
+    // TODO - show static summary screen when the language server is initialising
+    // (media/views/scanSummary/ScanSummaryInit.html)
     this.webviewView.webview.onDidReceiveMessage((msg: SummaryMessage) => this.handleMessage(msg));
   }
 
