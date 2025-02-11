@@ -83,6 +83,35 @@ declare const acquireVsCodeApi: any;
     };
   };
 
+  type GenerateFixExplanationMessage = {
+    type: 'generateFixExplanation';
+    args: {
+      suggestion: Suggestion;
+      diff: string;
+    };
+  };
+
+  type GenerateVulnerabilityExplanationMessage = {
+    type: 'generateVulnerabilityExplanation';
+    args: {
+      suggestion: Suggestion;
+    };
+  };
+
+  type SetFixExplanationMessage = {
+    type: 'setFixExplanation';
+    args: {
+      explanation: string;
+    };
+  };
+
+  type SetVulnerabilityExplanationMessage = {
+    type: 'setVulnerabilityExplanation';
+    args: {
+      explanation: string;
+    };
+  };
+
   type ApplyGitDiffMessage = {
     type: 'applyGitDiff';
     args: {
@@ -113,6 +142,10 @@ declare const acquireVsCodeApi: any;
     | SetSuggestionMessage
     | GetSuggestionMessage
     | GetAutofixDiffsMesssage
+    | GenerateFixExplanationMessage
+    | GenerateVulnerabilityExplanationMessage
+    | SetVulnerabilityExplanationMessage
+    | SetFixExplanationMessage
     | ApplyGitDiffMessage
     | SetAutofixDiffsMessage
     | SetAutofixErrorMessage;
@@ -213,10 +246,44 @@ declare const acquireVsCodeApi: any;
   const retryGenerateFixButton = document.getElementById('retry-generate-fix') as HTMLElement;
   const generateAIFixButton = document.getElementById('generate-ai-fix') as HTMLElement;
 
+  // AI Explain buttons
+  const generateVulnerabilityExplanationButton = document.getElementById(
+    'generate-vulnerability-explanation-button',
+  ) as HTMLButtonElement;
+  const generateFixExplanationButton = document.getElementById('generate-fix-explanation-button') as HTMLButtonElement;
+
+  const vulnerabilityExplanationText = document.getElementById('vuln-explain-text') as HTMLElement;
+  const fixExplanationText = document.getElementById('fix-explain-text') as HTMLElement;
+
   const ignoreContainerElements = document.getElementsByClassName('ignore-action-container');
   if (ignoreContainerElements) {
     toggleElement(ignoreContainerElements[0] as HTMLElement, 'show');
     (ignoreContainerElements[0] as HTMLElement).style.display = suggestion?.showInlineIgnoresButton ? 'block' : 'none';
+  }
+
+  function generateVulnerabilityExplanation() {
+    if (!suggestion) {
+      return;
+    }
+    const message: GenerateVulnerabilityExplanationMessage = {
+      type: 'generateVulnerabilityExplanation',
+      args: { suggestion },
+    };
+    sendMessage(message);
+  }
+
+  function generateFixExplanation() {
+    if (!suggestion) {
+      return;
+    }
+    const diffSuggestion = suggestion.diffs[diffSelectedIndex];
+    const filePath = suggestion.filePath;
+    const patch = diffSuggestion.unifiedDiffsPerFile[filePath];
+    const message: GenerateFixExplanationMessage = {
+      type: 'generateFixExplanation',
+      args: { suggestion, diff: patch },
+    };
+    sendMessage(message);
   }
 
   function generateAIFix() {
@@ -260,6 +327,9 @@ declare const acquireVsCodeApi: any;
   generateAIFixButton?.addEventListener('click', generateAIFix);
   retryGenerateFixButton?.addEventListener('click', retryGenerateAIFix);
   applyFixButton?.addEventListener('click', applyFix);
+
+  generateVulnerabilityExplanationButton?.addEventListener('click', generateVulnerabilityExplanation);
+  generateFixExplanationButton?.addEventListener('click', generateFixExplanation);
 
   // different AI fix states
   const fixLoadingIndicatorElem = document.getElementById('fix-loading-indicator') as HTMLElement;
@@ -412,6 +482,17 @@ declare const acquireVsCodeApi: any;
         }
         toggleElement(fixWrapperElem, 'hide');
         toggleElement(fixErrorSectionElem, 'show');
+        break;
+      }
+      case 'setVulnerabilityExplanation': {
+        console.log('vscode: in setVulnerabilityExplanation: ', message.args.explanation);
+        vulnerabilityExplanationText.innerText = message.args.explanation;
+        break;
+      }
+      case 'setFixExplanation': {
+        console.log('vscode: in setFixExplanation: ', message.args.explanation);
+        fixExplanationText.innerText = message.args.explanation;
+        break;
       }
     }
   });
