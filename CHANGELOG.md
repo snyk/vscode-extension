@@ -4,7 +4,6 @@
 - add scan summary
 - add ability to enter PATs as Tokens
 - add ability to define a reference folder for net-new scanning
--
 
 ## [2.20.0]
 - reduce hover verbosity to only title and description
