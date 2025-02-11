@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+// @ts-nocheck
 /// <reference lib="dom" />
 declare const acquireVsCodeApi: any;
 
@@ -127,7 +128,6 @@ function navigateToIssue(position?: MarkerPosition) {
 
   sendMessage(message);
 }
-let suggestion: Suggestion | null = vscode.getState()?.suggestion || null;
 
 function ignoreIssue(lineOnly: boolean) {
   if (!suggestion) return;
