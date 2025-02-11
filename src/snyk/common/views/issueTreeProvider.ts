@@ -185,14 +185,14 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
     let reference = config?.referenceFolderPath ?? '';
-    if (reference) {
+    if (reference === undefined || reference === '') {
       reference = config?.baseBranch ?? '';
     } else {
       reference = path.basename(reference);
     }
     if (deltaFindingsEnabled && config) {
       return new TreeNode({
-        text: 'Click here to choose reference [ current:' + reference + ' ]',
+        text: 'Click here to choose reference [ current: ' + reference + ' ]',
         icon: NODE_ICONS.branch,
         command: {
           command: SNYK_SET_DELTA_REFERENCE_COMMAND,
