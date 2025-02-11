@@ -44,10 +44,19 @@ export type FeaturesConfiguration = {
   iacEnabled: boolean | undefined;
 };
 
+export type ScanCommandConfig = {
+  preScanCommand: string;
+  preScanOnlyReferenceFolder: boolean;
+  postScanCommand: string;
+  postScanOnlyReferenceFolder: boolean;
+};
+
 export type FolderConfig = {
   folderPath: string;
   baseBranch: string;
   localBranches: string[] | undefined;
+  referenceFolderPath: string | undefined;
+  scanCommandConfig?: Record<string, ScanCommandConfig>;
 };
 
 export interface IssueViewOptions {
@@ -588,8 +597,7 @@ export class Configuration implements IConfiguration {
     const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
     const snykLsPath = this.getSnykLanguageServerPath();
     if (!isAutomaticDependencyManagementEnabled && snykLsPath) return snykLsPath;
-    const defaultPath = await CliExecutable.getPath();
-    return defaultPath;
+    return await CliExecutable.getPath();
   }
   getTrustedFolders(): string[] {
     return (

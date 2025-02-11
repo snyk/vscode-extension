@@ -1,23 +1,24 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity, LsErrorMessage } from '../../common/languageServer/types';
+import { IConfiguration, IssueViewOptions } from '../configuration/configuration';
+import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
-import { IContextService } from '../../common/services/contextService';
-import { IProductService } from '../../common/services/productService';
-import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
-import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
-import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { Command, Range } from '../../common/vscode/types';
+import { IContextService } from '../services/contextService';
+import { IProductService } from '../services/productService';
+import { AnalysisTreeNodeProvider } from './analysisTreeNodeProvider';
+import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from './treeNode';
+import { IVSCodeLanguages } from '../vscode/languages';
+import { Command, Range } from '../vscode/types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
-import { SNYK_SET_BASE_BRANCH_COMMAND } from '../constants/commands';
+import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
+import path from 'path';
 
 interface ISeverityCounts {
   [severity: string]: number;
 }
 
 export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
-  constructor(
+  protected constructor(
     protected readonly contextService: IContextService,
     protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
@@ -115,13 +116,14 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
 
-    const baseBranchNodeIndex = nodes.findIndex(node => {
+    const referenceNodeIndex = nodes.findIndex(node => {
       const label = node.label as string;
-      return label?.toLowerCase().indexOf('base branch') !== -1;
+      const lowerCaseLabel = label?.toLowerCase();
+      return lowerCaseLabel?.indexOf('reference');
     });
 
-    if (baseBranchNodeIndex > -1) {
-      nodes.splice(baseBranchNodeIndex + 1, 0, ...validTopNodes);
+    if (referenceNodeIndex > -1) {
+      nodes.splice(referenceNodeIndex + 1, 0, ...validTopNodes);
     } else {
       nodes.unshift(...validTopNodes);
     }
@@ -179,17 +181,22 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false;
   }
 
-  getBaseBranch(folderPath: string): TreeNode | undefined {
+  getReference(folderPath: string): TreeNode | undefined {
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
-
+    let reference = config?.referenceFolderPath ?? '';
+    if (reference) {
+      reference = config?.baseBranch ?? '';
+    } else {
+      reference = path.basename(reference);
+    }
     if (deltaFindingsEnabled && config) {
       return new TreeNode({
-        text: 'Base branch: ' + config.baseBranch,
+        text: 'Click here to choose reference [ current:' + reference + ' ]',
         icon: NODE_ICONS.branch,
         command: {
-          command: SNYK_SET_BASE_BRANCH_COMMAND,
-          title: 'Choose Base Branch',
+          command: SNYK_SET_DELTA_REFERENCE_COMMAND,
+          title: 'Choose reference for delta findings',
           arguments: [folderPath],
         },
       });
@@ -209,6 +216,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
       if (folderResult instanceof Error && folderResult.message === LsErrorMessage.repositoryInvalidError) {
         nodes.push(this.getFaultyRepositoryErrorTreeNode(folderName, folderResult.toString()));
         continue;
@@ -291,7 +299,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
       const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
-      const baseBranchNode = this.getBaseBranch(uri.fsPath);
+      const baseBranchNode = this.getReference(uri.fsPath);
       if (folderVulnCount == 0) {
         this.addBaseBranchNode(baseBranchNode, nodes);
         continue;

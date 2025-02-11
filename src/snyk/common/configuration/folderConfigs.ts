@@ -3,9 +3,15 @@ import { FolderConfig, IConfiguration } from './configuration';
 
 export interface IFolderConfigs {
   getFolderConfigs(config: IConfiguration): ReadonlyArray<FolderConfig>;
+
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined;
+
   setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void>;
+
   setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
+
+  setReferenceFolder(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
+
   resetFolderConfigsCache(): void;
 }
 
@@ -25,6 +31,29 @@ export class FolderConfigs implements IFolderConfigs {
     this.folderConfigsCache = folderConfigs;
 
     return folderConfigs;
+  }
+
+  async setReferenceFolder(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
+    const folderConfig = this.getFolderConfig(config, folderPath);
+
+    if (!folderConfig) {
+      return;
+    }
+
+    const selectedDir = await window.showOpenDialog({
+      canSelectFiles: false,
+      canSelectFolders: true,
+      canSelectMany: false,
+      openLabel: 'Select a reference folder for net-new issue scanning',
+    });
+
+    if (!selectedDir || selectedDir.length != 1) {
+      return;
+    }
+
+    folderConfig.referenceFolderPath = selectedDir[0].fsPath;
+    folderConfig.baseBranch = '';
+    await this.setFolderConfig(config, folderConfig);
   }
 
   async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
@@ -48,6 +77,7 @@ export class FolderConfigs implements IFolderConfigs {
     }
 
     folderConfig.baseBranch = branchName;
+    folderConfig.referenceFolderPath = '';
     await this.setFolderConfig(config, folderConfig);
   }
 
