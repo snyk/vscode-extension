@@ -126,8 +126,8 @@
           "snyk.features.codeQuality": {
             "order": 3,
             "type": "boolean",
-            "title": "Snyk Code quality issues",
-            "description": "Find and fix quality issues in your application code in real time.",
+            "title": "Snyk Code quality issues (deprecated)",
+            "description": "Find and fix quality issues in your application code in real time (deprecated).",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {

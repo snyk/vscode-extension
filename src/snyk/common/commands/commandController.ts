@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { ScanModeService } from '../../base/services/scanModeService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
@@ -39,7 +38,6 @@ export class CommandController {
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
-    private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
@@ -82,6 +80,10 @@ export class CommandController {
 
   async setBaseBranch(folderPath: string): Promise<void> {
     await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
+  }
+
+  async setReferenceFolder(folderPath: string): Promise<void> {
+    await this.folderConfigs.setReferenceFolder(this.window, this.configuration, folderPath);
   }
 
   async toggleDelta(isEnabled: boolean): Promise<void> {

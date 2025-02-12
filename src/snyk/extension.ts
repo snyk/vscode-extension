@@ -18,7 +18,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
-  SNYK_SET_BASE_BRANCH_COMMAND,
+  SNYK_SET_DELTA_REFERENCE_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND,
@@ -296,7 +296,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.snykCode,
       this.iacService,
       this.ossService,
-      this.scanModeService,
       vsCodeWorkspace,
       vsCodeCommands,
       vsCodeWindow,
@@ -526,9 +525,21 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
       vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, () => this.commandController.showLsOutputChannel()),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
-      vscode.commands.registerCommand(SNYK_SET_BASE_BRANCH_COMMAND, (folderPath: string) =>
-        this.commandController.setBaseBranch(folderPath),
-      ),
+      vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {
+        const referenceBranch = 'Select a reference branch';
+        const referenceDirectory = 'Select a reference directory';
+        const options = [referenceBranch, referenceDirectory];
+        const selection = await vscode.window.showQuickPick(options, {
+          placeHolder: 'Choose an option',
+        });
+
+        if (selection === referenceBranch) {
+          return this.commandController.setBaseBranch(folderPath);
+        } else if (selection === referenceDirectory) {
+          return this.commandController.setReferenceFolder(folderPath);
+        }
+      }),
+
       vscode.commands.registerCommand(SNYK_TOGGLE_DELTA, (isEnabled: boolean) =>
         this.commandController.toggleDelta(isEnabled),
       ),

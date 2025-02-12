@@ -68,6 +68,9 @@ export class AuthenticationService implements IAuthenticationService {
     let valid = uuidValidate(token);
     if (valid) return true;
 
+    valid = this.patValidate(token);
+    if (valid) return true;
+
     // try to parse as json (oauth2 token)
     try {
       const oauthToken = JSON.parse(token) as OAuthToken;
@@ -77,9 +80,29 @@ export class AuthenticationService implements IAuthenticationService {
         oauthToken.refresh_token.length > 0;
       this.logger.debug(`Token ${this.maskToken(token)} parsed`);
     } catch (e) {
-      this.logger.warn(`Token ${this.maskToken(token)} is not a valid uuid or json string: ${e}`);
+      this.logger.warn(`Token ${this.maskToken(token)} is not a valid UUID, PAT or OAuth2 token)}}}: ${e}`);
     }
     return valid;
+  }
+
+  /**
+   * This validation enforces the snyk_[type].[kid].[payload].[signature] format while allowing flexibility for the content of each part within the specified character sets. It ensures that there are exactly four parts separated by dots and prefixed with snyk_.
+   * @param token
+   * @private
+   */
+  patValidate(token: string): boolean {
+    // ^: Matches the beginning of the string.
+    // snyk_: Matches the literal prefix "snyk_".
+    // [a-zA-Z0-9]+: Matches one or more alphanumeric characters (for the type).
+    // \.: Matches a literal dot.
+    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the kid).
+    // \.: Matches a literal dot.
+    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the payload).
+    // \.: Matches a literal dot.
+    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the signature).
+    // $: Matches the end of the string.
+    const patRegex = /^snyk_[a-zA-Z0-9]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
+    return patRegex.test(token);
   }
 
   private maskToken(token: string): string {
