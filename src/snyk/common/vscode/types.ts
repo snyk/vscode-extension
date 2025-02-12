@@ -55,3 +55,6 @@ export type ConfigurationRequestHandlerSignature = lsc.ConfigurationRequest.Hand
 export type ResponseError<D = void> = lsc.ResponseError<D>;
 export type InlineValueText = lsc.InlineValueText;
 export type LSPTextDocument = lst.TextDocument;
+export type ShowDocumentParams = lsc.ShowDocumentParams;
+export type ShowDocumentRequestHandlerSignature = lsc.ShowDocumentRequest.HandlerSignature;
+export type ShowDocumentResult = lsc.ShowDocumentResult;

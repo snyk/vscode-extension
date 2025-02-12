@@ -1,13 +1,15 @@
+import { CancellationToken, RequestHandler, ShowDocumentRequest, WindowMiddleware } from 'vscode-languageclient';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { User } from '../user';
 import { ExtensionContext } from '../vscode/extensionContext';
 import type {
-  CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
   Middleware,
   ResponseError,
   WorkspaceMiddleware,
+  ShowDocumentParams,
+  ShowDocumentResult,
 } from '../vscode/types';
 import { LanguageServerSettings, ServerSettings } from './settings';
 
@@ -45,10 +47,26 @@ export class LanguageClientMiddleware implements Middleware {
       return [serverSettings];
     },
   };
+  window: WindowMiddleware = {
+    showDocument: async (
+      params: ShowDocumentParams,
+      next,
+    ) => {
+      if (params.uri.startsWith('snyk:')) {
+        console.log(`Intercepted window/showDocument request: ${params.uri}`);
+      }
+      const result = await next(params, CancellationToken.None);
 
+      return result as ShowDocumentResult;
+    },
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   isThenable<T>(v: any): v is Thenable<T> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return typeof v?.then === 'function';
   }
 }
+function isResponseError(result: import("vscode-languageclient").ResponseError<void> | import("vscode-languageclient").ShowDocumentResult) {
+  throw new Error('Function not implemented.');
+}
+
