@@ -54,6 +54,10 @@ export class LanguageClientMiddleware implements Middleware {
     ) => {
       if (params.uri.startsWith('snyk:')) {
         console.log(`Intercepted window/showDocument request: ${params.uri}`);
+        // 'snyk://filePath?product=Snyk+Code&issueId=f657804e7d3e7ca96968c8d707641217&action=showInDetailPanel'
+        // Implement a handler for the action param
+        // TODO: select issue that matches product + issueId in the tree and maybe refresh it
+        // don't continue processing
       }
       const result = await next(params, CancellationToken.None);
 
