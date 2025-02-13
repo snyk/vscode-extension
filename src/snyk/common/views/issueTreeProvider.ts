@@ -119,7 +119,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     const referenceNodeIndex = nodes.findIndex(node => {
       const label = node.label as string;
       const lowerCaseLabel = label?.toLowerCase();
-      return lowerCaseLabel?.indexOf('reference');
+      return lowerCaseLabel?.indexOf('reference') !== -1;
     });
 
     if (referenceNodeIndex > -1) {
