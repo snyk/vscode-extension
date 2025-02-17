@@ -142,9 +142,33 @@ export class CodeSuggestionWebviewProvider
         'suggestion',
         'codeSuggestionWebviewScriptLS.js',
       );
+      const ideGenerateAiFixScriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'out',
+        'snyk',
+        'snykCode',
+        'views',
+        'suggestion',
+        'ideFuncs',
+        'ideGenerateAiFix.js',
+      );
+      const ideApplyFixScriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'out',
+        'snyk',
+        'snykCode',
+        'views',
+        'suggestion',
+        'ideFuncs',
+        'ideApplyAiFix.js',
+      );
+      const generateAiFixScript = readFileSync(ideGenerateAiFixScriptPath.fsPath, 'utf8');
+      const applyAiFixScript = readFileSync(ideApplyFixScriptPath.fsPath, 'utf8');
       const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
-      html = html.replace('${ideStyle}', '<style nonce=${nonce}>' + ideStyle + '</style>');
-      html = html.replace('${ideScript}', '<script nonce=${nonce}>' + ideScript + '</script>');
+      html = html.replace('${ideStyle}', ideStyle);
+      html = html.replace('${ideScript}', ideScript);
+      html = html.replace('${ideGenerateAIFix}', generateAiFixScript);
+      html = html.replace('${ideApplyAIFix}', applyAiFixScript);
       const nonce = getNonce();
       html = html.replaceAll('${nonce}', nonce);
       html = html.replace('--default-font: ', '--default-font: var(--vscode-font-family) ,');
