@@ -4,7 +4,7 @@ import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
+import { Issue, LsScanProduct, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
@@ -18,6 +18,7 @@ export type WorkspaceFolderResult<T> = Issue<T>[] | Error;
 export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder
 
 export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
+  readonly lsScanProduct: LsScanProduct;
   result: Readonly<ProductResult<T>>;
   getIssue(folderPath: string, issueId: string): Issue<T> | undefined;
   getIssueById(issueId: string): Issue<T> | undefined;
@@ -26,7 +27,8 @@ export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
   isAnyResultAvailable(): boolean;
 
   activateWebviewProviders(): void;
-  showSuggestionProvider(folderPath: string, issueId: string): void;
+  showSuggestionProvider(folderPath: string, issueId: string): Promise<void>;
+  showSuggestionProviderById(issueId: string): Promise<void>;
 }
 
 export abstract class ProductService<T> extends AnalysisStatusProvider implements IProductService<T> {
@@ -38,7 +40,8 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   // Track running scan count. Assumption: server sends N success/error messages for N scans in progress.
   private runningScanCount = 0;
 
-  protected lsSubscription: Subscription;
+  protected lsScanSubscription: Subscription;
+  protected lsAiFixSubscription: Subscription;
 
   protected disposables: Disposable[] = [];
 
@@ -53,10 +56,12 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     readonly languages: IVSCodeLanguages,
     readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<T>,
     private readonly logger: ILog,
+    readonly lsScanProduct: LsScanProduct,
   ) {
     super();
     this._result = new Map<string, WorkspaceFolderResult<T>>();
-    this.lsSubscription = this.subscribeToLsScanMessages();
+    this.lsScanSubscription = this.subscribeToLsScanMessages();
+    this.lsAiFixSubscription = this.subscribeToLsAiFixMessages();
   }
 
   abstract subscribeToLsScanMessages(): Subscription;
@@ -128,6 +133,16 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     return this.suggestionProvider.showPanel(issue);
   }
 
+  showSuggestionProviderById(issueId: string): Promise<void> {
+    const issue = this.getIssueById(issueId);
+    if (!issue) {
+      this.logger.error(`Failed to find issue with id ${issueId} to open a details panel.`);
+      return Promise.resolve();
+    }
+
+    return this.suggestionProvider.showPanel(issue);
+  }
+
   disposeSuggestionPanelIfStale(): void {
     const openIssueId = this.suggestionProvider.openIssueId;
     if (!openIssueId) return;
@@ -142,7 +157,8 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   }
 
   dispose(): void {
-    this.lsSubscription.unsubscribe();
+    this.lsScanSubscription.unsubscribe();
+    this.lsAiFixSubscription.unsubscribe();
   }
 
   // Must be called from the child class to listen on scan messages
@@ -162,6 +178,16 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       this.handleSuccessOrError(scanMsg);
       this.disposeSuggestionPanelIfStale();
     }
+  }
+
+  private subscribeToLsAiFixMessages(): Subscription {
+    return this.languageServer.showIssueDetailTopic$.subscribe((aiFix) => {
+      if (aiFix.product !== this.lsScanProduct) {
+        return;
+      }
+
+      this.showSuggestionProviderById(aiFix.issueId);
+    });
   }
 
   private handleSuccessOrError(scanMsg: Scan<T>) {

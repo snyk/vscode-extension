@@ -58,3 +58,15 @@ export type LSPTextDocument = lst.TextDocument;
 export type ShowDocumentParams = lsc.ShowDocumentParams;
 export type ShowDocumentRequestHandlerSignature = lsc.ShowDocumentRequest.HandlerSignature;
 export type ShowDocumentResult = lsc.ShowDocumentResult;
+export type WindowMiddleware = lsc.WindowMiddleware;
+
+// Language client namespace mappings
+/*
+* TODO - Look into how to map without re-declaring.
+* You can't `export const NS = parent.NS;` as that breaks unit tests, as it causes an import of vscode.
+*/
+export declare namespace CancellationToken {
+  const None: CancellationToken;
+  const Cancelled: CancellationToken;
+  function is(value: any): value is CancellationToken;
+}

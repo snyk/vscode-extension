@@ -1,7 +1,6 @@
-import { CancellationToken, RequestHandler, ShowDocumentRequest, WindowMiddleware } from 'vscode-languageclient';
 import { IConfiguration } from '../../common/configuration/configuration';
+import { ILog } from '../logger/interfaces';
 import { User } from '../user';
-import { ExtensionContext } from '../vscode/extensionContext';
 import type {
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
@@ -10,8 +9,14 @@ import type {
   WorkspaceMiddleware,
   ShowDocumentParams,
   ShowDocumentResult,
+  WindowMiddleware,
+} from '../vscode/types';
+import {
+  CancellationToken,
 } from '../vscode/types';
 import { LanguageServerSettings, ServerSettings } from './settings';
+import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from './types';
+import { Subject } from 'rxjs';
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
@@ -22,7 +27,12 @@ type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
 };
 
 export class LanguageClientMiddleware implements Middleware {
-  constructor(private configuration: IConfiguration, private user: User, private extensionContext: ExtensionContext) {}
+  constructor(
+    private readonly logger: ILog,
+    private configuration: IConfiguration,
+    private user: User,
+    private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>
+  ) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -52,16 +62,39 @@ export class LanguageClientMiddleware implements Middleware {
       params: ShowDocumentParams,
       next,
     ) => {
-      if (params.uri.startsWith('snyk:')) {
-        console.log(`Intercepted window/showDocument request: ${params.uri}`);
-        // 'snyk://filePath?product=Snyk+Code&issueId=f657804e7d3e7ca96968c8d707641217&action=showInDetailPanel'
-        // Implement a handler for the action param
-        // TODO: select issue that matches product + issueId in the tree and maybe refresh it
-        // don't continue processing
+      let uri;
+      try {
+        uri = new URL(params.uri);
+      } catch (error) {
+        throw new Error('Invalid URI recieved for window/showDocument');
       }
-      const result = await next(params, CancellationToken.None);
+      if (uri.protocol === 'snyk:') {
+        // 'snyk://filePath?product=Snyk+Code&issueId=123abc456&action=showInDetailPanel'
+        const action = uri.searchParams.get('action');
+        if (action === SnykURIAction.ShowInDetailPanel) {
+          this.logger.info(`Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`);
+          const filePath = uri.pathname;
+          const product = uri.searchParams.get('product');
+          if (product !== LsScanProduct.Code) {
+            throw new Error(`Currently only able to handle showing issues for "${LsScanProduct.Code}"`)
+          }
+          const issueId = uri.searchParams.get('issueId');
+          if (issueId === null || issueId === '') {
+            throw new Error(`Invalid "snyk:" URI recieved (bad issueId)! ${params.uri}`)
+          }
 
-      return result as ShowDocumentResult;
+          this.showIssueDetailTopic$.next({
+            product,
+            issueId,
+          });
+
+          // TODO: select issue that matches product + issueId in the tree and maybe refresh it
+          // don't continue processing
+
+          return {success: true};
+        }
+      }
+      return await next(params, CancellationToken.None) as ShowDocumentResult;
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,7 +103,3 @@ export class LanguageClientMiddleware implements Middleware {
     return typeof v?.then === 'function';
   }
 }
-function isResponseError(result: import("vscode-languageclient").ResponseError<void> | import("vscode-languageclient").ShowDocumentResult) {
-  throw new Error('Function not implemented.');
-}
-
