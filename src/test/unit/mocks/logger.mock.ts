@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import assert from 'assert';
 import { ILog, LogLevel } from '../../../snyk/common/logger/interfaces';
 
 export class LoggerMock implements ILog {
@@ -9,4 +10,8 @@ export class LoggerMock implements ILog {
   debug = (_message: string): void => undefined;
 
   showOutput = (): void => undefined;
+}
+
+export class LoggerMockFailOnErrors extends LoggerMock {
+  error = (message: string) => assert.fail(message);
 }
