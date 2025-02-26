@@ -18,7 +18,7 @@ import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
 import { User } from '../user';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
-import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
+import { CancellationToken, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
@@ -26,13 +26,13 @@ import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
-import vscode, { CancellationToken, commands } from 'vscode';
 import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, GeminiCodeAssist } from '../llm/geminiApi';
 import { SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
 import { MarkdownStringAdapter } from '../vscode/markdownString';
 import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
 import { UriAdapter } from '../vscode/uri';
 import path from 'path';
+import { vsCodeCommands } from '../vscode/commands';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -208,8 +208,7 @@ export class LanguageServer implements ILanguageServer {
   async connectGeminiToMCPServer(url: string) {
     this.logger.info('Received MCP Server address ' + url);
     try {
-      const geminiCodeAssistExtension = vscode.extensions.all.find(ext => ext.id === 'google.geminicodeassist');
-
+      const geminiCodeAssistExtension = this.extensionContext.getExtension('google.geminicodeassist');
       const isInstalled = !!geminiCodeAssistExtension;
 
       if (!isInstalled) {
@@ -247,10 +246,14 @@ export class LanguageServer implements ILanguageServer {
           if (!request.prompt.fullPrompt().includes('/scan')) {
             return Promise.resolve();
           }
-          const result: string = await commands.executeCommand(
+          const result: string | undefined = await vsCodeCommands.executeCommand(
             SNYK_EXECUTE_MCP_TOOL_COMMAND,
             SNYK_WORKSPACE_SCAN_COMMAND,
           );
+
+          if (!result) {
+            return Promise.resolve();
+          }
 
           const markdown = new MarkdownStringAdapter().get(result, true);
           responseStream.push(markdown);
