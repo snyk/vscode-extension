@@ -31,6 +31,8 @@ import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, Gemini
 import { SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
 import { MarkdownStringAdapter } from '../vscode/markdownString';
 import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
+import { UriAdapter } from '../vscode/uri';
+import path from 'path';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -205,19 +207,27 @@ export class LanguageServer implements ILanguageServer {
 
   async connectGeminiToMCPServer(url: string) {
     this.logger.info('Received MCP Server address ' + url);
+    try {
+      const geminiCodeAssistExtension = vscode.extensions.all.find(ext => ext.id === 'google.geminicodeassist');
 
-    const geminiCodeAssist = vscode.extensions.all.find(
-      ext => ext.id === 'google.geminicodeassist',
-    ) as unknown as GeminiCodeAssist;
+      const isInstalled = !!geminiCodeAssistExtension;
 
-    const isInstalled = !!geminiCodeAssist;
+      if (!isInstalled) {
+        return Promise.resolve();
+      }
+      this.logger.info('found Gemini Code Assist extension');
 
-    if (!isInstalled) {
-      return Promise.resolve();
+      this.logger.debug('waiting for activation of gca');
+
+      while (geminiCodeAssistExtension && !geminiCodeAssistExtension.isActive) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      this.registerWithGeminiCodeAssist(geminiCodeAssistExtension?.exports as GeminiCodeAssist);
+    } catch (error) {
+      return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
-    this.logger.info('found Gemini Code Assist extension');
-
-    this.registerWithGeminiCodeAssist(geminiCodeAssist);
 
     return Promise.resolve();
   }
@@ -225,7 +235,9 @@ export class LanguageServer implements ILanguageServer {
   private registerWithGeminiCodeAssist(googleExtension: GeminiCodeAssist) {
     this.logger.info('Registering with Gemini Code Assist');
     try {
-      const geminiTool = googleExtension.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION);
+      const iconPath = path.join(this.extensionContext.extensionPath, 'media/images/readme/snyk_extension_icon.png');
+      const iconURI = new UriAdapter().file(iconPath);
+      const geminiTool = googleExtension.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
 
       geminiTool.registerChatHandler(
         async (request: ChatRequest, responseStream: ChatResponseStream, token: CancellationToken) => {
@@ -253,6 +265,7 @@ export class LanguageServer implements ILanguageServer {
             {
               command: 'scan',
               description: 'Perform a workspace scan with the Snyk Security Extension',
+              icon: iconPath,
             } as CommandDetail,
           ];
           return Promise.resolve(commands);
