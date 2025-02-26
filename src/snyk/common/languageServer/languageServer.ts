@@ -27,7 +27,6 @@ import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import vscode, { CancellationToken, commands } from 'vscode';
-import { configuration } from '../configuration/instance';
 import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, GeminiCodeAssist } from '../llm/geminiApi';
 import { SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
 import { MarkdownStringAdapter } from '../vscode/markdownString';

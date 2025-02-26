@@ -87,7 +87,6 @@ import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/glob
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
-import { IConfiguration } from './common/configuration/configuration';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
