@@ -7,6 +7,7 @@ import {
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
+  SNYK_MCPSERVERURL,
   SNYK_SCAN,
   SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
@@ -25,6 +26,12 @@ import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
+import vscode, { CancellationToken, commands } from 'vscode';
+import { configuration } from '../configuration/instance';
+import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, GeminiCodeAssist } from '../llm/geminiApi';
+import { SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
+import { MarkdownStringAdapter } from '../vscode/markdownString';
+import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -125,11 +132,12 @@ export class LanguageServer implements ILanguageServer {
     this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     try {
+      // register listeners before starting the client
+      this.registerListeners(this.client);
+
       // Start the client. This will also launch the server
       await this.client.start();
       this.logger.info('Snyk Language Server started');
-
-      this.registerListeners(this.client);
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
@@ -162,13 +170,17 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
+
+    client.onNotification(SNYK_MCPSERVERURL, ({ url }: { url: string }) => {
+      this.logger.info('Received MCP Server address ' + url);
+      void this.connectGeminiToMCPServer(url);
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
-    return settings;
+    return await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
   }
 
   showOutputChannel(): void {
@@ -190,5 +202,67 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.logger.info('Snyk Language Server stopped');
+  }
+
+  async connectGeminiToMCPServer(url: string) {
+    this.logger.info('Received MCP Server address ' + url);
+
+    const geminiCodeAssist = vscode.extensions.all.find(
+      ext => ext.id === 'google.geminicodeassist',
+    ) as unknown as GeminiCodeAssist;
+
+    const isInstalled = !!geminiCodeAssist;
+
+    if (!isInstalled) {
+      return Promise.resolve();
+    }
+    this.logger.info('found Gemini Code Assist extension');
+
+    this.registerWithGeminiCodeAssist(geminiCodeAssist);
+
+    return Promise.resolve();
+  }
+
+  private registerWithGeminiCodeAssist(googleExtension: GeminiCodeAssist) {
+    this.logger.info('Registering with Gemini Code Assist');
+    try {
+      const geminiTool = googleExtension.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION);
+
+      geminiTool.registerChatHandler(
+        async (request: ChatRequest, responseStream: ChatResponseStream, token: CancellationToken) => {
+          this.logger.debug('received chat request from gemini: ' + request.prompt.fullPrompt());
+          if (token.isCancellationRequested) return Promise.resolve();
+
+          if (!request.prompt.fullPrompt().includes('/scan')) {
+            return Promise.resolve();
+          }
+          const result: string = await commands.executeCommand(
+            SNYK_EXECUTE_MCP_TOOL_COMMAND,
+            SNYK_WORKSPACE_SCAN_COMMAND,
+          );
+
+          const markdown = new MarkdownStringAdapter().get(result, true);
+          responseStream.push(markdown);
+
+          return Promise.resolve();
+        },
+      );
+
+      const commandProvider = {
+        listCommands(): Promise<CommandDetail[]> {
+          const commands: CommandDetail[] = [
+            {
+              command: 'scan',
+              description: 'Perform a workspace scan with the Snyk Security Extension',
+            } as CommandDetail,
+          ];
+          return Promise.resolve(commands);
+        },
+      } as CommandProvider;
+
+      geminiTool.registerCommandProvider(commandProvider);
+    } catch (error) {
+      return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
+    }
   }
 }
