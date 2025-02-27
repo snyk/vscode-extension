@@ -154,4 +154,4 @@ export enum SnykURIAction {
 export type ShowIssueDetailTopicParams = {
   issueId: string;
   product: LsScanProduct;
-}
+};

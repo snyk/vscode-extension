@@ -173,5 +173,5 @@ suite('Product Service', () => {
     });
 
     sinon.assert.calledOnceWithExactly(service.showSuggestionProviderById, issueId);
-  })
+  });
 });

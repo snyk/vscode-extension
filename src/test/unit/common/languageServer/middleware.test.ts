@@ -13,7 +13,6 @@ import type {
   ShowDocumentRequestHandlerSignature,
 } from '../../../../snyk/common/vscode/types';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
 import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
@@ -21,7 +20,6 @@ import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
   let user: User;
-  let extensionContextMock: ExtensionContext;
 
   setup(() => {
     user = { anonymousId: 'anonymous-id' } as User;
@@ -62,15 +60,6 @@ suite('Language Server: Middleware', () => {
         return [];
       },
     } as IConfiguration;
-    extensionContextMock = {
-      extensionPath: 'test/path',
-      getGlobalStateValue: sinon.fake(),
-      updateGlobalStateValue: sinon.fake(),
-      setContext: sinon.fake(),
-      subscriptions: [],
-      addDisposables: sinon.fake(),
-      getExtensionUri: sinon.fake(),
-    } as unknown as ExtensionContext;
   });
 
   teardown(() => {
@@ -78,7 +67,12 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should translate settings', async () => {
-    const middleware = new LanguageClientMiddleware(new LoggerMockFailOnErrors(), configuration, user, new Subject<ShowIssueDetailTopicParams>());
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      user,
+      new Subject<ShowIssueDetailTopicParams>(),
+    );
     const params: ConfigurationParams = {
       items: [
         {
@@ -119,7 +113,12 @@ suite('Language Server: Middleware', () => {
   });
 
   test('Configuration request should return an error', async () => {
-    const middleware = new LanguageClientMiddleware(new LoggerMockFailOnErrors(), configuration, user, new Subject<ShowIssueDetailTopicParams>());
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      user,
+      new Subject<ShowIssueDetailTopicParams>(),
+    );
     const params: ConfigurationParams = {
       items: [
         {
@@ -148,21 +147,28 @@ suite('Language Server: Middleware', () => {
     const issueId = '123abc456';
 
     const showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
-    const subscribedTopicMessageRecieved = new Promise<ShowIssueDetailTopicParams>((resolve) => {
+    const subscribedTopicMessageRecieved = new Promise<ShowIssueDetailTopicParams>(resolve => {
       let calledAlready = false;
-      showIssueDetailTopic$.subscribe((showIssueDetailTopicParams) => {
+      showIssueDetailTopic$.subscribe(showIssueDetailTopicParams => {
         assert.strictEqual(calledAlready, false, 'Show issue detail topic published to multiple times');
         calledAlready = true;
         resolve(showIssueDetailTopicParams);
       });
     });
 
-    const middleware = new LanguageClientMiddleware(new LoggerMockFailOnErrors(), sinon.fake() as unknown as IConfiguration, sinon.fake() as unknown as User, showIssueDetailTopic$);
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      sinon.fake() as unknown as IConfiguration,
+      sinon.fake() as unknown as User,
+      showIssueDetailTopic$,
+    );
     const params: ShowDocumentParams = {
-      uri: `snyk:///fake/file/path?product=${product.replaceAll(' ', '+')}&issueId=${issueId}&action=${SnykURIAction.ShowInDetailPanel}`
-    }
+      uri: `snyk:///fake/file/path?product=${product.replaceAll(' ', '+')}&issueId=${issueId}&action=${
+        SnykURIAction.ShowInDetailPanel
+      }`,
+    };
     const failOnNextHandler: ShowDocumentRequestHandlerSignature = (_params, _token) => {
-      return {success: false};
+      return { success: false };
     };
 
     const res = await middleware.window.showDocument?.(params, failOnNextHandler);
@@ -172,7 +178,7 @@ suite('Language Server: Middleware', () => {
     if (res instanceof Error) {
       assert.fail('Handler returned an error');
     }
-    assert.deepStrictEqual(res, {success: true});
+    assert.deepStrictEqual(res, { success: true });
 
     const showIssueDetailTopicParams = await subscribedTopicMessageRecieved;
     assert.deepStrictEqual(showIssueDetailTopicParams, {

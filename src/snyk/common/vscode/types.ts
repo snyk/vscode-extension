@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import * as vscode from 'vscode';
 import * as lsc from 'vscode-languageclient/node';
 import * as lst from 'vscode-languageserver-textdocument';
@@ -62,10 +65,11 @@ export type WindowMiddleware = lsc.WindowMiddleware;
 
 // Language client namespace mappings
 /*
-* TODO - Look into how to map without re-declaring.
-* You can't `export const NS = parent.NS;` as that breaks unit tests, as it causes an import of vscode.
-*/
+ * TODO - Look into how to map without re-declaring.
+ * You can't `export const NS = parent.NS;` as that breaks unit tests, as it causes an import of vscode.
+ */
 export declare namespace CancellationToken {
+  // map of lsc.CancellationToken
   const None: CancellationToken;
   const Cancelled: CancellationToken;
   function is(value: any): value is CancellationToken;

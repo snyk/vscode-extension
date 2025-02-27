@@ -11,9 +11,7 @@ import type {
   ShowDocumentResult,
   WindowMiddleware,
 } from '../vscode/types';
-import {
-  CancellationToken,
-} from '../vscode/types';
+import { CancellationToken } from '../vscode/types';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
@@ -31,7 +29,7 @@ export class LanguageClientMiddleware implements Middleware {
     private readonly logger: ILog,
     private configuration: IConfiguration,
     private user: User,
-    private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>
+    private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
   ) {}
 
   workspace: LanguageClientWorkspaceMiddleware = {
@@ -58,10 +56,7 @@ export class LanguageClientMiddleware implements Middleware {
     },
   };
   window: WindowMiddleware = {
-    showDocument: async (
-      params: ShowDocumentParams,
-      next,
-    ) => {
+    showDocument: async (params: ShowDocumentParams, next) => {
       let uri;
       try {
         uri = new URL(params.uri);
@@ -72,15 +67,17 @@ export class LanguageClientMiddleware implements Middleware {
         // 'snyk://filePath?product=Snyk+Code&issueId=123abc456&action=showInDetailPanel'
         const action = uri.searchParams.get('action');
         if (action === SnykURIAction.ShowInDetailPanel) {
-          this.logger.info(`Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`);
-          const filePath = uri.pathname;
+          this.logger.info(
+            `Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`,
+          );
+          const _filePath = uri.pathname;
           const product = uri.searchParams.get('product');
           if (product !== LsScanProduct.Code) {
-            throw new Error(`Currently only able to handle showing issues for "${LsScanProduct.Code}"`)
+            throw new Error(`Currently only able to handle showing issues for "${LsScanProduct.Code}"`);
           }
           const issueId = uri.searchParams.get('issueId');
           if (issueId === null || issueId === '') {
-            throw new Error(`Invalid "snyk:" URI recieved (bad issueId)! ${params.uri}`)
+            throw new Error(`Invalid "snyk:" URI recieved (bad issueId)! ${params.uri}`);
           }
 
           this.showIssueDetailTopic$.next({
@@ -91,10 +88,10 @@ export class LanguageClientMiddleware implements Middleware {
           // TODO: select issue that matches product + issueId in the tree and maybe refresh it
           // don't continue processing
 
-          return {success: true};
+          return { success: true };
         }
       }
-      return await next(params, CancellationToken.None) as ShowDocumentResult;
+      return (await next(params, CancellationToken.None)) as ShowDocumentResult;
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

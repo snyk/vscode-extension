@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import assert, { deepStrictEqual, fail, strictEqual } from 'assert';
+import assert, { deepStrictEqual, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';

@@ -41,7 +41,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   private runningScanCount = 0;
 
   protected lsScanSubscription: Subscription;
-  protected lsAiFixSubscription: Subscription;
+  protected lsShowIssueDetailSubscription: Subscription;
 
   protected disposables: Disposable[] = [];
 
@@ -61,7 +61,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     super();
     this._result = new Map<string, WorkspaceFolderResult<T>>();
     this.lsScanSubscription = this.subscribeToLsScanMessages();
-    this.lsAiFixSubscription = this.subscribeToLsAiFixMessages();
+    this.lsShowIssueDetailSubscription = this.subscribeToShowIssueDetailMessages();
   }
 
   abstract subscribeToLsScanMessages(): Subscription;
@@ -158,7 +158,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   dispose(): void {
     this.lsScanSubscription.unsubscribe();
-    this.lsAiFixSubscription.unsubscribe();
+    this.lsShowIssueDetailSubscription.unsubscribe();
   }
 
   // Must be called from the child class to listen on scan messages
@@ -180,13 +180,13 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     }
   }
 
-  private subscribeToLsAiFixMessages(): Subscription {
-    return this.languageServer.showIssueDetailTopic$.subscribe((aiFix) => {
-      if (aiFix.product !== this.lsScanProduct) {
+  private subscribeToShowIssueDetailMessages(): Subscription {
+    return this.languageServer.showIssueDetailTopic$.subscribe(params => {
+      if (params.product !== this.lsScanProduct) {
         return;
       }
 
-      this.showSuggestionProviderById(aiFix.issueId);
+      void this.showSuggestionProviderById(params.issueId);
     });
   }
 

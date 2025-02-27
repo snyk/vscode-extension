@@ -42,7 +42,7 @@ export class OssService extends ProductService<OssIssueData> {
       languages,
       diagnosticsIssueProvider,
       logger,
-      LsScanProduct.OpenSource
+      LsScanProduct.OpenSource,
     );
 
     this.registerCodeActionsProvider(
