@@ -12,9 +12,11 @@ import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
 import { TreeNode } from '../../common/views/treeNode';
 import { IFolderConfigs } from '../../common/configuration/folderConfigs';
+import { ILog } from '../../common/logger/interfaces';
 
 export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
   constructor(
+    protected readonly logger: ILog,
     protected contextService: IContextService,
     protected codeService: IProductService<CodeIssueData>,
     protected configuration: IConfiguration,
@@ -22,7 +24,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     protected readonly isSecurityType: boolean,
     protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, codeService, configuration, languages, folderConfigs);
+    super(logger, contextService, codeService, configuration, languages, folderConfigs);
   }
 
   shouldShowTree(): boolean {

@@ -3,6 +3,7 @@ import { IFolderConfigs } from '../../common/configuration/folderConfigs';
 import { configuration } from '../../common/configuration/instance';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { CodeIssueData } from '../../common/languageServer/types';
+import { ILog } from '../../common/logger/interfaces';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
@@ -12,6 +13,7 @@ import { IssueTreeProvider } from './issueTreeProvider';
 
 export class CodeQualityIssueTreeProvider extends IssueTreeProvider {
   constructor(
+    protected readonly logger: ILog,
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
     protected codeService: IProductService<CodeIssueData>,
@@ -19,7 +21,7 @@ export class CodeQualityIssueTreeProvider extends IssueTreeProvider {
     protected languages: IVSCodeLanguages,
     protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, codeService, configuration, languages, false, folderConfigs);
+    super(logger, contextService, codeService, configuration, languages, false, folderConfigs);
   }
 
   getRootChildren(): TreeNode[] {

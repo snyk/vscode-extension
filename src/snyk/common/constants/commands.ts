@@ -26,6 +26,7 @@ export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 export const SNYK_CODE_FIX_DIFFS_COMMAND = 'snyk.code.fixDiffs';
+export const SNYK_CODE_FIX_APPLY_EDIT_COMMAND = 'snyk.code.fixApplyEdit';
 export const SNYK_CODE_SUBMIT_FIX_FEEDBACK = 'snyk.code.submitFixFeedback';
 export const SNYK_FEATURE_FLAG_COMMAND = 'snyk.getFeatureFlagStatus';
 export const SNYK_CLEAR_CACHE_COMMAND = 'snyk.clearCache';

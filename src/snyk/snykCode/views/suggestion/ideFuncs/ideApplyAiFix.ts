@@ -3,11 +3,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-const applyFixMessage: ApplyGitDiffMessage = {
-  type: 'applyGitDiff',
+const fixApplyEditMessage: FixApplyEditMessage = {
+  type: 'fixApplyEdit',
   //@ts-expect-error these will be injected from a func coming from LS
-  args: { filePath, patch, fixId },
+  args: { fixId },
 };
 
-vscode.postMessage(applyFixMessage);
+vscode.postMessage(fixApplyEditMessage);

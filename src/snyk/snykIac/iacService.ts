@@ -2,7 +2,7 @@ import { Subscription } from 'rxjs';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
 import { ILanguageServer } from '../common/languageServer/languageServer';
-import { IacIssueData, Scan, ScanProduct } from '../common/languageServer/types';
+import { IacIssueData, LsScanProduct, Scan, ScanProduct } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
 import { ProductService } from '../common/services/productService';
 import { IViewManagerService } from '../common/services/viewManagerService';
@@ -42,6 +42,7 @@ export class IacService extends ProductService<IacIssueData> {
       languages,
       diagnosticsIssueProvider,
       logger,
+      LsScanProduct.InfrastructureAsCode,
     );
 
     this.registerCodeActionsProvider(

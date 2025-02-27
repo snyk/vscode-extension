@@ -119,7 +119,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+        await this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
@@ -151,7 +151,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+        await this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

@@ -561,7 +561,6 @@
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
     "axios": "^1.7.8",
-    "diff": "^5.2.0",
     "glob": "^9.3.5",
     "he": "^1.2.0",
     "htmlparser2": "^7.2.0",
