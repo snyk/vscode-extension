@@ -30,8 +30,7 @@ export class GeminiIntegrationService {
     private readonly scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>,
   ) {}
 
-  async connectGeminiToMCPServer(url: string) {
-    this.logger.info('Received MCP Server address ' + url);
+  async connectGeminiToMCPServer() {
     try {
       const geminiCodeAssistExtension = this.extensionContext.getExtension('google.geminicodeassist');
       const isInstalled = !!geminiCodeAssistExtension;

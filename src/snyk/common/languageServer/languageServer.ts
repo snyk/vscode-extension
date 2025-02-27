@@ -170,7 +170,7 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_MCPSERVERURL, ({ url }: { url: string }) => {
       this.logger.info('Received MCP Server address ' + url);
-      void this.geminiIntegrationService.connectGeminiToMCPServer(url);
+      void this.geminiIntegrationService.connectGeminiToMCPServer();
     });
   }
 
