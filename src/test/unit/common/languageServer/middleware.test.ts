@@ -158,8 +158,8 @@ suite('Language Server: Middleware', () => {
 
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
-      sinon.fake() as unknown as IConfiguration,
-      sinon.fake() as unknown as User,
+      {} as IConfiguration,
+      {} as User,
       showIssueDetailTopic$,
     );
     const params: ShowDocumentParams = {

@@ -85,9 +85,6 @@ export class LanguageClientMiddleware implements Middleware {
             issueId,
           });
 
-          // TODO: select issue that matches product + issueId in the tree and maybe refresh it
-          // don't continue processing
-
           return { success: true };
         }
       }
