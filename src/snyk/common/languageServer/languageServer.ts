@@ -23,7 +23,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+import { CodeIssueData, IacIssueData, OssIssueData, Scan, ScanProduct, ScanStatus } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, GeminiCodeAssist } from '../llm/geminiApi';
@@ -33,6 +33,8 @@ import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
 import { UriAdapter } from '../vscode/uri';
 import path from 'path';
 import { vsCodeCommands } from '../vscode/commands';
+import { DiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { baseSchema } from '@amplitude/ampli/lib/settings/schema';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -238,29 +240,7 @@ export class LanguageServer implements ILanguageServer {
       const iconURI = new UriAdapter().file(iconPath);
       const geminiTool = googleExtension.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
 
-      geminiTool.registerChatHandler(
-        async (request: ChatRequest, responseStream: ChatResponseStream, token: CancellationToken) => {
-          this.logger.debug('received chat request from gemini: ' + request.prompt.fullPrompt());
-          if (token.isCancellationRequested) return Promise.resolve();
-
-          if (!request.prompt.fullPrompt().includes('/scan')) {
-            return Promise.resolve();
-          }
-          const result: string | undefined = await vsCodeCommands.executeCommand(
-            SNYK_EXECUTE_MCP_TOOL_COMMAND,
-            SNYK_WORKSPACE_SCAN_COMMAND,
-          );
-
-          if (!result) {
-            return Promise.resolve();
-          }
-
-          const markdown = new MarkdownStringAdapter().get(result, true);
-          responseStream.push(markdown);
-
-          return Promise.resolve();
-        },
-      );
+      geminiTool.registerChatHandler(this.getChatRequestHandler());
 
       const commandProvider = {
         listCommands(): Promise<CommandDetail[]> {
@@ -279,5 +259,52 @@ export class LanguageServer implements ILanguageServer {
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
+  }
+
+  private getChatRequestHandler() {
+    return async (request: ChatRequest, responseStream: ChatResponseStream, token: CancellationToken) => {
+      this.logger.debug('received chat request from gemini: ' + request.prompt.fullPrompt());
+      if (token.isCancellationRequested) return Promise.resolve();
+
+      if (!request.prompt.fullPrompt().includes('/scan')) {
+        return Promise.resolve();
+      }
+
+      const mdsa = new MarkdownStringAdapter();
+      responseStream.push(mdsa.get('Scanning workspace with Snyk...'));
+
+      const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
+
+      // subscribe to snyk code
+      this.scan$.subscribe((scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
+        const msg = 'Scan status for ' + scan.folderPath + ': ' + scan.status + '.';
+        responseStream.push(mdsa.get(msg));
+        if (scan.status == ScanStatus.Success) {
+          const issues = diagnosticsIssueProvider.getIssuesFromDiagnostics(scan.product);
+          let issueMsg = '\n\n## Snyk Issues\n';
+          for (const issue of issues) {
+            const baseName = path.basename(issue.filePath);
+            issueMsg += '*' + issue.severity + '* `' + issue.title + '` in ' + baseName + '\n\n';
+          }
+          responseStream.push(mdsa.get(issueMsg));
+          // todo add button to open in Snyk UI
+          // todo push to context
+        }
+      });
+
+      const result: string | undefined = await vsCodeCommands.executeCommand(
+        SNYK_EXECUTE_MCP_TOOL_COMMAND,
+        SNYK_WORKSPACE_SCAN_COMMAND,
+      );
+
+      if (!result) {
+        return Promise.resolve();
+      }
+
+      const markdown = mdsa.get(result, true);
+      responseStream.push(markdown);
+
+      return Promise.resolve();
+    };
   }
 }
