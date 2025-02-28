@@ -13,3 +13,4 @@ export const SNYK_ADD_TRUSTED_FOLDERS = '$/snyk.addTrustedFolders';
 export const SNYK_SCAN = '$/snyk.scan';
 export const SNYK_FOLDERCONFIG = '$/snyk.folderConfigs';
 export const SNYK_SCANSUMMARY = '$/snyk.scanSummary';
+export const SNYK_MCPSERVERURL = '$/snyk.mcpServerURL';

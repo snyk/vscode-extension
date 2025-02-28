@@ -42,6 +42,10 @@ export class ExtensionContext {
     if (!this.context) throw new Error('VS Code extension context not set.');
     return this.context;
   }
+
+  getExtension(id: string): vscode.Extension<any> | undefined {
+    return vscode.extensions.all.find(ext => ext.id === id);
+  }
 }
 
 export const extensionContext = new ExtensionContext();

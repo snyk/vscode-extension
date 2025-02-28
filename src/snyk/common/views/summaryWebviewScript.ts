@@ -14,7 +14,7 @@ type SummaryMessage = {
 type Summary = {
   toggleDelta: boolean;
 };
-let vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi();
 
 const summary: Summary = {
   // @ts-expect-error this will be injected in a func coming from LS that has isEnabled as arg.

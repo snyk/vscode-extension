@@ -7,6 +7,7 @@ import {
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
+  SNYK_MCPSERVERURL,
   SNYK_SCAN,
   SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
@@ -25,6 +26,7 @@ import { LanguageServerSettings, ServerSettings } from './settings';
 import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
+import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -41,6 +43,7 @@ export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
+  private geminiIntegrationService: GeminiIntegrationService;
 
   constructor(
     private user: User,
@@ -55,6 +58,7 @@ export class LanguageServer implements ILanguageServer {
     private summaryProvider: ISummaryProviderService,
   ) {
     this.downloadService = downloadService;
+    this.geminiIntegrationService = new GeminiIntegrationService(this.logger, this.extensionContext, this.scan$);
   }
 
   // Starts the language server and the client. LS will be downloaded if missing.
@@ -125,11 +129,12 @@ export class LanguageServer implements ILanguageServer {
     this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     try {
+      // register listeners before starting the client
+      this.registerListeners(this.client);
+
       // Start the client. This will also launch the server
       await this.client.start();
       this.logger.info('Snyk Language Server started');
-
-      this.registerListeners(this.client);
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
@@ -162,13 +167,17 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
+
+    client.onNotification(SNYK_MCPSERVERURL, ({ url }: { url: string }) => {
+      this.logger.info('Received MCP Server address ' + url);
+      void this.geminiIntegrationService.connectGeminiToMCPServer();
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
-    return settings;
+    return await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
   }
 
   showOutputChannel(): void {
