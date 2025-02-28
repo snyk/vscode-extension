@@ -16,7 +16,11 @@ import {
   ScanStatus,
 } from '../languageServer/types';
 import { vsCodeCommands } from '../vscode/commands';
-import { SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
+import {
+  SNYK_EXECUTE_MCP_TOOL_COMMAND,
+  SNYK_OPEN_ISSUE_COMMAND,
+  SNYK_WORKSPACE_SCAN_COMMAND,
+} from '../constants/commands';
 import { integer } from 'vscode-languageclient';
 import { configuration } from '../configuration/instance';
 import { ILog } from '../logger/interfaces';
@@ -154,24 +158,24 @@ export class GeminiIntegrationService {
       }
       if (codeIssues.length > 0) {
         issueMsg += '\n\n## Snyk ' + ScanProduct.Code + 'Issues\n';
-        issueMsg += '| Severity | Title | Filename | Issue Link |\n';
-        issueMsg += '| -------- | ----- | -------- | ---------- |\n';
+        issueMsg += '| Severity | Title | \n';
+        issueMsg += '| :------: | ----- | \n';
         for (const issue of codeIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue);
         }
       }
       if (ossIssues.length > 0) {
         issueMsg += '\n\n## Snyk ' + ScanProduct.OpenSource + 'Issues\n';
-        issueMsg += '| Severity | Title | Filename | Issue Link |\n';
-        issueMsg += '| -------- | ----- | -------- | ---------- |\n';
+        issueMsg += '| Severity | Title | \n';
+        issueMsg += '| :------: | ----- | \n';
         for (const issue of ossIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue);
         }
       }
       if (iacIssues.length > 0) {
         issueMsg += '\n\n## Snyk ' + ScanProduct.InfrastructureAsCode + 'Issues\n';
-        issueMsg += '| Severity | Title | Filename | Issue Link |\n';
-        issueMsg += '| -------- | ----- | -------- | ---------- |\n';
+        issueMsg += '| Severity | Title | \n';
+        issueMsg += '| :------: | ----- | \n';
         for (const issue of iacIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue);
         }
@@ -186,8 +190,16 @@ export class GeminiIntegrationService {
     // todo nicer format
     const baseName = path.basename(issue.filePath);
     const params = encodeURI(JSON.stringify(issue));
-    // const openLink = '[open](command:' + SNYK_OPEN_ISSUE_COMMAND + '?' + params + ')';
-    const openLink = 'open';
-    return '| ' + issue.severity + ' | ' + issue.title + ' | ' + baseName + ' | ' + openLink + ' |\n';
+    // const openLink = '[' + issue.title + '](command:' + SNYK_OPEN_ISSUE_COMMAND + '?' + params + ')';
+    const openLink = issue.title;
+    let emoji = '';
+    if (issue.severity == 'medium') {
+      emoji = '🟠';
+    } else if (issue.severity == 'high' || issue.severity == 'critical') {
+      emoji = '🔴';
+    } else {
+      emoji = '⚪️';
+    }
+    return '|   ' + emoji + ' | ' + openLink + '(`' + baseName + '`)' + ' | \n';
   }
 }
