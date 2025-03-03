@@ -15,7 +15,7 @@ export interface IDiagnosticsIssueProvider<T> {
 export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T> {
   getIssuesFromDiagnostics(product: ScanProduct): Issue<T>[] {
     const allDiagnostics = vscode.languages.getDiagnostics();
-    const diagnosticsSource = this.productToLsProduct(product);
+    const diagnosticsSource = productToLsProduct(product);
 
     // Filter and flatten the diagnostics list
     // Also filter only when diagnostic.data exists
@@ -28,17 +28,17 @@ export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T>
     const issues = filteredDiagnostics.map(diagnostic => diagnostic.data);
     return issues;
   }
+}
 
-  private productToLsProduct(product: ScanProduct): LsScanProduct {
-    switch (product) {
-      case ScanProduct.Code:
-        return LsScanProduct.Code;
-      case ScanProduct.InfrastructureAsCode:
-        return LsScanProduct.InfrastructureAsCode;
-      case ScanProduct.OpenSource:
-        return LsScanProduct.OpenSource;
-      default:
-        return LsScanProduct.Unknown;
-    }
+export function productToLsProduct(product: ScanProduct): LsScanProduct {
+  switch (product) {
+    case ScanProduct.Code:
+      return LsScanProduct.Code;
+    case ScanProduct.InfrastructureAsCode:
+      return LsScanProduct.InfrastructureAsCode;
+    case ScanProduct.OpenSource:
+      return LsScanProduct.OpenSource;
+    default:
+      return LsScanProduct.Unknown;
   }
 }

@@ -13,6 +13,7 @@ export const SNYK_DCIGNORE_COMMAND = 'snyk.dcignore';
 export const SNYK_OPEN_BROWSER_COMMAND = 'snyk.open';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
+export const SNYK_NAVIGATE_TO_RANGE = 'snyk.navigateToRange';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 export const SNYK_SHOW_LS_OUTPUT_COMMAND = 'snyk.showLsOutputChannel';

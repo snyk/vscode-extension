@@ -4,12 +4,13 @@ import path from 'path';
 import { UriAdapter } from '../vscode/uri';
 import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
 import { CancellationToken } from '../vscode/types';
-import { DiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { DiagnosticsIssueProvider, productToLsProduct } from '../services/diagnosticsService';
 import { MarkdownStringAdapter } from '../vscode/markdownString';
 import {
   CodeIssueData,
   IacIssueData,
   Issue,
+  IssueSeverity,
   OssIssueData,
   Scan,
   ScanProduct,
@@ -18,7 +19,7 @@ import {
 import { vsCodeCommands } from '../vscode/commands';
 import {
   SNYK_EXECUTE_MCP_TOOL_COMMAND,
-  SNYK_OPEN_ISSUE_COMMAND,
+  SNYK_NAVIGATE_TO_RANGE,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from '../constants/commands';
 import { integer } from 'vscode-languageclient';
@@ -128,6 +129,8 @@ export class GeminiIntegrationService {
 
       // show
       const markdown = mdsa.get(this.getIssueMarkDownFromDiagnostics(diagnosticsIssueProvider), true);
+      markdown.isTrusted = true;
+      markdown.supportHtml = true;
       responseStream.push(markdown);
       responseStream.close();
       return Promise.resolve();
@@ -161,7 +164,7 @@ export class GeminiIntegrationService {
         issueMsg += '| Severity | Title | \n';
         issueMsg += '| :------: | ----- | \n';
         for (const issue of codeIssues) {
-          issueMsg += this.enrichMessageWithIssueData(issue);
+          issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.Code);
         }
       }
       if (ossIssues.length > 0) {
@@ -169,7 +172,7 @@ export class GeminiIntegrationService {
         issueMsg += '| Severity | Title | \n';
         issueMsg += '| :------: | ----- | \n';
         for (const issue of ossIssues) {
-          issueMsg += this.enrichMessageWithIssueData(issue);
+          issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.OpenSource);
         }
       }
       if (iacIssues.length > 0) {
@@ -177,7 +180,7 @@ export class GeminiIntegrationService {
         issueMsg += '| Severity | Title | \n';
         issueMsg += '| :------: | ----- | \n';
         for (const issue of iacIssues) {
-          issueMsg += this.enrichMessageWithIssueData(issue);
+          issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.InfrastructureAsCode);
         }
       }
     } catch (e) {
@@ -186,16 +189,26 @@ export class GeminiIntegrationService {
     return issueMsg;
   }
 
-  private enrichMessageWithIssueData(issue: Issue<unknown>) {
-    // todo nicer format
+  private enrichMessageWithIssueData(issue: Issue<unknown>, scanProduct: ScanProduct) {
     const baseName = path.basename(issue.filePath);
-    const params = encodeURI(JSON.stringify(issue));
-    // const openLink = '[' + issue.title + '](command:' + SNYK_OPEN_ISSUE_COMMAND + '?' + params + ')';
-    const openLink = issue.title;
-    let emoji = '';
-    if (issue.severity == 'medium') {
+    const snykUri =
+      'snyk://' +
+      encodeURI(issue.filePath) +
+      '?product=' +
+      encodeURI(productToLsProduct(scanProduct)) +
+      '&issueId=' +
+      encodeURI(issue.id) +
+      '&action=showInDetailPanel';
+
+    const params = encodeURI(JSON.stringify([snykUri, issue.range]));
+    const commandURI = new UriAdapter().parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
+    const openLink = '[' + issue.title + `](${commandURI})`;
+    // const openLink = issue.title;
+    // todo nicer format
+    let emoji: string;
+    if (issue.severity == IssueSeverity.Medium) {
       emoji = '🟠';
-    } else if (issue.severity == 'high' || issue.severity == 'critical') {
+    } else if (issue.severity == IssueSeverity.High || issue.severity == IssueSeverity.Critical) {
       emoji = '🔴';
     } else {
       emoji = '⚪️';

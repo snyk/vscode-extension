@@ -1,3 +1,5 @@
+import { Range } from 'vscode-languageserver-types';
+
 export enum ScanProduct {
   Code = 'code',
   OpenSource = 'oss',
@@ -34,6 +36,7 @@ export type Issue<T> = {
   title: string;
   severity: IssueSeverity;
   filePath: string;
+  range: Range;
   additionalData: T;
   isIgnored: boolean;
 };
