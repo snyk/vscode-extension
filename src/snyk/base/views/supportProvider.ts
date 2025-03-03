@@ -12,38 +12,32 @@ export class SupportProvider extends TreeNodeProvider {
         link: 'https://snyk.io/contact-us/?utm_source=vsc',
       }),
       new TreeNode({
-        text: 'Top 3 FAQ',
+        text: 'Get the most out of the Snyk extension',
+        icon: new ThemeIcon('file-text'),
+        link: 'https://docs.snyk.io/ide-tools/visual-studio-code-extension',
+      }),
+      new TreeNode({
+        text: 'Ignore files and directories',
+        icon: new ThemeIcon('file-text'),
         collapsed: TreeItemCollapsibleState.Expanded,
         children: [
           new TreeNode({
-            text: '1. How to get the most out of Snyk’s extension?',
-            icon: new ThemeIcon('file-text'),
-            link: 'https://docs.snyk.io/ide-tools/visual-studio-code-extension',
+            text: 'Add a pre-filled .dcignore file',
+            icon: new ThemeIcon('new-file'),
+            command: {
+              command: SNYK_DCIGNORE_COMMAND,
+              title: '',
+              arguments: [],
+            },
           }),
           new TreeNode({
-            text: '2. How to ignore files and directories?',
-            icon: new ThemeIcon('file-text'),
-            collapsed: TreeItemCollapsibleState.Expanded,
-            children: [
-              new TreeNode({
-                text: 'Add default .dcignore file to your workspace',
-                icon: new ThemeIcon('new-file'),
-                command: {
-                  command: SNYK_DCIGNORE_COMMAND,
-                  title: '',
-                  arguments: [],
-                },
-              }),
-              new TreeNode({
-                text: 'Add a custom .dcignore file to your workspace',
-                icon: new ThemeIcon('new-file'),
-                command: {
-                  command: SNYK_DCIGNORE_COMMAND,
-                  title: '',
-                  arguments: [true],
-                },
-              }),
-            ],
+            text: 'Add a blank .dcignore file',
+            icon: new ThemeIcon('new-file'),
+            command: {
+              command: SNYK_DCIGNORE_COMMAND,
+              title: '',
+              arguments: [true],
+            },
           }),
         ],
       }),
