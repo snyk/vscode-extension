@@ -68,12 +68,12 @@ export class GeminiIntegrationService {
     return Promise.resolve();
   }
 
-  private registerWithGeminiCodeAssist(googleExtension: GeminiCodeAssist) {
+  private registerWithGeminiCodeAssist(geminiCodeAssist: GeminiCodeAssist) {
     this.logger.info('Registering with Gemini Code Assist');
     try {
       const iconPath = path.join(this.extensionContext.extensionPath, 'media/images/readme/snyk_extension_icon.png');
       const iconURI = new UriAdapter().file(iconPath);
-      const geminiTool = googleExtension.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
+      const geminiTool = geminiCodeAssist.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
 
       geminiTool.registerChatHandler(this.getChatRequestHandler());
 
@@ -128,7 +128,7 @@ export class GeminiIntegrationService {
           }
         });
 
-        await vsCodeCommands.executeCommand(SNYK_EXECUTE_MCP_TOOL_COMMAND, SNYK_WORKSPACE_SCAN_COMMAND);
+        await vsCodeCommands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         while (openScansCount > 0) {
           // eslint-disable-next-line no-await-in-loop
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -201,17 +201,15 @@ export class GeminiIntegrationService {
       return 0;
     };
 
-    function pushIssuesToContext(codeIssues: Issue<CodeIssueData | OssIssueData | IacIssueData>[]) {
+    function pushIssuesToContext(issues: Issue<CodeIssueData | OssIssueData | IacIssueData>[]) {
       const issuesString =
         'These are ' +
-        codeIssues[0].filterableIssueType +
+        issues[0].filterableIssueType +
         ' issues that Snyk has found in JSON format: ' +
-        JSON.stringify(codeIssues);
+        JSON.stringify(issues);
       const newContext = {
         id: generateUuid(),
-        getText: () => {
-          return issuesString;
-        },
+        getText: () => issuesString,
       } as ChatContext;
       context.push(newContext);
     }
@@ -281,7 +279,7 @@ export class GeminiIntegrationService {
 
     const params = encodeURI(JSON.stringify([snykUri, issue.range]));
     const commandURI = new UriAdapter().parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
-    const openLink = `[**` + issue.title + `**](${commandURI})`;
+    const titleLink = `[**` + issue.title + `**](${commandURI})`;
     const score = this.getScore(issue);
 
     let emoji: string;
@@ -294,7 +292,7 @@ export class GeminiIntegrationService {
     } else {
       emoji = '⚪️';
     }
-    return `| ${emoji} | ${openLink} <br> ${baseName} | ${score} |\n`;
+    return `| ${emoji} | ${titleLink} <br> ${baseName} | ${score} |\n`;
   }
 
   private getScore(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): number {
