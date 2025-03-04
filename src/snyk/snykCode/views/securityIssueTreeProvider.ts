@@ -10,9 +10,11 @@ import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IssueTreeProvider } from './issueTreeProvider';
 import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
 import { IFolderConfigs } from '../../common/configuration/folderConfigs';
+import { ILog } from '../../common/logger/interfaces';
 
 export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   constructor(
+    protected readonly logger: ILog,
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
     protected codeService: IProductService<CodeIssueData>,
@@ -20,7 +22,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     protected languages: IVSCodeLanguages,
     protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, codeService, configuration, languages, true, folderConfigs);
+    super(logger, contextService, codeService, configuration, languages, true, folderConfigs);
   }
 
   getRootChildren(): TreeNode[] {

@@ -6,19 +6,24 @@ import { messages as commonMessages } from '../../common/messages/analysisMessag
 import { IContextService } from '../services/contextService';
 import { IProductService } from '../services/productService';
 import { AnalysisTreeNodeProvider } from './analysisTreeNodeProvider';
-import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from './treeNode';
+import { INodeIcon, INodeOptions, NODE_ICONS, TreeNode } from './treeNode';
 import { IVSCodeLanguages } from '../vscode/languages';
 import { Command, Range } from '../vscode/types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
 import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
 import path from 'path';
+import { ILog } from '../logger/interfaces';
+import { ErrorHandler } from '../error/errorHandler';
 
 interface ISeverityCounts {
   [severity: string]: number;
 }
 
 export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
+  private allIssueNodes: TreeNode[] = [];
+
   protected constructor(
+    protected readonly logger: ILog,
     protected readonly contextService: IContextService,
     protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
@@ -204,6 +209,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   getResultNodes(): TreeNode[] {
+    this.allIssueNodes = [];
     const nodes: TreeNode[] = [];
 
     for (const result of this.productService.result.entries()) {
@@ -249,17 +255,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           folderVulnCount++;
 
           const issueRange = this.getIssueRange(issue);
-          const params: {
-            text: string;
-            icon: INodeIcon;
-            issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range };
-            internal: InternalType;
-            command: Command;
-            children?: TreeNode[];
-          } = {
+          const params: INodeOptions = {
             text: this.getIssueTitle(issue),
             icon: ProductIssueTreeProvider.getSeverityIcon(issue.severity),
             issue: {
+              id: issue.id,
               uri,
               filePath: file,
               range: issueRange,
@@ -271,6 +271,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           };
           return new TreeNode(params);
         });
+        this.allIssueNodes.push(...issueNodes);
 
         if (issueNodes.length === 0) {
           continue;
@@ -365,5 +366,33 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   /** Returns severity significance index. The higher, the more significant severity is. */
   static getSeverityComparatorIndex(severity: IssueSeverity): number {
     return Object.values(IssueSeverity).indexOf(severity);
+  }
+
+  private findIssueNodeByIssueId(issueId: string): TreeNode | undefined {
+    return this.allIssueNodes.find(issueNode => issueNode.issue?.id === issueId);
+  }
+
+  revealIssueById(treeView: vscode.TreeView<TreeNode>, issueId: string): Promise<boolean> {
+    return new Promise<boolean>((resolve, _reject) => {
+      const issueNode = this.findIssueNodeByIssueId(issueId);
+      if (issueNode === undefined) {
+        this.logger.error(`Cannot find issue by id ${issueId} to reveal`);
+        resolve(false);
+        return;
+      }
+      treeView
+        .reveal(issueNode, {
+          select: true,
+          focus: true,
+          expand: 3 /*maximum allowed depth*/,
+        })
+        .then(
+          () => resolve(true),
+          err => {
+            this.logger.error(ErrorHandler.stringifyError(err));
+            resolve(false);
+          },
+        );
+    });
   }
 }

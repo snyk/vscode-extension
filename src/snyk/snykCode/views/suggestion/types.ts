@@ -59,11 +59,9 @@ export type GetAutofixDiffsMesssage = {
   };
 };
 
-export type ApplyGitDiffMessage = {
-  type: 'applyGitDiff';
+export type FixApplyEditMessage = {
+  type: 'fixApplyEdit';
   args: {
-    patch: string;
-    filePath: string;
     fixId: string;
   };
 };
@@ -106,7 +104,7 @@ export type SuggestionMessage =
   | OpenBrowserMessage
   | IgnoreIssueMessage
   | GetAutofixDiffsMesssage
-  | ApplyGitDiffMessage
+  | FixApplyEditMessage
   | SetSuggestionMessage
   | GetSuggestionMessage
   | SetLessonMessage

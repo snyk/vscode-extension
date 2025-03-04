@@ -15,9 +15,11 @@ import { IacIssue } from '../issue';
 import { messages } from '../messages/analysis';
 import { IacIssueCommandArg } from './interfaces';
 import { IFolderConfigs } from '../../common/configuration/folderConfigs';
+import { ILog } from '../../common/logger/interfaces';
 
 export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIssueData> {
   constructor(
+    protected readonly logger: ILog,
     protected viewManagerService: IViewManagerService,
     protected contextService: IContextService,
     protected iacService: IProductService<IacIssueData>,
@@ -25,7 +27,7 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     protected languages: IVSCodeLanguages,
     protected readonly folderConfigs: IFolderConfigs,
   ) {
-    super(contextService, iacService, configuration, languages, folderConfigs);
+    super(logger, contextService, iacService, configuration, languages, folderConfigs);
   }
 
   getRootChildren(): TreeNode[] {

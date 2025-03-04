@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 /// <reference lib="dom" />
@@ -74,11 +75,9 @@ type GetSuggestionMessage = {
   type: 'get';
 };
 
-type ApplyGitDiffMessage = {
-  type: 'applyGitDiff';
+type FixApplyEditMessage = {
+  type: 'fixApplyEdit';
   args: {
-    patch: string;
-    filePath: string;
     fixId: string;
   };
 };
@@ -104,7 +103,7 @@ type SuggestionMessage =
   | SetSuggestionMessage
   | GetSuggestionMessage
   | GetAutofixDiffsMesssage
-  | ApplyGitDiffMessage
+  | FixApplyEditMessage
   | SetAutofixDiffsMessage
   | SetAutofixErrorMessage;
 

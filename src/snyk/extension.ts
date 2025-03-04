@@ -78,7 +78,7 @@ import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvid
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
-import { CodeIssueData, IacIssueData, OssIssueData } from './common/languageServer/types';
+import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
@@ -87,6 +87,7 @@ import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/glob
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
+import { ProductTreeViewService } from './common/services/productTreeViewService';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -307,6 +308,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.registerCommands(vscodeContext);
 
     const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
+      Logger,
       this.viewManagerService,
       this.contextService,
       this.snykCode,
@@ -316,6 +318,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
+      Logger,
       this.viewManagerService,
       this.contextService,
       this.snykCode,
@@ -335,11 +338,26 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: codeQualityIssueProvider,
     });
 
+    const codeSecurityTreeViewService = new ProductTreeViewService(
+      codeSecurityTree,
+      codeSecurityIssueProvider,
+      this.languageServer,
+      LsScanProduct.Code,
+    );
+    const codeQualityTreeViewService = new ProductTreeViewService(
+      codeQualityTree,
+      codeQualityIssueProvider,
+      this.languageServer,
+      LsScanProduct.Code,
+    );
+
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       vscode.window.registerTreeDataProvider(codeQualityView, codeQualityIssueProvider),
       codeSecurityTree,
       codeQualityTree,
+      codeSecurityTreeViewService,
+      codeQualityTreeViewService,
     );
 
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
@@ -354,6 +372,7 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(codeEnablementTree);
 
     const ossIssueProvider = new OssIssueTreeProvider(
+      Logger,
       this.viewManagerService,
       this.contextService,
       this.ossService,
@@ -372,6 +391,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     const iacIssueProvider = new IacIssueTreeProvider(
+      Logger,
       this.viewManagerService,
       this.contextService,
       this.iacService,
