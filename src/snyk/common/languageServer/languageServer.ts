@@ -23,7 +23,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
+import { ShowIssueDetailTopicParams, CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
@@ -37,6 +37,7 @@ export interface ILanguageServer {
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>;
+  showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>;
 }
 
 export class LanguageServer implements ILanguageServer {
@@ -44,6 +45,7 @@ export class LanguageServer implements ILanguageServer {
   readonly cliReady$ = new ReplaySubject<string>(1);
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
   private geminiIntegrationService: GeminiIntegrationService;
+  readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
 
   constructor(
     private user: User,
@@ -117,7 +119,7 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.configuration, this.user, this.extensionContext),
+      middleware: new LanguageClientMiddleware(this.logger, this.configuration, this.user, this.showIssueDetailTopic$),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789

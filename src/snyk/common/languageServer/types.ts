@@ -151,3 +151,12 @@ export type SummaryMessage = {
     summary: Summary;
   };
 };
+
+export enum SnykURIAction {
+  ShowInDetailPanel = 'showInDetailPanel',
+}
+
+export type ShowIssueDetailTopicParams = {
+  issueId: string;
+  product: LsScanProduct;
+};
