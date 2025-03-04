@@ -1,5 +1,6 @@
 import { IConfiguration } from '../../common/configuration/configuration';
 import { ILog } from '../logger/interfaces';
+import { isEnumStringValueOf } from '../tsUtil';
 import { User } from '../user';
 import type {
   ConfigurationParams,
@@ -61,34 +62,36 @@ export class LanguageClientMiddleware implements Middleware {
       try {
         uri = new URL(params.uri);
       } catch (error) {
-        throw new Error('Invalid URI recieved for window/showDocument');
+        this.logger.debug('Invalid URI received for window/showDocument');
+        return (await next(params, CancellationToken.None)) as ShowDocumentResult;
       }
-      if (uri.protocol === 'snyk:') {
-        // 'snyk://filePath?product=Snyk+Code&issueId=123abc456&action=showInDetailPanel'
-        const action = uri.searchParams.get('action');
-        if (action === SnykURIAction.ShowInDetailPanel) {
-          this.logger.info(
-            `Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`,
-          );
-          const _filePath = uri.pathname;
-          const product = uri.searchParams.get('product');
-          if (product !== LsScanProduct.Code) {
-            throw new Error(`Currently only able to handle showing issues for "${LsScanProduct.Code}"`);
-          }
-          const issueId = uri.searchParams.get('issueId');
-          if (issueId === null || issueId === '') {
-            throw new Error(`Invalid "snyk:" URI recieved (bad issueId)! ${params.uri}`);
-          }
 
-          this.showIssueDetailTopic$.next({
-            product,
-            issueId,
-          });
-
-          return { success: true };
-        }
+      // Looking for 'snyk://filePath?product=Snyk+Code&issueId=123abc456&action=showInDetailPanel'
+      if (uri.protocol !== 'snyk:' || uri.searchParams.get('action') !== SnykURIAction.ShowInDetailPanel) {
+        return (await next(params, CancellationToken.None)) as ShowDocumentResult;
       }
-      return (await next(params, CancellationToken.None)) as ShowDocumentResult;
+
+      this.logger.debug(
+        `Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`,
+      );
+      const _filePath = uri.pathname;
+      const product = uri.searchParams.get('product');
+      if (product === null || !isEnumStringValueOf(LsScanProduct, product)) {
+        this.logger.error(`Invalid "snyk:" URI received (bad or unknown product)! ${params.uri}`);
+        return { success: false };
+      }
+      const issueId = uri.searchParams.get('issueId');
+      if (issueId === null || issueId === '') {
+        this.logger.error(`Invalid "snyk:" URI received (bad issueId)! ${params.uri}`);
+        return { success: false };
+      }
+
+      this.showIssueDetailTopic$.next({
+        product,
+        issueId,
+      });
+
+      return { success: true };
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
