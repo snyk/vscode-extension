@@ -202,7 +202,11 @@ export class GeminiIntegrationService {
     };
 
     function pushIssuesToContext(codeIssues: Issue<CodeIssueData | OssIssueData | IacIssueData>[]) {
-      const issuesString = 'These are '+codeIssues[0].filterableIssueType+' issues that Snyk has found in JSON format: ' + JSON.stringify(codeIssues);
+      const issuesString =
+        'These are ' +
+        codeIssues[0].filterableIssueType +
+        ' issues that Snyk has found in JSON format: ' +
+        JSON.stringify(codeIssues);
       const newContext = {
         id: generateUuid(),
         getText: () => {
