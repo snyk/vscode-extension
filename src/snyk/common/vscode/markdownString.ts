@@ -6,7 +6,7 @@ export interface IMarkdownStringAdapter {
 }
 
 export class MarkdownStringAdapter implements IMarkdownStringAdapter {
-  get(value?: string, supportThemeIcons?: boolean): vscode.MarkdownString {
+  get(value?: string, supportThemeIcons?: boolean): MarkdownString {
     return new vscode.MarkdownString(value, supportThemeIcons);
   }
 }

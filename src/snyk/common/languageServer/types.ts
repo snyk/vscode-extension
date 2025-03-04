@@ -37,8 +37,10 @@ export type Issue<T> = {
   severity: IssueSeverity;
   filePath: string;
   range: Range;
-  additionalData: T;
   isIgnored: boolean;
+  isNew: boolean;
+  filterableIssueType: string;
+  additionalData: T;
 };
 
 export enum IssueSeverity {
@@ -103,7 +105,7 @@ export type OssIssueData = {
   exploit?: string;
 
   CVSSv3?: string;
-  cvssScore?: string;
+  cvssScore?: number;
 
   fixedIn?: Array<string>;
   from: Array<string>;

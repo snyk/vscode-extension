@@ -1,4 +1,12 @@
-import { ChatRequest, ChatResponseStream, CommandDetail, CommandProvider, GeminiCodeAssist } from './geminiApi';
+import {
+  ChatContext,
+  ChatRequest,
+  ChatRequestContext,
+  ChatResponseStream,
+  CommandDetail,
+  CommandProvider,
+  GeminiCodeAssist,
+} from './geminiApi';
 import { ErrorHandler } from '../error/errorHandler';
 import path from 'path';
 import { UriAdapter } from '../vscode/uri';
@@ -22,11 +30,11 @@ import {
   SNYK_NAVIGATE_TO_RANGE,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from '../constants/commands';
-import { integer } from 'vscode-languageclient';
 import { configuration } from '../configuration/instance';
 import { ILog } from '../logger/interfaces';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { Subject } from 'rxjs';
+import { generateUuid } from 'vscode-languageclient/lib/common/utils/uuid';
 
 export class GeminiIntegrationService {
   constructor(
@@ -128,8 +136,8 @@ export class GeminiIntegrationService {
       }
 
       // show
-      const markdown = mdsa.get(this.getIssueMarkDownFromDiagnostics(diagnosticsIssueProvider), true);
-      markdown.isTrusted = true;
+      const markdown = mdsa.get(this.getIssueMarkDownFromDiagnostics(diagnosticsIssueProvider, request.context), true);
+      markdown.isTrusted = { enabledCommands: [SNYK_NAVIGATE_TO_RANGE] };
       markdown.supportHtml = true;
       responseStream.push(markdown);
       responseStream.close();
@@ -137,7 +145,7 @@ export class GeminiIntegrationService {
     };
   }
 
-  private countEnabledProducts(): integer {
+  private countEnabledProducts(): number {
     const enabledProducts = [];
     if (configuration.getFeaturesConfiguration()?.ossEnabled) enabledProducts.push(ScanProduct.OpenSource);
     if (
@@ -150,35 +158,99 @@ export class GeminiIntegrationService {
     return enabledProducts.length;
   }
 
-  private getIssueMarkDownFromDiagnostics(diagnosticsIssueProvider: DiagnosticsIssueProvider<unknown>): string {
+  private toNumericSeverity(i1: Issue<CodeIssueData | OssIssueData | IacIssueData>) {
+    let i1NumSeverity;
+    switch (i1.severity) {
+      case IssueSeverity.Critical:
+        i1NumSeverity = 0;
+        break;
+      case IssueSeverity.High:
+        i1NumSeverity = 1;
+        break;
+      case IssueSeverity.Medium:
+        i1NumSeverity = 2;
+        break;
+      case IssueSeverity.Low:
+        i1NumSeverity = 3;
+        break;
+    }
+    return i1NumSeverity;
+  }
+
+  private getIssueMarkDownFromDiagnostics(
+    diagnosticsIssueProvider: DiagnosticsIssueProvider<unknown>,
+    context: ChatRequestContext,
+  ): string {
     let issueMsg = 'No issues found.';
+
+    const issueComparator = (
+      i1: Issue<CodeIssueData | OssIssueData | IacIssueData>,
+      i2: Issue<CodeIssueData | OssIssueData | IacIssueData>,
+    ) => {
+      const i1NumSeverity = this.toNumericSeverity(i1);
+      const i2NumSeverity = this.toNumericSeverity(i2);
+      const i1Score = this.getScore(i1);
+      const i2Score = this.getScore(i2);
+
+      if (i1NumSeverity < i2NumSeverity) return -1;
+      if (i1NumSeverity > i2NumSeverity) return 1;
+      if (i1Score < i2Score) return 1;
+      if (i1Score > i2Score) return -1;
+      if (i1.title < i2.title) return -1;
+      if (i1.title > i2.title) return 1;
+      return 0;
+    };
+
+    function pushIssuesToContext(codeIssues: Issue<CodeIssueData | OssIssueData | IacIssueData>[]) {
+      const issuesString = 'These are '+codeIssues[0].filterableIssueType+' issues that Snyk has found in JSON format: ' + JSON.stringify(codeIssues);
+      const newContext = {
+        id: generateUuid(),
+        getText: () => {
+          return issuesString;
+        },
+      } as ChatContext;
+      context.push(newContext);
+    }
+
     try {
-      const codeIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(ScanProduct.Code);
-      const ossIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(ScanProduct.OpenSource);
-      const iacIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(ScanProduct.InfrastructureAsCode);
+      const codeIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(ScanProduct.Code) as Issue<CodeIssueData>[];
+      const ossIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(
+        ScanProduct.OpenSource,
+      ) as Issue<OssIssueData>[];
+      const iacIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(
+        ScanProduct.InfrastructureAsCode,
+      ) as Issue<IacIssueData>[];
       if (codeIssues.length > 0 || ossIssues.length > 0 || iacIssues.length > 0) {
         issueMsg = '';
       }
+
       if (codeIssues.length > 0) {
-        issueMsg += '\n\n## Snyk ' + ScanProduct.Code + 'Issues\n';
-        issueMsg += '| Severity | Title | \n';
-        issueMsg += '| :------: | ----- | \n';
+        codeIssues.sort(issueComparator);
+        pushIssuesToContext(codeIssues);
+
+        issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.Code) + ' Issues\n';
+        issueMsg += '| Severity  | Issue                                     | Priority <br> Score | \n';
+        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
         for (const issue of codeIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.Code);
         }
       }
       if (ossIssues.length > 0) {
-        issueMsg += '\n\n## Snyk ' + ScanProduct.OpenSource + 'Issues\n';
-        issueMsg += '| Severity | Title | \n';
-        issueMsg += '| :------: | ----- | \n';
+        ossIssues.sort(issueComparator);
+        pushIssuesToContext(ossIssues);
+        issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.OpenSource) + ' Issues\n';
+        issueMsg += '| Severity  | Issue                                     | CVSS | \n';
+        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
         for (const issue of ossIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.OpenSource);
         }
       }
       if (iacIssues.length > 0) {
-        issueMsg += '\n\n## Snyk ' + ScanProduct.InfrastructureAsCode + 'Issues\n';
-        issueMsg += '| Severity | Title | \n';
-        issueMsg += '| :------: | ----- | \n';
+        iacIssues.sort(issueComparator);
+        pushIssuesToContext(iacIssues);
+        issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.InfrastructureAsCode) + ' Issues\n';
+        issueMsg += '| Severity  | Issue                                     | Priority <br> Score | \n';
+        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
         for (const issue of iacIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.InfrastructureAsCode);
         }
@@ -189,7 +261,10 @@ export class GeminiIntegrationService {
     return issueMsg;
   }
 
-  private enrichMessageWithIssueData(issue: Issue<unknown>, scanProduct: ScanProduct) {
+  private enrichMessageWithIssueData(
+    issue: Issue<CodeIssueData | OssIssueData | IacIssueData>,
+    scanProduct: ScanProduct,
+  ) {
     const baseName = path.basename(issue.filePath);
     const snykUri =
       'snyk://' +
@@ -202,17 +277,36 @@ export class GeminiIntegrationService {
 
     const params = encodeURI(JSON.stringify([snykUri, issue.range]));
     const commandURI = new UriAdapter().parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
-    const openLink = '[' + issue.title + `](${commandURI})`;
-    // const openLink = issue.title;
-    // todo nicer format
+    const openLink = `[**` + issue.title + `**](${commandURI})`;
+    const score = this.getScore(issue);
+
     let emoji: string;
-    if (issue.severity == IssueSeverity.Medium) {
-      emoji = '🟠';
-    } else if (issue.severity == IssueSeverity.High || issue.severity == IssueSeverity.Critical) {
+    if (issue.severity == IssueSeverity.Critical) {
       emoji = '🔴';
+    } else if (issue.severity == IssueSeverity.High) {
+      emoji = '🟠';
+    } else if (issue.severity == IssueSeverity.Medium) {
+      emoji = '🟡';
     } else {
       emoji = '⚪️';
     }
-    return '|   ' + emoji + ' | ' + openLink + '(`' + baseName + '`)' + ' | \n';
+    return `| ${emoji} | ${openLink} <br> ${baseName} | ${score} |\n`;
+  }
+
+  private getScore(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): number {
+    let score: number = 0;
+    switch (issue.filterableIssueType) {
+      case 'Code Quality':
+      case 'Code Security':
+        score = (issue.additionalData as CodeIssueData).priorityScore;
+        break;
+      case 'Open Source':
+        score = (issue.additionalData as OssIssueData).cvssScore ?? 0;
+        break;
+      default:
+        score = Math.abs(this.toNumericSeverity(issue) - 100);
+        break;
+    }
+    return score;
   }
 }
