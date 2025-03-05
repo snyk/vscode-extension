@@ -50,7 +50,7 @@ import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter } from './common/vscode/codeAction';
 import { vsCodeCommands } from './common/vscode/commands';
-import { extensionContext } from './common/vscode/extensionContext';
+import { extensionContext, IExtensionRetriever } from './common/vscode/extensionContext';
 import { LanguageClientAdapter } from './common/vscode/languageClient';
 import { vsCodeLanguages } from './common/vscode/languages';
 import SecretStorageAdapter from './common/vscode/secretStorage';
@@ -88,6 +88,8 @@ import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
+import { Extension } from './common/vscode/extension';
+import { MarkdownStringAdapter } from './common/vscode/markdownString';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -214,8 +216,17 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
-      this.context,
+      {
+        extensionPath: extensionContext.extensionPath,
+        getExtension(id: string): Extension | undefined {
+          return vscode.extensions.all.find(ext => ext.id === id);
+        },
+      } as IExtensionRetriever,
       this.summaryProviderService,
+      new UriAdapter(),
+      new MarkdownStringAdapter(),
+      vsCodeCommands,
+      new DiagnosticsIssueProvider(),
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -385,9 +396,17 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: ossIssueProvider,
     });
 
+    const ossSecurityTreeViewService = new ProductTreeViewService(
+      ossSecurityTree,
+      ossIssueProvider,
+      this.languageServer,
+      LsScanProduct.OpenSource,
+    );
+
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
+      ossSecurityTreeViewService,
     );
 
     const iacIssueProvider = new IacIssueTreeProvider(
@@ -404,9 +423,17 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: iacIssueProvider,
     });
 
+    const iacSecurityTreeViewService = new ProductTreeViewService(
+      iacSecurityTree,
+      iacIssueProvider,
+      this.languageServer,
+      LsScanProduct.InfrastructureAsCode,
+    );
+
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_IAC, iacIssueProvider),
       iacSecurityTree,
+      iacSecurityTreeViewService,
     );
 
     // Fill the view container to expose views for tests
@@ -465,10 +492,6 @@ class SnykExtension extends SnykLib implements IExtension {
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
 
-    // Fetch feature flag to determine whether to use the new LSP-based rendering.
-
-    // initialize contexts
-    await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
     this.sendPluginInstalledEvent();
 
     // Actually start analysis
