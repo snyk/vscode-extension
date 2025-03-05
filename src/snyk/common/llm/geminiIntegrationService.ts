@@ -36,10 +36,10 @@ import { IConfiguration } from '../configuration/configuration';
 import { readFileSync } from 'fs';
 
 export class GeminiIntegrationService {
-  private readonly criticalBase64Image: string;
-  private readonly highBase64Image: string;
-  private readonly mediumBase64Image: string;
-  private readonly lowBase64Image: string;
+  private criticalBase64Image: string;
+  private highBase64Image: string;
+  private mediumBase64Image: string;
+  private lowBase64Image: string;
 
   constructor(
     private readonly logger: ILog,
@@ -50,7 +50,14 @@ export class GeminiIntegrationService {
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
-  ) {
+  ) {}
+
+  private getBase64FromFilePath(filepath: string): string {
+    const fileContents = readFileSync(filepath);
+    return fileContents.toString('base64');
+  }
+
+  private initImages() {
     const basePath = path.join(this.extensionContext.extensionPath, 'media/images/readme');
     this.criticalBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-critical.png'));
     this.highBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-high.png'));
@@ -58,23 +65,18 @@ export class GeminiIntegrationService {
     this.lowBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-low.png'));
   }
 
-  private getBase64FromFilePath(filepath: string): string {
-    const fileContents = readFileSync(filepath);
-    return fileContents.toString('base64');
-  }
-
   async connectGeminiToMCPServer() {
     try {
       const geminiCodeAssistExtension = this.extensionContext.getExtension('google.geminicodeassist');
       const isInstalled = !!geminiCodeAssistExtension;
-
       if (!isInstalled) {
         return Promise.resolve();
       }
+
+      this.initImages();
       this.logger.info('found Gemini Code Assist extension');
 
       this.logger.debug('waiting for activation of gca');
-
       while (geminiCodeAssistExtension && !geminiCodeAssistExtension.isActive) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, 100));
