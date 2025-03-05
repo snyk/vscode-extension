@@ -107,7 +107,7 @@ export class GeminiIntegrationService {
   private getSuggestedPromptProvider() {
     const suggestedPromptProvider: SuggestedPromptProvider = {
       provideSuggestedPrompts: () => {
-        return ['/scan', '/show', '/scan for new', '/show new'];
+        return ['/scan', '/show', '/scan for new', '/show new', '/scan all', '/show all'];
       },
     };
     return suggestedPromptProvider;
@@ -123,11 +123,9 @@ export class GeminiIntegrationService {
       }
 
       const mdsa = new MarkdownStringAdapter();
-      // delta scan?
-      if (request.prompt.fullPrompt().includes('new') && !configuration.getDeltaFindingsEnabled()) {
-        await configuration.setDeltaFindingsEnabled(true);
-        responseStream.push(mdsa.get('Enabled net-new issues feature...'));
-      }
+
+      await this.handleDelta(request, responseStream, mdsa);
+
       const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
 
       if (request.prompt.fullPrompt().includes('/scan')) {
@@ -160,6 +158,20 @@ export class GeminiIntegrationService {
       responseStream.close();
       return Promise.resolve();
     };
+  }
+
+  private async handleDelta(request: ChatRequest, responseStream: ChatResponseStream, mdsa: MarkdownStringAdapter) {
+    if (request.prompt.fullPrompt().includes('new') && !configuration.getDeltaFindingsEnabled()) {
+      await configuration.setDeltaFindingsEnabled(true);
+      responseStream.push(mdsa.get('Enabled net-new issues feature...'));
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    if (request.prompt.fullPrompt().includes('all') && configuration.getDeltaFindingsEnabled()) {
+      await configuration.setDeltaFindingsEnabled(false);
+      responseStream.push(mdsa.get('Disabled net-new issues feature...'));
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
   }
 
   private countEnabledProducts(): number {
