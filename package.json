@@ -15,7 +15,7 @@
     "url": "https://support.snyk.io/"
   },
   "engines": {
-    "vscode": "^1.58.0"
+    "vscode": "^1.76.0"
   },
   "galleryBanner": {
     "color": "#283e55",

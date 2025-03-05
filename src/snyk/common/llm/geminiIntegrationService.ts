@@ -6,6 +6,7 @@ import {
   CommandDetail,
   CommandProvider,
   GeminiCodeAssist,
+  SuggestedPromptProvider,
 } from './geminiApi';
 import { ErrorHandler } from '../error/errorHandler';
 import path from 'path';
@@ -96,9 +97,20 @@ export class GeminiIntegrationService {
       } as CommandProvider;
 
       geminiTool.registerCommandProvider(commandProvider);
+      const suggestedPromptProvider = this.getSuggestedPromptProvider();
+      geminiTool.registerSuggestedPromptProvider(suggestedPromptProvider);
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
+  }
+
+  private getSuggestedPromptProvider() {
+    const suggestedPromptProvider: SuggestedPromptProvider = {
+      provideSuggestedPrompts: () => {
+        return ['/scan', '/show', '/scan for new', '/show new'];
+      },
+    };
+    return suggestedPromptProvider;
   }
 
   private getChatRequestHandler() {
@@ -110,8 +122,13 @@ export class GeminiIntegrationService {
         return Promise.resolve();
       }
 
-      const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
       const mdsa = new MarkdownStringAdapter();
+      // delta scan?
+      if (request.prompt.fullPrompt().includes('new') && !configuration.getDeltaFindingsEnabled()) {
+        await configuration.setDeltaFindingsEnabled(true);
+        responseStream.push(mdsa.get('Enabled net-new issues feature...'));
+      }
+      const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
 
       if (request.prompt.fullPrompt().includes('/scan')) {
         responseStream.push(mdsa.get('Scanning workspace with Snyk...'));
