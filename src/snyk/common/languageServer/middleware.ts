@@ -1,4 +1,4 @@
-import { IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import { ILog } from '../logger/interfaces';
 import { isEnumStringValueOf } from '../tsUtil';
 import { User } from '../user';
