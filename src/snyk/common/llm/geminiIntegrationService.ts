@@ -10,11 +10,11 @@ import {
 } from './geminiApi';
 import { ErrorHandler } from '../error/errorHandler';
 import path from 'path';
-import { UriAdapter } from '../vscode/uri';
+import { IUriAdapter } from '../vscode/uri';
 import { SNYK_NAME, SNYK_NAME_EXTENSION } from '../constants/general';
 import { CancellationToken } from '../vscode/types';
-import { DiagnosticsIssueProvider, productToLsProduct } from '../services/diagnosticsService';
-import { MarkdownStringAdapter } from '../vscode/markdownString';
+import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { IMarkdownStringAdapter } from '../vscode/markdownString';
 import {
   CodeIssueData,
   IacIssueData,
@@ -25,23 +25,25 @@ import {
   ScanProduct,
   ScanStatus,
 } from '../languageServer/types';
-import { vsCodeCommands } from '../vscode/commands';
-import {
-  SNYK_EXECUTE_MCP_TOOL_COMMAND,
-  SNYK_NAVIGATE_TO_RANGE,
-  SNYK_WORKSPACE_SCAN_COMMAND,
-} from '../constants/commands';
-import { configuration } from '../configuration/instance';
+import { IVSCodeCommands } from '../vscode/commands';
+import { SNYK_NAVIGATE_TO_RANGE, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
-import { ExtensionContext } from '../vscode/extensionContext';
 import { Subject } from 'rxjs';
 import { generateUuid } from 'vscode-languageclient/lib/common/utils/uuid';
+import { IExtensionRetriever } from '../vscode/extensionContext';
+import { productToLsProduct } from '../services/mappings';
+import { IConfiguration } from '../configuration/configuration';
 
 export class GeminiIntegrationService {
   constructor(
     private readonly logger: ILog,
-    private readonly extensionContext: ExtensionContext,
+    private readonly configuration: IConfiguration,
+    private readonly extensionContext: IExtensionRetriever,
     private readonly scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>,
+    private readonly uriAdapter: IUriAdapter,
+    private readonly markdownAdapter: IMarkdownStringAdapter,
+    private readonly codeCommands: IVSCodeCommands,
+    private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
   ) {}
 
   async connectGeminiToMCPServer() {
@@ -73,7 +75,7 @@ export class GeminiIntegrationService {
     this.logger.info('Registering with Gemini Code Assist');
     try {
       const iconPath = path.join(this.extensionContext.extensionPath, 'media/images/readme/snyk_extension_icon.png');
-      const iconURI = new UriAdapter().file(iconPath);
+      const iconURI = this.uriAdapter.file(iconPath);
       const geminiTool = geminiCodeAssist.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
 
       geminiTool.registerChatHandler(this.getChatRequestHandler());
@@ -122,28 +124,24 @@ export class GeminiIntegrationService {
         return Promise.resolve();
       }
 
-      const mdsa = new MarkdownStringAdapter();
-
-      await this.handleDelta(request, responseStream, mdsa);
-
-      const diagnosticsIssueProvider = new DiagnosticsIssueProvider();
+      await this.handleDelta(request, responseStream);
 
       if (request.prompt.fullPrompt().includes('/scan')) {
-        responseStream.push(mdsa.get('Scanning workspace with Snyk...'));
+        responseStream.push(this.markdownAdapter.get('Scanning workspace with Snyk...'));
 
         let openScansCount = this.countEnabledProducts();
 
         // subscribe to snyk scan topic to get issue data
         this.scan$.subscribe((scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
           const msg = 'Scan status for ' + scan.folderPath + ': ' + scan.status + '.';
-          responseStream.push(mdsa.get(msg));
+          responseStream.push(this.markdownAdapter.get(msg));
 
           if (scan.status == ScanStatus.Success || scan.status == ScanStatus.Error) {
             openScansCount--;
           }
         });
 
-        await vsCodeCommands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
+        await this.codeCommands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         while (openScansCount > 0) {
           // eslint-disable-next-line no-await-in-loop
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -151,7 +149,7 @@ export class GeminiIntegrationService {
       }
 
       // show
-      const markdown = mdsa.get(this.getIssueMarkDownFromDiagnostics(diagnosticsIssueProvider, request.context), true);
+      const markdown = this.markdownAdapter.get(this.getIssueMarkDownFromDiagnostics(request.context), true);
       markdown.isTrusted = { enabledCommands: [SNYK_NAVIGATE_TO_RANGE] };
       markdown.supportHtml = true;
       responseStream.push(markdown);
@@ -160,30 +158,31 @@ export class GeminiIntegrationService {
     };
   }
 
-  private async handleDelta(request: ChatRequest, responseStream: ChatResponseStream, mdsa: MarkdownStringAdapter) {
-    if (request.prompt.fullPrompt().includes('new') && !configuration.getDeltaFindingsEnabled()) {
-      await configuration.setDeltaFindingsEnabled(true);
-      responseStream.push(mdsa.get('Enabled net-new issues feature...'));
+  private async handleDelta(request: ChatRequest, responseStream: ChatResponseStream) {
+    if (request.prompt.fullPrompt().includes('new') && !this.configuration.getDeltaFindingsEnabled()) {
+      await this.configuration.setDeltaFindingsEnabled(true);
+      responseStream.push(this.markdownAdapter.get('Enabled net-new issues feature...'));
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    if (request.prompt.fullPrompt().includes('all') && configuration.getDeltaFindingsEnabled()) {
-      await configuration.setDeltaFindingsEnabled(false);
-      responseStream.push(mdsa.get('Disabled net-new issues feature...'));
+    if (request.prompt.fullPrompt().includes('all') && this.configuration.getDeltaFindingsEnabled()) {
+      await this.configuration.setDeltaFindingsEnabled(false);
+      responseStream.push(this.markdownAdapter.get('Disabled net-new issues feature...'));
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
   private countEnabledProducts(): number {
     const enabledProducts = [];
-    if (configuration.getFeaturesConfiguration()?.ossEnabled) enabledProducts.push(ScanProduct.OpenSource);
+    if (this.configuration.getFeaturesConfiguration()?.ossEnabled) enabledProducts.push(ScanProduct.OpenSource);
     if (
-      configuration.getFeaturesConfiguration()?.codeSecurityEnabled ||
-      configuration.getFeaturesConfiguration()?.codeQualityEnabled
+      this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled ||
+      this.configuration.getFeaturesConfiguration()?.codeQualityEnabled
     )
       enabledProducts.push(ScanProduct.Code);
 
-    if (configuration.getFeaturesConfiguration()?.iacEnabled) enabledProducts.push(ScanProduct.InfrastructureAsCode);
+    if (this.configuration.getFeaturesConfiguration()?.iacEnabled)
+      enabledProducts.push(ScanProduct.InfrastructureAsCode);
     return enabledProducts.length;
   }
 
@@ -206,10 +205,7 @@ export class GeminiIntegrationService {
     return i1NumSeverity;
   }
 
-  private getIssueMarkDownFromDiagnostics(
-    diagnosticsIssueProvider: DiagnosticsIssueProvider<unknown>,
-    context: ChatRequestContext,
-  ): string {
+  private getIssueMarkDownFromDiagnostics(context: ChatRequestContext): string {
     let issueMsg = 'No issues found.';
 
     const issueComparator = (
@@ -244,11 +240,11 @@ export class GeminiIntegrationService {
     }
 
     try {
-      const codeIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(ScanProduct.Code) as Issue<CodeIssueData>[];
-      const ossIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(
+      const codeIssues = this.diagnosticsProvider.getIssuesFromDiagnostics(ScanProduct.Code) as Issue<CodeIssueData>[];
+      const ossIssues = this.diagnosticsProvider.getIssuesFromDiagnostics(
         ScanProduct.OpenSource,
       ) as Issue<OssIssueData>[];
-      const iacIssues = diagnosticsIssueProvider.getIssuesFromDiagnostics(
+      const iacIssues = this.diagnosticsProvider.getIssuesFromDiagnostics(
         ScanProduct.InfrastructureAsCode,
       ) as Issue<IacIssueData>[];
       if (codeIssues.length > 0 || ossIssues.length > 0 || iacIssues.length > 0) {
@@ -307,7 +303,7 @@ export class GeminiIntegrationService {
       '&action=showInDetailPanel';
 
     const params = encodeURI(JSON.stringify([snykUri, issue.range]));
-    const commandURI = new UriAdapter().parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
+    const commandURI = this.uriAdapter.parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
     const titleLink = `[**` + issue.title + `**](${commandURI})`;
     const score = this.getScore(issue);
 
@@ -325,7 +321,7 @@ export class GeminiIntegrationService {
   }
 
   private getScore(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): number {
-    let score: number = 0;
+    let score: number;
     switch (issue.filterableIssueType) {
       case 'Code Quality':
       case 'Code Security':

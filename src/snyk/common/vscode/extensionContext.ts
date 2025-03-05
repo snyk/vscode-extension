@@ -1,4 +1,10 @@
 import * as vscode from 'vscode';
+import { Extension } from './extension';
+
+export interface IExtensionRetriever {
+  getExtension(id: string): Extension | undefined;
+  extensionPath: string;
+}
 
 /**
  * A wrapper class for the vscode.ExtensionContext to provide centralised access to a collection of utilities private to the extension.
@@ -41,10 +47,6 @@ export class ExtensionContext {
   private acquireContext(): vscode.ExtensionContext {
     if (!this.context) throw new Error('VS Code extension context not set.');
     return this.context;
-  }
-
-  getExtension(id: string): vscode.Extension<any> | undefined {
-    return vscode.extensions.all.find(ext => ext.id === id);
   }
 }
 

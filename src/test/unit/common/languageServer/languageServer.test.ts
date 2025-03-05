@@ -17,8 +17,12 @@ import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { ExtensionContext, IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
+import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
+import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -133,8 +137,12 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
-      extensionContextMock,
+      {} as IExtensionRetriever,
       {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      {} as IVSCodeCommands,
+      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -184,8 +192,12 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
-      extensionContextMock,
+      {} as IExtensionRetriever,
       {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      {} as IVSCodeCommands,
+      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -211,8 +223,12 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        extensionContextMock,
+        {} as IExtensionRetriever,
         {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        {} as IVSCodeCommands,
+        {} as IDiagnosticsIssueProvider<unknown>,
       );
     });
 
@@ -259,8 +275,12 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        extensionContextMock,
+        {} as IExtensionRetriever,
         {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        {} as IVSCodeCommands,
+        {} as IDiagnosticsIssueProvider<unknown>,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

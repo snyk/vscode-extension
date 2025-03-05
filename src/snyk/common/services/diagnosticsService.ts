@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Issue, LsScanProduct, ScanProduct } from '../languageServer/types';
+import { productToLsProduct } from './mappings';
 
 // This is a workaround until the LanguageClient package adds data to the Diagnostic type
 // according to https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic
@@ -27,18 +28,5 @@ export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T>
     });
     const issues = filteredDiagnostics.map(diagnostic => diagnostic.data);
     return issues;
-  }
-}
-
-export function productToLsProduct(product: ScanProduct): LsScanProduct {
-  switch (product) {
-    case ScanProduct.Code:
-      return LsScanProduct.Code;
-    case ScanProduct.InfrastructureAsCode:
-      return LsScanProduct.InfrastructureAsCode;
-    case ScanProduct.OpenSource:
-      return LsScanProduct.OpenSource;
-    default:
-      return LsScanProduct.Unknown;
   }
 }

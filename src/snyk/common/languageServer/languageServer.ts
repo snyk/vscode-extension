@@ -23,10 +23,14 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { ShowIssueDetailTopicParams, CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
-import { ExtensionContext } from '../vscode/extensionContext';
+import { CodeIssueData, IacIssueData, OssIssueData, Scan, ShowIssueDetailTopicParams } from './types';
+import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
+import { IUriAdapter } from '../vscode/uri';
+import { IMarkdownStringAdapter } from '../vscode/markdownString';
+import { IVSCodeCommands } from '../vscode/commands';
+import { DiagnosticsIssueProvider, IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -56,11 +60,24 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
-    private extensionContext: ExtensionContext,
+    private extensionRetriever: IExtensionRetriever,
     private summaryProvider: ISummaryProviderService,
+    private readonly uriAdapter: IUriAdapter,
+    private readonly markdownAdapter: IMarkdownStringAdapter,
+    private readonly codeCommands: IVSCodeCommands,
+    private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
   ) {
     this.downloadService = downloadService;
-    this.geminiIntegrationService = new GeminiIntegrationService(this.logger, this.extensionContext, this.scan$);
+    this.geminiIntegrationService = new GeminiIntegrationService(
+      this.logger,
+      this.configuration,
+      this.extensionRetriever,
+      this.scan$,
+      this.uriAdapter,
+      this.markdownAdapter,
+      this.codeCommands,
+      this.diagnosticsProvider,
+    );
   }
 
   // Starts the language server and the client. LS will be downloaded if missing.
