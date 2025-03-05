@@ -330,16 +330,16 @@ export class GeminiIntegrationService {
 
     switch (issue.severity) {
       case IssueSeverity.Critical:
-        emoji = `<img src="data:image/png;base64,${this.criticalBase64Image}" alt="Critical"></a>`;
+        emoji = `<img src="data:image/png;base64,${this.criticalBase64Image}" alt="Critical">`;
         break;
       case IssueSeverity.High:
-        emoji = `<img src="data:image/png;base64,${this.highBase64Image}" alt="High"></a>`;
+        emoji = `<img src="data:image/png;base64,${this.highBase64Image}" alt="High">`;
         break;
       case IssueSeverity.Medium:
-        emoji = `<img src="data:image/png;base64,${this.mediumBase64Image}" alt="Medium"></a>`;
+        emoji = `<img src="data:image/png;base64,${this.mediumBase64Image}" alt="Medium">`;
         break;
       default:
-        emoji = `<img src="data:image/png;base64,${this.lowBase64Image}" alt="Low"></a>`;
+        emoji = `<img src="data:image/png;base64,${this.lowBase64Image}" alt="Low">`;
         break;
     }
     return `| ${emoji} | ${titleLink} <br> ${baseName} | ${score} |\n`;
