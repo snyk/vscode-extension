@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Issue, LsScanProduct, ScanProduct } from '../languageServer/types';
+import { Issue, ScanProduct } from '../languageServer/types';
 import { productToLsProduct } from './mappings';
 
 // This is a workaround until the LanguageClient package adds data to the Diagnostic type
@@ -26,7 +26,6 @@ export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T>
           diagnostic.source === diagnosticsSource && diagnostic.hasOwnProperty('data'),
       );
     });
-    const issues = filteredDiagnostics.map(diagnostic => diagnostic.data);
-    return issues;
+    return filteredDiagnostics.map(diagnostic => diagnostic.data);
   }
 }

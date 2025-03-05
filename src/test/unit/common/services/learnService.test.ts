@@ -53,7 +53,7 @@ suite('LearnService', () => {
       filePath: 'not used',
       isIgnored: false,
       isNew: false,
-      filterableIssueType: 'Code Security'
+      filterableIssueType: 'Code Security',
     };
 
     await learnService.getCodeLesson(issue);

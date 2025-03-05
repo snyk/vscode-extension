@@ -30,7 +30,7 @@ import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
 import { IUriAdapter } from '../vscode/uri';
 import { IMarkdownStringAdapter } from '../vscode/markdownString';
 import { IVSCodeCommands } from '../vscode/commands';
-import { DiagnosticsIssueProvider, IDiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
