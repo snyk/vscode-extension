@@ -58,11 +58,11 @@ export class GeminiIntegrationService {
   }
 
   private initImages() {
-    const basePath = path.join(this.extensionContext.extensionPath, 'media/images/readme');
-    this.criticalBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-critical.png'));
-    this.highBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-high.png'));
-    this.mediumBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-medium.png'));
-    this.lowBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-low.png'));
+    const basePath = path.join(this.extensionContext.extensionPath, 'media/images');
+    this.criticalBase64Image = this.getBase64FromFilePath(path.join(basePath, 'dark-critical-severity.svg'));
+    this.highBase64Image = this.getBase64FromFilePath(path.join(basePath, 'dark-high-severity.svg'));
+    this.mediumBase64Image = this.getBase64FromFilePath(path.join(basePath, 'dark-medium-severity.svg'));
+    this.lowBase64Image = this.getBase64FromFilePath(path.join(basePath, 'dark-low-severity.svg'));
   }
 
   async connectGeminiToMCPServer() {
@@ -275,8 +275,8 @@ export class GeminiIntegrationService {
         pushIssuesToContext(codeIssues);
 
         issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.Code) + ' Issues\n';
-        issueMsg += '| Severity  | Issue                                     | Priority <br> Score | \n';
-        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
+        issueMsg += '|Sev  |⚡️    | Issue                                             | Score | \n';
+        issueMsg += '|-----|------|:------------------------------------------|------:| \n';
         for (const issue of codeIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.Code);
         }
@@ -285,8 +285,8 @@ export class GeminiIntegrationService {
         ossIssues.sort(issueComparator);
         pushIssuesToContext(ossIssues);
         issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.OpenSource) + ' Issues\n';
-        issueMsg += '| Severity  | Issue                                     | CVSS | \n';
-        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
+        issueMsg += '|Sev  |⚡️    | Issue                                             | Score | \n';
+        issueMsg += '|-----|------|:------------------------------------------|------:| \n';
         for (const issue of ossIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.OpenSource);
         }
@@ -295,8 +295,8 @@ export class GeminiIntegrationService {
         iacIssues.sort(issueComparator);
         pushIssuesToContext(iacIssues);
         issueMsg += '\n\n## ' + productToLsProduct(ScanProduct.InfrastructureAsCode) + ' Issues\n';
-        issueMsg += '| Severity  | Issue                                     | Priority <br> Score | \n';
-        issueMsg += '|-----------|:------------------------------------------|--------------:| \n';
+        issueMsg += '|Sev  |⚡️    | Issue                                             | Score | \n';
+        issueMsg += '|-----|------|:------------------------------------------|------:| \n';
         for (const issue of iacIssues) {
           issueMsg += this.enrichMessageWithIssueData(issue, ScanProduct.InfrastructureAsCode);
         }
@@ -323,26 +323,46 @@ export class GeminiIntegrationService {
       '&action=showInDetailPanel';
     const params = encodeURI(JSON.stringify([snykUri, issue.range]));
     const commandURI = this.uriAdapter.parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
-    const titleLink = `[**` + issue.title + `**](${commandURI})`;
+    const titleLink = `[**` + issue.title.split(':')[0] + `**](${commandURI})`;
 
     const score = this.getScore(issue);
     let emoji: string;
 
     switch (issue.severity) {
       case IssueSeverity.Critical:
-        emoji = `<img src="data:image/png;base64,${this.criticalBase64Image}" alt="Critical">`;
+        emoji = `<img src="data:image/svg+xml;base64,${this.criticalBase64Image}" alt="Critical">`;
         break;
       case IssueSeverity.High:
-        emoji = `<img src="data:image/png;base64,${this.highBase64Image}" alt="High">`;
+        emoji = `<img src="data:image/svg+xml;base64,${this.highBase64Image}" alt="High">`;
         break;
       case IssueSeverity.Medium:
-        emoji = `<img src="data:image/png;base64,${this.mediumBase64Image}" alt="Medium">`;
+        emoji = `<img src="data:image/svg+xml;base64,${this.mediumBase64Image}" alt="Medium">`;
         break;
       default:
-        emoji = `<img src="data:image/png;base64,${this.lowBase64Image}" alt="Low">`;
+        emoji = `<img src="data:image/svg+xml;base64,${this.lowBase64Image}" alt="Low">`;
         break;
     }
-    return `| ${emoji} | ${titleLink} <br> ${baseName} | ${score} |\n`;
+    const line = issue.range.start.line + 1;
+    const bolt = `${this.isFixable(issue) ? '⚡️' : ''}`;
+
+    return `| ${emoji} | ${bolt} | ${titleLink} <br> <small>${baseName}#L${line}</small>| \`${score}\` |\n`;
+  }
+
+  private isFixable(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): boolean {
+    let fixable: boolean;
+    switch (issue.filterableIssueType) {
+      case 'Code Quality':
+      case 'Code Security':
+        fixable = (issue.additionalData as CodeIssueData).hasAIFix;
+        break;
+      case 'Open Source':
+        fixable = (issue.additionalData as OssIssueData).isUpgradable;
+        break;
+      default:
+        fixable = false;
+        break;
+    }
+    return fixable;
   }
 
   private getScore(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): number {
