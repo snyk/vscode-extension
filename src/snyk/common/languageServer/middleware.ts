@@ -7,14 +7,14 @@ import type {
   ConfigurationRequestHandlerSignature,
   Middleware,
   ResponseError,
-  WorkspaceMiddleware,
   ShowDocumentParams,
   ShowDocumentResult,
   WindowMiddleware,
+  WorkspaceMiddleware,
 } from '../vscode/types';
 import { CancellationToken } from '../vscode/types';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from './types';
+import { LsScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {

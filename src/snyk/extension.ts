@@ -396,9 +396,17 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: ossIssueProvider,
     });
 
+    const ossSecurityTreeViewService = new ProductTreeViewService(
+      ossSecurityTree,
+      ossIssueProvider,
+      this.languageServer,
+      LsScanProduct.OpenSource,
+    );
+
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
       ossSecurityTree,
+      ossSecurityTreeViewService,
     );
 
     const iacIssueProvider = new IacIssueTreeProvider(
@@ -415,9 +423,17 @@ class SnykExtension extends SnykLib implements IExtension {
       treeDataProvider: iacIssueProvider,
     });
 
+    const iacSecurityTreeViewService = new ProductTreeViewService(
+      iacSecurityTree,
+      iacIssueProvider,
+      this.languageServer,
+      LsScanProduct.InfrastructureAsCode,
+    );
+
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_IAC, iacIssueProvider),
       iacSecurityTree,
+      iacSecurityTreeViewService,
     );
 
     // Fill the view container to expose views for tests

@@ -33,8 +33,14 @@ import { generateUuid } from 'vscode-languageclient/lib/common/utils/uuid';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { productToLsProduct } from '../services/mappings';
 import { IConfiguration } from '../configuration/configuration';
+import { readFileSync } from 'fs';
 
 export class GeminiIntegrationService {
+  private readonly criticalBase64Image: string;
+  private readonly highBase64Image: string;
+  private readonly mediumBase64Image: string;
+  private readonly lowBase64Image: string;
+
   constructor(
     private readonly logger: ILog,
     private readonly configuration: IConfiguration,
@@ -44,7 +50,18 @@ export class GeminiIntegrationService {
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
-  ) {}
+  ) {
+    const basePath = path.join(this.extensionContext.extensionPath, 'media/images/readme');
+    this.criticalBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-critical.png'));
+    this.highBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-high.png'));
+    this.mediumBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-medium.png'));
+    this.lowBase64Image = this.getBase64FromFilePath(path.join(basePath, 'icon-low.png'));
+  }
+
+  private getBase64FromFilePath(filepath: string): string {
+    const fileContents = readFileSync(filepath);
+    return fileContents.toString('base64');
+  }
 
   async connectGeminiToMCPServer() {
     try {
@@ -293,6 +310,7 @@ export class GeminiIntegrationService {
     scanProduct: ScanProduct,
   ) {
     const baseName = path.basename(issue.filePath);
+
     const snykUri =
       'snyk://' +
       encodeURI(issue.filePath) +
@@ -301,21 +319,26 @@ export class GeminiIntegrationService {
       '&issueId=' +
       encodeURI(issue.id) +
       '&action=showInDetailPanel';
-
     const params = encodeURI(JSON.stringify([snykUri, issue.range]));
     const commandURI = this.uriAdapter.parse(`command:${SNYK_NAVIGATE_TO_RANGE}?${params}`);
     const titleLink = `[**` + issue.title + `**](${commandURI})`;
-    const score = this.getScore(issue);
 
+    const score = this.getScore(issue);
     let emoji: string;
-    if (issue.severity == IssueSeverity.Critical) {
-      emoji = '🔴';
-    } else if (issue.severity == IssueSeverity.High) {
-      emoji = '🟠';
-    } else if (issue.severity == IssueSeverity.Medium) {
-      emoji = '🟡';
-    } else {
-      emoji = '⚪️';
+
+    switch (issue.severity) {
+      case IssueSeverity.Critical:
+        emoji = `<img src="data:image/png;base64,${this.criticalBase64Image}" alt="Critical"></a>`;
+        break;
+      case IssueSeverity.High:
+        emoji = `<img src="data:image/png;base64,${this.highBase64Image}" alt="High"></a>`;
+        break;
+      case IssueSeverity.Medium:
+        emoji = `<img src="data:image/png;base64,${this.mediumBase64Image}" alt="Medium"></a>`;
+        break;
+      default:
+        emoji = `<img src="data:image/png;base64,${this.lowBase64Image}" alt="Low"></a>`;
+        break;
     }
     return `| ${emoji} | ${titleLink} <br> ${baseName} | ${score} |\n`;
   }

@@ -5,6 +5,8 @@ import { ILanguageServer } from '../languageServer/languageServer';
 import { LsScanProduct } from '../languageServer/types';
 import { Subscription } from 'rxjs';
 import { Disposable } from '../vscode/types';
+import { IVSCodeCommands } from '../vscode/commands';
+import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 
 export class ProductTreeViewService<T> implements Disposable {
   protected lsShowIssueDetailSubscription: Subscription;
