@@ -74,7 +74,6 @@ export class LanguageClientMiddleware implements Middleware {
       this.logger.debug(
         `Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`,
       );
-      const _filePath = uri.pathname;
       const product = uri.searchParams.get('product');
       if (product === null || !isEnumStringValueOf(LsScanProduct, product)) {
         this.logger.error(`Invalid "snyk:" URI received (bad or unknown product)! ${params.uri}`);
