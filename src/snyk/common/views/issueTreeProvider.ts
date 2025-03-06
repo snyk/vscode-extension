@@ -20,7 +20,7 @@ interface ISeverityCounts {
 }
 
 export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
-  private allIssueNodes: TreeNode[] = [];
+  protected allIssueNodes: TreeNode[] = [];
 
   protected constructor(
     protected readonly logger: ILog,
