@@ -14,7 +14,7 @@ jobs:
       - name: Check Static Resources
         run: |
           declare -A resources
-          # Add each resource as a key, value pair, mapping the local resource to the reference file (which should be stored in the lanaguage server repository). For example:
+          # Add each resource as a key, value pair, mapping the local resource to the reference file (which should be stored in the language server repository). For example:
           # resources["<path_to_local_file>"]="<url_of_reference_file>"
           resources["media/views/scanSummary/ScanSummaryInit.html"]="https://raw.githubusercontent.com/snyk/snyk-ls/refs/heads/main/shared_ide_resources/ui/html/ScanSummaryInit.html"
           for key in ${!resources[@]}; do
