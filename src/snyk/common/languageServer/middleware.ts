@@ -60,6 +60,7 @@ export class LanguageClientMiddleware implements Middleware {
     showDocument: async (params: ShowDocumentParams, next) => {
       let uri;
       try {
+        // TODO: Change this to use URI parsing instead of URL parsing.
         uri = new URL(decodeURI(params.uri).replaceAll('\\', '/'));
       } catch (error) {
         this.logger.debug('Invalid URI received for window/showDocument');
