@@ -38,7 +38,7 @@ export type OssVulnerability = {
   exploit?: string;
 
   CVSSv3?: string;
-  cvssScore?: string;
+  cvssScore?: number;
 
   fixedIn?: Array<string>;
   from: Array<string>;

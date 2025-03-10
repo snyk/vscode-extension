@@ -11,6 +11,7 @@ import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
 import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings';
 import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
+import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
 
 suite('Code Issue Tree Provider', () => {
   let contextService: IContextService;
@@ -64,6 +65,7 @@ suite('Code Issue Tree Provider', () => {
     } as unknown as IProductService<CodeIssueData>;
 
     issueTreeProvider = new IssueTreeProvider(
+      new LoggerMockFailOnErrors(),
       contextService,
       localCodeService,
       configuration,
@@ -88,6 +90,7 @@ suite('Code Issue Tree Provider', () => {
     } as unknown as IProductService<CodeIssueData>;
 
     issueTreeProvider = new IssueTreeProvider(
+      new LoggerMockFailOnErrors(),
       contextService,
       localCodeService,
       configuration,
@@ -128,6 +131,7 @@ suite('Code Issue Tree Provider', () => {
     });
     configuration.issueViewOptions.openIssues = false;
     issueTreeProvider = new IssueTreeProvider(
+      new LoggerMockFailOnErrors(),
       contextService,
       localCodeService,
       configuration,
@@ -173,6 +177,7 @@ suite('Code Issue Tree Provider', () => {
       ignoredIssues: false,
     });
     issueTreeProvider = new IssueTreeProvider(
+      new LoggerMockFailOnErrors(),
       contextService,
       localCodeService,
       configuration,
@@ -218,6 +223,7 @@ suite('Code Issue Tree Provider', () => {
       ignoredIssues: false,
     });
     issueTreeProvider = new IssueTreeProvider(
+      new LoggerMockFailOnErrors(),
       contextService,
       localCodeService,
       configuration,

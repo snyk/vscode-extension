@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import assert, { deepStrictEqual, fail, strictEqual } from 'assert';
+import assert, { deepStrictEqual, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
@@ -13,12 +13,16 @@ import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageC
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
+import { ExtensionContext, IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
+import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
+import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -29,16 +33,7 @@ suite('Language Server', () => {
   let downloadServiceMock: DownloadService;
   let extensionContextMock: ExtensionContext;
   const path = 'testPath';
-  const logger = {
-    info(_msg: string) {},
-    warn(_msg: string) {},
-    log(_msg: string) {},
-    error(msg: string) {
-      fail(msg);
-    },
-  } as unknown as LoggerMock;
-
-  let contextGetGlobalStateValue: sinon.SinonStub;
+  const logger = new LoggerMockFailOnErrors();
 
   setup(() => {
     configurationMock = {
@@ -90,7 +85,7 @@ suite('Language Server', () => {
 
     extensionContextMock = {
       extensionPath: 'test/path',
-      getGlobalStateValue: contextGetGlobalStateValue,
+      getGlobalStateValue: sinon.fake(),
       updateGlobalStateValue: sinon.fake(),
       setContext: sinon.fake(),
       subscriptions: [],
@@ -142,8 +137,12 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
-      extensionContextMock,
+      {} as IExtensionRetriever,
       {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      {} as IVSCodeCommands,
+      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -193,8 +192,12 @@ suite('Language Server', () => {
       authServiceMock,
       new LoggerMock(),
       downloadServiceMock,
-      extensionContextMock,
+      {} as IExtensionRetriever,
       {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      {} as IVSCodeCommands,
+      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -220,8 +223,12 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        extensionContextMock,
+        {} as IExtensionRetriever,
         {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        {} as IVSCodeCommands,
+        {} as IDiagnosticsIssueProvider<unknown>,
       );
     });
 
@@ -268,8 +275,12 @@ suite('Language Server', () => {
         authServiceMock,
         new LoggerMock(),
         downloadServiceMock,
-        extensionContextMock,
+        {} as IExtensionRetriever,
         {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        {} as IVSCodeCommands,
+        {} as IDiagnosticsIssueProvider<unknown>,
       );
 
       const initOptions = await languageServer.getInitializationOptions();

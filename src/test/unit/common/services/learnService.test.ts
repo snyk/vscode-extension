@@ -23,6 +23,16 @@ suite('LearnService', () => {
     const learnService = new LearnService(commands);
     const issue: Issue<CodeIssueData> = {
       id: 'javascript/nosqli',
+      range: {
+        start: {
+          line: 1,
+          character: 2,
+        },
+        end: {
+          line: 3,
+          character: 4,
+        },
+      },
       additionalData: {
         ruleId: 'javascript/nosqli',
         cwe: ['CWE-79', 'CWE-89'],
@@ -42,6 +52,8 @@ suite('LearnService', () => {
       severity: IssueSeverity.Critical,
       filePath: 'not used',
       isIgnored: false,
+      isNew: false,
+      filterableIssueType: 'Code Security',
     };
 
     await learnService.getCodeLesson(issue);
