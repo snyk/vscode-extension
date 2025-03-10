@@ -164,28 +164,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false; // optionally overridden by products
   }
 
-  filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
-    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions));
-  }
-
-  protected isVisibleIssue(issue: Issue<T>, issueViewOptions: IssueViewOptions) {
-    const { ignoredIssues: includeIgnoredIssues, openIssues: includeOpenIssues } = issueViewOptions;
-
-    // Show all issues
-    if (includeIgnoredIssues && includeOpenIssues) {
-      return true;
-    }
-
-    // Show issues based on options
-    if (includeIgnoredIssues) {
-      return issue.isIgnored;
-    }
-    if (includeOpenIssues) {
-      return !issue.isIgnored;
-    }
-    return false;
-  }
-
   getReference(folderPath: string): TreeNode | undefined {
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
@@ -248,9 +226,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         const fileSeverityCounts = this.initSeverityCounts();
 
         const filteredIssues = this.filterIssues(fileIssues);
-        const visibleIssues = this.filterVisibleIssues(filteredIssues);
 
-        const issueNodes = visibleIssues.map(issue => {
+        const issueNodes = filteredIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 
