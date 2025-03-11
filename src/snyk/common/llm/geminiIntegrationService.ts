@@ -252,7 +252,7 @@ export class GeminiIntegrationService {
         ' issues that Snyk has found in JSON format: ' +
         JSON.stringify(issues);
       const newContext = {
-        id: generateUuid(),
+        id: "snyk-workspace-scan",
         getText: () => issuesString,
       } as ChatContext;
       context.push(newContext);
