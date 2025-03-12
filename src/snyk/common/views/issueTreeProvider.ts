@@ -1,6 +1,6 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration, IssueViewOptions } from '../configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
@@ -14,6 +14,7 @@ import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
 import path from 'path';
 import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -98,10 +99,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     const totalIssueCount = this.getTotalIssueCount();
     const ignoredIssueCount = this.getIgnoredCount();
+    const openIssueCount = totalIssueCount - ignoredIssueCount;
 
     const topNodes: (TreeNode | null)[] = [
       new TreeNode({
-        text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
+        text: this.getIssueFoundText(totalIssueCount, openIssueCount, ignoredIssueCount),
       }),
     ];
 
@@ -113,10 +115,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
     } else {
-      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(
-        totalIssueCount,
-        ignoredIssueCount,
-      );
+      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(totalIssueCount);
       topNodes.push(noIssueViewOptionSelectedWarning);
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
@@ -312,11 +311,18 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     nodes.unshift(baseBranchNode);
   }
 
-  protected getIssueFoundText(nIssues: number, _: number): string {
-    if (!nIssues) {
-      return '✅ Congrats! No issues found!';
+  protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+
+    if (!showingOpen) {
+      return 'Open issues are disabled!';
     }
-    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
+
+    if (totalIssueCount === 0) {
+      return '✅ Congrats! No issues found!';
+    } else {
+      return `✋ ${totalIssueCount} issue${totalIssueCount === 1 ? '' : 's'}`;
+    }
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {

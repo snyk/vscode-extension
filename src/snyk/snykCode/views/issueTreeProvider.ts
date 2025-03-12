@@ -78,7 +78,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     return issue.additionalData.hasAIFix;
   }
 
-  getFixableIssuesNode(fixableIssueCount: number): TreeNode {
+  getFixableIssuesNode(fixableIssueCount: number): TreeNode | null {
     return new TreeNode({
       text: this.getAIFixableIssuesText(fixableIssueCount),
     });
