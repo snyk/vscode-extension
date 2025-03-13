@@ -70,6 +70,10 @@ suite('Language Server', () => {
         medium: true,
         low: true,
       },
+      issueViewOptions: {
+        openIssues: true,
+        ignoredIssues: false,
+      },
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
       },

@@ -14,7 +14,6 @@ import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
 import path from 'path';
 import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
-import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
