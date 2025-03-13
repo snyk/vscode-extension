@@ -1,4 +1,4 @@
-import { IConfiguration } from '../../common/configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import { ILog } from '../logger/interfaces';
 import { isEnumStringValueOf } from '../tsUtil';
 import { User } from '../user';
@@ -7,14 +7,14 @@ import type {
   ConfigurationRequestHandlerSignature,
   Middleware,
   ResponseError,
-  WorkspaceMiddleware,
   ShowDocumentParams,
   ShowDocumentResult,
   WindowMiddleware,
+  WorkspaceMiddleware,
 } from '../vscode/types';
 import { CancellationToken } from '../vscode/types';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from './types';
+import { LsScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
@@ -60,7 +60,8 @@ export class LanguageClientMiddleware implements Middleware {
     showDocument: async (params: ShowDocumentParams, next) => {
       let uri;
       try {
-        uri = new URL(params.uri);
+        // TODO: Change this to use URI parsing instead of URL parsing.
+        uri = new URL(decodeURI(params.uri).replaceAll('\\', '/'));
       } catch (error) {
         this.logger.debug('Invalid URI received for window/showDocument');
         return (await next(params, CancellationToken.None)) as ShowDocumentResult;
@@ -74,7 +75,6 @@ export class LanguageClientMiddleware implements Middleware {
       this.logger.debug(
         `Intercepted window/showDocument request (action=${SnykURIAction.ShowInDetailPanel}): ${params.uri}`,
       );
-      const _filePath = uri.pathname;
       const product = uri.searchParams.get('product');
       if (product === null || !isEnumStringValueOf(LsScanProduct, product)) {
         this.logger.error(`Invalid "snyk:" URI received (bad or unknown product)! ${params.uri}`);

@@ -5,6 +5,19 @@ const mockCodeIssue: Issue<CodeIssueData> = {
   title: 'Mock issue',
   severity: IssueSeverity.Low,
   filePath: '//folderName//test.js',
+  range: {
+    start: {
+      line: 0,
+      character: 0,
+    },
+    end: {
+      line: 0,
+      character: 0,
+    },
+  },
+  isIgnored: false,
+  isNew: false,
+  filterableIssueType: '',
   additionalData: {
     message: 'Mock message',
     leadURL: undefined,
@@ -22,7 +35,6 @@ const mockCodeIssue: Issue<CodeIssueData> = {
     hasAIFix: false,
     details: 'Mock details',
   },
-  isIgnored: false,
 };
 
 export function makeMockCodeIssue(overridingProperties?: Partial<Issue<Partial<CodeIssueData>>>): Issue<CodeIssueData> {
