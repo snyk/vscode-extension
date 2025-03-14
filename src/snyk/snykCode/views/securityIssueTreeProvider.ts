@@ -41,45 +41,18 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
 
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
 
-  protected getNoIssueViewOptionsSelectedTreeNode(numIssues: number): TreeNode | null {
-    if (numIssues !== 0) {
-      return null;
-    }
-
+  protected getNoIssueViewOptionsSelectedTreeNode(): TreeNode | null {
     const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-    const showingOpen = this.configuration.issueViewOptions.openIssues;
-
     if (!isIgnoresEnabled) {
-      if (showingOpen) {
-        return null;
-      } else {
-        return new TreeNode({
-          text: messages.openIssueViewOptionDisabled,
-          command: {
-            command: VSCODE_GO_TO_SETTINGS_COMMAND,
-            title: '',
-            arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION} snyk.issueViewOptions`],
-          },
-        });
-      }
+      return super.getNoIssueViewOptionsSelectedTreeNode();
     }
 
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
     const showingIgnored = this.configuration.issueViewOptions.ignoredIssues;
 
     if (!showingOpen && !showingIgnored) {
       return new TreeNode({
         text: messages.allIssueViewOptionsDisabled,
-        command: {
-          command: VSCODE_GO_TO_SETTINGS_COMMAND,
-          title: '',
-          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION} snyk.issueViewOptions`],
-        },
-      });
-    }
-
-    if (!showingIgnored) {
-      return new TreeNode({
-        text: messages.ignoredIssueViewOptionDisabled,
         command: {
           command: VSCODE_GO_TO_SETTINGS_COMMAND,
           title: '',
@@ -99,6 +72,17 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       });
     }
 
+    if (!showingIgnored) {
+      return new TreeNode({
+        text: messages.ignoredIssueViewOptionDisabled,
+        command: {
+          command: VSCODE_GO_TO_SETTINGS_COMMAND,
+          title: '',
+          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION} snyk.issueViewOptions`],
+        },
+      });
+    }
+
     return null;
   }
 
@@ -108,18 +92,11 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
 
   protected getIssueFoundText(totalIssueCount: number, openIssueCount: number, ignoredIssueCount: number): string {
     const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
-    const showingOpen = this.configuration.issueViewOptions.openIssues;
     if (!isIgnoresEnabled) {
-      if (!showingOpen) {
-        return 'Open issues are disabled!';
-      }
-      if (totalIssueCount === 0) {
-        return '✅ Congrats! No issues found!';
-      } else {
-        return `✋ ${totalIssueCount} issue${totalIssueCount === 1 ? '' : 's'}`;
-      }
+      return super.getIssueFoundText(totalIssueCount, openIssueCount, ignoredIssueCount);
     }
 
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
     const showingIgnored = this.configuration.issueViewOptions.ignoredIssues;
     const openIssuesText = `${openIssueCount} open issue${openIssueCount === 1 ? '' : 's'}`;
     const ignoredIssuesText = `${ignoredIssueCount} ignored issue${ignoredIssueCount === 1 ? '' : 's'}`;
@@ -150,9 +127,8 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   }
 
   getFixableIssuesNode(fixableIssueCount: number): TreeNode | null {
-    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     const showingOpen = this.configuration.issueViewOptions.openIssues;
-    if (isIgnoresEnabled && !showingOpen) {
+    if (!showingOpen) {
       return null;
     }
     return super.getFixableIssuesNode(fixableIssueCount);

@@ -7,7 +7,6 @@ import { messages } from '../messages/analysisMessages';
 import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
   constructor(protected readonly configuration: IConfiguration, private statusProvider: AnalysisStatusProvider) {
@@ -49,11 +48,7 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     });
   }
 
-  protected getNoIssueViewOptionsSelectedTreeNode(numIssues: number): TreeNode | null {
-    if (numIssues !== 0) {
-      return null;
-    }
-
+  protected getNoIssueViewOptionsSelectedTreeNode(): TreeNode | null {
     const showingOpen = this.configuration.issueViewOptions.openIssues;
     if (!showingOpen) {
       return new TreeNode({

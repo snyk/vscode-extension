@@ -106,16 +106,14 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       }),
     ];
 
-    if (totalIssueCount > 0) {
-      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
-    }
-
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
-    } else {
-      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(totalIssueCount);
+    } else if (totalIssueCount === 0) {
+      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode();
       topNodes.push(noIssueViewOptionSelectedWarning);
+    } else {
+      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
 
