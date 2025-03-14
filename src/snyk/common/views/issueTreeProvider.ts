@@ -1,6 +1,6 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration, IssueViewOptions } from '../configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
@@ -98,26 +98,22 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     const totalIssueCount = this.getTotalIssueCount();
     const ignoredIssueCount = this.getIgnoredCount();
+    const openIssueCount = totalIssueCount - ignoredIssueCount;
 
     const topNodes: (TreeNode | null)[] = [
       new TreeNode({
-        text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
+        text: this.getIssueFoundText(totalIssueCount, openIssueCount, ignoredIssueCount),
       }),
     ];
-
-    if (totalIssueCount > 0) {
-      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
-    }
 
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
-    } else {
-      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(
-        totalIssueCount,
-        ignoredIssueCount,
-      );
+    } else if (totalIssueCount === 0) {
+      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode();
       topNodes.push(noIssueViewOptionSelectedWarning);
+    } else {
+      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
 
@@ -162,28 +158,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   isFixableIssue(_issue: Issue<T>) {
     return false; // optionally overridden by products
-  }
-
-  filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
-    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions));
-  }
-
-  protected isVisibleIssue(issue: Issue<T>, issueViewOptions: IssueViewOptions) {
-    const { ignoredIssues: includeIgnoredIssues, openIssues: includeOpenIssues } = issueViewOptions;
-
-    // Show all issues
-    if (includeIgnoredIssues && includeOpenIssues) {
-      return true;
-    }
-
-    // Show issues based on options
-    if (includeIgnoredIssues) {
-      return issue.isIgnored;
-    }
-    if (includeOpenIssues) {
-      return !issue.isIgnored;
-    }
-    return false;
   }
 
   getReference(folderPath: string): TreeNode | undefined {
@@ -248,9 +222,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         const fileSeverityCounts = this.initSeverityCounts();
 
         const filteredIssues = this.filterIssues(fileIssues);
-        const visibleIssues = this.filterVisibleIssues(filteredIssues);
 
-        const issueNodes = visibleIssues.map(issue => {
+        const issueNodes = filteredIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 
@@ -335,11 +308,18 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     nodes.unshift(baseBranchNode);
   }
 
-  protected getIssueFoundText(nIssues: number, _: number): string {
-    if (!nIssues) {
-      return '✅ Congrats! No issues found!';
+  protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+
+    if (!showingOpen) {
+      return 'Open issues are disabled!';
     }
-    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
+
+    if (totalIssueCount === 0) {
+      return '✅ Congrats! No issues found!';
+    } else {
+      return `✋ ${totalIssueCount} issue${totalIssueCount === 1 ? '' : 's'}`;
+    }
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {

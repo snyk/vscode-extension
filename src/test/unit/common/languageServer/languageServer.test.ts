@@ -74,6 +74,10 @@ suite('Language Server', () => {
         medium: true,
         low: true,
       },
+      issueViewOptions: {
+        openIssues: true,
+        ignoredIssues: false,
+      },
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
       },
@@ -251,6 +255,7 @@ suite('Language Server', () => {
         manageBinariesAutomatically: 'true',
         deviceId: user.anonymousId,
         filterSeverity: { critical: true, high: true, medium: true, low: true },
+        issueViewOptions: { openIssues: true, ignoredIssues: false },
         enableTrustedFoldersFeature: 'true',
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
