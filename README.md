@@ -29,7 +29,7 @@ Snyk Visual Studio Code extension does not support remote and containerized envi
 * [VS Code Remote Development](https://code.visualstudio.com/docs/remote/remote-overview)
 * [Inside a Container](https://code.visualstudio.com/docs/devcontainers/containers)
 
-Install the plugin at any time free of charge from the  [Visual Studio Code marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) and use it with any Snyk account, including a Free account. For more information, see the[VS Code extension installation guide](https://code.visualstudio.com/docs/editor/extension-marketplace#\_install-an-extension).
+Install the plugin at any time free of charge from the [Visual Studio Code marketplace](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) and use it with any Snyk account, including a Free account. For more information, see the [VS Code extension installation guide](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-an-extension).
 
 When the extension is installed, it automatically downloads the [Snyk CLI,](https://docs.snyk.io/snyk-cli) which includes the [Language Server](https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/snyk-language-server).
 
