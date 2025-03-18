@@ -86,7 +86,7 @@
           },
           "snyk.advanced.customEndpoint": {
             "type": "string",
-            "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://api.eu.snyk.io`.",
+            "markdownDescription": "If you're using SSO(OAuth2), Custom Endpoint configuration is automatic. \n\nOtherwise, for public regional instances, see the [docs](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
