@@ -86,7 +86,7 @@
           },
           "snyk.advanced.customEndpoint": {
             "type": "string",
-            "markdownDescription": "If you're using SSO(OAuth2), Custom Endpoint configuration is automatic. \n\nOtherwise, for public regional instances, see the [docs](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
+            "markdownDescription": "If you're using SSO with Snyk and OAuth2 the custom endpoint configuration is automatically populated. \n\nOtherwise, for public regional instances, see the [docs](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
