@@ -20,16 +20,27 @@ suite('Configuration', () => {
   });
 
   test('configuration change is reflected', async () => {
-    const featuresConfig = {
-      ossEnabled: false,
-      codeSecurityEnabled: false,
-      codeQualityEnabled: false,
-      iacEnabled: false,
-    } as FeaturesConfiguration;
+    try {
+      const featuresConfig = {
+        ossEnabled: false,
+        codeSecurityEnabled: false,
+        codeQualityEnabled: false,
+        iacEnabled: false,
+      } as FeaturesConfiguration;
 
-    await configuration.setFeaturesConfiguration(featuresConfig);
+      await configuration.setFeaturesConfiguration(featuresConfig);
 
-    deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
-    await configuration.setToken('');
+      deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
+    } finally {
+      await configuration.setToken('');
+
+      const enabledFeaturesConfig = {
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        codeQualityEnabled: true,
+        iacEnabled: true,
+      } as FeaturesConfiguration;
+      await configuration.setFeaturesConfiguration(enabledFeaturesConfig);
+    }
   });
 });

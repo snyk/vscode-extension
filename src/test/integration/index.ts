@@ -7,6 +7,7 @@ export async function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'tdd',
     color: true,
+    slow: 150, // double the default, as integration tests are slow
     timeout: process.env.SNYK_VSCE_DEVELOPMENT ? 60000 : undefined,
   });
 
