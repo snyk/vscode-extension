@@ -56,7 +56,7 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     if (!nIssues) {
       return '✅ Congrats! No issues found!';
     }
-    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
+    return `✋ ${nIssues} issue${nIssues === 1 ? '' : 's'} found`;
   }
 
   filterIssues(issues: Issue<IacIssueData>[]): Issue<IacIssueData>[] {

@@ -26,7 +26,7 @@ export const messages = {
     noVulnerabilitiesFound: ' ✅ Congrats! No issues found!',
     issue: 'issue',
     issues: 'issues',
-    singleVulnerabilityFound: 'Snyk found 1 issue',
-    multipleVulnerabilitiesFound: (issueCount: number): string => `Snyk found ${issueCount} issues`,
+    singleVulnerabilityFound: '✋ 1 issue found',
+    multipleVulnerabilitiesFound: (issueCount: number): string => `✋ ${issueCount} issues found`,
   },
 };

@@ -48,9 +48,9 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
       let text;
 
       if (nIssues === 1) {
-        text = `${nIssues} issue found by Snyk`;
+        text = `${nIssues} issue found`;
       } else {
-        text = `✋ ${nIssues} issues found by Snyk`;
+        text = `✋ ${nIssues} issues found`;
       }
 
       const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
