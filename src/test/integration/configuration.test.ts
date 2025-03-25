@@ -1,9 +1,10 @@
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual, strictEqual, notStrictEqual } from 'assert';
 import { FeaturesConfiguration } from '../../snyk/common/configuration/configuration';
 import { configuration } from '../../snyk/common/configuration/instance';
 import vscode from 'vscode';
-import { ADVANCED_CUSTOM_ENDPOINT } from '../../snyk/common/constants/settings';
-
+import { ADVANCED_CUSTOM_ENDPOINT, FOLDER_CONFIGS, TRUSTED_FOLDERS } from '../../snyk/common/constants/settings';
+import { LanguageServerSettings } from '../../snyk/common/languageServer/settings';
+import { User } from '../../snyk/common/user';
 suite('Configuration', () => {
   test('settings change is reflected', async () => {
     await vscode.workspace.getConfiguration().update(ADVANCED_CUSTOM_ENDPOINT, '');
@@ -31,5 +32,20 @@ suite('Configuration', () => {
 
     deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
     await configuration.setToken('');
+  });
+
+  test('workspaceFolder is transformed', async () => {
+    await vscode.workspace.getConfiguration().update(TRUSTED_FOLDERS, ['${workspaceFolder}']);
+    await vscode.workspace.getConfiguration().update(FOLDER_CONFIGS, [
+      {
+        folderPath: '${workspaceFolder}',
+        baseBranch: 'baseBranch',
+        localBranches: [],
+      },
+    ]);
+
+    const serverSettings = await LanguageServerSettings.fromConfiguration(configuration, new User());
+    notStrictEqual(serverSettings.trustedFolders?.at(0), '${workspaceFolder}');
+    notStrictEqual(serverSettings.folderConfigs?.at(0)?.folderPath, '${workspaceFolder}');
   });
 });
