@@ -116,12 +116,14 @@ async function getDefaultAgentOptions(
     // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
-        const allCerts = [...tls.rootCertificates];
+        logger.debug('NODE_EXTRA_CA_CERTS env var is set');
         await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
         const extraCerts = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS, 'utf-8');
-        if (extraCerts) {
-          allCerts.push(extraCerts);
+        if (!extraCerts) {
+          return;
         }
+        logger.debug('found certs in NODE_EXTRA_CA_CERTS');
+        const allCerts = [...tls.rootCertificates, extraCerts];
         defaultOptions = { ca: allCerts };
         globalAgent.options.ca = allCerts;
       } catch (error) {
