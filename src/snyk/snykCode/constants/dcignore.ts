@@ -1,4 +1,5 @@
-import { CustomDCIgnore, DefaultDCIgnore } from '@deepcode/dcignore';
+import DefaultDCIgnore from './full.dcignore';
+import CustomDCIgnore from './empty.dcignore';
 
 export const MAX_PAYLOAD = 4 * 1024 * 1024;
 export const MAX_FILE_SIZE = 1024 * 1024;
