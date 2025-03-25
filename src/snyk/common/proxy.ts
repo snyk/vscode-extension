@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
+import * as tls from 'tls';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
 import { IVSCodeWorkspace } from './vscode/workspace';
@@ -115,10 +116,14 @@ async function getDefaultAgentOptions(
     // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
+        const allCerts = [...tls.rootCertificates];
         await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
-        const certs = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS);
-        defaultOptions = { ca: [certs] };
-        globalAgent.options.ca = [certs];
+        const extraCerts = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS, 'utf-8');
+        if (extraCerts) {
+          allCerts.push(extraCerts);
+        }
+        defaultOptions = { ca: allCerts };
+        globalAgent.options.ca = allCerts;
       } catch (error) {
         logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
       }
