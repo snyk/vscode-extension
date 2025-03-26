@@ -44,7 +44,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   protected getNoIssueViewOptionsSelectedTreeNode(): TreeNode | null {
     const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     if (!isIgnoresEnabled) {
-      return super.getNoIssueViewOptionsSelectedTreeNode();
+      return null;
     }
 
     const showingOpen = this.configuration.issueViewOptions.openIssues;
@@ -127,8 +127,9 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   }
 
   getFixableIssuesNode(fixableIssueCount: number): TreeNode | null {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     const showingOpen = this.configuration.issueViewOptions.openIssues;
-    if (!showingOpen) {
+    if (isIgnoresEnabled && !showingOpen) {
       return null;
     }
     return super.getFixableIssuesNode(fixableIssueCount);

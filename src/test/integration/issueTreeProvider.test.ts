@@ -21,7 +21,7 @@ suite('Code Issue Tree Provider', () => {
   let languages: IVSCodeLanguages;
   let folderConfigs: IFolderConfigs;
 
-  setup(async () => {
+  setup(() => {
     contextService = {
       shouldShowCodeAnalysis: true,
     } as unknown as IContextService;
@@ -37,38 +37,55 @@ suite('Code Issue Tree Provider', () => {
     } as unknown as IProductService<CodeIssueData>;
     languages = {} as unknown as IVSCodeLanguages;
     folderConfigs = {} as unknown as IFolderConfigs;
-
-    configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
-    await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
-      openIssues: true,
-      ignoredIssues: true,
-    });
   });
 
   teardown(() => {
     sinon.restore();
   });
 
-  const testCases: {
+  const testCases: ({
     name: string;
-    issueViewOptions: IssueViewOptions;
-    issues: Issue<CodeIssueData>[];
-    expectedNodeLabels: string[];
-  }[] = [
+  } & (
+    | {
+        consistentIgnores: false;
+      }
+    | {
+        consistentIgnores: true;
+        issueViewOptions: IssueViewOptions;
+      }
+  ) & {
+      issues: Issue<CodeIssueData>[];
+      expectedNodeLabels: string[];
+    })[] = [
     {
-      name: 'getRootChildren returns correctly for no issues found',
+      name: 'getRootChildren returns correctly for no issues found with CCI disabled',
+      consistentIgnores: false,
+      issues: [],
+      expectedNodeLabels: ['✅ Congrats! No issues found!'],
+    },
+    {
+      name: 'getRootChildren returns correctly when viewing open and no issues found with CCI enabled',
+      consistentIgnores: true,
       issueViewOptions: { openIssues: true, ignoredIssues: true },
       issues: [],
       expectedNodeLabels: ['✅ Congrats! No issues found!'],
     },
     {
-      name: 'getRootChildren returns correctly for a visable non-fixable issue',
-      issueViewOptions: { openIssues: true, ignoredIssues: true },
+      name: 'getRootChildren returns correctly for one issue with CCI disabled',
+      consistentIgnores: false,
       issues: [makeMockCodeIssue()],
       expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI'],
     },
     {
-      name: 'getRootChildren returns correctly when not viewing open issues',
+      name: 'getRootChildren returns correctly for two visable one fixable issues with CCI enabled',
+      consistentIgnores: true,
+      issueViewOptions: { openIssues: true, ignoredIssues: true },
+      issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
+      expectedNodeLabels: ['✋ 2 issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI'],
+    },
+    {
+      name: 'getRootChildren returns correctly when not viewing open issues with CCI enabled',
+      consistentIgnores: true,
       issueViewOptions: { openIssues: false, ignoredIssues: true /* value should be irrelevant */ },
       issues: [],
       expectedNodeLabels: ['Open issues are disabled!', 'Adjust your settings to view Open issues.'],
@@ -78,7 +95,15 @@ suite('Code Issue Tree Provider', () => {
   for (const testCase of testCases) {
     test(testCase.name, async () => {
       try {
-        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, testCase.issueViewOptions);
+        configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, testCase.consistentIgnores);
+        if (testCase.consistentIgnores) {
+          await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, testCase.issueViewOptions);
+        } else {
+          // The issue view options shouldn't matter, but we'll test with them disabled to be sure.
+          await vscode.workspace
+            .getConfiguration()
+            .update(ISSUE_VIEW_OPTIONS_SETTING, { openIssues: false, ignoredIssues: false });
+        }
 
         const issueTreeProvider = new IssueTreeProvider(
           new LoggerMockFailOnErrors(),
@@ -99,6 +124,7 @@ suite('Code Issue Tree Provider', () => {
         const rootChildrenLabels = rootChildren.map(node => node.label);
         deepStrictEqual(rootChildrenLabels, testCase.expectedNodeLabels);
       } finally {
+        configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
         await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
           openIssues: true,
           ignoredIssues: true,

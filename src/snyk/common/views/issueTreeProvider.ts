@@ -14,6 +14,7 @@ import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
 import path from 'path';
 import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
@@ -309,9 +310,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     const showingOpen = this.configuration.issueViewOptions.openIssues;
-
-    if (!showingOpen) {
+    if (isIgnoresEnabled && !showingOpen) {
       return 'Open issues are disabled!';
     }
 
