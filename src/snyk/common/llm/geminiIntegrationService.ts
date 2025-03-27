@@ -29,7 +29,6 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { SNYK_NAVIGATE_TO_RANGE, SNYK_WORKSPACE_SCAN_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
 import { Subject } from 'rxjs';
-import { generateUuid } from 'vscode-languageclient/lib/common/utils/uuid';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { productToLsProduct } from '../services/mappings';
 import { IConfiguration } from '../configuration/configuration';
@@ -109,7 +108,7 @@ export class GeminiIntegrationService {
             } as CommandDetail,
             {
               command: 'show',
-              description: 'Show issues know to the Snyk Security Extension',
+              description: 'Show issues known to the Snyk Security Extension',
               icon: iconPath,
             } as CommandDetail,
           ];
@@ -140,6 +139,13 @@ export class GeminiIntegrationService {
       if (token.isCancellationRequested) return Promise.resolve();
 
       if (!request.prompt.fullPrompt().includes('/scan') && !request.prompt.fullPrompt().includes('show')) {
+        responseStream.push(
+          this.markdownAdapter.get(
+            'It seems, you tried to invoke the Snyk Security tool integration. Unfortunately, we were not able to recognize the command you sent. You can try `@snyk /scan` to scan for issues and display them here.',
+            true,
+          ),
+        );
+        responseStream.close();
         return Promise.resolve();
       }
 
