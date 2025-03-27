@@ -1,8 +1,14 @@
-import got, { OptionsInit as GotOptions } from 'got';
 import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
+
+// Node-specific fetch options for Node.js 16+
+interface NodeFetchOptions extends RequestInit {
+  agent?: Agent | HttpsProxyAgent;
+  ca?: string;
+  rejectUnauthorized?: boolean;
+}
 import * as tls from 'tls';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
@@ -84,18 +90,22 @@ function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 
-export async function getGotOptions(
+export async function getFetchOptions(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   logger: ILog,
-): Promise<GotOptions> {
+): Promise<NodeFetchOptions> {
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
   let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
   if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
+  
+  // Create fetch options object
   return {
-    agent: { https: agentOptions },
-    https: { rejectUnauthorized: !configuration.getInsecure() },
-    retry: { limit: 2 } // Add sensible retry settings
+    agent: agentOptions, // Node.js fetch supports agent directly
+    // Pass custom certificates from env if set
+    ...(process.env.NODE_EXTRA_CA_CERTS && { ca: process.env.NODE_EXTRA_CA_CERTS }),
+    // Handle SSL verification settings
+    ...(configuration.getInsecure() && { rejectUnauthorized: false })
   };
 }
 
