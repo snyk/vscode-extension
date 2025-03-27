@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+import got, { OptionsInit as GotOptions } from 'got';
 import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
@@ -17,7 +17,13 @@ export async function getHttpsProxyAgent(
   const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
   if (proxyOptions == undefined) return undefined;
 
-  return new HttpsProxyAgent(proxyOptions);
+  // Explicitly create agent with the proxy options to ensure CA certs are properly handled
+  const agent = new HttpsProxyAgent(proxyOptions);
+  
+  // For debugging purposes
+  logger.debug(`Created HTTPS proxy agent with options: ${JSON.stringify(proxyOptions)}`);
+  
+  return agent;
 }
 
 export async function getProxyOptions(
@@ -54,29 +60,42 @@ export async function getProxyOptions(
     port = parseInt(proxyUrl.port, 10);
   }
 
-  return {
+  // Ensure that if default options has CA certs, they are explicitly included
+  // This is critical for proxy connections to work with custom certificates
+  const proxyOptions = {
     host: proxyUrl.hostname,
     port: port,
     auth: proxyUrl.auth,
     protocol: proxyUrl.protocol,
     ...defaultOptions,
   };
+
+  // Explicitly log what we're sending to help with debugging
+  logger.debug(`Proxy options created: ${JSON.stringify({
+    ...proxyOptions,
+    auth: proxyOptions.auth ? '***' : undefined, // Mask auth details in logs
+    ca: proxyOptions.ca ? 'Custom CA certificates included' : undefined,
+  })}`);
+
+  return proxyOptions;
 }
 
 function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
   return workspace.getConfiguration<string>('http', 'proxy');
 }
 
-export async function getAxiosConfig(
+export async function getGotOptions(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   logger: ILog,
-): Promise<AxiosRequestConfig> {
+): Promise<GotOptions> {
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
   let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
   if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
   return {
-    httpsAgent: agentOptions,
+    agent: { https: agentOptions },
+    https: { rejectUnauthorized: !configuration.getInsecure() },
+    retry: { limit: 2 } // Add sensible retry settings
   };
 }
 

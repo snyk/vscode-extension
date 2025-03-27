@@ -1,10 +1,11 @@
-import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
 import * as stream from 'stream';
 import { mkdirSync } from 'fs';
 import { Progress } from 'vscode';
+// Use dynamic import for Got to avoid ESM/CommonJS issues
+const got = require('got');
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
@@ -17,7 +18,7 @@ import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
 
-export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
+export type DownloadResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
 
 export class Downloader {
   constructor(
