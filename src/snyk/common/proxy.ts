@@ -75,11 +75,7 @@ export async function getAxiosConfig(
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
   let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
   if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
-
   return {
-    // proxy false as we're using https-proxy-agent library for proxying
-    proxy: false,
-    httpAgent: agentOptions,
     httpsAgent: agentOptions,
   };
 }
@@ -123,9 +119,15 @@ async function getDefaultAgentOptions(
           return;
         }
         logger.debug('found certs in NODE_EXTRA_CA_CERTS');
-        const allCerts = [...tls.rootCertificates, extraCerts];
-        defaultOptions = { ca: allCerts };
-        globalAgent.options.ca = allCerts;
+        const currentCaRaw = globalAgent.options.ca ?? tls.rootCertificates;
+
+        const currentCaArray = Array.isArray(currentCaRaw) ? currentCaRaw : [currentCaRaw];
+
+        const mergedCa: (string | Buffer)[] = currentCaArray.map(ca => ca as string | Buffer);
+        mergedCa.push(extraCerts);
+
+        defaultOptions = { ca: mergedCa };
+        globalAgent.options.ca = mergedCa;
       } catch (error) {
         logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
       }
