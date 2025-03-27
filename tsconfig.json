@@ -2,14 +2,14 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "out",
-    "target": "es2019",
-    "lib": ["esnext"],
-    "module": "commonjs",
+    "target": "es2021", // Node.js 16 supports ES2021
+    "lib": ["es2021"],
+    "module": "Node16",
     "sourceMap": true,
     "allowJs": false,
     "declaration": true,
     "declarationDir": "./out",
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
     "noImplicitAny": true,

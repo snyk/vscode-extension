@@ -1,9 +1,9 @@
-import axios, { CancelTokenSource } from 'axios';
+import { AbortController } from 'abort-controller';
 import { IConfiguration } from '../common/configuration/configuration';
 import { PROTOCOL_VERSION } from '../common/constants/languageServer';
-import { DownloadAxiosResponse } from '../common/download/downloader';
+import { DownloadResponse } from '../common/download/downloader';
 import { ILog } from '../common/logger/interfaces';
-import { getAxiosConfig } from '../common/proxy';
+import { getFetchOptions } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
@@ -11,7 +11,7 @@ import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
-  downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]>;
+  downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, AbortController]>;
   getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string>;
 }
 
@@ -46,10 +46,15 @@ export class StaticCliApi implements IStaticCliApi {
 
   async getLatestCliVersion(releaseChannel: string): Promise<string> {
     try {
-      let { data } = await axios.get<string>(
-        this.getLatestVersionDownloadUrl(releaseChannel),
-        await getAxiosConfig(this.workspace, this.configuration, this.logger),
-      );
+      const url = this.getLatestVersionDownloadUrl(releaseChannel);
+      const fetchOptions = await getFetchOptions(this.workspace, this.configuration, this.logger);
+      
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch latest version: ${response.status} ${response.statusText}`);
+      }
+      
+      let data = await response.text();
       data = data.replace('\n', '');
       return data;
     } catch (e) {
@@ -59,28 +64,59 @@ export class StaticCliApi implements IStaticCliApi {
     }
   }
 
-  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]> {
-    const axiosCancelToken = axios.CancelToken.source();
+  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, AbortController]> {
+    // Create abort controller for cancelable requests
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
 
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
-
-    const response = axios.get(downloadUrl, {
-      responseType: 'stream',
-      cancelToken: axiosCancelToken.token,
-      ...(await getAxiosConfig(this.workspace, this.configuration, this.logger)),
+    
+    // Get fetch options with proxy and certificate handling
+    const fetchOptions = await getFetchOptions(this.workspace, this.configuration, this.logger);
+    
+    // Create a promise that will resolve with the download response
+    const responsePromise = fetch(downloadUrl, {
+      // Cast signal to any to avoid TypeScript compatibility issues
+      signal: signal as any,
+      ...fetchOptions,
+    }).then(async response => {
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+      
+      // Check if body exists
+      const body = response.body;
+      if (!body) {
+        throw new Error('Response body is null');
+      }
+      
+      // Convert the ReadableStream to a Node.js Readable stream
+      const { Readable } = require('stream');
+      const nodeReadable = Readable.fromWeb(body);
+      
+      return {
+        data: nodeReadable,
+        headers: response.headers
+      };
     });
-
-    return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
+    
+    return [responsePromise, abortController];
   }
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
     const fileName = this.getFileName(platform);
-    const { data } = await axios.get<string>(
-      `${this.getSha256DownloadUrl(version, platform)}`,
-      await getAxiosConfig(this.workspace, this.configuration, this.logger),
-    );
+    const url = this.getSha256DownloadUrl(version, platform);
+    const fetchOptions = await getFetchOptions(this.workspace, this.configuration, this.logger);
+    
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch checksum: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.text();
 
     const checksum = data.replace(fileName, '').replace('\n', '').trim();
 

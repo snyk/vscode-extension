@@ -1,9 +1,11 @@
 # Snyk Security Changelog
 
-## [2.22.0]
-- Using Code Actions to view an AI Fix now shows the affected issue in the tree view and details pane.
+## [2.21.1]
+- fix CLI download with proxy using custom certificates via NODE_EXTRA_CA_CERTS
+- fix error handling and wording in llm tool
 
 ## [2.21.0]
+- Using Code Actions to view an AI Fix now shows the affected issue in the tree view and details pane.
 - add scan summary
 - add ability to enter PATs as Tokens
 - add ability to define a reference folder for net-new scanning

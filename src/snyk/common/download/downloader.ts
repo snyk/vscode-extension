@@ -1,10 +1,13 @@
-import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
 import * as stream from 'stream';
 import { mkdirSync } from 'fs';
 import { Progress } from 'vscode';
+// Using native fetch available in Node.js 16+
+import { AbortController } from 'abort-controller';
+// Add types for node-fetch if needed for TypeScript support
+import type { Response as FetchResponse } from 'node-fetch';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
@@ -17,7 +20,8 @@ import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
 
-export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
+// Represents a response for downloading binary data with fetch
+export type DownloadResponse = { data: stream.Readable; headers: Headers; };
 
 export class Downloader {
   constructor(
@@ -93,30 +97,30 @@ export class Downloader {
     const hash = new Checksum(expectedChecksum);
 
     return this.window.withProgress(messages.progressTitle, async (progress, token) => {
-      const [request, requestToken]: [response: Promise<DownloadAxiosResponse>, cancelToken: CancelTokenSource] =
+      const [request, abortController]: [response: Promise<DownloadResponse>, controller: AbortController] =
         await this.cliApi.downloadBinary(platform);
 
       token.onCancellationRequested(async () => {
-        requestToken.cancel();
+        abortController.abort();
         this.logger.info(messages.downloadCanceled);
         await this.deleteFileAtPath(cliPath);
       });
 
       progress.report({ increment: 0 });
-      return await this.doDownload(requestToken, token, cliPath, request, hash, progress);
+      return await this.doDownload(abortController, token, cliPath, request, hash, progress);
     });
   }
 
   private async doDownload(
-    requestToken: CancelTokenSource,
+    abortController: AbortController,
     token: CancellationToken,
     path: string,
-    request: Promise<DownloadAxiosResponse>,
+    request: Promise<DownloadResponse>,
     hash: Checksum,
     progress: Progress<{ message?: string; increment?: number }>,
   ): Promise<Checksum | null> {
     token.onCancellationRequested(async () => {
-      requestToken.cancel();
+      abortController.abort();
       this.logger.info(messages.downloadCanceled);
       await this.deleteFileAtPath(path);
     });
@@ -129,14 +133,15 @@ export class Downloader {
     let lastPercentCompleted = 0;
 
     try {
-      const { data, headers }: { data: stream.Readable; headers: { [header: string]: unknown } } = await request;
+      const { data, headers } = await request;
 
-      const contentLength = headers['content-length'] as number;
+      // Get content length from headers - needed for progress reporting
+      const contentLength = parseInt(headers.get('content-length') || '0', 10);
       let downloadedBytes = 0;
 
       data.on('data', (chunk: Buffer) => {
         downloadedBytes += chunk.length;
-        const percentCompleted = Math.floor((downloadedBytes / contentLength) * 100);
+        const percentCompleted = contentLength > 0 ? Math.floor((downloadedBytes / contentLength) * 100) : 0;
         const increment = percentCompleted - lastPercentCompleted;
         lastPercentCompleted = percentCompleted;
 
@@ -159,7 +164,8 @@ export class Downloader {
         });
       });
     } catch (err) {
-      if (axios.isCancel(err)) {
+      // Check if the request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
         return null;
       }
 
