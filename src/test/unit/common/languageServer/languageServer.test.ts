@@ -31,7 +31,7 @@ suite('Language Server', () => {
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
-  let extensionContextMock: ExtensionContext;
+
   const path = 'testPath';
   const logger = new LoggerMockFailOnErrors();
 
@@ -82,16 +82,6 @@ suite('Language Server', () => {
       },
       scanningMode: 'auto',
     } as IConfiguration;
-
-    extensionContextMock = {
-      extensionPath: 'test/path',
-      getGlobalStateValue: sinon.fake(),
-      updateGlobalStateValue: sinon.fake(),
-      setContext: sinon.fake(),
-      subscriptions: [],
-      addDisposables: sinon.fake(),
-      getExtensionUri: sinon.fake(),
-    } as unknown as ExtensionContext;
 
     downloadServiceMock = {
       downloadReady$: new ReplaySubject<void>(1),

@@ -7,6 +7,6 @@ export type openedTextEditorType = {
     current: number;
     prevOffset: number;
   };
-  contentChanges: any[];
+  contentChanges: unknown[];
   document: TextDocument;
 };

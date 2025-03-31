@@ -9,14 +9,7 @@ suite('LanguageServerSettings', () => {
   suite('fromConfiguration', () => {
     test('should generate server settings with default true values for undefined feature toggles', async () => {
       const mockUser = { anonymousId: 'anonymous-id' } as User;
-      const extensionContextMock: ExtensionContext = {
-        extensionPath: 'test/path',
-        updateGlobalStateValue: sinon.fake(),
-        setContext: sinon.fake(),
-        subscriptions: [],
-        addDisposables: sinon.fake(),
-        getExtensionUri: sinon.fake(),
-      } as unknown as ExtensionContext;
+
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
         snykApiEndpoint: 'https://dev.snyk.io/api',

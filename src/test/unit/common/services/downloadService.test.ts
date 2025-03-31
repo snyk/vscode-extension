@@ -109,13 +109,4 @@ suite('DownloadService', () => {
   });
 });
 
-function stubSuccessDownload(apigetSha256Checksum: sinon.SinonStub, downloader: Downloader) {
-  const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
-  const latestChecksumStr = 'bdf6446bfaed1ae551b6eca14e8e101a53d855d33622094495e68e9a0b0069fc';
-  const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
-  apigetSha256Checksum.returns(latestChecksumStr);
 
-  sinon.stub(Platform, 'getCurrent').returns('darwin');
-  sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
-  sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.1', new Checksum(latestChecksumStr)));
-}
