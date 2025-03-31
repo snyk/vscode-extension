@@ -48,7 +48,11 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, user: User, receivedFolderConfigsFromLs = false): Promise<ServerSettings> {
+  static async fromConfiguration(
+    configuration: IConfiguration,
+    user: User,
+    receivedFolderConfigsFromLs = false,
+  ): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
