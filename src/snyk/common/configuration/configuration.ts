@@ -170,6 +170,7 @@ export class Configuration implements IConfiguration {
 
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
+  private inMemoryFolderConfigs: FolderConfig[] = [];
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -606,10 +607,7 @@ export class Configuration implements IConfiguration {
   }
 
   getFolderConfigs(): FolderConfig[] {
-    return (
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      []
-    );
+    return this.inMemoryFolderConfigs;
   }
 
   get scanningMode(): string | undefined {
@@ -626,12 +624,7 @@ export class Configuration implements IConfiguration {
   }
 
   async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(FOLDER_CONFIGS),
-      folderConfigs,
-      true,
-    );
+    this.inMemoryFolderConfigs = folderConfigs;
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
