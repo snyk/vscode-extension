@@ -2,8 +2,6 @@ import assert from 'assert';
 import { FolderConfig, IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
-import sinon from 'sinon';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 
 suite('LanguageServerSettings', () => {
   suite('fromConfiguration', () => {

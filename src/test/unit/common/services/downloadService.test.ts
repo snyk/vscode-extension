@@ -1,12 +1,9 @@
 import { strictEqual } from 'assert';
 import sinon, { stub } from 'sinon';
-import { Checksum } from '../../../../snyk/cli/checksum';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { Downloader } from '../../../../snyk/common/download/downloader';
-import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IStaticCliApi } from '../../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
-import { Platform } from '../../../../snyk/common/platform';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -108,5 +105,3 @@ suite('DownloadService', () => {
     strictEqual(updateSpy.called, false);
   });
 });
-
-
