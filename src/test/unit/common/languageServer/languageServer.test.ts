@@ -271,13 +271,14 @@ suite('Language Server', () => {
         folderPath: '/test/path',
         baseBranch: 'main',
         localBranches: ['main', 'develop'],
-        referenceFolderPath: undefined
+        referenceFolderPath: undefined,
       };
       configurationMock.getFolderConfigs = () => [sampleFolderConfig];
 
       // Simulate language server notification about folder configs
       // This is normally done in the registerListeners method when receiving a notification
-      (languageServer as any).receivedFolderConfigsFromLs = true;
+      // Access private field via type assertion to LanguageServer with private field type
+      (languageServer as unknown as { receivedFolderConfigsFromLs: boolean }).receivedFolderConfigsFromLs = true;
 
       // Create expected initialization options with the folder config included
       const expectedInitializationOptions: ServerSettings = {
