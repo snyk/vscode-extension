@@ -1,12 +1,9 @@
 import { strictEqual } from 'assert';
 import sinon, { stub } from 'sinon';
-import { Checksum } from '../../../../snyk/cli/checksum';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { Downloader } from '../../../../snyk/common/download/downloader';
-import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { IStaticCliApi } from '../../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
-import { Platform } from '../../../../snyk/common/platform';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../../mocks/logger.mock';
@@ -108,14 +105,3 @@ suite('DownloadService', () => {
     strictEqual(updateSpy.called, false);
   });
 });
-
-function stubSuccessDownload(apigetSha256Checksum: sinon.SinonStub, downloader: Downloader) {
-  const curChecksumStr = 'ba6b3c08ce5b9067ecda4f410e3b6c2662e01c064490994555f57b1cc25840f9';
-  const latestChecksumStr = 'bdf6446bfaed1ae551b6eca14e8e101a53d855d33622094495e68e9a0b0069fc';
-  const latestChecksum = Checksum.fromDigest(curChecksumStr, latestChecksumStr);
-  apigetSha256Checksum.returns(latestChecksumStr);
-
-  sinon.stub(Platform, 'getCurrent').returns('darwin');
-  sinon.stub(Checksum, 'getChecksumOf').resolves(latestChecksum);
-  sinon.stub(downloader, 'download').resolves(new CliExecutable('1.0.1', new Checksum(latestChecksumStr)));
-}

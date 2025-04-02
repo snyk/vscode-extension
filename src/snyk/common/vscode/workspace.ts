@@ -9,7 +9,7 @@ export interface IVSCodeWorkspace {
   updateConfiguration(
     configurationIdentifier: string,
     section: string,
-    value: any,
+    value: unknown,
     configurationTarget?: boolean,
     overrideInLanguage?: boolean,
   ): Promise<void>;
@@ -32,7 +32,7 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
   updateConfiguration(
     configurationIdentifier: string,
     section: string,
-    value: any,
+    value: unknown,
     configurationTarget?: boolean,
     overrideInLanguage?: boolean,
   ): Promise<void> {
