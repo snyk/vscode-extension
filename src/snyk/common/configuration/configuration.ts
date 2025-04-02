@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
@@ -19,7 +20,6 @@ import {
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
-  FOLDER_CONFIGS,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
@@ -32,7 +32,6 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 
 const NEWISSUES = 'Net new issues';
 const ALLISSUES = 'All issues';
@@ -159,7 +158,7 @@ export interface IConfiguration {
 
   getFolderConfigs(): FolderConfig[];
 
-  setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+  setFolderConfigs(folderConfig: FolderConfig[]): void;
 }
 
 export class Configuration implements IConfiguration {
@@ -170,6 +169,7 @@ export class Configuration implements IConfiguration {
 
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
+  private inMemoryFolderConfigs: FolderConfig[] = [];
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -606,10 +606,7 @@ export class Configuration implements IConfiguration {
   }
 
   getFolderConfigs(): FolderConfig[] {
-    return (
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      []
-    );
+    return this.inMemoryFolderConfigs;
   }
 
   get scanningMode(): string | undefined {
@@ -625,13 +622,8 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(FOLDER_CONFIGS),
-      folderConfigs,
-      true,
-    );
+  setFolderConfigs(folderConfigs: FolderConfig[]): void {
+    this.inMemoryFolderConfigs = folderConfigs;
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
