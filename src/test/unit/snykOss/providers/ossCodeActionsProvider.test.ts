@@ -100,8 +100,7 @@ suite('OSS code actions provider', () => {
     sinon.stub(ossActionsProvider, <any>'getVulnerabilities').returns(vulnerabilities);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(ossActionsProvider, <any>'getMostSevereVulnerability').returns(mostSevereVulnerability);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sinon.stub(ossActionsProvider, <any>'getActions').returns(codeActions);
+    sinon.stub(ossActionsProvider, 'getActions').returns(codeActions);
 
     // act
     const result = ossActionsProvider.provideCodeActions(document, clickedRange, context);
