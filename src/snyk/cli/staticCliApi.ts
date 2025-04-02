@@ -53,7 +53,6 @@ export class StaticCliApi implements IStaticCliApi {
       data = data.replace('\n', '');
       return data;
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       this.logger.error(e);
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }

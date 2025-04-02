@@ -4,7 +4,7 @@ export interface IVSCodeEnv {
   getUiKind(): string;
   getRemoteName(): string | undefined;
   getAppName(): string;
-  getAppHost(): string | undefined;
+  getAppHost(): string;
 }
 
 class VSCodeEnv implements IVSCodeEnv {
@@ -20,11 +20,8 @@ class VSCodeEnv implements IVSCodeEnv {
     return vscode.env.appName;
   }
 
-  getAppHost(): string | undefined {
-    // vscode.env.appHost was introduced only in engine of version >1.60.0, cast to keep old VS Code versions support for now (// TODO remove cast, once upgraded).
-    // https://code.visualstudio.com/api/references/vscode-api#env.appHost
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    return (vscode.env as any).appHost;
+  getAppHost(): string {
+    return vscode.env.appHost;
   }
 }
 

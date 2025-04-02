@@ -14,9 +14,6 @@ import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { messages as errorMessages } from '../../messages/error';
 import { readFileSync } from 'fs';
 import { IVSCodeCommands } from '../../../common/vscode/commands';
-// import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
-// import { IssueUtils } from '../../utils/issueUtils';
-// import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
 export class IacSuggestionWebviewProvider
   extends WebviewProvider<Issue<IacIssueData>>

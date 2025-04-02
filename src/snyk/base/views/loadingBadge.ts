@@ -30,7 +30,6 @@ export class LoadingBadge implements ILoadingBadge {
         .withProgress({ location: { viewId: SNYK_VIEW_WELCOME } }, () => self.getProgressBadgePromise())
         .then(
           () => undefined,
-          // eslint-disable-next-line  @typescript-eslint/no-unsafe-argument
           error => Logger.error(error),
         );
     } else if (this.progressBadge && !this.progressBadge.isCompleted) {

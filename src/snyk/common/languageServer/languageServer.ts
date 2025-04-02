@@ -132,7 +132,6 @@ export class LanguageServer implements ILanguageServer {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initializationOptions: await this.getInitializationOptions(),
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,

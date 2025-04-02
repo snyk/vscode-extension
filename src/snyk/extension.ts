@@ -445,7 +445,7 @@ class SnykExtension extends SnykLib implements IExtension {
       e.removed.forEach(folder => {
         this.snykCode.resetResult(folder.uri.fsPath);
       });
-      this.runScan();
+      void this.runScan();
     });
 
     this.editorsWatcher.activate(this);
@@ -495,7 +495,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.sendPluginInstalledEvent();
 
     // Actually start analysis
-    this.runScan();
+    void this.runScan();
   }
 
   private sendPluginInstalledEvent() {
