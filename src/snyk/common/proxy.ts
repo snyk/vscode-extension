@@ -17,7 +17,14 @@ export async function getHttpsProxyAgent(
   const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
   if (proxyOptions == undefined) return undefined;
 
-  return new HttpsProxyAgent(proxyOptions);
+  const agent = new HttpsProxyAgent(proxyOptions);
+
+  // Extract CA certificates from proxy agent options and add them at the top level
+  if (proxyOptions.ca) {
+    (agent as any).ca = proxyOptions.ca;
+  }
+
+  return agent;
 }
 
 export async function getProxyOptions(
