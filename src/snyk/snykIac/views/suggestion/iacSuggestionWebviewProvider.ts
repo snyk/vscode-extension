@@ -128,9 +128,9 @@ export class IacSuggestionWebviewProvider
     super.onPanelDispose();
   }
 
-  private async handleMessage(message: any) {
+  private async handleMessage(message: unknown) {
     try {
-      const { type, value } = message;
+      const { type, value } = message as { type: string; value: unknown };
       switch (type) {
         case 'openBrowser': {
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, value);

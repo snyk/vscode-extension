@@ -6,7 +6,7 @@ export interface IFolderConfigs {
 
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined;
 
-  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void>;
+  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void;
 
   setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
 
@@ -53,7 +53,7 @@ export class FolderConfigs implements IFolderConfigs {
 
     folderConfig.referenceFolderPath = selectedDir[0].fsPath;
     folderConfig.baseBranch = '';
-    await this.setFolderConfig(config, folderConfig);
+    this.setFolderConfig(config, folderConfig);
   }
 
   async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
@@ -78,19 +78,20 @@ export class FolderConfigs implements IFolderConfigs {
 
     folderConfig.baseBranch = branchName;
     folderConfig.referenceFolderPath = '';
-    await this.setFolderConfig(config, folderConfig);
+    this.setFolderConfig(config, folderConfig);
   }
 
   private validateBranchName(branchName: string, branchList: string[]): boolean {
     return branchList.includes(branchName);
   }
 
-  async setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void> {
+  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void {
     const currentFolderConfigs = this.getFolderConfigs(config);
     const finalFolderConfigs = currentFolderConfigs.map(i =>
       i.folderPath === folderConfig.folderPath ? folderConfig : i,
     );
-    await config.setFolderConfigs(finalFolderConfigs);
+    config.setFolderConfigs(finalFolderConfigs);
+    this.folderConfigsCache = finalFolderConfigs;
   }
 
   resetFolderConfigsCache() {

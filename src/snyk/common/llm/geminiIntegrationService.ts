@@ -94,7 +94,7 @@ export class GeminiIntegrationService {
     try {
       const iconPath = path.join(this.extensionContext.extensionPath, 'media/images/readme/snyk_extension_icon.png');
       const iconURI = this.uriAdapter.file(iconPath);
-      const geminiTool = geminiCodeAssist.registerTool('snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
+      const geminiTool = geminiCodeAssist.registerTool('Snyk', SNYK_NAME, SNYK_NAME_EXTENSION, iconURI);
 
       geminiTool.registerChatHandler(this.getChatRequestHandler());
 
@@ -158,8 +158,8 @@ export class GeminiIntegrationService {
 
         // subscribe to snyk scan topic to get issue data
         this.scan$.subscribe((scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
-          const msg = 'Scan status for ' + scan.folderPath + ': ' + scan.status + '.';
-          responseStream.push(this.markdownAdapter.get(msg));
+          // const msg = 'Scan status for ' + scan.folderPath + ': ' + scan.status + '.';
+          // responseStream.push(this.markdownAdapter.get(msg));
 
           if (scan.status == ScanStatus.Success || scan.status == ScanStatus.Error) {
             openScansCount--;
