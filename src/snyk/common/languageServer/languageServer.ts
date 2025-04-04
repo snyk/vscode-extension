@@ -153,7 +153,7 @@ export class LanguageServer implements ILanguageServer {
 
       // Start the client. This will also launch the server
       await this.client.start();
-      void this.geminiIntegrationService.connectGeminiToMCPServer();
+      await this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
