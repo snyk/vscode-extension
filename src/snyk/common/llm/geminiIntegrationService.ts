@@ -76,6 +76,7 @@ export class GeminiIntegrationService {
       this.logger.info('found Gemini Code Assist extension');
 
       this.logger.debug('waiting for activation of gca');
+
       while (geminiCodeAssistExtension && !geminiCodeAssistExtension.isActive) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, 100));

@@ -153,6 +153,7 @@ export class LanguageServer implements ILanguageServer {
 
       // Start the client. This will also launch the server
       await this.client.start();
+      void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
@@ -185,11 +186,6 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
-    });
-
-    client.onNotification(SNYK_MCPSERVERURL, ({ url }: { url: string }) => {
-      this.logger.info('Received MCP Server address ' + url);
-      void this.geminiIntegrationService.connectGeminiToMCPServer();
     });
   }
 
