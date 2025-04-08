@@ -35,7 +35,7 @@ suite('Configuration', () => {
       },
       updateConfiguration(_configurationIdentifier, _section, value, _configurationTarget, _overrideInLanguage) {
         if (_section === tokenConfigSection) {
-          token = value;
+          token = value as string;
           return Promise.resolve();
         }
         return Promise.reject('Section config not implemented. ' + _section);

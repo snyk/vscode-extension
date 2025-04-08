@@ -55,7 +55,11 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
+  static async fromConfiguration(
+    configuration: IConfiguration,
+    user: User,
+    receivedFolderConfigsFromLs = false,
+  ): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
@@ -93,7 +97,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: configuration.getFolderConfigs(),
+      folderConfigs: receivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
       hoverVerbosity: 1,
     };
