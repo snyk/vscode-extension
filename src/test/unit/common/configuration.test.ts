@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
@@ -12,7 +10,6 @@ import {
   SCANNING_MODE,
 } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
-import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContext } from '../../../snyk/common/vscode/extensionContext';
@@ -20,29 +17,9 @@ import { Platform } from '../../../snyk/common/platform';
 import path from 'path';
 
 suite('Configuration', () => {
-  let workspaceStub: IVSCodeWorkspace;
-
   setup(() => {
-    const tokenConfigSection = 'token';
-
-    let token = '';
     SecretStorageAdapter.init(extensionContextMock);
     extensionContext.setContext(extensionContextMock);
-    const stub = sinon.stub().returns({
-      getConfiguration(_configurationIdentifier, _section) {
-        if (_section === tokenConfigSection) return token;
-        throw new Error('Section config not implemented. ' + _section);
-      },
-      updateConfiguration(_configurationIdentifier, _section, value, _configurationTarget, _overrideInLanguage) {
-        if (_section === tokenConfigSection) {
-          token = value as string;
-          return Promise.resolve();
-        }
-        return Promise.reject('Section config not implemented. ' + _section);
-      },
-    } as IVSCodeWorkspace);
-
-    workspaceStub = stub();
   });
 
   teardown(() => {

@@ -23,7 +23,6 @@ suite('AuthenticationService', () => {
   let setEndpointSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
-  let previewFeaturesSpy: sinon.SinonSpy;
 
   setup(() => {
     baseModule = {} as IBaseSnykModule;
@@ -51,7 +50,7 @@ suite('AuthenticationService', () => {
       setEndpoint: setEndpointSpy,
       setToken: setTokenSpy,
       clearToken: clearTokenSpy,
-      getPreviewFeatures: previewFeaturesSpy,
+      getPreviewFeatures: sinon.fake(),
     } as unknown as IConfiguration;
   });
 
