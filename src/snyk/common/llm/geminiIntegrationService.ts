@@ -167,7 +167,7 @@ export class GeminiIntegrationService {
           }
         });
 
-        await this.codeCommands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
+        await this.codeCommands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND, ['LLM']);
         while (openScansCount > 0) {
           // eslint-disable-next-line no-await-in-loop
           await new Promise(resolve => setTimeout(resolve, 100));
