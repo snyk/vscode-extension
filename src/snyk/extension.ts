@@ -12,6 +12,7 @@ import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
   SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
   SNYK_DCIGNORE_COMMAND,
+  SNYK_CCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -80,6 +81,7 @@ import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
+import { IgnoresApprovalWorkflowService } from './common/services/ignoresApprovalWorkflowService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
@@ -192,6 +194,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.learnService = new LearnService(vsCodeCommands);
     this.cacheService = new ClearCacheService(vsCodeCommands);
+    this.ignoresApprovalWorkflowService = new IgnoresApprovalWorkflowService(vsCodeCommands);
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
@@ -528,7 +531,6 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.stop();
     await this.languageServer.start();
   }
-
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
@@ -561,6 +563,17 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
+      ),
+      vscode.commands.registerCommand(
+        SNYK_CCIGNORE_COMMAND,
+        async () =>
+          await this.ignoresApprovalWorkflowService.create(
+            'workflowType',
+            'issueId',
+            'ignoreType',
+            'reason',
+            'expiration',
+          ),
       ),
       vscode.commands.registerCommand(SNYK_OPEN_ISSUE_COMMAND, (arg: OpenIssueCommandArg) =>
         this.commandController.openIssueCommand(arg),
