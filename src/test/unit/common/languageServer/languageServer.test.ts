@@ -268,7 +268,7 @@ suite('Language Server', () => {
       // Simulate language server notification about folder configs
       // This is normally done in the registerListeners method when receiving a notification
       // Access private field via type assertion to LanguageServer with private field type
-      (languageServer as unknown as { receivedFolderConfigsFromLs: boolean }).receivedFolderConfigsFromLs = true;
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
 
       // Create expected initialization options with the folder config included
       const expectedInitializationOptions: ServerSettings = {
@@ -299,8 +299,9 @@ suite('Language Server', () => {
         enableSnykOSSQuickFixCodeActions: 'false',
         hoverVerbosity: 1,
       };
-
-      deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
+      const initializationOptions = await languageServer.getInitializationOptions();
+      LanguageServer.ReceivedFolderConfigsFromLs = false;
+      deepStrictEqual(initializationOptions, expectedInitializationOptions);
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {
