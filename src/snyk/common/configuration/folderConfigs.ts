@@ -53,7 +53,7 @@ export class FolderConfigs implements IFolderConfigs {
 
     folderConfig.referenceFolderPath = selectedDir[0].fsPath;
     folderConfig.baseBranch = '';
-    this.setFolderConfig(config, folderConfig);
+    await this.setFolderConfig(config, folderConfig);
   }
 
   async setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
@@ -78,7 +78,7 @@ export class FolderConfigs implements IFolderConfigs {
 
     folderConfig.baseBranch = branchName;
     folderConfig.referenceFolderPath = '';
-    this.setFolderConfig(config, folderConfig);
+    await this.setFolderConfig(config, folderConfig);
   }
 
   private validateBranchName(branchName: string, branchList: string[]): boolean {
