@@ -630,7 +630,6 @@ export class Configuration implements IConfiguration {
       this.getConfigName(FOLDER_CONFIGS),
       this.inMemoryFolderConfigs,
       true,
-      true,
     );
   }
 
