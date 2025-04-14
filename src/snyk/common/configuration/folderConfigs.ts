@@ -6,7 +6,7 @@ export interface IFolderConfigs {
 
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined;
 
-  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void;
+  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void>;
 
   setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
 
@@ -85,12 +85,12 @@ export class FolderConfigs implements IFolderConfigs {
     return branchList.includes(branchName);
   }
 
-  setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): void {
+  async setFolderConfig(config: IConfiguration, folderConfig: FolderConfig): Promise<void> {
     const currentFolderConfigs = this.getFolderConfigs(config);
     const finalFolderConfigs = currentFolderConfigs.map(i =>
       i.folderPath === folderConfig.folderPath ? folderConfig : i,
     );
-    config.setFolderConfigs(finalFolderConfigs);
+    await config.setFolderConfigs(finalFolderConfigs);
     this.folderConfigsCache = finalFolderConfigs;
   }
 
