@@ -122,10 +122,8 @@ suite('Proxy', () => {
     } as unknown as IConfiguration;
 
     const agent = await getHttpsProxyAgent(workspace, configuration, logger, {
-      // eslint-disable-next-line camelcase
-      https_proxy: proxy,
-      // eslint-disable-next-line camelcase
-      http_proxy: proxy,
+      HTTPS_PROXY: proxy,
+      HTTP_PROXY: proxy,
     });
 
     assert.deepStrictEqual(agent?.['proxy'].host, host);

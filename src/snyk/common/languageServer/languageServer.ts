@@ -7,7 +7,6 @@ import {
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
-  SNYK_MCPSERVERURL,
   SNYK_SCAN,
   SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
@@ -97,10 +96,8 @@ export class LanguageServer implements ILanguageServer {
     if (proxyEnvVariable) {
       processEnv = {
         ...processEnv,
-        // eslint-disable-next-line camelcase
-        https_proxy: proxyEnvVariable,
-        // eslint-disable-next-line camelcase
-        http_proxy: proxyEnvVariable,
+        HTTPS_PROXY: proxyEnvVariable,
+        HTTP_PROXY: proxyEnvVariable,
       };
     }
 
