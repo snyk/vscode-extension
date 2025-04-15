@@ -186,7 +186,7 @@ document.getElementById('position-line')!.addEventListener('click', () => {
 window.addEventListener('message', event => {
   // SAFE: Validate the origin strictly - in VSCode this should be vscode-webview://
   // This exactly matches Snyk's recommended pattern in their documentation
-  if (event.origin !== 'vscode-webview://') {
+  if (!event.origin.startsWith('vscode-webview://')) {
     console.error('Security: Message rejected from untrusted origin:', event.origin);
     return;
   }
