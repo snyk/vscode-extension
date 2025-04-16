@@ -1,7 +1,9 @@
 # Snyk Security Changelog
 
-## [2.22.0]
-- Using Code Actions to view an AI Fix now shows the affected issue in the tree view and details pane.
+## [2.21.1]
+- Gemini Tool fixes
+- Ensure default CAs are used when using proxy
+- Add scan source to workspace command
 
 ## [2.21.0]
 - add scan summary
