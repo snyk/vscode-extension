@@ -5,6 +5,7 @@ import { ExperimentService } from '../../common/experiment/services/experimentSe
 import { ILanguageServer } from '../../common/languageServer/languageServer';
 import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
 import { IClearCacheService } from '../../common/services/CacheService';
+import { IIgnoresApprovalWorkflowService } from '../../common/services/ignoresApprovalWorkflowService';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
 import { FeatureFlagService } from '../../common/services/featureFlagService';
@@ -39,6 +40,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected summaryProviderService: ISummaryProviderService;
   readonly contextService: IContextService;
   cacheService: IClearCacheService;
+  ignoresApprovalWorkflowService: IIgnoresApprovalWorkflowService;
   readonly openerService: IOpenerService;
   readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;

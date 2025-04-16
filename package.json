@@ -486,6 +486,11 @@
         "icon": "$(new-file)"
       },
       {
+        "command": "snyk.ccignore",
+        "title": "Create code consistant ignore (ccci)",
+        "category": "Snyk"
+      },
+      {
         "command": "snyk.showOutputChannel",
         "title": "Show Output Channel",
         "category": "Snyk"
