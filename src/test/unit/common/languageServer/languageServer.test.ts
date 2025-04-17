@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import assert, { deepStrictEqual, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
@@ -99,7 +98,6 @@ suite('Language Server', () => {
         _id: string,
         _name: string,
         serverOptions: ServerOptions,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _clientOptions: LanguageClientOptions,
       ): LanguageClient {
         return {

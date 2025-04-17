@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { TextDocument, TextDocumentChangeEvent, TextEditor } from '../../common/vscode/types';
 import { IWatcher } from '../../common/watchers/interfaces';
 import { openedTextEditorType } from '../interfaces';
 
@@ -7,7 +8,7 @@ class SnykEditorsWatcher implements IWatcher {
     [key: string]: openedTextEditorType;
   } = {};
 
-  private createEditorInfo(editor: vscode.TextEditor): void {
+  private createEditorInfo(editor: TextEditor): void {
     const path = editor.document.fileName;
 
     const workspacePath = (vscode.workspace.workspaceFolders || [])
@@ -27,7 +28,7 @@ class SnykEditorsWatcher implements IWatcher {
   }
 
   private watchEditorsNavChange() {
-    vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined) => {
+    vscode.window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
       if (editor && !this.currentTextEditors[editor.document.fileName]) {
         this.createEditorInfo(editor);
       }
@@ -35,13 +36,13 @@ class SnykEditorsWatcher implements IWatcher {
   }
 
   private watchClosingEditor() {
-    vscode.workspace.onDidCloseTextDocument((document: vscode.TextDocument) => {
+    vscode.workspace.onDidCloseTextDocument((document: TextDocument) => {
       delete this.currentTextEditors[document.fileName];
     });
   }
 
   private watchEditorCodeChanges() {
-    vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
+    vscode.workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
       const currentEditorFileName = event.document.fileName;
       if (this.currentTextEditors[currentEditorFileName] && event.contentChanges && event.contentChanges.length) {
         const curentLineCount = this.currentTextEditors[currentEditorFileName].lineCount.current;

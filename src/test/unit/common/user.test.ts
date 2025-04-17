@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { strictEqual } from 'assert';
-import sinon from 'sinon';
-import { User, UserDto } from '../../../snyk/common/user';
-import { IVSCodeCommands } from '../../../snyk/common/vscode/commands';
+import { User } from '../../../snyk/common/user';
 
 suite('User', () => {
   test('Returns authenticated id in SHA-256', () => {

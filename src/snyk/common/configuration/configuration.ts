@@ -256,13 +256,11 @@ export class Configuration implements IConfiguration {
   }
 
   static async getVersion(): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { version } = await this.getPackageJsonConfig();
     return version;
   }
 
   static async isPreview(): Promise<boolean> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
   }

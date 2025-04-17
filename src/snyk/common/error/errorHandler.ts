@@ -11,6 +11,7 @@ export class ErrorHandler {
    * Should be used only if the affected error breaks the whole extension.
    */
   static async handleGlobal(
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     error: Error | unknown,
     logger: ILog,
     contextService: IContextService,
@@ -24,11 +25,13 @@ export class ErrorHandler {
   /**
    * Should be used to log locally and report error event remotely.
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   static handle(error: Error | unknown, logger: ILog, message?: string): void {
     const errorStr = ErrorHandler.stringifyError(error);
     logger.error(message ? `${message}. ${errorStr}` : errorStr);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   static stringifyError(error: Error | unknown): string {
     return JSON.stringify(error, Object.getOwnPropertyNames(error));
   }

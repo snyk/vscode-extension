@@ -1,6 +1,6 @@
 import { IConfiguration } from '../configuration/configuration';
 import { ILog } from '../logger/interfaces';
-import { isEnumStringValueOf } from '../tsUtil';
+import { isEnumStringValueOf, isThenable } from '../tsUtil';
 import { User } from '../user';
 import type {
   ConfigurationParams,
@@ -40,7 +40,7 @@ export class LanguageClientMiddleware implements Middleware {
       next: ConfigurationRequestHandlerSignature,
     ) => {
       let settings = next(params, token);
-      if (this.isThenable(settings)) {
+      if (isThenable(settings)) {
         settings = await settings;
       }
 
@@ -94,9 +94,4 @@ export class LanguageClientMiddleware implements Middleware {
       return { success: true };
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  isThenable<T>(v: any): v is Thenable<T> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return typeof v?.then === 'function';
-  }
 }
