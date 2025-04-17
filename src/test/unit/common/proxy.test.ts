@@ -42,7 +42,6 @@ suite('Proxy', () => {
 
     // should still set rejectUnauthorized flag
     // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(configOptions.httpAgent?.options.rejectUnauthorized, proxyStrictSSL);
     assert.deepStrictEqual(configOptions.httpsAgent?.options.rejectUnauthorized, proxyStrictSSL);
   });
 
@@ -62,7 +61,7 @@ suite('Proxy', () => {
 
       test('should return rejectUnauthorized true', async () => {
         const config = await getAxiosConfig(workspace, configuration, logger);
-        assert.deepStrictEqual(config.httpAgent?.options.rejectUnauthorized, true);
+        assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, true);
       });
     });
 

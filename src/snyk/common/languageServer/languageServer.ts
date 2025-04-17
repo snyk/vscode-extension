@@ -50,7 +50,7 @@ export class LanguageServer implements ILanguageServer {
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
-  private receivedFolderConfigsFromLs = false;
+  public static ReceivedFolderConfigsFromLs = false;
 
   constructor(
     private user: User,
@@ -169,12 +169,10 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
-      this.receivedFolderConfigsFromLs = true;
-      try {
-        this.configuration.setFolderConfigs(folderConfigs);
-      } catch (error) {
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
+      this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
-      }
+      });
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
@@ -196,11 +194,7 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    return await LanguageServerSettings.fromConfiguration(
-      this.configuration,
-      this.user,
-      this.receivedFolderConfigsFromLs,
-    );
+    return await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
   }
 
   showOutputChannel(): void {

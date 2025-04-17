@@ -20,6 +20,7 @@ import {
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
+  FOLDER_CONFIGS,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
@@ -170,7 +171,7 @@ export interface IConfiguration {
 
   getFolderConfigs(): FolderConfig[];
 
-  setFolderConfigs(folderConfig: FolderConfig[]): void;
+  setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -622,8 +623,14 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  setFolderConfigs(folderConfigs: FolderConfig[]): void {
+  async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
     this.inMemoryFolderConfigs = folderConfigs;
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(FOLDER_CONFIGS),
+      this.inMemoryFolderConfigs,
+      true,
+    );
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
