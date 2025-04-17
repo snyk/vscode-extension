@@ -74,10 +74,10 @@ suite('Workspace Scan Command Parameter Test', () => {
     // Act - Simulate the scan command being executed with the LLM parameter
     // We need to get to the underlying executeCommand implementation
     const commands = geminiIntegrationService['codeCommands'];
-    await commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND, ['LLM']);
+    await commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND, 'LLM');
 
     // Assert - Verify the executeCommand was called with the right parameters
-    sinon.assert.calledWith(executeCommandStub, SNYK_WORKSPACE_SCAN_COMMAND, ['LLM']);
+    sinon.assert.calledWith(executeCommandStub, SNYK_WORKSPACE_SCAN_COMMAND, 'LLM');
     sinon.assert.calledOnce(executeCommandStub);
   });
 });
