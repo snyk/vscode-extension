@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as vscode from 'vscode';
-import * as lsc from 'vscode-languageclient/node';
-import * as lst from 'vscode-languageserver-textdocument';
+import type * as vscode from 'vscode';
+import type * as lsc from 'vscode-languageclient/node';
+import type * as lst from 'vscode-languageserver-textdocument';
 
 // VS Code core type mappings
 export type Disposable = vscode.Disposable;
@@ -23,6 +23,7 @@ export type HoverProvider = vscode.HoverProvider;
 export type TextEditor = vscode.TextEditor;
 export type TextDocument = vscode.TextDocument;
 export type TextDocumentShowOptions = vscode.TextDocumentShowOptions;
+export type TextDocumentContentChangeEvent = vscode.TextDocumentContentChangeEvent;
 export type ViewColumn = vscode.ViewColumn;
 export type Position = vscode.Position;
 export type Range = vscode.Range;

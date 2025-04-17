@@ -9,23 +9,28 @@ class Log implements ILog {
     this.output = vscode.window.createOutputChannel(SNYK_NAME);
   }
 
-  info(message: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  info(message: string | unknown): void {
     this.log('Info', message);
   }
 
-  warn(message: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  warn(message: string | Error | unknown): void {
     this.log('Warn', message);
   }
 
-  error(message: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  error(message: string | Error | unknown): void {
     this.log('Error', message);
   }
 
-  debug(message: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  debug(message: string | unknown): void {
     this.log('Debug', message);
   }
 
-  log(level: LogLevel, message: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  log(level: LogLevel, message: string | Error | unknown): void {
     if (level == 'Debug') {
       return console.log(message);
     }

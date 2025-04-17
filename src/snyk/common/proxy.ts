@@ -21,7 +21,7 @@ export async function getHttpsProxyAgent(
 
   // Extract CA certificates from proxy agent options and add them at the top level
   if (proxyOptions.ca) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     (agent as any).ca = proxyOptions.ca;
   }
 
