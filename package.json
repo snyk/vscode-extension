@@ -252,7 +252,7 @@
               }
             },
             "additionalProperties": false,
-            "markdownDescription": "Ignores settings is currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
+            "markdownDescription": "Ignored issues are currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
             "scope": "window"
           },
           "snyk.folderConfigs": {
