@@ -65,6 +65,11 @@ export interface IssueViewOptions {
   [option: string]: boolean;
 }
 
+export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
+  ignoredIssues: true,
+  openIssues: true,
+};
+
 export interface SeverityFilter {
   critical: boolean;
   high: boolean;
@@ -73,6 +78,13 @@ export interface SeverityFilter {
 
   [severity: string]: boolean;
 }
+
+export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
+  critical: true,
+  high: true,
+  medium: true,
+  low: true,
+};
 
 export type PreviewFeatures = {
   advisor: boolean | undefined;
@@ -518,12 +530,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ISSUE_VIEW_OPTIONS_SETTING),
     );
 
-    return (
-      config ?? {
-        openIssues: true,
-        ignoredIssues: true,
-      }
-    );
+    return config ?? DEFAULT_ISSUE_VIEW_OPTIONS;
   }
 
   get severityFilter(): SeverityFilter {
@@ -532,14 +539,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(SEVERITY_FILTER_SETTING),
     );
 
-    return (
-      config ?? {
-        critical: true,
-        high: true,
-        medium: true,
-        low: true,
-      }
-    );
+    return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
   get organization(): string | undefined {

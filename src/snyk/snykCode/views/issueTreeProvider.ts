@@ -8,9 +8,9 @@ import { IProductService } from '../../common/services/productService';
 import { ProductIssueTreeProvider } from '../../common/views/issueTreeProvider';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { messages } from '../messages/analysis';
+import { messages as analysisMessages } from '../../common/messages/analysisMessages';
 import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from './interfaces';
-import { TreeNode } from '../../common/views/treeNode';
 import { IFolderConfigs } from '../../common/configuration/folderConfigs';
 import { ILog } from '../../common/logger/interfaces';
 
@@ -78,15 +78,9 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     return issue.additionalData.hasAIFix;
   }
 
-  getFixableIssuesNode(fixableIssueCount: number): TreeNode | null {
-    return new TreeNode({
-      text: this.getAIFixableIssuesText(fixableIssueCount),
-    });
-  }
-
-  private getAIFixableIssuesText(issuesCount: number): string {
-    return issuesCount > 0
-      ? `⚡️ ${issuesCount} ${issuesCount === 1 ? 'issue' : 'issues'} can be fixed by Snyk DeepCode AI`
-      : 'There are no issues fixable by Snyk DeepCode AI';
+  getFixableIssuesText(fixableIssueCount: number): string | null {
+    return fixableIssueCount > 0
+      ? `⚡️ ${fixableIssueCount} ${fixableIssueCount === 1 ? 'issue' : 'issues'} can be fixed by Snyk DeepCode AI.`
+      : analysisMessages.noFixableIssues;
   }
 }

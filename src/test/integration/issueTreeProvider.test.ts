@@ -13,7 +13,7 @@ import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings
 import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
 import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
-import { IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
 
 suite('Code Issue Tree Provider', () => {
   let contextService: IContextService;
@@ -66,7 +66,7 @@ suite('Code Issue Tree Provider', () => {
     {
       name: 'getRootChildren returns correctly when viewing open and no issues found with CCI enabled',
       consistentIgnores: true,
-      issueViewOptions: { openIssues: true, ignoredIssues: true },
+      issueViewOptions: { openIssues: true, ignoredIssues: true /* value should be irrelevant */ },
       issues: [],
       expectedNodeLabels: ['✅ Congrats! No issues found!'],
     },
@@ -74,14 +74,14 @@ suite('Code Issue Tree Provider', () => {
       name: 'getRootChildren returns correctly for one issue with CCI disabled',
       consistentIgnores: false,
       issues: [makeMockCodeIssue()],
-      expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI'],
+      expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly for two visable one fixable issues with CCI enabled',
       consistentIgnores: true,
-      issueViewOptions: { openIssues: true, ignoredIssues: true },
+      issueViewOptions: { openIssues: true, ignoredIssues: true /* value should be irrelevant */ },
       issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
-      expectedNodeLabels: ['✋ 2 issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI'],
+      expectedNodeLabels: ['✋ 2 issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly when not viewing open issues with CCI enabled',
@@ -125,10 +125,7 @@ suite('Code Issue Tree Provider', () => {
         deepStrictEqual(rootChildrenLabels, testCase.expectedNodeLabels);
       } finally {
         configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
-        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
-          openIssues: true,
-          ignoredIssues: true,
-        });
+        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, DEFAULT_ISSUE_VIEW_OPTIONS);
       }
     });
   }

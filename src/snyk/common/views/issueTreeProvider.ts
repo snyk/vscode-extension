@@ -114,7 +114,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode();
       topNodes.push(noIssueViewOptionSelectedWarning);
     } else {
-      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
+      const fixableIssueText = this.getFixableIssuesText(this.getFixableCount());
+      if (fixableIssueText !== null) {
+        topNodes.push(new TreeNode({ text: fixableIssueText }));
+      }
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
 
@@ -132,7 +135,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return nodes;
   }
 
-  getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {
+  getFixableIssuesText(_fixableIssueCount: number): string | null {
     return null; // optionally overridden by products
   }
 
@@ -312,12 +315,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {
     const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     const showingOpen = this.configuration.issueViewOptions.openIssues;
-    if (isIgnoresEnabled && !showingOpen) {
-      return 'Open issues are disabled!';
-    }
 
+    if (isIgnoresEnabled && !showingOpen) {
+      return commonMessages.openIssuesAreDisabled;
+    }
     if (totalIssueCount === 0) {
-      return '✅ Congrats! No issues found!';
+      return commonMessages.congratsNoIssuesFound;
     } else {
       return `✋ ${totalIssueCount} issue${totalIssueCount === 1 ? '' : 's'}`;
     }

@@ -14,7 +14,7 @@ import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
 import CodeSecurityIssueTreeProvider from '../../snyk/snykCode/views/securityIssueTreeProvider';
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
-import { IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
 
 suite('Code Security Issue Tree Provider', () => {
   let viewManagerService: IViewManagerService;
@@ -79,14 +79,14 @@ suite('Code Security Issue Tree Provider', () => {
       name: 'getRootChildren returns correctly for one non-fixable issue with CCI diabled',
       consistentIgnores: false,
       issues: [makeMockCodeIssue()],
-      expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI'],
+      expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly when viewing open & ignored and have two open issues one fixable with CCI enabled',
       consistentIgnores: true,
       issueViewOptions: { openIssues: true, ignoredIssues: true },
       issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
-      expectedNodeLabels: ['✋ 2 open issues, 0 ignored issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI'],
+      expectedNodeLabels: ['✋ 2 open issues, 0 ignored issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly when viewing only open and have none with CCI enabled',
@@ -100,7 +100,7 @@ suite('Code Security Issue Tree Provider', () => {
       consistentIgnores: true,
       issueViewOptions: { openIssues: true, ignoredIssues: false },
       issues: [makeMockCodeIssue()],
-      expectedNodeLabels: ['✋ 1 open issue', 'There are no issues fixable by Snyk DeepCode AI'],
+      expectedNodeLabels: ['✋ 1 open issue', 'There are no issues fixable by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly when viewing only ignored and have none with CCI enabled',
@@ -126,7 +126,7 @@ suite('Code Security Issue Tree Provider', () => {
       issues: [],
       expectedNodeLabels: [
         'Open and Ignored issues are disabled!',
-        'Adjust your setttings to view Open or Ignored issues.',
+        'Adjust your settings to view Open or Ignored issues.',
       ],
     },
   ];
@@ -164,10 +164,7 @@ suite('Code Security Issue Tree Provider', () => {
         deepStrictEqual(rootChildrenLabels, testCase.expectedNodeLabels);
       } finally {
         configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
-        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, {
-          openIssues: true,
-          ignoredIssues: true,
-        });
+        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, DEFAULT_ISSUE_VIEW_OPTIONS);
       }
     });
   }

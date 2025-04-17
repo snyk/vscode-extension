@@ -98,40 +98,40 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
 
     const showingOpen = this.configuration.issueViewOptions.openIssues;
     const showingIgnored = this.configuration.issueViewOptions.ignoredIssues;
+
     const openIssuesText = `${openIssueCount} open issue${openIssueCount === 1 ? '' : 's'}`;
     const ignoredIssuesText = `${ignoredIssueCount} ignored issue${ignoredIssueCount === 1 ? '' : 's'}`;
 
-    if (showingOpen) {
-      if (showingIgnored) {
-        if (totalIssueCount === 0) {
-          return '✅ Congrats! No issues found!';
-        } else {
-          return `✋ ${openIssuesText}, ${ignoredIssuesText}`;
-        }
+    if (showingOpen && showingIgnored) {
+      if (totalIssueCount === 0) {
+        return messages.congratsNoIssuesFound;
       } else {
-        if (openIssueCount === 0) {
-          return '✅ Congrats! No open issues found!';
-        } else {
-          return `✋ ${openIssuesText}`;
-        }
+        return `✋ ${openIssuesText}, ${ignoredIssuesText}`;
       }
-    } else if (showingIgnored) {
+    }
+    if (showingOpen) {
+      if (openIssueCount === 0) {
+        return messages.congratsNoOpenIssuesFound;
+      } else {
+        return `✋ ${openIssuesText}`;
+      }
+    }
+    if (showingIgnored) {
       if (ignoredIssueCount === 0) {
-        return '✋ No ignored issues, open issues are disabled';
+        return messages.noIgnoredIssues;
       } else {
         return `✋ ${ignoredIssuesText}, open issues are disabled`;
       }
-    } else {
-      return 'Open and Ignored issues are disabled!';
     }
+    return messages.openAndIgnoredIssuesAreDisabled;
   }
 
-  getFixableIssuesNode(fixableIssueCount: number): TreeNode | null {
+  getFixableIssuesText(fixableIssueCount: number): string | null {
     const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     const showingOpen = this.configuration.issueViewOptions.openIssues;
     if (isIgnoresEnabled && !showingOpen) {
       return null;
     }
-    return super.getFixableIssuesNode(fixableIssueCount);
+    return super.getFixableIssuesText(fixableIssueCount);
   }
 }
