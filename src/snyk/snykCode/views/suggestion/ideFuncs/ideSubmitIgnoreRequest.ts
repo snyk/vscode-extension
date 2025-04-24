@@ -16,7 +16,7 @@ const submitIgnoreRequestMessage: SubmitIgnoreRequestMessage = {
   type: 'submitIgnoreRequest',
   args: {
     // @ts-expect-error this will be injected from a func coming from LS
-    id: suggestion.id,
+    id: issueId,
     // @ts-expect-error this will be injected from a func coming from LS
     ignoreType: ignoreType,
     // @ts-expect-error this will be injected from a func coming from LS
