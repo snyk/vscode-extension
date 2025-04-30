@@ -64,8 +64,8 @@ const mockIaCIssue: Issue<IacIssueData> = {
     path: undefined,
     resolve: undefined,
     references: undefined,
-    customUIContent: ''
-  }
+    customUIContent: '',
+  },
 };
 
 export function makeMockCodeIssue(overridingProperties?: Partial<Issue<Partial<CodeIssueData>>>): Issue<CodeIssueData> {
