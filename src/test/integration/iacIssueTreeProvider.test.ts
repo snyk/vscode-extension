@@ -2,30 +2,35 @@ import sinon from 'sinon';
 import * as vscode from 'vscode';
 
 import { IVSCodeLanguages } from '../../snyk/common/vscode/languages';
-import { CodeIssueData, Issue, ScanProduct } from '../../snyk/common/languageServer/types';
+import { IacIssueData, Issue, ScanProduct } from '../../snyk/common/languageServer/types';
 import { IContextService } from '../../snyk/common/services/contextService';
 import { IProductService } from '../../snyk/common/services/productService';
-import { IssueTreeProvider } from '../../snyk/snykCode/views/issueTreeProvider';
 import { deepStrictEqual } from 'assert';
 import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
 import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings';
 import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
 import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
-import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
 import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import IacIssueTreeProvider from '../../snyk/snykIac/views/iacIssueTreeProvider';
+import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
+import { makeMockIaCIssue } from '../unit/mocks/issue.mock';
 
-suite('Code Issue Tree Provider', () => {
+suite('IaC Issue Tree Provider', () => {
+  let viewManagerService: IViewManagerService;
   let contextService: IContextService;
-  let codeService: IProductService<CodeIssueData>;
+  let iacService: IProductService<IacIssueData>;
   let languages: IVSCodeLanguages;
   let folderConfigs: IFolderConfigs;
 
   setup(() => {
+    viewManagerService = {
+      refreshIacViewEmitter: sinon.stub(),
+    } as unknown as IViewManagerService;
     contextService = {
-      shouldShowCodeAnalysis: true,
+      shouldShowIacAnalysis: true,
     } as unknown as IContextService;
-    codeService = {
+    iacService = {
       isLsDownloadSuccessful: true,
       isAnyWorkspaceFolderTrusted: true,
       isAnalysisRunning: false,
@@ -33,8 +38,8 @@ suite('Code Issue Tree Provider', () => {
       result: {
         values: () => [[]],
       },
-      getSnykProductType: () => ScanProduct.Code,
-    } as unknown as IProductService<CodeIssueData>;
+      getSnykProductType: () => ScanProduct.InfrastructureAsCode,
+    } as unknown as IProductService<IacIssueData>;
     languages = {} as unknown as IVSCodeLanguages;
     folderConfigs = {} as unknown as IFolderConfigs;
   });
@@ -54,7 +59,7 @@ suite('Code Issue Tree Provider', () => {
         issueViewOptions: IssueViewOptions;
       }
   ) & {
-      issues: Issue<CodeIssueData>[];
+      issues: Issue<IacIssueData>[];
       expectedNodeLabels: string[];
     })[] = [
     {
@@ -73,15 +78,8 @@ suite('Code Issue Tree Provider', () => {
     {
       name: 'getRootChildren returns correctly for one issue with CCI disabled',
       consistentIgnores: false,
-      issues: [makeMockCodeIssue()],
-      expectedNodeLabels: ['✋ 1 issue', 'There are no issues fixable by Snyk DeepCode AI.'],
-    },
-    {
-      name: 'getRootChildren returns correctly for two visable one fixable issues with CCI enabled',
-      consistentIgnores: true,
-      issueViewOptions: { openIssues: true, ignoredIssues: true /* value should be irrelevant */ },
-      issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
-      expectedNodeLabels: ['✋ 2 issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI.'],
+      issues: [makeMockIaCIssue()],
+      expectedNodeLabels: ['✋ 1 issue'],
     },
     {
       name: 'getRootChildren returns correctly when not viewing open issues with CCI enabled',
@@ -105,16 +103,16 @@ suite('Code Issue Tree Provider', () => {
             .update(ISSUE_VIEW_OPTIONS_SETTING, { openIssues: false, ignoredIssues: false });
         }
 
-        const issueTreeProvider = new IssueTreeProvider(
+        const issueTreeProvider = new IacIssueTreeProvider(
           new LoggerMockFailOnErrors(),
+          viewManagerService,
           contextService,
           {
-            ...codeService,
+            ...iacService,
             result: new Map([['fake-dir', testCase.issues]]),
-          } as IProductService<CodeIssueData>,
+          } as IProductService<IacIssueData>,
           configuration,
           languages,
-          true,
           folderConfigs,
         );
 

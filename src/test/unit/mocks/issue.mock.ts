@@ -1,8 +1,8 @@
-import { CodeIssueData, Issue, IssueSeverity } from '../../../snyk/common/languageServer/types';
+import { CodeIssueData, IacIssueData, Issue, IssueSeverity } from '../../../snyk/common/languageServer/types';
 
 const mockCodeIssue: Issue<CodeIssueData> = {
-  id: '123MockIssue456',
-  title: 'Mock issue',
+  id: '123MockCodeIssue456',
+  title: 'Mock Code issue',
   severity: IssueSeverity.Low,
   filePath: '//folderName//test.js',
   range: {
@@ -37,6 +37,37 @@ const mockCodeIssue: Issue<CodeIssueData> = {
   },
 };
 
+const mockIaCIssue: Issue<IacIssueData> = {
+  id: '123MockIaCIssue456',
+  title: 'Mock IaC issue',
+  severity: IssueSeverity.Low,
+  filePath: '//folderName//test.js',
+  range: {
+    start: {
+      line: 0,
+      character: 0,
+    },
+    end: {
+      line: 0,
+      character: 0,
+    },
+  },
+  isIgnored: false,
+  isNew: false,
+  filterableIssueType: '',
+  additionalData: {
+    publicId: '',
+    documentation: '',
+    lineNumber: 0,
+    issue: '',
+    impact: '',
+    path: undefined,
+    resolve: undefined,
+    references: undefined,
+    customUIContent: ''
+  }
+};
+
 export function makeMockCodeIssue(overridingProperties?: Partial<Issue<Partial<CodeIssueData>>>): Issue<CodeIssueData> {
   if (!overridingProperties) {
     return mockCodeIssue;
@@ -46,6 +77,20 @@ export function makeMockCodeIssue(overridingProperties?: Partial<Issue<Partial<C
     ...overridingProperties,
     additionalData: {
       ...mockCodeIssue.additionalData,
+      ...overridingProperties.additionalData,
+    },
+  };
+}
+
+export function makeMockIaCIssue(overridingProperties?: Partial<Issue<Partial<IacIssueData>>>): Issue<IacIssueData> {
+  if (!overridingProperties) {
+    return mockIaCIssue;
+  }
+  return {
+    ...mockIaCIssue,
+    ...overridingProperties,
+    additionalData: {
+      ...mockIaCIssue.additionalData,
       ...overridingProperties.additionalData,
     },
   };
