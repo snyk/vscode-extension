@@ -9,6 +9,7 @@ import {
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
   SNYK_CODE_FIX_APPLY_EDIT_COMMAND,
+  SNYK_SUBMIT_IGNORE_COMMAND,
 } from '../../../common/constants/commands';
 import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
@@ -139,33 +140,27 @@ export class CodeSuggestionWebviewProvider
         'suggestion',
         'codeSuggestionWebviewScriptLS.js',
       );
-      const ideGenerateAiFixScriptPath = vscode.Uri.joinPath(
-        vscode.Uri.file(this.context.extensionPath),
-        'out',
-        'snyk',
-        'snykCode',
-        'views',
-        'suggestion',
-        'ideFuncs',
-        'ideGenerateAiFix.js',
-      );
-      const ideApplyFixScriptPath = vscode.Uri.joinPath(
-        vscode.Uri.file(this.context.extensionPath),
-        'out',
-        'snyk',
-        'snykCode',
-        'views',
-        'suggestion',
-        'ideFuncs',
-        'ideApplyAiFix.js',
-      );
-      const generateAiFixScript = readFileSync(ideGenerateAiFixScriptPath.fsPath, 'utf8');
-      const applyAiFixScript = readFileSync(ideApplyFixScriptPath.fsPath, 'utf8');
       const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
+      const ideFuncsPath = vscode.Uri.joinPath(
+        vscode.Uri.file(this.context.extensionPath),
+        'out',
+        'snyk',
+        'snykCode',
+        'views',
+        'suggestion',
+        'ideFuncs',
+      );
+      const ideGenerateAiFixScriptPath = vscode.Uri.joinPath(ideFuncsPath, 'ideGenerateAiFix.js');
+      const ideGenerateAiFixScript = readFileSync(ideGenerateAiFixScriptPath.fsPath, 'utf8');
+      const ideApplyFixScriptPath = vscode.Uri.joinPath(ideFuncsPath, 'ideApplyAiFix.js');
+      const ideApplyAiFixScript = readFileSync(ideApplyFixScriptPath.fsPath, 'utf8');
+      const ideSubmitIgnoreRequestScriptPath = vscode.Uri.joinPath(ideFuncsPath, 'ideSubmitIgnoreRequest.js');
+      const ideSubmitIgnoreRequestScript = readFileSync(ideSubmitIgnoreRequestScriptPath.fsPath, 'utf8');
       html = html.replace('${ideStyle}', ideStyle);
       html = html.replace('${ideScript}', ideScript);
-      html = html.replace('${ideGenerateAIFix}', generateAiFixScript);
-      html = html.replace('${ideApplyAIFix}', applyAiFixScript);
+      html = html.replace('${ideGenerateAIFix}', ideGenerateAiFixScript);
+      html = html.replace('${ideApplyAIFix}', ideApplyAiFixScript);
+      html = html.replace('${ideSubmitIgnoreRequest}', ideSubmitIgnoreRequestScript);
       const nonce = getNonce();
       html = html.replaceAll('${nonce}', nonce);
       html = html.replace('--default-font: ', '--default-font: var(--vscode-font-family) ,');
@@ -259,6 +254,20 @@ export class CodeSuggestionWebviewProvider
             isFileIgnore: !lineOnly,
           });
           this.panel?.dispose();
+          break;
+        }
+
+        case 'submitIgnoreRequest': {
+          this.logger.info('Sending ignore request');
+          const { id, ignoreType, ignoreExpirationDate, ignoreReason } = message.args;
+          await vscode.commands.executeCommand(
+            SNYK_SUBMIT_IGNORE_COMMAND,
+            'create',
+            id,
+            ignoreType,
+            ignoreReason,
+            ignoreExpirationDate,
+          );
           break;
         }
 

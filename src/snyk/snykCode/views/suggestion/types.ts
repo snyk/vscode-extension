@@ -103,6 +103,7 @@ export type SuggestionMessage =
   | OpenLocalMessage
   | OpenBrowserMessage
   | IgnoreIssueMessage
+  | SubmitIgnoreRequestMessage
   | GetAutofixDiffsMesssage
   | FixApplyEditMessage
   | SetSuggestionMessage
