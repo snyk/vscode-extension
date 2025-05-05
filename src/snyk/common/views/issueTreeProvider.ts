@@ -339,7 +339,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     if (!nIssues) {
       return '✅ Congrats! No issues found!';
     }
-    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
+    return `✋ ${nIssues} issue${nIssues === 1 ? '' : 's'} found`;
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {

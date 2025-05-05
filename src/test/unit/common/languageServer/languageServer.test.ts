@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import assert, { deepStrictEqual, strictEqual } from 'assert';
 import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
@@ -17,7 +16,7 @@ import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
-import { ExtensionContext, IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
+import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
@@ -31,7 +30,7 @@ suite('Language Server', () => {
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
-  let extensionContextMock: ExtensionContext;
+
   const path = 'testPath';
   const logger = new LoggerMockFailOnErrors();
 
@@ -83,16 +82,6 @@ suite('Language Server', () => {
       scanningMode: 'auto',
     } as IConfiguration;
 
-    extensionContextMock = {
-      extensionPath: 'test/path',
-      getGlobalStateValue: sinon.fake(),
-      updateGlobalStateValue: sinon.fake(),
-      setContext: sinon.fake(),
-      subscriptions: [],
-      addDisposables: sinon.fake(),
-      getExtensionUri: sinon.fake(),
-    } as unknown as ExtensionContext;
-
     downloadServiceMock = {
       downloadReady$: new ReplaySubject<void>(1),
     } as DownloadService;
@@ -108,7 +97,6 @@ suite('Language Server', () => {
         _id: string,
         _name: string,
         serverOptions: ServerOptions,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _clientOptions: LanguageClientOptions,
       ): LanguageClient {
         return {
@@ -232,7 +220,7 @@ suite('Language Server', () => {
       );
     });
 
-    test('LanguageServer should provide correct initialization options', async () => {
+    test('LanguageServer should provide empty folder configs when no folder configs were received', async () => {
       const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
         activateSnykCodeQuality: 'true',
@@ -263,6 +251,55 @@ suite('Language Server', () => {
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
+    });
+
+    test('LanguageServer should include folder configs when they have been received from language server', async () => {
+      // Setup a sample folder config
+      const sampleFolderConfig: FolderConfig = {
+        folderPath: '/test/path',
+        baseBranch: 'main',
+        localBranches: ['main', 'develop'],
+        referenceFolderPath: undefined,
+      };
+      configurationMock.getFolderConfigs = () => [sampleFolderConfig];
+
+      // Simulate language server notification about folder configs
+      // This is normally done in the registerListeners method when receiving a notification
+      // Access private field via type assertion to LanguageServer with private field type
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
+
+      // Create expected initialization options with the folder config included
+      const expectedInitializationOptions: ServerSettings = {
+        activateSnykCodeSecurity: 'true',
+        activateSnykCodeQuality: 'true',
+        enableDeltaFindings: 'false',
+        activateSnykOpenSource: 'false',
+        activateSnykIac: 'true',
+        token: 'testToken',
+        cliPath: 'testPath',
+        sendErrorReports: 'true',
+        integrationName: 'VS_CODE',
+        integrationVersion: '0.0.0',
+        automaticAuthentication: 'false',
+        endpoint: undefined,
+        organization: undefined,
+        additionalParams: '--all-projects -d',
+        manageBinariesAutomatically: 'true',
+        deviceId: user.anonymousId,
+        filterSeverity: { critical: true, high: true, medium: true, low: true },
+        enableTrustedFoldersFeature: 'true',
+        trustedFolders: ['/trusted/test/folder'],
+        insecure: 'true',
+        requiredProtocolVersion: PROTOCOL_VERSION.toString(),
+        scanningMode: 'auto',
+        folderConfigs: [sampleFolderConfig],
+        authenticationMethod: 'oauth',
+        enableSnykOSSQuickFixCodeActions: 'false',
+        hoverVerbosity: 1,
+      };
+      const initializationOptions = await languageServer.getInitializationOptions();
+      LanguageServer.ReceivedFolderConfigsFromLs = false;
+      deepStrictEqual(initializationOptions, expectedInitializationOptions);
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {

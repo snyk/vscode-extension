@@ -7,7 +7,6 @@ import {
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
-  SNYK_MCPSERVERURL,
   SNYK_SCAN,
   SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
@@ -50,6 +49,7 @@ export class LanguageServer implements ILanguageServer {
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
+  public static ReceivedFolderConfigsFromLs = false;
 
   constructor(
     private user: User,
@@ -96,10 +96,8 @@ export class LanguageServer implements ILanguageServer {
     if (proxyEnvVariable) {
       processEnv = {
         ...processEnv,
-        // eslint-disable-next-line camelcase
-        https_proxy: proxyEnvVariable,
-        // eslint-disable-next-line camelcase
-        http_proxy: proxyEnvVariable,
+        HTTPS_PROXY: proxyEnvVariable,
+        HTTP_PROXY: proxyEnvVariable,
       };
     }
 
@@ -131,7 +129,6 @@ export class LanguageServer implements ILanguageServer {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initializationOptions: await this.getInitializationOptions(),
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
@@ -168,8 +165,9 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
       this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
+        ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
       });
     });
 

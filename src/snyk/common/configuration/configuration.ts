@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
@@ -32,7 +33,6 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 
 const NEWISSUES = 'Net new issues';
 const ALLISSUES = 'All issues';
@@ -170,6 +170,7 @@ export class Configuration implements IConfiguration {
 
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
+  private inMemoryFolderConfigs: FolderConfig[] = [];
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -243,13 +244,11 @@ export class Configuration implements IConfiguration {
   }
 
   static async getVersion(): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { version } = await this.getPackageJsonConfig();
     return version;
   }
 
   static async isPreview(): Promise<boolean> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
   }
@@ -606,10 +605,7 @@ export class Configuration implements IConfiguration {
   }
 
   getFolderConfigs(): FolderConfig[] {
-    return (
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      []
-    );
+    return this.inMemoryFolderConfigs;
   }
 
   get scanningMode(): string | undefined {
@@ -626,10 +622,11 @@ export class Configuration implements IConfiguration {
   }
 
   async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
+    this.inMemoryFolderConfigs = folderConfigs;
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(FOLDER_CONFIGS),
-      folderConfigs,
+      this.inMemoryFolderConfigs,
       true,
     );
   }

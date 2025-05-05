@@ -91,6 +91,7 @@ export class FolderConfigs implements IFolderConfigs {
       i.folderPath === folderConfig.folderPath ? folderConfig : i,
     );
     await config.setFolderConfigs(finalFolderConfigs);
+    this.folderConfigsCache = finalFolderConfigs;
   }
 
   resetFolderConfigsCache() {

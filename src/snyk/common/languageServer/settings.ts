@@ -3,6 +3,7 @@ import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { LanguageServer } from './languageServer';
 
 export type ServerSettings = {
   // Feature toggles
@@ -85,7 +86,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: configuration.getFolderConfigs(),
+      folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
       hoverVerbosity: 1,
     };
