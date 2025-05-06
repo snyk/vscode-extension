@@ -139,7 +139,7 @@ export class GeminiIntegrationService {
       this.logger.debug('received chat request from gemini: ' + request.prompt.fullPrompt());
       if (token.isCancellationRequested) return Promise.resolve();
 
-      if (!request.prompt.fullPrompt().includes('/scan') && !request.prompt.fullPrompt().includes('show')) {
+      if (!request.prompt.fullPrompt().includes('scan') && !request.prompt.fullPrompt().includes('show')) {
         responseStream.push(
           this.markdownAdapter.get(
             'It seems, you tried to invoke the Snyk Security tool integration. Unfortunately, we were not able to recognize the command you sent. You can try `@snyk /scan` to scan for issues and display them here.',
@@ -152,7 +152,7 @@ export class GeminiIntegrationService {
 
       await this.handleDelta(request, responseStream);
 
-      if (request.prompt.fullPrompt().includes('/scan')) {
+      if (request.prompt.fullPrompt().includes('scan')) {
         responseStream.push(this.markdownAdapter.get('Scanning workspace with Snyk...'));
 
         let openScansCount = this.countEnabledProducts();
