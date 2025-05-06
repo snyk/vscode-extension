@@ -97,8 +97,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     }
     nodes.sort(this.compareNodes);
 
+    // totalIssueCount is the number of issues returned by LS, which pre-filters on Issue View Options and Severity Filters.
     const totalIssueCount = this.getTotalIssueCount();
     const ignoredIssueCount = this.getIgnoredCount();
+    // Depending on Issue View Options, ignored issues might be pre-filtered by the LS and so ignoredIssueCount may be 0.
+    // In this case, openIssueCount is the total issue count returned by the LS.
     const openIssueCount = totalIssueCount - ignoredIssueCount;
 
     const topNodes: (TreeNode | null)[] = [
