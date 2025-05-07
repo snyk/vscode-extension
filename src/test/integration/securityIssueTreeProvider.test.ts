@@ -86,7 +86,7 @@ suite('Code Security Issue Tree Provider', () => {
       consistentIgnores: true,
       issueViewOptions: { openIssues: true, ignoredIssues: true },
       issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
-      expectedNodeLabels: ['✋ 2 open issues, 0 ignored issues', '⚡️ 1 issue can be fixed by Snyk DeepCode AI.'],
+      expectedNodeLabels: ['✋ 2 open issues & 0 ignored issues', '⚡️ 1 open issue is fixable by Snyk DeepCode AI.'],
     },
     {
       name: 'getRootChildren returns correctly when viewing only open and have none with CCI enabled',

@@ -89,7 +89,8 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     }
 
     return fixableIssueCount > 0
-      ? `⚡️ ${fixableIssueCount} ${fixableIssueCount === 1 ? 'issue' : 'issues'} can be fixed by Snyk DeepCode AI.`
+      ? `⚡️ ${fixableIssueCount}${isIgnoresEnabled ? ' open' : ''} issue${fixableIssueCount === 1 ? ' is' : 's are'}` +
+          ' fixable by Snyk DeepCode AI.'
       : analysisMessages.noFixableIssues;
   }
 
@@ -154,7 +155,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
       if (totalIssueCount === 0) {
         return analysisMessages.congratsNoIssuesFound;
       } else {
-        return `✋ ${openIssuesText}, ${ignoredIssuesText}`;
+        return `✋ ${openIssuesText} & ${ignoredIssuesText}`;
       }
     }
     if (showingOpen) {
