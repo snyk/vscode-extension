@@ -1,5 +1,11 @@
 import assert from 'assert';
-import { FolderConfig, IConfiguration, PreviewFeatures } from '../../../../snyk/common/configuration/configuration';
+import {
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_SEVERITY_FILTER,
+  FolderConfig,
+  IConfiguration,
+  PreviewFeatures,
+} from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
 
@@ -33,7 +39,8 @@ suite('LanguageServerSettings', () => {
         getAuthenticationMethod(): string {
           return 'oauth';
         },
-        severityFilter: { critical: true, high: true, medium: true, low: false },
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         scanningMode: 'scan-mode',
       } as unknown as IConfiguration;
 

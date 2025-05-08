@@ -48,17 +48,6 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     return this.contextService.shouldShowIacAnalysis;
   }
 
-  getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
-    return `${dir} - ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`;
-  }
-
-  getIssueFoundText(nIssues: number, _: number): string {
-    if (!nIssues) {
-      return '✅ Congrats! No issues found!';
-    }
-    return `✋ ${nIssues} issue${nIssues === 1 ? '' : 's'} found`;
-  }
-
   filterIssues(issues: Issue<IacIssueData>[]): Issue<IacIssueData>[] {
     return issues;
   }

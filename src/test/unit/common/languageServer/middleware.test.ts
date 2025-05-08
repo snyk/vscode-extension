@@ -1,6 +1,11 @@
 import assert from 'assert';
 import sinon from 'sinon';
-import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import {
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_SEVERITY_FILTER,
+  FolderConfig,
+  IConfiguration,
+} from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { User } from '../../../../snyk/common/user';
@@ -49,12 +54,8 @@ suite('Language Server: Middleware', () => {
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
       },
-      severityFilter: {
-        critical: true,
-        high: true,
-        medium: true,
-        low: true,
-      },
+      severityFilter: DEFAULT_SEVERITY_FILTER,
+      issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders: () => ['/trusted/test/folder'],
       getFolderConfigs(): FolderConfig[] {
         return [];
