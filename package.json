@@ -237,7 +237,7 @@
             "type": "object",
             "default": {
               "openIssues": true,
-              "ignoredIssues": true
+              "ignoredIssues": false
             },
             "properties": {
               "openIssues": {
@@ -248,7 +248,7 @@
               "ignoredIssues": {
                 "type": "boolean",
                 "description": "Ignored Issues",
-                "default": true
+                "default": false
               }
             },
             "additionalProperties": false,
