@@ -17,6 +17,12 @@ The Snyk Visual Studio Code extension allows you to analyze your code, open-sour
 
 ## How to install and set up the extension
 
+
+For information about the versions of Visual Studio Code supported by the Visual Studio Code extension, see [Snyk IDE plugins and extensions](../).
+
+Snyk recommends always using the latest version of the Visual Studio Code extension.
+
+
 You can use the Snyk Visual Studio Code extension in the following environments:
 
 * Linux: AMD64 and ARM64
