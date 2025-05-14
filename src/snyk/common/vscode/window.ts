@@ -46,6 +46,10 @@ export interface IVSCodeWindow {
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
 class VSCodeWindow implements IVSCodeWindow {
+  // Map to track recently shown authentication error messages
+  private recentAuthErrorMessages = new Map<string, number>();
+  // Debounce period for authentication error messages (5 seconds)
+  private readonly AUTH_ERROR_DEBOUNCE_MS = 5000;
   showOpenDialog(param: {
     canSelectFiles: boolean;
     canSelectFolders: boolean;
@@ -134,12 +138,45 @@ class VSCodeWindow implements IVSCodeWindow {
   }
 
   showErrorMessage(message: string, ...items: string[]): Promise<string | undefined> {
+    // Check if this is an authentication error message
+    const isAuthError =
+      message.toLowerCase().includes('authentication') ||
+      message.toLowerCase().includes('authenticate') ||
+      message.toLowerCase().includes('credentials');
+
+    if (isAuthError) {
+      const now = Date.now();
+      const lastShown = this.recentAuthErrorMessages.get(message);
+
+      // If we've shown this message recently, don't show it again
+      if (lastShown && now - lastShown < this.AUTH_ERROR_DEBOUNCE_MS) {
+        return Promise.resolve(undefined);
+      }
+
+      // Update the timestamp for this message
+      this.recentAuthErrorMessages.set(message, now);
+
+      // Clean up old messages from the map
+      this.cleanupOldAuthErrors(now);
+    }
+
     return new Promise((resolve, reject) => {
       vscode.window.showErrorMessage(message, ...items).then(
         (value: string | undefined) => resolve(value),
         reason => reject(reason),
       );
     });
+  }
+
+  /**
+   * Clean up authentication error messages that are older than the debounce period
+   */
+  private cleanupOldAuthErrors(now: number): void {
+    for (const [message, timestamp] of this.recentAuthErrorMessages.entries()) {
+      if (now - timestamp > this.AUTH_ERROR_DEBOUNCE_MS) {
+        this.recentAuthErrorMessages.delete(message);
+      }
+    }
   }
 
   showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined> {
