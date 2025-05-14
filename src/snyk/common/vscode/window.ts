@@ -138,11 +138,13 @@ class VSCodeWindow implements IVSCodeWindow {
   }
 
   showErrorMessage(message: string, ...items: string[]): Promise<string | undefined> {
+    if (!message) {
+      return Promise.resolve(undefined);
+    }
+
     // Check if this is an authentication error message
-    const isAuthError =
-      message.toLowerCase().includes('authentication') ||
-      message.toLowerCase().includes('authenticate') ||
-      message.toLowerCase().includes('credentials');
+    const AUTH_ERROR_KEYWORDS = ['authentication', 'authenticate', 'credentials'];
+    const isAuthError = AUTH_ERROR_KEYWORDS.some(keyword => message.toLowerCase().includes(keyword));
 
     if (isAuthError) {
       const now = Date.now();
