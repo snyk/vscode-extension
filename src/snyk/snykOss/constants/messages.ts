@@ -23,10 +23,5 @@ export const messages = {
   treeView: {
     cookingDependencies: 'Scanning...',
     runTest: 'Run scan for Open Source security issues.',
-    noVulnerabilitiesFound: ' ✅ Congrats! No issues found!',
-    issue: 'issue',
-    issues: 'issues',
-    singleVulnerabilityFound: '✋ 1 issue found',
-    multipleVulnerabilitiesFound: (issueCount: number): string => `✋ ${issueCount} issues found`,
   },
 };

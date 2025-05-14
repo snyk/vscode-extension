@@ -7,7 +7,6 @@ import { messages } from '../messages/analysisMessages';
 import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
-import { configuration } from '../configuration/instance';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
@@ -50,48 +49,24 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     });
   }
 
-  protected getNoIssueViewOptionsSelectedTreeNode(numIssues: number, ignoredIssueCount: number): TreeNode | null {
-    const isIgnoresEnabled = configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+  protected getNoIssueViewOptionsSelectedTreeNode(): TreeNode | null {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
     if (!isIgnoresEnabled) {
       return null;
     }
 
-    const anyOptionEnabled = Object.values<boolean>(this.configuration.issueViewOptions).find(enabled => !!enabled);
-    if (!anyOptionEnabled) {
-      return new TreeNode({
-        text: messages.allIssueViewOptionsDisabled,
-      });
-    }
-
-    if (numIssues === 0) {
-      return null;
-    }
-
-    // if only ignored issues are enabled, then let the customer know to adjust their settings
-    if (numIssues === ignoredIssueCount && !this.configuration.issueViewOptions.ignoredIssues) {
-      return new TreeNode({
-        text: messages.ignoredIssueViewOptionDisabled,
-        command: {
-          command: VSCODE_GO_TO_SETTINGS_COMMAND,
-          title: '',
-          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`],
-        },
-      });
-    }
-
-    // if only open issues are enabled, then let the customer know to adjust their settings
-    if (ignoredIssueCount === 0 && !this.configuration.issueViewOptions.openIssues) {
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+    if (!showingOpen) {
       return new TreeNode({
         text: messages.openIssueViewOptionDisabled,
         command: {
           command: VSCODE_GO_TO_SETTINGS_COMMAND,
           title: '',
-          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION}`],
+          arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION} snyk.issueViewOptions`],
         },
       });
     }
 
-    // if all options are enabled we don't want to show a warning
     return null;
   }
 

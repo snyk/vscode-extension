@@ -3,7 +3,12 @@ import { ReplaySubject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
-import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import {
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_SEVERITY_FILTER,
+  FolderConfig,
+  IConfiguration,
+} from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
@@ -67,12 +72,8 @@ suite('Language Server', () => {
           ossQuickfixes: false,
         };
       },
-      severityFilter: {
-        critical: true,
-        high: true,
-        medium: true,
-        low: true,
-      },
+      severityFilter: DEFAULT_SEVERITY_FILTER,
+      issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
       },
@@ -238,7 +239,8 @@ suite('Language Server', () => {
         additionalParams: '--all-projects -d',
         manageBinariesAutomatically: 'true',
         deviceId: user.anonymousId,
-        filterSeverity: { critical: true, high: true, medium: true, low: true },
+        filterSeverity: DEFAULT_SEVERITY_FILTER,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         enableTrustedFoldersFeature: 'true',
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
@@ -286,7 +288,8 @@ suite('Language Server', () => {
         additionalParams: '--all-projects -d',
         manageBinariesAutomatically: 'true',
         deviceId: user.anonymousId,
-        filterSeverity: { critical: true, high: true, medium: true, low: true },
+        filterSeverity: DEFAULT_SEVERITY_FILTER,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         enableTrustedFoldersFeature: 'true',
         trustedFolders: ['/trusted/test/folder'],
         insecure: 'true',
