@@ -64,7 +64,9 @@ export class SummaryWebviewViewProvider implements vscode.WebviewViewProvider {
 
       html = html.replace('${ideStyle}', `<style nonce=${nonce}>` + '' + '</style>');
       html = html.replace('${ideFunc}', ideScript);
-      html = html.replace('${ideScript}', '');
+      // Must not have blank template replacements, as they could be used to skip the "${nonce}" injection check
+      // and still end up with the nonce injected, e.g. "${nonce${resolvesToEmpty}}" becomes "${nonce}" - See IDE-1050.
+      html = html.replace('${ideScript}', ' ');
       html = html.replace(/\${nonce}/g, nonce);
 
       this.webviewView.webview.html = html;
