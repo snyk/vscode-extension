@@ -194,7 +194,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     this.runningScanCount--;
 
     if (scanMsg.status == ScanStatus.Success) {
-      const issues = this.diagnosticsIssueProvider.getIssuesFromDiagnostics(scanMsg.product);
+      const issues = this.diagnosticsIssueProvider.getIssuesFromDiagnosticsForFolder(scanMsg.product, scanMsg.folderPath);
       this._result.set(scanMsg.folderPath, issues);
     } else {
       this._result.set(scanMsg.folderPath, new Error(scanMsg.errorMessage));

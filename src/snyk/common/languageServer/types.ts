@@ -36,6 +36,7 @@ export type Issue<T> = {
   title: string;
   severity: IssueSeverity;
   filePath: string;
+  contentRoot: string;
   range: Range;
   isIgnored: boolean;
   isNew: boolean;

@@ -276,16 +276,10 @@ export class CodeSuggestionWebviewProvider
 
           const { suggestion } = message.args;
           try {
-            const filePath = suggestion.filePath;
-            const folderPath = this.getWorkspaceFolderPath(filePath);
-            const relativePath = relative(folderPath, filePath);
-
             const issueId = suggestion.id;
 
             const diffs: AutofixUnifiedDiffSuggestion[] = await vscode.commands.executeCommand(
               SNYK_CODE_FIX_DIFFS_COMMAND,
-              folderPath,
-              relativePath,
               issueId,
             );
             // todo(berkay.berabi): Here if suggestions are empty, we should post a different type of message that

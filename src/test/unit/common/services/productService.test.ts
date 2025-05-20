@@ -60,6 +60,7 @@ suite('Product Service', () => {
       {} as IVSCodeLanguages,
       {
         getIssuesFromDiagnostics: () => [],
+        getIssuesFromDiagnosticsForFolder: () => [],
       } as IDiagnosticsIssueProvider<MockProductData>,
       new LoggerMock(),
       LsScanProduct.Code,
