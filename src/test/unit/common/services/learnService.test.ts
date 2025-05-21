@@ -51,6 +51,7 @@ suite('LearnService', () => {
       title: 'not used',
       severity: IssueSeverity.Critical,
       filePath: 'not used',
+      contentRoot: '//folderName',
       isIgnored: false,
       isNew: false,
       filterableIssueType: 'Code Security',

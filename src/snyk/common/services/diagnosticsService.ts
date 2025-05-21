@@ -11,9 +11,15 @@ class Diagnostic316<T> extends vscode.Diagnostic {
 
 export interface IDiagnosticsIssueProvider<T> {
   getIssuesFromDiagnostics(product: ScanProduct): Issue<T>[];
+  getIssuesFromDiagnosticsForFolder(product: ScanProduct, folderPath: string): Issue<T>[];
 }
 
 export class DiagnosticsIssueProvider<T> implements IDiagnosticsIssueProvider<T> {
+  getIssuesFromDiagnosticsForFolder(product: ScanProduct, folderPath: string): Issue<T>[] {
+    const issues = this.getIssuesFromDiagnostics(product);
+    return issues.filter(x => x.contentRoot == folderPath);
+  }
+
   getIssuesFromDiagnostics(product: ScanProduct): Issue<T>[] {
     const allDiagnostics = vscode.languages.getDiagnostics();
     const diagnosticsSource = productToLsProduct(product);

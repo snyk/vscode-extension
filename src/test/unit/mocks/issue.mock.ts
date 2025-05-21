@@ -5,6 +5,7 @@ const mockCodeIssue: Issue<CodeIssueData> = {
   title: 'Mock Code issue',
   severity: IssueSeverity.Low,
   filePath: '//folderName//test.js',
+  contentRoot: '//folderName',
   range: {
     start: {
       line: 0,
@@ -42,6 +43,7 @@ const mockIaCIssue: Issue<IacIssueData> = {
   title: 'Mock IaC issue',
   severity: IssueSeverity.Low,
   filePath: '//folderName//test.js',
+  contentRoot: '//folderName',
   range: {
     start: {
       line: 0,
