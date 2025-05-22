@@ -1,4 +1,4 @@
-import { TextDocument } from 'vscode';
+import { TextDocument, TextDocumentContentChangeEvent } from '../common/vscode/types';
 
 export type openedTextEditorType = {
   fullPath: string;
@@ -7,6 +7,6 @@ export type openedTextEditorType = {
     current: number;
     prevOffset: number;
   };
-  contentChanges: any[];
+  contentChanges: TextDocumentContentChangeEvent[];
   document: TextDocument;
 };

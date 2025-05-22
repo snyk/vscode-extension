@@ -14,9 +14,6 @@ import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { messages as errorMessages } from '../../messages/error';
 import { readFileSync } from 'fs';
 import { IVSCodeCommands } from '../../../common/vscode/commands';
-// import { getAbsoluteMarkerFilePath } from '../../utils/analysisUtils';
-// import { IssueUtils } from '../../utils/issueUtils';
-// import { ICodeSuggestionWebviewProvider } from '../interfaces';
 
 export class IacSuggestionWebviewProvider
   extends WebviewProvider<Issue<IacIssueData>>
@@ -128,9 +125,9 @@ export class IacSuggestionWebviewProvider
     super.onPanelDispose();
   }
 
-  private async handleMessage(message: any) {
+  private async handleMessage(message: unknown) {
     try {
-      const { type, value } = message;
+      const { type, value } = message as { type: string; value: unknown };
       switch (type) {
         case 'openBrowser': {
           await vscode.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, value);

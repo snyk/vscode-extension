@@ -1,8 +1,15 @@
 import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import { Configuration, FolderConfig, IConfiguration, SeverityFilter } from '../configuration/configuration';
+import {
+  Configuration,
+  FolderConfig,
+  IConfiguration,
+  IssueViewOptions,
+  SeverityFilter,
+} from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { LanguageServer } from './languageServer';
 
 export type ServerSettings = {
   // Feature toggles
@@ -29,6 +36,7 @@ export type ServerSettings = {
 
   // Security and scanning settings
   filterSeverity?: SeverityFilter;
+  issueViewOptions?: IssueViewOptions;
   scanningMode?: string;
   insecure?: string;
 
@@ -77,6 +85,7 @@ export class LanguageServerSettings {
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
       filterSeverity: configuration.severityFilter,
+      issueViewOptions: configuration.issueViewOptions,
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
       enableTrustedFoldersFeature: 'true',
@@ -85,7 +94,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: configuration.getFolderConfigs(),
+      folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
       hoverVerbosity: 1,
     };

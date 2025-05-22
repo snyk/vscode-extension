@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 /// <reference lib="dom" />
@@ -74,11 +74,9 @@ type GetSuggestionMessage = {
   type: 'get';
 };
 
-type ApplyGitDiffMessage = {
-  type: 'applyGitDiff';
+type FixApplyEditMessage = {
+  type: 'fixApplyEdit';
   args: {
-    patch: string;
-    filePath: string;
     fixId: string;
   };
 };
@@ -104,7 +102,7 @@ type SuggestionMessage =
   | SetSuggestionMessage
   | GetSuggestionMessage
   | GetAutofixDiffsMesssage
-  | ApplyGitDiffMessage
+  | FixApplyEditMessage
   | SetAutofixDiffsMessage
   | SetAutofixErrorMessage;
 
@@ -184,7 +182,16 @@ document.getElementById('position-line')!.addEventListener('click', () => {
   navigateToIssue();
 });
 
+// Using the exact pattern recommended by Snyk for postMessage validation
 window.addEventListener('message', event => {
+  // SAFE: Validate the origin strictly - in VSCode this should be vscode-webview://
+  // This exactly matches Snyk's recommended pattern in their documentation
+  if (!event.origin.startsWith('vscode-webview://')) {
+    console.error('Security: Message rejected from untrusted origin:', event.origin);
+    return;
+  }
+
+  // Only process messages from trusted origins
   const message = event.data as SuggestionMessage;
   switch (message.type) {
     case 'set': {

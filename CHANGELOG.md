@@ -1,5 +1,14 @@
 # Snyk Security Changelog
 
+## [2.22.0]
+- Support early access of Ignores Approval Workflow
+- Fix early access Issue View Options not hiding issues in editor
+
+## [2.21.1]
+- Gemini Tool fixes
+- Ensure default CAs are used when using proxy
+- Add scan source to workspace command
+
 ## [2.21.0]
 - add scan summary
 - add ability to enter PATs as Tokens

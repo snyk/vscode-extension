@@ -13,6 +13,7 @@ export const SNYK_DCIGNORE_COMMAND = 'snyk.dcignore';
 export const SNYK_OPEN_BROWSER_COMMAND = 'snyk.open';
 export const SNYK_OPEN_LOCAL_COMMAND = 'snyk.show';
 export const SNYK_OPEN_ISSUE_COMMAND = 'snyk.showissue';
+export const SNYK_NAVIGATE_TO_RANGE = 'snyk.navigateToRange';
 export const SNYK_IGNORE_ISSUE_COMMAND = 'snyk.ignoreissue';
 export const SNYK_SHOW_OUTPUT_COMMAND = 'snyk.showOutputChannel';
 export const SNYK_SHOW_LS_OUTPUT_COMMAND = 'snyk.showLsOutputChannel';
@@ -26,12 +27,15 @@ export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 export const SNYK_CODE_FIX_DIFFS_COMMAND = 'snyk.code.fixDiffs';
+export const SNYK_CODE_FIX_APPLY_EDIT_COMMAND = 'snyk.code.fixApplyEdit';
 export const SNYK_CODE_SUBMIT_FIX_FEEDBACK = 'snyk.code.submitFixFeedback';
 export const SNYK_FEATURE_FLAG_COMMAND = 'snyk.getFeatureFlagStatus';
 export const SNYK_CLEAR_CACHE_COMMAND = 'snyk.clearCache';
 export const SNYK_CLEAR_PERSISTED_CACHE_COMMAND = 'snyk.clearPersistedCache';
 export const SNYK_GENERATE_ISSUE_DESCRIPTION = 'snyk.generateIssueDescription';
 export const SNYK_REPORT_ANALYTICS = 'snyk.reportAnalytics';
+export const SNYK_EXECUTE_MCP_TOOL_COMMAND = 'snyk.executeMCPToolCall';
+export const SNYK_SUBMIT_IGNORE_COMMAND = 'snyk.submitIgnoreRequest';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

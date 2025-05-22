@@ -1,3 +1,5 @@
+import { Range } from 'vscode-languageserver-types';
+
 export enum ScanProduct {
   Code = 'code',
   OpenSource = 'oss',
@@ -34,8 +36,12 @@ export type Issue<T> = {
   title: string;
   severity: IssueSeverity;
   filePath: string;
-  additionalData: T;
+  contentRoot: string;
+  range: Range;
   isIgnored: boolean;
+  isNew: boolean;
+  filterableIssueType: string;
+  additionalData: T;
 };
 
 export enum IssueSeverity {
@@ -100,7 +106,7 @@ export type OssIssueData = {
   exploit?: string;
 
   CVSSv3?: string;
-  cvssScore?: string;
+  cvssScore?: number;
 
   fixedIn?: Array<string>;
   from: Array<string>;
@@ -145,4 +151,13 @@ export type SummaryMessage = {
   args: {
     summary: Summary;
   };
+};
+
+export enum SnykURIAction {
+  ShowInDetailPanel = 'showInDetailPanel',
+}
+
+export type ShowIssueDetailTopicParams = {
+  issueId: string;
+  product: LsScanProduct;
 };

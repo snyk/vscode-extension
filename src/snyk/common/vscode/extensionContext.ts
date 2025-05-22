@@ -1,4 +1,10 @@
 import * as vscode from 'vscode';
+import { Extension } from './extension';
+
+export interface IExtensionRetriever {
+  getExtension(id: string): Extension | undefined;
+  extensionPath: string;
+}
 
 /**
  * A wrapper class for the vscode.ExtensionContext to provide centralised access to a collection of utilities private to the extension.
