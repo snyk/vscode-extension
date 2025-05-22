@@ -10,6 +10,7 @@ import { OpenIssueCommandArg } from './common/commands/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
+  SNYK_ADD_TO_WORKSPACE_RECOMMENDATIONS,
   SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
@@ -590,6 +591,9 @@ class SnykExtension extends SnykLib implements IExtension {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;
         void this.notificationService.showErrorNotification(err.message);
       }),
+      vscode.commands.registerCommand(SNYK_ADD_TO_WORKSPACE_RECOMMENDATIONS, () =>
+        SupportProvider.addToWorkspaceRecommendations(),
+      ),
     );
   }
 }
