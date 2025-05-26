@@ -383,12 +383,12 @@ class SnykExtension extends SnykLib implements IExtension {
               const args = ['mcp', '-t', 'stdio', '--experimental'];
               const env: Record<string, string | number | null> = {};
 
+              env.SNYK_CFG_ORG = configuration.organization ?? '';
+              env.SNYK_CFG_ENDPOINT = configuration.snykApiEndpoint ?? '';
+
               Object.entries(process.env).forEach(([key, value]) => {
                 env[key] = value ?? '';
               });
-
-              env.SNYK_CFG_ORG = configuration.organization ?? '';
-              env.SNYK_CFG_ENDPOINT = configuration.snykApiEndpoint ?? '';
 
               // @ts-expect-error backward compatibility for older VS Code versions
               output.push(new vscode.McpStdioServerDefinition('Snyk Security Scanner', cliPath, args, env));
@@ -399,8 +399,8 @@ class SnykExtension extends SnykLib implements IExtension {
         );
       }
     } catch (err) {
-      Logger.warn(
-        `Failed to register MCP Server Definition Provider. This feature might be unavailable. Error: ${err}`,
+      Logger.info(
+        `VS Code MCP Server Definition Provider API is not available. This feature requires VS Code version > 1.101.0.`,
       );
     }
 
