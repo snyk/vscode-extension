@@ -372,7 +372,8 @@ class SnykExtension extends SnykLib implements IExtension {
         vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
           onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
           provideMcpServerDefinitions: async () => {
-            const output: any[] = [];
+            // @ts-expect-error backward compatibility for older VS Code versions
+            const output: vscode.McpServerDefinition[][] = [];
 
             /* eslint-disable @typescript-eslint/no-unsafe-call */
             const cliPath = await configuration.getCliPath();
