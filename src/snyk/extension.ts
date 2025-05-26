@@ -364,7 +364,7 @@ class SnykExtension extends SnykLib implements IExtension {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     // @ts-expect-error backward compatibility for older VS Code versions
-    if (vsAny.lm?.registerMcpServerDefinitionProvider) {
+    if (vscode.lm?.registerMcpServerDefinitionProvider) {
       vscodeContext.subscriptions.push(
         /* eslint-disable @typescript-eslint/no-unsafe-argument */
         /* eslint-disable @typescript-eslint/no-unsafe-call */
