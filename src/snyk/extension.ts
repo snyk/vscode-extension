@@ -361,19 +361,19 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    // @ts-ignore
+    // @ts-expect-error
     if (vscode.lm?.registerMcpServerDefinitionProvider) {
       vscodeContext.subscriptions.push(
-        // @ts-ignore
+        // @ts-expect-error
         vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
           onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
           provideMcpServerDefinitions: async () => {
-            // @ts-ignore
+            // @ts-expect-error
             let output: vscode.McpServerDefinition[] = [];
 
             const cliPath = await configuration.getCliPath();
             const args = ['mcp', '-t', 'stdio', '--experimental'];
-            // @ts-ignore
+            // @ts-expect-error
             output.push(new vscode.McpStdioServerDefinition('Snyk Security Scanner', cliPath, args));
 
             return output;
