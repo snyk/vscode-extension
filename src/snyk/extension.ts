@@ -361,30 +361,46 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-    // @ts-expect-error backward compatibility for older VS Code versions
-    if (vscode.lm?.registerMcpServerDefinitionProvider) {
-      vscodeContext.subscriptions.push(
-        /* eslint-disable @typescript-eslint/no-unsafe-argument */
-        /* eslint-disable @typescript-eslint/no-unsafe-call */
-        // @ts-expect-error backward compatibility for older VS Code versions
-        vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
-          onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
-          provideMcpServerDefinitions: async () => {
-            // @ts-expect-error backward compatibility for older VS Code versions
-            const output: vscode.McpServerDefinition[][] = [];
 
-            /* eslint-disable @typescript-eslint/no-unsafe-call */
-            const cliPath = await configuration.getCliPath();
-            /* eslint-disable @typescript-eslint/no-unsafe-return */
-            const args = ['mcp', '-t', 'stdio', '--experimental'];
-            // @ts-expect-error backward compatibility for older VS Code versions
-            output.push(new vscode.McpStdioServerDefinition('Snyk Security Scanner', cliPath, args));
+    try {
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+      /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+      // @ts-expect-error backward compatibility for older VS Code versions
+      if (vscode.lm?.registerMcpServerDefinitionProvider) {
+        vscodeContext.subscriptions.push(
+          /* eslint-disable @typescript-eslint/no-unsafe-argument */
+          /* eslint-disable @typescript-eslint/no-unsafe-call */
+          // @ts-expect-error backward compatibility for older VS Code versions
+          vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+            onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
+            provideMcpServerDefinitions: async () => {
+              // @ts-expect-error backward compatibility for older VS Code versions
+              const output: vscode.McpServerDefinition[][] = [];
 
-            return output;
-          },
-        }),
+              /* eslint-disable @typescript-eslint/no-unsafe-call */
+              const cliPath = await configuration.getCliPath();
+              /* eslint-disable @typescript-eslint/no-unsafe-return */
+              const args = ['mcp', '-t', 'stdio', '--experimental'];
+              const env: Record<string, string | number | null> = {};
+
+              Object.entries(process.env).forEach(([key, value]) => {
+                env[key] = value ?? '';
+              });
+
+              env.SNYK_CFG_ORG = configuration.organization ?? '';
+              env.SNYK_CFG_ENDPOINT = configuration.snykApiEndpoint ?? '';
+
+              // @ts-expect-error backward compatibility for older VS Code versions
+              output.push(new vscode.McpStdioServerDefinition('Snyk Security Scanner', cliPath, args, env));
+
+              return output;
+            },
+          }),
+        );
+      }
+    } catch (err) {
+      Logger.warn(
+        `Failed to register MCP Server Definition Provider. This feature might be unavailable. Error: ${err}`,
       );
     }
 
