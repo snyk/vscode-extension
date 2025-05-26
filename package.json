@@ -51,6 +51,12 @@
   "main": "./out/extension.js",
   "types": "./out/extension.d.ts",
   "contributes": {
+    "mcpServerDefinitionProviders": [
+			{
+				"id": "snyk-security-scanner",
+				"label": "Snyk Security Scanner"
+			}
+		],
     "configuration": [
       {
         "id": "snyk",

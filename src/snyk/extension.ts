@@ -361,6 +361,32 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+    // @ts-expect-error backward compatibility for older VS Code versions
+    if (vscode.lm?.registerMcpServerDefinitionProvider) {
+      vscodeContext.subscriptions.push(
+        /* eslint-disable @typescript-eslint/no-unsafe-argument */
+        /* eslint-disable @typescript-eslint/no-unsafe-call */
+        // @ts-expect-error backward compatibility for older VS Code versions
+        vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+          onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
+          provideMcpServerDefinitions: async () => {
+            // @ts-expect-error backward compatibility for older VS Code versions
+            const output: vscode.McpServerDefinition[][] = [];
+
+            /* eslint-disable @typescript-eslint/no-unsafe-call */
+            const cliPath = await configuration.getCliPath();
+            /* eslint-disable @typescript-eslint/no-unsafe-return */
+            const args = ['mcp', '-t', 'stdio', '--experimental'];
+            // @ts-expect-error backward compatibility for older VS Code versions
+            output.push(new vscode.McpStdioServerDefinition('Snyk Security Scanner', cliPath, args));
+
+            return output;
+          },
+        }),
+      );
+    }
 
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
