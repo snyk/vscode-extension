@@ -559,7 +559,7 @@
     "typescript": "^5.4.3",
     "vscode-test": "^1.4.0",
     "yalc": "^1.0.0-pre.44"
-    },
+  },
   "dependencies": {
     "@amplitude/experiment-node-server": "^1.8.2",
     "@babel/parser": "^7.23.9",
