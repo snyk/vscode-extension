@@ -2,7 +2,7 @@ This Contributor Licence Agreement (“Agreement”) sets out the terms under wh
 
 Who the “Contributor” is depends on whether the person submitting the contribution is a private individual acting on their own behalf, or is acting on behalf of someone else (for example, their employer). The “Contributor” in this Agreement is therefore either: (i) if the individual who Submits a Contribution does so on behalf of their employer or another Legal Entity, any Legal Entity on behalf of whom a Contribution has been received by Snyk; or in all other cases (ii) the individual who Submits a Contribution to Snyk. "Legal Entity" means an entity which is not a natural person (for example, a limited company or corporation).
 
-** 1. Interpretation**
+**1. Interpretation**
 
 The following definitions and rules of interpretation apply in this Agreement.
 
