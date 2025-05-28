@@ -5,7 +5,7 @@ We welcome contributions, but please read first! To ensure a smooth process and 
 ## 1. Planning your changes
 
 Before undertaking any changes or new features, please discuss your plans with us. This helps align on scope, design, technical approach, and priority.  
-Even bug fixes can have unforseen impacts or alternative solutions better suited for the codebase, so please ask first, we will be happy to discuss.  
+Even bug fixes can have unforeseen impacts or alternative solutions better suited for the codebase, so please ask first, we will be happy to discuss.  
 Please raise a request with [support](https://support.snyk.io). (Snyk employees, use `#ask-ide`)
 
 ## 2. Where changes should be made
