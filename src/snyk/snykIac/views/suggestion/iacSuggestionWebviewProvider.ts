@@ -104,7 +104,9 @@ export class IacSuggestionWebviewProvider
     // data-ide-style is a placeholder defined in the Language Server
     // to be replaced with the custom IDE styles.
     html = html.replace('${ideStyle}', `<style nonce="${nonce}">${ideStyle}</style>`);
-    html = html.replace('${ideScript}', '');
+    // Must not have blank template replacements, as they could be used to skip the "${nonce}" injection check
+    // and still end up with the nonce injected, e.g. "${nonce${resolvesToEmpty}}" becomes "${nonce}" - See IDE-1050.
+    html = html.replace('${ideScript}', ' ');
     return html;
   }
 
