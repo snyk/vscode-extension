@@ -2,12 +2,11 @@
 
 We welcome contributions, but please read first! To ensure a smooth process and that your valuable work aligns with our roadmap, please keep the following in mind to help manage expectations:
 
-## 1. Scope of changes
+## 1. Planning your changes
 
-Before undertaking large changes or new features, please discuss your plans with us. This helps align on scope, design, technical approach, and priority.  
+Before undertaking any changes or new features, please discuss your plans with us. This helps align on scope, design, technical approach, and priority.  
+Even bug fixes can have unforseen impacts or alternative solutions better suited for the codebase, so please ask first, we will be happy to discuss.  
 Please raise a request with [support](https://support.snyk.io). (Snyk employees, use `#ask-ide`)
-
-Direct PRs for small bug fixes or changes that do not have wider implications are welcome! If you're unsure about the scope or potential impact, please ask first, we will be happy to discuss.
 
 ## 2. Where changes should be made
 
@@ -24,7 +23,7 @@ For visual changes the PR template asks for screenshots, so this is a good oppor
 
 ## 5. Documentation changes
 
-If you have access to makes changes to the documentation (e.g. it is in this repository itself, or you are a Snyk employee and it's a hosted doc), we will expect you to make the changes to it (can be done after the initial PR review, but needs to be done before we will merge).
+If you have access to make changes to the documentation (e.g. it is in this repository itself, or you are a Snyk employee and it's a hosted doc), we will expect you to make the changes to it (can be done after the initial PR review, but needs to be done before we will merge). (Snyk employees, use `#request-ux-content`)
 
 ---
 
