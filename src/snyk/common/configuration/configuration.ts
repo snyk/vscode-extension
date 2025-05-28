@@ -346,8 +346,11 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
     );
-    if (setting?.toLowerCase() != 'token authentication') {
+    const authMethod = setting?.toLowerCase() ?? '';
+    if (authMethod === 'oauth2 (recommended)') {
       return 'oauth';
+    } else if (authMethod === 'personal access token') {
+      return 'pat';
     } else {
       return 'token';
     }
