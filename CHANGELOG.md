@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.23.0]
+- PAT support
+
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow
 - Fix early access Issue View Options not hiding issues in editor
