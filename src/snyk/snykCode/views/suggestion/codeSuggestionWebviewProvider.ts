@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { relative } from 'path';
 import { marked } from 'marked';
 import * as vscode from 'vscode';
 import {
