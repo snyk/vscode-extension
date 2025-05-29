@@ -10,11 +10,17 @@ Please raise a request with [support](https://support.snyk.io). (Snyk employees,
 
 ## 2. Where changes should be made
 
-Consider whether your proposed change should be implemented within the IDE extension(s) or in [the shared Language Server](https://github.com/snyk/snyk-ls) and related stack.
+Consider whether your proposed change should be implemented within the IDE extension(s) or in the shared Language Server and related stack.
+- [Snyk Language Server](https://github.com/snyk/snyk-ls)
+- [Go Application Framework](https://github.com/snyk/go-application-framework)
+- [Code Client Go](https://github.com/snyk/code-client-go)
 
 ## 3. Cross-IDE consistency
 
 If your change is applicable to other Snyk IDE plugins as well, we may expect you to submit similar PRs for the other relevant IDE repositories after your initial PR has been reviewed and approved, as they will _usually_ need to be merged all at once or not at all.
+- [Snyk IntelliJ plugin](https://github.com/snyk/snyk-intellij-plugin)
+- [Snyk Eclipse plugin](https://github.com/snyk/snyk-eclipse-plugin)
+- [Snyk Visual Studio extension](https://github.com/snyk/snyk-visual-studio-plugin)
 
 ## 4. Manual testing
 
@@ -23,7 +29,10 @@ For visual changes the PR template asks for screenshots, so this is a good oppor
 
 ## 5. Documentation changes
 
-If you have access to make changes to the documentation (e.g. it is in this repository itself, or you are a Snyk employee and it's a hosted doc), we will expect you to make the changes to it (can be done after the initial PR review, but needs to be done before we will merge). (Snyk employees, use `#request-ux-content`)
+Any user-facing changes will require [documentation](https://docs.snyk.io/) changes, which you will need to prepare.
+If you do not have access to our content management system (you are not a Snyk employee), please add the documentation changes required (including new wording and screenshots) to the PR description.
+
+We can instruct you on what to add to the CHANGELOG.md, so please ask.
 
 ---
 
