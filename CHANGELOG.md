@@ -1,7 +1,7 @@
 # Snyk Security Changelog
 
 ## [2.23.0]
-- PAT support
+- Support early access of PAT authentication
 
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow
