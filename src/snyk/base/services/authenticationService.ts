@@ -49,7 +49,7 @@ export class AuthenticationService implements IAuthenticationService {
 
   async setToken(): Promise<void> {
     const token = await this.window.showInputBox({
-      placeHolder: 'OAuth2, UUID legacy token or Personal Access Token',
+      placeHolder: 'OAuth2 Token, Personal Access Token, or Legacy API Token',
       password: true,
       validateInput: token => {
         const valid = this.validateToken(token);

@@ -71,18 +71,18 @@
           "snyk.advanced.authenticationMethod": {
             "type": "string",
             "default": "OAuth2 (Recommended)",
-            "description": "Specifies whether to authenticate with OAuth2 or with an API token. \n\nNote: OAuth2 authentication is recommended as it provides enhanced security.",
+            "description": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security.",
             "enum": [
               "OAuth2 (Recommended)",
               "Personal Access Token",
               "API Token (Legacy)"
             ],
             "enumDescriptions": [
-              "Uses the OAuth2 authentication",
-              "Uses Personal Access Token (PAT).",
+              "Uses the OAuth2 authentication.",
+              "Uses Personal Access Token (PAT) authentication.",
               "Uses the legacy Snyk Token authentication."
             ],
-            "markdownDescription": "Specifies whether to authenticate with OAuth2, PAT, or with an API token. \n\nNote: OAuth2 authentication is recommended as it provides enhanced security."
+            "markdownDescription": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security."
           },
           "snyk.advanced.tokenStorage": {
             "type": "string",
