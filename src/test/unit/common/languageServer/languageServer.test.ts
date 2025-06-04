@@ -68,7 +68,6 @@ suite('Language Server', () => {
       },
       getPreviewFeatures() {
         return {
-          advisor: false,
           ossQuickfixes: false,
         };
       },
@@ -224,7 +223,6 @@ suite('Language Server', () => {
     test('LanguageServer should provide empty folder configs when no folder configs were received', async () => {
       const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
-        activateSnykCodeQuality: 'true',
         enableDeltaFindings: 'false',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
@@ -250,6 +248,10 @@ suite('Language Server', () => {
         authenticationMethod: 'oauth',
         enableSnykOSSQuickFixCodeActions: 'false',
         hoverVerbosity: 1,
+        runtimeName: process.release.name,
+        runtimeVersion: process.version,
+        osArch: process.arch,
+        osPlatform: process.platform,
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
@@ -273,7 +275,6 @@ suite('Language Server', () => {
       // Create expected initialization options with the folder config included
       const expectedInitializationOptions: ServerSettings = {
         activateSnykCodeSecurity: 'true',
-        activateSnykCodeQuality: 'true',
         enableDeltaFindings: 'false',
         activateSnykOpenSource: 'false',
         activateSnykIac: 'true',
@@ -299,6 +300,10 @@ suite('Language Server', () => {
         authenticationMethod: 'oauth',
         enableSnykOSSQuickFixCodeActions: 'false',
         hoverVerbosity: 1,
+        runtimeName: process.release.name,
+        runtimeVersion: process.version,
+        osArch: process.arch,
+        osPlatform: process.platform,
       };
       const initializationOptions = await languageServer.getInitializationOptions();
       LanguageServer.ReceivedFolderConfigsFromLs = false;
@@ -325,7 +330,6 @@ suite('Language Server', () => {
 
       const initOptions = await languageServer.getInitializationOptions();
 
-      strictEqual(initOptions.activateSnykCodeQuality, `true`);
       strictEqual(initOptions.activateSnykCodeSecurity, `true`);
     });
 

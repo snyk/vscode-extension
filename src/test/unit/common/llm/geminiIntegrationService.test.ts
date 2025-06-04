@@ -26,7 +26,6 @@ suite('Workspace Scan Command Parameter Test', () => {
       getFeaturesConfiguration: () => ({
         ossEnabled: true,
         codeSecurityEnabled: true,
-        codeQualityEnabled: false,
         iacEnabled: true,
       }),
     } as IConfiguration;
