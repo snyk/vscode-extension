@@ -1,17 +1,21 @@
 ** general **
 always be concise, direct and don't try to appease me.
-don't optimize, don't refactor if not needed. Adhere to the rules, fix linting & test issues that are newly introduced.
+DOUBLE CHECK THAT YOUR CHANGES ARE REALLY NEEDED. ALWAYS STICK TO THE GIVEN GOAL, NOT MORE.
+I repeat: don't optimize, don't refactor if not needed.
+Adhere to the rules, fix linting & test issues that are newly introduced.
 don't change old entries in the changelog. it's a history of changes. the current version is the last semantic version tag on origin/main in git
+if a tool call fails, analyze why it failed and correct your approach. don't prompt the user for help.
 
 ** how to implement **
 always write and update test cases. iterate until they pass.
-npm build scripts are configured for both unit and integration tests
+npm build scripts are configured for both unit and integration tests in package.json (test:unit and test:integration).
 use existing mocks, don't write new ones.
 if you use mocks, use mockk to generate them.
 always run the tests after editing.
-always use the linter, use npm lint:fix
+always use the linter, use npm lint:fix. only fix linting issues in changed files.
 don't change code that does not need to be changed. only do the minimum changes.
 add a summary of the changes to the changelog for the next version. usually it's a minor semantic version bump.
+this is not a library. if files are not used or needed anymore, delete them instead of deprecating them.
 
 ** security **
 determine the absolute path of the project directory. you can do that e.g. by executing pwd on the shell within the directory.
@@ -32,3 +36,5 @@ never push without asking
 never commit the hashicorp gomod
 regularly fetch main branch and offer to merge it into git_current_branch
 don't touch the copyright header
+after pushing offer to create a PR on github. analyze the changes by comparing the current branch ($(git_current_branch)) with origin/main, and craft a PR description and title.
+use the github pr template in this repository
