@@ -1,7 +1,5 @@
 import npmValidPackageName from 'validate-npm-package-name';
 import {
-  HTML,
-  HTML_FILE_REGEX,
   JAVASCRIPT,
   JAVASCRIPT_FILE_REGEX,
   JAVASCRIPT_REACT,
@@ -18,8 +16,6 @@ export function getSupportedLanguage(fileName: string, languageId: string): Lang
     return Language.TypeScript;
   } else if (languageId === JAVASCRIPT || languageId === JAVASCRIPT_REACT || JAVASCRIPT_FILE_REGEX.test(fileName)) {
     return Language.JavaScript;
-  } else if (languageId === HTML || HTML_FILE_REGEX.test(fileName)) {
-    return Language.HTML;
   } else if (languageId === PJSON && fileName.endsWith('package.json')) {
     return Language.PJSON;
   }
