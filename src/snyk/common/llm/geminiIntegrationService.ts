@@ -201,11 +201,7 @@ export class GeminiIntegrationService {
   private countEnabledProducts(): number {
     const enabledProducts = [];
     if (this.configuration.getFeaturesConfiguration()?.ossEnabled) enabledProducts.push(ScanProduct.OpenSource);
-    if (
-      this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled ||
-      this.configuration.getFeaturesConfiguration()?.codeQualityEnabled
-    )
-      enabledProducts.push(ScanProduct.Code);
+    if (this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled) enabledProducts.push(ScanProduct.Code);
 
     if (this.configuration.getFeaturesConfiguration()?.iacEnabled)
       enabledProducts.push(ScanProduct.InfrastructureAsCode);
@@ -358,7 +354,6 @@ export class GeminiIntegrationService {
   private isFixable(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): boolean {
     let fixable: boolean;
     switch (issue.filterableIssueType) {
-      case 'Code Quality':
       case 'Code Security':
         fixable = (issue.additionalData as CodeIssueData).hasAIFix;
         break;
@@ -375,7 +370,6 @@ export class GeminiIntegrationService {
   private getScore(issue: Issue<CodeIssueData | OssIssueData | IacIssueData>): number {
     let score: number;
     switch (issue.filterableIssueType) {
-      case 'Code Quality':
       case 'Code Security':
         score = (issue.additionalData as CodeIssueData).priorityScore;
         break;

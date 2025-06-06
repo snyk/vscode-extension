@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.23.0]
+- Removed Snyk Code Quality feature. All related settings, configurations, and UI elements have been removed.
+
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow
 - Fix early access Issue View Options not hiding issues in editor

@@ -15,7 +15,6 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
-  CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
@@ -40,7 +39,6 @@ const ALLISSUES = 'All issues';
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
-  codeQualityEnabled: boolean | undefined;
   iacEnabled: boolean | undefined;
 };
 
@@ -88,7 +86,6 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
 };
 
 export type PreviewFeatures = {
-  advisor: boolean | undefined;
   ossQuickfixes: boolean | undefined;
 };
 
@@ -99,7 +96,9 @@ export interface IConfiguration {
   authHost: string;
 
   getExtensionId(): string;
+
   setExtensionId(extensionId: string): void;
+
   getFeatureFlag(flagName: string): boolean;
 
   setFeatureFlag(flagName: string, value: boolean): void;
@@ -113,6 +112,7 @@ export interface IConfiguration {
   setCliPath(cliPath: string): Promise<void>;
 
   setCliReleaseChannel(releaseChannel: string): Promise<void>;
+
   setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void>;
 
   clearToken(): Promise<void>;
@@ -144,8 +144,11 @@ export interface IConfiguration {
   isAutomaticDependencyManagementEnabled(): boolean;
 
   getCliPath(): Promise<string>;
+
   getCliReleaseChannel(): Promise<string>;
+
   getCliBaseDownloadUrl(): string;
+
   getInsecure(): boolean;
 
   isFedramp: boolean;
@@ -165,6 +168,7 @@ export interface IConfiguration {
   setEndpoint(endpoint: string): Promise<void>;
 
   getDeltaFindingsEnabled(): boolean;
+
   setDeltaFindingsEnabled(isEnabled: boolean): Promise<void>;
 
   getOssQuickFixCodeActionsEnabled(): boolean;
@@ -334,11 +338,8 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    const selectionValue = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
-    );
-    return selectionValue === NEWISSUES;
+    const value = this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, DELTA_FINDINGS);
+    return value === NEWISSUES;
   }
 
   getAuthenticationMethod(): string {
@@ -388,12 +389,7 @@ export class Configuration implements IConfiguration {
     if (!isEnabled) {
       deltaValue = ALLISSUES;
     }
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
-      deltaValue,
-      true,
-    );
+    await this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, DELTA_FINDINGS, deltaValue, true);
   }
 
   async clearToken(): Promise<void> {
@@ -416,29 +412,19 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
     );
-    const codeQualityEnabled = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
-    );
     const iacEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(IAC_ENABLED_SETTING),
     );
 
-    if (
-      _.isUndefined(ossEnabled) &&
-      _.isUndefined(codeSecurityEnabled) &&
-      _.isUndefined(codeQualityEnabled) &&
-      _.isUndefined(iacEnabled)
-    ) {
+    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(iacEnabled)) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true, iacEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, iacEnabled: true };
     }
 
     return {
       ossEnabled,
       codeSecurityEnabled,
-      codeQualityEnabled,
       iacEnabled,
     };
   }
@@ -454,12 +440,6 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
       config?.codeSecurityEnabled,
-      true,
-    );
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
-      config?.codeQualityEnabled,
       true,
     );
     await this.workspace.updateConfiguration(
@@ -547,7 +527,6 @@ export class Configuration implements IConfiguration {
 
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
-      advisor: false,
       ossQuickfixes: false,
     };
 
@@ -598,6 +577,7 @@ export class Configuration implements IConfiguration {
     if (!isAutomaticDependencyManagementEnabled && snykLsPath) return snykLsPath;
     return await CliExecutable.getPath();
   }
+
   getTrustedFolders(): string[] {
     return (
       this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []

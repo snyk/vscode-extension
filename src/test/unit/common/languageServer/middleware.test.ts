@@ -46,7 +46,7 @@ suite('Language Server: Middleware', () => {
         return false;
       },
       getPreviewFeatures() {
-        return { advisor: false, ossQuickfixes: false };
+        return { ossQuickfixes: false };
       },
       getOssQuickFixCodeActionsEnabled(): boolean {
         return false;
@@ -97,7 +97,6 @@ suite('Language Server: Middleware', () => {
 
     const serverResult = res[0] as ServerSettings;
     assert.strictEqual(serverResult.activateSnykCodeSecurity, 'true');
-    assert.strictEqual(serverResult.activateSnykCodeQuality, 'true');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
     assert.strictEqual(serverResult.activateSnykIac, 'true');
     assert.strictEqual(serverResult.endpoint, configuration.snykApiEndpoint);

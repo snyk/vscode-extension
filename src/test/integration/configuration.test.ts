@@ -24,7 +24,6 @@ suite('Configuration', () => {
       const featuresConfig = {
         ossEnabled: false,
         codeSecurityEnabled: false,
-        codeQualityEnabled: false,
         iacEnabled: false,
       } as FeaturesConfiguration;
 
@@ -34,10 +33,17 @@ suite('Configuration', () => {
     } finally {
       await configuration.setToken('');
 
+      await configuration.setFeaturesConfiguration(undefined);
+      const defaultConfig = configuration.getFeaturesConfiguration();
+      deepStrictEqual(defaultConfig, {
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+      });
+
       const enabledFeaturesConfig = {
         ossEnabled: true,
         codeSecurityEnabled: true,
-        codeQualityEnabled: true,
         iacEnabled: true,
       } as FeaturesConfiguration;
       await configuration.setFeaturesConfiguration(enabledFeaturesConfig);
