@@ -248,10 +248,6 @@ suite('Language Server', () => {
         authenticationMethod: 'oauth',
         enableSnykOSSQuickFixCodeActions: 'false',
         hoverVerbosity: 1,
-        runtimeName: process.release.name,
-        runtimeVersion: process.version,
-        osArch: process.arch,
-        osPlatform: process.platform,
       };
 
       deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
@@ -300,10 +296,6 @@ suite('Language Server', () => {
         authenticationMethod: 'oauth',
         enableSnykOSSQuickFixCodeActions: 'false',
         hoverVerbosity: 1,
-        runtimeName: process.release.name,
-        runtimeVersion: process.version,
-        osArch: process.arch,
-        osPlatform: process.platform,
       };
       const initializationOptions = await languageServer.getInitializationOptions();
       LanguageServer.ReceivedFolderConfigsFromLs = false;

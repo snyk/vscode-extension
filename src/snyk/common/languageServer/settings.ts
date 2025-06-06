@@ -103,10 +103,6 @@ export class LanguageServerSettings {
       folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getPreviewFeatures().ossQuickfixes}`,
       hoverVerbosity: 1,
-      runtimeName: process.release.name, // Typically 'node'
-      runtimeVersion: process.version,
-      osArch: process.arch,
-      osPlatform: process.platform,
     };
   }
 }
