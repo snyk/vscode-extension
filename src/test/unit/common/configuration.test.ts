@@ -1,6 +1,7 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
-import { Configuration, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import { ALLISSUES, Configuration, NEWISSUES, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import {
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
@@ -8,6 +9,7 @@ import {
   ADVANCED_CUSTOM_LS_PATH,
   FEATURES_PREVIEW_SETTING,
   SCANNING_MODE,
+  CONFIGURATION_IDENTIFIER,
 } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
@@ -171,6 +173,67 @@ suite('Configuration', () => {
       configuration.setExtensionId('snyk-vulnerability-scanner-preview');
       const cliReleaseChannel = await configuration.getCliReleaseChannel();
       strictEqual(cliReleaseChannel, 'v1.1294.0');
+    });
+  });
+
+  suite('Delta Findings Configuration', () => {
+    [
+      {
+        description: 'getDeltaFindingsEnabled() should return true when workspace returns "Net new issues"',
+        configValue: NEWISSUES,
+        expectedValue: true,
+      },
+      {
+        description: 'getDeltaFindingsEnabled() should return false when workspace returns "All issues"',
+        configValue: ALLISSUES,
+        expectedValue: false,
+      },
+      {
+        description: 'getDeltaFindingsEnabled() should return false when workspace returns undefined (config not set)',
+        configValue: undefined,
+        expectedValue: false,
+      },
+    ].forEach(({ description, configValue, expectedValue }) => {
+      test(description, () => {
+        const workspace = stubWorkspaceConfiguration(
+          `${CONFIGURATION_IDENTIFIER}.allIssuesVsNetNewIssues`,
+          configValue,
+        );
+        const config = new Configuration({}, workspace);
+
+        strictEqual(config.getDeltaFindingsEnabled(), expectedValue);
+      });
+    });
+
+    [
+      {
+        description: 'setDeltaFindingsEnabled(true) should call updateConfiguration with "Net new issues"',
+        deltaEnabled: true,
+        expectedValue: NEWISSUES,
+      },
+      {
+        description: 'setDeltaFindingsEnabled(false) should call updateConfiguration with "All issues"',
+        deltaEnabled: false,
+        expectedValue: ALLISSUES,
+      },
+    ].forEach(({ description, deltaEnabled, expectedValue }) => {
+      test(description, async () => {
+        const updateSpy = sinon.spy();
+        const workspace = {
+          updateConfiguration: updateSpy,
+        } as unknown as IVSCodeWorkspace;
+        const config = new Configuration({}, workspace);
+
+        await config.setDeltaFindingsEnabled(deltaEnabled);
+
+        sinon.assert.calledOnceWithExactly(
+          updateSpy,
+          CONFIGURATION_IDENTIFIER,
+          'allIssuesVsNetNewIssues',
+          expectedValue,
+          true,
+        );
+      });
     });
   });
 });
