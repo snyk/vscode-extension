@@ -338,7 +338,7 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    const value = this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, DELTA_FINDINGS);
+    const value = this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS));
     return value === NEWISSUES;
   }
 
@@ -389,7 +389,12 @@ export class Configuration implements IConfiguration {
     if (!isEnabled) {
       deltaValue = ALLISSUES;
     }
-    await this.workspace.updateConfiguration(CONFIGURATION_IDENTIFIER, DELTA_FINDINGS, deltaValue, true);
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(DELTA_FINDINGS),
+      deltaValue,
+      true,
+    );
   }
 
   async clearToken(): Promise<void> {
