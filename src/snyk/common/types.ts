@@ -1,9 +1,8 @@
-import { JAVASCRIPT, TYPESCRIPT, HTML, PJSON } from './constants/languageConsts';
+import { JAVASCRIPT, TYPESCRIPT, PJSON } from './constants/languageConsts';
 
 export enum Language {
   TypeScript,
   JavaScript,
-  HTML,
   PJSON,
 }
 export type OssRange = {
@@ -31,8 +30,6 @@ export function languageToString(language: Language): string {
       return TYPESCRIPT;
     case Language.JavaScript:
       return JAVASCRIPT;
-    case Language.HTML:
-      return HTML;
     case Language.PJSON:
       return PJSON;
   }
