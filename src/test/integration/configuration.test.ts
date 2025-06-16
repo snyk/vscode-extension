@@ -21,17 +21,34 @@ suite('Configuration', () => {
   });
 
   test('configuration change is reflected', async () => {
-    const featuresConfig = {
-      ossEnabled: false,
-      codeSecurityEnabled: false,
-      codeQualityEnabled: false,
-      iacEnabled: false,
-    } as FeaturesConfiguration;
+    try {
+      const featuresConfig = {
+        ossEnabled: false,
+        codeSecurityEnabled: false,
+        iacEnabled: false,
+      } as FeaturesConfiguration;
 
-    await configuration.setFeaturesConfiguration(featuresConfig);
+      await configuration.setFeaturesConfiguration(featuresConfig);
 
-    deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
-    await configuration.setToken('');
+      deepStrictEqual(configuration.getFeaturesConfiguration(), featuresConfig);
+    } finally {
+      await configuration.setToken('');
+
+      await configuration.setFeaturesConfiguration(undefined);
+      const defaultConfig = configuration.getFeaturesConfiguration();
+      deepStrictEqual(defaultConfig, {
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+      });
+
+      const enabledFeaturesConfig = {
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+      } as FeaturesConfiguration;
+      await configuration.setFeaturesConfiguration(enabledFeaturesConfig);
+    }
   });
 
   test('workspaceFolder is transformed', async () => {

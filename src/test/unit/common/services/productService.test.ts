@@ -4,8 +4,8 @@ import sinon from 'sinon';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import { Issue, Scan, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
-import { IProductService, ProductService } from '../../../../snyk/common/services/productService';
+import { Issue, LsScanProduct, Scan, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
+import { ProductService } from '../../../../snyk/common/services/productService';
 import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
 import { IProductWebviewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
@@ -15,15 +15,17 @@ import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
-type ProductData = {
+type MockProductData = {
   productName: string;
 };
-class MockProductService extends ProductService<ProductData> {
+class MockProductService extends ProductService<MockProductData> {
   productType: ScanProduct;
+
+  showSuggestionProviderById = sinon.fake();
 
   subscribeToLsScanMessages(): Subscription {
     return this.languageServer.scan$.subscribe((scan: Scan<unknown>) => {
-      super.handleLsScanMessage(scan as Scan<ProductData>);
+      super.handleLsScanMessage(scan as Scan<MockProductData>);
     });
   }
 
@@ -34,7 +36,7 @@ class MockProductService extends ProductService<ProductData> {
 
 suite('Product Service', () => {
   let ls: ILanguageServer;
-  let service: IProductService<ProductData>;
+  let service: MockProductService;
   let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
@@ -48,7 +50,7 @@ suite('Product Service', () => {
     service = new MockProductService(
       {} as ExtensionContext,
       {} as IConfiguration,
-      {} as unknown as IProductWebviewProvider<Issue<ProductData>>,
+      {} as unknown as IProductWebviewProvider<Issue<MockProductData>>,
       viewManagerService,
       {
         getWorkspaceFolders: () => [''],
@@ -58,8 +60,10 @@ suite('Product Service', () => {
       {} as IVSCodeLanguages,
       {
         getIssuesFromDiagnostics: () => [],
-      } as IDiagnosticsIssueProvider<ProductData>,
+        getIssuesFromDiagnosticsForFolder: () => [],
+      } as IDiagnosticsIssueProvider<MockProductData>,
       new LoggerMock(),
+      LsScanProduct.Code,
     );
   });
 
@@ -159,5 +163,16 @@ suite('Product Service', () => {
 
     strictEqual(service.isAnalysisRunning, false);
     sinon.assert.calledTwice(refreshViewFake);
+  });
+
+  test('Show issue detail topic message shows issue detail pane', () => {
+    const issueId = '123abc456';
+
+    ls.showIssueDetailTopic$.next({
+      product: service.lsScanProduct,
+      issueId,
+    });
+
+    sinon.assert.calledOnceWithExactly(service.showSuggestionProviderById, issueId);
   });
 });

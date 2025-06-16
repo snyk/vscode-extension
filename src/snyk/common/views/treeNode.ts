@@ -46,30 +46,34 @@ export type InternalType = {
   isError?: boolean;
 };
 
-interface INodeOptions {
+type TreeNodeIssueType = {
+  id: string;
+  uri: Uri;
+  filePath: string;
+  range?: Range;
+};
+
+export interface INodeOptions {
   text: string;
   description?: string;
   descriptionTail?: string;
-  issue?: {
-    uri: Uri;
-    filePath: string;
-    range?: Range;
-  };
+  issue?: TreeNodeIssueType;
   link?: string;
   icon?: INodeIcon | ThemeIcon;
   command?: Command;
   collapsed?: TreeItemCollapsibleState;
-  parent?: TreeNode;
   children?: TreeNode[];
   internal?: InternalType;
 }
 
 type INode = TreeItem & {
   readonly internal: InternalType;
+  readonly issue: TreeNodeIssueType | undefined;
 };
 
 export class TreeNode extends TreeItem implements INode {
   readonly internal: InternalType;
+  readonly issue: TreeNodeIssueType | undefined;
   private parent: TreeNode | undefined;
   private children: TreeNode[] | undefined;
 
@@ -104,9 +108,11 @@ export class TreeNode extends TreeItem implements INode {
     // However, as of August 2020, there is still no way to manually decorate tree items
     // https://github.com/microsoft/vscode/issues/47502
     // this.resourceUri = options.link ? Uri.parse(options.link) : (options.issue && options.issue.uri);
-    this.parent = options.parent;
     this.children = options.children;
     this.internal = options.internal || {};
+    this.issue = options.issue;
+
+    this.children?.forEach(childNode => (childNode.parent = this));
   }
 
   getParent(): TreeNode | undefined {

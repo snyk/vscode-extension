@@ -25,6 +25,7 @@ import { OssVulnerabilityCountService } from '../../snykOss/services/vulnerabili
 import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
+import { ISummaryProviderService } from '../summary/summaryProviderService';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
 
@@ -35,7 +36,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
 
   protected readonly editorsWatcher: IWatcher;
   protected configurationWatcher: IWatcher;
-
+  protected summaryProviderService: ISummaryProviderService;
   readonly contextService: IContextService;
   cacheService: IClearCacheService;
   readonly openerService: IOpenerService;

@@ -1,5 +1,23 @@
 # Snyk Security Changelog
 
+## [2.23.0]
+- Removed Snyk Code Quality feature. All related settings, configurations, and UI elements have been removed.
+- Removed scanning for vulnerabilities in JavaScript libraries referenced via CDN in HTML files.
+
+## [2.22.0]
+- Support early access of Ignores Approval Workflow
+- Fix early access Issue View Options not hiding issues in editor
+
+## [2.21.1]
+- Gemini Tool fixes
+- Ensure default CAs are used when using proxy
+- Add scan source to workspace command
+
+## [2.21.0]
+- add scan summary
+- add ability to enter PATs as Tokens
+- add ability to define a reference folder for net-new scanning
+
 ## [2.20.0]
 - reduce hover verbosity to only title and description
 - If $/snyk.hasAuthenticated transmits an API URL, this is saved in the settings.

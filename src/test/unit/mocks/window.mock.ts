@@ -15,4 +15,5 @@ export const windowMock = {
   showTextDocumentViaUri: sinon.fake(),
   showTextDocumentViaFilepath: sinon.fake(),
   showInputBox: sinon.fake(),
+  showOpenDialog: sinon.fake(),
 } as IVSCodeWindow;

@@ -1,7 +1,6 @@
 import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
-import { ScanModeService } from '../../../../snyk/base/services/scanModeService';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
 import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
@@ -26,7 +25,6 @@ suite('CommandController', () => {
       {} as IProductService<CodeIssueData>,
       {} as IProductService<IacIssueData>,
       {} as OssService,
-      {} as ScanModeService,
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,
       windowMock,

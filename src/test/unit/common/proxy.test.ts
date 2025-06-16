@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import assert from 'assert';
 import sinon from 'sinon';
@@ -41,8 +39,6 @@ suite('Proxy', () => {
     const configOptions = await getAxiosConfig(workspace, configuration, logger);
 
     // should still set rejectUnauthorized flag
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(configOptions.httpAgent?.options.rejectUnauthorized, proxyStrictSSL);
     assert.deepStrictEqual(configOptions.httpsAgent?.options.rejectUnauthorized, proxyStrictSSL);
   });
 
@@ -62,7 +58,7 @@ suite('Proxy', () => {
 
       test('should return rejectUnauthorized true', async () => {
         const config = await getAxiosConfig(workspace, configuration, logger);
-        assert.deepStrictEqual(config.httpAgent?.options.rejectUnauthorized, true);
+        assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, true);
       });
     });
 
@@ -104,14 +100,10 @@ suite('Proxy', () => {
 
     const agent = await getHttpsProxyAgent(workspace, configuration, logger);
 
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.host, host);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.port, port);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.auth, auth);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
+    assert.deepStrictEqual(agent?.['proxy'].host, host);
+    assert.deepStrictEqual(agent?.['proxy'].port, port);
+    assert.deepStrictEqual(agent?.['proxy'].auth, auth);
+    assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, proxyStrictSSL);
   });
 
   test('Proxy is configured in environment', async () => {
@@ -130,18 +122,14 @@ suite('Proxy', () => {
     } as unknown as IConfiguration;
 
     const agent = await getHttpsProxyAgent(workspace, configuration, logger, {
-      https_proxy: proxy,
-      http_proxy: proxy,
+      HTTPS_PROXY: proxy,
+      HTTP_PROXY: proxy,
     });
 
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.host, host);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.port, port);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.auth, auth);
-    // @ts-ignore: cannot test options otherwise
-    assert.deepStrictEqual(agent?.proxy.rejectUnauthorized, proxyStrictSSL);
+    assert.deepStrictEqual(agent?.['proxy'].host, host);
+    assert.deepStrictEqual(agent?.['proxy'].port, port);
+    assert.deepStrictEqual(agent?.['proxy'].auth, auth);
+    assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, proxyStrictSSL);
   });
 
   test('getProxyEnvVariable should return the https proxy as env var', async () => {

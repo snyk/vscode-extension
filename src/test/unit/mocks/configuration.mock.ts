@@ -2,7 +2,6 @@ import { FeaturesConfiguration } from '../../../snyk/common/configuration/config
 
 export const defaultFeaturesConfigurationStub: FeaturesConfiguration = {
   ossEnabled: false,
-  codeQualityEnabled: true,
   codeSecurityEnabled: true,
   iacEnabled: true,
 };

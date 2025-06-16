@@ -26,7 +26,6 @@ export const DCIGNORE_DRAFTS = {
   default: DefaultDCIgnore,
 };
 
-// eslint-disable-next-line no-shadow
 export enum ErrorCodes {
   loginInProgress = 304,
   badRequest = 400,

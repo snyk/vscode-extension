@@ -1,9 +1,9 @@
 // see https://code.visualstudio.com/api/references/contribution-points#contributes.viewsWelcome
 
 export const SNYK_VIEW_WELCOME = 'snyk.views.welcome';
+export const SNYK_VIEW_SUMMARY = 'snyk.views.summary';
 export const SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT = 'snyk.views.analysis.code.enablement';
 export const SNYK_VIEW_ANALYSIS_CODE_SECURITY = 'snyk.views.analysis.code.security';
-export const SNYK_VIEW_ANALYSIS_CODE_QUALITY = 'snyk.views.analysis.code.quality';
 export const SNYK_VIEW_ANALYSIS_OSS = 'snyk.views.analysis.oss';
 export const SNYK_VIEW_SUPPORT = 'snyk.views.support';
 export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
@@ -25,6 +25,7 @@ export const SNYK_CONTEXT = {
   MODE: 'mode',
   ADVANCED: 'advanced',
   DELTA_FINDINGS_ENABLED: 'deltaFindingsEnabled',
+  SCANSUMMARY: 'scanSummaryHtml',
 };
 
 export const SNYK_ANALYSIS_STATUS = {
@@ -34,6 +35,5 @@ export const SNYK_ANALYSIS_STATUS = {
   UPLOADING: 'Uploading files',
   OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
-  CODE_QUALITY_DISABLED: 'Snyk Code Quality is disabled. Enable it in settings to use it.',
   IAC_DISABLED: 'Snyk Configuration is disabled. Enable it in settings to use it.',
 };

@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-array-constructor */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import path from 'path';
 import { IVSCodeWorkspace } from '../../common/vscode/workspace';
 import {

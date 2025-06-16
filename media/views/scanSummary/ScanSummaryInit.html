@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="style-src 'self' 'nonce-${nonce}' 'nonce-ideNonce' https://fonts.googleapis.com;
+        script-src 'nonce-${nonce}' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;" />
+  <style nonce=${nonce}>
+    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+    :root {
+      font-size: var(--main-font-size);
+      --default-font: "SF Pro Text", "Segoe UI", "Ubuntu", Geneva, Verdana, Tahoma, sans-serif;
+      --ide-background-color: var(--vscode-sideBar-background);
+      --text-color: var(--vscode-foreground);
+      --input-border: var(--vscode-input-border);
+    }
+    p { font-size:1.3rem; margin: .8rem 0;  }
+    hr { margin: 2rem 0; }
+    body { background-color:var(--ide-background-color); color: var(--text-color); font-family: var(--default-font); }
+
+    .snx-loader { flex: none; display: inline-block; width: 10px; height: 10px; border: 2px solid rgba(125,125,125,.65); border-bottom-color: transparent; border-radius: 50%; margin-right:.8rem; animation: spin 1s linear infinite; }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .snx-h1 { font-size: 1.6rem; font-weight: 400; margin: .4rem 0; }
+
+    .snx-status { display:flex; align-items:center; padding: .4rem 1.2rem; background-color: rgba(255,255,255,.1); border-radius: 1rem; }
+
+    .snx-header { display: flex; gap:1.6rem; }
+    .snx-status .snx-message { display: flex; align-items: center }
+  </style>
+  ${ideStyle}
+</head>
+<body>
+  <div class="snx-summary">
+    <div class="snx-status">
+      <span class="snx-loader"></span>
+      <p class="snx-message">Snyk Security is loading...</p>
+    </div>
+  </div>
+</body>
+</html>

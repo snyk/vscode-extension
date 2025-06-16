@@ -15,7 +15,7 @@
     "url": "https://support.snyk.io/"
   },
   "engines": {
-    "vscode": "^1.58.0"
+    "vscode": "^1.76.0"
   },
   "galleryBanner": {
     "color": "#283e55",
@@ -51,6 +51,12 @@
   "main": "./out/extension.js",
   "types": "./out/extension.d.ts",
   "contributes": {
+    "mcpServerDefinitionProviders": [
+			{
+				"id": "snyk-security-scanner",
+				"label": "Snyk Security Scanner"
+			}
+		],
     "configuration": [
       {
         "id": "snyk",
@@ -86,7 +92,7 @@
           },
           "snyk.advanced.customEndpoint": {
             "type": "string",
-            "markdownDescription": "Sets API endpoint to use for Snyk requests. Useful for custom Snyk setups. E.g. `https://api.eu.snyk.io`.",
+            "markdownDescription": "If you're using SSO with Snyk and OAuth2, the custom endpoint configuration is automatically populated. \n\nOtherwise, for public regional instances, see our [documentation](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
@@ -121,13 +127,6 @@
             "type": "boolean",
             "title": "Snyk Code security issues",
             "description": "Find and fix security issues in your application code in real time.",
-            "default": true
-          },
-          "snyk.features.codeQuality": {
-            "order": 3,
-            "type": "boolean",
-            "title": "Snyk Code quality issues",
-            "description": "Find and fix quality issues in your application code in real time.",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {
@@ -237,7 +236,7 @@
             "type": "object",
             "default": {
               "openIssues": true,
-              "ignoredIssues": true
+              "ignoredIssues": false
             },
             "properties": {
               "openIssues": {
@@ -248,11 +247,11 @@
               "ignoredIssues": {
                 "type": "boolean",
                 "description": "Ignored Issues",
-                "default": true
+                "default": false
               }
             },
             "additionalProperties": false,
-            "markdownDescription": "Ignores settings is currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
+            "markdownDescription": "Ignored issues are currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
             "scope": "window"
           },
           "snyk.folderConfigs": {
@@ -347,6 +346,13 @@
           "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authenticationChanged"
         },
         {
+          "type": "webview",
+          "id": "snyk.views.summary",
+          "name": "SUMMARY",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error",
+          "content": "${scanSummaryHtml}"
+        },
+        {
           "id": "snyk.views.analysis.oss",
           "name": "Open Source Security",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
@@ -360,11 +366,6 @@
           "id": "snyk.views.analysis.configuration",
           "name": "Configuration Issues",
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
-        },
-        {
-          "id": "snyk.views.analysis.code.quality",
-          "name": "Code Quality",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
@@ -417,12 +418,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
           "group": "navigation"
         }
       ],
@@ -528,7 +529,7 @@
     "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.0",
     "@types/validate-npm-package-name": "^3.0.3",
-    "@types/vscode": "^1.58.0",
+    "@types/vscode": "1.76.0",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
     "@vscode/test-electron": "^2.4.0",
@@ -553,11 +554,9 @@
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
-    "axios": "^1.7.8",
-    "diff": "^5.2.0",
+    "axios": "^1.8.3",
     "glob": "^9.3.5",
     "he": "^1.2.0",
-    "htmlparser2": "^7.2.0",
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
     "lodash": "^4.17.21",
