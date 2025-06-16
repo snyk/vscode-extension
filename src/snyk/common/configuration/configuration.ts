@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
@@ -14,7 +15,6 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
-  CODE_QUALITY_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
@@ -32,21 +32,29 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 
-const NEWISSUES = 'Net new issues';
+export const NEWISSUES = 'Net new issues';
+export const ALLISSUES = 'All issues';
 
 export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
-  codeQualityEnabled: boolean | undefined;
   iacEnabled: boolean | undefined;
+};
+
+export type ScanCommandConfig = {
+  preScanCommand: string;
+  preScanOnlyReferenceFolder: boolean;
+  postScanCommand: string;
+  postScanOnlyReferenceFolder: boolean;
 };
 
 export type FolderConfig = {
   folderPath: string;
   baseBranch: string;
   localBranches: string[] | undefined;
+  referenceFolderPath: string | undefined;
+  scanCommandConfig?: Record<string, ScanCommandConfig>;
 };
 
 export interface IssueViewOptions {
@@ -55,6 +63,11 @@ export interface IssueViewOptions {
 
   [option: string]: boolean;
 }
+
+export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
+  ignoredIssues: true,
+  openIssues: true,
+};
 
 export interface SeverityFilter {
   critical: boolean;
@@ -65,8 +78,14 @@ export interface SeverityFilter {
   [severity: string]: boolean;
 }
 
+export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
+  critical: true,
+  high: true,
+  medium: true,
+  low: true,
+};
+
 export type PreviewFeatures = {
-  advisor: boolean | undefined;
   ossQuickfixes: boolean | undefined;
 };
 
@@ -77,7 +96,9 @@ export interface IConfiguration {
   authHost: string;
 
   getExtensionId(): string;
+
   setExtensionId(extensionId: string): void;
+
   getFeatureFlag(flagName: string): boolean;
 
   setFeatureFlag(flagName: string, value: boolean): void;
@@ -91,6 +112,7 @@ export interface IConfiguration {
   setCliPath(cliPath: string): Promise<void>;
 
   setCliReleaseChannel(releaseChannel: string): Promise<void>;
+
   setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void>;
 
   clearToken(): Promise<void>;
@@ -122,8 +144,11 @@ export interface IConfiguration {
   isAutomaticDependencyManagementEnabled(): boolean;
 
   getCliPath(): Promise<string>;
+
   getCliReleaseChannel(): Promise<string>;
+
   getCliBaseDownloadUrl(): string;
+
   getInsecure(): boolean;
 
   isFedramp: boolean;
@@ -144,6 +169,8 @@ export interface IConfiguration {
 
   getDeltaFindingsEnabled(): boolean;
 
+  setDeltaFindingsEnabled(isEnabled: boolean): Promise<void>;
+
   getOssQuickFixCodeActionsEnabled(): boolean;
 
   getFolderConfigs(): FolderConfig[];
@@ -159,6 +186,7 @@ export class Configuration implements IConfiguration {
 
   private featureFlag: { [key: string]: boolean } = {};
   private extensionId: string;
+  private inMemoryFolderConfigs: FolderConfig[] = [];
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
@@ -232,13 +260,11 @@ export class Configuration implements IConfiguration {
   }
 
   static async getVersion(): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { version } = await this.getPackageJsonConfig();
     return version;
   }
 
   static async isPreview(): Promise<boolean> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { preview } = await this.getPackageJsonConfig();
     return preview;
   }
@@ -312,11 +338,8 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    const selectionValue = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
-    );
-    return selectionValue === NEWISSUES;
+    const value = this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS));
+    return value === NEWISSUES;
   }
 
   getAuthenticationMethod(): string {
@@ -361,6 +384,19 @@ export class Configuration implements IConfiguration {
     );
   }
 
+  async setDeltaFindingsEnabled(isEnabled: boolean): Promise<void> {
+    let deltaValue = NEWISSUES;
+    if (!isEnabled) {
+      deltaValue = ALLISSUES;
+    }
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(DELTA_FINDINGS),
+      deltaValue,
+      true,
+    );
+  }
+
   async clearToken(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       SecretStorageAdapter.instance
@@ -381,29 +417,19 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
     );
-    const codeQualityEnabled = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
-    );
     const iacEnabled = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(IAC_ENABLED_SETTING),
     );
 
-    if (
-      _.isUndefined(ossEnabled) &&
-      _.isUndefined(codeSecurityEnabled) &&
-      _.isUndefined(codeQualityEnabled) &&
-      _.isUndefined(iacEnabled)
-    ) {
+    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(iacEnabled)) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { ossEnabled: true, codeSecurityEnabled: true, codeQualityEnabled: true, iacEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, iacEnabled: true };
     }
 
     return {
       ossEnabled,
       codeSecurityEnabled,
-      codeQualityEnabled,
       iacEnabled,
     };
   }
@@ -419,12 +445,6 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
       config?.codeSecurityEnabled,
-      true,
-    );
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_QUALITY_ENABLED_SETTING),
-      config?.codeQualityEnabled,
       true,
     );
     await this.workspace.updateConfiguration(
@@ -494,12 +514,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ISSUE_VIEW_OPTIONS_SETTING),
     );
 
-    return (
-      config ?? {
-        openIssues: true,
-        ignoredIssues: true,
-      }
-    );
+    return config ?? DEFAULT_ISSUE_VIEW_OPTIONS;
   }
 
   get severityFilter(): SeverityFilter {
@@ -508,14 +523,7 @@ export class Configuration implements IConfiguration {
       this.getConfigName(SEVERITY_FILTER_SETTING),
     );
 
-    return (
-      config ?? {
-        critical: true,
-        high: true,
-        medium: true,
-        low: true,
-      }
-    );
+    return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
   get organization(): string | undefined {
@@ -524,7 +532,6 @@ export class Configuration implements IConfiguration {
 
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {
-      advisor: false,
       ossQuickfixes: false,
     };
 
@@ -573,9 +580,9 @@ export class Configuration implements IConfiguration {
     const isAutomaticDependencyManagementEnabled = this.isAutomaticDependencyManagementEnabled();
     const snykLsPath = this.getSnykLanguageServerPath();
     if (!isAutomaticDependencyManagementEnabled && snykLsPath) return snykLsPath;
-    const defaultPath = await CliExecutable.getPath();
-    return defaultPath;
+    return await CliExecutable.getPath();
   }
+
   getTrustedFolders(): string[] {
     return (
       this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []
@@ -583,10 +590,7 @@ export class Configuration implements IConfiguration {
   }
 
   getFolderConfigs(): FolderConfig[] {
-    return (
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      []
-    );
+    return this.inMemoryFolderConfigs;
   }
 
   get scanningMode(): string | undefined {
@@ -603,10 +607,11 @@ export class Configuration implements IConfiguration {
   }
 
   async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
+    this.inMemoryFolderConfigs = folderConfigs;
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(FOLDER_CONFIGS),
-      folderConfigs,
+      this.inMemoryFolderConfigs,
       true,
     );
   }

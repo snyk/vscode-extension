@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
+import * as tls from 'tls';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
 import { IVSCodeWorkspace } from './vscode/workspace';
@@ -16,7 +17,15 @@ export async function getHttpsProxyAgent(
   const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
   if (proxyOptions == undefined) return undefined;
 
-  return new HttpsProxyAgent(proxyOptions);
+  const agent = new HttpsProxyAgent(proxyOptions);
+
+  // Extract CA certificates from proxy agent options and add them at the top level
+  if (proxyOptions.ca) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    (agent as any).ca = proxyOptions.ca;
+  }
+
+  return agent;
 }
 
 export async function getProxyOptions(
@@ -74,11 +83,7 @@ export async function getAxiosConfig(
   // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
   let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
   if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
-
   return {
-    // proxy false as we're using https-proxy-agent library for proxying
-    proxy: false,
-    httpAgent: agentOptions,
     httpsAgent: agentOptions,
   };
 }
@@ -115,10 +120,22 @@ async function getDefaultAgentOptions(
     // use custom certs if provided
     if (processEnv.NODE_EXTRA_CA_CERTS) {
       try {
+        logger.debug('NODE_EXTRA_CA_CERTS env var is set');
         await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
-        const certs = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS);
-        defaultOptions = { ca: [certs] };
-        globalAgent.options.ca = [certs];
+        const extraCerts = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS, 'utf-8');
+        if (!extraCerts) {
+          return;
+        }
+        logger.debug('found certs in NODE_EXTRA_CA_CERTS');
+        const currentCaRaw = globalAgent.options.ca ?? tls.rootCertificates;
+
+        const currentCaArray = Array.isArray(currentCaRaw) ? currentCaRaw : [currentCaRaw];
+
+        const mergedCa: (string | Buffer)[] = currentCaArray.map(ca => ca as string | Buffer);
+        mergedCa.push(extraCerts);
+
+        defaultOptions = { ca: mergedCa };
+        globalAgent.options.ca = mergedCa;
       } catch (error) {
         logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
       }

@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import _ from 'lodash';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { ScanModeService } from '../../base/services/scanModeService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
@@ -39,7 +37,6 @@ export class CommandController {
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
     private ossService: OssService,
-    private scanModeService: ScanModeService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
@@ -84,6 +81,14 @@ export class CommandController {
     await this.folderConfigs.setBranch(this.window, this.configuration, folderPath);
   }
 
+  async setReferenceFolder(folderPath: string): Promise<void> {
+    await this.folderConfigs.setReferenceFolder(this.window, this.configuration, folderPath);
+  }
+
+  async toggleDelta(isEnabled: boolean): Promise<void> {
+    await this.configuration.setDeltaFindingsEnabled(isEnabled);
+  }
+
   openSettings(): void {
     void this.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, `@ext:${this.configuration.getExtensionId()}`);
   }
@@ -113,7 +118,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+        await this.snykCode.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }
@@ -145,7 +150,7 @@ export class CommandController {
       await this.openLocalFile(issue.filePath, issueArgs.range);
 
       try {
-        this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+        await this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

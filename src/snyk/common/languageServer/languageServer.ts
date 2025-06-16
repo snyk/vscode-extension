@@ -8,6 +8,7 @@ import {
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
+  SNYK_SCANSUMMARY,
 } from '../constants/languageServer';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
@@ -19,11 +20,16 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { CliExecutable } from '../../cli/cliExecutable';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { CodeIssueData, IacIssueData, OssIssueData, Scan } from './types';
-import { ExtensionContext } from '../vscode/extensionContext';
+import { CodeIssueData, IacIssueData, OssIssueData, Scan, ShowIssueDetailTopicParams } from './types';
+import { IExtensionRetriever } from '../vscode/extensionContext';
+import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
+import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
+import { IUriAdapter } from '../vscode/uri';
+import { IMarkdownStringAdapter } from '../vscode/markdownString';
+import { IVSCodeCommands } from '../vscode/commands';
+import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -34,12 +40,16 @@ export interface ILanguageServer {
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>;
+  showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>;
 }
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
   readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
+  private geminiIntegrationService: GeminiIntegrationService;
+  readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
+  public static ReceivedFolderConfigsFromLs = false;
 
   constructor(
     private user: User,
@@ -50,9 +60,24 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
-    private extensionContext: ExtensionContext,
+    private extensionRetriever: IExtensionRetriever,
+    private summaryProvider: ISummaryProviderService,
+    private readonly uriAdapter: IUriAdapter,
+    private readonly markdownAdapter: IMarkdownStringAdapter,
+    private readonly codeCommands: IVSCodeCommands,
+    private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
   ) {
     this.downloadService = downloadService;
+    this.geminiIntegrationService = new GeminiIntegrationService(
+      this.logger,
+      this.configuration,
+      this.extensionRetriever,
+      this.scan$,
+      this.uriAdapter,
+      this.markdownAdapter,
+      this.codeCommands,
+      this.diagnosticsProvider,
+    );
   }
 
   // Starts the language server and the client. LS will be downloaded if missing.
@@ -71,10 +96,8 @@ export class LanguageServer implements ILanguageServer {
     if (proxyEnvVariable) {
       processEnv = {
         ...processEnv,
-        // eslint-disable-next-line camelcase
-        https_proxy: proxyEnvVariable,
-        // eslint-disable-next-line camelcase
-        http_proxy: proxyEnvVariable,
+        HTTPS_PROXY: proxyEnvVariable,
+        HTTP_PROXY: proxyEnvVariable,
       };
     }
 
@@ -106,12 +129,11 @@ export class LanguageServer implements ILanguageServer {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initializationOptions: await this.getInitializationOptions(),
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.configuration, this.user, this.extensionContext),
+      middleware: new LanguageClientMiddleware(this.logger, this.configuration, this.user, this.showIssueDetailTopic$),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
@@ -123,11 +145,13 @@ export class LanguageServer implements ILanguageServer {
     this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
 
     try {
+      // register listeners before starting the client
+      this.registerListeners(this.client);
+
       // Start the client. This will also launch the server
       await this.client.start();
+      void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
-
-      this.registerListeners(this.client);
     } catch (error) {
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
@@ -141,8 +165,9 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
       this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
+        ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
       });
     });
 
@@ -156,13 +181,16 @@ export class LanguageServer implements ILanguageServer {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
     });
+
+    client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
+      this.summaryProvider.updateSummaryPanel(scanSummary);
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<ServerSettings> {
-    const settings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
-    return settings;
+    return await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
   }
 
   showOutputChannel(): void {

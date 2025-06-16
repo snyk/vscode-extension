@@ -1,23 +1,30 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
-import { IConfiguration, IssueViewOptions } from '../../common/configuration/configuration';
-import { Issue, IssueSeverity, LsErrorMessage } from '../../common/languageServer/types';
+import { IConfiguration } from '../configuration/configuration';
+import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
-import { IContextService } from '../../common/services/contextService';
-import { IProductService } from '../../common/services/productService';
-import { AnalysisTreeNodeProvider } from '../../common/views/analysisTreeNodeProvider';
-import { INodeIcon, InternalType, NODE_ICONS, TreeNode } from '../../common/views/treeNode';
-import { IVSCodeLanguages } from '../../common/vscode/languages';
-import { Command, Range } from '../../common/vscode/types';
+import { IContextService } from '../services/contextService';
+import { IProductService } from '../services/productService';
+import { AnalysisTreeNodeProvider } from './analysisTreeNodeProvider';
+import { INodeIcon, INodeOptions, NODE_ICONS, TreeNode } from './treeNode';
+import { IVSCodeLanguages } from '../vscode/languages';
+import { Command, Range } from '../vscode/types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
-import { SNYK_SET_BASE_BRANCH_COMMAND } from '../constants/commands';
+import { SNYK_SET_DELTA_REFERENCE_COMMAND } from '../constants/commands';
+import path from 'path';
+import { ILog } from '../logger/interfaces';
+import { ErrorHandler } from '../error/errorHandler';
+import { FEATURE_FLAGS } from '../constants/featureFlags';
 
 interface ISeverityCounts {
   [severity: string]: number;
 }
 
 export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvider {
-  constructor(
+  protected allIssueNodes: TreeNode[] = [];
+
+  protected constructor(
+    protected readonly logger: ILog,
     protected readonly contextService: IContextService,
     protected readonly productService: IProductService<T>,
     protected readonly configuration: IConfiguration,
@@ -90,45 +97,48 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     }
     nodes.sort(this.compareNodes);
 
+    // totalIssueCount is the number of issues returned by LS, which pre-filters on Issue View Options and Severity Filters.
     const totalIssueCount = this.getTotalIssueCount();
     const ignoredIssueCount = this.getIgnoredCount();
+    // Depending on Issue View Options, ignored issues might be pre-filtered by the LS and so ignoredIssueCount may be 0.
+    // In this case, openIssueCount is the total issue count returned by the LS.
+    const openIssueCount = totalIssueCount - ignoredIssueCount;
 
     const topNodes: (TreeNode | null)[] = [
       new TreeNode({
-        text: this.getIssueFoundText(totalIssueCount, ignoredIssueCount),
+        text: this.getIssueFoundText(totalIssueCount, openIssueCount, ignoredIssueCount),
       }),
     ];
-
-    if (totalIssueCount > 0) {
-      topNodes.push(this.getFixableIssuesNode(this.getFixableCount()));
-    }
 
     const noSeverityFiltersSelectedWarning = this.getNoSeverityFiltersSelectedTreeNode();
     if (noSeverityFiltersSelectedWarning !== null) {
       topNodes.push(noSeverityFiltersSelectedWarning);
-    } else {
-      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode(
-        totalIssueCount,
-        ignoredIssueCount,
-      );
+    } else if (totalIssueCount === 0) {
+      const noIssueViewOptionSelectedWarning = this.getNoIssueViewOptionsSelectedTreeNode();
       topNodes.push(noIssueViewOptionSelectedWarning);
+    } else {
+      const fixableIssueText = this.getFixableIssuesText(this.getFixableCount());
+      if (fixableIssueText !== null) {
+        topNodes.push(new TreeNode({ text: fixableIssueText }));
+      }
     }
     const validTopNodes = topNodes.filter((n): n is TreeNode => n !== null);
 
-    const baseBranchNodeIndex = nodes.findIndex(node => {
+    const referenceNodeIndex = nodes.findIndex(node => {
       const label = node.label as string;
-      return label?.toLowerCase().indexOf('base branch') !== -1;
+      const lowerCaseLabel = label?.toLowerCase();
+      return lowerCaseLabel?.indexOf('reference') !== -1;
     });
 
-    if (baseBranchNodeIndex > -1) {
-      nodes.splice(baseBranchNodeIndex + 1, 0, ...validTopNodes);
+    if (referenceNodeIndex > -1) {
+      nodes.splice(referenceNodeIndex + 1, 0, ...validTopNodes);
     } else {
       nodes.unshift(...validTopNodes);
     }
     return nodes;
   }
 
-  getFixableIssuesNode(_fixableIssueCount: number): TreeNode | null {
+  getFixableIssuesText(_fixableIssueCount: number): string | null {
     return null; // optionally overridden by products
   }
 
@@ -157,39 +167,22 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     return false; // optionally overridden by products
   }
 
-  filterVisibleIssues(issues: Issue<T>[]): Issue<T>[] {
-    return issues.filter(issue => this.isVisibleIssue(issue, this.configuration.issueViewOptions));
-  }
-
-  protected isVisibleIssue(issue: Issue<T>, issueViewOptions: IssueViewOptions) {
-    const { ignoredIssues: includeIgnoredIssues, openIssues: includeOpenIssues } = issueViewOptions;
-
-    // Show all issues
-    if (includeIgnoredIssues && includeOpenIssues) {
-      return true;
-    }
-
-    // Show issues based on options
-    if (includeIgnoredIssues) {
-      return issue.isIgnored;
-    }
-    if (includeOpenIssues) {
-      return !issue.isIgnored;
-    }
-    return false;
-  }
-
-  getBaseBranch(folderPath: string): TreeNode | undefined {
+  getReference(folderPath: string): TreeNode | undefined {
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
-
+    let reference = config?.referenceFolderPath ?? '';
+    if (reference === undefined || reference === '') {
+      reference = config?.baseBranch ?? '';
+    } else {
+      reference = path.basename(reference);
+    }
     if (deltaFindingsEnabled && config) {
       return new TreeNode({
-        text: 'Base branch: ' + config.baseBranch,
+        text: 'Click here to choose reference [ current: ' + reference + ' ]',
         icon: NODE_ICONS.branch,
         command: {
-          command: SNYK_SET_BASE_BRANCH_COMMAND,
-          title: 'Choose Base Branch',
+          command: SNYK_SET_DELTA_REFERENCE_COMMAND,
+          title: 'Choose reference for delta findings',
           arguments: [folderPath],
         },
       });
@@ -197,6 +190,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   getResultNodes(): TreeNode[] {
+    this.allIssueNodes = [];
     const nodes: TreeNode[] = [];
 
     for (const result of this.productService.result.entries()) {
@@ -209,6 +203,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const folderName = shortFolderPath.pop() || uri.path;
 
       let folderVulnCount = 0;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
       if (folderResult instanceof Error && folderResult.message === LsErrorMessage.repositoryInvalidError) {
         nodes.push(this.getFaultyRepositoryErrorTreeNode(folderName, folderResult.toString()));
         continue;
@@ -234,24 +229,17 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         const fileSeverityCounts = this.initSeverityCounts();
 
         const filteredIssues = this.filterIssues(fileIssues);
-        const visibleIssues = this.filterVisibleIssues(filteredIssues);
 
-        const issueNodes = visibleIssues.map(issue => {
+        const issueNodes = filteredIssues.map(issue => {
           fileSeverityCounts[issue.severity] += 1;
           folderVulnCount++;
 
           const issueRange = this.getIssueRange(issue);
-          const params: {
-            text: string;
-            icon: INodeIcon;
-            issue: { filePath: string; uri: vscode.Uri; range?: vscode.Range };
-            internal: InternalType;
-            command: Command;
-            children?: TreeNode[];
-          } = {
+          const params: INodeOptions = {
             text: this.getIssueTitle(issue),
             icon: ProductIssueTreeProvider.getSeverityIcon(issue.severity),
             issue: {
+              id: issue.id,
               uri,
               filePath: file,
               range: issueRange,
@@ -263,6 +251,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           };
           return new TreeNode(params);
         });
+        this.allIssueNodes.push(...issueNodes);
 
         if (issueNodes.length === 0) {
           continue;
@@ -291,7 +280,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
       const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
 
-      const baseBranchNode = this.getBaseBranch(uri.fsPath);
+      const baseBranchNode = this.getReference(uri.fsPath);
       if (folderVulnCount == 0) {
         this.addBaseBranchNode(baseBranchNode, nodes);
         continue;
@@ -326,11 +315,18 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     nodes.unshift(baseBranchNode);
   }
 
-  protected getIssueFoundText(nIssues: number, _: number): string {
-    if (!nIssues) {
-      return '✅ Congrats! No issues found!';
+  protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+
+    if (isIgnoresEnabled && !showingOpen) {
+      return commonMessages.openIssuesAreDisabled;
     }
-    return `Snyk found ${nIssues} issue${nIssues === 1 ? '' : 's'}`;
+    if (totalIssueCount === 0) {
+      return commonMessages.congratsNoIssuesFound;
+    } else {
+      return `✋ ${totalIssueCount} issue${totalIssueCount === 1 ? '' : 's'}`;
+    }
   }
 
   protected getIssueDescriptionText(dir: string | undefined, issueCount: number): string | undefined {
@@ -357,5 +353,33 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   /** Returns severity significance index. The higher, the more significant severity is. */
   static getSeverityComparatorIndex(severity: IssueSeverity): number {
     return Object.values(IssueSeverity).indexOf(severity);
+  }
+
+  private findIssueNodeByIssueId(issueId: string): TreeNode | undefined {
+    return this.allIssueNodes.find(issueNode => issueNode.issue?.id === issueId);
+  }
+
+  revealIssueById(treeView: vscode.TreeView<TreeNode>, issueId: string): Promise<boolean> {
+    return new Promise<boolean>((resolve, _reject) => {
+      const issueNode = this.findIssueNodeByIssueId(issueId);
+      if (issueNode === undefined) {
+        this.logger.error(`Cannot find issue by id ${issueId} to reveal`);
+        resolve(false);
+        return;
+      }
+      treeView
+        .reveal(issueNode, {
+          select: true,
+          focus: true,
+          expand: 3 /*maximum allowed depth*/,
+        })
+        .then(
+          () => resolve(true),
+          err => {
+            this.logger.error(ErrorHandler.stringifyError(err));
+            resolve(false);
+          },
+        );
+    });
   }
 }

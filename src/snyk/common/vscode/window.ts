@@ -33,12 +33,28 @@ export interface IVSCodeWindow {
   showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined>;
 
   onDidChangeActiveTextEditor(listener: (e: vscode.TextEditor | undefined) => unknown): vscode.Disposable;
+
+  showOpenDialog(param: {
+    canSelectFiles: boolean;
+    canSelectFolders: boolean;
+    canSelectMany: boolean;
+    openLabel: string;
+  }): Thenable<Uri[] | undefined>;
 }
 
 /**
  * A wrapper class for the vscode.window to provide centralised access to dealing with the current window of the editor.
  */
 class VSCodeWindow implements IVSCodeWindow {
+  showOpenDialog(param: {
+    canSelectFiles: boolean;
+    canSelectFolders: boolean;
+    canSelectMany: boolean;
+    openLabel: string;
+  }): Thenable<Uri[] | undefined> {
+    return vscode.window.showOpenDialog(param);
+  }
+
   getActiveTextEditor(): vscode.TextEditor | undefined {
     return vscode.window.activeTextEditor;
   }

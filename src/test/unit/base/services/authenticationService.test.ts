@@ -1,4 +1,4 @@
-import { rejects } from 'assert';
+import { rejects, strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IBaseSnykModule } from '../../../../snyk/base/modules/interfaces';
 import { AuthenticationService, OAuthToken } from '../../../../snyk/base/services/authenticationService';
@@ -23,7 +23,6 @@ suite('AuthenticationService', () => {
   let setEndpointSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
-  let previewFeaturesSpy: sinon.SinonSpy;
 
   setup(() => {
     baseModule = {} as IBaseSnykModule;
@@ -51,7 +50,7 @@ suite('AuthenticationService', () => {
       setEndpoint: setEndpointSpy,
       setToken: setTokenSpy,
       clearToken: clearTokenSpy,
-      getPreviewFeatures: previewFeaturesSpy,
+      getPreviewFeatures: sinon.fake(),
     } as unknown as IConfiguration;
   });
 
@@ -198,5 +197,60 @@ suite('AuthenticationService', () => {
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
+  });
+
+  suite('AuthenticationService', () => {
+    // Existing setup...
+
+    suite('patValidate', () => {
+      let service: AuthenticationService;
+
+      setup(() => {
+        service = new AuthenticationService(
+          {} as IContextService,
+          {} as IBaseSnykModule,
+          {} as IConfiguration,
+          windowMock,
+          new LoggerMock(),
+          {} as ILanguageClientAdapter,
+          {} as IVSCodeCommands,
+        );
+      });
+
+      test('should return true for valid PATs', () => {
+        const validPats = [
+          'snyk_abc.def-ghi.jkl_mno.pqr-stu',
+          'snyk_A1B2.C3D4-E5F6.G7H8_I9J0.K1L2-M3N4',
+          'snyk_longtype.evenlongerkid.superlongpayload.verylongsignature',
+          'snyk_0.0.0.0', // Boundary case: all zeros
+        ];
+        validPats.forEach(pat => {
+          const result = service.patValidate(pat);
+          strictEqual(result, true, "Expected true for valid PAT '" + pat + "'");
+        });
+      });
+
+      test('should return false for invalid PATs', () => {
+        const invalidPats = [
+          'snyk_invalid-pat', // Missing parts
+          'snyk_.kid.payload.signature', // Empty type
+          'snyk_type..payload.signature', // Empty kid
+          'snyk_type.kid..signature', // Empty payload
+          'snyk_type.kid.payload.', // Empty signature
+          'snyk_type.kid.payload.signature.extra', // Too many parts
+          'not-a-snyk-pat', // Wrong prefix
+          'snyk_type/kid.payload.signature', // Invalid character (/) in type
+          'snyk_type.k/id.payload.signature', // Invalid character (/) in kid
+          'snyk_type.kid.p@ylo@d.sign@ture', // Invalid character (@) in payload
+          'snyk_type.kid.payload.s!gnature', // Invalid character (!) in signature
+          '', // Empty string
+          '   ', // Whitespace only
+        ];
+        invalidPats.forEach(pat => {
+          const result = service.patValidate(pat);
+          strictEqual(result, false, "Expected false for invalid PAT '" + pat + "')");
+        });
+      });
+    }); // End of patValidate suite
   });
 });

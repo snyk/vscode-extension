@@ -1,0 +1,28 @@
+name: Static Resource Checking
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  static-resource-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+
+      - name: Check Static Resources
+        run: |
+          declare -A resources
+          # Add each resource as a key, value pair, mapping the local resource to the reference file (which should be stored in the language server repository). For example:
+          # resources["<path_to_local_file>"]="<url_of_reference_file>"
+          resources["media/views/scanSummary/ScanSummaryInit.html"]="https://raw.githubusercontent.com/snyk/snyk-ls/refs/heads/main/shared_ide_resources/ui/html/ScanSummaryInit.html"
+          for key in ${!resources[@]}; do
+            candidate=$(sha512sum $key | awk {'print $1'})
+            candidate=${candidate:="null"}
+            reference=$(curl -s ${resources[$key]} | sha512sum | awk {'print $1'})
+            echo "Candidate file $key has sha512sum $candidate"
+            echo "Reference file ${resources[$key]} has sha512sum $reference"
+            [[ $candidate == $reference ]]
+          done
+

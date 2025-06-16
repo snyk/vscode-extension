@@ -7,10 +7,8 @@ import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
-  CODE_QUALITY_ENABLED_SETTING,
-  CODE_SECURITY_ENABLED_SETTING,
-  IAC_ENABLED_SETTING,
   ADVANCED_ORGANIZATION,
+  IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
   SEVERITY_FILTER_SETTING,
@@ -20,6 +18,7 @@ import {
   ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
+  CODE_SECURITY_ENABLED_SETTING,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -38,7 +37,7 @@ class ConfigurationWatcher implements IWatcher {
       return extension.checkAdvancedMode();
     } else if (key === OSS_ENABLED_SETTING) {
       extension.viewManagerService.refreshOssView();
-    } else if (key === CODE_SECURITY_ENABLED_SETTING || key === CODE_QUALITY_ENABLED_SETTING) {
+    } else if (key === CODE_SECURITY_ENABLED_SETTING) {
       return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
@@ -60,7 +59,7 @@ class ConfigurationWatcher implements IWatcher {
       extension.initDependencyDownload();
       return;
     } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
-      extension.viewManagerService.refreshAllViews();
+      return extension.viewManagerService.refreshAllViews();
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
@@ -87,7 +86,6 @@ class ConfigurationWatcher implements IWatcher {
         ADVANCED_ORGANIZATION,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
-        CODE_QUALITY_ENABLED_SETTING,
         IAC_ENABLED_SETTING,
         SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
