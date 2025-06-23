@@ -20,7 +20,7 @@ suite('LanguageServerSettings', () => {
         organization: 'my-org',
         // eslint-disable-next-line @typescript-eslint/require-await
         getToken: async () => 'snyk-token',
-        getFeaturesConfiguration: () => ({}), // iacEnabled, codeSecurityEnabled, codeQualityEnabled are undefined
+        getFeaturesConfiguration: () => ({ iacEnabled: true, codeSecurityEnabled: true }), // advisorEnabled is removed
         getCliPath: () => '/path/to/cli',
         getAdditionalCliParameters: () => '--all-projects -d',
         getTrustedFolders: () => ['/trusted/path'],
@@ -31,7 +31,7 @@ suite('LanguageServerSettings', () => {
           return [];
         },
         getPreviewFeatures(): PreviewFeatures {
-          return { advisor: false, ossQuickfixes: false };
+          return { ossQuickfixes: false }; // advisor is removed
         },
         getOssQuickFixCodeActionsEnabled(): boolean {
           return false;
@@ -47,7 +47,6 @@ suite('LanguageServerSettings', () => {
       const serverSettings = await LanguageServerSettings.fromConfiguration(mockConfiguration, mockUser);
 
       assert.strictEqual(serverSettings.activateSnykCodeSecurity, 'true');
-      assert.strictEqual(serverSettings.activateSnykCodeQuality, 'true');
       assert.strictEqual(serverSettings.activateSnykIac, 'true');
       assert.strictEqual(serverSettings.deviceId, 'anonymous-id');
 

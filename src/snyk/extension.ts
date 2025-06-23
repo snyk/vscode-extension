@@ -31,7 +31,6 @@ import {
 import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
-  SNYK_VIEW_ANALYSIS_CODE_QUALITY,
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
@@ -64,7 +63,6 @@ import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeSettings } from './snykCode/codeSettings';
-import { CodeQualityIssueTreeProvider } from './snykCode/views/qualityIssueTreeProvider';
 import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { IacService } from './snykIac/iacService';
@@ -328,36 +326,14 @@ class SnykExtension extends SnykLib implements IExtension {
       this.folderConfigs,
     );
 
-    const codeQualityIssueProvider = new CodeQualityIssueTreeProvider(
-      Logger,
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-      this.folderConfigs,
-    );
-
     const securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
-    const codeQualityView = SNYK_VIEW_ANALYSIS_CODE_QUALITY;
-
     const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
       treeDataProvider: codeSecurityIssueProvider,
-    });
-
-    const codeQualityTree = vscode.window.createTreeView(codeQualityView, {
-      treeDataProvider: codeQualityIssueProvider,
     });
 
     const codeSecurityTreeViewService = new ProductTreeViewService(
       codeSecurityTree,
       codeSecurityIssueProvider,
-      this.languageServer,
-      LsScanProduct.Code,
-    );
-    const codeQualityTreeViewService = new ProductTreeViewService(
-      codeQualityTree,
-      codeQualityIssueProvider,
       this.languageServer,
       LsScanProduct.Code,
     );
@@ -406,11 +382,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
-      vscode.window.registerTreeDataProvider(codeQualityView, codeQualityIssueProvider),
       codeSecurityTree,
-      codeQualityTree,
       codeSecurityTreeViewService,
-      codeQualityTreeViewService,
     );
 
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));

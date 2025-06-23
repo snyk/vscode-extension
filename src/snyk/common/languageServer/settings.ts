@@ -14,7 +14,6 @@ import { LanguageServer } from './languageServer';
 export type ServerSettings = {
   // Feature toggles
   activateSnykCodeSecurity?: string;
-  activateSnykCodeQuality?: string;
   activateSnykOpenSource?: string;
   activateSnykIac?: string;
 
@@ -53,27 +52,34 @@ export type ServerSettings = {
   folderConfigs: FolderConfig[];
   enableSnykOSSQuickFixCodeActions: string;
   hoverVerbosity: number;
+  // Environment/Editor Info
+  runtimeName?: string;
+  runtimeVersion?: string;
+  osArch?: string;
+  osPlatform?: string;
+  additionalEnv?: string;
 };
 
 export class LanguageServerSettings {
   static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
-    const ossEnabled = _.isUndefined(featuresConfiguration.ossEnabled) ? true : featuresConfiguration.ossEnabled;
+    const ossEnabled = _.isUndefined(featuresConfiguration?.ossEnabled)
+      ? 'true'
+      : `${featuresConfiguration?.ossEnabled}`;
 
-    const iacEnabled = _.isUndefined(featuresConfiguration.iacEnabled) ? true : featuresConfiguration.iacEnabled;
-    const codeSecurityEnabled = _.isUndefined(featuresConfiguration.codeSecurityEnabled)
-      ? true
-      : featuresConfiguration.codeSecurityEnabled;
-    const codeQualityEnabled = _.isUndefined(featuresConfiguration.codeQualityEnabled)
-      ? true
-      : featuresConfiguration.codeQualityEnabled;
+    const iacEnabled = _.isUndefined(featuresConfiguration?.iacEnabled)
+      ? 'true'
+      : `${featuresConfiguration?.iacEnabled}`;
+
+    const codeSecurityEnabled = _.isUndefined(featuresConfiguration?.codeSecurityEnabled)
+      ? 'true'
+      : `${featuresConfiguration?.codeSecurityEnabled}`;
 
     return {
-      activateSnykCodeSecurity: `${codeSecurityEnabled}`,
-      activateSnykCodeQuality: `${codeQualityEnabled}`,
-      activateSnykOpenSource: `${ossEnabled}`,
-      activateSnykIac: `${iacEnabled}`,
+      activateSnykCodeSecurity: codeSecurityEnabled,
+      activateSnykOpenSource: ossEnabled,
+      activateSnykIac: iacEnabled,
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: await configuration.getCliPath(),

@@ -131,13 +131,6 @@
             "description": "Find and fix security issues in your application code in real time.",
             "default": true
           },
-          "snyk.features.codeQuality": {
-            "order": 3,
-            "type": "boolean",
-            "title": "Snyk Code quality issues (deprecated)",
-            "description": "Find and fix quality issues in your application code in real time (deprecated).",
-            "default": true
-          },
           "snyk.features.infrastructureAsCode": {
             "order": 4,
             "type": "boolean",
@@ -377,11 +370,6 @@
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
-          "id": "snyk.views.analysis.code.quality",
-          "name": "Code Quality",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
-        },
-        {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
           "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
@@ -571,7 +559,6 @@
     "axios": "^1.8.3",
     "glob": "^9.3.5",
     "he": "^1.2.0",
-    "htmlparser2": "^7.2.0",
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
     "lodash": "^4.17.21",
