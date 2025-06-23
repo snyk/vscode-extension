@@ -91,17 +91,7 @@ export class AuthenticationService implements IAuthenticationService {
    * @private
    */
   patValidate(token: string): boolean {
-    // ^: Matches the beginning of the string.
-    // snyk_: Matches the literal prefix "snyk_".
-    // [a-zA-Z0-9]+: Matches one or more alphanumeric characters (for the type).
-    // \.: Matches a literal dot.
-    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the kid).
-    // \.: Matches a literal dot.
-    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the payload).
-    // \.: Matches a literal dot.
-    // [a-zA-Z0-9_-]+: Matches one or more alphanumeric characters, hyphens, or underscores (for the signature).
-    // $: Matches the end of the string.
-    const patRegex = /^snyk_[a-zA-Z0-9]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
+    const patRegex = /^snyk_(?:uat|sat)\.[a-z0-9]{8}\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$/;
     return patRegex.test(token);
   }
 
