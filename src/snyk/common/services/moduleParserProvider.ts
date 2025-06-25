@@ -1,4 +1,3 @@
-import { BabelParser } from '../../snykOss/services/vulnerabilityCount/parsers/babelParser';
 import { ModuleParser } from '../../snykOss/services/vulnerabilityCount/parsers/moduleParser';
 import { PackageJsonParser } from '../../snykOss/services/vulnerabilityCount/parsers/packageJsonParser';
 import { IConfiguration } from '../configuration/configuration';
@@ -7,9 +6,7 @@ import { Language } from '../types';
 
 export class ModuleParserProvider {
   static getInstance(language: Language, logger: ILog, configuration: IConfiguration): ModuleParser | undefined {
-    if ([Language.TypeScript, Language.JavaScript].includes(language)) {
-      return new BabelParser();
-    } else if (language === Language.PJSON) {
+    if (language === Language.PJSON) {
       const cliParameters = configuration.getAdditionalCliParameters();
       return new PackageJsonParser(logger, cliParameters);
     }
