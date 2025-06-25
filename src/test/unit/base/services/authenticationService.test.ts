@@ -218,9 +218,10 @@ suite('AuthenticationService', () => {
       });
 
       test('should return true for valid PATs', () => {
-        const validPat = 'snyk_uat.1fcad39e.eyJlJjoxNzQ4NDMxNjJwLCJoJjoJc244ay4payJsJmsoJOJJaWmNXcFdkcjRGamhOYjYxUWdk' +
-        'REJaJJwJcyJ6JnE2RGRfUzU2UUpXT0otWVRYVDAwcWcJfQ.-q0jjlMEo4oqT3oga7Y-4Eq0NHqDfEDnWQZSrkv_ea162aHvwHMe9Decpz3JY' +
-        'O21r7DOTfne4FF0Y3C8cjJFCw'
+        const validPat =
+         'snyk_uat.1fcad39e.eyJlJjoxNzQ4NDMxNjJwLCJoJjoJc244ay4payJsJmsoJOJJaWmNXcFdkcjRGamhOYjYxUWdk' +
+          'REJaJJwJcyJ6JnE2RGRfUzU2UUpXT0otWVRYVDAwcWcJfQ.-q0jjlMEo4oqT3oga7Y-4Eq0NHqDfEDnWQZSrkv_ea162aHvwHMe9Decpz3JY' +
+          'O21r7DOTfne4FF0Y3C8cjJFCw'
         const result = service.patValidate(validPat);
         strictEqual(result, true, "Expected true for valid PAT '" + validPat + "'");
       });
