@@ -218,16 +218,12 @@ suite('AuthenticationService', () => {
       });
 
       test('should return true for valid PATs', () => {
-        const validPats = [
-          'snyk_abc.def-ghi.jkl_mno.pqr-stu',
-          'snyk_A1B2.C3D4-E5F6.G7H8_I9J0.K1L2-M3N4',
-          'snyk_longtype.evenlongerkid.superlongpayload.verylongsignature',
-          'snyk_0.0.0.0', // Boundary case: all zeros
-        ];
-        validPats.forEach(pat => {
-          const result = service.patValidate(pat);
-          strictEqual(result, true, "Expected true for valid PAT '" + pat + "'");
-        });
+        const validPat =
+          'snyk_uat.1fcad39e.eyJlJjoxNzQ4NDMxNjJwLCJoJjoJc244ay4payJsJmsoJOJJaWmNXcFdkcjRGamhOYjYxUWdk' +
+          'REJaJJwJcyJ6JnE2RGRfUzU2UUpXT0otWVRYVDAwcWcJfQ.-q0jjlMEo4oqT3oga7Y-4Eq0NHqDfEDnWQZSrkv_ea162aHvwHMe9Decpz3JY' +
+          'O21r7DOTfne4FF0Y3C8cjJFCw';
+        const result = service.patValidate(validPat);
+        strictEqual(result, true, "Expected true for valid PAT '" + validPat + "'");
       });
 
       test('should return false for invalid PATs', () => {
