@@ -4,6 +4,7 @@
 - Support early access of PAT authentication
 - Removed Snyk Code Quality feature. All related settings, configurations, and UI elements have been removed.
 - Removed scanning for vulnerabilities in JavaScript libraries referenced via CDN in HTML files.
+- Removed inline display of vulnerability counts for imports/requires in JavaScript/TypeScript files.
 
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow
