@@ -1,7 +1,7 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../configuration/configuration';
-import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
+import { Issue, IssueSeverity } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
 import { IProductService } from '../services/productService';
@@ -191,7 +191,8 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
   getResultNodes(): TreeNode[] {
     this.allIssueNodes = [];
-    const nodes: TreeNode[] = [];
+    const outerNodes: TreeNode[] = [];
+    const singleWorkspace = this.productService.result.size === 1;
 
     for (const result of this.productService.result.entries()) {
       const folderPath = result[0];
@@ -202,117 +203,141 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       // TODO: this might need to be changed to uri.fspath
       const folderName = shortFolderPath.pop() || uri.path;
 
-      let folderVulnCount = 0;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
-      if (folderResult instanceof Error && folderResult.message === LsErrorMessage.repositoryInvalidError) {
-        nodes.push(this.getFaultyRepositoryErrorTreeNode(folderName, folderResult.toString()));
-        continue;
+      let addTo: TreeNode[];
+      if (singleWorkspace) {
+        // Single-workspace will be directly in the tree.
+        addTo = outerNodes;
+      } else {
+        // Multi-workspace will be under a new node for the folder.
+        addTo = [];
       }
+      const baseBranchNode = this.getReference(uri.fsPath);
+      if (baseBranchNode !== undefined) {
+        addTo.push(baseBranchNode);
+      }
+
+      let folderIcon: INodeIcon;
+      let folderDescription: string | undefined;
 
       if (folderResult instanceof Error) {
-        nodes.push(this.getErrorEncounteredTreeNode(folderName));
-        continue;
-      }
+        folderIcon = NODE_ICONS.error;
+        folderDescription = 'An error occurred';
 
-      const folderSeverityCounts = this.initSeverityCounts();
-      const fileNodes: TreeNode[] = [];
-
-      const fileVulns = _.groupBy(folderResult, v => v.filePath);
-
-      for (const file in fileVulns) {
-        const fileIssues = fileVulns[file];
-        const uri = vscode.Uri.file(file);
-        const filePath = uri.path.split('/');
-        const filename = filePath.pop() || uri.path;
-        const dir = filePath.pop();
-
-        const fileSeverityCounts = this.initSeverityCounts();
-
-        const filteredIssues = this.filterIssues(fileIssues);
-
-        const issueNodes = filteredIssues.map(issue => {
-          fileSeverityCounts[issue.severity] += 1;
-          folderVulnCount++;
-
-          const issueRange = this.getIssueRange(issue);
-          const params: INodeOptions = {
-            text: this.getIssueTitle(issue),
-            icon: ProductIssueTreeProvider.getSeverityIcon(issue.severity),
-            issue: {
-              id: issue.id,
-              uri,
-              filePath: file,
-              range: issueRange,
-            },
-            internal: {
-              severity: ProductIssueTreeProvider.getSeverityComparatorIndex(issue.severity),
-            },
-            command: this.getOpenIssueCommand(issue, folderPath, file),
-          };
-          return new TreeNode(params);
-        });
-        this.allIssueNodes.push(...issueNodes);
-
-        if (issueNodes.length === 0) {
-          continue;
+        if (singleWorkspace) {
+          addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
 
-        issueNodes.sort(this.compareNodes);
+        let errorMessage = folderResult.message;
+        if (errorMessage.toLowerCase().startsWith('error: ')) {
+          errorMessage = errorMessage.substring('error: '.length);
+        }
 
-        const fileSeverity = ProductIssueTreeProvider.getHighestSeverity(fileSeverityCounts);
-        folderSeverityCounts[fileSeverity] += 1;
-
-        // append file node
-        const fileNode = new TreeNode({
-          text: filename,
-          description: this.getIssueDescriptionText(dir, issueNodes.length),
-          icon: ProductIssueTreeProvider.getSeverityIcon(fileSeverity),
-          children: issueNodes,
-          internal: {
-            nIssues: issueNodes.length,
-            severity: ProductIssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
-          },
-        });
-        fileNodes.push(fileNode);
-      }
-
-      fileNodes.sort(this.compareNodes);
-
-      const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
-
-      const baseBranchNode = this.getReference(uri.fsPath);
-      if (folderVulnCount == 0) {
-        this.addBaseBranchNode(baseBranchNode, nodes);
-        continue;
-      }
-      // flatten results if single workspace folder
-      if (this.productService.result.size === 1) {
-        this.addBaseBranchNode(baseBranchNode, nodes);
-        nodes.push(...fileNodes);
+        addTo.push(
+          new TreeNode({
+            text: 'Error:',
+            description: errorMessage,
+          }),
+        );
+        addTo.push(this.getErrorEncounteredTreeNode(undefined, false));
       } else {
-        const folderNode = new TreeNode({
-          text: folderName,
-          description: this.getIssueDescriptionText(folderName, folderVulnCount),
-          icon: ProductIssueTreeProvider.getSeverityIcon(folderSeverity),
-          children: fileNodes,
-          internal: {
-            nIssues: folderVulnCount,
-            severity: ProductIssueTreeProvider.getSeverityComparatorIndex(folderSeverity),
-          },
-        });
-        this.addBaseBranchNode(baseBranchNode, fileNodes);
-        nodes.push(folderNode);
+        const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(folderResult, folderPath);
+        addTo.push(...fileNodes);
+
+        const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
+        folderIcon = ProductIssueTreeProvider.getSeverityIcon(folderSeverity);
+        folderDescription = this.getIssueDescriptionText(folderName, folderVulnCount);
+      }
+
+      if (!singleWorkspace) {
+        outerNodes.push(this.createFolderNode(folderName, folderDescription, folderIcon, addTo));
       }
     }
 
-    return nodes;
+    return outerNodes;
   }
 
-  addBaseBranchNode(baseBranchNode: TreeNode | undefined, nodes: TreeNode[]) {
-    if (!baseBranchNode) {
-      return;
+  protected createFolderNode(
+    text: string,
+    description: string | undefined,
+    icon: INodeIcon,
+    children?: TreeNode[],
+  ): TreeNode {
+    return new TreeNode({
+      text,
+      description,
+      icon,
+      children,
+    });
+  }
+
+  private processFolderFiles(
+    issues: Issue<T>[],
+    folderPath: string,
+  ): { fileNodes: TreeNode[]; folderVulnCount: number; folderSeverityCounts: ISeverityCounts } {
+    let folderVulnCount = 0;
+    const folderSeverityCounts = this.initSeverityCounts();
+    const fileNodes: TreeNode[] = [];
+
+    const fileVulns = _.groupBy(issues, v => v.filePath);
+
+    for (const file in fileVulns) {
+      const fileIssues = fileVulns[file];
+      const uri = vscode.Uri.file(file);
+      const filePath = uri.path.split('/');
+      const filename = filePath.pop() || uri.path;
+      const dir = filePath.pop();
+
+      const fileSeverityCounts = this.initSeverityCounts();
+      const filteredIssues = this.filterIssues(fileIssues);
+
+      const issueNodes = filteredIssues.map(issue => {
+        fileSeverityCounts[issue.severity] += 1;
+        folderVulnCount++;
+
+        const issueRange = this.getIssueRange(issue);
+        const params: INodeOptions = {
+          text: this.getIssueTitle(issue),
+          icon: ProductIssueTreeProvider.getSeverityIcon(issue.severity),
+          issue: {
+            id: issue.id,
+            uri,
+            filePath: file,
+            range: issueRange,
+          },
+          internal: {
+            severity: ProductIssueTreeProvider.getSeverityComparatorIndex(issue.severity),
+          },
+          command: this.getOpenIssueCommand(issue, folderPath, file),
+        };
+        return new TreeNode(params);
+      });
+      this.allIssueNodes.push(...issueNodes);
+
+      if (issueNodes.length === 0) {
+        continue;
+      }
+
+      issueNodes.sort(this.compareNodes);
+
+      const fileSeverity = ProductIssueTreeProvider.getHighestSeverity(fileSeverityCounts);
+      folderSeverityCounts[fileSeverity] += 1;
+
+      // append file node
+      const fileNode = new TreeNode({
+        text: filename,
+        description: this.getIssueDescriptionText(dir, issueNodes.length),
+        icon: ProductIssueTreeProvider.getSeverityIcon(fileSeverity),
+        children: issueNodes,
+        internal: {
+          nIssues: issueNodes.length,
+          severity: ProductIssueTreeProvider.getSeverityComparatorIndex(fileSeverity),
+        },
+      });
+      fileNodes.push(fileNode);
     }
-    nodes.unshift(baseBranchNode);
+
+    fileNodes.sort(this.compareNodes);
+    return { fileNodes, folderVulnCount, folderSeverityCounts };
   }
 
   protected getIssueFoundText(totalIssueCount: number, _openIssueCount: number, _ignoredIssueCount: number): string {

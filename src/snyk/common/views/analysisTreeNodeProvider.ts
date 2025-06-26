@@ -70,9 +70,9 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return null;
   }
 
-  protected getErrorEncounteredTreeNode(scanPath?: string): TreeNode {
+  protected getErrorEncounteredTreeNode(scanPath?: string, showErrorIcon: boolean = true): TreeNode {
     return new TreeNode({
-      icon: NODE_ICONS.error,
+      ...(showErrorIcon ? { icon: NODE_ICONS.error } : {}),
       text: scanPath ? path.basename(scanPath) : messages.scanFailed,
       description: messages.clickToProblem,
       internal: {
