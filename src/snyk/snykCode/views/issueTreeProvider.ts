@@ -90,7 +90,7 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
 
     return fixableIssueCount > 0
       ? `⚡️ ${fixableIssueCount}${isIgnoresEnabled ? ' open' : ''} issue${fixableIssueCount === 1 ? ' is' : 's are'}` +
-          ' fixable by Snyk DeepCode AI.'
+          ' fixable by Snyk Agent Fix.'
       : analysisMessages.noFixableIssues;
   }
 
