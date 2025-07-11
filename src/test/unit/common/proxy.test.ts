@@ -154,7 +154,7 @@ suite('Proxy', () => {
     assert.deepStrictEqual(envVariable, `${protocol}//${auth}@${host}:${port}`);
   });
 
-    suite('Certificate handling and insecure mode', () => {
+  suite('Certificate handling and insecure mode', () => {
     let originalEnv: string | undefined;
 
     setup(() => {
@@ -313,9 +313,9 @@ suite('Proxy', () => {
 
     test('should log error when certificate file operations fail', async () => {
       const errorStub = sinon.stub();
-      const testLogger = { 
-        error: errorStub, 
-        debug: sinon.stub() 
+      const testLogger = {
+        error: errorStub,
+        debug: sinon.stub(),
       } as unknown as ILog;
 
       // Set to a path that likely doesn't exist

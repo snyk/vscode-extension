@@ -136,7 +136,7 @@ async function getDefaultAgentOptions(
       // Preserve the rejectUnauthorized setting when adding custom certificates
       defaultOptions = {
         ca: mergedCa,
-        rejectUnauthorized: sslCheck
+        rejectUnauthorized: sslCheck,
       };
       globalAgent.options.ca = mergedCa;
     } catch (error) {
