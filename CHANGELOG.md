@@ -6,6 +6,7 @@
 - Removed scanning for vulnerabilities in JavaScript libraries referenced via CDN in HTML files.
 - Removed inline display of vulnerability counts for imports/requires in JavaScript/TypeScript files.
 - Renamed DeepCode AI Fix to Snyk Agent Fix
+- Fixed certificate handling when using custom certificates (NODE_EXTRA_CA_CERTS) in insecure mode to prevent hostname mismatch errors
 
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow

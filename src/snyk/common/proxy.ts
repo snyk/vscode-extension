@@ -113,32 +113,34 @@ async function getDefaultAgentOptions(
   let defaultOptions: AgentOptions | undefined;
 
   const sslCheck = !configuration.getInsecure();
+  globalAgent.options.rejectUnauthorized = sslCheck;
   defaultOptions = { rejectUnauthorized: sslCheck };
-  if (!sslCheck) {
-    globalAgent.options.rejectUnauthorized = false;
-  } else {
-    // use custom certs if provided
-    if (processEnv.NODE_EXTRA_CA_CERTS) {
-      try {
-        logger.debug('NODE_EXTRA_CA_CERTS env var is set');
-        await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
-        const extraCerts = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS, 'utf-8');
-        if (!extraCerts) {
-          return;
-        }
-        logger.debug('found certs in NODE_EXTRA_CA_CERTS');
-        const currentCaRaw = globalAgent.options.ca ?? tls.rootCertificates;
 
-        const currentCaArray = Array.isArray(currentCaRaw) ? currentCaRaw : [currentCaRaw];
-
-        const mergedCa: (string | Buffer)[] = currentCaArray.map(ca => ca as string | Buffer);
-        mergedCa.push(extraCerts);
-
-        defaultOptions = { ca: mergedCa };
-        globalAgent.options.ca = mergedCa;
-      } catch (error) {
-        logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
+  // Handle custom certificates if provided (both secure and insecure modes)
+  if (processEnv.NODE_EXTRA_CA_CERTS) {
+    try {
+      logger.debug('NODE_EXTRA_CA_CERTS env var is set');
+      await fs.access(processEnv.NODE_EXTRA_CA_CERTS);
+      const extraCerts = await fs.readFile(processEnv.NODE_EXTRA_CA_CERTS, 'utf-8');
+      if (!extraCerts) {
+        return defaultOptions;
       }
+      logger.debug('found certs in NODE_EXTRA_CA_CERTS');
+      const currentCaRaw = globalAgent.options.ca ?? tls.rootCertificates;
+
+      const currentCaArray = Array.isArray(currentCaRaw) ? currentCaRaw : [currentCaRaw];
+
+      const mergedCa: (string | Buffer)[] = currentCaArray.map(ca => ca as string | Buffer);
+      mergedCa.push(extraCerts);
+
+      // Preserve the rejectUnauthorized setting when adding custom certificates
+      defaultOptions = {
+        ca: mergedCa,
+        rejectUnauthorized: sslCheck,
+      };
+      globalAgent.options.ca = mergedCa;
+    } catch (error) {
+      logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
     }
   }
 
