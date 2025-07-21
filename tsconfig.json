@@ -18,7 +18,8 @@
     "ignoreDeprecations": "5.0",
     "noUnusedParameters": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true
   },
   "exclude": ["out", "node_modules", ".vscode-test", "mocked_data"]
 }

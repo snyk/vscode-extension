@@ -66,7 +66,7 @@ suite('AuthenticationService', () => {
       languageClientAdapter,
       {} as IVSCodeCommands,
     );
-    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(''));
+    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(Promise.resolve('')));
 
     await service.setToken();
 
@@ -85,7 +85,7 @@ suite('AuthenticationService', () => {
       {} as IVSCodeCommands,
     );
     const tokenValue = 'token-value';
-    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(tokenValue));
+    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(Promise.resolve(tokenValue)));
 
     await service.setToken();
 
