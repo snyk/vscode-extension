@@ -11,17 +11,21 @@ jobs:
   build:
     uses: snyk/vscode-extension/.github/workflows/ci.yaml@main
 
-  publish:
+  release:
     runs-on: ubuntu-latest
     needs: build
     environment: Stable
-    name: Publish extension
-    outputs:
-      new-version: ${{ steps.patched-tag.outputs.new_version }}
-      new-tag: ${{ steps.patched-tag.outputs.new_tag }}
+    name: Release Extension (stable)
     steps:
       - name: Fetch sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for semver-action
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
       - name: Setup VSCE
         run: sudo npm install -g vsce@latest
@@ -29,13 +33,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Bump patch version
-        id: patched-tag
-        uses: mathieudutour/github-tag-action@v6.0
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches: main,fix.*,chore.*
-          default_bump: patch
+          token: ${{ github.token }}
+          branch: main
+          skipInvalidTags: true  # Skip non-semver tags
 
       - name: Add Credentials
         run: |
@@ -44,48 +48,27 @@ jobs:
               -e 's|${env.SNYK_VSCE_SENTRY_DSN_KEY}|${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}|g' \
               snyk.config.json
 
-      - name: Publish to Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.patched-tag.outputs.new_version }}
+      - name: Set up Git actions user
+        uses: fregante/setup-git-user@v1
 
-  release:
-    runs-on: ubuntu-latest
-    needs: publish
-    environment: Stable
-    name: Release
-    steps:
-      - name: Fetch sources
-        uses: actions/checkout@v2
-
-      - name: Setup VSCE
-        run: sudo npm install -g vsce@latest
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Package VSIX
+      - name: Create and push Git tag release
         run: |
-          run: |
-          sed -i \
-              -e 's|${env.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY}|${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}|g' \
-              -e 's|${env.SNYK_VSCE_SENTRY_DSN_KEY}|${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}|g' \
-              snyk.config.json
-
-          echo y | vsce package --no-git-tag-version --no-update-package-json ${{ needs.publish.outputs.new-version }}
-
-      - name: Extract release notes
-        id: extract-release-notes
-        uses: ffurrer2/extract-release-notes@v1
+          git tag ${{ steps.semver.outputs.next }}
+          git push origin ${{ github.ref_name }} --follow-tags
+      
+      - name: Package VSIX
+        run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.semver.outputs.next }}
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        id: create_release
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: ${{ needs.publish.outputs.new-tag }}
-          tag_name: ${{ needs.publish.outputs.new-tag }}
-          body: '${{ steps.extract-release-notes.outputs.release_notes }}'
-          draft: false
-          prerelease: false
-          fail_on_unmatched_files: true
-          files: |
-            **/*.vsix
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create ${{ steps.semver.outputs.next }} --generate-notes $(find . -name '*.vsix')
+
+      - name: Publish to Marketplace
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.next }}  
+
+      - name: Clean up credentials
+        if: always()
+        run: git checkout -- snyk.config.json 
