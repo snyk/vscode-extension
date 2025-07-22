@@ -16,7 +16,7 @@ import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
 
-interface ISeverityCounts {
+export interface ISeverityCounts {
   [severity: string]: number;
 }
 
@@ -59,7 +59,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     issue: Issue<T>,
     folderPath: string,
     filePath: string,
-    filteredIssues?: Issue<T>[],
+    filteredIssues: Issue<T>[],
   ): Command;
 
   getRootChildren(): TreeNode[] {
@@ -226,18 +226,6 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         if (singleWorkspace) {
           addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
-
-        let errorMessage = folderResult.message;
-        if (errorMessage.toLowerCase().startsWith('error: ')) {
-          errorMessage = errorMessage.substring('error: '.length);
-        }
-
-        addTo.push(
-          new TreeNode({
-            text: 'Error:',
-            description: errorMessage,
-          }),
-        );
         addTo.push(this.getErrorEncounteredTreeNode(undefined, false));
       } else {
         const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(folderResult, folderPath);
@@ -307,7 +295,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
           internal: {
             severity: ProductIssueTreeProvider.getSeverityComparatorIndex(issue.severity),
           },
-          command: this.getOpenIssueCommand(issue, folderPath, file),
+          command: this.getOpenIssueCommand(issue, folderPath, file, filteredIssues),
         };
         return new TreeNode(params);
       });
