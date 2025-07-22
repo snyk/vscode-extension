@@ -556,7 +556,7 @@
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
-    "axios": "^1.8.3",
+    "axios": "^1.10.0",
     "glob": "^9.3.5",
     "he": "^1.2.0",
     "http-proxy-agent": "^5.0.0",
