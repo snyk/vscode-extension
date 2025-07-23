@@ -1,26 +1,28 @@
-import axios, { CancelTokenSource } from 'axios';
 import { IConfiguration } from '../common/configuration/configuration';
 import { PROTOCOL_VERSION } from '../common/constants/languageServer';
-import { DownloadAxiosResponse } from '../common/download/downloader';
 import { ILog } from '../common/logger/interfaces';
-import { getAxiosConfig } from '../common/proxy';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
 import { ERRORS } from '../common/constants/errors';
+import { VSCodeHttpClient, CancelToken, DownloadResponse } from '../common/vscodeHttpClient';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
-  downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]>;
+  downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]>;
   getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string>;
 }
 
 export class StaticCliApi implements IStaticCliApi {
+  private readonly httpClient: VSCodeHttpClient;
+
   constructor(
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
     private readonly logger: ILog,
-  ) {}
+  ) {
+    this.httpClient = new VSCodeHttpClient(workspace, configuration, logger);
+  }
 
   getLatestVersionDownloadUrl(releaseChannel: string): string {
     const downloadUrl = `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${PROTOCOL_VERSION}`;
@@ -46,40 +48,36 @@ export class StaticCliApi implements IStaticCliApi {
 
   async getLatestCliVersion(releaseChannel: string): Promise<string> {
     try {
-      let { data } = await axios.get<string>(
-        this.getLatestVersionDownloadUrl(releaseChannel),
-        await getAxiosConfig(this.workspace, this.configuration, this.logger),
-      );
-      data = data.replace('\n', '');
-      return data;
+      const data = await this.httpClient.request({
+        url: this.getLatestVersionDownloadUrl(releaseChannel),
+      });
+      return data.replace('\n', '');
     } catch (e) {
       this.logger.error(e);
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
 
-  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadAxiosResponse>, CancelTokenSource]> {
-    const axiosCancelToken = axios.CancelToken.source();
+  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
+    const cancelToken = this.httpClient.createCancelToken();
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
 
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
-    const response = axios.get(downloadUrl, {
+    const response = this.httpClient.downloadStream({
+      url: downloadUrl,
       responseType: 'stream',
-      cancelToken: axiosCancelToken.token,
-      ...(await getAxiosConfig(this.workspace, this.configuration, this.logger)),
-    });
+    }, cancelToken);
 
-    return [response as Promise<DownloadAxiosResponse>, axiosCancelToken];
+    return [response, cancelToken];
   }
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
     const fileName = this.getFileName(platform);
-    const { data } = await axios.get<string>(
-      `${this.getSha256DownloadUrl(version, platform)}`,
-      await getAxiosConfig(this.workspace, this.configuration, this.logger),
-    );
+    const data = await this.httpClient.request({
+      url: this.getSha256DownloadUrl(version, platform),
+    });
 
     const checksum = data.replace(fileName, '').replace('\n', '').trim();
 

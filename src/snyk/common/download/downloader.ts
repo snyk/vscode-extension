@@ -1,4 +1,3 @@
-import axios, { CancelTokenSource } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
@@ -16,8 +15,9 @@ import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
+import { CancelToken, DownloadResponse } from '../vscodeHttpClient';
 
-export type DownloadAxiosResponse = { data: stream.Readable; headers: { [header: string]: unknown } };
+export type DownloadAxiosResponse = DownloadResponse;
 
 export class Downloader {
   constructor(
@@ -92,7 +92,7 @@ export class Downloader {
     const hash = new Checksum(expectedChecksum);
 
     return this.window.withProgress(messages.progressTitle, async (progress, token) => {
-      const [request, requestToken]: [response: Promise<DownloadAxiosResponse>, cancelToken: CancelTokenSource] =
+      const [request, requestToken]: [response: Promise<DownloadResponse>, cancelToken: CancelToken] =
         await this.cliApi.downloadBinary(platform);
 
       token.onCancellationRequested(async () => {
@@ -107,10 +107,10 @@ export class Downloader {
   }
 
   private async doDownload(
-    requestToken: CancelTokenSource,
+    requestToken: CancelToken,
     token: CancellationToken,
     path: string,
-    request: Promise<DownloadAxiosResponse>,
+    request: Promise<DownloadResponse>,
     hash: Checksum,
     progress: Progress<{ message?: string; increment?: number }>,
   ): Promise<Checksum | null> {
@@ -158,7 +158,7 @@ export class Downloader {
         });
       });
     } catch (err) {
-      if (axios.isCancel(err)) {
+      if (err instanceof Error && err.message === 'Request cancelled') {
         return null;
       }
 
