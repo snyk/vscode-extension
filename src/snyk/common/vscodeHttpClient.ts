@@ -7,6 +7,14 @@ import { ILog } from './logger/interfaces';
 import { IVSCodeWorkspace } from './vscode/workspace';
 import { getHttpsProxyAgent } from './proxy';
 
+export class RequestCancelledError extends Error {
+  constructor() {
+    super('Request cancelled');
+    this.name = 'RequestCancelledError';
+    Object.setPrototypeOf(this, RequestCancelledError.prototype);
+  }
+}
+
 export interface RequestOptions {
   url: string;
   method?: string;
@@ -138,7 +146,7 @@ export class VSCodeHttpClient {
 
     if (cancelToken) {
       cancelToken.token.onCancellationRequested(() => {
-        request.destroy(new Error('Request cancelled'));
+        request.destroy(new RequestCancelledError());
         this.activeRequests.delete(request);
       });
     }
