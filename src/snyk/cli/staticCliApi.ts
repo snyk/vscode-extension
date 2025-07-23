@@ -9,6 +9,7 @@ import { Readable } from 'stream';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import * as https from 'https';
 import * as url from 'url';
+import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
@@ -29,10 +30,6 @@ export interface CancelToken {
   };
 }
 
-interface CliVersionResponse {
-  version: string;
-}
-
 export class StaticCliApi implements IStaticCliApi {
   constructor(
     private readonly workspace: IVSCodeWorkspace,
@@ -50,30 +47,46 @@ export class StaticCliApi implements IStaticCliApi {
     configure(httpProxy || undefined, proxyStrictSSL);
   }
 
+  private getLatestVersionDownloadUrl(releaseChannel: string): string {
+    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${PROTOCOL_VERSION}`;
+  }
+
+  private getDownloadUrl(version: string, platform: CliSupportedPlatform): string {
+    if (!version.startsWith('v')) {
+      version = `v${version}`;
+    }
+    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${version}/${CliExecutable.getFileName(platform)}`;
+  }
+
+  private getSha256DownloadUrl(version: string, platform: CliSupportedPlatform): string {
+    return `${this.getDownloadUrl(version, platform)}.sha256`;
+  }
+
   async getLatestCliVersion(releaseChannel: string): Promise<string> {
     try {
-      const apiUrl = `https://api.snyk.io/v1/cli-version/${releaseChannel}`;
       const response = await xhr({
-        url: apiUrl,
+        url: this.getLatestVersionDownloadUrl(releaseChannel),
         headers: {
           'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
         },
       });
 
       if (response.status >= 200 && response.status < 300) {
-        const data = JSON.parse(response.responseText) as CliVersionResponse;
-        return data.version;
+        // The response is plain text with the version string
+        return response.responseText.replace('\n', '').trim();
       } else {
         throw new Error(`Failed to fetch CLI version: ${response.status}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to fetch CLI version: ${error}`);
-      throw error;
+      this.logger.error(error);
+      throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
 
   async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
-    const downloadUrl = await this.getDownloadUrl(platform);
+    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
+    const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
     // Create a cancel token compatible with our interface
     let isCancelled = false;
@@ -145,18 +158,24 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
-    const checksumUrl = `https://static.snyk.io/cli/v${version}/${CliExecutable.getFileName(platform) + '.sha256'}`;
+    const fileName = CliExecutable.getFileName(platform);
 
     try {
       const response = await xhr({
-        url: checksumUrl,
+        url: this.getSha256DownloadUrl(version, platform),
         headers: {
           'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
         },
       });
 
       if (response.status >= 200 && response.status < 300) {
-        return response.responseText.trim();
+        const checksum = response.responseText.replace(fileName, '').replace('\n', '').trim();
+
+        if (!checksum) {
+          return Promise.reject(new Error('Checksum not found'));
+        }
+
+        return checksum;
       } else {
         throw new Error(`Failed to fetch checksum: ${response.status}`);
       }
@@ -164,11 +183,5 @@ export class StaticCliApi implements IStaticCliApi {
       this.logger.error(`Failed to fetch checksum: ${error}`);
       throw error;
     }
-  }
-
-  private async getDownloadUrl(platform: CliSupportedPlatform): Promise<string> {
-    const releaseChannel = await this.configuration.getCliReleaseChannel();
-    const version = await this.getLatestCliVersion(releaseChannel);
-    return `https://downloads.snyk.io/cli/${version}/${CliExecutable.getFileName(platform)}`;
   }
 }
