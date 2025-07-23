@@ -25,11 +25,11 @@ suite('StaticCliApi - Integration Tests', function () {
 
     // Create a simple logger implementation
     logger = {
-      info: (message: string | unknown) => console.log(`[INFO] ${message}`),
-      warn: (message: string | Error | unknown) => console.warn(`[WARN] ${message}`),
-      error: (message: string | Error | unknown) => console.error(`[ERROR] ${message}`),
-      debug: (message: string | unknown) => console.log(`[DEBUG] ${message}`),
-      log: (level: LogLevel, message: string | Error | unknown) => console.log(`[${level}] ${message}`),
+      info: (message: unknown) => console.log(`[INFO] ${message}`),
+      warn: (message: unknown) => console.warn(`[WARN] ${message}`),
+      error: (message: unknown) => console.error(`[ERROR] ${message}`),
+      debug: (message: unknown) => console.log(`[DEBUG] ${message}`),
+      log: (level: LogLevel, message: unknown) => console.log(`[${level}] ${message}`),
       showOutput: () => {}, // No-op for tests
     };
 
@@ -155,7 +155,7 @@ suite('StaticCliApi - Integration Tests', function () {
       const hash = crypto.createHash('sha256');
 
       for await (const chunk of fileStream) {
-        hash.update(chunk);
+        hash.update(new Uint8Array(chunk as Buffer));
       }
       const actualChecksum = hash.digest('hex');
 
