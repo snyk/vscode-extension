@@ -113,11 +113,15 @@ export class StaticCliApi implements IStaticCliApi {
     const parsedUrl = new URL(downloadUrl);
 
     return new Promise((resolve, reject) => {
+      // Get SSL verification setting from VSCode configuration
+      const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+      
       const options: https.RequestOptions = {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port,
         path: parsedUrl.pathname + parsedUrl.search,
         method: 'GET',
+        rejectUnauthorized: proxyStrictSSL,
       };
 
       // request-light's configure() call should have set up the global agent with proxy settings
