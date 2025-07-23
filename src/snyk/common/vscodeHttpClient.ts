@@ -56,49 +56,33 @@ export class VSCodeHttpClient {
   }
 
   async request(options: RequestOptions): Promise<string> {
+    const { requestOptions, httpModule } = await this.prepareRequest(options);
+
     return new Promise((resolve, reject) => {
-      this.makeRequest(
-        options,
-        res => {
-          let data = '';
-          res.on('data', chunk => {
-            data += chunk;
-          });
-          res.on('end', () => {
-            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-              resolve(data);
-            } else {
-              reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
-            }
-          });
-        },
-        reject,
-      ).catch(reject);
+      const request = httpModule.request(requestOptions, res => {
+        let data = '';
+        res.on('data', chunk => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(data);
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+          }
+        });
+      });
+
+      this.setupRequestHandlers(request, reject);
+      request.end();
     });
   }
 
   async downloadStream(options: RequestOptions, cancelToken?: CancelToken): Promise<DownloadResponse> {
-    const parsedUrl = url.parse(options.url);
-    const isHttps = parsedUrl.protocol === 'https:';
-
-    const requestOptions: https.RequestOptions = {
-      hostname: parsedUrl.hostname,
-      port: parsedUrl.port,
-      path: parsedUrl.path,
-      method: options.method || 'GET',
-      headers: options.headers || {},
-    };
-
-    // Add proxy agent if configured
-    const proxyAgent = await getHttpsProxyAgent(this.workspace, this.configuration, this.logger);
-
-    if (proxyAgent) {
-      requestOptions.agent = proxyAgent;
-    }
+    const { requestOptions, httpModule } = await this.prepareRequest(options);
 
     return new Promise((resolve, reject) => {
-      const httpModule = isHttps ? https : http;
-      const req = httpModule.request(requestOptions, res => {
+      const request = httpModule.request(requestOptions, res => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
           resolve({
             data: res as stream.Readable,
@@ -109,29 +93,15 @@ export class VSCodeHttpClient {
         }
       });
 
-      this.activeRequests.add(req);
-
-      req.on('error', reject);
-      req.on('close', () => {
-        this.activeRequests.delete(req);
-      });
-
-      if (cancelToken) {
-        cancelToken.token.onCancellationRequested(() => {
-          req.destroy(new Error('Request cancelled'));
-          this.activeRequests.delete(req);
-        });
-      }
-
-      req.end();
+      this.setupRequestHandlers(request, reject, cancelToken);
+      request.end();
     });
   }
 
-  private async makeRequest(
-    options: RequestOptions,
-    onResponse: (res: http.IncomingMessage) => void,
-    onError: (err: Error) => void,
-  ): Promise<void> {
+  private async prepareRequest(options: RequestOptions): Promise<{
+    requestOptions: https.RequestOptions;
+    httpModule: typeof https | typeof http;
+  }> {
     const parsedUrl = url.parse(options.url);
     const isHttps = parsedUrl.protocol === 'https:';
 
@@ -145,21 +115,32 @@ export class VSCodeHttpClient {
 
     // Add proxy agent if configured
     const proxyAgent = await getHttpsProxyAgent(this.workspace, this.configuration, this.logger);
-
     if (proxyAgent) {
       requestOptions.agent = proxyAgent;
     }
 
     const httpModule = isHttps ? https : http;
-    const req = httpModule.request(requestOptions, onResponse);
 
-    this.activeRequests.add(req);
+    return { requestOptions, httpModule };
+  }
 
-    req.on('error', onError);
-    req.on('close', () => {
-      this.activeRequests.delete(req);
+  private setupRequestHandlers(
+    request: http.ClientRequest,
+    onError: (err: Error) => void,
+    cancelToken?: CancelToken,
+  ): void {
+    this.activeRequests.add(request);
+
+    request.on('error', onError);
+    request.on('close', () => {
+      this.activeRequests.delete(request);
     });
 
-    req.end();
+    if (cancelToken) {
+      cancelToken.token.onCancellationRequested(() => {
+        request.destroy(new Error('Request cancelled'));
+        this.activeRequests.delete(request);
+      });
+    }
   }
 }
