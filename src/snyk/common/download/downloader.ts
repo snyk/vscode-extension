@@ -7,7 +7,7 @@ import { Progress } from 'vscode';
 import { Checksum } from '../../cli/checksum';
 import { messages } from '../../cli/messages/messages';
 import { IConfiguration } from '../configuration/configuration';
-import { IStaticCliApi } from '../../cli/staticCliApi';
+import { IStaticCliApi, CancelToken, DownloadResponse } from '../../cli/staticCliApi';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { ILog } from '../logger/interfaces';
 import { CancellationToken } from '../vscode/types';
@@ -15,21 +15,6 @@ import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
-
-export interface CancelToken {
-  cancel: () => void;
-  token: {
-    isCancellationRequested: boolean;
-    onCancellationRequested: (fn: () => void) => void;
-  };
-}
-
-export interface DownloadResponse {
-  data: stream.Readable;
-  headers: { [header: string]: unknown };
-}
-
-export type DownloadAxiosResponse = DownloadResponse;
 
 export class Downloader {
   constructor(

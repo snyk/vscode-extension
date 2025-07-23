@@ -1,7 +1,7 @@
 # Snyk Security Changelog
 
 ## [2.24.0]
-- Replace axios HTTP client with VSCode's built-in HTTP client for CLI downloads
+- Replace custom HTTP client with VSCode's built-in HTTP client for CLI downloads
 - Ensure proxy settings are properly respected using VSCode's proxy configuration
 - Simplify HTTP client implementation using request-light library for better VSCode integration
 - Improve proxy and certificate handling with automatic VSCode proxy configuration support
