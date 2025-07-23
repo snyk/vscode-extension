@@ -1,11 +1,19 @@
 # Snyk Security Changelog
 
+## [2.24.0]
+- Replace custom HTTP client with VSCode's built-in HTTP client for CLI downloads
+- Ensure proxy settings are properly respected using VSCode's proxy configuration
+- Simplify HTTP client implementation using request-light library for better VSCode integration
+- Improve proxy and certificate handling with automatic VSCode proxy configuration support
+- Fixed scan errors preventing the selection of the delta scan reference.
+
 ## [2.23.0]
 - Support early access of PAT authentication
 - Removed Snyk Code Quality feature. All related settings, configurations, and UI elements have been removed.
 - Removed scanning for vulnerabilities in JavaScript libraries referenced via CDN in HTML files.
 - Removed inline display of vulnerability counts for imports/requires in JavaScript/TypeScript files.
-- Fixed scan errors preventing the selection of the delta scan reference.
+- Renamed DeepCode AI Fix to Snyk Agent Fix
+- Fixed certificate handling when using custom certificates (NODE_EXTRA_CA_CERTS) in insecure mode to prevent hostname mismatch errors
 
 ## [2.22.0]
 - Support early access of Ignores Approval Workflow

@@ -52,11 +52,11 @@
   "types": "./out/extension.d.ts",
   "contributes": {
     "mcpServerDefinitionProviders": [
-			{
-				"id": "snyk-security-scanner",
-				"label": "Snyk Security Scanner"
-			}
-		],
+      {
+        "id": "snyk-security-scanner",
+        "label": "Snyk Security Scanner"
+      }
+    ],
     "configuration": [
       {
         "id": "snyk",
@@ -556,7 +556,6 @@
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
-    "axios": "^1.8.3",
     "glob": "^9.3.5",
     "he": "^1.2.0",
     "http-proxy-agent": "^5.0.0",
@@ -565,6 +564,7 @@
     "marked": "^11.2.0",
     "needle": "^3.3.1",
     "open": "^7.4.2",
+    "request-light": "^0.8.0",
     "rxjs": "^7.8.1",
     "string-argv": "^0.3.2",
     "uuid": "^8.3.2",

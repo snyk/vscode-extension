@@ -8,7 +8,7 @@ export const messages = {
   openIssuesAreDisabled: 'Open issues are disabled!',
   noIgnoredIssues: '✋ No ignored issues, open issues are disabled',
   openAndIgnoredIssuesAreDisabled: 'Open and Ignored issues are disabled!',
-  noFixableIssues: 'There are no issues fixable by Snyk DeepCode AI.',
+  noFixableIssues: 'There are no issues fixable by Snyk Agent Fix.',
   allSeverityFiltersDisabled: 'Please enable severity filters to see the results.',
   allIssueViewOptionsDisabled: 'Adjust your settings to view Open or Ignored issues.',
   openIssueViewOptionDisabled: 'Adjust your settings to view Open issues.',

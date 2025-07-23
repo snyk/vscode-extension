@@ -84,7 +84,8 @@ suite('Language Server', () => {
 
     downloadServiceMock = {
       downloadReady$: new ReplaySubject<void>(1),
-    } as DownloadService;
+      verifyAndRepairCli: sinon.fake.resolves(true),
+    } as unknown as DownloadService;
   });
 
   teardown(() => {

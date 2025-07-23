@@ -13,7 +13,6 @@ import {
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
-import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
 import { User } from '../user';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
@@ -87,17 +86,16 @@ export class LanguageServer implements ILanguageServer {
     await firstValueFrom(this.downloadService.downloadReady$);
     this.logger.info('Starting Snyk Language Server');
 
-    // proxy settings
-    const proxyOptions = await getProxyOptions(this.workspace, this.configuration, this.logger);
-    const proxyEnvVariable = getProxyEnvVariable(proxyOptions);
+    // proxy settings - get directly from VSCode configuration
+    const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
 
     let processEnv = process.env;
 
-    if (proxyEnvVariable) {
+    if (httpProxy) {
       processEnv = {
         ...processEnv,
-        HTTPS_PROXY: proxyEnvVariable,
-        HTTP_PROXY: proxyEnvVariable,
+        HTTPS_PROXY: httpProxy,
+        HTTP_PROXY: httpProxy,
       };
     }
 
@@ -153,6 +151,40 @@ export class LanguageServer implements ILanguageServer {
       void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
+      this.logger.error(
+        `Language Server startup failed: ${error instanceof Error ? error.message : 'An error occurred'}`,
+      );
+
+      // If startup failed and automatic downloads are enabled, verify CLI integrity
+      if (this.configuration.isAutomaticDependencyManagementEnabled()) {
+        this.logger.info('Verifying CLI integrity and attempting repair...');
+        const cliRepaired = await this.downloadService.verifyAndRepairCli();
+
+        if (cliRepaired) {
+          this.logger.info('CLI repaired, retrying Language Server startup...');
+          try {
+            // Recreate the client with the same options since the previous one may be in a bad state
+            this.client = this.languageClientAdapter.create(
+              'SnykLS',
+              SNYK_LANGUAGE_SERVER_NAME,
+              serverOptions,
+              clientOptions,
+            );
+            this.registerListeners(this.client);
+            await this.client.start();
+            void this.geminiIntegrationService.connectGeminiToMCPServer();
+            this.logger.info('Snyk Language Server started successfully after CLI repair');
+            return;
+          } catch (retryError) {
+            this.logger.error(
+              `Language Server startup failed even after CLI repair: ${
+                retryError instanceof Error ? retryError.message : 'An error occurred'
+              }`,
+            );
+          }
+        }
+      }
+
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
   }

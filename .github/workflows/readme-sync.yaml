@@ -52,7 +52,7 @@ jobs:
             echo "No documentation changes detected, exiting."
           fi
         env:
-          SOURCE_PATH: ./docs/docs/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/README.md
+          SOURCE_PATH: ./docs/docs/cli-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions/visual-studio-code-extension/README.md
           FILE_TO_COMMIT: README.md
           DESTINATION_REPOSITORY: vscode-extension
           DESTINATION_BRANCH: docs/automatic-gitbook-update
