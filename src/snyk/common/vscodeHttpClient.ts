@@ -11,7 +11,6 @@ export interface RequestOptions {
   url: string;
   method?: string;
   headers?: { [key: string]: string };
-  responseType?: 'stream' | 'text';
 }
 
 export interface DownloadResponse {
