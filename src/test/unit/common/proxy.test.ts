@@ -92,7 +92,7 @@ suite('Proxy', () => {
   suite('Process environment variables', () => {
     const env = { ...process.env };
 
-    afterEach(() => {
+    teardown(() => {
       process.env = env;
     });
 
@@ -182,7 +182,7 @@ suite('Proxy', () => {
   suite('Node certs', () => {
     const env = { ...process.env };
 
-    afterEach(() => {
+    teardown(() => {
       process.env = env;
     });
 

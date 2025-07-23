@@ -5,7 +5,7 @@ import * as stream from 'stream';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
 import { IVSCodeWorkspace } from './vscode/workspace';
-import { getHttpsProxyAgent, getProxyOptions } from './proxy';
+import { getHttpsProxyAgent } from './proxy';
 
 export interface RequestOptions {
   url: string;
@@ -57,11 +57,12 @@ export class VSCodeHttpClient {
   }
 
   async request(options: RequestOptions): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        await this.makeRequest(options, (res) => {
+    return new Promise((resolve, reject) => {
+      this.makeRequest(
+        options,
+        res => {
           let data = '';
-          res.on('data', (chunk) => {
+          res.on('data', chunk => {
             data += chunk;
           });
           res.on('end', () => {
@@ -71,17 +72,13 @@ export class VSCodeHttpClient {
               reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
             }
           });
-        }, reject);
-      } catch (error) {
-        reject(error);
-      }
+        },
+        reject,
+      ).catch(reject);
     });
   }
 
-  async downloadStream(
-    options: RequestOptions,
-    cancelToken?: CancelToken,
-  ): Promise<DownloadResponse> {
+  async downloadStream(options: RequestOptions, cancelToken?: CancelToken): Promise<DownloadResponse> {
     const parsedUrl = url.parse(options.url);
     const isHttps = parsedUrl.protocol === 'https:';
 
@@ -94,11 +91,7 @@ export class VSCodeHttpClient {
     };
 
     // Add proxy agent if configured
-    const proxyAgent = await getHttpsProxyAgent(
-      this.workspace,
-      this.configuration,
-      this.logger,
-    );
+    const proxyAgent = await getHttpsProxyAgent(this.workspace, this.configuration, this.logger);
 
     if (proxyAgent) {
       requestOptions.agent = proxyAgent;
@@ -106,7 +99,7 @@ export class VSCodeHttpClient {
 
     return new Promise((resolve, reject) => {
       const httpModule = isHttps ? https : http;
-      const req = httpModule.request(requestOptions, (res) => {
+      const req = httpModule.request(requestOptions, res => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
           resolve({
             data: res as stream.Readable,
@@ -152,11 +145,7 @@ export class VSCodeHttpClient {
     };
 
     // Add proxy agent if configured
-    const proxyAgent = await getHttpsProxyAgent(
-      this.workspace,
-      this.configuration,
-      this.logger,
-    );
+    const proxyAgent = await getHttpsProxyAgent(this.workspace, this.configuration, this.logger);
 
     if (proxyAgent) {
       requestOptions.agent = proxyAgent;
@@ -174,6 +163,4 @@ export class VSCodeHttpClient {
 
     req.end();
   }
-
-
-} 
+}

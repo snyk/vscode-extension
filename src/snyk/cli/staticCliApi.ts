@@ -65,10 +65,13 @@ export class StaticCliApi implements IStaticCliApi {
 
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
-    const response = this.httpClient.downloadStream({
-      url: downloadUrl,
-      responseType: 'stream',
-    }, cancelToken);
+    const response = this.httpClient.downloadStream(
+      {
+        url: downloadUrl,
+        responseType: 'stream',
+      },
+      cancelToken,
+    );
 
     return [response, cancelToken];
   }

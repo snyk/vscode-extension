@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { Agent, AgentOptions, globalAgent } from 'https';
+import { AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
 import * as url from 'url';
 import * as tls from 'tls';
@@ -83,12 +83,6 @@ export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undef
 
   // noinspection HttpUrlsUsage
   return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
-}
-
-async function getHttpsAgent(configuration: IConfiguration, logger: ILog): Promise<Agent> {
-  return new Agent({
-    ...(await getDefaultAgentOptions(configuration, logger)),
-  });
 }
 
 async function getDefaultAgentOptions(

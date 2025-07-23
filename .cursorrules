@@ -6,6 +6,8 @@ Adhere to the rules, fix linting & test issues that are newly introduced.
 don't change old entries in the changelog. it's a history of changes. the current version is the last semantic version tag on origin/main in git
 
 ** how to implement **
+always write and save a step-wise implementation plan. don't commit it, but use if a reference for the implementation.
+do atomic commits with conventional commit messages
 always write and update test cases. iterate until they pass.
 npm build scripts are configured for both unit and integration tests in package.json (test:unit and test:integration).
 use existing mocks, don't write new ones.
