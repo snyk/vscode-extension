@@ -1,4 +1,3 @@
-import { AxiosRequestConfig } from 'axios';
 import fs from 'fs/promises';
 import { Agent, AgentOptions, globalAgent } from 'https';
 import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
@@ -73,19 +72,6 @@ export async function getProxyOptions(
 
 function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
   return workspace.getConfiguration<string>('http', 'proxy');
-}
-
-export async function getAxiosConfig(
-  workspace: IVSCodeWorkspace,
-  configuration: IConfiguration,
-  logger: ILog,
-): Promise<AxiosRequestConfig> {
-  // if proxying, we need to configure getHttpsProxyAgent, else configure getHttpsAgent
-  let agentOptions: HttpsProxyAgent | Agent | undefined = await getHttpsProxyAgent(workspace, configuration, logger);
-  if (!agentOptions) agentOptions = await getHttpsAgent(configuration, logger);
-  return {
-    httpsAgent: agentOptions,
-  };
 }
 
 export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undefined): string | undefined {
