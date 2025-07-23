@@ -120,9 +120,6 @@ export class StaticCliApi implements IStaticCliApi {
         port: parsedUrl.port,
         path: parsedUrl.path,
         method: 'GET',
-        headers: {
-          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
-        },
       };
 
       // Get proxy configuration from VSCode settings
@@ -160,9 +157,6 @@ export class StaticCliApi implements IStaticCliApi {
     try {
       const response = await xhr({
         url: this.getSha256DownloadUrl(version, platform),
-        headers: {
-          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
-        },
       });
 
       if (response.status >= 200 && response.status < 300) {
