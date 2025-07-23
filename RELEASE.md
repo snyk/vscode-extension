@@ -5,13 +5,6 @@
 - Ensure the Snyk Language Server Protocol version is correct in the plugin. 
   - `PROTOCOL_VERSION`  in  `src/snyk/common/constants/languageServer.ts`  
 
-
-**Update Changelog**
-
-- In the plugin/extension repo, make sure the the Changelog is updated with the correct version to be released and the correct changes in the release.
-  - Make sure Early Access are specified correctly for new feature.
-
-
 **Initiate Release**
 
 - If you want to do a hotfix with a subset of commits from main, create a hotfix branch off the previous release tag.
@@ -20,23 +13,14 @@
 - Trigger the release workflow in GitHub Actions.
   - If this is a hotfix not off main, select the hotfix branch.
 
-
-**Release Notes**
-
-- Edit or generate release notes on GitHub.
-  - Its okay to include all items from any intermediate hotfix releases in the release notes.
-
-
 **Marketplace Availability**
 
 - Check that the new release appears on all relevant Marketplaces.
-
 
 **Installation and Version Verification**
 
 - Install the plugin or extension in the target IDE.    
 - Confirm that the installed version matches the intended release.
-
 
 **CLI Configuration and Verification**
 
