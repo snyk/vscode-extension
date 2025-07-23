@@ -119,7 +119,7 @@ export class VSCodeHttpClient {
 
       if (cancelToken) {
         cancelToken.token.onCancellationRequested(() => {
-          req.destroy();
+          req.destroy(new Error('Request cancelled'));
           this.activeRequests.delete(req);
         });
       }
