@@ -151,29 +151,40 @@ export class LanguageServer implements ILanguageServer {
       void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
-      this.logger.error(`Language Server startup failed: ${error instanceof Error ? error.message : 'An error occurred'}`);
-      
+      this.logger.error(
+        `Language Server startup failed: ${error instanceof Error ? error.message : 'An error occurred'}`,
+      );
+
       // If startup failed and automatic downloads are enabled, verify CLI integrity
       if (this.configuration.isAutomaticDependencyManagementEnabled()) {
         this.logger.info('Verifying CLI integrity and attempting repair...');
         const cliRepaired = await this.downloadService.verifyAndRepairCli();
-        
+
         if (cliRepaired) {
           this.logger.info('CLI repaired, retrying Language Server startup...');
           try {
             // Recreate the client with the same options since the previous one may be in a bad state
-            this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);
+            this.client = this.languageClientAdapter.create(
+              'SnykLS',
+              SNYK_LANGUAGE_SERVER_NAME,
+              serverOptions,
+              clientOptions,
+            );
             this.registerListeners(this.client);
             await this.client.start();
             void this.geminiIntegrationService.connectGeminiToMCPServer();
             this.logger.info('Snyk Language Server started successfully after CLI repair');
             return;
           } catch (retryError) {
-            this.logger.error(`Language Server startup failed even after CLI repair: ${retryError instanceof Error ? retryError.message : 'An error occurred'}`);
+            this.logger.error(
+              `Language Server startup failed even after CLI repair: ${
+                retryError instanceof Error ? retryError.message : 'An error occurred'
+              }`,
+            );
           }
         }
       }
-      
+
       return ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
     }
   }

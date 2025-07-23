@@ -176,7 +176,7 @@ export class DownloadService {
     try {
       const cliPath = await this.configuration.getCliPath();
       const platform = await CliExecutable.getCurrentWithArch();
-      
+
       if (!platform) {
         this.logger.error('Unsupported platform for CLI verification');
         return false;
@@ -196,7 +196,7 @@ export class DownloadService {
 
       // Verify the actual file checksum
       const actualChecksum = await Checksum.getChecksumOf(cliPath, expectedChecksum);
-      
+
       if (actualChecksum.verify()) {
         this.logger.info('CLI checksum verification passed');
         return true;
