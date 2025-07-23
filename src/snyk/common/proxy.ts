@@ -36,7 +36,7 @@ export async function getProxyOptions(
   let proxy: string | undefined = getVsCodeProxy(workspace);
 
   const defaultOptions: HttpsProxyAgentOptions = {
-    ...(await getDefaultAgentOptions(configuration, logger)),
+    ...(await getDefaultAgentOptions(configuration, logger, processEnv)),
   };
 
   if (!proxy) {
