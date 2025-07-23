@@ -1,6 +1,5 @@
 import * as https from 'https';
 import * as http from 'http';
-import * as url from 'url';
 import * as stream from 'stream';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
@@ -110,13 +109,13 @@ export class VSCodeHttpClient {
     requestOptions: https.RequestOptions;
     httpModule: typeof https | typeof http;
   }> {
-    const parsedUrl = url.parse(options.url);
+    const parsedUrl = new URL(options.url);
     const isHttps = parsedUrl.protocol === 'https:';
 
     const requestOptions: https.RequestOptions = {
       hostname: parsedUrl.hostname,
       port: parsedUrl.port,
-      path: parsedUrl.path,
+      path: `${parsedUrl.pathname}${parsedUrl.search}`,
       method: options.method || 'GET',
       headers: options.headers || {},
     };
