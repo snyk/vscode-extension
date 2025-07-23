@@ -4,8 +4,11 @@ import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
-import { ERRORS } from '../common/constants/errors';
-import { VSCodeHttpClient, CancelToken, DownloadResponse } from '../common/vscodeHttpClient';
+import { xhr, configure } from 'request-light';
+import { Readable } from 'stream';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import * as https from 'https';
+import * as url from 'url';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string): Promise<string>;
@@ -13,78 +16,159 @@ export interface IStaticCliApi {
   getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string>;
 }
 
-export class StaticCliApi implements IStaticCliApi {
-  private readonly httpClient: VSCodeHttpClient;
+export interface DownloadResponse {
+  data: Readable;
+  headers: { [header: string]: unknown };
+}
 
+export interface CancelToken {
+  cancel: () => void;
+  token: {
+    isCancellationRequested: boolean;
+    onCancellationRequested: (fn: () => void) => void;
+  };
+}
+
+interface CliVersionResponse {
+  version: string;
+}
+
+export class StaticCliApi implements IStaticCliApi {
   constructor(
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
     private readonly logger: ILog,
   ) {
-    this.httpClient = new VSCodeHttpClient(workspace, configuration, logger);
+    // Configure request-light with VSCode proxy settings
+    this.configureProxy();
   }
 
-  getLatestVersionDownloadUrl(releaseChannel: string): string {
-    const downloadUrl = `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${PROTOCOL_VERSION}`;
-    return downloadUrl;
-  }
+  private configureProxy(): void {
+    const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
+    const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
 
-  getDownloadUrl(version: string, platform: CliSupportedPlatform): string {
-    if (!version.startsWith('v')) {
-      version = `v${version}`;
-    }
-    const downloadUrl = `${this.configuration.getCliBaseDownloadUrl()}/cli/${version}/${this.getFileName(platform)}`;
-    return downloadUrl;
-  }
-
-  getSha256DownloadUrl(version: string, platform: CliSupportedPlatform): string {
-    const downloadUrl = `${this.getDownloadUrl(version, platform)}.sha256`;
-    return downloadUrl;
-  }
-
-  getFileName(platform: CliSupportedPlatform): string {
-    return CliExecutable.getFileName(platform);
+    configure(httpProxy || undefined, proxyStrictSSL);
   }
 
   async getLatestCliVersion(releaseChannel: string): Promise<string> {
     try {
-      const data = await this.httpClient.request({
-        url: this.getLatestVersionDownloadUrl(releaseChannel),
+      const apiUrl = `https://api.snyk.io/v1/cli-version/${releaseChannel}`;
+      const response = await xhr({
+        url: apiUrl,
+        headers: {
+          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
+        },
       });
-      return data.replace('\n', '');
-    } catch (e) {
-      this.logger.error(e);
-      throw Error(ERRORS.DOWNLOAD_FAILED);
+
+      if (response.status >= 200 && response.status < 300) {
+        const data = JSON.parse(response.responseText) as CliVersionResponse;
+        return data.version;
+      } else {
+        throw new Error(`Failed to fetch CLI version: ${response.status}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch CLI version: ${error}`);
+      throw error;
     }
   }
 
   async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
-    const cancelToken = this.httpClient.createCancelToken();
-    const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
-    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
+    const downloadUrl = await this.getDownloadUrl(platform);
 
-    const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
+    // Create a cancel token compatible with our interface
+    let isCancelled = false;
+    const cancellationHandlers: (() => void)[] = [];
 
-    const response = this.httpClient.downloadStream(
-      {
-        url: downloadUrl,
+    const cancelToken: CancelToken = {
+      cancel: () => {
+        isCancelled = true;
+        cancellationHandlers.forEach(handler => handler());
       },
-      cancelToken,
-    );
+      token: {
+        get isCancellationRequested() {
+          return isCancelled;
+        },
+        onCancellationRequested: (fn: () => void) => {
+          cancellationHandlers.push(fn);
+        },
+      },
+    };
 
-    return [response, cancelToken];
+    const downloadPromise = this.performDownload(downloadUrl, cancelToken);
+
+    return [downloadPromise, cancelToken];
+  }
+
+  private async performDownload(downloadUrl: string, cancelToken: CancelToken): Promise<DownloadResponse> {
+    // For streaming downloads, we need to use Node.js https directly since request-light doesn't support streaming
+    // However, we can still use request-light to respect proxy settings by getting the configured proxy
+    const parsedUrl = url.parse(downloadUrl);
+
+    return new Promise((resolve, reject) => {
+      const options: https.RequestOptions = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.path,
+        method: 'GET',
+        headers: {
+          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
+        },
+      };
+
+      // Get proxy configuration from VSCode settings
+      const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
+      if (httpProxy) {
+        options.agent = new HttpsProxyAgent(httpProxy);
+      }
+
+      const req = https.request(options, res => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({
+            data: res as unknown as Readable,
+            headers: res.headers,
+          });
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+      });
+
+      req.on('error', reject);
+
+      if (cancelToken) {
+        cancelToken.token.onCancellationRequested(() => {
+          req.destroy(new Error('Request cancelled'));
+        });
+      }
+
+      req.end();
+    });
   }
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
-    const fileName = this.getFileName(platform);
-    const data = await this.httpClient.request({
-      url: this.getSha256DownloadUrl(version, platform),
-    });
+    const checksumUrl = `https://static.snyk.io/cli/v${version}/${CliExecutable.getFileName(platform) + '.sha256'}`;
 
-    const checksum = data.replace(fileName, '').replace('\n', '').trim();
+    try {
+      const response = await xhr({
+        url: checksumUrl,
+        headers: {
+          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
+        },
+      });
 
-    if (!checksum) return Promise.reject(new Error('Checksum not found'));
+      if (response.status >= 200 && response.status < 300) {
+        return response.responseText.trim();
+      } else {
+        throw new Error(`Failed to fetch checksum: ${response.status}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch checksum: ${error}`);
+      throw error;
+    }
+  }
 
-    return checksum;
+  private async getDownloadUrl(platform: CliSupportedPlatform): Promise<string> {
+    const releaseChannel = await this.configuration.getCliReleaseChannel();
+    const version = await this.getLatestCliVersion(releaseChannel);
+    return `https://downloads.snyk.io/cli/${version}/${CliExecutable.getFileName(platform)}`;
   }
 }

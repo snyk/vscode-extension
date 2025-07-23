@@ -1,99 +1,21 @@
 import fs from 'fs/promises';
-import { AgentOptions, globalAgent } from 'https';
-import { HttpsProxyAgent, HttpsProxyAgentOptions } from 'https-proxy-agent';
-import * as url from 'url';
+import { AgentOptions } from 'https';
 import * as tls from 'tls';
 import { IConfiguration } from './configuration/configuration';
 import { ILog } from './logger/interfaces';
-import { IVSCodeWorkspace } from './vscode/workspace';
 
-export async function getHttpsProxyAgent(
-  workspace: IVSCodeWorkspace,
-  configuration: IConfiguration,
-  logger: ILog,
-  processEnv: NodeJS.ProcessEnv = process.env,
-): Promise<HttpsProxyAgent | undefined> {
-  const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
-  if (proxyOptions == undefined) return undefined;
+// This simplified proxy module now only handles custom certificate configuration
+// as request-light automatically handles proxy settings from VSCode
 
-  const agent = new HttpsProxyAgent(proxyOptions);
-
-  // Extract CA certificates from proxy agent options and add them at the top level
-  if (proxyOptions.ca) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    (agent as any).ca = proxyOptions.ca;
-  }
-
-  return agent;
-}
-
-export async function getProxyOptions(
-  workspace: IVSCodeWorkspace,
-  configuration: IConfiguration,
-  logger: ILog,
-  processEnv: NodeJS.ProcessEnv = process.env,
-): Promise<HttpsProxyAgentOptions | undefined> {
-  let proxy: string | undefined = getVsCodeProxy(workspace);
-
-  const defaultOptions: HttpsProxyAgentOptions = {
-    ...(await getDefaultAgentOptions(configuration, logger, processEnv)),
-  };
-
-  if (!proxy) {
-    proxy = processEnv.HTTPS_PROXY || processEnv.https_proxy || processEnv.HTTP_PROXY || processEnv.http_proxy;
-    if (!proxy) {
-      return undefined; // No proxy
-    }
-  }
-
-  // Basic sanity checking on proxy url
-  const proxyUrl = url.parse(proxy);
-  if (proxyUrl.protocol !== 'https:' && proxyUrl.protocol !== 'http:') {
-    return undefined;
-  }
-
-  if (proxyUrl.hostname == null || proxyUrl.hostname === '') {
-    return undefined;
-  }
-
-  let port;
-  if (proxyUrl.port && proxyUrl.port !== '') {
-    port = parseInt(proxyUrl.port, 10);
-  }
-
-  return {
-    host: proxyUrl.hostname,
-    port: port,
-    auth: proxyUrl.auth,
-    protocol: proxyUrl.protocol,
-    ...defaultOptions,
-  };
-}
-
-function getVsCodeProxy(workspace: IVSCodeWorkspace): string | undefined {
-  return workspace.getConfiguration<string>('http', 'proxy');
-}
-
-export function getProxyEnvVariable(proxyOptions: HttpsProxyAgentOptions | undefined): string | undefined {
-  if (!proxyOptions) {
-    return;
-  }
-  const { host, port, auth, protocol } = proxyOptions;
-  if (!host) return;
-
-  // noinspection HttpUrlsUsage
-  return `${protocol}//${auth ? `${auth}@` : ''}${host}${port ? `:${port}` : ''}`;
-}
-
-async function getDefaultAgentOptions(
+export async function getDefaultAgentOptions(
   configuration: IConfiguration,
   logger: ILog,
   processEnv: NodeJS.ProcessEnv = process.env,
 ): Promise<AgentOptions | undefined> {
   let defaultOptions: AgentOptions | undefined;
 
+  // Handle SSL certificate validation based on insecure setting
   const sslCheck = !configuration.getInsecure();
-  globalAgent.options.rejectUnauthorized = sslCheck;
   defaultOptions = { rejectUnauthorized: sslCheck };
 
   // Handle custom certificates if provided (both secure and insecure modes)
@@ -106,10 +28,10 @@ async function getDefaultAgentOptions(
         return defaultOptions;
       }
       logger.debug('found certs in NODE_EXTRA_CA_CERTS');
-      const currentCaRaw = globalAgent.options.ca ?? tls.rootCertificates;
 
+      // Get current CA certificates
+      const currentCaRaw = tls.rootCertificates;
       const currentCaArray = Array.isArray(currentCaRaw) ? currentCaRaw : [currentCaRaw];
-
       const mergedCa: (string | Buffer)[] = currentCaArray.map(ca => ca as string | Buffer);
       mergedCa.push(extraCerts);
 
@@ -118,7 +40,6 @@ async function getDefaultAgentOptions(
         ca: mergedCa,
         rejectUnauthorized: sslCheck,
       };
-      globalAgent.options.ca = mergedCa;
     } catch (error) {
       logger.error(`Failed to read NODE_EXTRA_CA_CERTS file: ${error}`);
     }

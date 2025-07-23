@@ -15,7 +15,19 @@ import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ERRORS } from '../constants/errors';
-import { CancelToken, DownloadResponse, RequestCancelledError } from '../vscodeHttpClient';
+
+export interface CancelToken {
+  cancel: () => void;
+  token: {
+    isCancellationRequested: boolean;
+    onCancellationRequested: (fn: () => void) => void;
+  };
+}
+
+export interface DownloadResponse {
+  data: stream.Readable;
+  headers: { [header: string]: unknown };
+}
 
 export type DownloadAxiosResponse = DownloadResponse;
 
@@ -158,7 +170,7 @@ export class Downloader {
         });
       });
     } catch (err) {
-      if (err instanceof RequestCancelledError) {
+      if (err instanceof Error && err.message === 'Request cancelled') {
         return null;
       }
 

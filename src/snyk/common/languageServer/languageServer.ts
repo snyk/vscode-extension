@@ -13,7 +13,6 @@ import {
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
-import { getProxyEnvVariable, getProxyOptions } from '../proxy';
 import { DownloadService } from '../services/downloadService';
 import { User } from '../user';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
@@ -87,17 +86,16 @@ export class LanguageServer implements ILanguageServer {
     await firstValueFrom(this.downloadService.downloadReady$);
     this.logger.info('Starting Snyk Language Server');
 
-    // proxy settings
-    const proxyOptions = await getProxyOptions(this.workspace, this.configuration, this.logger);
-    const proxyEnvVariable = getProxyEnvVariable(proxyOptions);
+    // proxy settings - get directly from VSCode configuration
+    const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
 
     let processEnv = process.env;
 
-    if (proxyEnvVariable) {
+    if (httpProxy) {
       processEnv = {
         ...processEnv,
-        HTTPS_PROXY: proxyEnvVariable,
-        HTTP_PROXY: proxyEnvVariable,
+        HTTPS_PROXY: httpProxy,
+        HTTP_PROXY: httpProxy,
       };
     }
 
