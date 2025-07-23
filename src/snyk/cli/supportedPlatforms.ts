@@ -8,4 +8,4 @@ const SupportedCliPlatformsList = [
   'macos',
   'macos_arm64',
 ] as const;
-export type CliSupportedPlatform = (typeof SupportedCliPlatformsList)[number];
+export type CliSupportedPlatform = typeof SupportedCliPlatformsList[number];
