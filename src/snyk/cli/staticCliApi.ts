@@ -66,9 +66,6 @@ export class StaticCliApi implements IStaticCliApi {
     try {
       const response = await xhr({
         url: this.getLatestVersionDownloadUrl(releaseChannel),
-        headers: {
-          'User-Agent': `Snyk VSCode extension/${PROTOCOL_VERSION}`,
-        },
       });
 
       if (response.status >= 200 && response.status < 300) {
