@@ -162,4 +162,57 @@ export class DownloadService {
   private getCliChecksum(): string | undefined {
     return this.extensionContext.getGlobalStateValue<string>(MEMENTO_CLI_CHECKSUM);
   }
+
+  /**
+   * Verifies CLI integrity and redownloads if checksum doesn't match or file is corrupted.
+   * Returns true if CLI is valid or was successfully redownloaded.
+   */
+  async verifyAndRepairCli(): Promise<boolean> {
+    if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
+      this.logger.info('Automatic dependency management disabled, skipping CLI verification');
+      return false;
+    }
+
+    try {
+      const cliPath = await this.configuration.getCliPath();
+      const platform = await CliExecutable.getCurrentWithArch();
+      
+      if (!platform) {
+        this.logger.error('Unsupported platform for CLI verification');
+        return false;
+      }
+
+      // Check if CLI file exists
+      const cliExists = await CliExecutable.exists(cliPath);
+      if (!cliExists) {
+        this.logger.info('CLI binary not found, downloading...');
+        return await this.download();
+      }
+
+      // Get the expected checksum for the current version
+      const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+      const latestVersion = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
+      const expectedChecksum = await this.cliApi.getSha256Checksum(latestVersion, platform);
+
+      // Verify the actual file checksum
+      const actualChecksum = await Checksum.getChecksumOf(cliPath, expectedChecksum);
+      
+      if (actualChecksum.verify()) {
+        this.logger.info('CLI checksum verification passed');
+        return true;
+      } else {
+        this.logger.info('CLI checksum verification failed, redownloading...');
+        return await this.download();
+      }
+    } catch (error) {
+      this.logger.error(`CLI verification failed: ${error}`);
+      this.logger.info('Attempting to redownload CLI...');
+      try {
+        return await this.download();
+      } catch (downloadError) {
+        this.logger.error(`CLI redownload failed: ${downloadError}`);
+        return false;
+      }
+    }
+  }
 }
