@@ -1,5 +1,11 @@
 # Snyk Security Changelog
 
+## [2.24.0]
+- Replace custom HTTP client with VSCode's built-in HTTP client for CLI downloads
+- Ensure proxy settings are properly respected using VSCode's proxy configuration
+- Simplify HTTP client implementation using request-light library for better VSCode integration
+- Improve proxy and certificate handling with automatic VSCode proxy configuration support
+
 ## [2.23.0]
 - Support early access of PAT authentication
 - Removed Snyk Code Quality feature. All related settings, configurations, and UI elements have been removed.
