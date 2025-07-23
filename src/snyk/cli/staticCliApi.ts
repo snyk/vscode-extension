@@ -6,9 +6,7 @@ import { CliExecutable } from './cliExecutable';
 import { CliSupportedPlatform } from './supportedPlatforms';
 import { xhr, configure } from 'request-light';
 import { Readable } from 'stream';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import * as https from 'https';
-import * as url from 'url';
 import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
@@ -110,24 +108,19 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   private async performDownload(downloadUrl: string, cancelToken: CancelToken): Promise<DownloadResponse> {
-    // For streaming downloads, we need to use Node.js https directly since request-light doesn't support streaming
-    // However, we can still use request-light to respect proxy settings by getting the configured proxy
-    const parsedUrl = url.parse(downloadUrl);
+    // Use request-light for proxy configuration, but we need streaming for large binary downloads
+    // request-light automatically configures the global agent with proxy settings
+    const parsedUrl = new URL(downloadUrl);
 
     return new Promise((resolve, reject) => {
       const options: https.RequestOptions = {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port,
-        path: parsedUrl.path,
+        path: parsedUrl.pathname + parsedUrl.search,
         method: 'GET',
       };
 
-      // Get proxy configuration from VSCode settings
-      const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
-      if (httpProxy) {
-        options.agent = new HttpsProxyAgent(httpProxy);
-      }
-
+      // request-light's configure() call should have set up the global agent with proxy settings
       const req = https.request(options, res => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
           resolve({
