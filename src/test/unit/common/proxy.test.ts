@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import assert from 'assert';
 import sinon from 'sinon';
-import { getAxiosConfig, getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
+import { getHttpsProxyAgent, getProxyEnvVariable, getProxyOptions } from '../../../snyk/common/proxy';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
 import { ILog } from '../../../snyk/common/logger/interfaces';
@@ -36,50 +36,10 @@ suite('Proxy', () => {
       getConfiguration,
     } as unknown as IVSCodeWorkspace;
 
-    const configOptions = await getAxiosConfig(workspace, configuration, logger);
+    const proxyAgent = await getHttpsProxyAgent(workspace, configuration, logger);
 
-    // should still set rejectUnauthorized flag
-    assert.deepStrictEqual(configOptions.httpsAgent?.options.rejectUnauthorized, proxyStrictSSL);
-  });
-
-  suite('.getAxiosConfig()', () => {
-    suite('when proxyStrictSsl checkbox is checked', () => {
-      const getConfiguration = sinon.stub();
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-
-      const getInsecure = sinon.stub();
-      getInsecure.returns(false);
-
-      const configuration = {
-        getInsecure,
-      } as unknown as IConfiguration;
-
-      test('should return rejectUnauthorized true', async () => {
-        const config = await getAxiosConfig(workspace, configuration, logger);
-        assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, true);
-      });
-    });
-
-    suite('when proxyStrictSsl checkbox is not checked', () => {
-      const getConfiguration = sinon.stub();
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-
-      const getInsecure = sinon.stub();
-      getInsecure.returns(true);
-
-      const configuration = {
-        getInsecure,
-      } as unknown as IConfiguration;
-
-      test('should return rejectUnauthorized false', async () => {
-        const config = await getAxiosConfig(workspace, configuration, logger);
-        assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
-      });
-    });
+    // should return undefined when no proxy is configured
+    assert.strictEqual(proxyAgent, undefined);
   });
 
   test('Proxy is configured in VS Code settings', async () => {
@@ -98,43 +58,19 @@ suite('Proxy', () => {
       getInsecure,
     } as unknown as IConfiguration;
 
-    const agent = await getHttpsProxyAgent(workspace, configuration, logger);
+    const proxyOptions = await getProxyOptions(workspace, configuration, logger);
 
-    assert.deepStrictEqual(agent?.['proxy'].host, host);
-    assert.deepStrictEqual(agent?.['proxy'].port, port);
-    assert.deepStrictEqual(agent?.['proxy'].auth, auth);
-    assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, proxyStrictSSL);
+    assert.deepStrictEqual(proxyOptions?.host, host);
+    assert.deepStrictEqual(proxyOptions?.port, port);
+    assert.deepStrictEqual(proxyOptions?.auth, auth);
+    assert.deepStrictEqual(proxyOptions?.protocol, protocol);
+    assert.deepStrictEqual(proxyOptions?.rejectUnauthorized, proxyStrictSSL);
   });
 
-  test('Proxy is configured in environment', async () => {
+  test('Proxy is configured in VS Code settings, but proxy protocol is not supported', async () => {
+    const wrongProxy = `ftp://${auth}@${host}:${port}`;
     const getConfiguration = sinon.stub();
-    getConfiguration.withArgs('http', 'proxy').returns(undefined);
-    getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
-
-    const workspace = {
-      getConfiguration,
-    } as unknown as IVSCodeWorkspace;
-
-    const getInsecure = sinon.stub();
-    getInsecure.returns(!proxyStrictSSL);
-    const configuration = {
-      getInsecure,
-    } as unknown as IConfiguration;
-
-    const agent = await getHttpsProxyAgent(workspace, configuration, logger, {
-      HTTPS_PROXY: proxy,
-      HTTP_PROXY: proxy,
-    });
-
-    assert.deepStrictEqual(agent?.['proxy'].host, host);
-    assert.deepStrictEqual(agent?.['proxy'].port, port);
-    assert.deepStrictEqual(agent?.['proxy'].auth, auth);
-    assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, proxyStrictSSL);
-  });
-
-  test('getProxyEnvVariable should return the https proxy as env var', async () => {
-    const getConfiguration = sinon.stub();
-    getConfiguration.withArgs('http', 'proxy').returns(proxy);
+    getConfiguration.withArgs('http', 'proxy').returns(wrongProxy);
     getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
 
     const workspace = {
@@ -148,197 +84,195 @@ suite('Proxy', () => {
       getInsecure,
     } as unknown as IConfiguration;
 
-    const envVariable = getProxyEnvVariable(await getProxyOptions(workspace, configuration, logger));
+    const proxyOptions = await getProxyOptions(workspace, configuration, logger);
 
-    // noinspection HttpUrlsUsage
-    assert.deepStrictEqual(envVariable, `${protocol}//${auth}@${host}:${port}`);
+    assert.deepStrictEqual(proxyOptions, undefined);
   });
 
-  suite('Certificate handling and insecure mode', () => {
-    let originalEnv: string | undefined;
+  suite('Process environment variables', () => {
+    const env = { ...process.env };
 
-    setup(() => {
-      originalEnv = process.env.NODE_EXTRA_CA_CERTS;
+    afterEach(() => {
+      process.env = env;
     });
 
-    teardown(() => {
-      // Restore original environment
-      if (originalEnv) {
-        process.env.NODE_EXTRA_CA_CERTS = originalEnv;
-      } else {
-        delete process.env.NODE_EXTRA_CA_CERTS;
-      }
+    const processEnvs = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'];
+    processEnvs.forEach(envKey => {
+      test(`Proxy is configured via ${envKey}`, async () => {
+        const processEnv = {
+          [envKey]: proxy,
+        } as NodeJS.ProcessEnv;
+
+        const getConfiguration = sinon.stub();
+        const workspace = {
+          getConfiguration,
+        } as unknown as IVSCodeWorkspace;
+
+        const getInsecure = sinon.stub();
+        getInsecure.returns(!proxyStrictSSL);
+
+        const configuration = {
+          getInsecure,
+        } as unknown as IConfiguration;
+
+        const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
+
+        assert.deepStrictEqual(proxyOptions?.host, host);
+        assert.deepStrictEqual(proxyOptions?.port, port);
+        assert.deepStrictEqual(proxyOptions?.auth, auth);
+        assert.deepStrictEqual(proxyOptions?.protocol, protocol);
+        assert.deepStrictEqual(proxyOptions?.rejectUnauthorized, proxyStrictSSL);
+      });
     });
 
-    test('should disable certificate validation in insecure mode without custom certs', async () => {
-      delete process.env.NODE_EXTRA_CA_CERTS;
+    test(`VS Code setting should win over an environment variable`, async () => {
+      const envVarProxy = 'https://my.wrongproxy.com:8888';
+      const processEnv = {
+        HTTPS_PROXY: envVarProxy,
+      } as NodeJS.ProcessEnv;
 
-      const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(undefined);
-
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-
-      const getInsecure = sinon.stub();
-      getInsecure.returns(true); // Insecure mode
-
-      const configuration = {
-        getInsecure,
-      } as unknown as IConfiguration;
-
-      const config = await getAxiosConfig(workspace, configuration, logger);
-
-      // Should disable certificate validation
-      assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
-    });
-
-    test('should enable certificate validation in secure mode without custom certs', async () => {
-      delete process.env.NODE_EXTRA_CA_CERTS;
-
-      const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(undefined);
-
-      const workspace = {
-        getConfiguration,
-      } as unknown as IVSCodeWorkspace;
-
-      const getInsecure = sinon.stub();
-      getInsecure.returns(false); // Secure mode
-
-      const configuration = {
-        getInsecure,
-      } as unknown as IConfiguration;
-
-      const config = await getAxiosConfig(workspace, configuration, logger);
-
-      // Should enable certificate validation
-      assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, true);
-    });
-
-    test('should preserve insecure mode setting with proxy configuration', async () => {
       const getConfiguration = sinon.stub();
       getConfiguration.withArgs('http', 'proxy').returns(proxy);
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(false); // Insecure proxy
+      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(proxyStrictSSL);
 
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
 
       const getInsecure = sinon.stub();
-      getInsecure.returns(true); // Insecure mode
+      getInsecure.returns(!proxyStrictSSL);
 
       const configuration = {
         getInsecure,
       } as unknown as IConfiguration;
 
-      const agent = await getHttpsProxyAgent(workspace, configuration, logger);
+      const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
 
-      // Should disable certificate validation in proxy settings
-      assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, false);
+      assert.deepStrictEqual(proxyOptions?.host, host);
+      assert.deepStrictEqual(proxyOptions?.port, port);
+      assert.deepStrictEqual(proxyOptions?.auth, auth);
+      assert.deepStrictEqual(proxyOptions?.protocol, protocol);
+      assert.deepStrictEqual(proxyOptions?.rejectUnauthorized, proxyStrictSSL);
     });
 
-    test('should preserve secure mode setting with proxy configuration', async () => {
-      const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(proxy);
-      getConfiguration.withArgs('http', 'proxyStrictSSL').returns(true); // Secure proxy
+    test(`getProxyEnvVariable should create valid proxy string from proxy options`, async () => {
+      const processEnv = {
+        HTTPS_PROXY: proxy,
+      } as NodeJS.ProcessEnv;
 
+      const getConfiguration = sinon.stub();
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
 
       const getInsecure = sinon.stub();
-      getInsecure.returns(false); // Secure mode
+      getInsecure.returns(!proxyStrictSSL);
 
       const configuration = {
         getInsecure,
       } as unknown as IConfiguration;
 
-      const agent = await getHttpsProxyAgent(workspace, configuration, logger);
+      const proxyOptions = await getProxyOptions(workspace, configuration, logger, processEnv);
+      const result = getProxyEnvVariable(proxyOptions);
 
-      // Should enable certificate validation in proxy settings
-      assert.deepStrictEqual(agent?.['proxy'].rejectUnauthorized, true);
+      assert.deepStrictEqual(result, proxy);
+    });
+  });
+
+  suite('Node certs', () => {
+    const env = { ...process.env };
+
+    afterEach(() => {
+      process.env = env;
     });
 
-    test('should handle NODE_EXTRA_CA_CERTS environment variable being set', async () => {
-      // Set the environment variable but don't mock file system
-      // This tests that the code doesn't crash when the env var is set
-      process.env.NODE_EXTRA_CA_CERTS = '/nonexistent/path/cert.pem';
+    const testLogger = {
+      debug: sinon.stub(),
+      error: sinon.stub(),
+    } as unknown as ILog;
+
+    test('NODE_EXTRA_CA_CERTS adds additional CA certificate to proxy configuration', async () => {
+      const processEnv = {
+        HTTPS_PROXY: proxy,
+        NODE_EXTRA_CA_CERTS: 'src/test/unit/mocks/test-certs/ca-cert.crt',
+      } as NodeJS.ProcessEnv;
 
       const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(undefined);
-
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
 
       const getInsecure = sinon.stub();
-      getInsecure.returns(false); // Secure mode
+      getInsecure.returns(!proxyStrictSSL);
 
       const configuration = {
         getInsecure,
       } as unknown as IConfiguration;
 
-      // This should not throw an error even if the cert file doesn't exist
-      const config = await getAxiosConfig(workspace, configuration, logger);
+      const proxyOptions = await getProxyOptions(workspace, configuration, testLogger, processEnv);
 
-      // Should still respect the insecure mode setting
-      assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, true);
+      // Ensure the ca option is set
+      assert.ok(proxyOptions?.ca);
+      assert.ok(Array.isArray(proxyOptions?.ca));
+      assert.ok(proxyOptions?.ca.length > 0);
     });
 
-    test('should handle NODE_EXTRA_CA_CERTS in insecure mode', async () => {
-      // Set the environment variable but don't mock file system
-      process.env.NODE_EXTRA_CA_CERTS = '/nonexistent/path/cert.pem';
+    test('NODE_EXTRA_CA_CERTS with invalid path logs error and continues', async () => {
+      const processEnv = {
+        HTTPS_PROXY: proxy,
+        NODE_EXTRA_CA_CERTS: '/invalid/path/ca-cert.crt',
+      } as NodeJS.ProcessEnv;
 
       const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(undefined);
-
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
 
       const getInsecure = sinon.stub();
-      getInsecure.returns(true); // Insecure mode
+      getInsecure.returns(!proxyStrictSSL);
 
       const configuration = {
         getInsecure,
       } as unknown as IConfiguration;
 
-      // This should not throw an error even if the cert file doesn't exist
-      const config = await getAxiosConfig(workspace, configuration, logger);
+      const proxyOptions = await getProxyOptions(workspace, configuration, testLogger, processEnv);
 
-      // Should disable certificate validation even with NODE_EXTRA_CA_CERTS set
-      assert.deepStrictEqual(config.httpsAgent?.options.rejectUnauthorized, false);
+      // Should still return proxy options, just without custom CA
+      assert.deepStrictEqual(proxyOptions?.host, host);
+      assert.deepStrictEqual(proxyOptions?.port, port);
+      assert.deepStrictEqual(proxyOptions?.auth, auth);
+      assert.deepStrictEqual(proxyOptions?.protocol, protocol);
+      assert.deepStrictEqual(proxyOptions?.rejectUnauthorized, proxyStrictSSL);
+
+      // Ensure error was logged
+      assert.ok((testLogger.error as sinon.SinonStub).called);
     });
 
-    test('should log error when certificate file operations fail', async () => {
-      const errorStub = sinon.stub();
-      const testLogger = {
-        error: errorStub,
-        debug: sinon.stub(),
-      } as unknown as ILog;
-
-      // Set to a path that likely doesn't exist
-      process.env.NODE_EXTRA_CA_CERTS = '/nonexistent/path/cert.pem';
+    test('NODE_EXTRA_CA_CERTS adds CA certificate even when insecure mode is enabled', async () => {
+      const processEnv = {
+        HTTPS_PROXY: proxy,
+        NODE_EXTRA_CA_CERTS: 'src/test/unit/mocks/test-certs/ca-cert.crt',
+      } as NodeJS.ProcessEnv;
 
       const getConfiguration = sinon.stub();
-      getConfiguration.withArgs('http', 'proxy').returns(undefined);
-
       const workspace = {
         getConfiguration,
       } as unknown as IVSCodeWorkspace;
 
       const getInsecure = sinon.stub();
-      getInsecure.returns(false);
+      getInsecure.returns(true); // insecure mode
 
       const configuration = {
         getInsecure,
       } as unknown as IConfiguration;
 
-      await getAxiosConfig(workspace, configuration, testLogger);
+      const proxyOptions = await getProxyOptions(workspace, configuration, testLogger, processEnv);
 
-      // Should log an error about the certificate file
-      assert.ok(errorStub.called);
+      // Even in insecure mode, CA should be loaded
+      assert.ok(proxyOptions?.ca);
+      assert.ok(Array.isArray(proxyOptions?.ca));
+      assert.ok(proxyOptions?.ca.length > 0);
+      assert.strictEqual(proxyOptions?.rejectUnauthorized, false); // Should still be insecure
     });
   });
 });
