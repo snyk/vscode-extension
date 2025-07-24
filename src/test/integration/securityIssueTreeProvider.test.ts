@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { IVSCodeLanguages } from '../../snyk/common/vscode/languages';
 import { CodeIssueData, Issue, ScanProduct } from '../../snyk/common/languageServer/types';
 import { IContextService } from '../../snyk/common/services/contextService';
-import { IProductService } from '../../snyk/common/services/productService';
+import { IProductService, ProductResult } from '../../snyk/common/services/productService';
 import { deepStrictEqual } from 'assert';
 import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
@@ -15,6 +15,8 @@ import CodeSecurityIssueTreeProvider from '../../snyk/snykCode/views/securityIss
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
 import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import { NODE_ICONS, TreeNode } from '../../snyk/common/views/treeNode';
+import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../../snyk/common/constants/commands';
 
 suite('Code Security Issue Tree Provider', () => {
   let viewManagerService: IViewManagerService;
@@ -22,6 +24,45 @@ suite('Code Security Issue Tree Provider', () => {
   let codeService: IProductService<CodeIssueData>;
   let languages: IVSCodeLanguages;
   let folderConfigs: IFolderConfigs;
+
+  async function setCCIAndIVOs(consistentIgnores: boolean, issueViewOptions?: IssueViewOptions) {
+    configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, consistentIgnores);
+    const options =
+      issueViewOptions ||
+      (consistentIgnores ? DEFAULT_ISSUE_VIEW_OPTIONS : { openIssues: false, ignoredIssues: false });
+    await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, options);
+  }
+
+  function createIssueTreeProvider(resultData: ProductResult<CodeIssueData>): CodeSecurityIssueTreeProvider {
+    return new CodeSecurityIssueTreeProvider(
+      new LoggerMockFailOnErrors(),
+      viewManagerService,
+      contextService,
+      {
+        ...codeService,
+        result: resultData,
+      } as IProductService<CodeIssueData>,
+      configuration,
+      languages,
+      folderConfigs,
+    );
+  }
+
+  function verifyScanFailedErrorNode(errorNode: TreeNode): void {
+    deepStrictEqual(errorNode.label, 'Scan failed');
+    deepStrictEqual(errorNode.description, 'Click here to see the problem.');
+    deepStrictEqual(errorNode.tooltip, 'Click here to see the problem.');
+    deepStrictEqual(errorNode.iconPath, undefined);
+    deepStrictEqual(errorNode.internal.isError, true);
+    deepStrictEqual(errorNode.command?.command, SNYK_SHOW_LS_OUTPUT_COMMAND);
+  }
+
+  function verifyFolderNodeWithError(folderNode: TreeNode, expectedFolderName: string): void {
+    deepStrictEqual(folderNode.label, expectedFolderName);
+    deepStrictEqual(folderNode.description, 'An error occurred');
+    deepStrictEqual(folderNode.tooltip, 'An error occurred');
+    deepStrictEqual(folderNode.iconPath, NODE_ICONS.error);
+  }
 
   setup(() => {
     viewManagerService = {
@@ -41,7 +82,14 @@ suite('Code Security Issue Tree Provider', () => {
       getSnykProductType: () => ScanProduct.Code,
     } as unknown as IProductService<CodeIssueData>;
     languages = {} as unknown as IVSCodeLanguages;
-    folderConfigs = {} as unknown as IFolderConfigs;
+    folderConfigs = {
+      getFolderConfig: () => undefined,
+      getFolderConfigs: () => [],
+      setFolderConfig: () => Promise.resolve(),
+      setBranch: () => Promise.resolve(),
+      setReferenceFolder: () => Promise.resolve(),
+      resetFolderConfigsCache: () => {},
+    } as IFolderConfigs;
   });
 
   teardown(() => {
@@ -134,38 +182,75 @@ suite('Code Security Issue Tree Provider', () => {
   for (const testCase of testCases) {
     test(testCase.name, async () => {
       try {
-        configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, testCase.consistentIgnores);
-        if (testCase.consistentIgnores) {
-          await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, testCase.issueViewOptions);
-        } else {
-          // The issue view options shouldn't matter, but we'll test with them disabled to be sure.
-          await vscode.workspace
-            .getConfiguration()
-            .update(ISSUE_VIEW_OPTIONS_SETTING, { openIssues: false, ignoredIssues: false });
-        }
-
-        const issueTreeProvider = new CodeSecurityIssueTreeProvider(
-          new LoggerMockFailOnErrors(),
-          viewManagerService,
-          contextService,
-          {
-            ...codeService,
-            result: new Map([['fake-dir', testCase.issues]]),
-          } as IProductService<CodeIssueData>,
-          configuration,
-          languages,
-          folderConfigs,
+        // Setup
+        await setCCIAndIVOs(
+          testCase.consistentIgnores,
+          testCase.consistentIgnores ? testCase.issueViewOptions : undefined,
         );
+        const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', testCase.issues]]));
+        sinon.stub(issueTreeProvider, 'getResultNodes').returns([]); // Not checking the issue nodes are created properly.
 
-        sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
-
+        // Act
         const rootChildren = issueTreeProvider.getRootChildren();
-        const rootChildrenLabels = rootChildren.map(node => node.label);
-        deepStrictEqual(rootChildrenLabels, testCase.expectedNodeLabels);
+
+        // Verify
+        deepStrictEqual(
+          rootChildren.map(node => node.label),
+          testCase.expectedNodeLabels,
+        );
       } finally {
-        configuration.setFeatureFlag(FEATURE_FLAGS.consistentIgnores, true);
-        await vscode.workspace.getConfiguration().update(ISSUE_VIEW_OPTIONS_SETTING, DEFAULT_ISSUE_VIEW_OPTIONS);
+        await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
       }
     });
   }
+
+  test('getRootChildren returns correctly for single folder workspace scan error', async () => {
+    try {
+      // Setup
+      await setCCIAndIVOs(false);
+      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', new Error('Some scan error')]]));
+
+      // Act
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      // Verify
+      // ⚠️ fake-dir  An error occurred
+      //    Scan failed  Click here to see the problem.
+      deepStrictEqual(rootChildren.length, 2);
+      verifyFolderNodeWithError(rootChildren[0], 'fake-dir');
+      verifyScanFailedErrorNode(rootChildren[1]);
+    } finally {
+      await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
+    }
+  });
+
+  test('getRootChildren returns correctly for multi folder workspace scan errors', async () => {
+    try {
+      // Setup
+      await setCCIAndIVOs(false);
+      const folderNames = ['dir-one', 'dir-two'];
+      const issueTreeProvider = createIssueTreeProvider(
+        new Map(folderNames.map(name => [name, new Error('Some scan error')])),
+      );
+
+      // Act
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      // Verify
+      // V ⚠️ dir-one  An error occurred
+      // |    Scan failed  Click here to see the problem.
+      // V ⚠️ dir-two  An error occurred
+      // |    Scan failed  Click here to see the problem.
+      deepStrictEqual(rootChildren.length, 2);
+      for (let i = 0; i < folderNames.length; i++) {
+        const folderNode = rootChildren[i];
+        verifyFolderNodeWithError(folderNode, folderNames[i]);
+        const folderChildren = folderNode.getChildren();
+        deepStrictEqual(folderChildren.length, 1);
+        verifyScanFailedErrorNode(folderChildren[0]);
+      }
+    } finally {
+      await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
+    }
+  });
 });

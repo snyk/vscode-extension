@@ -192,7 +192,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   getResultNodes(): TreeNode[] {
     this.allIssueNodes = [];
     const outerNodes: TreeNode[] = [];
-    const singleWorkspace = this.productService.result.size === 1;
+    const singleFolderWorkspace = this.productService.result.size === 1;
 
     for (const result of this.productService.result.entries()) {
       const folderPath = result[0];
@@ -204,7 +204,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       const folderName = shortFolderPath.pop() || uri.path;
 
       let addTo: TreeNode[];
-      if (singleWorkspace) {
+      if (singleFolderWorkspace) {
         // Single-workspace will be directly in the tree.
         addTo = outerNodes;
       } else {
@@ -223,7 +223,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         folderIcon = NODE_ICONS.error;
         folderDescription = 'An error occurred';
 
-        if (singleWorkspace) {
+        if (singleFolderWorkspace) {
           addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
         addTo.push(this.getErrorEncounteredTreeNode(undefined, false));
@@ -236,7 +236,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         folderDescription = this.getIssueDescriptionText(folderName, folderVulnCount);
       }
 
-      if (!singleWorkspace) {
+      if (!singleFolderWorkspace) {
         outerNodes.push(this.createFolderNode(folderName, folderDescription, folderIcon, addTo));
       }
     }
