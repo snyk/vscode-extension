@@ -48,7 +48,10 @@ suite('Code Security Issue Tree Provider', () => {
     );
   }
 
-  function verifyScanFailedErrorNode(errorNode: TreeNode, expectedDescription: string = 'Click here to see the problem.'): void {
+  function verifyScanFailedErrorNode(
+    errorNode: TreeNode,
+    expectedDescription: string = 'Click here to see the problem.',
+  ): void {
     deepStrictEqual(errorNode.label, 'Scan failed');
     deepStrictEqual(errorNode.description, expectedDescription);
     deepStrictEqual(errorNode.tooltip, expectedDescription);
