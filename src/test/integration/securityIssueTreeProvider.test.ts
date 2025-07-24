@@ -207,8 +207,9 @@ suite('Code Security Issue Tree Provider', () => {
   test('getRootChildren returns correctly for single folder workspace scan error', async () => {
     try {
       // Setup
+      const repositoryInvalidError = new Error(LsErrorMessage.repositoryInvalidError);
       await setCCIAndIVOs(false);
-      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', new Error(LsErrorMessage.repositoryInvalidError)]]));
+      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', repositoryInvalidError]]));
 
       // Act
       const rootChildren = issueTreeProvider.getRootChildren();
@@ -218,7 +219,7 @@ suite('Code Security Issue Tree Provider', () => {
       //    Scan failed  Error: repository does not exist
       deepStrictEqual(rootChildren.length, 2);
       verifyFolderNodeWithError(rootChildren[0], 'fake-dir');
-      verifyScanFailedErrorNode(rootChildren[1], LsErrorMessage.repositoryInvalidError);
+      verifyScanFailedErrorNode(rootChildren[1], repositoryInvalidError.toString());
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
