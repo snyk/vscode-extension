@@ -19,6 +19,10 @@ export enum ScanStatus {
   Error = 'error',
 }
 
+export enum LsErrorMessage {
+  repositoryInvalidError = 'repository does not exist',
+}
+
 export type Scan<T> = {
   folderPath: string;
   product: ScanProduct;

@@ -1,7 +1,7 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../configuration/configuration';
-import { Issue, IssueSeverity } from '../languageServer/types';
+import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
 import { IProductService } from '../services/productService';
@@ -15,6 +15,7 @@ import path from 'path';
 import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
+import { isEnumStringValueOf } from '../tsUtil';
 
 export interface ISeverityCounts {
   [severity: string]: number;
@@ -226,7 +227,10 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
         if (singleFolderWorkspace) {
           addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
-        addTo.push(this.getErrorEncounteredTreeNode(undefined, false));
+        const errorMessage = isEnumStringValueOf(LsErrorMessage, folderResult.message)
+          ? folderResult.toString()
+          : undefined;
+        addTo.push(this.getErrorEncounteredTreeNode(errorMessage, false));
       } else {
         const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(folderResult, folderPath);
         addTo.push(...fileNodes);

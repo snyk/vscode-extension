@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as vscode from 'vscode';
 
 import { IVSCodeLanguages } from '../../snyk/common/vscode/languages';
-import { CodeIssueData, Issue, ScanProduct } from '../../snyk/common/languageServer/types';
+import { CodeIssueData, Issue, LsErrorMessage, ScanProduct } from '../../snyk/common/languageServer/types';
 import { IContextService } from '../../snyk/common/services/contextService';
 import { IProductService, ProductResult } from '../../snyk/common/services/productService';
 import { deepStrictEqual } from 'assert';
@@ -48,10 +48,10 @@ suite('Code Security Issue Tree Provider', () => {
     );
   }
 
-  function verifyScanFailedErrorNode(errorNode: TreeNode): void {
+  function verifyScanFailedErrorNode(errorNode: TreeNode, expectedDescription: string = 'Click here to see the problem.'): void {
     deepStrictEqual(errorNode.label, 'Scan failed');
-    deepStrictEqual(errorNode.description, 'Click here to see the problem.');
-    deepStrictEqual(errorNode.tooltip, 'Click here to see the problem.');
+    deepStrictEqual(errorNode.description, expectedDescription);
+    deepStrictEqual(errorNode.tooltip, expectedDescription);
     deepStrictEqual(errorNode.iconPath, undefined);
     deepStrictEqual(errorNode.internal.isError, true);
     deepStrictEqual(errorNode.command?.command, SNYK_SHOW_LS_OUTPUT_COMMAND);
@@ -208,17 +208,17 @@ suite('Code Security Issue Tree Provider', () => {
     try {
       // Setup
       await setCCIAndIVOs(false);
-      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', new Error('Some scan error')]]));
+      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', new Error(LsErrorMessage.repositoryInvalidError)]]));
 
       // Act
       const rootChildren = issueTreeProvider.getRootChildren();
 
       // Verify
       // ⚠️ fake-dir  An error occurred
-      //    Scan failed  Click here to see the problem.
+      //    Scan failed  Error: repository does not exist
       deepStrictEqual(rootChildren.length, 2);
       verifyFolderNodeWithError(rootChildren[0], 'fake-dir');
-      verifyScanFailedErrorNode(rootChildren[1]);
+      verifyScanFailedErrorNode(rootChildren[1], LsErrorMessage.repositoryInvalidError);
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
