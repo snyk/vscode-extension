@@ -21,6 +21,7 @@ export enum ScanStatus {
 
 export enum LsErrorMessage {
   repositoryInvalidError = 'repository does not exist',
+  missingDeltaReferenceError = 'must specify reference for delta scans',
 }
 
 export type Scan<T> = {
