@@ -59,7 +59,12 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
     return IssueUtils.createVsCodeRange(issue.additionalData, this.languages);
   }
 
-  getOpenIssueCommand(issue: Issue<CodeIssueData>, folderPath: string, filePath: string): Command {
+  override getOpenIssueCommand(
+    issue: Issue<CodeIssueData>,
+    folderPath: string,
+    filePath: string,
+    _filteredIssues: Issue<CodeIssueData>[],
+  ): Command {
     return {
       command: SNYK_OPEN_ISSUE_COMMAND,
       title: '',
