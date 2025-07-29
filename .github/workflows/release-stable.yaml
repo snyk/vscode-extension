@@ -67,7 +67,7 @@ jobs:
         run: gh release create ${{ steps.semver.outputs.next }} --generate-notes $(find . -name '*.vsix')
 
       - name: Publish to Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.next }}
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.nextStrict }}
 
       - name: Clean up credentials
         if: always()
