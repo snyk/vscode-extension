@@ -554,7 +554,7 @@
     "@amplitude/experiment-node-server": "^1.8.2",
     "@babel/parser": "^7.23.9",
     "@babel/traverse": "^7.23.9",
-    "@babel/types": "^7.23.9",
+    "@babel/types": "^7.28.0",
     "@deepcode/dcignore": "^1.0.4",
     "glob": "^9.3.5",
     "he": "^1.2.0",
