@@ -54,8 +54,8 @@ jobs:
       - name: Create and push Git tag release
         run: |
           git tag ${{ steps.semver.outputs.next }}
-          git push origin ${{ github.ref_name }} --follow-tags
-      
+          git push --tags
+
       - name: Package VSIX
         run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.semver.outputs.next }}
 
@@ -67,8 +67,8 @@ jobs:
         run: gh release create ${{ steps.semver.outputs.next }} --generate-notes $(find . -name '*.vsix')
 
       - name: Publish to Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.next }}  
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.next }}
 
       - name: Clean up credentials
         if: always()
-        run: git checkout -- snyk.config.json 
+        run: git checkout -- snyk.config.json

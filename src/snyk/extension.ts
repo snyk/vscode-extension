@@ -360,7 +360,7 @@ class SnykExtension extends SnykLib implements IExtension {
               const env: Record<string, string | number | null> = {};
 
               env.SNYK_CFG_ORG = configuration.organization ?? '';
-              env.SNYK_CFG_ENDPOINT = configuration.snykApiEndpoint ?? '';
+              env.SNYK_API = configuration.snykApiEndpoint ?? '';
 
               Object.entries(process.env).forEach(([key, value]) => {
                 env[key] = value ?? '';
