@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import * as path from 'path';
 import { AnalysisStatusProvider } from '../analysis/statusProvider';
 import { IConfiguration } from '../configuration/configuration';
 import { SNYK_SHOW_LS_OUTPUT_COMMAND, VSCODE_GO_TO_SETTINGS_COMMAND } from '../constants/commands';
@@ -70,32 +69,20 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return null;
   }
 
-  protected getErrorEncounteredTreeNode(scanPath?: string): TreeNode {
+  protected getErrorEncounteredTreeNode(
+    errorMessage: string = messages.clickToProblem,
+    showErrorIcon: boolean = true,
+  ): TreeNode {
     return new TreeNode({
-      icon: NODE_ICONS.error,
-      text: scanPath ? path.basename(scanPath) : messages.scanFailed,
-      description: messages.clickToProblem,
-      internal: {
-        isError: true,
-      },
-      command: {
-        command: SNYK_SHOW_LS_OUTPUT_COMMAND,
-        title: '',
-      },
-    });
-  }
-
-  protected getFaultyRepositoryErrorTreeNode(scanPath?: string, errorMessage?: string): TreeNode {
-    return new TreeNode({
-      icon: NODE_ICONS.error,
-      text: scanPath ? path.basename(scanPath) : messages.scanFailed,
+      ...(showErrorIcon ? { icon: NODE_ICONS.error } : {}),
+      text: messages.scanFailed,
       description: errorMessage,
       internal: {
         isError: true,
       },
       command: {
         command: SNYK_SHOW_LS_OUTPUT_COMMAND,
-        title: 'errorMessage',
+        title: '',
       },
     });
   }
