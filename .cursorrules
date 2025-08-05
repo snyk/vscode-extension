@@ -7,6 +7,7 @@ don't change old entries in the changelog. it's a history of changes. the curren
 
 ** how to implement **
 always write and save a step-wise implementation plan. don't commit it, but use if a reference for the implementation.
+get approval for the implementation plan before doing anything
 do atomic commits with conventional commit messages
 always write and update test cases. iterate until they pass.
 npm build scripts are configured for both unit and integration tests in package.json (test:unit and test:integration).
