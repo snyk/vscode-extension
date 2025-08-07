@@ -338,7 +338,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    configureMcpHosts(vscodeContext, configuration);
+    await configureMcpHosts(vscodeContext, configuration);
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       codeSecurityTree,

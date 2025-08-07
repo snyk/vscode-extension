@@ -191,7 +191,7 @@ export class Configuration implements IConfiguration {
   private extensionId: string;
   private inMemoryFolderConfigs: FolderConfig[] = [];
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) { }
+  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
   getExtensionId(): string {
     return this.extensionId;
@@ -222,9 +222,10 @@ export class Configuration implements IConfiguration {
   }
 
   getSecurityAtInception(): boolean {
-    return this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SECURITY_AT_INCEPTION)) ?? false;
+    return (
+      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(SECURITY_AT_INCEPTION)) ??
+      false
+    );
   }
 
   async setSecurityAtInception(enabled: boolean): Promise<void> {

@@ -20,14 +20,14 @@ export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, 
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   // @ts-expect-error backward compatibility for older VS Code versions
   if (vscode.lm?.registerMcpServerDefinitionProvider) {
-    await configureCopilot(vscodeContext, configuration);
+    configureCopilot(vscodeContext, configuration);
   }
   if (vscode.env.appName.toLowerCase().includes('windsurf')) {
     await configureWindsurf(vscodeContext, configuration);
   }
 }
 
-export async function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+export function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   try {
     vscodeContext.subscriptions.push(
       /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -72,7 +72,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
 export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   try {
     if (!configuration.getSecurityAtInception()) {
-      return
+      return;
     }
     // Get the MCP config path for Windsurf
     const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
@@ -83,11 +83,11 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
     await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
     await fs.promises.mkdir(memoriesDir, { recursive: true });
     // Load or create the config file
-    let config: McpConfig = { mcpServers: {} };
+    const config: McpConfig = { mcpServers: {} };
     if (fs.existsSync(configPath)) {
       try {
         const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        if (raw && typeof raw === 'object' && 'mcpServers' in raw && typeof (raw as any).mcpServers === 'object') {
+        if (raw && typeof raw === 'object' && 'mcpServers' in raw && raw.mcpServers === 'object') {
           config.mcpServers = (raw as McpConfig).mcpServers ?? {};
         }
       } catch (err) {
