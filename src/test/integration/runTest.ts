@@ -5,6 +5,12 @@ async function main() {
   try {
     console.log('STARTING TESTS');
 
+    // Capture additional command line arguments for Mocha
+    const additionalArgs = process.argv.slice(2); // Skip 'node' and script name
+    if (additionalArgs.length > 0) {
+      process.env.TEST_MOCHA_CLI_ARGS = JSON.stringify(additionalArgs);
+    }
+
     // The folder containing the Extension Manifest package.json
     // Passed to `--extensionDevelopmentPath`
     const extensionDevelopmentPath = path.resolve(__dirname, '../../../');
