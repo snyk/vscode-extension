@@ -121,7 +121,7 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
       fs.writeFileSync(rulesPath, assetContent, 'utf8');
       Logger.debug(`Copied snyk_rules.md to ${rulesPath}`);
     } catch (err) {
-      console.error('Failed to copy snyk_rules.md', err);
+      Logger.error('Failed to copy snyk_rules.md', err);
     }
   } catch (err) {
     Logger.error('Failed to update Windsurf MCP config');
