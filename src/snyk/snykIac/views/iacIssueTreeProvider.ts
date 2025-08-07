@@ -60,7 +60,12 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     return IacIssue.getRange(issue, this.languages);
   }
 
-  getOpenIssueCommand(issue: Issue<IacIssueData>, folderPath: string, filePath: string): Command {
+  override getOpenIssueCommand(
+    issue: Issue<IacIssueData>,
+    folderPath: string,
+    filePath: string,
+    _filteredIssues: Issue<IacIssueData>[],
+  ): Command {
     return {
       command: SNYK_OPEN_ISSUE_COMMAND,
       title: '',
