@@ -80,8 +80,8 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
     const memoriesDir = path.join(baseDir, 'memories');
     const rulesPath = path.join(memoriesDir, 'snyk_rules.md');
 
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.mkdirSync(memoriesDir, { recursive: true });
+    await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
+    await fs.promises.mkdir(memoriesDir, { recursive: true });
     // Load or create the config file
     let config: McpConfig = { mcpServers: {} };
     if (fs.existsSync(configPath)) {
