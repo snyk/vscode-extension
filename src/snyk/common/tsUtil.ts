@@ -13,3 +13,7 @@ export function isThenable<T>(v: unknown): v is Thenable<T> {
   // We can't fully check that `v.then` takes the correct parameters, but this is good enough.
   return hasProperty(v, 'then') && typeof v.then === 'function';
 }
+
+export function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
