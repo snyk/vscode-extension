@@ -4,6 +4,7 @@ import { Logger } from '../../common/logger/logger';
 import * as fs from 'fs';
 import * as os from 'os';
 import path from 'path';
+import { upsertDelimitedBlock } from './text';
 
 type Env = Record<string, string>;
 interface McpServer {
@@ -132,7 +133,7 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
       const block = `${RULE_START}\n${snykRules.trim()}\n${RULE_END}\n`;
 
       if (fs.existsSync(globalRulesPath)) {
-        let globalContent = await fs.promises.readFile(globalRulesPath, 'utf8');
+        const globalContent = await fs.promises.readFile(globalRulesPath, 'utf8');
         const updated = upsertDelimitedBlock(globalContent, RULE_START, RULE_END, block);
         if (updated !== globalContent) {
           await fs.promises.writeFile(globalRulesPath, updated, 'utf8');
@@ -150,36 +151,4 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
   } catch (err) {
     Logger.error('Failed to update Windsurf MCP config');
   }
-}
-
-/**
- * Replace or append a delimited block inside a file.
- * - If both markers exist: replace content between them (inclusive of markers is preserved by passing full `block`).
- * - If not found: append block with a separating newline if needed.
- */
-function upsertDelimitedBlock(source: string, start: string, end: string, fullBlockToInsert: string): string {
-  // Normalize newlines to \n for regex ops
-  const src = source.replace(/\r\n/g, '\n');
-
-  const startIdx = src.indexOf(start);
-  const endIdx = src.indexOf(end);
-
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    // Replace from start marker to end marker (inclusive)
-    const before = src.slice(0, startIdx);
-    const after = src.slice(endIdx + end.length);
-    // Ensure single trailing newline around seams
-    return `${trimTrailingNewlines(before)}\n${fullBlockToInsert.trim()}\n${trimLeadingNewlines(after)}`;
-  }
-
-  // No existing block: append, ensuring file ends with a newline first
-  const prefix = src.length ? `${trimTrailingNewlines(src)}\n\n` : '';
-  return `${prefix}${fullBlockToInsert.trim()}\n`;
-}
-
-function trimTrailingNewlines(s: string): string {
-  return s.replace(/\s*$/g, '').replace(/\r?\n*$/g, '');
-}
-function trimLeadingNewlines(s: string): string {
-  return s.replace(/^\r?\n*/g, '');
 }
