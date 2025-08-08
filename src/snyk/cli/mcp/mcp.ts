@@ -15,6 +15,10 @@ interface McpConfig {
   mcpServers: Record<string, McpServer>;
 }
 
+const SERVER_KEY = 'Snyk';
+const RULE_START = '###BEGIN SNYK GLOBAL RULE###';
+const RULE_END = '###END SNYK GLOBAL RULE###';
+
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   /* eslint-disable @typescript-eslint/no-unsafe-assignment */
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -78,15 +82,17 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
     const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
     const configPath = path.join(baseDir, 'mcp_config.json');
     const memoriesDir = path.join(baseDir, 'memories');
-    const rulesPath = path.join(memoriesDir, 'snyk_rules.md');
+    const globalRulesPath = path.join(memoriesDir, 'global_rules.md');
 
-    await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
-    await fs.promises.mkdir(memoriesDir, { recursive: true });
-    // Load or create the config file
+    if (!fs.existsSync(baseDir)) {
+      Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
+      return;
+    }
+
     const config: McpConfig = { mcpServers: {} };
     if (fs.existsSync(configPath)) {
       try {
-        const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const raw = JSON.parse(await fs.promises.readFile(configPath, 'utf8'));
         if (raw && typeof raw === 'object' && 'mcpServers' in raw && raw.mcpServers === 'object') {
           config.mcpServers = (raw as McpConfig).mcpServers ?? {};
         }
@@ -95,35 +101,85 @@ export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, 
       }
     }
 
-    if (!config.mcpServers) {
-      config.mcpServers = {};
-    }
-
     const cliPath = await configuration.getCliPath();
-    config.mcpServers['Snyk'] = {
+    config.mcpServers[SERVER_KEY] = {
       command: cliPath,
       args: ['mcp', '-t', 'stdio'],
       env: {},
     };
     if (configuration.organization) {
-      config.mcpServers['Snyk'].env.SNYK_CFG_ORG = configuration.organization;
+      config.mcpServers[SERVER_KEY].env.SNYK_CFG_ORG = configuration.organization;
     }
     if (configuration.snykApiEndpoint) {
-      config.mcpServers['Snyk'].env.SNYK_API = configuration.snykApiEndpoint;
+      config.mcpServers[SERVER_KEY].env.SNYK_API = configuration.snykApiEndpoint;
     }
-
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+    await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
     Logger.debug(`Updated Windsurf MCP config at ${configPath}`);
 
     try {
-      const assetPath = path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules.md');
-      const assetContent = fs.readFileSync(assetPath, 'utf8');
-      fs.writeFileSync(rulesPath, assetContent, 'utf8');
-      Logger.debug(`Copied snyk_rules.md to ${rulesPath}`);
+      let snykRules: string;
+      try {
+        snykRules = await fs.promises.readFile(
+          path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules.md'),
+          'utf8',
+        );
+      } catch {
+        Logger.error(`Failed to read bundled snyk_rules.md`);
+        return;
+      }
+
+      await fs.promises.mkdir(path.dirname(memoriesDir), { recursive: true });
+      const block = `${RULE_START}\n${snykRules.trim()}\n${RULE_END}\n`;
+
+      if (fs.existsSync(globalRulesPath)) {
+        let globalContent = await fs.promises.readFile(globalRulesPath, 'utf8');
+        const updated = upsertDelimitedBlock(globalContent, RULE_START, RULE_END, block);
+        if (updated !== globalContent) {
+          await fs.promises.writeFile(globalRulesPath, updated, 'utf8');
+          Logger.debug(`Updated Snyk block in ${globalRulesPath}`);
+        } else {
+          Logger.debug('Global rules already contain up-to-date Snyk block.');
+        }
+      } else {
+        await fs.promises.writeFile(globalRulesPath, block, 'utf8');
+        Logger.debug(`Created ${globalRulesPath} with Snyk block.`);
+      }
     } catch (err) {
-      Logger.error('Failed to copy snyk_rules.md');
+      Logger.error('Failed to update Windsurf configuration');
     }
   } catch (err) {
     Logger.error('Failed to update Windsurf MCP config');
   }
+}
+
+/**
+ * Replace or append a delimited block inside a file.
+ * - If both markers exist: replace content between them (inclusive of markers is preserved by passing full `block`).
+ * - If not found: append block with a separating newline if needed.
+ */
+function upsertDelimitedBlock(source: string, start: string, end: string, fullBlockToInsert: string): string {
+  // Normalize newlines to \n for regex ops
+  const src = source.replace(/\r\n/g, '\n');
+
+  const startIdx = src.indexOf(start);
+  const endIdx = src.indexOf(end);
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    // Replace from start marker to end marker (inclusive)
+    const before = src.slice(0, startIdx);
+    const after = src.slice(endIdx + end.length);
+    // Ensure single trailing newline around seams
+    return `${trimTrailingNewlines(before)}\n${fullBlockToInsert.trim()}\n${trimLeadingNewlines(after)}`;
+  }
+
+  // No existing block: append, ensuring file ends with a newline first
+  const prefix = src.length ? `${trimTrailingNewlines(src)}\n\n` : '';
+  return `${prefix}${fullBlockToInsert.trim()}\n`;
+}
+
+function trimTrailingNewlines(s: string): string {
+  return s.replace(/\s*$/g, '').replace(/\r?\n*$/g, '');
+}
+function trimLeadingNewlines(s: string): string {
+  return s.replace(/^\r?\n*/g, '');
 }
