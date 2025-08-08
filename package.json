@@ -54,7 +54,7 @@
     "mcpServerDefinitionProviders": [
       {
         "id": "snyk-security-scanner",
-        "label": "Snyk Security Scanner"
+        "label": "Snyk"
       }
     ],
     "configuration": [
@@ -256,14 +256,20 @@
             "markdownDescription": "Ignored issues are currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
             "scope": "window"
           },
-          "snyk.folderConfigs": {
+          "snyk.securityAtInception": {
             "order": 2,
+            "type": "boolean",
+            "default": false,
+            "description": "Secure AI Generated code at Inception."
+          },
+          "snyk.folderConfigs": {
+            "order": 3,
             "type": "array",
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
           "snyk.features.preview": {
-            "order": 3,
+            "order": 4,
             "type": "object",
             "default": {},
             "title": "Preview feature toggles",
@@ -499,7 +505,8 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
+    "copy-assets": "cp -r src/snyk/assets out/",
+    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map && npm run copy-assets",
     "build": "npm run vscode:prepublish",
     "clean": "rm -rf ./out",
     "rebuild": "npm run clean && npm run build",

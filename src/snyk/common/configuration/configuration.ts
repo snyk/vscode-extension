@@ -24,6 +24,7 @@ import {
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
   SCANNING_MODE,
+  SECURITY_AT_INCEPTION,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
@@ -176,6 +177,8 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+  getSecurityAtInception(): boolean;
+  setSecurityAtInception(enabled: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -214,6 +217,22 @@ export class Configuration implements IConfiguration {
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL),
       baseDownloadUrl,
+      true,
+    );
+  }
+
+  getSecurityAtInception(): boolean {
+    return (
+      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(SECURITY_AT_INCEPTION)) ??
+      false
+    );
+  }
+
+  async setSecurityAtInception(enabled: boolean): Promise<void> {
+    return this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(SECURITY_AT_INCEPTION),
+      enabled,
       true,
     );
   }
