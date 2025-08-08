@@ -260,7 +260,7 @@
             "order": 2,
             "type": "boolean",
             "default": false,
-            "description": "Secure AI generated code by using Snyk MCP server in Windsurf and Copilot."
+            "description": "Secure AI Generated code at Inception."
           },
           "snyk.folderConfigs": {
             "order": 3,
