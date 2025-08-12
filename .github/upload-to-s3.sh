@@ -51,8 +51,14 @@ function uploadFile() {
 }
 
 # publish repo
-mv $SCRIPT_DIR/../*.vsix snyk-vulnerability-scanner-preview.vsix
+vsix_files=($SCRIPT_DIR/../*.vsix)
+if [ ${#vsix_files[@]} -ne 1 ]; then
+  echo "Error: Expected to find exactly one .vsix file, but found ${#vsix_files[@]}." >&2
+  exit 1
+fi
+
 FILENAME_SRC="snyk-vulnerability-scanner-preview.vsix"
+mv "${vsix_files[0]}" "$FILENAME_SRC"
 FILENAME_DST="$FILENAME_SRC"
 # shellcheck disable=SC2086
 uploadFile $FILENAME_SRC $FILENAME_DST $DRY_RUN
