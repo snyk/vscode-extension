@@ -59,6 +59,6 @@ if [ "${#vsix_files[@]}" -ne 1 ]; then
 fi
 FILENAME_SRC="snyk-vulnerability-scanner-preview.vsix"
 mv "${vsix_files[0]}" "$FILENAME_SRC"
-FILENAME_DST="$FILENAME_SRC"
+FILENAME_DST="$RELEASE_CHANNEL/$FILENAME_SRC"
 # shellcheck disable=SC2086
 uploadFile $FILENAME_SRC $FILENAME_DST $DRY_RUN
