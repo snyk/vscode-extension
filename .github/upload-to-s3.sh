@@ -53,6 +53,6 @@ function uploadFile() {
 # publish repo
 mv $SCRIPT_DIR/../*.vsix snyk-vulnerability-scanner-preview.vsix
 FILENAME_SRC="snyk-vulnerability-scanner-preview.vsix"
-FILENAME_DST="$RELEASE_CHANNEL"
+FILENAME_DST="$FILENAME_SRC"
 # shellcheck disable=SC2086
 uploadFile $FILENAME_SRC $FILENAME_DST $DRY_RUN

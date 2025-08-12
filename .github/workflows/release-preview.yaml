@@ -35,6 +35,9 @@ jobs:
       - name: Package VSIX
         run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.preview.outputs.version }}
 
+      - name: Publish to Marketplace
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
+
       - name: Upload to S3
         env:
           AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
@@ -43,6 +46,3 @@ jobs:
           AWS_REGION: us-east-1
         run: |
           .github/upload-to-s3.sh preview
-
-      - name: Publish to Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
