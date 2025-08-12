@@ -31,3 +31,5 @@ snykConfigJson = JSON.stringify({
   sentryKey: process.env.SNYK_VSCE_SENTRY_DSN_KEY,
 });
 fs.writeFileSync('./snyk.config.json', snykConfigJson);
+
+console.log(version);
