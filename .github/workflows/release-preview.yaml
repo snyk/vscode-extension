@@ -29,5 +29,17 @@ jobs:
           SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY: ${{ secrets.SNYK_VSCE_AMPLITUDE_EXPERIMENT_API_KEY }}
           SNYK_VSCE_SENTRY_DSN_KEY: ${{ secrets.SNYK_VSCE_SENTRY_DSN_KEY }}
 
+      - name: Package VSIX
+        run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.semver.outputs.next }}
+
+      - name: Upload to S3
+        env:
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: us-east-1
+        run: |
+          .github/upload-to-s3.sh preview
+
       - name: Publish to Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
