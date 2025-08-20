@@ -256,14 +256,8 @@
             "markdownDescription": "Ignored issues are currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
             "scope": "window"
           },
-          "snyk.securityAtInception": {
-            "order": 2,
-            "type": "boolean",
-            "default": false,
-            "description": "Secure AI Generated code at Inception."
-          },
           "snyk.folderConfigs": {
-            "order": 3,
+            "order": 2,
             "type": "array",
             "default": [],
             "description": "Folder configuration for Snyk scans."

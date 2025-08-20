@@ -17,8 +17,8 @@ interface McpConfig {
 }
 
 const SERVER_KEY = 'Snyk';
-const RULE_START = '###BEGIN SNYK GLOBAL RULE###';
-const RULE_END = '###END SNYK GLOBAL RULE###';
+const RULE_START = '<!--###BEGIN SNYK GLOBAL RULE###-->';
+const RULE_END = '<!--###END SNYK GLOBAL RULE###-->';
 
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   /* eslint-disable @typescript-eslint/no-unsafe-assignment */
