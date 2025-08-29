@@ -262,15 +262,44 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
-          "snyk.features.preview": {
-            "order": 4,
+          "snyk.securityAtInception": {
+            "order": 3,
             "type": "object",
-            "default": {},
-            "title": "Preview feature toggles",
-            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
-            "propertyNames": true,
-            "properties": {}
+            "default": {
+              "autoConfigureMcpServer": false,
+              "publishSecurityAtInceptionRules": false,
+              "snykRulesLocation": "global"
+            },
+            "properties": {
+              "autoConfigureMcpServer": {
+                "type": "boolean",
+                "description": "Configure Snyk MCP server",
+                "default": false
+              },
+              "publishSecurityAtInceptionRules": {
+                "type": "boolean",
+                "description": "Publish Security at Inception rules",
+                "default": false
+              },
+             "persistRulesInProjects": {
+                "type": "boolean",
+                "description": "Write Snyk rules to current project. False will write it globally to user profile.",
+                "default": false
+              }
+            },
+            "additionalProperties": false,
+            "markdownDescription": "Configure Snyk MCP server, publish Security at Inception rules, and use project rules or global rules. Works for GitHub Copilot, Windsurf and Cursor.",
+            "scope": "window"
           }
+        },
+        "snyk.features.preview": {
+          "order": 4,
+          "type": "object",
+          "default": {},
+          "title": "Preview feature toggles",
+          "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
+          "propertyNames": true,
+          "properties": {}
         }
       },
       {

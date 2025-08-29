@@ -70,6 +70,12 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   openIssues: true,
 };
 
+export const DEFAULT_SECURITY_AT_INCEPTION: SecurityAtInceptionConfig = {
+  autoConfigureMcpServer: false,
+  persistRulesInProjects: false,
+  publishSecurityAtInceptionRules: false,
+};
+
 export interface SeverityFilter {
   critical: boolean;
   high: boolean;
@@ -88,6 +94,12 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
 
 export type PreviewFeatures = {
   ossQuickfixes: boolean | undefined;
+};
+
+export type SecurityAtInceptionConfig = {
+  autoConfigureMcpServer: boolean;
+  publishSecurityAtInceptionRules: boolean;
+  persistRulesInProjects: boolean;
 };
 
 export interface IConfiguration {
@@ -177,8 +189,7 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
-  getSecurityAtInception(): boolean;
-  setSecurityAtInception(enabled: boolean): Promise<void>;
+  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig;
 }
 
 export class Configuration implements IConfiguration {
@@ -221,20 +232,13 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getSecurityAtInception(): boolean {
-    return (
-      this.workspace.getConfiguration<boolean>(CONFIGURATION_IDENTIFIER, this.getConfigName(SECURITY_AT_INCEPTION)) ??
-      false
-    );
-  }
-
-  async setSecurityAtInception(enabled: boolean): Promise<void> {
-    return this.workspace.updateConfiguration(
+  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig {
+    const config = this.workspace.getConfiguration<SecurityAtInceptionConfig>(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(SECURITY_AT_INCEPTION),
-      enabled,
-      true,
     );
+
+    return config ?? DEFAULT_SECURITY_AT_INCEPTION;
   }
 
   async getCliReleaseChannel(): Promise<string> {
