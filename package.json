@@ -262,6 +262,35 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
+          "snyk.securityAtInception": {
+            "order": 3,
+            "type": "object",
+            "default": {
+              "autoConfigureMcpServer": false,
+              "publishSecurityAtInceptionRules": false,
+              "persistRulesInProjects": false
+            },
+            "properties": {
+              "autoConfigureMcpServer": {
+                "type": "boolean",
+                "description": "Configure Snyk MCP server",
+                "default": false
+              },
+              "publishSecurityAtInceptionRules": {
+                "type": "boolean",
+                "description": "Publish Security at Inception rules",
+                "default": false
+              },
+              "persistRulesInProjects": {
+                "type": "boolean",
+                "description": "Write Snyk rules to current project. False will write it globally to user profile.",
+                "default": false
+              }
+            },
+            "additionalProperties": false,
+            "markdownDescription": "Configure Snyk MCP server, publish Security at Inception rules, and use project rules or global rules. Works for GitHub Copilot, Windsurf and Cursor.",
+            "scope": "window"
+          },
           "snyk.features.preview": {
             "order": 4,
             "type": "object",

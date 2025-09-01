@@ -21,134 +21,272 @@ const RULE_START = '<!--###BEGIN SNYK GLOBAL RULE###-->';
 const RULE_END = '<!--###END SNYK GLOBAL RULE###-->';
 
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-  // @ts-expect-error backward compatibility for older VS Code versions
-  if (vscode.lm?.registerMcpServerDefinitionProvider) {
-    configureCopilot(vscodeContext, configuration);
+  const appName = vscode.env.appName.toLowerCase();
+  const isWindsurf = appName.includes('windsurf');
+  const isCursor = appName.includes('cursor');
+  const isVsCode = appName.includes('visual studio code');
+
+  if (isCursor) {
+    await configureCursor(vscodeContext, configuration);
+    return;
   }
-  if (vscode.env.appName.toLowerCase().includes('windsurf')) {
+  if (isWindsurf) {
     await configureWindsurf(vscodeContext, configuration);
+    return;
+  }
+  if (isVsCode) {
+    await configureCopilot(vscodeContext, configuration);
+    return;
   }
 }
 
-export function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+export async function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
   try {
-    vscodeContext.subscriptions.push(
-      /* eslint-disable @typescript-eslint/no-unsafe-argument */
-      /* eslint-disable @typescript-eslint/no-unsafe-call */
-      // @ts-expect-error backward compatibility for older VS Code versions
-      vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
-        onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
-        provideMcpServerDefinitions: async () => {
-          // @ts-expect-error backward compatibility for older VS Code versions
-          const output: vscode.McpServerDefinition[][] = [];
+    if (securityAtInception.autoConfigureMcpServer) {
+      vscodeContext.subscriptions.push(
+        /* eslint-disable @typescript-eslint/no-unsafe-argument */
+        /* eslint-disable @typescript-eslint/no-unsafe-call */
+        /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+        // @ts-expect-error backward compatibility for older VS Code versions
+        vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+          onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
+          provideMcpServerDefinitions: async () => {
+            // @ts-expect-error backward compatibility for older VS Code versions
+            const output: vscode.McpServerDefinition[][] = [];
 
-          /* eslint-disable @typescript-eslint/no-unsafe-call */
-          const cliPath = await configuration.getCliPath();
-          /* eslint-disable @typescript-eslint/no-unsafe-return */
-          const args = ['mcp', '-t', 'stdio'];
-          const env: Env = {};
-          if (configuration.organization) {
-            env.SNYK_CFG_ORG = configuration.organization ?? '';
-          }
-          if (configuration.snykApiEndpoint) {
-            env.SNYK_API = configuration.snykApiEndpoint ?? '';
-          }
+            /* eslint-disable @typescript-eslint/no-unsafe-call */
+            const cliPath = await configuration.getCliPath();
+            /* eslint-disable @typescript-eslint/no-unsafe-return */
+            const args = ['mcp', '-t', 'stdio'];
+            const env: Env = {};
+            if (configuration.organization) {
+              env.SNYK_CFG_ORG = configuration.organization ?? '';
+            }
+            if (configuration.snykApiEndpoint) {
+              env.SNYK_API = configuration.snykApiEndpoint ?? '';
+            }
+            const token = await configuration.getToken();
+            const authMethod = configuration.getAuthenticationMethod();
+            if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+              env.SNYK_TOKEN = token ?? '';
+            }
+            Object.entries(process.env).forEach(([key, value]) => {
+              env[key] = value ?? '';
+            });
 
-          Object.entries(process.env).forEach(([key, value]) => {
-            env[key] = value ?? '';
-          });
+            // @ts-expect-error backward compatibility for older VS Code versions
+            output.push(new vscode.McpStdioServerDefinition(SERVER_KEY, cliPath, args, env));
 
-          // @ts-expect-error backward compatibility for older VS Code versions
-          output.push(new vscode.McpStdioServerDefinition('Snyk', cliPath, args, env));
-
-          return output;
-        },
-      }),
-    );
+            return output;
+          },
+        }),
+      );
+    }
   } catch (err) {
     Logger.debug(
       `VS Code MCP Server Definition Provider API is not available. This feature requires VS Code version > 1.101.0.`,
     );
   }
+
+  // Rules publishing for Copilot
+  if (!securityAtInception.publishSecurityAtInceptionRules) return;
+  try {
+    const rulesContent = await readBundledRules(vscodeContext);
+    if (securityAtInception.persistRulesInProjects) {
+      await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
+    } else {
+      const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
+      const globalPath = getCopilotGlobalRulesPath(isInsiders);
+      await writeGlobalRules(globalPath, rulesContent);
+    }
+  } catch {
+    Logger.error('Failed to publish Copilot rules');
+  }
 }
 
-export async function configureWindsurf(vsCodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
   try {
-    if (!configuration.getSecurityAtInception()) {
-      return;
-    }
-    // Get the MCP config path for Windsurf
-    const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
-    const configPath = path.join(baseDir, 'mcp_config.json');
-    const memoriesDir = path.join(baseDir, 'memories');
-    const globalRulesPath = path.join(memoriesDir, 'global_rules.md');
-
-    if (!fs.existsSync(baseDir)) {
-      Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
-      return;
-    }
-
-    const config: McpConfig = { mcpServers: {} };
-    if (fs.existsSync(configPath)) {
-      try {
-        const raw = JSON.parse(await fs.promises.readFile(configPath, 'utf8'));
-        if (raw && typeof raw === 'object' && 'mcpServers' in raw && raw.mcpServers === 'object') {
-          config.mcpServers = (raw as McpConfig).mcpServers ?? {};
-        }
-      } catch (err) {
-        Logger.error('parsing Windsurf MCP config, resetting to empty.');
-      }
-    }
-
-    const cliPath = await configuration.getCliPath();
-    config.mcpServers[SERVER_KEY] = {
-      command: cliPath,
-      args: ['mcp', '-t', 'stdio'],
-      env: {},
-    };
-    if (configuration.organization) {
-      config.mcpServers[SERVER_KEY].env.SNYK_CFG_ORG = configuration.organization;
-    }
-    if (configuration.snykApiEndpoint) {
-      config.mcpServers[SERVER_KEY].env.SNYK_API = configuration.snykApiEndpoint;
-    }
-    await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
-    Logger.debug(`Updated Windsurf MCP config at ${configPath}`);
-
-    try {
-      let snykRules: string;
-      try {
-        snykRules = await fs.promises.readFile(
-          path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules.md'),
-          'utf8',
-        );
-      } catch {
-        Logger.error(`Failed to read bundled snyk_rules.md`);
-        return;
-      }
-
-      await fs.promises.mkdir(path.dirname(memoriesDir), { recursive: true });
-      const block = `${RULE_START}\n${snykRules.trim()}\n${RULE_END}\n`;
-
-      if (fs.existsSync(globalRulesPath)) {
-        const globalContent = await fs.promises.readFile(globalRulesPath, 'utf8');
-        const updated = upsertDelimitedBlock(globalContent, RULE_START, RULE_END, block);
-        if (updated !== globalContent) {
-          await fs.promises.writeFile(globalRulesPath, updated, 'utf8');
-          Logger.debug(`Updated Snyk block in ${globalRulesPath}`);
-        } else {
-          Logger.debug('Global rules already contain up-to-date Snyk block.');
-        }
+    if (securityAtInception.autoConfigureMcpServer) {
+      const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
+      const configPath = path.join(baseDir, 'mcp_config.json');
+      if (!fs.existsSync(baseDir)) {
+        Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
       } else {
-        await fs.promises.writeFile(globalRulesPath, block, 'utf8');
-        Logger.debug(`Created ${globalRulesPath} with Snyk block.`);
+        const cliPath = await configuration.getCliPath();
+        const token = await configuration.getToken();
+        const authMethod = configuration.getAuthenticationMethod();
+        const env: Env = {};
+        if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
+        if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
+        if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+          env.SNYK_TOKEN = token ?? '';
+        }
+        await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
+        Logger.debug(`Ensured Windsurf MCP config at ${configPath}`);
       }
-    } catch (err) {
-      Logger.error('Failed to update Windsurf configuration');
     }
-  } catch (err) {
+  } catch {
     Logger.error('Failed to update Windsurf MCP config');
+  }
+
+  try {
+    if (!securityAtInception.publishSecurityAtInceptionRules) return;
+    const rulesContent = await readBundledRules(vscodeContext);
+    if (securityAtInception.persistRulesInProjects) {
+      await writeLocalRulesForIde(path.join('.windsurf', 'rules', 'snyk_rules.md'), rulesContent);
+    } else {
+      const globalPath = path.join(os.homedir(), '.codeium', 'windsurf', 'memories', 'global_rules.md');
+      await writeGlobalRules(globalPath, rulesContent);
+    }
+  } catch {
+    Logger.error('Failed to publish Windsurf rules');
+  }
+}
+
+export async function configureCursor(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
+  try {
+    if (securityAtInception.autoConfigureMcpServer) {
+      const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
+      const cliPath = await configuration.getCliPath();
+      const env: Env = {};
+      const token = await configuration.getToken();
+      const authMethod = configuration.getAuthenticationMethod();
+      if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
+      if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
+      if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+        env.SNYK_TOKEN = token ?? '';
+      }
+
+      await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
+      Logger.debug(`Ensured Cursor MCP config at ${configPath}`);
+    }
+  } catch {
+    Logger.error('Failed to update Cursor MCP config');
+  }
+
+  try {
+    if (!securityAtInception.publishSecurityAtInceptionRules) return;
+    const rulesContent = await readBundledRules(vscodeContext);
+    if (securityAtInception.persistRulesInProjects) {
+      await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
+    } else {
+      void vscode.window.showInformationMessage(
+        'Cursor does not support filesystem based global rules. Only project rules can be persisted.',
+      );
+    }
+  } catch {
+    Logger.error('Failed to publish Cursor rules');
+  }
+}
+
+async function ensureMcpServerInJson(
+  filePath: string,
+  serverKey: string,
+  command: string,
+  args: string[],
+  env: Env,
+): Promise<void> {
+  let raw: unknown = undefined;
+  if (fs.existsSync(filePath)) {
+    try {
+      raw = JSON.parse(await fs.promises.readFile(filePath, 'utf8'));
+    } catch {
+      // ignore parse error; will recreate minimal structure
+    }
+  }
+  type RawConfig = { mcpServers?: Record<string, McpServer> };
+  const config: McpConfig = { mcpServers: {} };
+  if (raw && typeof raw === 'object' && raw !== null && Object.prototype.hasOwnProperty.call(raw, 'mcpServers')) {
+    const servers = (raw as RawConfig).mcpServers;
+    if (servers && typeof servers === 'object') {
+      config.mcpServers = servers;
+    }
+  }
+
+  const serverKeyLower = serverKey.toLowerCase();
+  let matchedKey: string | undefined = undefined;
+  for (const key of Object.keys(config.mcpServers)) {
+    const lower = key.toLowerCase();
+    if (lower === serverKeyLower || lower.includes(serverKeyLower)) {
+      matchedKey = key;
+      break;
+    }
+  }
+  const keyToUse = matchedKey ?? serverKey;
+  const existing = config.mcpServers[keyToUse];
+  const desired: McpServer = { command, args, env };
+
+  const needsWrite =
+    !existing ||
+    existing.command !== desired.command ||
+    JSON.stringify(existing.args) !== JSON.stringify(desired.args) ||
+    JSON.stringify(existing.env || {}) !== JSON.stringify(desired.env || {});
+
+  if (!needsWrite) return;
+
+  config.mcpServers[keyToUse] = desired;
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.promises.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
+}
+
+async function readBundledRules(vsCodeContext: vscode.ExtensionContext): Promise<string> {
+  return await fs.promises.readFile(path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules.md'), 'utf8');
+}
+
+async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: string): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    void vscode.window.showInformationMessage('No workspace folder found. Local rules require an open workspace.');
+    return;
+  }
+  for (const folder of folders) {
+    const root = folder.uri.fsPath;
+    const rulesPath = path.join(root, relativeRulesPath);
+    await fs.promises.mkdir(path.dirname(rulesPath), { recursive: true });
+    let existing = '';
+    try {
+      existing = await fs.promises.readFile(rulesPath, 'utf8');
+    } catch {
+      // ignore
+    }
+    if (existing !== rulesContent) {
+      await fs.promises.writeFile(rulesPath, rulesContent, 'utf8');
+      Logger.debug(`Wrote local rules to ${rulesPath}`);
+    } else {
+      Logger.debug(`Local rules already up to date at ${rulesPath}.`);
+    }
+  }
+}
+
+function getCopilotGlobalRulesPath(isInsiders: boolean): string {
+  const isWindows = process.platform === 'win32';
+  const isMac = process.platform === 'darwin';
+  const codeDirName = isInsiders ? 'Code - Insiders' : 'Code';
+  const base = isWindows
+    ? path.join(os.homedir(), 'AppData', 'Roaming', codeDirName, 'User', 'prompts')
+    : isMac
+    ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
+    : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
+  return path.join(base, 'snyk_instructions.md');
+}
+
+async function writeGlobalRules(targetFile: string, rulesContent: string): Promise<void> {
+  await fs.promises.mkdir(path.dirname(targetFile), { recursive: true });
+  const block = `${RULE_START}\n${rulesContent.trim()}\n${RULE_END}\n`;
+  let current = '';
+  try {
+    current = await fs.promises.readFile(targetFile, 'utf8');
+  } catch {
+    // file may not exist yet
+  }
+  const updated = upsertDelimitedBlock(current, RULE_START, RULE_END, block);
+  if (updated !== current) {
+    await fs.promises.writeFile(targetFile, updated, 'utf8');
+    Logger.debug(`Upserted delimited global rules into ${targetFile}`);
+  } else {
+    Logger.debug(`Delimited global rules already up to date at ${targetFile}.`);
   }
 }
