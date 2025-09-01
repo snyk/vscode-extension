@@ -268,7 +268,7 @@
             "default": {
               "autoConfigureMcpServer": false,
               "publishSecurityAtInceptionRules": false,
-              "snykRulesLocation": "global"
+              "persistRulesInProjects": false
             },
             "properties": {
               "autoConfigureMcpServer": {
