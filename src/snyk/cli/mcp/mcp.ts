@@ -41,9 +41,9 @@ export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, 
 }
 
 export async function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const sai = configuration.getSecurityAtInceptionConfig();
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
   try {
-    if (sai.autoConfigureMcpServer) {
+    if (securityAtInception.autoConfigureMcpServer) {
       vscodeContext.subscriptions.push(
         /* eslint-disable @typescript-eslint/no-unsafe-argument */
         /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -85,10 +85,10 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
   }
 
   // Rules publishing for Copilot
-  if (!sai.publishSecurityAtInceptionRules) return;
+  if (!securityAtInception.publishSecurityAtInceptionRules) return;
   try {
     const rulesContent = await readBundledRules(vscodeContext);
-    if (sai.persistRulesInProjects) {
+    if (securityAtInception.persistRulesInProjects) {
       await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
     } else {
       const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
@@ -101,9 +101,9 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
 }
 
 export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const sai = configuration.getSecurityAtInceptionConfig();
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
   try {
-    if (sai.autoConfigureMcpServer) {
+    if (securityAtInception.autoConfigureMcpServer) {
       const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
       const configPath = path.join(baseDir, 'mcp_config.json');
       if (!fs.existsSync(baseDir)) {
@@ -122,9 +122,9 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
   }
 
   try {
-    if (!sai.publishSecurityAtInceptionRules) return;
+    if (!securityAtInception.publishSecurityAtInceptionRules) return;
     const rulesContent = await readBundledRules(vscodeContext);
-    if (sai.persistRulesInProjects) {
+    if (securityAtInception.persistRulesInProjects) {
       await writeLocalRulesForIde(path.join('.windsurf', 'rules', 'snyk_rules.md'), rulesContent);
     } else {
       const globalPath = path.join(os.homedir(), '.codeium', 'windsurf', 'memories', 'global_rules.md');
@@ -136,9 +136,9 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
 }
 
 export async function configureCursor(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const sai = configuration.getSecurityAtInceptionConfig();
+  const securityAtInception = configuration.getSecurityAtInceptionConfig();
   try {
-    if (sai.autoConfigureMcpServer) {
+    if (securityAtInception.autoConfigureMcpServer) {
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
       const env: Env = {};
@@ -152,9 +152,9 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
   }
 
   try {
-    if (!sai.publishSecurityAtInceptionRules) return;
+    if (!securityAtInception.publishSecurityAtInceptionRules) return;
     const rulesContent = await readBundledRules(vscodeContext);
-    if (sai.persistRulesInProjects) {
+    if (securityAtInception.persistRulesInProjects) {
       await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
     } else {
       void vscode.window.showInformationMessage(
