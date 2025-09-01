@@ -159,7 +159,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
     } else {
       void vscode.window.showInformationMessage(
-        'Cursor does not support global rules. Only local rules can be persisted.',
+        'Cursor does not support filesystem based global rules. Only project rules can be persisted.',
       );
     }
   } catch {
