@@ -209,8 +209,8 @@ async function ensureMcpServerInJson(
     resultingEnv = { ...existing.env };
     const overrideKeys: (keyof Env)[] = ['SNYK_TOKEN', 'SNYK_CFG_ORG', 'SNYK_API'];
     for (const k of overrideKeys) {
-      if (Object.hasOwn(existing.env, k) && typeof (env as Env)[k] !== 'undefined') {
-        resultingEnv[k] = (env as Env)[k] as string;
+      if (Object.hasOwn(existing.env, k) && typeof env[k] !== 'undefined') {
+        resultingEnv[k] = env[k];
       }
     }
   } else {
