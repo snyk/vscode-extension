@@ -143,8 +143,15 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
       const env: Env = {};
+      const token = await configuration.getToken();
+      const authMethod = configuration.getAuthenticationMethod();
       if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
       if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
+      if (authMethod === 'pat' || authMethod === 'token'
+        && token) {
+        env.SNYK_TOKEN = token ?? '';
+      }
+
       await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
       Logger.debug(`Ensured Cursor MCP config at ${configPath}`);
     }
@@ -253,8 +260,8 @@ function getCopilotGlobalRulesPath(isInsiders: boolean): string {
   const base = isWindows
     ? path.join(os.homedir(), 'AppData', 'Roaming', codeDirName, 'User', 'prompts')
     : isMac
-    ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
-    : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
+      ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
+      : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
   return path.join(base, 'snyk_instructions.md');
 }
 
