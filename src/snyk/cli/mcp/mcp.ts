@@ -191,7 +191,17 @@ async function ensureMcpServerInJson(
     }
   }
 
-  const existing = config.mcpServers[serverKey];
+  const serverKeyLower = serverKey.toLowerCase();
+  let matchedKey: string | undefined = undefined;
+  for (const key of Object.keys(config.mcpServers)) {
+    const lower = key.toLowerCase();
+    if (lower === serverKeyLower || lower.includes(serverKeyLower)) {
+      matchedKey = key;
+      break;
+    }
+  }
+  const keyToUse = matchedKey ?? serverKey;
+  const existing = config.mcpServers[keyToUse];
   const desired: McpServer = { command, args, env };
 
   const needsWrite =
@@ -202,7 +212,7 @@ async function ensureMcpServerInJson(
 
   if (!needsWrite) return;
 
-  config.mcpServers[serverKey] = desired;
+  config.mcpServers[keyToUse] = desired;
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
   await fs.promises.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
 }
