@@ -35,27 +35,28 @@ export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, 
     return;
   }
   if (isVsCode) {
-    configureCopilot(vscodeContext, configuration);
+    await configureCopilot(vscodeContext, configuration);
     return;
   }
 }
 
-export function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+export async function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   const sai = configuration.getSecurityAtInceptionConfig();
   try {
     if (sai.autoConfigureMcpServer) {
-      type LmApi = {
-        registerMcpServerDefinitionProvider?: (id: string, provider: unknown) => vscode.Disposable;
-      };
-      const lmApi: LmApi | undefined = (vscode as unknown as { lm?: LmApi }).lm;
-      if (!lmApi?.registerMcpServerDefinitionProvider) return;
       vscodeContext.subscriptions.push(
-        lmApi.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+        /* eslint-disable @typescript-eslint/no-unsafe-argument */
+        /* eslint-disable @typescript-eslint/no-unsafe-call */
+        // @ts-expect-error backward compatibility for older VS Code versions
+        vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
           onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
           provideMcpServerDefinitions: async () => {
-            const output: unknown[][] = [];
+            // @ts-expect-error backward compatibility for older VS Code versions
+            const output: vscode.McpServerDefinition[][] = [];
 
+            /* eslint-disable @typescript-eslint/no-unsafe-call */
             const cliPath = await configuration.getCliPath();
+            /* eslint-disable @typescript-eslint/no-unsafe-return */
             const args = ['mcp', '-t', 'stdio'];
             const env: Env = {};
             if (configuration.organization) {
@@ -69,15 +70,8 @@ export function configureCopilot(vscodeContext: vscode.ExtensionContext, configu
               env[key] = value ?? '';
             });
 
-            const McpCtor = (
-              vscode as unknown as {
-                McpStdioServerDefinition?: new (name: string, command: string, args: string[], env: Env) => unknown;
-              }
-            ).McpStdioServerDefinition;
-            if (typeof McpCtor === 'function') {
-              const def = new McpCtor(SERVER_KEY, cliPath, args, env);
-              output.push([def]);
-            }
+            // @ts-expect-error backward compatibility for older VS Code versions
+            output.push(new vscode.McpStdioServerDefinition(SERVER_KEY, cliPath, args, env));
 
             return output;
           },
@@ -91,21 +85,19 @@ export function configureCopilot(vscodeContext: vscode.ExtensionContext, configu
   }
 
   // Rules publishing for Copilot
-  (async () => {
-    if (!sai.publishSecurityAtInceptionRules) return;
-    try {
-      const rulesContent = await readBundledRules(vscodeContext);
-      if (sai.persistRulesInProjects) {
-        await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
-      } else {
-        const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
-        const globalPath = getCopilotGlobalRulesPath(isInsiders);
-        await writeGlobalRules(globalPath, rulesContent);
-      }
-    } catch {
-      Logger.error('Failed to publish Copilot rules');
+  if (!sai.publishSecurityAtInceptionRules) return;
+  try {
+    const rulesContent = await readBundledRules(vscodeContext);
+    if (sai.persistRulesInProjects) {
+      await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
+    } else {
+      const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
+      const globalPath = getCopilotGlobalRulesPath(isInsiders);
+      await writeGlobalRules(globalPath, rulesContent);
     }
-  })().catch(() => undefined);
+  } catch {
+    Logger.error('Failed to publish Copilot rules');
+  }
 }
 
 export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
