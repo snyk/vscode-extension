@@ -262,7 +262,7 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
-          "snyk.securityAtInception": {
+          "snyk.features.preview.securityAtInception": {
             "order": 3,
             "type": "object",
             "default": {
@@ -281,7 +281,7 @@
                 "description": "Publish Security at Inception rules",
                 "default": false
               },
-             "persistRulesInProjects": {
+              "persistRulesInProjects": {
                 "type": "boolean",
                 "description": "Write Snyk rules to current project. False will write it globally to user profile.",
                 "default": false
@@ -290,16 +290,16 @@
             "additionalProperties": false,
             "markdownDescription": "Configure Snyk MCP server, publish Security at Inception rules, and use project rules or global rules. Works for GitHub Copilot, Windsurf and Cursor.",
             "scope": "window"
+          },
+          "snyk.features.preview": {
+            "order": 4,
+            "type": "object",
+            "default": {},
+            "title": "Preview feature toggles",
+            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
+            "propertyNames": true,
+            "properties": {}
           }
-        },
-        "snyk.features.preview": {
-          "order": 4,
-          "type": "object",
-          "default": {},
-          "title": "Preview feature toggles",
-          "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
-          "propertyNames": true,
-          "properties": {}
         }
       },
       {
