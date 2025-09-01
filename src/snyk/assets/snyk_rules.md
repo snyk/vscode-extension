@@ -1,5 +1,6 @@
 ---
 alwaysApply: true
+always_on: true
 applyTo: "**"
 description: Snyk Security At Inception
 ---
