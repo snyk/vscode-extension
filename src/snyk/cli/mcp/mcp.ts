@@ -203,15 +203,29 @@ async function ensureMcpServerInJson(
   const existing = config.mcpServers[keyToUse];
   const desired: McpServer = { command, args, env };
 
+  // Merge env: keep existing keys; override Snyk keys only if already present
+  let resultingEnv: Env;
+  if (existing && existing.env) {
+    resultingEnv = { ...existing.env };
+    const overrideKeys: (keyof Env)[] = ['SNYK_TOKEN', 'SNYK_CFG_ORG', 'SNYK_API'];
+    for (const k of overrideKeys) {
+      if (Object.hasOwn(existing.env, k) && typeof (env as Env)[k] !== 'undefined') {
+        resultingEnv[k] = (env as Env)[k] as string;
+      }
+    }
+  } else {
+    resultingEnv = { ...(env || {}) };
+  }
+
   const needsWrite =
     !existing ||
     existing.command !== desired.command ||
     JSON.stringify(existing.args) !== JSON.stringify(desired.args) ||
-    JSON.stringify(existing.env || {}) !== JSON.stringify(desired.env || {});
+    JSON.stringify(existing.env || {}) !== JSON.stringify(resultingEnv || {});
 
   if (!needsWrite) return;
 
-  config.mcpServers[keyToUse] = desired;
+  config.mcpServers[keyToUse] = { command, args, env: resultingEnv };
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
   await fs.promises.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
 }
