@@ -66,7 +66,11 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
             if (configuration.snykApiEndpoint) {
               env.SNYK_API = configuration.snykApiEndpoint ?? '';
             }
-
+            const token = await configuration.getToken();
+            const authMethod = configuration.getAuthenticationMethod();
+            if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+              env.SNYK_TOKEN = token ?? '';
+            }
             Object.entries(process.env).forEach(([key, value]) => {
               env[key] = value ?? '';
             });
@@ -111,9 +115,14 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
         Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
       } else {
         const cliPath = await configuration.getCliPath();
+        const token = await configuration.getToken();
+        const authMethod = configuration.getAuthenticationMethod();
         const env: Env = {};
         if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
         if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
+        if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+          env.SNYK_TOKEN = token ?? '';
+        }
         await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
         Logger.debug(`Ensured Windsurf MCP config at ${configPath}`);
       }
@@ -147,8 +156,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       const authMethod = configuration.getAuthenticationMethod();
       if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
       if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-      if (authMethod === 'pat' || authMethod === 'token'
-        && token) {
+      if (authMethod === 'pat' || (authMethod === 'token' && token)) {
         env.SNYK_TOKEN = token ?? '';
       }
 
@@ -260,8 +268,8 @@ function getCopilotGlobalRulesPath(isInsiders: boolean): string {
   const base = isWindows
     ? path.join(os.homedir(), 'AppData', 'Roaming', codeDirName, 'User', 'prompts')
     : isMac
-      ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
-      : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
+    ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
+    : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
   return path.join(base, 'snyk_instructions.md');
 }
 
