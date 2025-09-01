@@ -262,7 +262,7 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
-          "snyk.features.preview.securityAtInception": {
+          "snyk.securityAtInception": {
             "order": 3,
             "type": "object",
             "default": {

@@ -47,6 +47,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
       vscodeContext.subscriptions.push(
         /* eslint-disable @typescript-eslint/no-unsafe-argument */
         /* eslint-disable @typescript-eslint/no-unsafe-call */
+        /* eslint-disable @typescript-eslint/no-unsafe-member-access */
         // @ts-expect-error backward compatibility for older VS Code versions
         vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
           onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
