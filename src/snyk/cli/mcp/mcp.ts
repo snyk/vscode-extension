@@ -98,7 +98,8 @@ export function configureCopilot(vscodeContext: vscode.ExtensionContext, configu
       if (sai.persistRulesInProjects) {
         await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
       } else {
-        const globalPath = getCopilotGlobalRulesPath();
+        const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
+        const globalPath = getCopilotGlobalRulesPath(isInsiders);
         await writeGlobalRules(globalPath, rulesContent);
       }
     } catch {
@@ -242,14 +243,15 @@ async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: st
   }
 }
 
-function getCopilotGlobalRulesPath(): string {
+function getCopilotGlobalRulesPath(isInsiders: boolean): string {
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';
+  const codeDirName = isInsiders ? 'Code - Insiders' : 'Code';
   const base = isWindows
-    ? path.join(os.homedir(), 'AppData', 'Roaming', 'Code', 'User', 'prompts')
+    ? path.join(os.homedir(), 'AppData', 'Roaming', codeDirName, 'User', 'prompts')
     : isMac
-    ? path.join(os.homedir(), 'Library', 'Application Support', 'Code', 'User', 'prompts')
-    : path.join(os.homedir(), '.config', 'Code', 'User', 'prompts');
+    ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
+    : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
   return path.join(base, 'snyk_instructions.md');
 }
 
