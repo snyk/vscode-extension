@@ -59,21 +59,12 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
             const cliPath = await configuration.getCliPath();
             /* eslint-disable @typescript-eslint/no-unsafe-return */
             const args = ['mcp', '-t', 'stdio'];
-            const env: Env = {};
-            if (configuration.organization) {
-              env.SNYK_CFG_ORG = configuration.organization ?? '';
-            }
-            if (configuration.snykApiEndpoint) {
-              env.SNYK_API = configuration.snykApiEndpoint ?? '';
-            }
-            const token = await configuration.getToken();
-            const authMethod = configuration.getAuthenticationMethod();
-            if (authMethod === 'pat' || (authMethod === 'token' && token)) {
-              env.SNYK_TOKEN = token ?? '';
-            }
+            const snykEnv = await getSnykMcpEnv(configuration);
+            const processEnv: Env = {};
             Object.entries(process.env).forEach(([key, value]) => {
-              env[key] = value ?? '';
+              processEnv[key] = value ?? '';
             });
+            const env: Env = { ...processEnv, ...snykEnv };
 
             // @ts-expect-error backward compatibility for older VS Code versions
             output.push(new vscode.McpStdioServerDefinition(SERVER_KEY, cliPath, args, env));
@@ -115,14 +106,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
         Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
       } else {
         const cliPath = await configuration.getCliPath();
-        const token = await configuration.getToken();
-        const authMethod = configuration.getAuthenticationMethod();
-        const env: Env = {};
-        if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
-        if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-        if (authMethod === 'pat' || (authMethod === 'token' && token)) {
-          env.SNYK_TOKEN = token ?? '';
-        }
+        const env = await getSnykMcpEnv(configuration);
         await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
         Logger.debug(`Ensured Windsurf MCP config at ${configPath}`);
       }
@@ -156,7 +140,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       const authMethod = configuration.getAuthenticationMethod();
       if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
       if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-      if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+      if ((authMethod === 'pat' || authMethod === 'token') && token) {
         env.SNYK_TOKEN = token ?? '';
       }
 
@@ -219,15 +203,29 @@ async function ensureMcpServerInJson(
   const existing = config.mcpServers[keyToUse];
   const desired: McpServer = { command, args, env };
 
+  // Merge env: keep existing keys; override Snyk keys only if already present
+  let resultingEnv: Env;
+  if (existing && existing.env) {
+    resultingEnv = { ...existing.env };
+    const overrideKeys: (keyof Env)[] = ['SNYK_TOKEN', 'SNYK_CFG_ORG', 'SNYK_API'];
+    for (const k of overrideKeys) {
+      if (Object.hasOwn(existing.env, k) && typeof env[k] !== 'undefined') {
+        resultingEnv[k] = env[k];
+      }
+    }
+  } else {
+    resultingEnv = { ...(env || {}) };
+  }
+
   const needsWrite =
     !existing ||
     existing.command !== desired.command ||
     JSON.stringify(existing.args) !== JSON.stringify(desired.args) ||
-    JSON.stringify(existing.env || {}) !== JSON.stringify(desired.env || {});
+    JSON.stringify(existing.env || {}) !== JSON.stringify(resultingEnv || {});
 
   if (!needsWrite) return;
 
-  config.mcpServers[keyToUse] = desired;
+  config.mcpServers[keyToUse] = { command, args, env: resultingEnv };
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
   await fs.promises.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
 }
@@ -289,4 +287,22 @@ async function writeGlobalRules(targetFile: string, rulesContent: string): Promi
   } else {
     Logger.debug(`Delimited global rules already up to date at ${targetFile}.`);
   }
+}
+
+async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
+  const env: Env = {};
+  if (configuration.organization) {
+    env.SNYK_CFG_ORG = configuration.organization;
+  }
+  if (configuration.snykApiEndpoint) {
+    env.SNYK_API = configuration.snykApiEndpoint;
+  }
+
+  const token = await configuration.getToken();
+  const authMethod = configuration.getAuthenticationMethod();
+  if ((authMethod === 'pat' || authMethod === 'token') && token) {
+    env.SNYK_TOKEN = token; // No need for '?? \'\''
+  }
+
+  return env;
 }
