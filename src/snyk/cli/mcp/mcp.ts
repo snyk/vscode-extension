@@ -68,7 +68,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
             }
             const token = await configuration.getToken();
             const authMethod = configuration.getAuthenticationMethod();
-            if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+            if ((authMethod === 'pat' || authMethod === 'token') && token) {
               env.SNYK_TOKEN = token ?? '';
             }
             Object.entries(process.env).forEach(([key, value]) => {
@@ -120,7 +120,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
         const env: Env = {};
         if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
         if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-        if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+        if ((authMethod === 'pat' || authMethod === 'token') && token) {
           env.SNYK_TOKEN = token ?? '';
         }
         await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
@@ -156,7 +156,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       const authMethod = configuration.getAuthenticationMethod();
       if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
       if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-      if (authMethod === 'pat' || (authMethod === 'token' && token)) {
+      if ((authMethod === 'pat' || authMethod === 'token') && token) {
         env.SNYK_TOKEN = token ?? '';
       }
 
