@@ -66,7 +66,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release create ${{ steps.semver.outputs.next }} --generate-notes $(find . -name '*.vsix')
 
-      - name: Publish to Marketplace
+      - name: Publish to VS Code Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.nextStrict }}
 
       - name: Publish to OpenVSX Marketplace
