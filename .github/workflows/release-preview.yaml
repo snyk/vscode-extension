@@ -35,8 +35,11 @@ jobs:
       - name: Package VSIX
         run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.preview.outputs.version }}
 
-      - name: Publish to Marketplace
+      - name: Publish to VS Code Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
+
+      - name: Publish to OpenVSX Marketplace
+        run: npx ovsx publish -i snyk-vulnerability-scanner-preview-${{ steps.preview.outputs.version }}.vsix -p ${{ secrets.OPENVSX_TOKEN }}
 
       - name: Upload to S3
         env:

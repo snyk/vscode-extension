@@ -69,6 +69,12 @@ jobs:
       - name: Publish to Marketplace
         run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.nextStrict }}
 
+      - name: Publish to OpenVSX Marketplace
+        run: |
+          VERSION=$(echo ${{ steps.semver.outputs.next }} | sed 's/^v//')
+          echo y | vsce package --no-git-tag-version --no-update-package-json $VERSION
+          npx ovsx publish -i snyk-vulnerability-scanner-${VERSION}.vsix -p ${{ secrets.OPENVSX_TOKEN }}
+
       - name: Clean up credentials
         if: always()
         run: git checkout -- snyk.config.json
