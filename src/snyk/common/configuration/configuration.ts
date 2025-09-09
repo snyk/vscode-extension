@@ -92,9 +92,7 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-export type PreviewFeatures = {
-  ossQuickfixes: boolean | undefined;
-};
+export type PreviewFeatures = Record<string, never>;
 
 export type SecurityAtInceptionConfig = {
   autoConfigureMcpServer: boolean;
@@ -267,7 +265,7 @@ export class Configuration implements IConfiguration {
   }
 
   getOssQuickFixCodeActionsEnabled(): boolean {
-    return this.getPreviewFeatures().ossQuickfixes ?? false;
+    return true;
   }
 
   getSnykLanguageServerPath(): string | undefined {
@@ -557,9 +555,7 @@ export class Configuration implements IConfiguration {
   }
 
   getPreviewFeatures(): PreviewFeatures {
-    const defaultSetting: PreviewFeatures = {
-      ossQuickfixes: false,
-    };
+    const defaultSetting: PreviewFeatures = {};
 
     const userSetting =
       this.workspace.getConfiguration<PreviewFeatures>(

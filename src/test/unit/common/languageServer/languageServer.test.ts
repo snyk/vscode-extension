@@ -67,9 +67,10 @@ suite('Language Server', () => {
         return defaultFeaturesConfigurationStub;
       },
       getPreviewFeatures() {
-        return {
-          ossQuickfixes: false,
-        };
+        return {};
+      },
+      getOssQuickFixCodeActionsEnabled(): boolean {
+        return true;
       },
       severityFilter: DEFAULT_SEVERITY_FILTER,
       issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
@@ -247,7 +248,7 @@ suite('Language Server', () => {
         scanningMode: 'auto',
         folderConfigs: [],
         authenticationMethod: 'oauth',
-        enableSnykOSSQuickFixCodeActions: 'false',
+        enableSnykOSSQuickFixCodeActions: 'true',
         hoverVerbosity: 1,
       };
 
@@ -295,7 +296,7 @@ suite('Language Server', () => {
         scanningMode: 'auto',
         folderConfigs: [sampleFolderConfig],
         authenticationMethod: 'oauth',
-        enableSnykOSSQuickFixCodeActions: 'false',
+        enableSnykOSSQuickFixCodeActions: 'true',
         hoverVerbosity: 1,
       };
       const initializationOptions = await languageServer.getInitializationOptions();

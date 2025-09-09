@@ -1,0 +1,118 @@
+graph TD
+    A["VSCode Extension Starts"] --> B["DownloadService.download()"]
+    B --> C{"CLI Installed?"}
+    C -->|No| D["Downloader.download()"]
+    C -->|Yes| E{"Version Check"}
+    E -->|Update Needed| D
+    E -->|Up to Date| F["CLI Ready"]
+
+    D --> G["getCliExecutable()"]
+    G --> H["Create CLI Directory"]
+    H --> I["Delete Existing Binary"]
+    I --> J["Get Latest Version"]
+    J --> K["Fetch SHA256 Checksum"]
+    K --> L["Download CLI Binary"]
+
+    J --> M["StaticCliApi.getLatestCliVersion()"]
+    M --> N["GET /cli/{channel}/ls-protocol-version-{version}"]
+    N --> O["Parse Version Response"]
+
+    K --> P["StaticCliApi.getSha256Checksum()"]
+    P --> Q["GET /cli/{version}/{platform}.sha256"]
+    Q --> R["Parse Checksum Response"]
+
+    L --> S["StaticCliApi.downloadBinary()"]
+    S --> T["GET /cli/{version}/{platform}"]
+    T --> U["Stream Download with Progress"]
+    U --> V["Write to Local Filesystem"]
+    V --> W["Verify Checksum"]
+    W --> X{"Checksum Valid?"}
+    X -->|Yes| Y["CLI Ready"]
+    X -->|No| Z["Download Failed"]
+
+    subgraph "Remote Server Structure (downloads.snyk.io)"
+        AA["Base URL: https://downloads.snyk.io"]
+        BB["/cli/"]
+        CC["stable/"]
+        DD["rc/"]
+        EE["preview/"]
+        FF["v1.1234.0/"]
+        HH["ls-protocol-version-20"]
+        II["snyk-linux"]
+        JJ["snyk-linux.sha256"]
+        KK["snyk-linux-arm64"]
+        LL["snyk-linux-arm64.sha256"]
+        MM["snyk-macos"]
+        NN["snyk-macos.sha256"]
+        OO["snyk-macos-arm64"]
+        PP["snyk-macos-arm64.sha256"]
+        QQ["snyk-win.exe"]
+        RR["snyk-win.exe.sha256"]
+        SS["snyk-alpine"]
+        TT["snyk-alpine.sha256"]
+        UU["snyk-alpine-arm64"]
+        VV["snyk-alpine-arm64.sha256"]
+
+        BB --> CC
+        BB --> DD
+        BB --> EE
+        BB --> FF
+        CC --> HH
+        DD --> HH
+        EE --> HH
+        FF --> II
+        FF --> JJ
+        FF --> KK
+        FF --> LL
+        FF --> MM
+        FF --> NN
+        FF --> OO
+        FF --> PP
+        FF --> QQ
+        FF --> RR
+        FF --> SS
+        FF --> TT
+        FF --> UU
+        FF --> VV
+    end
+
+    subgraph "Local Filesystem Structure"
+        AAA["~/.local/share/snyk/vscode-cli/"]
+        BBB["~/Library/Application Support/snyk/vscode-cli/"]
+        CCC["%APPDATA%\\Local\\snyk\\vscode-cli\\"]
+
+        AAA --> DDD["snyk-linux"]
+        AAA --> EEE["snyk-linux-arm64"]
+        AAA --> FFF["snyk-alpine"]
+        AAA --> GGG["snyk-alpine-arm64"]
+
+        BBB --> HHH["snyk-macos"]
+        BBB --> III["snyk-macos-arm64"]
+
+        CCC --> JJJ["snyk-win.exe"]
+    end
+
+    subgraph "Platform Detection"
+        LLL["Platform.getCurrent()"]
+        MMM["Platform.getArch()"]
+
+        LLL --> OOO{"OS Type"}
+        OOO -->|linux| PPP{"Alpine?"}
+        OOO -->|darwin| QQQ["macos"]
+        OOO -->|win32| RRR["windows"]
+
+        PPP -->|Yes| SSS["alpine"]
+        PPP -->|No| TTT["linux"]
+
+        MMM -->|arm64| UUU["-arm64 suffix (not on Windows)"]
+        MMM -->|x64| VVV["no suffix"]
+    end
+
+    style A fill:#e1f5fe
+    style F fill:#c8e6c9
+    style Y fill:#c8e6c9
+    style Z fill:#ffcdd2
+    style AA fill:#fff3e0
+    style AAA fill:#f3e5f5
+    style BBB fill:#f3e5f5
+    style CCC fill:#f3e5f5

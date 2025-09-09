@@ -72,15 +72,11 @@ suite('Configuration', () => {
 
     const configuration = new Configuration({}, workspace);
 
-    deepStrictEqual(configuration.getPreviewFeatures(), {
-      ossQuickfixes: false,
-    } as PreviewFeatures);
+    deepStrictEqual(configuration.getPreviewFeatures(), {});
   });
 
   test('Preview features: some features enabled', () => {
-    const previewFeatures = {
-      ossQuickfixes: true,
-    } as PreviewFeatures;
+    const previewFeatures = {} as PreviewFeatures;
     const workspace = stubWorkspaceConfiguration(FEATURES_PREVIEW_SETTING, previewFeatures);
 
     const configuration = new Configuration({}, workspace);

@@ -31,10 +31,10 @@ suite('LanguageServerSettings', () => {
           return [];
         },
         getPreviewFeatures(): PreviewFeatures {
-          return { ossQuickfixes: false }; // advisor is removed
+          return {}; // advisor is removed
         },
         getOssQuickFixCodeActionsEnabled(): boolean {
-          return false;
+          return true;
         },
         getAuthenticationMethod(): string {
           return 'oauth';
