@@ -46,10 +46,10 @@ suite('Language Server: Middleware', () => {
         return false;
       },
       getPreviewFeatures() {
-        return { ossQuickfixes: false };
+        return {};
       },
       getOssQuickFixCodeActionsEnabled(): boolean {
-        return false;
+        return true;
       },
       getFeaturesConfiguration() {
         return defaultFeaturesConfigurationStub;
