@@ -1,0 +1,45 @@
+** general **
+always be concise, direct and don't try to appease me.
+DOUBLE CHECK THAT YOUR CHANGES ARE REALLY NEEDED. ALWAYS STICK TO THE GIVEN GOAL, NOT MORE.
+I repeat: don't optimize, don't refactor if not needed.
+Adhere to the rules, fix linting & test issues that are newly introduced.
+don't change old entries in the changelog. it's a history of changes. the current version is the last semantic version tag on origin/main in git
+
+** how to implement **
+always write and save a step-wise implementation plan. don't commit it, but use if a reference for the implementation.
+get approval for the implementation plan before doing anything
+do atomic commits with conventional commit messages
+always write and update test cases. iterate until they pass.
+npm build scripts are configured for both unit and integration tests in package.json (test:unit and test:integration).
+use existing mocks, don't write new ones.
+if you use mocks, use mockk to generate them.
+always run the tests after editing.
+always use the linter, use npm lint:fix. only fix linting issues in changed files.
+don't change code that does not need to be changed. only do the minimum changes.
+add a summary of the changes to the changelog for the next version. usually it's a minor semantic version bump.
+this is not a library. if files are not used or needed anymore, delete them instead of deprecating them.
+if a tool call fails, analyze why it failed and correct your approach. don't prompt the user for help.
+if you don't know something, read the code instead of assuming it.
+commenting out code to fix errors is not a solution. instead, fix the error.
+
+** security **
+determine the absolute path of the project directory. you can do that e.g. by executing pwd on the shell within the directory.
+always use snyk for sca and code scanning. scan with both tools. you need to pass the absolute path of the directory we are scanning.
+run snyk code tests after each edit. pass the absolute path of the project directory as a parameter
+run snyk sca tests after updating package.json and pass the absolute path of the project directory as a parameter.
+run snyk sca and code test before committing. if not test data, fix issues before committing.
+
+** fixing issues **
+fix security issues if they are fixable. take the snyk scan results and the test results as input.
+
+** committing **
+when asked to commit, always use conventional commit messages (Conventional Commit Style (Subject + Body)). be descriptive in the body. if you find a JIRA issue (IDE-XXXX) in the branch name, use it as a postfix to the subject line in the format [IDE-XXXX]
+consider all commits in the current branch when committing, to have the context of the current changes.
+when asked to push, always use 'git push --set-upstream origin $(git_current_branch)' with git_current_branch being the current branch we are on
+never force push
+never push without asking
+never commit the hashicorp gomod
+regularly fetch main branch and offer to merge it into git_current_branch
+don't touch the copyright header
+after pushing offer to create a PR on github. analyze the changes by comparing the current branch ($(git_current_branch)) with origin/main, and craft a PR description and title.
+use the github pr template in this repository 
