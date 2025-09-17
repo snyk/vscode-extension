@@ -547,7 +547,7 @@
     "patch-preview": "node ./scripts/patchPreview.js"
   },
   "devDependencies": {
-    "@amplitude/ampli": "^1.29.0",
+    "@amplitude/ampli": "^1.36.2",
     "@types/babel__traverse": "^7.12.2",
     "@types/diff": "^5.0.9",
     "@types/find-package-json": "^1.2.2",
