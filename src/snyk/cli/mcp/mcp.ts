@@ -4,7 +4,7 @@ import { Logger } from '../../common/logger/logger';
 import * as fs from 'fs';
 import * as os from 'os';
 import path from 'path';
-import { upsertDelimitedBlock } from './text';
+import { deleteDelimitedBlock, upsertDelimitedBlock } from './text';
 
 type Env = Record<string, string>;
 interface McpServer {
@@ -81,14 +81,20 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
   }
 
   // Rules publishing for Copilot
-  if (!securityAtInception.publishSecurityAtInceptionRules) return;
+  const filePath = path.join('.github', 'instructions', 'snyk_rules.instructions.md');
+  const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
+  const globalPath = getCopilotGlobalRulesPath(isInsiders);
   try {
+    if (!securityAtInception.publishSecurityAtInceptionRules) {
+      // Delete rules from both project and global
+      await deleteLocalRulesForIde(filePath);
+      await deleteGlobalRules(globalPath);
+      return;
+    }
     const rulesContent = await readBundledRules(vscodeContext);
     if (securityAtInception.persistRulesInProjects) {
-      await writeLocalRulesForIde(path.join('.github', 'instructions', 'snyk_rules.instructions.md'), rulesContent);
+      await writeLocalRulesForIde(filePath, rulesContent);
     } else {
-      const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
-      const globalPath = getCopilotGlobalRulesPath(isInsiders);
       await writeGlobalRules(globalPath, rulesContent);
     }
   } catch {
@@ -115,13 +121,19 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
     Logger.error('Failed to update Windsurf MCP config');
   }
 
+  const globalPath = path.join(os.homedir(), '.codeium', 'windsurf', 'memories', 'global_rules.md');
+  const localPath = path.join('.windsurf', 'rules', 'snyk_rules.md');
   try {
-    if (!securityAtInception.publishSecurityAtInceptionRules) return;
+    if (!securityAtInception.publishSecurityAtInceptionRules) {
+      // Delete rules from both project and global
+      await deleteLocalRulesForIde(localPath);
+      await deleteGlobalRules(globalPath);
+      return;
+    }
     const rulesContent = await readBundledRules(vscodeContext);
     if (securityAtInception.persistRulesInProjects) {
-      await writeLocalRulesForIde(path.join('.windsurf', 'rules', 'snyk_rules.md'), rulesContent);
+      await writeLocalRulesForIde(localPath, rulesContent);
     } else {
-      const globalPath = path.join(os.homedir(), '.codeium', 'windsurf', 'memories', 'global_rules.md');
       await writeGlobalRules(globalPath, rulesContent);
     }
   } catch {
@@ -152,7 +164,11 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
   }
 
   try {
-    if (!securityAtInception.publishSecurityAtInceptionRules) return;
+    if (!securityAtInception.publishSecurityAtInceptionRules) {
+      // Delete rules from project (Cursor doesn't support global rules)
+      await deleteLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'));
+      return;
+    }
     const rulesContent = await readBundledRules(vscodeContext);
     if (securityAtInception.persistRulesInProjects) {
       await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
@@ -289,6 +305,43 @@ async function writeGlobalRules(targetFile: string, rulesContent: string): Promi
   }
 }
 
+async function deleteLocalRulesForIde(relativeRulesPath: string): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    return;
+  }
+  for (const folder of folders) {
+    const root = folder.uri.fsPath;
+    const rulesPath = path.join(root, relativeRulesPath);
+    try {
+      if (fs.existsSync(rulesPath)) {
+        await fs.promises.unlink(rulesPath);
+        Logger.debug(`Deleted local rules from ${rulesPath}`);
+      }
+    } catch (err) {
+      Logger.debug(`Failed to delete local rules from ${rulesPath}: ${err}`);
+    }
+  }
+}
+
+async function deleteGlobalRules(targetFile: string): Promise<void> {
+  try {
+    if (!fs.existsSync(targetFile)) {
+      return;
+    }
+    const current = await fs.promises.readFile(targetFile, 'utf8');
+    const updated = deleteDelimitedBlock(current, RULE_START, RULE_END);
+
+    if (updated !== current) {
+      // Write the file without the delimited block
+      await fs.promises.writeFile(targetFile, updated, 'utf8');
+      Logger.debug(`Removed delimited global rules from ${targetFile}`);
+    }
+  } catch (err) {
+    Logger.debug(`Failed to delete global rules from ${targetFile}: ${err}`);
+  }
+}
+
 async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   const env: Env = {};
   if (configuration.organization) {
@@ -297,11 +350,13 @@ async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   if (configuration.snykApiEndpoint) {
     env.SNYK_API = configuration.snykApiEndpoint;
   }
-
+  if (configuration.getTrustedFolders().length > 0) {
+    env.TRUSTED_FOLDERS = configuration.getTrustedFolders().join(';');
+  }
   const token = await configuration.getToken();
   const authMethod = configuration.getAuthenticationMethod();
   if ((authMethod === 'pat' || authMethod === 'token') && token) {
-    env.SNYK_TOKEN = token; // No need for '?? \'\''
+    env.SNYK_TOKEN = token;
   }
 
   return env;
