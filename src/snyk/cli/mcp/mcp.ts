@@ -147,14 +147,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
     if (securityAtInception.autoConfigureMcpServer) {
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
-      const env: Env = {};
-      const token = await configuration.getToken();
-      const authMethod = configuration.getAuthenticationMethod();
-      if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
-      if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
-      if ((authMethod === 'pat' || authMethod === 'token') && token) {
-        env.SNYK_TOKEN = token ?? '';
-      }
+      const env = await getSnykMcpEnv(configuration);
 
       await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
       Logger.debug(`Ensured Cursor MCP config at ${configPath}`);
