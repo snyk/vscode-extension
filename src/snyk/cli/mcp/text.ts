@@ -26,6 +26,41 @@ export function upsertDelimitedBlock(source: string, start: string, end: string,
   return `${prefix}${fullBlockToInsert.trim()}\n`;
 }
 
+/**
+ * Remove a delimited block from content completely (including markers).
+ * - If both markers exist: removes everything between and including the markers
+ * - If markers not found: returns the original content unchanged
+ * - Returns empty string if the file only contained the delimited block
+ */
+export function deleteDelimitedBlock(source: string, start: string, end: string): string {
+  // Normalize newlines to \n for regex ops
+  const src = source.replace(/\r\n/g, '\n');
+
+  const startIdx = src.indexOf(start);
+  const endIdx = src.indexOf(end);
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    const before = src.slice(0, startIdx).trimEnd();
+    const after = src.slice(endIdx + end.length).trimStart();
+
+    if (before === '' && after === '') {
+      // File only contained the delimited block
+      return '';
+    }
+
+    // Join before and after, preserving content outside the delimited block
+    if (before && after) {
+      // Ensure after ends with exactly one newline if it has content
+      const afterTrimmed = after.trimEnd();
+      return `${before}\n\n${afterTrimmed}\n`;
+    }
+    return `${before}${after}`.trim() + (before || after ? '\n' : '');
+  }
+
+  // No block found, return original
+  return src;
+}
+
 function trimTrailingNewlines(s: string): string {
   return s.replace(/\s*$/g, '').replace(/\r?\n*$/g, '');
 }
