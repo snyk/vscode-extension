@@ -343,8 +343,9 @@ async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   if (configuration.snykApiEndpoint) {
     env.SNYK_API = configuration.snykApiEndpoint;
   }
-  if (configuration.getTrustedFolders().length > 0) {
-    env.TRUSTED_FOLDERS = configuration.getTrustedFolders().join(';');
+  const trustedFolders = configuration.getTrustedFolders();
+  if (trustedFolders.length > 0) {
+    env.TRUSTED_FOLDERS = trustedFolders.join(';');
   }
   const token = await configuration.getToken();
   const authMethod = configuration.getAuthenticationMethod();
