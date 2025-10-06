@@ -201,6 +201,8 @@ export class LanguageServer implements ILanguageServer {
       this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
       });
+
+      this.handleOrgSettingsFromFolderConfigs(folderConfigs);
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
@@ -231,6 +233,53 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.client.outputChannel.show();
+  }
+
+  private handleOrgSettingsFromFolderConfigs(folderConfigs: FolderConfig[]): void {
+    const currentWorkspaceFolders = this.workspace.getWorkspaceFolders();
+
+    folderConfigs.forEach(folderConfig => {
+      // Only set organization for folders that are part of the current VS Code workspace
+      const workspaceFolder = currentWorkspaceFolders.find(
+        workspaceFolder => folderConfig.folderPath === workspaceFolder.uri.fsPath,
+      );
+
+      if (!workspaceFolder) {
+        this.logger.warn(`No workspace folder found for path: ${folderConfig.folderPath}`);
+        return;
+      }
+
+      this.configuration.setOrganization(workspaceFolder, folderConfig.preferredOrg).then(
+        () => {
+          this.logger.debug(
+            `Set organization "${folderConfig.preferredOrg}" for workspace folder: ${folderConfig.folderPath}`,
+          );
+        },
+        error => {
+          this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
+        },
+      );
+
+      // Set auto-organization at workspace folder level only if the desired value differs from
+      // the current configuration value when querying all levels (folder, workspace, global, default).
+      if (folderConfig.orgSetByUser !== undefined) {
+        const desiredAutoOrg = !folderConfig.orgSetByUser;
+        const currentAutoOrg = this.configuration.isAutoOrganizationEnabled(workspaceFolder);
+
+        if (desiredAutoOrg !== currentAutoOrg) {
+          this.configuration.setAutoOrganization(workspaceFolder, desiredAutoOrg).then(
+            () => {
+              this.logger.debug(
+                `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
+              );
+            },
+            error => {
+              this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
+            },
+          );
+        }
+      }
+    });
   }
 
   async stop(): Promise<void> {

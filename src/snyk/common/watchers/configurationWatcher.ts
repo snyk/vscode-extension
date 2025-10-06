@@ -7,6 +7,7 @@ import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
+  ADVANCED_AUTO_ORGANIZATION,
   ADVANCED_ORGANIZATION,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
@@ -24,14 +25,22 @@ import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
+import { vsCodeWorkspace } from '../vscode/workspace';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
 
-  private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
-    if (key === ADVANCED_ORGANIZATION) {
+  private async onChangeConfiguration(
+    extension: IExtension,
+    key: string,
+    event: vscode.ConfigurationChangeEvent,
+  ): Promise<void> {
+    if (key === ADVANCED_AUTO_ORGANIZATION) {
+      return this.syncFolderConfigAutoOrgOnChange(event);
+    } else if (key === ADVANCED_ORGANIZATION) {
+      await this.syncFolderConfigOrgOnWorkspaceFolderOrgSettingChanged(event);
       return extension.setupFeatureFlags();
     } else if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
@@ -83,6 +92,7 @@ class ConfigurationWatcher implements IWatcher {
       const change = [
         ADVANCED_ADVANCED_MODE_SETTING,
         ADVANCED_AUTOSCAN_OSS_SETTING,
+        ADVANCED_AUTO_ORGANIZATION,
         ADVANCED_ORGANIZATION,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
@@ -100,7 +110,7 @@ class ConfigurationWatcher implements IWatcher {
 
       if (change) {
         try {
-          await this.onChangeConfiguration(extension, change);
+          await this.onChangeConfiguration(extension, change, event);
         } catch (error) {
           ErrorHandler.handle(error, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${change}`);
         }
@@ -112,6 +122,68 @@ class ConfigurationWatcher implements IWatcher {
         return extension.runScan();
       }
     });
+  }
+
+  private async syncFolderConfigAutoOrgOnChange(event: vscode.ConfigurationChangeEvent): Promise<void> {
+    const affectedWorkspaceFolders = vsCodeWorkspace
+      .getWorkspaceFolders()
+      .filter(folder => event.affectsConfiguration(ADVANCED_AUTO_ORGANIZATION, folder));
+
+    if (affectedWorkspaceFolders.length === 0) {
+      return;
+    }
+
+    const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
+      const workspaceFolder = affectedWorkspaceFolders.find(
+        workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
+      );
+      if (!workspaceFolder) {
+        return folderConfig;
+      }
+
+      // Get the effective value considering all levels (global, workspace, folder)
+      const autoOrgEnabled = configuration.isAutoOrganizationEnabled(workspaceFolder);
+
+      return {
+        ...folderConfig,
+        orgSetByUser: !autoOrgEnabled,
+      };
+    });
+
+    await configuration.setFolderConfigs(updatedFolderConfigs);
+  }
+
+  private async syncFolderConfigOrgOnWorkspaceFolderOrgSettingChanged(
+    event: vscode.ConfigurationChangeEvent,
+  ): Promise<void> {
+    const affectedWorkspaceFolders = vsCodeWorkspace
+      .getWorkspaceFolders()
+      .filter(folder => event.affectsConfiguration(ADVANCED_ORGANIZATION, folder));
+
+    if (affectedWorkspaceFolders.length === 0) {
+      return;
+    }
+
+    const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
+      const workspaceFolder = affectedWorkspaceFolders.find(
+        workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
+      );
+      if (!workspaceFolder) {
+        return folderConfig;
+      }
+
+      const orgValueAtFolderLevel = configuration.getConfigurationAtFolderLevelOnly<string>(
+        ADVANCED_ORGANIZATION,
+        workspaceFolder,
+      );
+
+      return {
+        ...folderConfig,
+        preferredOrg: orgValueAtFolderLevel ?? '',
+      };
+    });
+
+    await configuration.setFolderConfigs(updatedFolderConfigs);
   }
 }
 

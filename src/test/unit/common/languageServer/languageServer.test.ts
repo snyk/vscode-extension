@@ -36,8 +36,26 @@ suite('Language Server', () => {
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
 
-  const path = 'testPath';
   const logger = new LoggerMockFailOnErrors();
+
+  const createFakeLanguageServer = (languageClientAdapter: ILanguageClientAdapter, workspace: IVSCodeWorkspace) => {
+    return new LanguageServer(
+      user,
+      configurationMock,
+      languageClientAdapter,
+      workspace,
+      windowMock,
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      {} as IVSCodeCommands,
+      {} as IDiagnosticsIssueProvider<unknown>,
+    );
+  };
 
   setup(() => {
     configurationMock = {
@@ -51,7 +69,7 @@ suite('Language Server', () => {
         return false;
       },
       getCliPath(): Promise<string | undefined> {
-        return Promise.resolve(path);
+        return Promise.resolve('testPath');
       },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
@@ -118,21 +136,9 @@ suite('Language Server', () => {
       },
     });
 
-    languageServer = new LanguageServer(
-      user,
-      configurationMock,
+    languageServer = createFakeLanguageServer(
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-      windowMock,
-      authServiceMock,
-      logger,
-      downloadServiceMock,
-      {} as IExtensionRetriever,
-      {} as ISummaryProviderService,
-      {} as IUriAdapter,
-      {} as IMarkdownStringAdapter,
-      {} as IVSCodeCommands,
-      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
 
@@ -152,11 +158,11 @@ suite('Language Server', () => {
       ): LanguageClient {
         return {
           start(): Promise<void> {
-            assert.strictEqual(id, 'Snyk LS');
+            assert.strictEqual(id, 'SnykLS');
             assert.strictEqual(name, 'Snyk Language Server');
             assert.strictEqual(
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-              'options' in serverOptions ? serverOptions?.options?.env?.http_proxy : undefined,
+              'options' in serverOptions ? serverOptions?.options?.env?.HTTP_PROXY : undefined,
               expectedProxy,
             );
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -173,21 +179,9 @@ suite('Language Server', () => {
       },
     });
 
-    languageServer = new LanguageServer(
-      user,
-      configurationMock,
+    languageServer = createFakeLanguageServer(
       lca as unknown as ILanguageClientAdapter,
       stubWorkspaceConfiguration('http.proxy', expectedProxy),
-      windowMock,
-      authServiceMock,
-      new LoggerMock(),
-      downloadServiceMock,
-      {} as IExtensionRetriever,
-      {} as ISummaryProviderService,
-      {} as IUriAdapter,
-      {} as IMarkdownStringAdapter,
-      {} as IVSCodeCommands,
-      {} as IDiagnosticsIssueProvider<unknown>,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -204,124 +198,81 @@ suite('Language Server', () => {
         create: sinon.stub().returns(mockLanguageClient),
         getLanguageClient: sinon.stub().returns(mockLanguageClient),
       };
-      languageServer = new LanguageServer(
-        user,
-        configurationMock,
-        mockLanguageClientAdapter,
-        {} as IVSCodeWorkspace,
-        windowMock,
-        authServiceMock,
-        new LoggerMock(),
-        downloadServiceMock,
-        {} as IExtensionRetriever,
-        {} as ISummaryProviderService,
-        {} as IUriAdapter,
-        {} as IMarkdownStringAdapter,
-        {} as IVSCodeCommands,
-        {} as IDiagnosticsIssueProvider<unknown>,
-      );
+      languageServer = createFakeLanguageServer(mockLanguageClientAdapter, {} as IVSCodeWorkspace);
     });
 
-    test('LanguageServer should provide empty folder configs when no folder configs were received', async () => {
-      const expectedInitializationOptions: ServerSettings = {
-        activateSnykCodeSecurity: 'true',
-        enableDeltaFindings: 'false',
-        activateSnykOpenSource: 'false',
-        activateSnykIac: 'true',
-        token: 'testToken',
-        cliPath: 'testPath',
-        sendErrorReports: 'true',
-        integrationName: 'VS_CODE',
-        integrationVersion: '0.0.0',
-        automaticAuthentication: 'false',
-        endpoint: undefined,
-        organization: undefined,
-        additionalParams: '--all-projects -d',
-        manageBinariesAutomatically: 'true',
-        deviceId: user.anonymousId,
-        filterSeverity: DEFAULT_SEVERITY_FILTER,
-        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
-        enableTrustedFoldersFeature: 'true',
-        trustedFolders: ['/trusted/test/folder'],
-        insecure: 'true',
-        requiredProtocolVersion: PROTOCOL_VERSION.toString(),
-        scanningMode: 'auto',
-        folderConfigs: [],
-        authenticationMethod: 'oauth',
-        enableSnykOSSQuickFixCodeActions: 'true',
-        hoverVerbosity: 1,
-      };
-
-      deepStrictEqual(await languageServer.getInitializationOptions(), expectedInitializationOptions);
-    });
-
-    test('LanguageServer should include folder configs when they have been received from language server', async () => {
-      // Setup a sample folder config
-      const sampleFolderConfig: FolderConfig = {
-        folderPath: '/test/path',
-        baseBranch: 'main',
-        localBranches: ['main', 'develop'],
-        referenceFolderPath: undefined,
-      };
-      configurationMock.getFolderConfigs = () => [sampleFolderConfig];
-
-      // Simulate language server notification about folder configs
-      // This is normally done in the registerListeners method when receiving a notification
-      // Access private field via type assertion to LanguageServer with private field type
-      LanguageServer.ReceivedFolderConfigsFromLs = true;
-
-      // Create expected initialization options with the folder config included
-      const expectedInitializationOptions: ServerSettings = {
-        activateSnykCodeSecurity: 'true',
-        enableDeltaFindings: 'false',
-        activateSnykOpenSource: 'false',
-        activateSnykIac: 'true',
-        token: 'testToken',
-        cliPath: 'testPath',
-        sendErrorReports: 'true',
-        integrationName: 'VS_CODE',
-        integrationVersion: '0.0.0',
-        automaticAuthentication: 'false',
-        endpoint: undefined,
-        organization: undefined,
-        additionalParams: '--all-projects -d',
-        manageBinariesAutomatically: 'true',
-        deviceId: user.anonymousId,
-        filterSeverity: DEFAULT_SEVERITY_FILTER,
-        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
-        enableTrustedFoldersFeature: 'true',
-        trustedFolders: ['/trusted/test/folder'],
-        insecure: 'true',
-        requiredProtocolVersion: PROTOCOL_VERSION.toString(),
-        scanningMode: 'auto',
-        folderConfigs: [sampleFolderConfig],
-        authenticationMethod: 'oauth',
-        enableSnykOSSQuickFixCodeActions: 'true',
-        hoverVerbosity: 1,
-      };
-      const initializationOptions = await languageServer.getInitializationOptions();
+    teardown(() => {
       LanguageServer.ReceivedFolderConfigsFromLs = false;
-      deepStrictEqual(initializationOptions, expectedInitializationOptions);
+    });
+
+    const tcs: {
+      name: string;
+      folderConfigs: FolderConfig[];
+      simulateReceivedFolderConfigsFromLs: boolean;
+    }[] = [
+      {
+        name: 'LanguageServer should provide empty folder configs when no folder configs were received',
+        folderConfigs: [],
+        simulateReceivedFolderConfigsFromLs: false,
+      },
+      {
+        name: 'LanguageServer should include folder configs when they have been received from language server',
+        folderConfigs: [
+          {
+            folderPath: '/test/path',
+            baseBranch: 'main',
+            localBranches: ['main', 'develop'],
+            referenceFolderPath: undefined,
+            preferredOrg: 'irrelevant-org',
+          },
+        ],
+        simulateReceivedFolderConfigsFromLs: true,
+      },
+    ];
+    tcs.forEach(tc => {
+      test(tc.name, async () => {
+        // Setup folder configs mock
+        configurationMock.getFolderConfigs = () => tc.folderConfigs;
+
+        // Simulate language server notification about folder configs
+        // This is normally done in the registerListeners method when receiving a notification
+        LanguageServer.ReceivedFolderConfigsFromLs = tc.simulateReceivedFolderConfigsFromLs;
+
+        const expectedInitializationOptions: ServerSettings = {
+          activateSnykCodeSecurity: 'true',
+          enableDeltaFindings: 'false',
+          activateSnykOpenSource: 'false',
+          activateSnykIac: 'true',
+          token: 'testToken',
+          cliPath: 'testPath',
+          sendErrorReports: 'true',
+          integrationName: 'VS_CODE',
+          integrationVersion: '0.0.0',
+          automaticAuthentication: 'false',
+          endpoint: undefined,
+          organization: undefined,
+          additionalParams: '--all-projects -d',
+          manageBinariesAutomatically: 'true',
+          deviceId: user.anonymousId,
+          filterSeverity: DEFAULT_SEVERITY_FILTER,
+          issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+          enableTrustedFoldersFeature: 'true',
+          trustedFolders: ['/trusted/test/folder'],
+          insecure: 'true',
+          requiredProtocolVersion: PROTOCOL_VERSION.toString(),
+          scanningMode: 'auto',
+          folderConfigs: tc.folderConfigs,
+          authenticationMethod: 'oauth',
+          enableSnykOSSQuickFixCodeActions: 'true',
+          hoverVerbosity: 1,
+        };
+
+        const initializationOptions = await languageServer.getInitializationOptions();
+        deepStrictEqual(initializationOptions, expectedInitializationOptions);
+      });
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {
-      languageServer = new LanguageServer(
-        user,
-        configurationMock,
-        {} as ILanguageClientAdapter,
-        {} as IVSCodeWorkspace,
-        windowMock,
-        authServiceMock,
-        new LoggerMock(),
-        downloadServiceMock,
-        {} as IExtensionRetriever,
-        {} as ISummaryProviderService,
-        {} as IUriAdapter,
-        {} as IMarkdownStringAdapter,
-        {} as IVSCodeCommands,
-        {} as IDiagnosticsIssueProvider<unknown>,
-      );
-
       const initOptions = await languageServer.getInitializationOptions();
 
       strictEqual(initOptions.activateSnykCodeSecurity, `true`);
@@ -334,6 +285,145 @@ suite('Language Server', () => {
 
         assert.strictEqual(options.scanningMode, expectedScanningMode);
       });
+    });
+  });
+
+  suite('handleOrgSettingsFromFolderConfigs', () => {
+    let getWorkspaceFoldersStub: sinon.SinonStub;
+    let workspaceMock: IVSCodeWorkspace;
+    let setOrganizationStub: sinon.SinonStub;
+    let setAutoOrganizationStub: sinon.SinonStub;
+    let isAutoOrganizationEnabledStub: sinon.SinonStub;
+    let languageClientAdapter: ILanguageClientAdapter;
+
+    setup(() => {
+      setOrganizationStub = sinon.stub().resolves();
+      configurationMock.setOrganization = setOrganizationStub;
+      setAutoOrganizationStub = sinon.stub().resolves();
+      configurationMock.setAutoOrganization = setAutoOrganizationStub;
+      isAutoOrganizationEnabledStub = sinon.stub();
+      configurationMock.isAutoOrganizationEnabled = isAutoOrganizationEnabledStub;
+
+      languageClientAdapter = {
+        create: sinon.stub(),
+      } as unknown as ILanguageClientAdapter;
+
+      getWorkspaceFoldersStub = sinon.stub();
+      workspaceMock = {
+        getWorkspaceFolders: getWorkspaceFoldersStub,
+      } as unknown as IVSCodeWorkspace;
+
+      languageServer = createFakeLanguageServer(languageClientAdapter, workspaceMock);
+    });
+
+    const createFolderConfig = (folderPath: string, preferredOrg: string, orgSetByUser?: boolean): FolderConfig => ({
+      folderPath,
+      baseBranch: 'main',
+      localBranches: undefined,
+      referenceFolderPath: undefined,
+      preferredOrg,
+      orgSetByUser,
+    });
+
+    test('should set organization for matching workspace folders', () => {
+      const workspaceFolder1 = { uri: { fsPath: '/path/to/folder1' } };
+      const workspaceFolder2 = { uri: { fsPath: '/path/to/folder2' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder1, workspaceFolder2]);
+
+      const folderConfigs = [
+        createFolderConfig('/path/to/folder1', 'org-1'),
+        createFolderConfig('/path/to/folder2', 'org-2'),
+      ];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setOrganizationStub.callCount, 2);
+      strictEqual(setOrganizationStub.firstCall.args[0], workspaceFolder1);
+      strictEqual(setOrganizationStub.firstCall.args[1], 'org-1');
+      strictEqual(setOrganizationStub.secondCall.args[0], workspaceFolder2);
+      strictEqual(setOrganizationStub.secondCall.args[1], 'org-2');
+    });
+
+    test('should warn and skip folder configs without matching workspace folders', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+
+      const folderConfigs = [
+        createFolderConfig('/path/to/existing/folder', 'existing-org'),
+        createFolderConfig('/path/to/missing/folder', 'missing-org'),
+      ];
+
+      const loggerWarnSpy = sinon.spy(logger, 'warn');
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setOrganizationStub.callCount, 1);
+      strictEqual(setOrganizationStub.firstCall.args[1], 'existing-org');
+      strictEqual(loggerWarnSpy.callCount, 1);
+      strictEqual(loggerWarnSpy.firstCall.args[0], 'No workspace folder found for path: /path/to/missing/folder');
+    });
+
+    test('should handle empty string organization (unset)', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', '')];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setOrganizationStub.callCount, 1);
+      strictEqual(setOrganizationStub.firstCall.args[0], workspaceFolder);
+      strictEqual(setOrganizationStub.firstCall.args[1], '');
+    });
+
+    test('should set auto-organization to false when orgSetByUser is true and current is true', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+      isAutoOrganizationEnabledStub.returns(true);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', 'test-org', true)];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setAutoOrganizationStub.callCount, 1);
+      strictEqual(setAutoOrganizationStub.firstCall.args[0], workspaceFolder);
+      strictEqual(setAutoOrganizationStub.firstCall.args[1], false);
+    });
+
+    test('should set auto-organization to true when orgSetByUser is false and current is false', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+      isAutoOrganizationEnabledStub.returns(false);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', 'test-org', false)];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setAutoOrganizationStub.callCount, 1);
+      strictEqual(setAutoOrganizationStub.firstCall.args[0], workspaceFolder);
+      strictEqual(setAutoOrganizationStub.firstCall.args[1], true);
+    });
+
+    test('should not set auto-organization when value matches current setting', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+      isAutoOrganizationEnabledStub.returns(true);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', 'test-org', false)];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setAutoOrganizationStub.callCount, 0);
+    });
+
+    test('should not set auto-organization when orgSetByUser is undefined', () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', 'test-org', undefined)];
+
+      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setAutoOrganizationStub.callCount, 0);
     });
   });
 });

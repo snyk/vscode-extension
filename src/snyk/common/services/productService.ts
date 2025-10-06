@@ -106,7 +106,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   }
 
   get isAnyWorkspaceFolderTrusted(): boolean {
-    const workspacePaths = this.workspace.getWorkspaceFolders();
+    const workspacePaths = this.workspace.getWorkspaceFolderPaths();
     return this.workspaceTrust.getTrustedFolders(this.config, workspacePaths).length > 0;
   }
 

@@ -53,7 +53,7 @@ suite('Product Service', () => {
       {} as unknown as IProductWebviewProvider<Issue<MockProductData>>,
       viewManagerService,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,

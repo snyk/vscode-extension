@@ -7,6 +7,7 @@ import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
+  ADVANCED_AUTO_ORGANIZATION,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_BASE_DOWNLOAD_URL,
@@ -33,6 +34,7 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { WorkspaceFolder } from '../vscode/types';
 
 export const NEWISSUES = 'Net new issues';
 export const ALLISSUES = 'All issues';
@@ -56,6 +58,9 @@ export type FolderConfig = {
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
+  preferredOrg?: string;
+  orgMigratedFromGlobalConfig?: boolean;
+  orgSetByUser?: boolean;
 };
 
 export interface IssueViewOptions {
@@ -68,6 +73,12 @@ export interface IssueViewOptions {
 export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   ignoredIssues: true,
   openIssues: true,
+};
+
+export type SecurityAtInceptionConfig = {
+  autoConfigureMcpServer: boolean;
+  publishSecurityAtInceptionRules: boolean;
+  persistRulesInProjects: boolean;
 };
 
 export const DEFAULT_SECURITY_AT_INCEPTION: SecurityAtInceptionConfig = {
@@ -92,13 +103,9 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-export type PreviewFeatures = Record<string, never>;
+const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
 
-export type SecurityAtInceptionConfig = {
-  autoConfigureMcpServer: boolean;
-  publishSecurityAtInceptionRules: boolean;
-  persistRulesInProjects: boolean;
-};
+export type PreviewFeatures = Record<string, never>;
 
 export interface IConfiguration {
   shouldShowAdvancedView: boolean;
@@ -126,11 +133,21 @@ export interface IConfiguration {
 
   setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void>;
 
+  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig;
+
   clearToken(): Promise<void>;
 
   snykCodeUrl: string;
 
   organization: string | undefined;
+
+  isAutoOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean;
+
+  setAutoOrganization(workspaceFolder: WorkspaceFolder, autoOrganization: boolean): Promise<void>;
+
+  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
+
+  setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
   getAdditionalCliParameters(): string | undefined;
 
@@ -187,7 +204,8 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
-  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig;
+
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined;
 }
 
 export class Configuration implements IConfiguration {
@@ -550,8 +568,57 @@ export class Configuration implements IConfiguration {
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
+  /**
+   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
+   */
+  isAutoOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
+    return (
+      this.workspace.getConfiguration<boolean>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(ADVANCED_AUTO_ORGANIZATION),
+        workspaceFolder,
+      ) ?? DEFAULT_AUTO_ORGANIZATION
+    );
+  }
+
+  /**
+   * Sets the auto organization setting at the workspace folder level.
+   */
+  async setAutoOrganization(workspaceFolder: WorkspaceFolder, autoOrganization: boolean): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTO_ORGANIZATION),
+      autoOrganization,
+      workspaceFolder,
+    );
+  }
+
+  /**
+   * Gets the organization setting from the global & workspace scopes only.
+   */
   get organization(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
+  }
+
+  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      workspaceFolder,
+    );
+  }
+
+  /**
+   * Sets the organization at the workspace folder level.
+   * If the empty string or undefined is provided, the organization will be cleared.
+   */
+  async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      organization === '' ? undefined : organization,
+      workspaceFolder,
+    );
   }
 
   getPreviewFeatures(): PreviewFeatures {
@@ -636,6 +703,19 @@ export class Configuration implements IConfiguration {
       this.inMemoryFolderConfigs,
       true,
     );
+  }
+
+  /**
+   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * Returns undefined if the setting is not specifically set at the folder level.
+   */
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
+    const inspectionResult = this.workspace.inspectConfiguration<T>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(configSettingName),
+      workspaceFolder,
+    );
+    return inspectionResult?.workspaceFolderValue;
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');

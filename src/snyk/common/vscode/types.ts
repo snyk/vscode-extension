@@ -31,6 +31,7 @@ export type SecretStorage = vscode.SecretStorage;
 export type SecretStorageChangeEvent = vscode.SecretStorageChangeEvent;
 export type Event<T> = vscode.Event<T>;
 export type Uri = vscode.Uri;
+export type WorkspaceFolder = vscode.WorkspaceFolder;
 export type MarkdownString = vscode.MarkdownString;
 export type CodeAction = vscode.CodeAction;
 export type CodeActionKind = vscode.CodeActionKind;

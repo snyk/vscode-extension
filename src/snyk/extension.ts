@@ -166,7 +166,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // set the workspace context so that the text to add folders is only shown if really the case
     // initializing after LS startup and just before scan is too late
-    const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
+    const workspacePaths = vsCodeWorkspace.getWorkspaceFolderPaths();
     await this.setWorkspaceContext(workspacePaths);
 
     this.user = await User.getAnonymous(this.context, Logger);

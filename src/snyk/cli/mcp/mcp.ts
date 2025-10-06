@@ -138,7 +138,8 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       const env: Env = {};
       const token = await configuration.getToken();
       const authMethod = configuration.getAuthenticationMethod();
-      if (configuration.organization) env.SNYK_CFG_ORG = configuration.organization;
+      const org = getOrganizationForMCP(configuration);
+      if (org) env.SNYK_CFG_ORG = org;
       if (configuration.snykApiEndpoint) env.SNYK_API = configuration.snykApiEndpoint;
       if ((authMethod === 'pat' || authMethod === 'token') && token) {
         env.SNYK_TOKEN = token ?? '';
@@ -164,6 +165,19 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
   } catch {
     Logger.error('Failed to publish Cursor rules');
   }
+}
+
+/**
+ * Organization can be per workspace folder, but we will just query each workspace folder in order until we find one (which may fall back to a higher scope).
+ */
+function getOrganizationForMCP(configuration: IConfiguration): string | undefined {
+  for (const workspaceFolder of vscode.workspace.workspaceFolders ?? []) {
+    const org = configuration.getOrganization(workspaceFolder);
+    if (org) {
+      return org;
+    }
+  }
+  return undefined;
 }
 
 async function ensureMcpServerInJson(
@@ -240,23 +254,27 @@ async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: st
     void vscode.window.showInformationMessage('No workspace folder found. Local rules require an open workspace.');
     return;
   }
-  for (const folder of folders) {
-    const root = folder.uri.fsPath;
-    const rulesPath = path.join(root, relativeRulesPath);
-    await fs.promises.mkdir(path.dirname(rulesPath), { recursive: true });
-    let existing = '';
-    try {
-      existing = await fs.promises.readFile(rulesPath, 'utf8');
-    } catch {
-      // ignore
-    }
-    if (existing !== rulesContent) {
-      await fs.promises.writeFile(rulesPath, rulesContent, 'utf8');
-      Logger.debug(`Wrote local rules to ${rulesPath}`);
-    } else {
-      Logger.debug(`Local rules already up to date at ${rulesPath}.`);
-    }
-  }
+  await folders.reduce(
+    (promise, folder) =>
+      promise.then(async () => {
+        const root = folder.uri.fsPath;
+        const rulesPath = path.join(root, relativeRulesPath);
+        await fs.promises.mkdir(path.dirname(rulesPath), { recursive: true });
+        let existing = '';
+        try {
+          existing = await fs.promises.readFile(rulesPath, 'utf8');
+        } catch {
+          // ignore
+        }
+        if (existing !== rulesContent) {
+          await fs.promises.writeFile(rulesPath, rulesContent, 'utf8');
+          Logger.debug(`Wrote local rules to ${rulesPath}`);
+        } else {
+          Logger.debug(`Local rules already up to date at ${rulesPath}.`);
+        }
+      }),
+    Promise.resolve(),
+  );
 }
 
 function getCopilotGlobalRulesPath(isInsiders: boolean): string {
@@ -291,8 +309,9 @@ async function writeGlobalRules(targetFile: string, rulesContent: string): Promi
 
 async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   const env: Env = {};
-  if (configuration.organization) {
-    env.SNYK_CFG_ORG = configuration.organization;
+  const org = getOrganizationForMCP(configuration);
+  if (org) {
+    env.SNYK_CFG_ORG = org;
   }
   if (configuration.snykApiEndpoint) {
     env.SNYK_API = configuration.snykApiEndpoint;

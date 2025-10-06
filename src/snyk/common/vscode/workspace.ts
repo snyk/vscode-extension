@@ -1,23 +1,49 @@
 import * as vscode from 'vscode';
 import { TextDocumentChangeEvent } from 'vscode';
-import { TextDocument, Uri } from './types';
+import { TextDocument, Uri, WorkspaceFolder } from './types';
 
 export interface IVSCodeWorkspace {
   fs: vscode.FileSystem;
 
-  getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined;
+  getConfiguration<T>(
+    configurationIdentifier: string,
+    section: string,
+    workspaceFolder?: WorkspaceFolder,
+  ): T | undefined;
+
+  inspectConfiguration<T>(
+    configurationIdentifier: string,
+    section: string,
+    workspaceFolder?: WorkspaceFolder,
+  ):
+    | {
+        globalValue?: T;
+        workspaceValue?: T;
+        workspaceFolderValue?: T;
+        defaultValue?: T;
+      }
+    | undefined;
+
   updateConfiguration(
     configurationIdentifier: string,
     section: string,
     value: unknown,
-    configurationTarget?: boolean,
+    configurationTarget?: boolean | WorkspaceFolder,
     overrideInLanguage?: boolean,
   ): Promise<void>;
-  getWorkspaceFolders(): string[];
+
+  getWorkspaceFolders(): readonly WorkspaceFolder[];
+
+  getWorkspaceFolderPaths(): string[];
+
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
+
   onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
+
   openFileTextDocument(fileName: string): Promise<TextDocument>;
+
   openTextDocument(options?: { language?: string; content?: string }): Promise<TextDocument>;
+
   openTextDocumentViaUri(uri: Uri): Promise<TextDocument>;
 }
 
@@ -25,20 +51,46 @@ export interface IVSCodeWorkspace {
  * A wrapper class for the vscode.workspace to provide centralised access to dealing with the current workspace.
  */
 export class VSCodeWorkspace implements IVSCodeWorkspace {
-  getConfiguration<T>(configurationIdentifier: string, section: string): T | undefined {
-    return vscode.workspace.getConfiguration(configurationIdentifier).get(section);
+  getConfiguration<T>(
+    configurationIdentifier: string,
+    section: string,
+    workspaceFolder?: WorkspaceFolder,
+  ): T | undefined {
+    return vscode.workspace.getConfiguration(configurationIdentifier, workspaceFolder).get(section);
+  }
+
+  inspectConfiguration<T>(
+    configurationIdentifier: string,
+    section: string,
+    workspaceFolder?: WorkspaceFolder,
+  ):
+    | {
+        globalValue?: T;
+        workspaceValue?: T;
+        workspaceFolderValue?: T;
+        defaultValue?: T;
+      }
+    | undefined {
+    return vscode.workspace.getConfiguration(configurationIdentifier, workspaceFolder).inspect(section);
   }
 
   updateConfiguration(
     configurationIdentifier: string,
     section: string,
     value: unknown,
-    configurationTarget?: boolean,
+    configurationTarget?: boolean | WorkspaceFolder,
     overrideInLanguage?: boolean,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
+      let workspaceFolder: WorkspaceFolder | undefined;
+      if (typeof configurationTarget === 'object') {
+        // configurationTarget is a WorkspaceFolder - set at folder level
+        workspaceFolder = configurationTarget;
+        configurationTarget = undefined; // undefined == folder level
+      }
+
       vscode.workspace
-        .getConfiguration(configurationIdentifier)
+        .getConfiguration(configurationIdentifier, workspaceFolder)
         .update(section, value, configurationTarget, overrideInLanguage)
         .then(
           () => resolve(),
@@ -47,8 +99,12 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
     });
   }
 
-  getWorkspaceFolders(): string[] {
-    return (vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath);
+  getWorkspaceFolders(): readonly WorkspaceFolder[] {
+    return vscode.workspace.workspaceFolders || [];
+  }
+
+  getWorkspaceFolderPaths(): string[] {
+    return this.getWorkspaceFolders().map(f => f.uri.fsPath);
   }
 
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher {

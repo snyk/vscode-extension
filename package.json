@@ -69,6 +69,7 @@
         "order": 1,
         "properties": {
           "snyk.advanced.authenticationMethod": {
+            "order": 1,
             "type": "string",
             "default": "OAuth2 (Recommended)",
             "description": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security.",
@@ -85,6 +86,7 @@
             "markdownDescription": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security."
           },
           "snyk.advanced.tokenStorage": {
+            "order": 3,
             "type": "string",
             "enum": [
               "Always use VS Code's secret storage"
@@ -93,18 +95,27 @@
             "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
           },
           "snyk.advanced.customEndpoint": {
+            "order": 2,
             "type": "string",
             "markdownDescription": "If you're using SSO with Snyk and OAuth2, the custom endpoint configuration is automatically populated. \n\nOtherwise, for public regional instances, see our [documentation](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
+          "snyk.advanced.autoOrganization": {
+            "order": 4,
+            "type": "boolean",
+            "markdownDescription": "Use automatic organization selection, where the most suitable organization for your project is selected from the organizations you have access to which have the project imported, falling back to the preferred organization as defined in your [web account settings](https://app.snyk.io/account).\n\nIf you do not use this feature, then you will need to manually specify an organization ID in the [organization settings text box](vscode://settings/snyk.advanced.organization).",
+            "scope": "resource",
+            "default": true
+          },
           "snyk.advanced.organization": {
+            "order": 5,
             "type": "string",
-            "markdownDescription": "Specifies an organization ID to run tests for that organization.\n\nRetrieve the organization ID from the organization settings in the Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` and copy the ID from the **Organization ID** section.\n\nNote: If not specified, the preferred organization as defined in your [web account settings](https://app.snyk.io/account) is used to run tests.",
-            "scope": "window"
+            "markdownDescription": "Specifies an organization ID to run tests for that organization.\n\nRetrieve the organization ID from the organization settings in the Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` and copy the ID from the **Organization ID** section.\n\nSpecifying an org manually will disable [automatic organization selection](vscode://settings/snyk.advanced.autoOrganization). If [automatic organization selection](vscode://settings/snyk.advanced.autoOrganization) is enabled at a workspace folder level, then this field will show the organization ID that has been automatically selected.\n\nIf this field is blank and automatic organization selection is disabled, then the preferred organization from your [web account settings](https://app.snyk.io/account) will be used.",
+            "scope": "resource"
           },
           "snyk.yesCrashReport": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphbetically",
+            "order": 6,
             "type": "boolean",
             "default": true,
             "markdownDescription": "Send error reports to Snyk",
@@ -220,7 +231,6 @@
           },
           "snyk.yesBackgroundOssNotification": {
             "order": 3,
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
             "type": "boolean",
             "default": true,
             "markdownDescription": "Show scan notification for critical Open Source Security issues when Snyk view is hidden",
@@ -308,13 +318,14 @@
         "order": 5,
         "properties": {
           "snyk.yesWelcomeNotification": {
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
+            "order": 2,
             "type": "boolean",
             "default": true,
             "markdownDescription": "Show welcome notification after installation and restart",
             "scope": "application"
           },
           "snyk.trustedFolders": {
+            "order": 1,
             "type": "array",
             "default": [],
             "description": "Folders to trust for Snyk scans."
