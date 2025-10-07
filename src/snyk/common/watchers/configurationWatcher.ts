@@ -28,9 +28,10 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
 import { handleSecurityAtInceptionChange } from '../configuration/securityAtInceptionHandler';
+import { User } from '../user';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(private readonly logger: ILog) {}
+  constructor(private readonly logger: ILog, private readonly user: User) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ORGANIZATION) {
@@ -66,7 +67,7 @@ class ConfigurationWatcher implements IWatcher {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
     } else if (key === SECURITY_AT_INCEPTION) {
-      return handleSecurityAtInceptionChange(extension, this.logger);
+      return handleSecurityAtInceptionChange(extension, this.logger, this.user);
     }
 
     // from here on only for OSS and trusted folders

@@ -8,7 +8,7 @@ import { AnalyticsSender } from '../analytics/AnalyticsSender';
 import { AnalyticsEvent } from '../analytics/AnalyticsEvent';
 import { vsCodeCommands } from '../vscode/commands';
 
-export async function handleSecurityAtInceptionChange(extension: IExtension, logger: ILog): Promise<void> {
+export async function handleSecurityAtInceptionChange(extension: IExtension, logger: ILog, user: User): Promise<void> {
     if (!extension.context) {
         return;
     }
@@ -33,7 +33,7 @@ export async function handleSecurityAtInceptionChange(extension: IExtension, log
 
     const analyticsPromises = fields
         .filter(field => currentConfig[field] !== previousConfig[field])
-        .map(field => sendConfigChangedAnalytics(extension, logger, field, previousConfig[field], currentConfig[field]));
+        .map(field => sendConfigChangedAnalytics(extension, logger, user, field, previousConfig[field], currentConfig[field]));
 
     await Promise.all(analyticsPromises);
 }
@@ -41,6 +41,7 @@ export async function handleSecurityAtInceptionChange(extension: IExtension, log
 async function sendConfigChangedAnalytics(
     extension: IExtension,
     logger: ILog,
+    user: User,
     field: keyof SecurityAtInceptionConfig,
     oldValue: boolean,
     newValue: boolean,
@@ -48,8 +49,6 @@ async function sendConfigChangedAnalytics(
     if (!extension.context) {
         return;
     }
-
-    const user = await User.getAnonymous(extension.context, logger);
     const analyticsSender = AnalyticsSender.getInstance(logger, configuration, vsCodeCommands, extension.contextService);
 
     const event = new AnalyticsEvent(user.anonymousId, 'Config changed', []);
