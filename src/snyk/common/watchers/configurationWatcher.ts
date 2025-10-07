@@ -28,6 +28,7 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { vsCodeWorkspace } from '../vscode/workspace';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
+import { LanguageServer } from '../languageServer/languageServer';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
@@ -40,7 +41,7 @@ class ConfigurationWatcher implements IWatcher {
     if (key === ADVANCED_AUTO_ORGANIZATION) {
       return this.syncFolderConfigAutoOrgOnChange(event);
     } else if (key === ADVANCED_ORGANIZATION) {
-      await this.syncFolderConfigOrgOnWorkspaceFolderOrgSettingChanged(event);
+      await this.syncFolderConfigPreferredOrgOnWorkspaceFolderOrgSettingChanged(event);
       return extension.setupFeatureFlags();
     } else if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
@@ -153,7 +154,7 @@ class ConfigurationWatcher implements IWatcher {
     await configuration.setFolderConfigs(updatedFolderConfigs);
   }
 
-  private async syncFolderConfigOrgOnWorkspaceFolderOrgSettingChanged(
+  private async syncFolderConfigPreferredOrgOnWorkspaceFolderOrgSettingChanged(
     event: vscode.ConfigurationChangeEvent,
   ): Promise<void> {
     const affectedWorkspaceFolders = vsCodeWorkspace
@@ -172,11 +173,19 @@ class ConfigurationWatcher implements IWatcher {
         return folderConfig;
       }
 
+      // Skip updates triggered by LS displaying org from folder configs
+      if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
+        return folderConfig;
+      }
+
       const orgValueAtFolderLevel = configuration.getConfigurationAtFolderLevelOnly<string>(
         ADVANCED_ORGANIZATION,
         workspaceFolder,
       );
 
+      // Update preferredOrg with the new value
+      // Note: We could set orgSetByUser=true here when detecting a user change from auto-org mode,
+      // but we let LS handle it - LS will detect the preferredOrg change and set orgSetByUser=true
       return {
         ...folderConfig,
         preferredOrg: orgValueAtFolderLevel ?? '',

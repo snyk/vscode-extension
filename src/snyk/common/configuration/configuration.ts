@@ -58,9 +58,10 @@ export type FolderConfig = {
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
-  preferredOrg?: string;
-  orgMigratedFromGlobalConfig?: boolean;
   orgSetByUser?: boolean;
+  preferredOrg?: string;
+  autoDeterminedOrg?: string;
+  orgMigratedFromGlobalConfig?: boolean;
 };
 
 export interface IssueViewOptions {

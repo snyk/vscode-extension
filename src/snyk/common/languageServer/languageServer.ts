@@ -49,6 +49,14 @@ export class LanguageServer implements ILanguageServer {
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
   public static ReceivedFolderConfigsFromLs = false;
+  // Track folder paths where LS is updating org settings to prevent circular updates
+  private static foldersBeingUpdatedByLS = new Set<string>();
+  // Track folder paths that have received configs from LS (for merge logic on first receipt)
+  private static folderConfigsReceivedFromLS = new Set<string>();
+
+  static isLSUpdatingOrg(folderPath: string): boolean {
+    return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
+  }
 
   constructor(
     private user: User,
@@ -197,12 +205,31 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
-      LanguageServer.ReceivedFolderConfigsFromLs = true;
-      this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
+      // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
+      const processedFolderConfigs = folderConfigs.map(folderConfig => {
+        const isFirstReceipt = !LanguageServer.folderConfigsReceivedFromLS.has(folderConfig.folderPath);
+
+        if (isFirstReceipt) {
+          // First time receiving config for this folder - merge VS Code settings into LS config
+          LanguageServer.folderConfigsReceivedFromLS.add(folderConfig.folderPath);
+          return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
+        }
+
+        // Subsequent receipt - return as-is (will be handled by handleOrgSettingsFromFolderConfigs)
+        return folderConfig;
       });
 
-      this.handleOrgSettingsFromFolderConfigs(folderConfigs);
+      // Update org settings in VS Code UI to reflect the current state
+      this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
+
+      // Set global flag after first folder config received (used for initialization options)
+      if (!LanguageServer.ReceivedFolderConfigsFromLs) {
+        LanguageServer.ReceivedFolderConfigsFromLs = true;
+      }
+
+      this.configuration.setFolderConfigs(processedFolderConfigs).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
+      });
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
@@ -249,16 +276,28 @@ export class LanguageServer implements ILanguageServer {
         return;
       }
 
-      this.configuration.setOrganization(workspaceFolder, folderConfig.preferredOrg).then(
-        () => {
-          this.logger.debug(
-            `Set organization "${folderConfig.preferredOrg}" for workspace folder: ${folderConfig.folderPath}`,
-          );
-        },
-        error => {
-          this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
-        },
-      );
+      const orgToDisplay = folderConfig.orgSetByUser
+        ? folderConfig.preferredOrg
+        : folderConfig.autoDeterminedOrg;
+
+      // Mark this folder as being updated by LS to prevent circular updates in the watcher
+      LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
+
+      this.configuration.setOrganization(workspaceFolder, orgToDisplay)
+        .then(
+          () => {
+            this.logger.debug(
+              `Set organization "${orgToDisplay}" for workspace folder: ${folderConfig.folderPath} (orgSetByUser: ${folderConfig.orgSetByUser})`,
+            );
+          },
+          error => {
+            this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
+          },
+        )
+        .finally(() => {
+          // Clear the flag after update completes (whether success or error)
+          LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
+        });
 
       // Set auto-organization at workspace folder level only if the desired value differs from
       // the current configuration value when querying all levels (folder, workspace, global, default).
@@ -280,6 +319,20 @@ export class LanguageServer implements ILanguageServer {
         }
       }
     });
+  }
+
+  private mergeOrgSettingsIntoLSFolderConfig(folderConfig: FolderConfig): FolderConfig {
+    const workspaceFolder = this.workspace.getWorkspaceFolder(folderConfig.folderPath);
+    if (!workspaceFolder) {
+      // LS must be crazy, we don't know of this folder, so we will just store it as-is.
+      return folderConfig;
+    }
+
+    return {
+      ...folderConfig,
+      preferredOrg: this.configuration.getOrganization(workspaceFolder),
+      orgSetByUser: !this.configuration.isAutoOrganizationEnabled(workspaceFolder),
+    };
   }
 
   async stop(): Promise<void> {

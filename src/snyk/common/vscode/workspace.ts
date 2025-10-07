@@ -36,6 +36,8 @@ export interface IVSCodeWorkspace {
 
   getWorkspaceFolderPaths(): string[];
 
+  getWorkspaceFolder(folderPath: string): WorkspaceFolder | undefined;
+
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
 
   onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
@@ -105,6 +107,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
 
   getWorkspaceFolderPaths(): string[] {
     return this.getWorkspaceFolders().map(f => f.uri.fsPath);
+  }
+
+  getWorkspaceFolder(folderPath: string): WorkspaceFolder | undefined {
+    return this.getWorkspaceFolders().find(f => f.uri.fsPath === folderPath);
   }
 
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher {
