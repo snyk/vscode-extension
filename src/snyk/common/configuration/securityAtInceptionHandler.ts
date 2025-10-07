@@ -9,55 +9,55 @@ import { AnalyticsEvent } from '../analytics/AnalyticsEvent';
 import { vsCodeCommands } from '../vscode/commands';
 
 export async function handleSecurityAtInceptionChange(extension: IExtension, logger: ILog): Promise<void> {
-  if (!extension.context) {
-    return;
-  }
+    if (!extension.context) {
+        return;
+    }
 
-  const currentConfig = configuration.getSecurityAtInceptionConfig();
-  let previousConfig = extension.context.getGlobalStateValue<SecurityAtInceptionConfig>(
-    MEMENTO_SECURITY_AT_INCEPTION_CONFIG,
-  );
+    const currentConfig = configuration.getSecurityAtInceptionConfig();
+    let previousConfig = extension.context.getGlobalStateValue<SecurityAtInceptionConfig>(
+        MEMENTO_SECURITY_AT_INCEPTION_CONFIG,
+    );
 
-  // Persist current config to memento
-  await extension.context.updateGlobalStateValue(MEMENTO_SECURITY_AT_INCEPTION_CONFIG, currentConfig);
+    // Persist current config to memento
+    await extension.context.updateGlobalStateValue(MEMENTO_SECURITY_AT_INCEPTION_CONFIG, currentConfig);
 
-  if (!previousConfig) {
-    previousConfig = DEFAULT_SECURITY_AT_INCEPTION;
-  }
+    if (!previousConfig) {
+        previousConfig = DEFAULT_SECURITY_AT_INCEPTION;
+    }
 
-  const fields: Array<keyof SecurityAtInceptionConfig> = [
-    'autoConfigureMcpServer',
-    'publishSecurityAtInceptionRules',
-    'persistRulesInProjects',
-  ];
+    const fields: Array<keyof SecurityAtInceptionConfig> = [
+        'autoConfigureMcpServer',
+        'publishSecurityAtInceptionRules',
+        'persistRulesInProjects',
+    ];
 
-  const analyticsPromises = fields
-    .filter(field => currentConfig[field] !== previousConfig[field])
-    .map(field => sendConfigChangedAnalytics(extension, logger, field, previousConfig[field], currentConfig[field]));
+    const analyticsPromises = fields
+        .filter(field => currentConfig[field] !== previousConfig[field])
+        .map(field => sendConfigChangedAnalytics(extension, logger, field, previousConfig[field], currentConfig[field]));
 
-  await Promise.all(analyticsPromises);
+    await Promise.all(analyticsPromises);
 }
 
 async function sendConfigChangedAnalytics(
-  extension: IExtension,
-  logger: ILog,
-  field: keyof SecurityAtInceptionConfig,
-  oldValue: boolean,
-  newValue: boolean,
+    extension: IExtension,
+    logger: ILog,
+    field: keyof SecurityAtInceptionConfig,
+    oldValue: boolean,
+    newValue: boolean,
 ): Promise<void> {
-  if (!extension.context) {
-    return;
-  }
+    if (!extension.context) {
+        return;
+    }
 
-  const user = await User.getAnonymous(extension.context, logger);
-  const analyticsSender = AnalyticsSender.getInstance(logger, configuration, vsCodeCommands, extension.contextService);
+    const user = await User.getAnonymous(extension.context, logger);
+    const analyticsSender = AnalyticsSender.getInstance(logger, configuration, vsCodeCommands, extension.contextService);
 
-  const event = new AnalyticsEvent(user.anonymousId, 'Config changed', []);
-  event.getExtension().set(`config::securityAtInception::${field}::oldValue`, oldValue);
-  event.getExtension().set(`config::securityAtInception::${field}::newValue`, newValue);
+    const event = new AnalyticsEvent(user.anonymousId, 'Config changed', []);
+    event.getExtension().set(`config::securityAtInception::${field}::oldValue`, oldValue);
+    event.getExtension().set(`config::securityAtInception::${field}::newValue`, newValue);
 
-  analyticsSender.logEvent(event, () => {
-    logger.info(`Analytics event sent for config change: securityAtInception.${field}`);
-  });
+    analyticsSender.logEvent(event, () => {
+        logger.info(`Analytics event sent for config change: securityAtInception.${field}`);
+    });
 }
 
