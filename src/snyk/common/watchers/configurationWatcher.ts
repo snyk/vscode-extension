@@ -19,6 +19,7 @@ import {
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   CODE_SECURITY_ENABLED_SETTING,
+  SECURITY_AT_INCEPTION,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -26,6 +27,7 @@ import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
+import { handleSecurityAtInceptionChange } from '../configuration/securityAtInceptionHandler';
 
 class ConfigurationWatcher implements IWatcher {
   constructor(private readonly logger: ILog) {}
@@ -63,6 +65,8 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
+    } else if (key === SECURITY_AT_INCEPTION) {
+      return handleSecurityAtInceptionChange(extension, this.logger);
     }
 
     // from here on only for OSS and trusted folders
@@ -96,6 +100,7 @@ class ConfigurationWatcher implements IWatcher {
         ISSUE_VIEW_OPTIONS_SETTING,
         DELTA_FINDINGS,
         FOLDER_CONFIGS,
+        SECURITY_AT_INCEPTION,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {
