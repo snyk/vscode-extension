@@ -42,9 +42,6 @@ function sendConfigChangedAnalytics(
   oldValue: boolean,
   newValue: boolean,
 ): void {
-  if (!extension.context) {
-    return;
-  }
   const analyticsSender = AnalyticsSender.getInstance(logger, configuration, vsCodeCommands, extension.contextService);
 
   const event = new AnalyticsEvent(user.anonymousId, 'Config changed', []);
