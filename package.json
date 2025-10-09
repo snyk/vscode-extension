@@ -262,37 +262,34 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
-          "snyk.securityAtInception": {
+          "snyk.securityAtInception.autoConfigureMcpServer": {
             "order": 3,
-            "type": "object",
-            "default": {
-              "autoConfigureMcpServer": false,
-              "publishSecurityAtInceptionRules": false,
-              "persistRulesInProjects": false
-            },
-            "properties": {
-              "autoConfigureMcpServer": {
-                "type": "boolean",
-                "description": "Configure Snyk MCP server",
-                "default": false
-              },
-              "publishSecurityAtInceptionRules": {
-                "type": "boolean",
-                "description": "Publish Security at Inception rules",
-                "default": false
-              },
-              "persistRulesInProjects": {
-                "type": "boolean",
-                "description": "Write Snyk rules to current project. False will write it globally to user profile.",
-                "default": false
-              }
-            },
-            "additionalProperties": false,
-            "markdownDescription": "Configure Snyk MCP server, publish Security at Inception rules, and use project rules or global rules. Works for GitHub Copilot, Windsurf and Cursor.",
+            "type": "boolean",
+            "description": "Configure Snyk MCP server",
+            "default": false,
+            "markdownDescription": "Configure Snyk MCP server",
+            "scope": "window"
+          },
+          "snyk.securityAtInception.secureAtInceptionExecutionFrequency": {
+            "order": 4,
+            "type": "string",
+            "description": "Choose when Snyk should scan and initiate fixes for your AI-generated code",
+            "default": "Manual",
+            "enum": [
+              "On Code Generation",
+              "Smart Scan",
+              "Manual"
+            ],
+            "enumDescriptions": [
+              "Executes scans and guides the agent to fix newly introduced vulnerabilities when the agent generates new code",
+              "Similar to \"On Code Generation\" but leverages AI to determine when a security check is warranted in a given agent interaction",
+              "The remediation of newly introduced issues will only take place when the agent is manually prompted to scan and fix security issues"
+            ],
+            "markdownDescription": "Choose when Snyk should scan and initiate fixes for your AI-generated code",
             "scope": "window"
           },
           "snyk.features.preview": {
-            "order": 4,
+            "order": 5,
             "type": "object",
             "default": {},
             "title": "Preview feature toggles",
