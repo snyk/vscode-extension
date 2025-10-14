@@ -39,8 +39,8 @@ function sendConfigChangedAnalytics(
   logger: ILog,
   user: User,
   field: keyof SecurityAtInceptionConfig,
-  oldValue: boolean,
-  newValue: boolean,
+  oldValue: string | boolean,
+  newValue: string | boolean,
 ): void {
   const analyticsSender = AnalyticsSender.getInstance(logger, configuration, vsCodeCommands, extension.contextService);
 
