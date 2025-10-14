@@ -72,8 +72,7 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
 
 export const DEFAULT_SECURITY_AT_INCEPTION: SecurityAtInceptionConfig = {
   autoConfigureMcpServer: false,
-  persistRulesInProjects: false,
-  publishSecurityAtInceptionRules: false,
+  secureAtInceptionExecutionFrequency: 'Manual',
 };
 
 export interface SeverityFilter {
@@ -96,8 +95,7 @@ export type PreviewFeatures = Record<string, never>;
 
 export type SecurityAtInceptionConfig = {
   autoConfigureMcpServer: boolean;
-  publishSecurityAtInceptionRules: boolean;
-  persistRulesInProjects: boolean;
+  secureAtInceptionExecutionFrequency: string;
 };
 
 export interface IConfiguration {

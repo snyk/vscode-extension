@@ -4,7 +4,6 @@ import { Logger } from '../../common/logger/logger';
 import * as fs from 'fs';
 import * as os from 'os';
 import path from 'path';
-import { deleteDelimitedBlock, upsertDelimitedBlock } from './text';
 
 type Env = Record<string, string>;
 interface McpServer {
@@ -17,8 +16,6 @@ interface McpConfig {
 }
 
 const SERVER_KEY = 'Snyk';
-const RULE_START = '<!--###BEGIN SNYK GLOBAL RULE###-->';
-const RULE_END = '<!--###END SNYK GLOBAL RULE###-->';
 
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   const appName = vscode.env.appName.toLowerCase();
@@ -82,21 +79,14 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
 
   // Rules publishing for Copilot
   const filePath = path.join('.github', 'instructions', 'snyk_rules.instructions.md');
-  const isInsiders = vscode.env.appName.toLowerCase().includes('insiders');
-  const globalPath = getCopilotGlobalRulesPath(isInsiders);
   try {
-    if (!securityAtInception.publishSecurityAtInceptionRules) {
-      // Delete rules from both project and global
+    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
+      // Delete rules from project
       await deleteLocalRulesForIde(filePath);
-      await deleteGlobalRules(globalPath);
       return;
     }
     const rulesContent = await readBundledRules(vscodeContext);
-    if (securityAtInception.persistRulesInProjects) {
-      await writeLocalRulesForIde(filePath, rulesContent);
-    } else {
-      await writeGlobalRules(globalPath, rulesContent);
-    }
+    await writeLocalRulesForIde(filePath, rulesContent);
   } catch {
     Logger.error('Failed to publish Copilot rules');
   }
@@ -121,21 +111,15 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
     Logger.error('Failed to update Windsurf MCP config');
   }
 
-  const globalPath = path.join(os.homedir(), '.codeium', 'windsurf', 'memories', 'global_rules.md');
   const localPath = path.join('.windsurf', 'rules', 'snyk_rules.md');
   try {
-    if (!securityAtInception.publishSecurityAtInceptionRules) {
-      // Delete rules from both project and global
+    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
+      // Delete rules from project
       await deleteLocalRulesForIde(localPath);
-      await deleteGlobalRules(globalPath);
       return;
     }
     const rulesContent = await readBundledRules(vscodeContext);
-    if (securityAtInception.persistRulesInProjects) {
-      await writeLocalRulesForIde(localPath, rulesContent);
-    } else {
-      await writeGlobalRules(globalPath, rulesContent);
-    }
+    await writeLocalRulesForIde(localPath, rulesContent);
   } catch {
     Logger.error('Failed to publish Windsurf rules');
   }
@@ -157,19 +141,13 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
   }
 
   try {
-    if (!securityAtInception.publishSecurityAtInceptionRules) {
+    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
       // Delete rules from project (Cursor doesn't support global rules)
       await deleteLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'));
       return;
     }
     const rulesContent = await readBundledRules(vscodeContext);
-    if (securityAtInception.persistRulesInProjects) {
-      await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
-    } else {
-      void vscode.window.showInformationMessage(
-        'Cursor does not support filesystem based global rules. Only project rules can be persisted.',
-      );
-    }
+    await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
   } catch {
     Logger.error('Failed to publish Cursor rules');
   }
@@ -268,36 +246,6 @@ async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: st
   }
 }
 
-function getCopilotGlobalRulesPath(isInsiders: boolean): string {
-  const isWindows = process.platform === 'win32';
-  const isMac = process.platform === 'darwin';
-  const codeDirName = isInsiders ? 'Code - Insiders' : 'Code';
-  const base = isWindows
-    ? path.join(os.homedir(), 'AppData', 'Roaming', codeDirName, 'User', 'prompts')
-    : isMac
-    ? path.join(os.homedir(), 'Library', 'Application Support', codeDirName, 'User', 'prompts')
-    : path.join(os.homedir(), '.config', codeDirName, 'User', 'prompts');
-  return path.join(base, 'snyk_instructions.md');
-}
-
-async function writeGlobalRules(targetFile: string, rulesContent: string): Promise<void> {
-  await fs.promises.mkdir(path.dirname(targetFile), { recursive: true });
-  const block = `${RULE_START}\n${rulesContent.trim()}\n${RULE_END}\n`;
-  let current = '';
-  try {
-    current = await fs.promises.readFile(targetFile, 'utf8');
-  } catch {
-    // file may not exist yet
-  }
-  const updated = upsertDelimitedBlock(current, RULE_START, RULE_END, block);
-  if (updated !== current) {
-    await fs.promises.writeFile(targetFile, updated, 'utf8');
-    Logger.debug(`Upserted delimited global rules into ${targetFile}`);
-  } else {
-    Logger.debug(`Delimited global rules already up to date at ${targetFile}.`);
-  }
-}
-
 async function deleteLocalRulesForIde(relativeRulesPath: string): Promise<void> {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) {
@@ -314,24 +262,6 @@ async function deleteLocalRulesForIde(relativeRulesPath: string): Promise<void> 
     } catch (err) {
       Logger.debug(`Failed to delete local rules from ${rulesPath}: ${err}`);
     }
-  }
-}
-
-async function deleteGlobalRules(targetFile: string): Promise<void> {
-  try {
-    if (!fs.existsSync(targetFile)) {
-      return;
-    }
-    const current = await fs.promises.readFile(targetFile, 'utf8');
-    const updated = deleteDelimitedBlock(current, RULE_START, RULE_END);
-
-    if (updated !== current) {
-      // Write the file without the delimited block
-      await fs.promises.writeFile(targetFile, updated, 'utf8');
-      Logger.debug(`Removed delimited global rules from ${targetFile}`);
-    }
-  } catch (err) {
-    Logger.debug(`Failed to delete global rules from ${targetFile}: ${err}`);
   }
 }
 
