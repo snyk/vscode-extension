@@ -218,7 +218,10 @@ async function ensureMcpServerInJson(
 }
 
 async function readBundledRules(vsCodeContext: vscode.ExtensionContext): Promise<string> {
-  return await fs.promises.readFile(path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules.md'), 'utf8');
+  return await fs.promises.readFile(
+    path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules_always_apply.md'),
+    'utf8',
+  );
 }
 
 async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: string): Promise<void> {
