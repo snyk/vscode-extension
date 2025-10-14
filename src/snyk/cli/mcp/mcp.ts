@@ -212,13 +212,13 @@ async function ensureMcpServerInJson(
   const existing = config.mcpServers[keyToUse];
   const desired: McpServer = { command, args, env };
 
-  // Merge env: keep existing keys; override Snyk keys only if already present
+  // Merge env: keep existing keys; add or override Snyk keys
   let resultingEnv: Env;
   if (existing && existing.env) {
     resultingEnv = { ...existing.env };
-    const overrideKeys: (keyof Env)[] = ['SNYK_TOKEN', 'SNYK_CFG_ORG', 'SNYK_API'];
+    const overrideKeys: (keyof Env)[] = ['SNYK_CFG_ORG', 'SNYK_API', 'IDE_CONFIG_PATH', 'TRUSTED_FOLDERS'];
     for (const k of overrideKeys) {
-      if (Object.hasOwn(existing.env, k) && typeof env[k] !== 'undefined') {
+      if (typeof env[k] !== 'undefined') {
         resultingEnv[k] = env[k];
       }
     }
@@ -347,11 +347,7 @@ async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   if (trustedFolders.length > 0) {
     env.TRUSTED_FOLDERS = trustedFolders.join(';');
   }
-  const token = await configuration.getToken();
-  const authMethod = configuration.getAuthenticationMethod();
-  if ((authMethod === 'pat' || authMethod === 'token') && token) {
-    env.SNYK_TOKEN = token;
-  }
+  env.IDE_CONFIG_PATH = vscode.env.appName;
 
   return env;
 }
