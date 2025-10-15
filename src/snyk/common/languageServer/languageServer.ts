@@ -301,22 +301,21 @@ export class LanguageServer implements ILanguageServer {
 
       // Set auto-organization at workspace folder level only if the desired value differs from
       // the current configuration value when querying all levels (folder, workspace, global, default).
-      if (folderConfig.orgSetByUser !== undefined) {
-        const desiredAutoOrg = !folderConfig.orgSetByUser;
-        const currentAutoOrg = this.configuration.isAutoOrganizationEnabled(workspaceFolder);
+      // Unless the desired auto-org is true (selected), then it shoulf be written at the folder level.
+      const desiredAutoOrg = !folderConfig.orgSetByUser;
+      const currentAutoOrg = this.configuration.isAutoOrganizationEnabled(workspaceFolder);
 
-        if (desiredAutoOrg !== currentAutoOrg) {
-          this.configuration.setAutoOrganization(workspaceFolder, desiredAutoOrg).then(
-            () => {
-              this.logger.debug(
-                `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
-              );
-            },
-            error => {
-              this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
-            },
-          );
-        }
+      if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
+        this.configuration.setAutoOrganization(workspaceFolder, desiredAutoOrg).then(
+          () => {
+            this.logger.debug(
+              `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
+            );
+          },
+          error => {
+            this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
+          },
+        );
       }
     });
   }
@@ -328,11 +327,19 @@ export class LanguageServer implements ILanguageServer {
       return folderConfig;
     }
 
-    return {
-      ...folderConfig,
-      preferredOrg: this.configuration.getOrganization(workspaceFolder),
-      orgSetByUser: !this.configuration.isAutoOrganizationEnabled(workspaceFolder),
-    };
+    const orgSetByUser = !this.configuration.isAutoOrganizationEnabled(workspaceFolder);
+    if (orgSetByUser) {
+      return {
+        ...folderConfig,
+        preferredOrg: this.configuration.getOrganizationAtWorkspaceFolderLevel(workspaceFolder) ?? "",
+        orgSetByUser: true,
+      };
+    } else {
+      return {
+        ...folderConfig,
+        orgSetByUser: false,
+      };
+    }
   }
 
   async stop(): Promise<void> {

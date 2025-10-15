@@ -58,10 +58,10 @@ export type FolderConfig = {
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
-  orgSetByUser?: boolean;
-  preferredOrg?: string;
-  autoDeterminedOrg?: string;
-  orgMigratedFromGlobalConfig?: boolean;
+  orgSetByUser: boolean;
+  preferredOrg: string;
+  autoDeterminedOrg: string;
+  orgMigratedFromGlobalConfig: boolean;
 };
 
 export interface IssueViewOptions {
@@ -147,6 +147,8 @@ export interface IConfiguration {
   setAutoOrganization(workspaceFolder: WorkspaceFolder, autoOrganization: boolean): Promise<void>;
 
   getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
+
+  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined;
 
   setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
@@ -607,6 +609,14 @@ export class Configuration implements IConfiguration {
       this.getConfigName(ADVANCED_ORGANIZATION),
       workspaceFolder,
     );
+  }
+
+  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined {
+    return this.workspace.inspectConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      workspaceFolder,
+    )?.workspaceFolderValue;
   }
 
   /**
