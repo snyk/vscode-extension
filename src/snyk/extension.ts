@@ -27,6 +27,7 @@ import {
   SNYK_START_COMMAND,
   SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
+  SNYK_SHOW_SECURITY_LEVEL_MODAL_COMMAND,
 } from './common/constants/commands';
 import {
   SNYK_CONTEXT,
@@ -173,7 +174,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
     configuration.setExtensionId(vscodeContext.extension.id);
-    this.configurationWatcher = new ConfigurationWatcher(Logger, this.user);
+    this.configurationWatcher = new ConfigurationWatcher(Logger, this.user, vscodeContext);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
@@ -563,6 +564,25 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND, () => {
         const err = this.contextService.viewContext[SNYK_CONTEXT.ERROR] as Error;
         void this.notificationService.showErrorNotification(err.message);
+      }),
+      vscode.commands.registerCommand(SNYK_SHOW_SECURITY_LEVEL_MODAL_COMMAND, async () => {
+        const options = ['Yes', 'Not now'] as const;
+
+        const picked = await vscode.window.showInformationMessage(
+          'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+          {
+            modal: true,
+            detail:
+              "Consider enabling this if you're using an AI agent in your IDE. You can customize the scan frequency on Snyk Security's settings page",
+          },
+          ...options,
+        );
+
+        if (picked) {
+          await vscode.workspace
+            .getConfiguration('snyk.securityAtInception')
+            .update('autoConfigureMcpServer', picked, vscode.ConfigurationTarget.Global);
+        }
       }),
     );
   }

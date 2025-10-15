@@ -24,7 +24,8 @@ import {
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
   SCANNING_MODE,
-  SECURITY_AT_INCEPTION,
+  AUTO_CONFIGURE_MCP_SERVER,
+  SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
@@ -70,8 +71,11 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   openIssues: true,
 };
 
-export const DEFAULT_SECURITY_AT_INCEPTION: SecurityAtInceptionConfig = {
+export const DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG: AutoConfigureMcpServerConfig = {
   autoConfigureMcpServer: false,
+};
+
+export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG: SecureAtInceptionExecutionFrequencyConfig = {
   secureAtInceptionExecutionFrequency: 'Manual',
 };
 
@@ -93,8 +97,11 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
 
 export type PreviewFeatures = Record<string, never>;
 
-export type SecurityAtInceptionConfig = {
+export type AutoConfigureMcpServerConfig = {
   autoConfigureMcpServer: boolean;
+};
+
+export type SecureAtInceptionExecutionFrequencyConfig = {
   secureAtInceptionExecutionFrequency: string;
 };
 
@@ -185,7 +192,10 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
-  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig;
+
+  getAutoConfigureMcpServerConfig(): AutoConfigureMcpServerConfig;
+
+  getSecureAtInceptionExecutionFrequencyConfig(): SecureAtInceptionExecutionFrequencyConfig;
 }
 
 export class Configuration implements IConfiguration {
@@ -228,13 +238,27 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  getSecurityAtInceptionConfig(): SecurityAtInceptionConfig {
-    const config = this.workspace.getConfiguration<SecurityAtInceptionConfig>(
+  getAutoConfigureMcpServerConfig(): AutoConfigureMcpServerConfig {
+    const value = this.workspace.getConfiguration<boolean>(
       CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SECURITY_AT_INCEPTION),
+      this.getConfigName(AUTO_CONFIGURE_MCP_SERVER),
     );
 
-    return config ?? DEFAULT_SECURITY_AT_INCEPTION;
+    return {
+      autoConfigureMcpServer: value ?? DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG.autoConfigureMcpServer,
+    };
+  }
+
+  getSecureAtInceptionExecutionFrequencyConfig(): SecureAtInceptionExecutionFrequencyConfig {
+    const value = this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY),
+    );
+
+    return {
+      secureAtInceptionExecutionFrequency:
+        value ?? DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG.secureAtInceptionExecutionFrequency,
+    };
   }
 
   async getCliReleaseChannel(): Promise<string> {

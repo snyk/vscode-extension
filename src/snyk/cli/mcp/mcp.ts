@@ -38,9 +38,10 @@ export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, 
 }
 
 export async function configureCopilot(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const securityAtInception = configuration.getSecurityAtInceptionConfig();
+  const autoConfigureMcpServer = configuration.getAutoConfigureMcpServerConfig();
+  const secureAtInceptionExecutionFrequency = configuration.getSecureAtInceptionExecutionFrequencyConfig();
   try {
-    if (securityAtInception.autoConfigureMcpServer) {
+    if (autoConfigureMcpServer.autoConfigureMcpServer) {
       vscodeContext.subscriptions.push(
         /* eslint-disable @typescript-eslint/no-unsafe-argument */
         /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -80,7 +81,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
   // Rules publishing for Copilot
   const filePath = path.join('.github', 'instructions', 'snyk_rules.instructions.md');
   try {
-    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
+    if (secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency === 'Manual') {
       // Delete rules from project
       await deleteLocalRulesForIde(filePath);
       return;
@@ -93,9 +94,10 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
 }
 
 export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const securityAtInception = configuration.getSecurityAtInceptionConfig();
+  const autoConfigureMcpServer = configuration.getAutoConfigureMcpServerConfig();
+  const secureAtInceptionExecutionFrequency = configuration.getSecureAtInceptionExecutionFrequencyConfig();
   try {
-    if (securityAtInception.autoConfigureMcpServer) {
+    if (autoConfigureMcpServer.autoConfigureMcpServer) {
       const baseDir = path.join(os.homedir(), '.codeium', 'windsurf');
       const configPath = path.join(baseDir, 'mcp_config.json');
       if (!fs.existsSync(baseDir)) {
@@ -113,7 +115,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
 
   const localPath = path.join('.windsurf', 'rules', 'snyk_rules.md');
   try {
-    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
+    if (secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency === 'Manual') {
       // Delete rules from project
       await deleteLocalRulesForIde(localPath);
       return;
@@ -126,9 +128,10 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
 }
 
 export async function configureCursor(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
-  const securityAtInception = configuration.getSecurityAtInceptionConfig();
+  const autoConfigureMcpServer = configuration.getAutoConfigureMcpServerConfig();
+  const secureAtInceptionExecutionFrequency = configuration.getSecureAtInceptionExecutionFrequencyConfig();
   try {
-    if (securityAtInception.autoConfigureMcpServer) {
+    if (autoConfigureMcpServer.autoConfigureMcpServer) {
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
       const env = await getSnykMcpEnv(configuration);
@@ -141,7 +144,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
   }
 
   try {
-    if (securityAtInception.secureAtInceptionExecutionFrequency === 'Manual') {
+    if (secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency === 'Manual') {
       // Delete rules from project (Cursor doesn't support global rules)
       await deleteLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'));
       return;

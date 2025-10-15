@@ -36,6 +36,7 @@ export const SNYK_GENERATE_ISSUE_DESCRIPTION = 'snyk.generateIssueDescription';
 export const SNYK_REPORT_ANALYTICS = 'snyk.reportAnalytics';
 export const SNYK_EXECUTE_MCP_TOOL_COMMAND = 'snyk.executeMCPToolCall';
 export const SNYK_SUBMIT_IGNORE_COMMAND = 'snyk.submitIgnoreRequest';
+export const SNYK_SHOW_SECURITY_LEVEL_MODAL_COMMAND = 'snyk.showSecurityLevelModal';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

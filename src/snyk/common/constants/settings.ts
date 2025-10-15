@@ -30,4 +30,5 @@ export const FOLDER_CONFIGS = `${CONFIGURATION_IDENTIFIER}.folderConfigs`;
 export const SCANNING_MODE = `${CONFIGURATION_IDENTIFIER}.scanningMode`;
 
 export const DELTA_FINDINGS = `${CONFIGURATION_IDENTIFIER}.allIssuesVsNetNewIssues`;
-export const SECURITY_AT_INCEPTION = `${CONFIGURATION_IDENTIFIER}.securityAtInception`;
+export const AUTO_CONFIGURE_MCP_SERVER = `${CONFIGURATION_IDENTIFIER}.securityAtInception.autoConfigureMcpServer`;
+export const SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY = `${CONFIGURATION_IDENTIFIER}.securityAtInception.secureAtInceptionExecutionFrequency`;
