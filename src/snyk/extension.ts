@@ -466,13 +466,13 @@ class SnykExtension extends SnykLib implements IExtension {
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
 
-    this.sendPluginInstalledEvent();
+    await this.sendPluginInstalledEvent();
 
     // Actually start analysis
     void this.runScan();
   }
 
-  private sendPluginInstalledEvent() {
+  private async sendPluginInstalledEvent() {
     // start analytics sender and send plugin installed event
     const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
 
@@ -486,6 +486,18 @@ class SnykExtension extends SnykLib implements IExtension {
       analyticsSender.logEvent(pluginInstalleEvent, () => {
         void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
       });
+
+      const options = ['Yes', 'Not now'] as const;
+      const picked = await vscode.window.showInformationMessage(
+        "Do you want to enable Snyk's AI Check service and the auto-scanning of your AI generated code?",
+        { modal: true, detail: "Once enabled, you can customize the scan frequency on Snyk Security's setting page" },
+        ...options,
+      );
+
+      if (picked) {
+        const frequency = picked === 'Yes' ? 'On Code Generation' : 'Manual';
+        await configuration.setSecureAtInceptionExecutionFrequency(frequency);
+      }
     }
   }
 

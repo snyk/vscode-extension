@@ -86,7 +86,10 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
       await deleteLocalRulesForIde(filePath);
       return;
     }
-    const rulesContent = await readBundledRules(vscodeContext);
+    const rulesContent = await readBundledRules(
+      vscodeContext,
+      secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
+    );
     await writeLocalRulesForIde(filePath, rulesContent);
   } catch {
     Logger.error('Failed to publish Copilot rules');
@@ -120,7 +123,10 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
       await deleteLocalRulesForIde(localPath);
       return;
     }
-    const rulesContent = await readBundledRules(vscodeContext);
+    const rulesContent = await readBundledRules(
+      vscodeContext,
+      secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
+    );
     await writeLocalRulesForIde(localPath, rulesContent);
   } catch {
     Logger.error('Failed to publish Windsurf rules');
@@ -149,7 +155,11 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       await deleteLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'));
       return;
     }
-    const rulesContent = await readBundledRules(vscodeContext);
+
+    const rulesContent = await readBundledRules(
+      vscodeContext,
+      secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
+    );
     await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
   } catch {
     Logger.error('Failed to publish Cursor rules');
@@ -220,11 +230,9 @@ async function ensureMcpServerInJson(
   await fs.promises.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
 }
 
-async function readBundledRules(vsCodeContext: vscode.ExtensionContext): Promise<string> {
-  return await fs.promises.readFile(
-    path.join(vsCodeContext.extensionPath, 'out', 'assets', 'snyk_rules_always_apply.md'),
-    'utf8',
-  );
+async function readBundledRules(vsCodeContext: vscode.ExtensionContext, frequency: string): Promise<string> {
+  const rulesFileName = frequency === 'Smart Scan' ? 'snyk_rules_smart_apply.md' : 'snyk_rules_always_apply.md';
+  return await fs.promises.readFile(path.join(vsCodeContext.extensionPath, 'out', 'assets', rulesFileName), 'utf8');
 }
 
 async function writeLocalRulesForIde(relativeRulesPath: string, rulesContent: string): Promise<void> {

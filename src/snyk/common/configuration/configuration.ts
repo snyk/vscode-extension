@@ -196,6 +196,8 @@ export interface IConfiguration {
   getAutoConfigureMcpServerConfig(): AutoConfigureMcpServerConfig;
 
   getSecureAtInceptionExecutionFrequencyConfig(): SecureAtInceptionExecutionFrequencyConfig;
+
+  setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -661,4 +663,13 @@ export class Configuration implements IConfiguration {
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
+
+  async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY),
+      frequency,
+      true,
+    );
+  }
 }
