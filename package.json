@@ -521,11 +521,6 @@
         "command": "snyk.clearPersistedCache",
         "title": "Clear Persisted Cache",
         "category": "Snyk"
-      },
-      {
-        "command": "snyk.showSecurityLevelModal",
-        "title": "Show Security Level Modal",
-        "category": "Snyk"
       }
     ]
   },
