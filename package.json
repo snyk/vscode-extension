@@ -270,7 +270,7 @@
             "markdownDescription": "Configure Snyk MCP server",
             "scope": "window"
           },
-          "snyk.securityAtInception.secureAtInceptionExecutionFrequency": {
+          "snyk.securityAtInception.executionFrequency": {
             "order": 4,
             "type": "string",
             "description": "Choose when Snyk should scan and initiate fixes for your AI-generated code",

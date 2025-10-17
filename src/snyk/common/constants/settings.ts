@@ -31,4 +31,4 @@ export const SCANNING_MODE = `${CONFIGURATION_IDENTIFIER}.scanningMode`;
 
 export const DELTA_FINDINGS = `${CONFIGURATION_IDENTIFIER}.allIssuesVsNetNewIssues`;
 export const AUTO_CONFIGURE_MCP_SERVER = `${CONFIGURATION_IDENTIFIER}.securityAtInception.autoConfigureSnykMcpServer`;
-export const SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY = `${CONFIGURATION_IDENTIFIER}.securityAtInception.secureAtInceptionExecutionFrequency`;
+export const SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY = `${CONFIGURATION_IDENTIFIER}.securityAtInception.executionFrequency`;
