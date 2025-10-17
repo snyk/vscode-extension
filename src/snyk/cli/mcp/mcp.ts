@@ -57,7 +57,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
             const cliPath = await configuration.getCliPath();
             /* eslint-disable @typescript-eslint/no-unsafe-return */
             const args = ['mcp', '-t', 'stdio'];
-            const snykEnv = await getSnykMcpEnv(configuration);
+            const snykEnv = getSnykMcpEnv(configuration);
             const processEnv: Env = {};
             Object.entries(process.env).forEach(([key, value]) => {
               processEnv[key] = value ?? '';
@@ -105,7 +105,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
         Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
       } else {
         const cliPath = await configuration.getCliPath();
-        const env = await getSnykMcpEnv(configuration);
+        const env = getSnykMcpEnv(configuration);
         await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
         Logger.debug(`Ensured Windsurf MCP config at ${configPath}`);
       }
@@ -136,7 +136,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
     if (autoConfigureMcpServer) {
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
-      const env = await getSnykMcpEnv(configuration);
+      const env = getSnykMcpEnv(configuration);
 
       await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
       Logger.debug(`Ensured Cursor MCP config at ${configPath}`);
@@ -198,13 +198,13 @@ async function ensureMcpServerInJson(
   const existing = config.mcpServers[keyToUse];
   const desired: McpServer = { command, args, env };
 
-  // Merge env: keep existing keys; override Snyk keys only if already present
+  // Merge env: keep existing keys; add or override Snyk keys
   let resultingEnv: Env;
   if (existing && existing.env) {
     resultingEnv = { ...existing.env };
-    const overrideKeys: (keyof Env)[] = ['SNYK_TOKEN', 'SNYK_CFG_ORG', 'SNYK_API'];
+    const overrideKeys: (keyof Env)[] = ['SNYK_CFG_ORG', 'SNYK_API', 'IDE_CONFIG_PATH', 'TRUSTED_FOLDERS'];
     for (const k of overrideKeys) {
-      if (Object.hasOwn(existing.env, k) && typeof env[k] !== 'undefined') {
+      if (typeof env[k] !== 'undefined') {
         resultingEnv[k] = env[k];
       }
     }
@@ -309,7 +309,7 @@ async function ensureInGitignore(patterns: string[]): Promise<void> {
   );
 }
 
-async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
+function getSnykMcpEnv(configuration: IConfiguration): Env {
   const env: Env = {};
   if (configuration.organization) {
     env.SNYK_CFG_ORG = configuration.organization;
@@ -321,11 +321,7 @@ async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
   if (trustedFolders.length > 0) {
     env.TRUSTED_FOLDERS = trustedFolders.join(';');
   }
-  const token = await configuration.getToken();
-  const authMethod = configuration.getAuthenticationMethod();
-  if ((authMethod === 'pat' || authMethod === 'token') && token) {
-    env.SNYK_TOKEN = token;
-  }
+  env.IDE_CONFIG_PATH = vscode.env.appName;
 
   return env;
 }
