@@ -57,7 +57,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
             const cliPath = await configuration.getCliPath();
             /* eslint-disable @typescript-eslint/no-unsafe-return */
             const args = ['mcp', '-t', 'stdio'];
-            const snykEnv = await getSnykMcpEnv(configuration);
+            const snykEnv = getSnykMcpEnv(configuration);
             const processEnv: Env = {};
             Object.entries(process.env).forEach(([key, value]) => {
               processEnv[key] = value ?? '';
@@ -105,7 +105,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
         Logger.debug(`Windsurf base directory not found at ${baseDir}, skipping MCP configuration.`);
       } else {
         const cliPath = await configuration.getCliPath();
-        const env = await getSnykMcpEnv(configuration);
+        const env = getSnykMcpEnv(configuration);
         await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
         Logger.debug(`Ensured Windsurf MCP config at ${configPath}`);
       }
@@ -136,7 +136,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
     if (autoConfigureMcpServer) {
       const configPath = path.join(os.homedir(), '.cursor', 'mcp.json');
       const cliPath = await configuration.getCliPath();
-      const env = await getSnykMcpEnv(configuration);
+      const env = getSnykMcpEnv(configuration);
 
       await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
       Logger.debug(`Ensured Cursor MCP config at ${configPath}`);
@@ -309,7 +309,7 @@ async function ensureInGitignore(patterns: string[]): Promise<void> {
   );
 }
 
-async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
+function getSnykMcpEnv(configuration: IConfiguration): Env {
   const env: Env = {};
   if (configuration.organization) {
     env.SNYK_CFG_ORG = configuration.organization;
