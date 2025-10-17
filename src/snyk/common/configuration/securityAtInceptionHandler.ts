@@ -26,10 +26,10 @@ export async function handleSecurityAtInceptionChange(
   const currentAutoConfigureMcpServerConfig = configuration.getAutoConfigureMcpServer();
   const currentSecureAtInceptionExecutionFrequencyConfig = configuration.getSecureAtInceptionExecutionFrequency();
 
-  let previousAutoConfigureMcpServerConfig =
+  const previousAutoConfigureMcpServerConfig =
     extension.context.getGlobalStateValue<boolean>(MEMENTO_AUTO_CONFIGURE_MCP_SERVER) ?? false;
 
-  let previousSecureAtInceptionExecutionFrequencyConfig =
+  const previousSecureAtInceptionExecutionFrequencyConfig =
     extension.context.getGlobalStateValue<string>(MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY) ??
     DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY;
 

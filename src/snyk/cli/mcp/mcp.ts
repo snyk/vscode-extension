@@ -86,10 +86,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
       await deleteLocalRulesForIde(filePath);
       return;
     }
-    const rulesContent = await readBundledRules(
-      vscodeContext,
-      secureAtInceptionExecutionFrequency,
-    );
+    const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(filePath, rulesContent);
     await ensureInGitignore([filePath]);
   } catch {
@@ -124,10 +121,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
       await deleteLocalRulesForIde(localPath);
       return;
     }
-    const rulesContent = await readBundledRules(
-      vscodeContext,
-      secureAtInceptionExecutionFrequency,
-    );
+    const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(localPath, rulesContent);
     await ensureInGitignore([localPath]);
   } catch {
@@ -159,10 +153,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       return;
     }
 
-    const rulesContent = await readBundledRules(
-      vscodeContext,
-      secureAtInceptionExecutionFrequency,
-    );
+    const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(cursorRulesPath, rulesContent);
     await ensureInGitignore([cursorRulesPath]);
   } catch {

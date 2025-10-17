@@ -465,7 +465,7 @@ class SnykExtension extends SnykLib implements IExtension {
     // feature flags depend on the language server
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
-    
+
     await this.sendPluginInstalledEvent();
 
     // Actually start analysis
@@ -489,8 +489,12 @@ class SnykExtension extends SnykLib implements IExtension {
 
       const options = ['Yes'] as const;
       const picked = await vscode.window.showInformationMessage(
-        "Do you want to enable Snyk to automatically scan and secure AI generated code?",
-        { modal: true, detail: " Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page." },
+        'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+        {
+          modal: true,
+          detail:
+            ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
+        },
         ...options,
       );
 
