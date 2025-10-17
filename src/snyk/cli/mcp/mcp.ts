@@ -297,10 +297,14 @@ async function ensureInGitignore(patterns: string[]): Promise<void> {
       try {
         content = await fs.promises.readFile(gitignorePath, 'utf8');
       } catch {
-        // .gitignore doesn't exist yet, will create it
+        Logger.debug(`.gitignore does not exist at ${gitignorePath}`);
+        return;
       }
 
-      const missing = patterns.filter(p => !content.includes(p));
+      // Split into lines handling both \n and \r\n
+      const lines = content.split(/\r?\n/);
+      const missing = patterns.filter(p => !lines.some(line => line.trim() === p.trim()));
+      
       if (missing.length === 0) {
         Logger.debug(`Snyk rules already in .gitignore at ${gitignorePath}`);
         return;
