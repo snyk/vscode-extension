@@ -1,5 +1,6 @@
 ---
 alwaysApply: false
+trigger: model_decision
 description: BEFORE declaring task complete and IF there are significant code changes: ensure best security practices are met
 ---
 

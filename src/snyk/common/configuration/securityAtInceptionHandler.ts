@@ -1,14 +1,10 @@
 import { IExtension } from '../../base/modules/interfaces';
 import { ILog } from '../logger/interfaces';
 import { configuration } from './instance';
+import { DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY } from './configuration';
 import {
-  DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG,
-  AutoConfigureMcpServerConfig,
-  SecureAtInceptionExecutionFrequencyConfig,
-} from './configuration';
-import {
-  MEMENTO_AUTO_CONFIGURE_MCP_SERVER_CONFIG,
-  MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG,
+  MEMENTO_AUTO_CONFIGURE_MCP_SERVER,
+  MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY,
 } from '../constants/globalState';
 import { User } from '../user';
 import { AnalyticsSender } from '../analytics/AnalyticsSender';
@@ -27,72 +23,47 @@ export async function handleSecurityAtInceptionChange(
     return;
   }
 
-  const currentAutoConfigureMcpServerConfig = configuration.getAutoConfigureMcpServerConfig();
-  const currentSecureAtInceptionExecutionFrequencyConfig = configuration.getSecureAtInceptionExecutionFrequencyConfig();
+  const currentAutoConfigureMcpServerConfig = configuration.getAutoConfigureMcpServer();
+  const currentSecureAtInceptionExecutionFrequencyConfig = configuration.getSecureAtInceptionExecutionFrequency();
 
-  let previousAutoConfigureMcpServerConfig = extension.context.getGlobalStateValue<AutoConfigureMcpServerConfig>(
-    MEMENTO_AUTO_CONFIGURE_MCP_SERVER_CONFIG,
-  );
+  let previousAutoConfigureMcpServerConfig =
+    extension.context.getGlobalStateValue<boolean>(MEMENTO_AUTO_CONFIGURE_MCP_SERVER) ?? false;
 
   let previousSecureAtInceptionExecutionFrequencyConfig =
-    extension.context.getGlobalStateValue<SecureAtInceptionExecutionFrequencyConfig>(
-      MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG,
+    extension.context.getGlobalStateValue<string>(MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY) ??
+    DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY;
+
+  if (currentAutoConfigureMcpServerConfig !== previousAutoConfigureMcpServerConfig) {
+    await extension.context.updateGlobalStateValue(
+      MEMENTO_AUTO_CONFIGURE_MCP_SERVER,
+      currentAutoConfigureMcpServerConfig,
     );
 
-  await extension.context.updateGlobalStateValue(
-    MEMENTO_AUTO_CONFIGURE_MCP_SERVER_CONFIG,
-    currentAutoConfigureMcpServerConfig,
-  );
-  await extension.context.updateGlobalStateValue(
-    MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG,
-    currentSecureAtInceptionExecutionFrequencyConfig,
-  );
-
-  if (!previousAutoConfigureMcpServerConfig) {
-    previousAutoConfigureMcpServerConfig = { autoConfigureMcpServer: false };
+    sendConfigChangedAnalytics(
+      extension,
+      logger,
+      user,
+      'autoConfigureSnykMcpServer',
+      previousAutoConfigureMcpServerConfig,
+      currentAutoConfigureMcpServerConfig,
+    );
   }
 
-  if (!previousSecureAtInceptionExecutionFrequencyConfig) {
-    previousSecureAtInceptionExecutionFrequencyConfig = DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG;
+  if (currentSecureAtInceptionExecutionFrequencyConfig !== previousSecureAtInceptionExecutionFrequencyConfig) {
+    await extension.context.updateGlobalStateValue(
+      MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY,
+      currentSecureAtInceptionExecutionFrequencyConfig,
+    );
+
+    sendConfigChangedAnalytics(
+      extension,
+      logger,
+      user,
+      'secureAtInceptionExecutionFrequency',
+      previousSecureAtInceptionExecutionFrequencyConfig,
+      currentSecureAtInceptionExecutionFrequencyConfig,
+    );
   }
-
-  const autoConfigureMcpServerConfigFields = Object.keys(currentAutoConfigureMcpServerConfig) as Array<
-    keyof AutoConfigureMcpServerConfig
-  >;
-
-  const secureAtInceptionExecutionFrequencyConfigFields = Object.keys(
-    currentSecureAtInceptionExecutionFrequencyConfig,
-  ) as Array<keyof SecureAtInceptionExecutionFrequencyConfig>;
-
-  autoConfigureMcpServerConfigFields
-    .filter(field => currentAutoConfigureMcpServerConfig[field] !== previousAutoConfigureMcpServerConfig[field])
-    .forEach(field =>
-      sendConfigChangedAnalytics(
-        extension,
-        logger,
-        user,
-        field,
-        previousAutoConfigureMcpServerConfig[field],
-        currentAutoConfigureMcpServerConfig[field],
-      ),
-    );
-
-  secureAtInceptionExecutionFrequencyConfigFields
-    .filter(
-      field =>
-        currentSecureAtInceptionExecutionFrequencyConfig[field] !==
-        previousSecureAtInceptionExecutionFrequencyConfig[field],
-    )
-    .forEach(field =>
-      sendConfigChangedAnalytics(
-        extension,
-        logger,
-        user,
-        field,
-        previousSecureAtInceptionExecutionFrequencyConfig[field],
-        currentSecureAtInceptionExecutionFrequencyConfig[field],
-      ),
-    );
 
   await configureMcpHosts(vscodeContext, configuration);
 }
@@ -101,7 +72,7 @@ function sendConfigChangedAnalytics(
   extension: IExtension,
   logger: ILog,
   user: User,
-  field: keyof AutoConfigureMcpServerConfig | keyof SecureAtInceptionExecutionFrequencyConfig,
+  field: string,
   oldValue: boolean | string,
   newValue: boolean | string,
 ): void {

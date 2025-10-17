@@ -262,7 +262,7 @@
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
-          "snyk.securityAtInception.autoConfigureMcpServer": {
+          "snyk.securityAtInception.autoConfigureSnykMcpServer": {
             "order": 3,
             "type": "boolean",
             "description": "Configure Snyk MCP server",
