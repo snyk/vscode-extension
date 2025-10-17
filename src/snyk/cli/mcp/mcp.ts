@@ -91,6 +91,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
       secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
     );
     await writeLocalRulesForIde(filePath, rulesContent);
+    await ensureInGitignore([filePath]);
   } catch {
     Logger.error('Failed to publish Copilot rules');
   }
@@ -128,6 +129,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
       secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
     );
     await writeLocalRulesForIde(localPath, rulesContent);
+    await ensureInGitignore([localPath]);
   } catch {
     Logger.error('Failed to publish Windsurf rules');
   }
@@ -149,10 +151,11 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
     Logger.error('Failed to update Cursor MCP config');
   }
 
+  const cursorRulesPath = path.join('.cursor', 'rules', 'snyk_rules.mdc');
   try {
     if (secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency === 'Manual') {
       // Delete rules from project (Cursor doesn't support global rules)
-      await deleteLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'));
+      await deleteLocalRulesForIde(cursorRulesPath);
       return;
     }
 
@@ -160,7 +163,8 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
       vscodeContext,
       secureAtInceptionExecutionFrequency.secureAtInceptionExecutionFrequency,
     );
-    await writeLocalRulesForIde(path.join('.cursor', 'rules', 'snyk_rules.mdc'), rulesContent);
+    await writeLocalRulesForIde(cursorRulesPath, rulesContent);
+    await ensureInGitignore([cursorRulesPath]);
   } catch {
     Logger.error('Failed to publish Cursor rules');
   }
@@ -277,6 +281,41 @@ async function deleteLocalRulesForIde(relativeRulesPath: string): Promise<void> 
       Logger.debug(`Failed to delete local rules from ${rulesPath}: ${err}`);
     }
   }
+}
+
+async function ensureInGitignore(patterns: string[]): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    folders.map(async folder => {
+      const gitignorePath = path.join(folder.uri.fsPath, '.gitignore');
+      let content = '';
+
+      try {
+        content = await fs.promises.readFile(gitignorePath, 'utf8');
+      } catch {
+        Logger.debug(`.gitignore does not exist at ${gitignorePath}`);
+        return;
+      }
+
+      // Split into lines handling both \n and \r\n
+      const lines = content.split(/\r?\n/);
+      const missing = patterns.filter(p => !lines.some(line => line.trim() === p.trim()));
+      
+      if (missing.length === 0) {
+        Logger.debug(`Snyk rules already in .gitignore at ${gitignorePath}`);
+        return;
+      }
+
+      const addition = `\n# Snyk Security Extension - AI Rules (auto-generated)\n${missing.join('\n')}\n`;
+      const updated = content + addition;
+      await fs.promises.writeFile(gitignorePath, updated, 'utf8');
+      Logger.debug(`Added Snyk rules to .gitignore at ${gitignorePath}: ${missing.join(', ')}`);
+    }),
+  );
 }
 
 async function getSnykMcpEnv(configuration: IConfiguration): Promise<Env> {
