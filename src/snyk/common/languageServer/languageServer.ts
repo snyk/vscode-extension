@@ -301,7 +301,7 @@ export class LanguageServer implements ILanguageServer {
 
       // Set auto-organization at workspace folder level only if the desired value differs from
       // the current configuration value when querying all levels (folder, workspace, global, default).
-      // Unless the desired auto-org is true (selected), then it shoulf be written at the folder level.
+      // Unless the desired auto-org is true (selected), then it should be written at the folder level.
       const desiredAutoOrg = !folderConfig.orgSetByUser;
       const currentAutoOrg = this.configuration.isAutoOrganizationEnabled(workspaceFolder);
 

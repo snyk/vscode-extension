@@ -127,6 +127,9 @@ suite('Configuration', () => {
         localBranches: undefined,
         referenceFolderPath: undefined,
         preferredOrg: '',
+        orgSetByUser: false,
+        autoDeterminedOrg: 'irrelevant-org',
+        orgMigratedFromGlobalConfig: true,
       };
       await configuration.setFolderConfigs([initialFolderConfig]);
 
@@ -159,6 +162,9 @@ suite('Configuration', () => {
         localBranches: undefined,
         referenceFolderPath: undefined,
         preferredOrg: 'existing-org',
+        orgSetByUser: true,
+        autoDeterminedOrg: 'irrelevant-org',
+        orgMigratedFromGlobalConfig: true,
       };
       await configuration.setFolderConfigs([initialFolderConfig]);
 
@@ -207,6 +213,9 @@ suite('Configuration', () => {
         localBranches: undefined,
         referenceFolderPath: undefined,
         preferredOrg: 'org-1',
+        orgSetByUser: true,
+        autoDeterminedOrg: 'irrelevant-org',
+        orgMigratedFromGlobalConfig: true,
       };
       const folderConfig2 = {
         folderPath: '/path/to/different/folder',
@@ -214,6 +223,9 @@ suite('Configuration', () => {
         localBranches: undefined,
         referenceFolderPath: undefined,
         preferredOrg: 'org-2',
+        orgSetByUser: true,
+        autoDeterminedOrg: 'irrelevant-org',
+        orgMigratedFromGlobalConfig: true,
       };
       await configuration.setFolderConfigs([folderConfig1, folderConfig2]);
 
@@ -251,6 +263,9 @@ suite('Configuration', () => {
         localBranches: undefined,
         referenceFolderPath: undefined,
         preferredOrg: 'folder-org',
+        orgSetByUser: true,
+        autoDeterminedOrg: 'irrelevant-org',
+        orgMigratedFromGlobalConfig: true,
       };
       await configuration.setFolderConfigs([initialFolderConfig]);
 
@@ -309,6 +324,10 @@ suite('Configuration', () => {
         baseBranch: 'main',
         localBranches: undefined,
         referenceFolderPath: undefined,
+        preferredOrg: '',
+        orgSetByUser: false,
+        autoDeterminedOrg: '',
+        orgMigratedFromGlobalConfig: false,
       };
       await configuration.setFolderConfigs([unmigratedConfig]);
 
@@ -417,6 +436,10 @@ suite('Configuration', () => {
         baseBranch: 'main',
         localBranches: undefined,
         referenceFolderPath: undefined,
+        preferredOrg: '',
+        orgSetByUser: false,
+        autoDeterminedOrg: '',
+        orgMigratedFromGlobalConfig: false,
       };
 
       const unmigratedConfig2: FolderConfig = {
@@ -424,6 +447,10 @@ suite('Configuration', () => {
         baseBranch: 'main',
         localBranches: undefined,
         referenceFolderPath: undefined,
+        preferredOrg: '',
+        orgSetByUser: false,
+        autoDeterminedOrg: '',
+        orgMigratedFromGlobalConfig: false,
       };
 
       await configuration.setFolderConfigs([unmigratedConfig1, unmigratedConfig2]);
