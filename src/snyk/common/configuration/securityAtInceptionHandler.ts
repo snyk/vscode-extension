@@ -2,7 +2,6 @@ import { IExtension } from '../../base/modules/interfaces';
 import { ILog } from '../logger/interfaces';
 import { configuration } from './instance';
 import {
-  DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG,
   DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG,
   AutoConfigureMcpServerConfig,
   SecureAtInceptionExecutionFrequencyConfig,
@@ -50,7 +49,7 @@ export async function handleSecurityAtInceptionChange(
   );
 
   if (!previousAutoConfigureMcpServerConfig) {
-    previousAutoConfigureMcpServerConfig = DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG;
+    previousAutoConfigureMcpServerConfig = { autoConfigureMcpServer: false };
   }
 
   if (!previousSecureAtInceptionExecutionFrequencyConfig) {

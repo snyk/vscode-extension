@@ -487,7 +487,7 @@ class SnykExtension extends SnykLib implements IExtension {
         void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
       });
 
-      const options = ['Yes', 'Not now'] as const;
+      const options = ['Yes'] as const;
       const picked = await vscode.window.showInformationMessage(
         "Do you want to enable Snyk's AI Check service and the auto-scanning of your AI generated code?",
         { modal: true, detail: "Once enabled, you can customize the scan frequency on Snyk Security's setting page" },
@@ -496,7 +496,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
       if (picked) {
         const frequency = picked === 'Yes' ? 'On Code Generation' : 'Manual';
-        await configuration.setSecureAtInceptionExecutionFrequency(frequency);
+        await configuration.setAutoConfigureMcpServerConfig(true);
+        await configuration.setSecureAtInceptionExecutionFrequencyConfig(frequency);
       }
     }
   }

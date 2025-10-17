@@ -71,10 +71,6 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   openIssues: true,
 };
 
-export const DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG: AutoConfigureMcpServerConfig = {
-  autoConfigureMcpServer: false,
-};
-
 export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY_CONFIG: SecureAtInceptionExecutionFrequencyConfig = {
   secureAtInceptionExecutionFrequency: 'Manual',
 };
@@ -197,7 +193,9 @@ export interface IConfiguration {
 
   getSecureAtInceptionExecutionFrequencyConfig(): SecureAtInceptionExecutionFrequencyConfig;
 
-  setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void>;
+  setSecureAtInceptionExecutionFrequencyConfig(frequency: string): Promise<void>;
+
+  setAutoConfigureMcpServerConfig(autoConfigureMcpServer: boolean): Promise<void>;
 }
 
 export class Configuration implements IConfiguration {
@@ -247,7 +245,7 @@ export class Configuration implements IConfiguration {
     );
 
     return {
-      autoConfigureMcpServer: value ?? DEFAULT_AUTO_CONFIGURE_MCP_SERVER_CONFIG.autoConfigureMcpServer,
+      autoConfigureMcpServer: value ?? false,
     };
   }
 
@@ -664,11 +662,20 @@ export class Configuration implements IConfiguration {
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
 
-  async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {
+  async setSecureAtInceptionExecutionFrequencyConfig(frequency: string): Promise<void> {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY),
       frequency,
+      true,
+    );
+  }
+
+  async setAutoConfigureMcpServerConfig(autoConfigureMcpServer: boolean): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(AUTO_CONFIGURE_MCP_SERVER),
+      autoConfigureMcpServer,
       true,
     );
   }
