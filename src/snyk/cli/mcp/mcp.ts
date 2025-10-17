@@ -304,7 +304,7 @@ async function ensureInGitignore(patterns: string[]): Promise<void> {
       // Split into lines handling both \n and \r\n
       const lines = content.split(/\r?\n/);
       const missing = patterns.filter(p => !lines.some(line => line.trim() === p.trim()));
-      
+
       if (missing.length === 0) {
         Logger.debug(`Snyk rules already in .gitignore at ${gitignorePath}`);
         return;
