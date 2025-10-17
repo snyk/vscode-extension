@@ -81,7 +81,10 @@ import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
-import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
+import {
+  MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT,
+  MEMENTO_SECURE_AT_INCEPTION_MODAL,
+} from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
@@ -487,20 +490,26 @@ class SnykExtension extends SnykLib implements IExtension {
         void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
       });
 
-      const options = ['Yes'] as const;
-      const picked = await vscode.window.showInformationMessage(
-        'Do you want to enable Snyk to automatically scan and secure AI generated code?',
-        {
-          modal: true,
-          detail:
-            ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
-        },
-        ...options,
-      );
+      const secureAtInceptionModal =
+        extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
 
-      if (picked) {
-        await configuration.setAutoConfigureMcpServer(true);
-        await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
+      if (!secureAtInceptionModal) {
+        await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+        const options = ['Yes'] as const;
+        const picked = await vscode.window.showInformationMessage(
+          'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+          {
+            modal: true,
+            detail:
+              ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
+          },
+          ...options,
+        );
+
+        if (picked) {
+          await configuration.setAutoConfigureMcpServer(true);
+          await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
+        }
       }
     }
   }
