@@ -101,17 +101,17 @@
             "scope": "window",
             "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
           },
-          "snyk.advanced.autoOrganization": {
+          "snyk.advanced.autoSelectOrganization": {
             "order": 4,
             "type": "boolean",
-            "markdownDescription": "Use automatic organization selection, where the most suitable organization for your project is selected from the organizations you have access to which have the project imported, falling back to the preferred organization as defined in your [web account settings](https://app.snyk.io/account).\n\nIf you do not use this feature, then you will need to manually specify an organization ID in the [organization settings text box](vscode://settings/snyk.advanced.organization).",
+            "markdownDescription": "Use automatic organization selection. When enabled, Snyk will automatically select the most appropriate organization for your project using context found in your repository and your authentication. If an organization is configured manually, this feature will be overridden. If an appropriate organization cannot be identified automatically, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used as a fallback.",
             "scope": "resource",
             "default": true
           },
           "snyk.advanced.organization": {
             "order": 5,
             "type": "string",
-            "markdownDescription": "Specifies an organization ID to run tests for that organization.\n\nRetrieve the organization ID from the organization settings in the Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` and copy the ID from the **Organization ID** section.\n\nSpecifying an org manually will disable [automatic organization selection](vscode://settings/snyk.advanced.autoOrganization). If [automatic organization selection](vscode://settings/snyk.advanced.autoOrganization) is enabled at a workspace folder level, then this field will show the organization ID that has been automatically selected.\n\nIf this field is blank and automatic organization selection is disabled, then the preferred organization from your [web account settings](https://app.snyk.io/account) will be used.",
+            "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used.",
             "scope": "resource"
           },
           "snyk.yesCrashReport": {

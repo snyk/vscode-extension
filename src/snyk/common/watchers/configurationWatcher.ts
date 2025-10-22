@@ -7,7 +7,7 @@ import {
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CUSTOM_ENDPOINT,
-  ADVANCED_AUTO_ORGANIZATION,
+  ADVANCED_AUTO_SELECT_ORGANIZATION,
   ADVANCED_ORGANIZATION,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
@@ -38,7 +38,7 @@ class ConfigurationWatcher implements IWatcher {
     key: string,
     event: vscode.ConfigurationChangeEvent,
   ): Promise<void> {
-    if (key === ADVANCED_AUTO_ORGANIZATION) {
+    if (key === ADVANCED_AUTO_SELECT_ORGANIZATION) {
       return this.syncFolderConfigAutoOrgOnChange(event);
     } else if (key === ADVANCED_ORGANIZATION) {
       await this.syncFolderConfigPreferredOrgOnWorkspaceFolderOrgSettingChanged(event);
@@ -93,7 +93,7 @@ class ConfigurationWatcher implements IWatcher {
       const change = [
         ADVANCED_ADVANCED_MODE_SETTING,
         ADVANCED_AUTOSCAN_OSS_SETTING,
-        ADVANCED_AUTO_ORGANIZATION,
+        ADVANCED_AUTO_SELECT_ORGANIZATION,
         ADVANCED_ORGANIZATION,
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
@@ -128,7 +128,7 @@ class ConfigurationWatcher implements IWatcher {
   private async syncFolderConfigAutoOrgOnChange(event: vscode.ConfigurationChangeEvent): Promise<void> {
     const affectedWorkspaceFolders = vsCodeWorkspace
       .getWorkspaceFolders()
-      .filter(folder => event.affectsConfiguration(ADVANCED_AUTO_ORGANIZATION, folder));
+      .filter(folder => event.affectsConfiguration(ADVANCED_AUTO_SELECT_ORGANIZATION, folder));
 
     if (affectedWorkspaceFolders.length === 0) {
       return;
@@ -143,7 +143,7 @@ class ConfigurationWatcher implements IWatcher {
       }
 
       // Get the effective value considering all levels (global, workspace, folder)
-      const autoOrgEnabled = configuration.isAutoOrganizationEnabled(workspaceFolder);
+      const autoOrgEnabled = configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       return {
         ...folderConfig,

@@ -295,18 +295,18 @@ suite('Language Server', () => {
     let getWorkspaceFoldersStub: sinon.SinonStub;
     let workspaceMock: IVSCodeWorkspace;
     let setOrganizationStub: sinon.SinonStub;
-    let setAutoOrganizationStub: sinon.SinonStub;
-    let isAutoOrganizationEnabledStub: sinon.SinonStub;
+    let setAutoSelectOrganizationStub: sinon.SinonStub;
+    let isAutoSelectOrganizationEnabledStub: sinon.SinonStub;
     let languageClientAdapter: ILanguageClientAdapter;
     const AUTO_DETERMINED_ORG = 'auto-determined-org';
 
     setup(() => {
       setOrganizationStub = sinon.stub().resolves();
       configurationMock.setOrganization = setOrganizationStub;
-      setAutoOrganizationStub = sinon.stub().resolves();
-      configurationMock.setAutoOrganization = setAutoOrganizationStub;
-      isAutoOrganizationEnabledStub = sinon.stub();
-      configurationMock.isAutoOrganizationEnabled = isAutoOrganizationEnabledStub;
+      setAutoSelectOrganizationStub = sinon.stub().resolves();
+      configurationMock.setAutoSelectOrganization = setAutoSelectOrganizationStub;
+      isAutoSelectOrganizationEnabledStub = sinon.stub();
+      configurationMock.isAutoSelectOrganizationEnabled = isAutoSelectOrganizationEnabledStub;
 
       languageClientAdapter = {
         create: sinon.stub(),
@@ -347,7 +347,7 @@ suite('Language Server', () => {
 
       const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
       getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoOrganizationEnabledStub.returns(true);
+      isAutoSelectOrganizationEnabledStub.returns(true);
 
       const folderConfigs = testCases.map(tc =>
         createFolderConfig(tc.folderPath, tc.preferredOrg, true),
@@ -356,12 +356,12 @@ suite('Language Server', () => {
       languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoOrganizationStub.callCount, testCases.length);
+      strictEqual(setAutoSelectOrganizationStub.callCount, testCases.length);
       testCases.forEach((tc, index) => {
         strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
         strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
-        strictEqual(setAutoOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setAutoOrganizationStub.getCall(index).args[1], false);
+        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
+        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[1], false);
       });
     });
 
@@ -369,7 +369,7 @@ suite('Language Server', () => {
       test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, () => {
         const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
         getWorkspaceFoldersStub.returns([workspaceFolder]);
-        isAutoOrganizationEnabledStub.returns(currentAutoOrg);
+        isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
 
         const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
 
@@ -380,9 +380,9 @@ suite('Language Server', () => {
         strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
 
         // We still write it to ensure it is set at the folder level
-        strictEqual(setAutoOrganizationStub.callCount, 1);
-        strictEqual(setAutoOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setAutoOrganizationStub.getCall(0).args[1], true);
+        strictEqual(setAutoSelectOrganizationStub.callCount, 1);
+        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
+        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], true);
       });
     }
 
@@ -402,7 +402,7 @@ suite('Language Server', () => {
 
       const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
       getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoOrganizationEnabledStub.returns(false);
+      isAutoSelectOrganizationEnabledStub.returns(false);
 
       const folderConfigs = testCases.map(tc =>
         createFolderConfig(tc.folderPath, tc.preferredOrg, true),
@@ -411,7 +411,7 @@ suite('Language Server', () => {
       languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoOrganizationStub.callCount, 0);
+      strictEqual(setAutoSelectOrganizationStub.callCount, 0);
       testCases.forEach((tc, index) => {
         strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
         strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
@@ -421,7 +421,7 @@ suite('Language Server', () => {
     test('should warn and skip folder configs without matching workspace folders', () => {
       const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
       getWorkspaceFoldersStub.returns([workspaceFolder]);
-      isAutoOrganizationEnabledStub.returns(true);
+      isAutoSelectOrganizationEnabledStub.returns(true);
 
       const folderConfigs = [
         createFolderConfig('/path/to/existing/folder', 'existing-org', true),
@@ -436,9 +436,9 @@ suite('Language Server', () => {
       strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
       strictEqual(setOrganizationStub.getCall(0).args[1], 'existing-org');
 
-      strictEqual(setAutoOrganizationStub.callCount, 1);
-      strictEqual(setAutoOrganizationStub.getCall(0).args[0], workspaceFolder);
-      strictEqual(setAutoOrganizationStub.getCall(0).args[1], false);
+      strictEqual(setAutoSelectOrganizationStub.callCount, 1);
+      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
+      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], false);
 
       // Should warn about the missing folder
       strictEqual(loggerWarnSpy.callCount, 1);

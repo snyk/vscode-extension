@@ -301,10 +301,10 @@ export class LanguageServer implements ILanguageServer {
       // the current configuration value when querying all levels (folder, workspace, global, default).
       // Unless the desired auto-org is true (selected), then it should be written at the folder level.
       const desiredAutoOrg = !folderConfig.orgSetByUser;
-      const currentAutoOrg = this.configuration.isAutoOrganizationEnabled(workspaceFolder);
+      const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
-        this.configuration.setAutoOrganization(workspaceFolder, desiredAutoOrg).then(
+        this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg).then(
           () => {
             this.logger.debug(
               `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
@@ -325,7 +325,7 @@ export class LanguageServer implements ILanguageServer {
       return folderConfig;
     }
 
-    const orgSetByUser = !this.configuration.isAutoOrganizationEnabled(workspaceFolder);
+    const orgSetByUser = !this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
     if (orgSetByUser) {
       return {
         ...folderConfig,
