@@ -51,8 +51,6 @@ export class LanguageServer implements ILanguageServer {
   public static ReceivedFolderConfigsFromLs = false;
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
-  // Track folder paths that have received configs from LS (for merge logic on first receipt)
-  private static folderConfigsReceivedFromLS = new Set<string>();
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -207,11 +205,11 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
       // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
       const processedFolderConfigs = folderConfigs.map(folderConfig => {
-        const isFirstReceipt = !LanguageServer.folderConfigsReceivedFromLS.has(folderConfig.folderPath);
-
+        const isFirstReceipt = !this.configuration
+          .getFolderConfigs()
+          .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
         if (isFirstReceipt) {
           // First time receiving config for this folder - merge VS Code settings into LS config
-          LanguageServer.folderConfigsReceivedFromLS.add(folderConfig.folderPath);
           return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
         }
 
