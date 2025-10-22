@@ -349,9 +349,7 @@ suite('Language Server', () => {
       getWorkspaceFoldersStub.returns(workspaceFolders);
       isAutoSelectOrganizationEnabledStub.returns(true);
 
-      const folderConfigs = testCases.map(tc =>
-        createFolderConfig(tc.folderPath, tc.preferredOrg, true),
-      );
+      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
       languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
@@ -404,9 +402,7 @@ suite('Language Server', () => {
       getWorkspaceFoldersStub.returns(workspaceFolders);
       isAutoSelectOrganizationEnabledStub.returns(false);
 
-      const folderConfigs = testCases.map(tc =>
-        createFolderConfig(tc.folderPath, tc.preferredOrg, true),
-      );
+      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
       languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 

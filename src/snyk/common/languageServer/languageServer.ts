@@ -274,14 +274,13 @@ export class LanguageServer implements ILanguageServer {
         return;
       }
 
-      const orgToDisplay = folderConfig.orgSetByUser
-        ? folderConfig.preferredOrg
-        : folderConfig.autoDeterminedOrg;
+      const orgToDisplay = folderConfig.orgSetByUser ? folderConfig.preferredOrg : folderConfig.autoDeterminedOrg;
 
       // Mark this folder as being updated by LS to prevent circular updates in the watcher
       LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
 
-      this.configuration.setOrganization(workspaceFolder, orgToDisplay)
+      this.configuration
+        .setOrganization(workspaceFolder, orgToDisplay)
         .then(
           () => {
             this.logger.debug(
@@ -329,7 +328,7 @@ export class LanguageServer implements ILanguageServer {
     if (orgSetByUser) {
       return {
         ...folderConfig,
-        preferredOrg: this.configuration.getOrganizationAtWorkspaceFolderLevel(workspaceFolder) ?? "",
+        preferredOrg: this.configuration.getOrganizationAtWorkspaceFolderLevel(workspaceFolder) ?? '',
         orgSetByUser: true,
       };
     } else {
