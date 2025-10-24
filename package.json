@@ -270,7 +270,7 @@
             "order": 2,
             "type": "array",
             "default": [],
-            "description": "Folder configuration for Snyk scans."
+            "description": "Folder configuration for Snyk scans. This value is read-only, any changes made will be overridden."
           },
           "snyk.securityAtInception": {
             "order": 3,
