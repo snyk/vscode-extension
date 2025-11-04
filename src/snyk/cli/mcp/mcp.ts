@@ -17,6 +17,11 @@ interface McpConfig {
 
 const SERVER_KEY = 'Snyk';
 
+// Gitignore patterns for IDE-specific rule files (always use forward slashes for Git compatibility)
+const COPILOT_GITIGNORE_PATTERN = '.github/instructions/snyk_rules.instructions.md';
+const WINDSURF_GITIGNORE_PATTERN = '.windsurf/rules/snyk_rules.md';
+const CURSOR_GITIGNORE_PATTERN = '.cursor/rules/snyk_rules.mdc';
+
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   const appName = vscode.env.appName.toLowerCase();
   const isWindsurf = appName.includes('windsurf');
@@ -88,7 +93,7 @@ export async function configureCopilot(vscodeContext: vscode.ExtensionContext, c
     }
     const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(filePath, rulesContent);
-    await ensureInGitignore([filePath]);
+    await ensureInGitignore([COPILOT_GITIGNORE_PATTERN]);
   } catch {
     Logger.error('Failed to publish Copilot rules');
   }
@@ -123,7 +128,7 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
     }
     const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(localPath, rulesContent);
-    await ensureInGitignore([localPath]);
+    await ensureInGitignore([WINDSURF_GITIGNORE_PATTERN]);
   } catch {
     Logger.error('Failed to publish Windsurf rules');
   }
@@ -155,7 +160,7 @@ export async function configureCursor(vscodeContext: vscode.ExtensionContext, co
 
     const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(cursorRulesPath, rulesContent);
-    await ensureInGitignore([cursorRulesPath]);
+    await ensureInGitignore([CURSOR_GITIGNORE_PATTERN]);
   } catch {
     Logger.error('Failed to publish Cursor rules');
   }
