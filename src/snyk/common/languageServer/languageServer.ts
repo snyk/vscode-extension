@@ -1,9 +1,11 @@
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
+import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
+  SNYK_CONFIGURE_MCP,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -217,6 +219,46 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
+
+    client.onNotification(
+      SNYK_CONFIGURE_MCP,
+      async (params: { command: string; args: string[]; env: Record<string, string>; ideName: string }) => {
+        this.logger.info(`Received MCP configuration for VS Code Copilot`);
+        try {
+          // This notification is ONLY sent for VS Code (not Cursor/Windsurf)
+          // LS handles file writes for Cursor/Windsurf directly
+          this.extensionRetriever.getContext().subscriptions.push(
+            /* eslint-disable @typescript-eslint/no-unsafe-argument */
+            /* eslint-disable @typescript-eslint/no-unsafe-call */
+            /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+            // @ts-expect-error backward compatibility for older VS Code versions
+            vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+              onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
+              provideMcpServerDefinitions: async () => {
+                // @ts-expect-error backward compatibility for older VS Code versions
+                const output: vscode.McpServerDefinition[][] = [];
+
+                const processEnv: Record<string, string> = {};
+                Object.entries(process.env).forEach(([key, value]) => {
+                  processEnv[key] = value ?? '';
+                });
+                const env: Record<string, string> = { ...processEnv, ...params.env };
+
+                // @ts-expect-error backward compatibility for older VS Code versions
+                output.push(new vscode.McpStdioServerDefinition('Snyk', params.command, params.args, env));
+
+                return output;
+              },
+            }),
+          );
+          this.logger.info('VS Code Copilot MCP server registered');
+        } catch (error) {
+          this.logger.debug(
+            `VS Code MCP Server Definition Provider API is not available. This feature requires VS Code version > 1.101.0.`,
+          );
+        }
+      },
+    );
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

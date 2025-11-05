@@ -14,3 +14,4 @@ export const SNYK_SCAN = '$/snyk.scan';
 export const SNYK_FOLDERCONFIG = '$/snyk.folderConfigs';
 export const SNYK_SCANSUMMARY = '$/snyk.scanSummary';
 export const SNYK_MCPSERVERURL = '$/snyk.mcpServerURL';
+export const SNYK_CONFIGURE_MCP = '$/snyk.configureSnykMCP';
