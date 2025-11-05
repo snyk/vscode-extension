@@ -340,7 +340,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    // MCP configuration is now handled by Language Server
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       codeSecurityTree,
