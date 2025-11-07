@@ -169,6 +169,29 @@
             "description": "Severity issues to display.",
             "scope": "window"
           },
+          "snyk.issueViewOptions": {
+            "order": 6,
+            "type": "object",
+            "default": {
+              "openIssues": true,
+              "ignoredIssues": false
+            },
+            "properties": {
+              "openIssues": {
+                "type": "boolean",
+                "description": "Open Issues",
+                "default": true
+              },
+              "ignoredIssues": {
+                "type": "boolean",
+                "description": "Ignored Issues",
+                "default": false
+              }
+            },
+            "additionalProperties": false,
+            "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) is a feature which provides consistent handling of \"ignore\" rules for code security findings across all surfaces - such as the CLI, IDE, and Snyk UI\n\nShow the following issues:",
+            "scope": "window"
+          },
           "snyk.allIssuesVsNetNewIssues": {
             "type": "string",
             "default": "All issues",
@@ -181,13 +204,13 @@
               "Shows all issues that have been identified, including both new and existing issues.",
               "Shows only new issues filtering out previously known issues in a base branch"
             ],
-            "order": 6
+            "order": 7
           },
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
             "scope": "window",
-            "order": 7
+            "order": 8
           }
         }
       },
@@ -233,37 +256,14 @@
         "title": "Experimental",
         "order": 4,
         "properties": {
-          "snyk.issueViewOptions": {
-            "order": 1,
-            "type": "object",
-            "default": {
-              "openIssues": true,
-              "ignoredIssues": false
-            },
-            "properties": {
-              "openIssues": {
-                "type": "boolean",
-                "description": "Open Issues",
-                "default": true
-              },
-              "ignoredIssues": {
-                "type": "boolean",
-                "description": "Ignored Issues",
-                "default": false
-              }
-            },
-            "additionalProperties": false,
-            "markdownDescription": "Ignored issues are currently an experimental feature. Please reach out to [support.snyk.io](https://support.snyk.io) for more details.\n\nShow the following issues:",
-            "scope": "window"
-          },
           "snyk.folderConfigs": {
-            "order": 2,
+            "order": 1,
             "type": "array",
             "default": [],
             "description": "Folder configuration for Snyk scans."
           },
           "snyk.securityAtInception.autoConfigureSnykMcpServer": {
-            "order": 3,
+            "order": 2,
             "type": "boolean",
             "description": "Configure Snyk MCP server",
             "default": false,
@@ -271,7 +271,7 @@
             "scope": "window"
           },
           "snyk.securityAtInception.executionFrequency": {
-            "order": 4,
+            "order": 3,
             "type": "string",
             "description": "Choose when Snyk should scan and initiate fixes for your AI-generated code",
             "default": "Manual",
@@ -289,7 +289,7 @@
             "scope": "window"
           },
           "snyk.features.preview": {
-            "order": 5,
+            "order": 4,
             "type": "object",
             "default": {},
             "title": "Preview feature toggles",

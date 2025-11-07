@@ -136,8 +136,8 @@ suite('Code Security Issue Tree Provider', () => {
       name: 'getRootChildren returns correctly when viewing open & ignored and have two open issues one fixable with CCI enabled',
       consistentIgnores: true,
       issueViewOptions: { openIssues: true, ignoredIssues: true },
-      issues: [makeMockCodeIssue(), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
-      expectedNodeLabels: ['✋ 2 open issues & 0 ignored issues', '⚡️ 1 open issue is fixable by Snyk Agent Fix.'],
+      issues: [makeMockCodeIssue({ isIgnored: true }), makeMockCodeIssue({ additionalData: { hasAIFix: true } })],
+      expectedNodeLabels: ['✋ 1 open issue & 1 ignored issue', '⚡️ 1 open issue is fixable by Snyk Agent Fix.'],
     },
     {
       name: 'getRootChildren returns correctly when viewing only open and have none with CCI enabled',
