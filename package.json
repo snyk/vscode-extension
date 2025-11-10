@@ -139,7 +139,7 @@
             "order": 2,
             "type": "boolean",
             "title": "Snyk Code security issues",
-            "description": "Find and fix security issues in your application code in real time.",
+            "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, note that it must be enabled for the organization.",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {
@@ -200,7 +200,7 @@
               }
             },
             "additionalProperties": false,
-            "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) is a feature which provides consistent handling of \"ignore\" rules for code security findings across all surfaces - such as the CLI, IDE, and Snyk UI\n\nShow the following issues:",
+            "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) is a feature which provides consistent handling of \"ignore\" rules for code security findings across all surfaces - such as the CLI, IDE, and Snyk UI.\n\nNote: These filters will do nothing if Code Consistent Ignores (CCI) is disabled for the organization.\n\nShow the following issues:",
             "scope": "window"
           },
           "snyk.allIssuesVsNetNewIssues": {
