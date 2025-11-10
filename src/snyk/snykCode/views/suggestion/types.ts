@@ -18,7 +18,6 @@ export type Suggestion = {
   rows: Point;
   hasAIFix?: boolean;
   filePath: string;
-  showInlineIgnoresButton: boolean;
 };
 
 export type OpenLocalMessage = {
