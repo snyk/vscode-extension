@@ -12,6 +12,7 @@ import { IssueUtils } from '../utils/issueUtils';
 import { CodeIssueCommandArg } from '../views/interfaces';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
+import { IFolderConfigs } from '../../common/configuration/folderConfigs';
 
 export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> {
   constructor(
@@ -20,6 +21,7 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     codeActionKindAdapter: ICodeActionKindAdapter,
     private readonly languages: IVSCodeLanguages,
     private readonly configuration: IConfiguration,
+    private readonly folderConfigs: IFolderConfigs,
   ) {
     super(issues, codeActionKindAdapter);
   }
@@ -31,7 +33,8 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
 
     const actions = [openIssueAction];
 
-    if (this.configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore)) {
+    const folderConfig = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
+    if (folderConfig?.featureFlags?.[FEATURE_FLAGS.snykCodeInlineIgnore]) {
       actions.push(fileIgnoreIssueAction);
       actions.push(ignoreIssueAction);
     }

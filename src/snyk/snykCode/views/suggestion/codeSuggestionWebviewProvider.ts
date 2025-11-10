@@ -30,8 +30,6 @@ import { ICodeSuggestionWebviewProvider } from '../interfaces';
 import { readFileSync } from 'fs';
 import { Suggestion, SuggestionMessage } from './types';
 import { WebviewPanelSerializer } from '../../../snykCode/views/webviewPanelSerializer';
-import { configuration } from '../../../common/configuration/instance';
-import { FEATURE_FLAGS } from '../../../common/constants/featureFlags';
 import { IVSCodeCommands } from '../../../common/vscode/commands';
 
 export class CodeSuggestionWebviewProvider
@@ -164,7 +162,10 @@ export class CodeSuggestionWebviewProvider
       html = html.replaceAll('${nonce}', nonce);
       html = html.replace('--default-font: ', '--default-font: var(--vscode-font-family) ,');
       this.panel.webview.html = html;
-      void this.postSuggestMessage({ type: 'set', args: this.mapToModel(issue) });
+      void this.postSuggestMessage({
+        type: 'set',
+        args: this.mapToModel(issue),
+      });
       void this.postLearnLessonMessage(issue);
 
       this.issue = issue;
@@ -207,7 +208,6 @@ export class CodeSuggestionWebviewProvider
 
   private mapToModel(issue: Issue<CodeIssueData>): Suggestion {
     const parsedDetails = marked.parse(issue.additionalData.text) as string;
-    const showInlineIgnoresButton = configuration.getFeatureFlag(FEATURE_FLAGS.snykCodeInlineIgnore);
 
     return {
       id: issue.id,
@@ -217,7 +217,6 @@ export class CodeSuggestionWebviewProvider
       text: parsedDetails,
       hasAIFix: issue.additionalData.hasAIFix,
       filePath: issue.filePath,
-      showInlineIgnoresButton,
     };
   }
 
@@ -284,9 +283,15 @@ export class CodeSuggestionWebviewProvider
             // todo(berkay.berabi): Here if suggestions are empty, we should post a different type of message that
             // will show the user correct information, namely: we tried but no fixes available for now.
 
-            void this.postSuggestMessage({ type: 'setAutofixDiffs', args: { suggestion, diffs } });
+            void this.postSuggestMessage({
+              type: 'setAutofixDiffs',
+              args: { suggestion, diffs },
+            });
           } catch (error) {
-            void this.postSuggestMessage({ type: 'setAutofixError', args: { suggestion } });
+            void this.postSuggestMessage({
+              type: 'setAutofixError',
+              args: { suggestion },
+            });
           }
 
           break;

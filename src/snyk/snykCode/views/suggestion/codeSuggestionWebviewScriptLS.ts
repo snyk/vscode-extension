@@ -38,7 +38,6 @@ type Suggestion = {
   filePath: string;
   hasAIFix: boolean;
   diffs: AutofixUnifiedDiffSuggestion[];
-  showInlineIgnoresButton: boolean;
 };
 
 type OpenLocalMessage = {

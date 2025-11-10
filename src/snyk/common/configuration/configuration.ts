@@ -57,6 +57,7 @@ export type FolderConfig = {
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
+  featureFlags?: Record<string, boolean>;
 };
 
 export interface IssueViewOptions {
