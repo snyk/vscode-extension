@@ -11,26 +11,16 @@ export interface IFolderConfigs {
   setBranch(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
 
   setReferenceFolder(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void>;
-
-  resetFolderConfigsCache(): void;
 }
 
 export class FolderConfigs implements IFolderConfigs {
-  private folderConfigsCache?: ReadonlyArray<FolderConfig>;
-
   getFolderConfig(config: IConfiguration, folderPath: string): FolderConfig | undefined {
     const folderConfigs = this.getFolderConfigs(config);
     return folderConfigs.find(i => i.folderPath === folderPath);
   }
 
   getFolderConfigs(config: IConfiguration): ReadonlyArray<FolderConfig> {
-    if (this.folderConfigsCache !== undefined) {
-      return this.folderConfigsCache;
-    }
-    const folderConfigs = config.getFolderConfigs();
-    this.folderConfigsCache = folderConfigs;
-
-    return folderConfigs;
+    return config.getFolderConfigs();
   }
 
   async setReferenceFolder(window: IVSCodeWindow, config: IConfiguration, folderPath: string): Promise<void> {
@@ -91,10 +81,5 @@ export class FolderConfigs implements IFolderConfigs {
       i.folderPath === folderConfig.folderPath ? folderConfig : i,
     );
     await config.setFolderConfigs(finalFolderConfigs);
-    this.folderConfigsCache = finalFolderConfigs;
-  }
-
-  resetFolderConfigsCache() {
-    this.folderConfigsCache = undefined;
   }
 }

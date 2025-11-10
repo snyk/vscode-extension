@@ -31,7 +31,7 @@ suite('Snyk Code Analysis Utils', () => {
     const suggestionFilePath = '/Users/snyk/goof/test.js';
     const markerFilePath = '/Users/snyk/goof/test2.js';
     workspace = {
-      getWorkspaceFolders: () => ['/Users/snyk/goof1', '/Users/snyk/goof2'],
+      getWorkspaceFolderPaths: () => ['/Users/snyk/goof1', '/Users/snyk/goof2'],
     } as unknown as IVSCodeWorkspace;
 
     // act
@@ -47,7 +47,7 @@ suite('Snyk Code Analysis Utils', () => {
     const relativeMarkerFilePath = 'test2.js';
     const workspaceFolder = '/Users/snyk/goof1';
     workspace = {
-      getWorkspaceFolders: () => [workspaceFolder],
+      getWorkspaceFolderPaths: () => [workspaceFolder],
     } as unknown as IVSCodeWorkspace;
 
     // act

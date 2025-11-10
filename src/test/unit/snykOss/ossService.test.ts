@@ -37,7 +37,7 @@ suite('OSS Service', () => {
       { getQuickFix: sinon.fake() } as ICodeActionKindAdapter,
       viewManagerService,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,

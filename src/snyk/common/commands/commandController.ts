@@ -95,7 +95,7 @@ export class CommandController {
 
   async createDCIgnore(custom = false, uriAdapter: IUriAdapter, path?: string): Promise<void> {
     if (!path) {
-      const paths = this.workspace.getWorkspaceFolders();
+      const paths = this.workspace.getWorkspaceFolderPaths();
       const promises = [];
       for (const p of paths) {
         promises.push(createDCIgnoreUtil(p, custom, this.workspace, this.window, uriAdapter));

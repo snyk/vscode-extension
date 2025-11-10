@@ -49,6 +49,12 @@ export class LanguageServer implements ILanguageServer {
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
   public static ReceivedFolderConfigsFromLs = false;
+  // Track folder paths where LS is updating org settings to prevent circular updates
+  private static foldersBeingUpdatedByLS = new Set<string>();
+
+  static isLSUpdatingOrg(folderPath: string): boolean {
+    return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
+  }
 
   constructor(
     private user: User,
@@ -197,8 +203,29 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
-      LanguageServer.ReceivedFolderConfigsFromLs = true;
-      this.configuration.setFolderConfigs(folderConfigs).catch((error: Error) => {
+      // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
+      const processedFolderConfigs = folderConfigs.map(folderConfig => {
+        const isFirstReceipt = !this.configuration
+          .getFolderConfigs()
+          .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
+        if (isFirstReceipt) {
+          // First time receiving config for this folder - merge VS Code settings into LS config
+          return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
+        }
+
+        // Subsequent receipt - return as-is (will be handled by handleOrgSettingsFromFolderConfigs)
+        return folderConfig;
+      });
+
+      // Update org settings in VS Code UI to reflect the current state
+      this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
+
+      // Set global flag after first folder config received (used for initialization options)
+      if (!LanguageServer.ReceivedFolderConfigsFromLs) {
+        LanguageServer.ReceivedFolderConfigsFromLs = true;
+      }
+
+      this.configuration.setFolderConfigs(processedFolderConfigs).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
       });
     });
@@ -231,6 +258,85 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.client.outputChannel.show();
+  }
+
+  private handleOrgSettingsFromFolderConfigs(folderConfigs: FolderConfig[]): void {
+    const currentWorkspaceFolders = this.workspace.getWorkspaceFolders();
+
+    folderConfigs.forEach(folderConfig => {
+      // Only set organization for folders that are part of the current VS Code workspace
+      const workspaceFolder = currentWorkspaceFolders.find(
+        workspaceFolder => folderConfig.folderPath === workspaceFolder.uri.fsPath,
+      );
+
+      if (!workspaceFolder) {
+        this.logger.warn(`No workspace folder found for path: ${folderConfig.folderPath}`);
+        return;
+      }
+
+      const orgToDisplay = folderConfig.orgSetByUser ? folderConfig.preferredOrg : folderConfig.autoDeterminedOrg;
+
+      // Mark this folder as being updated by LS to prevent circular updates in the watcher
+      LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
+
+      this.configuration
+        .setOrganization(workspaceFolder, orgToDisplay)
+        .then(
+          () => {
+            this.logger.debug(
+              `Set organization "${orgToDisplay}" for workspace folder: ${folderConfig.folderPath} (orgSetByUser: ${folderConfig.orgSetByUser})`,
+            );
+          },
+          error => {
+            this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
+          },
+        )
+        .finally(() => {
+          // Clear the flag after update completes (whether success or error)
+          LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
+        });
+
+      // Set auto-organization at workspace folder level only if the desired value differs from
+      // the current configuration value when querying all levels (folder, workspace, global, default).
+      // Unless the desired auto-org is true (selected), then it should be written at the folder level.
+      const desiredAutoOrg = !folderConfig.orgSetByUser;
+      const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
+
+      if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
+        this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg).then(
+          () => {
+            this.logger.debug(
+              `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
+            );
+          },
+          error => {
+            this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
+          },
+        );
+      }
+    });
+  }
+
+  private mergeOrgSettingsIntoLSFolderConfig(folderConfig: FolderConfig): FolderConfig {
+    const workspaceFolder = this.workspace.getWorkspaceFolder(folderConfig.folderPath);
+    if (!workspaceFolder) {
+      // LS must be crazy, we don't know of this folder, so we will just store it as-is.
+      return folderConfig;
+    }
+
+    const orgSetByUser = !this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
+    if (orgSetByUser) {
+      return {
+        ...folderConfig,
+        preferredOrg: this.configuration.getOrganizationAtWorkspaceFolderLevel(workspaceFolder) ?? '',
+        orgSetByUser: true,
+      };
+    } else {
+      return {
+        ...folderConfig,
+        orgSetByUser: false,
+      };
+    }
   }
 
   async stop(): Promise<void> {

@@ -91,7 +91,6 @@ suite('Code Security Issue Tree Provider', () => {
       setFolderConfig: () => Promise.resolve(),
       setBranch: () => Promise.resolve(),
       setReferenceFolder: () => Promise.resolve(),
-      resetFolderConfigsCache: () => {},
     } as IFolderConfigs;
   });
 
