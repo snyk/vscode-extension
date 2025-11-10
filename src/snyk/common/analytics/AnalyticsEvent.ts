@@ -72,4 +72,18 @@ export class AnalyticsEvent implements AbstractAnalyticsEvent {
   public getExtension(): Map<string, unknown> {
     return this.extension;
   }
+
+  public toJSON(): Record<string, unknown> {
+    return {
+      interactionType: this.interactionType,
+      category: this.category,
+      status: this.status,
+      targetId: this.targetId,
+      timestampMs: this.timestampMs,
+      durationMs: this.durationMs,
+      results: Object.fromEntries(this.results),
+      errors: this.errors,
+      extension: Object.fromEntries(this.extension),
+    };
+  }
 }

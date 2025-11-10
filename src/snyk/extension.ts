@@ -81,7 +81,10 @@ import { ClearCacheService } from './common/services/CacheService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
-import { MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT } from './common/constants/globalState';
+import {
+  MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT,
+  MEMENTO_SECURE_AT_INCEPTION_MODAL,
+} from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
@@ -173,7 +176,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
     configuration.setExtensionId(vscodeContext.extension.id);
-    this.configurationWatcher = new ConfigurationWatcher(Logger);
+    this.configurationWatcher = new ConfigurationWatcher(Logger, this.user, vscodeContext);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
@@ -466,13 +469,13 @@ class SnykExtension extends SnykLib implements IExtension {
     this.featureFlagService = new FeatureFlagService(vsCodeCommands);
     await this.setupFeatureFlags();
 
-    this.sendPluginInstalledEvent();
+    await this.sendPluginInstalledEvent();
 
     // Actually start analysis
     void this.runScan();
   }
 
-  private sendPluginInstalledEvent() {
+  private async sendPluginInstalledEvent() {
     // start analytics sender and send plugin installed event
     const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
 
@@ -486,6 +489,28 @@ class SnykExtension extends SnykLib implements IExtension {
       analyticsSender.logEvent(pluginInstalleEvent, () => {
         void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
       });
+
+      const secureAtInceptionModal =
+        extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
+
+      if (!secureAtInceptionModal) {
+        await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+        const options = ['Yes'] as const;
+        const picked = await vscode.window.showInformationMessage(
+          'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+          {
+            modal: true,
+            detail:
+              ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
+          },
+          ...options,
+        );
+
+        if (picked) {
+          await configuration.setAutoConfigureMcpServer(true);
+          await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
+        }
+      }
     }
   }
 

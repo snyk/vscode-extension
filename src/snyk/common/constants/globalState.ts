@@ -3,3 +3,6 @@ export const MEMENTO_CLI_VERSION = 'snyk.cliVersion';
 export const MEMENTO_CLI_CHECKSUM = 'snyk.cliChecksum';
 export const MEMENTO_LS_PROTOCOL_VERSION = 'snyk.lsProtocolVersion';
 export const MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT = 'snyk.pluginInstalledSent';
+export const MEMENTO_AUTO_CONFIGURE_MCP_SERVER = 'snyk.autoConfigureSnykMcpServer';
+export const MEMENTO_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'snyk.secureAtInceptionExecutionFrequency';
+export const MEMENTO_SECURE_AT_INCEPTION_MODAL = 'snyk.secureAtInceptionModal';

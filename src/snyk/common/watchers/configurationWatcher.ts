@@ -20,6 +20,8 @@ import {
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   CODE_SECURITY_ENABLED_SETTING,
+  AUTO_CONFIGURE_MCP_SERVER,
+  SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -28,10 +30,16 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { vsCodeWorkspace } from '../vscode/workspace';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
+import { handleSecurityAtInceptionChange } from '../configuration/securityAtInceptionHandler';
+import { User } from '../user';
 import { LanguageServer } from '../languageServer/languageServer';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(private readonly logger: ILog) {}
+  constructor(
+    private readonly logger: ILog,
+    private readonly user: User,
+    private readonly vscodeContext: vscode.ExtensionContext,
+  ) {}
 
   private async onChangeConfiguration(
     extension: IExtension,
@@ -73,6 +81,8 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
+    } else if (key === AUTO_CONFIGURE_MCP_SERVER || key === SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY) {
+      return handleSecurityAtInceptionChange(extension, this.logger, this.user, this.vscodeContext);
     }
 
     // from here on only for OSS and trusted folders
@@ -107,6 +117,8 @@ class ConfigurationWatcher implements IWatcher {
         ISSUE_VIEW_OPTIONS_SETTING,
         DELTA_FINDINGS,
         FOLDER_CONFIGS,
+        AUTO_CONFIGURE_MCP_SERVER,
+        SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {
