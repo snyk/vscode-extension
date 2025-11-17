@@ -38,14 +38,14 @@ export interface ILanguageServer {
   showOutputChannel(): void;
 
   cliReady$: ReplaySubject<string>;
-  scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>;
+  scan$: Subject<Scan>;
   showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>;
 }
 
 export class LanguageServer implements ILanguageServer {
   private client: LanguageClient;
   readonly cliReady$ = new ReplaySubject<string>(1);
-  readonly scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
+  readonly scan$ = new Subject<Scan>();
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
   public static ReceivedFolderConfigsFromLs = false;
@@ -236,7 +236,7 @@ export class LanguageServer implements ILanguageServer {
       });
     });
 
-    client.onNotification(SNYK_SCAN, (scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
+    client.onNotification(SNYK_SCAN, (scan: Scan) => {
       this.logger.info(`${_.capitalize(scan.product)} scan for ${scan.folderPath}: ${scan.status}.`);
       this.scan$.next(scan);
     });

@@ -19,17 +19,30 @@ export enum ScanStatus {
   Error = 'error',
 }
 
-export enum LsErrorMessage {
-  repositoryInvalidError = 'repository does not exist',
-  missingDeltaReferenceError = 'must specify reference for delta scans',
+export type PresentableError = {
+  code?: number;
+  error?: string;
+  path?: string;
+  command?: string;
+  showNotification: boolean;
+  treeNodeSuffix: string;
+};
+
+export function isPresentableError(result: unknown): result is PresentableError {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result &&
+    'treeNodeSuffix' in result &&
+    !Array.isArray(result)
+  );
 }
 
-export type Scan<T> = {
+export type Scan = {
   folderPath: string;
   product: ScanProduct;
   status: ScanStatus;
-  issues: Issue<T>[];
-  errorMessage: string;
+  presentableError?: PresentableError;
 };
 
 export type Issue<T> = {

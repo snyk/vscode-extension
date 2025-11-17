@@ -51,7 +51,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
   }
 
   subscribeToLsScanMessages(): Subscription {
-    return this.languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => {
+    return this.languageServer.scan$.subscribe((scan: Scan) => {
       if (scan.product !== ScanProduct.Code) {
         return;
       }

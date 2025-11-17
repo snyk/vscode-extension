@@ -4,7 +4,15 @@ import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, LsScanProduct, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
+import {
+  Issue,
+  isPresentableError,
+  LsScanProduct,
+  PresentableError,
+  Scan,
+  ScanProduct,
+  ScanStatus,
+} from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
@@ -14,7 +22,7 @@ import { Disposable } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { IDiagnosticsIssueProvider } from './diagnosticsService';
 
-export type WorkspaceFolderResult<T> = Issue<T>[] | Error;
+export type WorkspaceFolderResult<T> = Issue<T>[] | PresentableError;
 export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder
 
 export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
@@ -78,7 +86,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   getIssue(folderPath: string, issueId: string): Issue<T> | undefined {
     const folderResult = this._result.get(folderPath);
-    if (folderResult instanceof Error) {
+    if (isPresentableError(folderResult)) {
       return undefined;
     }
 
@@ -88,7 +96,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   getIssueById(issueId: string): Issue<T> | undefined {
     const results = this._result.values();
     for (const folderResult of results) {
-      if (folderResult instanceof Error) {
+      if (isPresentableError(folderResult)) {
         return undefined;
       }
 
@@ -162,7 +170,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   }
 
   // Must be called from the child class to listen on scan messages
-  handleLsScanMessage(scanMsg: Scan<T>) {
+  handleLsScanMessage(scanMsg: Scan) {
     if (scanMsg.status == ScanStatus.InProgress) {
       if (!this.isAnalysisRunning) {
         this.analysisStarted();
@@ -190,7 +198,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     });
   }
 
-  private handleSuccessOrError(scanMsg: Scan<T>) {
+  private handleSuccessOrError(scanMsg: Scan) {
     this.runningScanCount--;
 
     if (scanMsg.status == ScanStatus.Success) {
@@ -200,7 +208,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       );
       this._result.set(scanMsg.folderPath, issues);
     } else {
-      this._result.set(scanMsg.folderPath, new Error(scanMsg.errorMessage));
+      this._result.set(scanMsg.folderPath, scanMsg.presentableError!);
     }
 
     if (this.runningScanCount <= 0) {

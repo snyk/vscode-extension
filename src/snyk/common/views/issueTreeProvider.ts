@@ -1,7 +1,7 @@
 import _, { flatten } from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../configuration/configuration';
-import { Issue, IssueSeverity, LsErrorMessage } from '../languageServer/types';
+import { Issue, isPresentableError, IssueSeverity } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
 import { IProductService } from '../services/productService';
@@ -15,7 +15,6 @@ import path from 'path';
 import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
-import { isEnumStringValueOf } from '../tsUtil';
 
 export interface ISeverityCounts {
   [severity: string]: number;
@@ -68,7 +67,13 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
     if (!this.shouldShowTree()) return nodes;
     if (!this.productService.isLsDownloadSuccessful) {
-      return [this.getErrorEncounteredTreeNode()];
+      return [
+        this.getErrorEncounteredTreeNode({
+          treeNodeSuffix: '(download failed)',
+          showNotification: false,
+          error: 'Snyk language server download failed',
+        }),
+      ];
     }
     if (!this.productService.isAnyWorkspaceFolderTrusted) {
       return [this.getNoWorkspaceTrustTreeNode()];
@@ -92,7 +97,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     nodes.push(...this.getResultNodes());
 
     const folderResults = Array.from(this.productService.result.values());
-    const allFailed = folderResults.every(folderResult => folderResult instanceof Error);
+    const allFailed = folderResults.every(folderResult => isPresentableError(folderResult));
     if (allFailed) {
       return nodes;
     }
@@ -220,17 +225,14 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       let folderIcon: INodeIcon;
       let folderDescription: string | undefined;
 
-      if (folderResult instanceof Error) {
+      if (isPresentableError(folderResult)) {
         folderIcon = NODE_ICONS.error;
-        folderDescription = 'An error occurred';
+        folderDescription = folderResult.treeNodeSuffix;
 
         if (singleFolderWorkspace) {
           addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
-        const errorMessage = isEnumStringValueOf(LsErrorMessage, folderResult.message)
-          ? folderResult.toString()
-          : undefined;
-        addTo.push(this.getErrorEncounteredTreeNode(errorMessage, false));
+        addTo.push(this.getErrorEncounteredTreeNode(folderResult, false));
       } else {
         const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(folderResult, folderPath);
         addTo.push(...fileNodes);
@@ -265,7 +267,11 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   private processFolderFiles(
     issues: Issue<T>[],
     folderPath: string,
-  ): { fileNodes: TreeNode[]; folderVulnCount: number; folderSeverityCounts: ISeverityCounts } {
+  ): {
+    fileNodes: TreeNode[];
+    folderVulnCount: number;
+    folderSeverityCounts: ISeverityCounts;
+  } {
     let folderVulnCount = 0;
     const folderSeverityCounts = this.initSeverityCounts();
     const fileNodes: TreeNode[] = [];

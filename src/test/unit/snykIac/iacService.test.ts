@@ -59,9 +59,7 @@ suite('IaC Service', () => {
     ls.scan$.next({
       product: ScanProduct.OpenSource,
       folderPath: 'test/path',
-      issues: [],
       status: ScanStatus.InProgress,
-      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);
