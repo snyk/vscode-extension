@@ -1,0 +1,49 @@
+%% MCP Configuration Flow
+
+graph TB
+    subgraph "VS Code Extension"
+        A[Configuration Change Detected] --> B[Send workspace/didChangeConfiguration]
+        N[Receive $/snyk.configureSnykMCP] --> O{IDE Type?}
+        O -->|VS Code| P[configureCopilot]
+        O -->|Cursor| Q[configureCursor]
+        O -->|Windsurf| R[configureWindsurf]
+        P --> S[Register MCP Provider]
+        P --> T[Write Rules Files]
+        Q --> U[Update mcp.json]
+        Q --> V[Write Rules Files]
+        R --> W[Update mcp_config.json]
+        R --> X[Write Rules Files]
+    end
+
+    subgraph "Language Server"
+        B --> C[workspaceDidChangeConfiguration Handler]
+        C --> D[UpdateSettings]
+        D --> E{MCP Config Changed?}
+        E -->|Yes| F[Send Analytics]
+        E -->|Yes| G[Build MCP Config]
+        E -->|No| H[Return]
+        F --> I[analytics.SendConfigChangedAnalytics]
+        G --> J[Get CLI Path]
+        G --> K[Build Args: mcp -t stdio]
+        G --> L[Build Env Variables]
+        J --> M[Create SnykConfigureMcpParams]
+        K --> M
+        L --> M
+        M --> N
+    end
+
+    style A fill:#e1f5ff
+    style N fill:#fff4e1
+    style I fill:#e8f5e9
+    style M fill:#f3e5f5
+
+    classDef extensionNode fill:#e1f5ff,stroke:#01579b
+    classDef lsNode fill:#fff4e1,stroke:#e65100
+    classDef analyticsNode fill:#e8f5e9,stroke:#1b5e20
+    classDef notificationNode fill:#f3e5f5,stroke:#4a148c
+
+    class A,O,P,Q,R,S,T,U,V,W,X extensionNode
+    class C,D,E,G,H,J,K,L lsNode
+    class F,I analyticsNode
+    class M,N notificationNode
+

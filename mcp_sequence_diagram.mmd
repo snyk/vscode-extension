@@ -1,0 +1,58 @@
+%% MCP Configuration Sequence Diagram
+
+sequenceDiagram
+    participant User
+    participant IDE as IDE Extension
+    participant LS as Language Server
+    participant Analytics as Analytics Service
+    participant FileSystem as File System
+    participant VSCODE as VS Code API
+
+    User->>IDE: Changes MCP config setting
+    IDE->>LS: workspace/didChangeConfiguration
+    
+    Note over LS: workspaceDidChangeConfiguration handler
+    LS->>LS: UpdateSettings(settings)
+    
+    alt MCP config changed
+        LS->>LS: Detect autoConfigureMcpServer changed
+        LS->>Analytics: SendConfigChangedAnalytics("autoConfigureSnykMcpServer", oldValue, newValue, triggerSource)
+        
+        LS->>LS: Detect secureAtInceptionExecutionFrequency changed
+        LS->>Analytics: SendConfigChangedAnalytics("secureAtInceptionExecutionFrequency", oldValue, newValue, triggerSource)
+        
+        LS->>LS: configureMcp()
+        LS->>LS: Build MCP config (command, args, env)
+        
+        Note over LS: Create SnykConfigureMcpParams:<br/>- command: CLI path<br/>- args: ["mcp", "-t", "stdio"]<br/>- env: {SNYK_CFG_ORG, SNYK_API, ...}<br/>- ideName: "vscode"|"cursor"|"windsurf"
+        
+        LS->>IDE: $/snyk.configureSnykMCP notification
+    end
+    
+    IDE->>IDE: handleMcpConfigNotification(params)
+    
+    alt IDE is VS Code
+        IDE->>VSCODE: vscode.lm.registerMcpServerDefinitionProvider()
+        VSCODE-->>IDE: Provider registered
+        IDE->>FileSystem: Write .github/instructions/snyk_rules.instructions.md
+        FileSystem-->>IDE: Rules written
+    else IDE is Cursor
+        IDE->>FileSystem: Read ~/.cursor/mcp.json
+        FileSystem-->>IDE: Current config
+        IDE->>FileSystem: Write updated ~/.cursor/mcp.json
+        FileSystem-->>IDE: Config updated
+        IDE->>FileSystem: Write .cursor/rules/snyk_rules.mdc
+        FileSystem-->>IDE: Rules written
+    else IDE is Windsurf
+        IDE->>FileSystem: Read ~/.codeium/windsurf/mcp_config.json
+        FileSystem-->>IDE: Current config
+        IDE->>FileSystem: Write updated mcp_config.json
+        FileSystem-->>IDE: Config updated
+        IDE->>FileSystem: Write .windsurf/rules/snyk_rules.md
+        FileSystem-->>IDE: Rules written
+    end
+    
+    IDE-->>User: MCP configured successfully
+
+    Note over IDE,LS: Analytics flow through LS<br/>No special handling in extension
+

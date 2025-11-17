@@ -1,0 +1,61 @@
+%% MCP Architecture: Current vs Target
+
+graph TB
+    subgraph "Current Architecture"
+        direction TB
+        A1[User Changes Config] --> B1[Configuration Watcher]
+        B1 --> C1[handleSecurityAtInceptionChange]
+        C1 --> D1[Send Analytics to LS via command]
+        C1 --> E1[configureMcpHosts]
+        E1 --> F1{Detect IDE}
+        F1 -->|VS Code| G1[configureCopilot]
+        F1 -->|Cursor| H1[configureCursor]
+        F1 -->|Windsurf| I1[configureWindsurf]
+        G1 --> J1[Register MCP Provider]
+        G1 --> K1[Write Rules]
+        H1 --> L1[Update mcp.json]
+        H1 --> M1[Write Rules]
+        I1 --> N1[Update mcp_config.json]
+        I1 --> O1[Write Rules]
+    end
+
+    subgraph "Target Architecture"
+        direction TB
+        A2[User Changes Config] --> B2[Send to Language Server]
+        B2 --> C2[LS: UpdateSettings]
+        C2 --> D2[LS: Detect MCP Config Change]
+        D2 --> E2[LS: Send Analytics Automatically]
+        D2 --> F2[LS: Build MCP Config]
+        F2 --> G2[LS: Send $/snyk.configureSnykMCP]
+        G2 --> H2[Extension: Receive Notification]
+        H2 --> I2{IDE Type from Param}
+        I2 -->|VS Code| J2[configureCopilot]
+        I2 -->|Cursor| K2[configureCursor]
+        I2 -->|Windsurf| L2[configureWindsurf]
+        J2 --> M2[Register MCP Provider]
+        J2 --> N2[Write Rules]
+        K2 --> O2[Update mcp.json]
+        K2 --> P2[Write Rules]
+        L2 --> Q2[Update mcp_config.json]
+        L2 --> R2[Write Rules]
+    end
+
+    style C1 fill:#ffcdd2
+    style D1 fill:#ffcdd2
+    style E1 fill:#ffcdd2
+    style C2 fill:#c8e6c9
+    style D2 fill:#c8e6c9
+    style E2 fill:#c8e6c9
+    style F2 fill:#c8e6c9
+    style G2 fill:#c8e6c9
+
+    classDef current fill:#ffebee,stroke:#c62828
+    classDef target fill:#e8f5e9,stroke:#2e7d32
+    classDef removal fill:#ffcdd2,stroke:#c62828,stroke-width:3px
+    classDef addition fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+
+    class A1,B1,F1,G1,H1,I1,J1,K1,L1,M1,N1,O1 current
+    class A2,B2,H2,I2,J2,K2,L2,M2,N2,O2,P2,Q2,R2 target
+    class C1,D1,E1 removal
+    class C2,D2,E2,F2,G2 addition
+
