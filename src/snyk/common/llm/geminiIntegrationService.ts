@@ -44,7 +44,7 @@ export class GeminiIntegrationService {
     private readonly logger: ILog,
     private readonly configuration: IConfiguration,
     private readonly extensionContext: IExtensionRetriever,
-    private readonly scan$: Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>,
+    private readonly scan$: Subject<Scan>,
     private readonly uriAdapter: IUriAdapter,
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
@@ -158,7 +158,7 @@ export class GeminiIntegrationService {
         let openScansCount = this.countEnabledProducts();
 
         // subscribe to snyk scan topic to get issue data
-        this.scan$.subscribe((scan: Scan<CodeIssueData | OssIssueData | IacIssueData>) => {
+        this.scan$.subscribe((scan: Scan) => {
           // const msg = 'Scan status for ' + scan.folderPath + ': ' + scan.status + '.';
           // responseStream.push(this.markdownAdapter.get(msg));
 

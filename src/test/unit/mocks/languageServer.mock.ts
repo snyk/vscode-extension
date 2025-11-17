@@ -15,6 +15,6 @@ export class LanguageServerMock implements ILanguageServer {
   showOutputChannel = sinon.fake();
 
   cliReady$ = new ReplaySubject<string>(1);
-  scan$ = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
+  scan$ = new Subject<Scan>();
   showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
 }

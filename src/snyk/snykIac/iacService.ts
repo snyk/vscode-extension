@@ -51,7 +51,7 @@ export class IacService extends ProductService<IacIssueData> {
   }
 
   subscribeToLsScanMessages(): Subscription {
-    return this.languageServer.scan$.subscribe((scan: Scan<IacIssueData>) => {
+    return this.languageServer.scan$.subscribe((scan: Scan) => {
       if (scan.product !== ScanProduct.InfrastructureAsCode) {
         return;
       }

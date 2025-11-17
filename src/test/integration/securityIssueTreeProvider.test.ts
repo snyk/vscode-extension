@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as vscode from 'vscode';
 
 import { IVSCodeLanguages } from '../../snyk/common/vscode/languages';
-import { CodeIssueData, Issue, LsErrorMessage, ScanProduct } from '../../snyk/common/languageServer/types';
+import { CodeIssueData, Issue, PresentableError, ScanProduct } from '../../snyk/common/languageServer/types';
 import { IContextService } from '../../snyk/common/services/contextService';
 import { IProductService, ProductResult } from '../../snyk/common/services/productService';
 import { deepStrictEqual } from 'assert';
@@ -209,7 +209,11 @@ suite('Code Security Issue Tree Provider', () => {
   test('getRootChildren returns correctly for single folder workspace scan error', async () => {
     try {
       // Setup
-      const repositoryInvalidError = new Error(LsErrorMessage.repositoryInvalidError);
+      const repositoryInvalidError: PresentableError = {
+        error: 'repository does not exist',
+        showNotification: false,
+        treeNodeSuffix: '',
+      };
       await setCCIAndIVOs(false);
       const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', repositoryInvalidError]]));
 
@@ -221,7 +225,7 @@ suite('Code Security Issue Tree Provider', () => {
       //    Scan failed  Error: repository does not exist
       deepStrictEqual(rootChildren.length, 2);
       verifyFolderNodeWithError(rootChildren[0], 'fake-dir');
-      verifyScanFailedErrorNode(rootChildren[1], repositoryInvalidError.toString());
+      verifyScanFailedErrorNode(rootChildren[1], repositoryInvalidError.error || '');
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
@@ -232,9 +236,12 @@ suite('Code Security Issue Tree Provider', () => {
       // Setup
       await setCCIAndIVOs(false);
       const folderNames = ['dir-one', 'dir-two'];
-      const issueTreeProvider = createIssueTreeProvider(
-        new Map(folderNames.map(name => [name, new Error('Some scan error')])),
-      );
+      const scanError: PresentableError = {
+        error: 'Some scan error',
+        showNotification: false,
+        treeNodeSuffix: '',
+      };
+      const issueTreeProvider = createIssueTreeProvider(new Map(folderNames.map(name => [name, scanError])));
 
       // Act
       const rootChildren = issueTreeProvider.getRootChildren();

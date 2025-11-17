@@ -7,6 +7,7 @@ import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
+import { PresentableError } from './common/languageServer/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
@@ -565,7 +566,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.openIssueCommand(arg),
       ),
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
-      vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, () => this.commandController.showLsOutputChannel()),
+      vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, (presentableError?: PresentableError) =>
+        this.commandController.showLsOutputChannel(presentableError),
+      ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {
         const referenceBranch = 'Select a reference branch';
