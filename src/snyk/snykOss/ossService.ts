@@ -51,7 +51,7 @@ export class OssService extends ProductService<OssIssueData> {
   }
 
   subscribeToLsScanMessages(): Subscription {
-    return this.languageServer.scan$.subscribe((scan: Scan<OssIssueData>) => {
+    return this.languageServer.scan$.subscribe((scan: Scan) => {
       if (scan.product !== ScanProduct.OpenSource) {
         return;
       }

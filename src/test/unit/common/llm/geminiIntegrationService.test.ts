@@ -31,7 +31,7 @@ suite('Workspace Scan Command Parameter Test', () => {
     } as IConfiguration;
 
     const extensionContextMock = {} as IExtensionRetriever;
-    const scanSubject = new Subject<Scan<CodeIssueData | OssIssueData | IacIssueData>>();
+    const scanSubject = new Subject<Scan>();
     const uriAdapterMock = {} as IUriAdapter;
 
     const markdownAdapterMock = {

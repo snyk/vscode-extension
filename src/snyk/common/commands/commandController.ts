@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
@@ -15,7 +16,7 @@ import {
 import { COMMAND_DEBOUNCE_INTERVAL } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { CodeIssueData, IacIssueData } from '../languageServer/types';
+import { CodeIssueData, IacIssueData, PresentableError } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
@@ -63,7 +64,10 @@ export class CommandController {
 
   async openLocal(path: Uri, range?: Range): Promise<void> {
     try {
-      await this.window.showTextDocumentViaUri(path, { viewColumn: 1, selection: range });
+      await this.window.showTextDocumentViaUri(path, {
+        viewColumn: 1,
+        selection: range,
+      });
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
@@ -71,7 +75,10 @@ export class CommandController {
 
   async openLocalFile(filePath: string, range?: Range): Promise<void> {
     try {
-      await this.window.showTextDocumentViaFilepath(filePath, { viewColumn: 1, selection: range });
+      await this.window.showTextDocumentViaFilepath(filePath, {
+        viewColumn: 1,
+        selection: range,
+      });
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
@@ -161,9 +168,32 @@ export class CommandController {
     return this.logger.showOutput();
   }
 
-  showLsOutputChannel(): void {
+  async showLsOutputChannel(presentableError?: PresentableError): Promise<void> {
     // To get an instance of an OutputChannel use createOutputChannel.
-    return this.languageServer.showOutputChannel();
+    this.languageServer.showOutputChannel();
+
+    if (presentableError?.error) {
+      // Format JSON as rows, excluding showNotification, treeNodeSuffix, and empty values
+      const details = Object.entries(presentableError)
+        .filter(([key]) => key !== 'showNotification' && key !== 'treeNodeSuffix')
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+        .join('\n');
+
+      const copyButton = 'Copy';
+      const result = await vscode.window.showInformationMessage(
+        details,
+        {
+          modal: true,
+          detail: `You can copy the error message and use the filter field in the output channel to locate it.`,
+        },
+        copyButton,
+      );
+
+      if (result === copyButton) {
+        await vscode.env.clipboard.writeText(presentableError.error);
+      }
+    }
   }
 
   async executeCommand(
