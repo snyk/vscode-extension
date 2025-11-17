@@ -175,7 +175,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     SecretStorageAdapter.init(vscodeContext);
     configuration.setExtensionId(vscodeContext.extension.id);
-    this.configurationWatcher = new ConfigurationWatcher(Logger, this.user, vscodeContext);
+    this.configurationWatcher = new ConfigurationWatcher(Logger);
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
@@ -209,6 +209,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
     this.languageServer = new LanguageServer(
+      vscodeContext,
       this.user,
       configuration,
       languageClientAdapter,

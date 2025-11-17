@@ -28,14 +28,9 @@ import { errorsLogs } from '../messages/errors';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
-import { User } from '../user';
 
 class ConfigurationWatcher implements IWatcher {
-  constructor(
-    private readonly logger: ILog,
-    private readonly user: User,
-    private readonly vscodeContext: vscode.ExtensionContext,
-  ) {}
+  constructor(private readonly logger: ILog) {}
 
   private async onChangeConfiguration(extension: IExtension, key: string): Promise<void> {
     if (key === ADVANCED_ORGANIZATION) {

@@ -53,6 +53,7 @@ export class LanguageServer implements ILanguageServer {
   public static ReceivedFolderConfigsFromLs = false;
 
   constructor(
+    private vscodeContext: vscode.ExtensionContext,
     private user: User,
     private configuration: IConfiguration,
     private languageClientAdapter: ILanguageClientAdapter,
@@ -227,7 +228,7 @@ export class LanguageServer implements ILanguageServer {
         try {
           // This notification is ONLY sent for VS Code (not Cursor/Windsurf)
           // LS handles file writes for Cursor/Windsurf directly
-          this.extensionRetriever.getContext().subscriptions.push(
+          this.vscodeContext.subscriptions.push(
             /* eslint-disable @typescript-eslint/no-unsafe-argument */
             /* eslint-disable @typescript-eslint/no-unsafe-call */
             /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -236,18 +237,7 @@ export class LanguageServer implements ILanguageServer {
               onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
               provideMcpServerDefinitions: async () => {
                 // @ts-expect-error backward compatibility for older VS Code versions
-                const output: vscode.McpServerDefinition[][] = [];
-
-                const processEnv: Record<string, string> = {};
-                Object.entries(process.env).forEach(([key, value]) => {
-                  processEnv[key] = value ?? '';
-                });
-                const env: Record<string, string> = { ...processEnv, ...params.env };
-
-                // @ts-expect-error backward compatibility for older VS Code versions
-                output.push(new vscode.McpStdioServerDefinition('Snyk', params.command, params.args, env));
-
-                return output;
+                return [new vscode.McpStdioServerDefinition('Snyk', params.command, params.args, params.env)];
               },
             }),
           );
