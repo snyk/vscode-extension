@@ -52,7 +52,7 @@ suite('Code Security Issue Tree Provider', () => {
     errorNode: TreeNode,
     expectedDescription: string = 'Click here to see the problem.',
   ): void {
-    deepStrictEqual(errorNode.label, 'Scan failed');
+    deepStrictEqual(errorNode.label, '');
     deepStrictEqual(errorNode.description, expectedDescription);
     deepStrictEqual(errorNode.tooltip, expectedDescription);
     deepStrictEqual(errorNode.iconPath, undefined);
@@ -60,10 +60,14 @@ suite('Code Security Issue Tree Provider', () => {
     deepStrictEqual(errorNode.command?.command, SNYK_SHOW_LS_OUTPUT_COMMAND);
   }
 
-  function verifyFolderNodeWithError(folderNode: TreeNode, expectedFolderName: string): void {
+  function verifyFolderNodeWithError(
+    folderNode: TreeNode,
+    expectedFolderName: string,
+    expectedSuffix: string,
+  ): void {
     deepStrictEqual(folderNode.label, expectedFolderName);
-    deepStrictEqual(folderNode.description, 'An error occurred');
-    deepStrictEqual(folderNode.tooltip, 'An error occurred');
+    deepStrictEqual(folderNode.description, expectedSuffix);
+    deepStrictEqual(folderNode.tooltip, expectedSuffix);
     deepStrictEqual(folderNode.iconPath, NODE_ICONS.error);
   }
 
@@ -212,7 +216,7 @@ suite('Code Security Issue Tree Provider', () => {
       const repositoryInvalidError: PresentableError = {
         error: 'repository does not exist',
         showNotification: false,
-        treeNodeSuffix: '',
+        treeNodeSuffix: '(repository not found)',
       };
       await setCCIAndIVOs(false);
       const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', repositoryInvalidError]]));
@@ -221,11 +225,11 @@ suite('Code Security Issue Tree Provider', () => {
       const rootChildren = issueTreeProvider.getRootChildren();
 
       // Verify
-      // ⚠️ fake-dir  An error occurred
-      //    Scan failed  Error: repository does not exist
+      // ⚠️ fake-dir  (repository not found)
+      //    Scan failed  Click here to see the problem.
       deepStrictEqual(rootChildren.length, 2);
-      verifyFolderNodeWithError(rootChildren[0], 'fake-dir');
-      verifyScanFailedErrorNode(rootChildren[1], repositoryInvalidError.error || '');
+      verifyFolderNodeWithError(rootChildren[0], 'fake-dir', repositoryInvalidError.treeNodeSuffix);
+      verifyScanFailedErrorNode(rootChildren[1]);
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
@@ -237,9 +241,9 @@ suite('Code Security Issue Tree Provider', () => {
       await setCCIAndIVOs(false);
       const folderNames = ['dir-one', 'dir-two'];
       const scanError: PresentableError = {
-        error: 'Some scan error',
+        error: 'Scan failed',
         showNotification: false,
-        treeNodeSuffix: '',
+        treeNodeSuffix: '(scan failed)',
       };
       const issueTreeProvider = createIssueTreeProvider(new Map(folderNames.map(name => [name, scanError])));
 
@@ -247,14 +251,14 @@ suite('Code Security Issue Tree Provider', () => {
       const rootChildren = issueTreeProvider.getRootChildren();
 
       // Verify
-      // V ⚠️ dir-one  An error occurred
+      // V ⚠️ dir-one  (scan failed)
       // |    Scan failed  Click here to see the problem.
-      // V ⚠️ dir-two  An error occurred
+      // V ⚠️ dir-two  (scan failed)
       // |    Scan failed  Click here to see the problem.
       deepStrictEqual(rootChildren.length, 2);
       for (let i = 0; i < folderNames.length; i++) {
         const folderNode = rootChildren[i];
-        verifyFolderNodeWithError(folderNode, folderNames[i]);
+        verifyFolderNodeWithError(folderNode, folderNames[i], scanError.treeNodeSuffix);
         const folderChildren = folderNode.getChildren();
         deepStrictEqual(folderChildren.length, 1);
         verifyScanFailedErrorNode(folderChildren[0]);

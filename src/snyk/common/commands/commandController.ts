@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
@@ -21,6 +20,7 @@ import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
 import { IVSCodeCommands } from '../vscode/commands';
+import { IVSCodeEnv } from '../vscode/env';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
@@ -41,6 +41,7 @@ export class CommandController {
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
+    private env: IVSCodeEnv,
     private languageServer: ILanguageServer,
     private logger: ILog,
     private configuration: IConfiguration,
@@ -181,7 +182,7 @@ export class CommandController {
         .join('\n');
 
       const copyButton = 'Copy';
-      const result = await vscode.window.showInformationMessage(
+      const result = await this.window.showInformationMessage(
         details,
         {
           modal: true,
@@ -191,7 +192,7 @@ export class CommandController {
       );
 
       if (result === copyButton) {
-        await vscode.env.clipboard.writeText(presentableError.error);
+        await this.env.getClipboard().writeText(presentableError.error);
       }
     }
   }

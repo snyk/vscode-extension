@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver-types';
+import { hasOptionalPropertyOfType, hasPropertyOfType } from '../tsUtil';
 
 export enum ScanProduct {
   Code = 'code',
@@ -30,11 +31,12 @@ export type PresentableError = {
 
 export function isPresentableError(result: unknown): result is PresentableError {
   return (
-    typeof result === 'object' &&
-    result !== null &&
-    'error' in result &&
-    'treeNodeSuffix' in result &&
-    !Array.isArray(result)
+    hasOptionalPropertyOfType(result, 'code', 'number') &&
+    hasOptionalPropertyOfType(result, 'error', 'string') &&
+    hasOptionalPropertyOfType(result, 'path', 'string') &&
+    hasOptionalPropertyOfType(result, 'command', 'string') &&
+    hasPropertyOfType(result, 'showNotification', 'boolean') &&
+    hasPropertyOfType(result, 'treeNodeSuffix', 'string')
   );
 }
 

@@ -69,9 +69,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     if (!this.productService.isLsDownloadSuccessful) {
       return [
         this.getErrorEncounteredTreeNode({
-          treeNodeSuffix: '(download failed)',
-          showNotification: false,
           error: 'Snyk language server download failed',
+          showNotification: false,
+          treeNodeSuffix: '(download failed)',
         }),
       ];
     }

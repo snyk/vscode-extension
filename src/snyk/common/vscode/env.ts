@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
+import { IVSCodeClipboard } from './clipboard';
 
 export interface IVSCodeEnv {
   getUiKind(): string;
   getRemoteName(): string | undefined;
   getAppName(): string;
   getAppHost(): string;
+  getClipboard(): IVSCodeClipboard;
 }
 
 class VSCodeEnv implements IVSCodeEnv {
@@ -22,6 +24,10 @@ class VSCodeEnv implements IVSCodeEnv {
 
   getAppHost(): string {
     return vscode.env.appHost;
+  }
+
+  getClipboard(): IVSCodeClipboard {
+    return vscode.env.clipboard;
   }
 }
 
