@@ -27,8 +27,13 @@ export interface IVSCodeWindow {
 
   registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
 
-  showInformationMessage(message: string, ...items: string[]): Promise<string | undefined>;
-  showErrorMessage(message: string, ...items: string[]): Promise<string | undefined>;
+  showInformationMessage(message: string, ...items: string[]): Thenable<string | undefined>;
+  showInformationMessage(
+    message: string,
+    options: vscode.MessageOptions,
+    ...items: string[]
+  ): Thenable<string | undefined>;
+  showErrorMessage(message: string, ...items: string[]): Thenable<string | undefined>;
 
   showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined>;
 
@@ -124,22 +129,16 @@ class VSCodeWindow implements IVSCodeWindow {
     return vscode.window.withProgress(options, task);
   }
 
-  showInformationMessage(message: string, ...items: string[]): Promise<string | undefined> {
-    return new Promise((resolve, reject) => {
-      vscode.window.showInformationMessage(message, ...items).then(
-        (value: string | undefined) => resolve(value),
-        reason => reject(reason),
-      );
-    });
+  showInformationMessage(
+    message: string,
+    ...rest: Array<vscode.MessageOptions | string>
+  ): Thenable<string | undefined> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    return vscode.window.showInformationMessage(message, ...(rest as any)) as Thenable<string | undefined>;
   }
 
-  showErrorMessage(message: string, ...items: string[]): Promise<string | undefined> {
-    return new Promise((resolve, reject) => {
-      vscode.window.showErrorMessage(message, ...items).then(
-        (value: string | undefined) => resolve(value),
-        reason => reject(reason),
-      );
-    });
+  showErrorMessage(message: string, ...items: string[]): Thenable<string | undefined> {
+    return vscode.window.showErrorMessage(message, ...items);
   }
 
   showInputBox(options?: InputBoxOptions, token?: CancellationToken): Promise<string | undefined> {

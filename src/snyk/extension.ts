@@ -57,6 +57,7 @@ import SecretStorageAdapter from './common/vscode/secretStorage';
 import { TextDocumentAdapter } from './common/vscode/textdocument';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
+import { vsCodeEnv } from './common/vscode/env';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
@@ -314,6 +315,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       vsCodeCommands,
       vsCodeWindow,
+      vsCodeEnv,
       this.languageServer,
       Logger,
       configuration,
