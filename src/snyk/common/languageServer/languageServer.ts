@@ -264,6 +264,11 @@ export class LanguageServer implements ILanguageServer {
     const currentWorkspaceFolders = this.workspace.getWorkspaceFolders();
 
     folderConfigs.forEach(folderConfig => {
+      // Only write folder level org settings for folders that have been migrated from global config
+      if (!folderConfig.orgMigratedFromGlobalConfig) {
+        return;
+      }
+
       // Only set organization for folders that are part of the current VS Code workspace
       const workspaceFolder = currentWorkspaceFolders.find(
         workspaceFolder => folderConfig.folderPath === workspaceFolder.uri.fsPath,

@@ -95,7 +95,7 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
+const DEFAULT_AUTO_ORGANIZATION = false; // Should match value in package.json.
 
 export type PreviewFeatures = Record<string, never>;
 

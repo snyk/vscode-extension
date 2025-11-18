@@ -106,7 +106,7 @@
             "type": "boolean",
             "markdownDescription": "Use automatic organization selection. When enabled, Snyk will automatically select the most appropriate organization for your project using context found in your repository and your authentication. If an organization is configured manually, this feature will be overridden. If an appropriate organization cannot be identified automatically, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used as a fallback.",
             "scope": "resource",
-            "default": true
+            "default": false
           },
           "snyk.advanced.organization": {
             "order": 5,
