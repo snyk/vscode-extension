@@ -198,7 +198,7 @@ export class CodeSuggestionWebviewProvider
   private getWorkspaceFolderPath(filePath: string) {
     // get the workspace folders
     // look at the filepath and identify the folder that contains the filepath
-    for (const folderPath of this.workspace.getWorkspaceFolders()) {
+    for (const folderPath of this.workspace.getWorkspaceFolderPaths()) {
       if (filePath.startsWith(folderPath)) {
         return folderPath;
       }

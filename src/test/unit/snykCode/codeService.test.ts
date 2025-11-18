@@ -40,7 +40,7 @@ suite('Code Service', () => {
       } as ICodeActionKindAdapter,
       viewManagerService,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
