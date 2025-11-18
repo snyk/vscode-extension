@@ -59,6 +59,7 @@ export type FolderConfig = {
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
+  featureFlags?: Record<string, boolean>;
   orgSetByUser: boolean;
   preferredOrg: string;
   autoDeterminedOrg: string;
@@ -324,8 +325,14 @@ export class Configuration implements IConfiguration {
     this.featureFlag[flagName] = value;
   }
 
-  private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {
-    return (await import(path.join('../../../..', 'package.json'))) as { version: string; preview: boolean };
+  private static async getPackageJsonConfig(): Promise<{
+    version: string;
+    preview: boolean;
+  }> {
+    return (await import(path.join('../../../..', 'package.json'))) as {
+      version: string;
+      preview: boolean;
+    };
   }
 
   get isDevelopment(): boolean {

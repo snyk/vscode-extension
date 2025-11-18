@@ -255,6 +255,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       new DiagnosticsIssueProvider<CodeIssueData>(),
       Logger,
+      this.folderConfigs,
     );
 
     const ossSuggestionProvider = new OssDetailPanelProvider(

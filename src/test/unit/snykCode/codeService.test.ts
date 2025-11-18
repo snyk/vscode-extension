@@ -1,6 +1,7 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
+import { IFolderConfigs } from '../../../snyk/common/configuration/folderConfigs';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { CodeIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
@@ -46,6 +47,7 @@ suite('Code Service', () => {
       languagesMock,
       {} as IDiagnosticsIssueProvider<CodeIssueData>,
       new LoggerMock(),
+      {} as IFolderConfigs,
     );
   });
 
