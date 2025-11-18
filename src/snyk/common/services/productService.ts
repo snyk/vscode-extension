@@ -4,7 +4,15 @@ import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { Issue, isPresentableError, LsScanProduct, PresentableError, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
+import {
+  Issue,
+  isPresentableError,
+  LsScanProduct,
+  PresentableError,
+  Scan,
+  ScanProduct,
+  ScanStatus,
+} from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';

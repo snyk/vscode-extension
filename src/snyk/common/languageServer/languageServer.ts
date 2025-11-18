@@ -21,7 +21,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { CodeIssueData, IacIssueData, OssIssueData, Scan, ShowIssueDetailTopicParams } from './types';
+import { Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { GeminiIntegrationService } from '../llm/geminiIntegrationService';

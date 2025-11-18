@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import { Subject } from 'rxjs';
 import { GeminiIntegrationService } from '../../../../snyk/common/llm/geminiIntegrationService';
 import { SNYK_WORKSPACE_SCAN_COMMAND } from '../../../../snyk/common/constants/commands';
-import { Scan, CodeIssueData, IacIssueData, OssIssueData } from '../../../../snyk/common/languageServer/types';
+import { Scan } from '../../../../snyk/common/languageServer/types';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
