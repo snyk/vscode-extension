@@ -45,6 +45,10 @@ This test plan includes the following test cases:
 11. **Test Case 11: Configuration Watcher Bidirectional Sync**
     - Verify `ConfigurationWatcher` correctly syncs changes in both directions (VSCode config ↔ folder configs)
 
+12. **Test Case 12: Settings.json Merging with Language Server Folder Config** (VSCode-Specific)
+    - Verify values from `.vscode/settings.json` are correctly merged with folder config from Language Server
+    - Test scenarios when LS has and does not have folder config for the folder
+
 ---
 
 ## Key Concepts
@@ -1089,6 +1093,271 @@ Verify `ConfigurationWatcher` correctly syncs changes in both directions (VSCode
 
 ---
 
+## Test Case 12: Settings.json Merging with Language Server Folder Config (VSCode-Specific)
+
+### Objective
+Verify that values from `.vscode/settings.json` are correctly merged with folder config received from the Language Server. This is VSCode-specific behavior where settings can be shared via Git, and the extension must handle the interaction between settings file values and Language Server folder configs.
+
+### Prerequisites
+- VSCode with Snyk extension
+- Authenticated Snyk account
+- Test workspace folder
+- Ability to manually edit `.vscode/settings.json`
+- Language Server initialized (for scenarios with folder config)
+- Ability to reset/clear folder configs (for scenarios without folder config)
+
+### Steps
+
+#### 12.1 Test Settings.json with Auto-Select Enabled - LS Has Folder Config
+1. **Setup**: Ensure Language Server has a folder config for the workspace folder:
+   - Open the folder in VSCode
+   - Wait for Language Server to initialize and send folder config via `$/snyk.folderConfig`
+   - Verify folder config is received (check Output panel)
+2. **Edit settings.json**: Manually edit `.vscode/settings.json` in the workspace folder:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": true
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config is updated:
+     - `orgSetByUser = false` (matches `autoSelectOrganization = true`)
+     - `preferredOrg` is cleared (if it was set)
+     - `autoDeterminedOrg` is preserved from LS folder config
+   - Verify Language Server receives updated folder config
+   - Verify scans use `autoDeterminedOrg` from LS
+
+#### 12.2 Test Settings.json with Auto-Select Disabled and Org Set - LS Has Folder Config
+1. **Setup**: Ensure Language Server has a folder config for the workspace folder
+2. **Edit settings.json**: Manually edit `.vscode/settings.json`:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": false,
+     "snyk.advanced.organization": "org-from-settings-json"
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config is updated:
+     - `orgSetByUser = true` (matches `autoSelectOrganization = false`)
+     - `preferredOrg = "org-from-settings-json"` (from settings.json)
+     - `autoDeterminedOrg` is preserved from LS folder config
+   - Verify Language Server receives updated folder config with `preferredOrg`
+   - Verify scans use `preferredOrg` from settings.json
+
+#### 12.3 Test Settings.json with Auto-Select Enabled - LS Does NOT Have Folder Config
+1. **Setup**: Ensure Language Server does NOT have a folder config for the workspace folder:
+   - Option A: Open a new folder that has never been opened before
+   - Option B: Clear/reset folder configs in Language Server storage
+   - Verify no folder config is received from LS (check Output panel)
+2. **Edit settings.json**: Manually create/edit `.vscode/settings.json`:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": true
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify extension creates/updates folder config:
+     - `orgSetByUser = false` (from settings.json)
+     - `preferredOrg = ""` (empty, since auto-select is enabled)
+     - `autoDeterminedOrg` may be empty initially (until LS provides it)
+   - Verify Language Server receives folder config via `WorkspaceDidChangeConfiguration`
+   - Wait for LS to send folder config back via `$/snyk.folderConfig`
+   - Verify `autoDeterminedOrg` is populated when LS responds
+   - Verify scans use `autoDeterminedOrg` once LS provides it
+
+#### 12.4 Test Settings.json with Auto-Select Disabled and Org Set - LS Does NOT Have Folder Config
+1. **Setup**: Ensure Language Server does NOT have a folder config for the workspace folder
+2. **Edit settings.json**: Manually create/edit `.vscode/settings.json`:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": false,
+     "snyk.advanced.organization": "org-from-settings-json"
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify extension creates/updates folder config:
+     - `orgSetByUser = true` (from settings.json)
+     - `preferredOrg = "org-from-settings-json"` (from settings.json)
+     - `autoDeterminedOrg` may be empty initially (until LS provides it)
+   - Verify Language Server receives folder config via `WorkspaceDidChangeConfiguration`
+   - Verify scans use `preferredOrg` from settings.json
+   - Wait for LS to send folder config back via `$/snyk.folderConfig`
+   - Verify `autoDeterminedOrg` is populated when LS responds (but scans still use `preferredOrg`)
+
+#### 12.5 Test Settings.json with Only Organization (No Auto-Select) - LS Has Folder Config
+1. **Setup**: Ensure Language Server has a folder config for the workspace folder
+2. **Edit settings.json**: Manually edit `.vscode/settings.json` with only organization (auto-select setting missing):
+   ```json
+   {
+     "snyk.advanced.organization": "org-from-settings-json-only"
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config behavior:
+     - If `autoSelectOrganization` defaults to `true`:
+       - Extension should treat as auto-select enabled
+       - `orgSetByUser = false`
+       - `preferredOrg` should be cleared (auto-select takes precedence)
+       - Scans use `autoDeterminedOrg` from LS
+     - If `autoSelectOrganization` defaults to `false`:
+       - Extension should treat as manual mode
+       - `orgSetByUser = true`
+       - `preferredOrg = "org-from-settings-json-only"`
+       - Scans use `preferredOrg`
+   - Verify Language Server receives correct folder config
+
+#### 12.6 Test Settings.json with Only Auto-Select (No Organization) - LS Has Folder Config
+1. **Setup**: Ensure Language Server has a folder config for the workspace folder
+2. **Edit settings.json**: Manually edit `.vscode/settings.json` with only auto-select (organization missing):
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": false
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config is updated:
+     - `orgSetByUser = true` (from settings.json)
+     - `preferredOrg` may be empty or use fallback from VSCode config hierarchy
+     - `autoDeterminedOrg` is preserved from LS folder config
+   - Verify Language Server receives folder config
+   - Verify scans use fallback organization (folder → workspace → user → default)
+
+#### 12.7 Test Settings.json with Empty Organization - LS Has Folder Config
+1. **Setup**: Ensure Language Server has a folder config for the workspace folder
+2. **Edit settings.json**: Manually edit `.vscode/settings.json` with empty organization:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": false,
+     "snyk.advanced.organization": ""
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config is updated:
+     - `orgSetByUser = true` (from settings.json)
+     - `preferredOrg = ""` (empty, from settings.json)
+     - `autoDeterminedOrg` is preserved from LS folder config
+   - Verify Language Server receives folder config with empty `preferredOrg`
+   - Verify scans use fallback organization from VSCode config hierarchy
+
+#### 12.8 Test Settings.json Override of LS Folder Config
+1. **Setup**: 
+   - Ensure Language Server has a folder config with:
+     - `orgSetByUser = false` (auto-select enabled)
+     - `preferredOrg = "org-from-ls"`
+     - `autoDeterminedOrg = "org-auto-from-ls"`
+2. **Edit settings.json**: Manually edit `.vscode/settings.json` to override:
+   ```json
+   {
+     "snyk.advanced.autoSelectOrganization": false,
+     "snyk.advanced.organization": "org-override-from-settings"
+   }
+   ```
+3. **Save and verify**:
+   - Save the file
+   - Verify settings.json values take precedence over LS folder config:
+     - `orgSetByUser = true` (from settings.json, overrides LS)
+     - `preferredOrg = "org-override-from-settings"` (from settings.json, overrides LS)
+     - `autoDeterminedOrg = "org-auto-from-ls"` (preserved from LS, never overridden)
+   - Verify Language Server receives updated folder config
+   - Verify scans use `preferredOrg` from settings.json (not from LS)
+
+#### 12.9 Test Settings.json with Multiple Folders - Each Has Different Settings
+1. **Setup**: Open workspace with multiple folders
+2. **Edit settings.json**: Create/edit `.vscode/settings.json` in each folder with different values:
+   - Folder A: `autoSelectOrganization: true`
+   - Folder B: `autoSelectOrganization: false, organization: "org-b"`
+   - Folder C: No settings.json (uses defaults)
+3. **Save and verify**:
+   - Save all files
+   - Verify each folder's settings.json is processed independently
+   - Verify each folder config reflects its own settings.json values
+   - Verify Language Server receives separate folder configs for each folder
+   - Verify scans on each folder use the correct organization
+
+#### 12.10 Test Settings.json Shared via Git - Team Member Opens Folder
+1. **Setup**: 
+   - Create a workspace folder with `.vscode/settings.json` committed to Git:
+     ```json
+     {
+       "snyk.advanced.autoSelectOrganization": false,
+       "snyk.advanced.organization": "team-org-id"
+     }
+     ```
+   - Commit and push to repository
+2. **Test as Team Member**:
+   - Clone repository on another machine
+   - Open folder in VSCode (first time for this machine)
+   - Verify Language Server does NOT have folder config initially
+3. **Verify behavior**:
+   - Verify extension reads settings.json on folder open
+   - Verify extension creates folder config from settings.json:
+     - `orgSetByUser = true` (from settings.json, since `autoSelectOrganization = false`)
+     - `preferredOrg = "team-org-id"` (from settings.json)
+   - Verify Language Server receives folder config via `WorkspaceDidChangeConfiguration`
+   - Wait for LS to send folder config back via `$/snyk.folderConfig`
+   - Verify `autoDeterminedOrg` is populated when LS responds
+   - Verify scans use `preferredOrg` from settings.json (team member's org may differ, but uses shared setting)
+
+#### 12.11 Test Settings.json Conflict Resolution - Settings.json vs LS Folder Config
+1. **Setup**: 
+   - Ensure Language Server has folder config with `preferredOrg = "org-from-ls"`
+   - Manually edit `.vscode/settings.json` with different value:
+     ```json
+     {
+       "snyk.advanced.organization": "org-from-settings-json"
+     }
+     ```
+2. **Open folder**: Close and reopen the folder in VSCode
+3. **Verify conflict resolution**:
+   - Verify extension reads settings.json on folder open
+   - Verify settings.json values take precedence:
+     - Extension uses `org-from-settings-json` from settings.json
+     - Extension updates folder config to match settings.json
+     - Language Server receives updated folder config
+   - Verify no circular updates occur
+   - Verify final state matches settings.json (not LS folder config)
+
+#### 12.12 Test Settings.json Removal - LS Has Folder Config
+1. **Setup**: Ensure workspace folder has `.vscode/settings.json` with organization settings
+2. **Remove settings**: Delete or remove organization settings from `.vscode/settings.json`
+3. **Save and verify**:
+   - Save the file (or delete it)
+   - Verify `ConfigurationWatcher` detects the change
+   - Verify folder config behavior:
+     - If settings.json is deleted: Folder config may use defaults or fallback to workspace/user level
+     - If settings are removed but file exists: Folder config uses fallback hierarchy
+   - Verify Language Server receives updated folder config
+   - Verify scans use fallback organization (workspace → user → default)
+
+### Expected Results
+- Settings.json values are correctly read and merged with LS folder configs
+- When LS has folder config: Settings.json values override LS folder config (except `autoDeterminedOrg`)
+- When LS does NOT have folder config: Extension creates folder config from settings.json
+- `autoDeterminedOrg` is always preserved from LS (never overridden by settings.json)
+- Settings.json values take precedence over LS folder config for `orgSetByUser` and `preferredOrg`
+- Multiple folders maintain independent settings.json values
+- Settings.json shared via Git works correctly for team members
+- Conflict resolution favors settings.json over LS folder config
+- Settings.json removal triggers fallback to configuration hierarchy
+- `ConfigurationWatcher` correctly detects and processes settings.json changes
+- Language Server receives correct folder configs based on merged values
+
+---
+
 ## Error Monitoring
 
 Throughout all tests, monitor:
@@ -1188,6 +1457,7 @@ All test cases should pass with:
 - ✅ **Opting in/out of automatic org selection works correctly** (Test Case 9 - Critical)
 - ✅ **Settings persist correctly after VSCode restart** (Test Case 10)
 - ✅ **Configuration Watcher bidirectional sync works correctly** (Test Case 11 - VSCode-specific)
+- ✅ **Settings.json merging with Language Server folder config works correctly** (Test Case 12 - VSCode-specific)
 
 ---
 
