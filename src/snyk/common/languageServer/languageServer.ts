@@ -221,9 +221,7 @@ export class LanguageServer implements ILanguageServer {
       this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
 
       // Set global flag after first folder config received (used for initialization options)
-      if (!LanguageServer.ReceivedFolderConfigsFromLs) {
-        LanguageServer.ReceivedFolderConfigsFromLs = true;
-      }
+      LanguageServer.ReceivedFolderConfigsFromLs = true;
 
       this.configuration.setFolderConfigs(processedFolderConfigs).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
