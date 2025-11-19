@@ -5,6 +5,10 @@
 - Ensure the Snyk Language Server Protocol version is correct in the plugin. 
   - `PROTOCOL_VERSION`  in  `src/snyk/common/constants/languageServer.ts`  
 
+- There must be a stable CLI release for the Snyk Language Server Protocol version before you can release this extension, once there is update the hardcoded flag, which switches CLI tests over to the stable channel.
+  - `isStableCLIReleased` in `src/snyk/common/constants/languageServer.ts`
+  - You cannot release without this, the release pipeline has a special test that will fail.
+
 **Initiate Release**
 
 - If you want to do a hotfix with a subset of commits from main, create a hotfix branch off the previous release tag.

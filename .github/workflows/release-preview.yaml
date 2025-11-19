@@ -5,8 +5,8 @@ on:
       - main
 jobs:
   build:
-    uses: snyk/vscode-extension/.github/workflows/ci.yaml@main
-    
+    uses: ./.github/workflows/ci.yaml
+
   release-preview:
     name: Release Preview
     runs-on: ubuntu-latest
