@@ -60,11 +60,7 @@ suite('Code Security Issue Tree Provider', () => {
     deepStrictEqual(errorNode.command?.command, SNYK_SHOW_LS_OUTPUT_COMMAND);
   }
 
-  function verifyFolderNodeWithError(
-    folderNode: TreeNode,
-    expectedFolderName: string,
-    expectedSuffix: string,
-  ): void {
+  function verifyFolderNodeWithError(folderNode: TreeNode, expectedFolderName: string, expectedSuffix: string): void {
     deepStrictEqual(folderNode.label, expectedFolderName);
     deepStrictEqual(folderNode.description, expectedSuffix);
     deepStrictEqual(folderNode.tooltip, expectedSuffix);
