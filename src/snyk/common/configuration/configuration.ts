@@ -146,16 +146,45 @@ export interface IConfiguration {
 
   snykCodeUrl: string;
 
+  /**
+   * Gets the organization setting from the global & workspace scopes only.
+   */
   organization: string | undefined;
 
+  /**
+   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns true if auto organization is enabled, false otherwise
+   */
   isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean;
 
+  /**
+   * Sets the auto organization setting at the workspace folder level.
+   * @param workspaceFolder - The workspace folder to set the setting for
+   * @param autoSelectOrganization - Whether auto organization should be enabled
+   */
   setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void>;
 
+  /**
+   * Gets the organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns The organization ID/name, or undefined if not set
+   */
   getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
 
+  /**
+   * Gets the organization setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns The organization ID/name set specifically at folder level, or undefined if not set at folder level
+   */
   getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined;
 
+  /**
+   * Sets the organization at the workspace folder level.
+   * If the empty string or undefined is provided, the organization will be cleared.
+   * @param workspaceFolder - The workspace folder to set the organization for
+   * @param organization - The organization ID/name to set, or undefined to clear
+   */
   setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
   getAdditionalCliParameters(): string | undefined;
@@ -599,9 +628,6 @@ export class Configuration implements IConfiguration {
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
-  /**
-   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
-   */
   isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
     return (
       this.workspace.getConfiguration<boolean>(
@@ -612,9 +638,6 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  /**
-   * Sets the auto organization setting at the workspace folder level.
-   */
   async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
@@ -624,9 +647,6 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  /**
-   * Gets the organization setting from the global & workspace scopes only.
-   */
   get organization(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
   }
@@ -647,10 +667,6 @@ export class Configuration implements IConfiguration {
     )?.workspaceFolderValue;
   }
 
-  /**
-   * Sets the organization at the workspace folder level.
-   * If the empty string or undefined is provided, the organization will be cleared.
-   */
   async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
