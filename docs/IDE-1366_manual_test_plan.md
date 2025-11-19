@@ -209,12 +209,114 @@ Verify auto-select organization functionality and settings behavior.
 5. Verify scan uses the manually entered organization
 6. Verify `orgSetByUser = true` in folder config sent to Language Server
 
+#### 2.6 Test Auto-Select with Single Folder Workspace
+1. Open a workspace with a **single folder**
+2. Navigate to Settings → Extensions → Snyk
+3. Change **"Snyk: Advanced: Auto Select Organization"** checkbox state
+4. Verify settings are saved to the folder's `.vscode/settings.json`:
+   - Check that `.vscode/settings.json` exists in the workspace folder
+   - Verify settings are written to folder-level settings.json
+   - Verify settings are NOT written to workspace-level settings.json (since single folder = folder level)
+5. Verify Language Server receives folder config with correct `orgSetByUser` value
+6. Verify scans use the correct organization based on folder config
+
+#### 2.7 Test Auto-Select with Multiple Folder Workspace
+1. Open a workspace with **multiple folders** (File → Add Folder to Workspace)
+2. Configure different auto-select settings for each folder:
+   - Folder A: Auto-select enabled (checkbox checked)
+   - Folder B: Auto-select disabled (checkbox unchecked)
+3. Verify each folder's `.vscode/settings.json` contains its own settings:
+   - Folder A: `snyk.advanced.autoSelectOrganization: true`
+   - Folder B: `snyk.advanced.autoSelectOrganization: false`
+4. Verify workspace-level `.vscode/settings.json` (if exists) does NOT contain folder-specific org settings
+5. Verify each folder maintains independent organization settings
+6. Run scans on each folder and verify each uses the correct organization
+
+#### 2.8 Test Auto-Select Change at Workspace Level
+1. Open a workspace with multiple folders
+2. Open workspace-level settings (workspace root `.vscode/settings.json`)
+3. Set **"Snyk: Advanced: Auto Select Organization"** at workspace level
+4. Verify:
+   - Workspace-level setting is saved in workspace root `.vscode/settings.json`
+   - **Folder-level settings take precedence** over workspace-level
+   - If a folder has no folder-level setting, it falls back to workspace-level
+   - Language Server reads settings at folder level (like other IDEs)
+   - Each folder's folder config reflects its effective organization (folder-level or workspace-level fallback)
+5. Change auto-select at workspace level
+6. Verify folders without folder-level settings inherit the workspace-level change
+7. Verify folders with folder-level settings are NOT affected by workspace-level change
+
+#### 2.9 Test Auto-Select Change at Global/User Level
+1. Open User Settings (File → Preferences → Settings → User tab, or user `settings.json`)
+2. Set **"Snyk: Advanced: Auto Select Organization"** at user/global level
+3. Verify:
+   - User-level setting is saved in user `settings.json`
+   - **Folder-level settings take precedence** over user-level
+   - **Workspace-level settings take precedence** over user-level
+   - If a folder has no folder/workspace-level setting, it falls back to user-level
+   - Language Server reads settings at folder level (like other IDEs)
+   - Each folder's folder config reflects its effective organization (folder → workspace → user fallback)
+4. Change auto-select at user level
+5. Verify folders without folder/workspace-level settings inherit the user-level change
+6. Verify folders with folder/workspace-level settings are NOT affected by user-level change
+
+#### 2.10 Test Settings.json Writing Behavior (Critical)
+**Objective**: Verify settings are only written to `.vscode/settings.json` when relevant and not when it doesn't make sense.
+
+1. **Test: Single Folder Workspace - Folder-Level Setting**
+   - Open single folder workspace
+   - Set organization at folder level
+   - Verify `.vscode/settings.json` in the folder contains the setting
+   - Verify workspace-level `.vscode/settings.json` does NOT exist (single folder = no workspace file needed)
+
+2. **Test: Multiple Folder Workspace - Folder-Level Setting**
+   - Open workspace with multiple folders
+   - Set organization for Folder A at folder level
+   - Verify Folder A's `.vscode/settings.json` contains the setting
+   - Verify workspace root `.vscode/settings.json` does NOT contain folder-specific org settings
+   - Verify Folder B's `.vscode/settings.json` does NOT contain org settings (if not set for Folder B)
+
+3. **Test: Multiple Folder Workspace - Workspace-Level Setting**
+   - Open workspace with multiple folders
+   - Set organization at workspace level (workspace root `.vscode/settings.json`)
+   - Verify workspace root `.vscode/settings.json` contains the setting
+   - Verify individual folder `.vscode/settings.json` files do NOT contain org settings (unless explicitly set at folder level)
+   - Verify folders without folder-level settings use workspace-level setting
+
+4. **Test: User-Level Setting**
+   - Set organization at user level (user `settings.json`)
+   - Verify user `settings.json` contains the setting
+   - Verify NO `.vscode/settings.json` files are created/modified (user-level doesn't require workspace files)
+   - Verify folders without folder/workspace-level settings use user-level setting
+
+5. **Test: Auto-Select Default Value (true)**
+   - Open workspace folder
+   - Verify if auto-select is at default value (true) and matches Language Server's `orgSetByUser = false`:
+     - **Settings.json should NOT be written** if value matches default
+     - Settings.json should only be written if user explicitly changes it
+   - Change auto-select to false, then back to true
+   - Verify settings.json behavior (may or may not remove the setting depending on VSCode behavior)
+
+6. **Test: Organization Field Empty**
+   - Set auto-select to false (manual mode)
+   - Leave organization field empty
+   - Verify:
+     - If organization is empty and matches default/fallback, settings.json may not need to contain it
+     - Settings.json should only contain organization field if it has a meaningful value
+     - Language Server should use fallback hierarchy when organization is empty
+
 ### Expected Results
 - Checkbox controls organization selection mode correctly
 - Auto-select uses appropriate organization from Language Server
 - Manual organization setting works when auto-select is disabled
 - Language Server receives correct `orgSetByUser` flag
 - Settings are always editable (VSCode behavior)
+- **Single folder workspace**: Settings written to folder-level `.vscode/settings.json`
+- **Multiple folder workspace**: Each folder maintains independent settings; workspace-level settings work as fallback
+- **Workspace-level changes**: Only affect folders without folder-level settings
+- **Global/user-level changes**: Only affect folders without folder/workspace-level settings
+- **Settings.json writing**: Settings are only written when relevant (not for default values, not unnecessarily)
+- **Language Server reads at folder level**: Like other IDEs, LS reads folder-level settings, not workspace/global
 
 ---
 
@@ -596,12 +698,100 @@ Verify the extension correctly handles migrated folder configs received from Lan
    - Extension waits for LS to migrate
    - Extension receives migrated config after LS processes it
 
+#### 7.8 Test Migration with Single Folder Workspace
+1. Open a **single folder workspace**
+2. Set organization at folder level (or user level) before migration
+3. Reset migration state (using command from 7.3)
+4. Open workspace folder and trigger migration (handled by LS)
+5. Verify extension receives migrated folder config from LS
+6. Verify `.vscode/settings.json` in the folder reflects migrated state:
+   - Auto-select checkbox state matches `!orgSetByUser`
+   - Organization field shows correct value
+7. Verify settings are written to folder-level `.vscode/settings.json` (not workspace-level, since single folder)
+8. Verify Language Server reads settings at folder level
+
+#### 7.9 Test Migration with Multiple Folder Workspace
+1. Open a **workspace with multiple folders**
+2. Set different organization settings for different folders before migration:
+   - Folder A: Organization "org-123" at folder level
+   - Folder B: Organization at workspace level
+   - Folder C: No organization setting (will use user-level or default)
+3. Reset migration state for all folders
+4. Open workspace and trigger migration (handled by LS)
+5. Verify each folder receives its own migrated folder config from LS
+6. Verify each folder's `.vscode/settings.json` reflects its migrated state:
+   - Folder A: Settings in Folder A's `.vscode/settings.json`
+   - Folder B: Settings in workspace root `.vscode/settings.json` (workspace-level)
+   - Folder C: May use user-level settings or default
+7. Verify workspace root `.vscode/settings.json` does NOT contain folder-specific org settings for Folder A
+8. Verify Language Server reads each folder's settings at folder level (like other IDEs)
+
+#### 7.10 Test Migration with Workspace-Level Organization
+1. Open workspace with multiple folders
+2. Set organization at **workspace level** (workspace root `.vscode/settings.json`) before migration
+3. Reset migration state
+4. Open workspace and trigger migration (handled by LS)
+5. Verify:
+   - Workspace-level organization is migrated by LS
+   - Each folder receives migrated folder config (may inherit from workspace-level)
+   - Workspace root `.vscode/settings.json` reflects migrated state
+   - Individual folder `.vscode/settings.json` files do NOT contain org settings (unless explicitly set at folder level)
+   - Language Server reads settings at folder level, using workspace-level as fallback
+
+#### 7.11 Test Migration with Global/User-Level Organization
+1. Set organization at **user/global level** (user `settings.json`) before migration
+2. Open workspace folder(s) without folder/workspace-level org settings
+3. Reset migration state
+4. Trigger migration (handled by LS)
+5. Verify:
+   - User-level organization is migrated by LS
+   - Folders without folder/workspace-level settings receive migrated config based on user-level
+   - User `settings.json` reflects migrated state
+   - NO `.vscode/settings.json` files are created/modified (user-level doesn't require workspace files)
+   - Language Server reads settings at folder level, using user-level as fallback
+
+#### 7.12 Test Migration - Settings.json Writing Behavior
+**Objective**: Verify settings are only written to `.vscode/settings.json` when relevant after migration.
+
+1. **Test: Migration with Default Values**
+   - Reset migration state
+   - Open folder with no existing org settings
+   - Trigger migration (LS migrates to auto-select enabled, default org)
+   - Verify:
+     - If migrated state matches defaults, `.vscode/settings.json` may not need org settings
+     - Settings.json should only be written if migrated state differs from defaults
+     - Language Server uses folder config (which may have migrated values)
+
+2. **Test: Migration with Non-Default Values**
+   - Reset migration state
+   - Open folder with existing org setting (non-default)
+   - Trigger migration (LS migrates to manual mode with preferred org)
+   - Verify:
+     - `.vscode/settings.json` contains migrated org settings
+     - Settings reflect migrated state (auto-select false, preferred org set)
+     - Settings are written because they differ from defaults
+
+3. **Test: Migration - Multiple Folders, Different States**
+   - Open workspace with multiple folders
+   - Folder A: Has org setting → migrates to manual mode
+   - Folder B: No org setting → migrates to auto-select mode
+   - Verify:
+     - Folder A's `.vscode/settings.json` contains org settings (non-default)
+     - Folder B's `.vscode/settings.json` may not contain org settings (if default)
+     - Workspace root `.vscode/settings.json` does NOT contain folder-specific settings
+
 ### Expected Results
 - Extension correctly receives and stores migrated folder configs from LS
 - VSCode settings UI correctly reflects migrated organization state
 - Extension handles both migrated and unmigrated folder configs gracefully
 - `orgMigratedFromGlobalConfig` flag is correctly stored and used
 - Settings persist correctly after migration
+- **Single folder workspace**: Migration settings written to folder-level `.vscode/settings.json` when relevant
+- **Multiple folder workspace**: Each folder migrates independently; workspace-level migration works as fallback
+- **Workspace-level migration**: Settings written to workspace root `.vscode/settings.json` when relevant
+- **User-level migration**: Settings written to user `settings.json`; no workspace files created unnecessarily
+- **Settings.json writing**: Settings are only written when they differ from defaults or when explicitly needed
+- **Language Server reads at folder level**: Like other IDEs, LS reads folder-level settings, using workspace/user as fallback
 
 ---
 
