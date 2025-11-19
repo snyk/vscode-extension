@@ -53,6 +53,21 @@ export type ScanCommandConfig = {
   postScanOnlyReferenceFolder: boolean;
 };
 
+export type LocalCodeEngine = {
+  allowCloudUpload: boolean;
+  url: string;
+  enabled: boolean;
+};
+
+export type SastSettings = {
+  sastEnabled: boolean;
+  localCodeEngine: LocalCodeEngine;
+  org: string;
+  supportedLanguages: string[];
+  reportFalsePositivesEnabled: boolean;
+  autofixEnabled: boolean;
+};
+
 export type FolderConfig = {
   folderPath: string;
   baseBranch: string;
@@ -64,6 +79,7 @@ export type FolderConfig = {
   preferredOrg: string;
   autoDeterminedOrg: string;
   orgMigratedFromGlobalConfig: boolean;
+  sastSettings?: SastSettings;
 };
 
 export interface IssueViewOptions {
