@@ -14,12 +14,15 @@ suite('IaC code actions provider', () => {
 
   setup(() => {
     const codeResults = new Map<string, WorkspaceFolderResult<IacIssueData>>();
-    codeResults.set('folderName', [
-      {
-        filePath: '//folderName//test.js',
-        additionalData: {},
-      } as unknown as Issue<IacIssueData>,
-    ]);
+    codeResults.set('folderName', {
+      isSuccess: true,
+      issues: [
+        {
+          filePath: '//folderName//test.js',
+          additionalData: {},
+        } as unknown as Issue<IacIssueData>,
+      ],
+    });
 
     const codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({

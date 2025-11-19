@@ -15,12 +15,15 @@ suite('OSS code actions provider', () => {
 
   setup(() => {
     const ossResults = new Map<string, WorkspaceFolderResult<OssIssueData>>();
-    ossResults.set('folderName', [
-      {
-        filePath: '//folderName//package.json',
-        additionalData: {},
-      } as unknown as Issue<OssIssueData>,
-    ]);
+    ossResults.set('folderName', {
+      isSuccess: true,
+      issues: [
+        {
+          filePath: '//folderName//package.json',
+          additionalData: {},
+        } as unknown as Issue<OssIssueData>,
+      ],
+    });
 
     const codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({

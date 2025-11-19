@@ -4,15 +4,7 @@ import { IConfiguration } from '../configuration/configuration';
 import { IWorkspaceTrust } from '../configuration/trustedFolders';
 import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
-import {
-  Issue,
-  isPresentableError,
-  LsScanProduct,
-  PresentableError,
-  Scan,
-  ScanProduct,
-  ScanStatus,
-} from '../languageServer/types';
+import { Issue, LsScanProduct, PresentableError, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
@@ -22,7 +14,18 @@ import { Disposable } from '../vscode/types';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { IDiagnosticsIssueProvider } from './diagnosticsService';
 
-export type WorkspaceFolderResult<T> = Issue<T>[] | PresentableError;
+export type WorkspaceFolderResult<T> = WorkspaceFolderResultSuccess<T> | WorkspaceFolderResultFailure;
+
+export interface WorkspaceFolderResultSuccess<T> {
+  isSuccess: true;
+  issues: Issue<T>[];
+}
+
+export interface WorkspaceFolderResultFailure {
+  isSuccess: false;
+  error: PresentableError;
+}
+
 export type ProductResult<T> = Map<string, WorkspaceFolderResult<T>>; // map of a workspace folder to results array or an error occurred in this folder
 
 export interface IProductService<T> extends AnalysisStatusProvider, Disposable {
@@ -86,21 +89,21 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   getIssue(folderPath: string, issueId: string): Issue<T> | undefined {
     const folderResult = this._result.get(folderPath);
-    if (isPresentableError(folderResult)) {
+    if (!folderResult || !folderResult.isSuccess) {
       return undefined;
     }
 
-    return folderResult?.find(issue => issue.id === issueId);
+    return folderResult.issues.find(issue => issue.id === issueId);
   }
 
   getIssueById(issueId: string): Issue<T> | undefined {
     const results = this._result.values();
     for (const folderResult of results) {
-      if (isPresentableError(folderResult)) {
-        return undefined;
+      if (!folderResult.isSuccess) {
+        continue;
       }
 
-      const issue = folderResult?.find(issue => issue.id === issueId);
+      const issue = folderResult.issues.find(issue => issue.id === issueId);
       if (issue) {
         return issue;
       }
@@ -174,7 +177,7 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     if (scanMsg.status == ScanStatus.InProgress) {
       if (!this.isAnalysisRunning) {
         this.analysisStarted();
-        this._result.set(scanMsg.folderPath, []);
+        this._result.set(scanMsg.folderPath, { isSuccess: true, issues: [] });
         this.refreshTreeView();
       }
 
@@ -206,9 +209,14 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
         scanMsg.product,
         scanMsg.folderPath,
       );
-      this._result.set(scanMsg.folderPath, issues);
+      this._result.set(scanMsg.folderPath, { isSuccess: true, issues });
     } else {
-      this._result.set(scanMsg.folderPath, scanMsg.presentableError!);
+      const error: PresentableError = scanMsg.presentableError ?? {
+        error: 'Scan failed',
+        showNotification: false,
+        treeNodeSuffix: '(scan failed)',
+      };
+      this._result.set(scanMsg.folderPath, { isSuccess: false, error });
     }
 
     if (this.runningScanCount <= 0) {

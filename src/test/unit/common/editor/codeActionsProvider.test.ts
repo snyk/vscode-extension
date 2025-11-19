@@ -45,14 +45,17 @@ suite('Code Actions Provider', () => {
 
   setup(() => {
     const codeResults = new Map<string, WorkspaceFolderResult<ProductData>>();
-    codeResults.set('folderName', [
-      {
-        filePath: '//folderName//test.js',
-        additionalData: {
-          rule: 'some-rule',
-        },
-      } as unknown as Issue<ProductData>,
-    ]);
+    codeResults.set('folderName', {
+      isSuccess: true,
+      issues: [
+        {
+          filePath: '//folderName//test.js',
+          additionalData: {
+            rule: 'some-rule',
+          },
+        } as unknown as Issue<ProductData>,
+      ],
+    });
 
     const codeActionKindAdapter = {
       getQuickFix: sinon.fake(),
