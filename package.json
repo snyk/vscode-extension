@@ -240,14 +240,6 @@
             "default": false,
             "description": "Run Snyk Open Source Security analysis in automatic mode.",
             "scope": "application"
-          },
-          "snyk.yesBackgroundOssNotification": {
-            "order": 3,
-            "//": "Name starts with y to put it at the end, as configs are sorted alphabetically",
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "Show scan notification for critical Open Source Security issues when Snyk view is hidden",
-            "scope": "application"
           }
         }
       },
