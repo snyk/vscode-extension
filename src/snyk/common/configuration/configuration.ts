@@ -28,7 +28,6 @@ import {
   SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
-  YES_BACKGROUND_OSS_NOTIFICATION_SETTING,
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
 } from '../constants/settings';
@@ -126,9 +125,6 @@ export interface IConfiguration {
   getAdditionalCliParameters(): string | undefined;
 
   snykApiEndpoint: string;
-  shouldShowOssBackgroundScanNotification: boolean;
-
-  hideOssBackgroundScanNotification(): Promise<void>;
 
   shouldAutoScanOss: boolean;
 
@@ -503,22 +499,6 @@ export class Configuration implements IConfiguration {
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(YES_WELCOME_NOTIFICATION_SETTING),
-      false,
-      true,
-    );
-  }
-
-  get shouldShowOssBackgroundScanNotification(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_BACKGROUND_OSS_NOTIFICATION_SETTING),
-    );
-  }
-
-  async hideOssBackgroundScanNotification(): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_BACKGROUND_OSS_NOTIFICATION_SETTING),
       false,
       true,
     );
