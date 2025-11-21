@@ -168,6 +168,7 @@ export async function configureAntigravity(vscodeContext: vscode.ExtensionContex
     }
     const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(localPath, rulesContent);
+    // Known antigravity bug: ignored rules for antigravity are not recognized.
   } catch {
     Logger.error('Failed to publish Antigravity rules');
   }
