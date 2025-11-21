@@ -142,7 +142,7 @@ Verify organization can be set per-folder through VSCode settings.
 #### 1.5 Verify Language Server Communication
 1. Open VSCode Output panel (`View → Output`)
 2. Select "Snyk" from the output channel dropdown
-3. Monitor for `WorkspaceDidChangeConfiguration` calls
+3. Monitor for `registerNotifier` - sending folderConfig to client folderConfig instead of `WorkspaceDidChangeConfiguration`
 4. Verify folder config is sent to Language Server with correct `preferredOrg` and `orgSetByUser` values
 
 ### Expected Results
@@ -176,6 +176,7 @@ Verify auto-select organization functionality and settings behavior.
 
 #### 2.2 Test Checkbox Behavior - Enabling Auto-Select
 1. If checkbox is unchecked, check **"Snyk: Advanced: Auto Select Organization"**
+   - **Note**: This applies to the checkbox in workspace settings (folder-level or workspace-level). The checkbox in global settings does not update org.
 2. Verify **"Snyk: Advanced: Organization"** field shows `autoDeterminedOrg` value (if available)
 3. Verify field remains editable (VSCode doesn't make it read-only)
 4. Verify settings.json shows:
@@ -190,13 +191,14 @@ Verify auto-select organization functionality and settings behavior.
 2. Verify **"Snyk: Advanced: Organization"** field remains editable
 3. Verify field may be empty or show previous value
 4. Verify user can enter manual organization value
-5. Verify settings.json shows:
-   ```json
-   {
-     "snyk.advanced.autoSelectOrganization": false,
-     "snyk.advanced.organization": "org-123"
-   }
-   ```
+5. Verify settings.json behavior:
+   - **Note**: `settings.json` never sets the value to `false` (`"snyk.advanced.autoSelectOrganization": false`). Instead, if the checkbox is unchecked, the key is removed completely from `settings.json`. It does set `"orgSetByUser": false` in the folder config sent to the Language Server.
+   - If organization is set, verify settings.json shows:
+     ```json
+     {
+       "snyk.advanced.organization": "org-123"
+     }
+     ```
 
 #### 2.4 Test Auto-Select Functionality
 1. Ensure checkbox is checked (auto-select enabled)
@@ -208,6 +210,7 @@ Verify auto-select organization functionality and settings behavior.
 #### 2.5 Test Manual Override
 1. Uncheck **"Snyk: Advanced: Auto Select Organization"**
 2. Enter a specific organization ID in **"Snyk: Advanced: Organization"** field
+   - **Note**: SLUG IS CASE SENSITIVE - ensure the organization slug is entered with the correct casing
 3. Settings are saved automatically
 4. Run a Snyk scan
 5. Verify scan uses the manually entered organization
@@ -1357,6 +1360,17 @@ Verify that values from `.vscode/settings.json` are correctly merged with folder
 - Language Server receives correct folder configs based on merged values
 
 ---
+
+## Accessing Logs
+
+### VSCode Extension Logs
+To access VSCode extension logs, run the following command in your terminal:
+
+```bash
+cd "$(ls -d ~/Library/Application\ Support/Code/logs/*/window*/exthost/output_logging_*/ | sort -V | tail -n 1)"
+```
+
+This will navigate you to the most recent extension host logging directory where you can find the extension logs.
 
 ## Error Monitoring
 
