@@ -195,11 +195,10 @@ class ConfigurationWatcher implements IWatcher {
         workspaceFolder,
       );
 
-      // Update preferredOrg with the new value
-      // Note: We could set orgSetByUser=true here when detecting a user change from auto-org mode,
-      // but we let LS handle it - LS will detect the preferredOrg change and set orgSetByUser=true
+      // Update preferredOrg with the new value and set orgSetByUser to true.
       return {
         ...folderConfig,
+        orgSetByUser: true,
         preferredOrg: orgValueAtFolderLevel ?? '',
       };
     });
