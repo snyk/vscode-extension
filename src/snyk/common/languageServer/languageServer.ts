@@ -282,6 +282,7 @@ export class LanguageServer implements ILanguageServer {
       // Mark this folder as being updated by LS to prevent circular updates in the watcher
       LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
 
+      // TODO - await this call when we update vscode-languageclient to a version that supports async notification handlers.
       this.configuration
         .setOrganization(workspaceFolder, orgToDisplay)
         .then(
@@ -306,6 +307,7 @@ export class LanguageServer implements ILanguageServer {
       const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
+        // TODO - await this call when we update vscode-languageclient to a version that supports async notification handlers.
         this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg).then(
           () => {
             this.logger.debug(
