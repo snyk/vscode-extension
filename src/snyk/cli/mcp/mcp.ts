@@ -21,7 +21,6 @@ const SERVER_KEY = 'Snyk';
 const COPILOT_GITIGNORE_PATTERN = '.github/instructions/snyk_rules.instructions.md';
 const WINDSURF_GITIGNORE_PATTERN = '.windsurf/rules/snyk_rules.md';
 const CURSOR_GITIGNORE_PATTERN = '.cursor/rules/snyk_rules.mdc';
-const ANTIGRAVITY_GITIGNORE_PATTERN = '.agent/rules/snyk_rules.md';
 
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   const appName = vscode.env.appName.toLowerCase();
@@ -169,7 +168,6 @@ export async function configureAntigravity(vscodeContext: vscode.ExtensionContex
     }
     const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
     await writeLocalRulesForIde(localPath, rulesContent);
-    await ensureInGitignore([ANTIGRAVITY_GITIGNORE_PATTERN]);
   } catch {
     Logger.error('Failed to publish Antigravity rules');
   }
