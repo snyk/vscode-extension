@@ -21,13 +21,19 @@ const SERVER_KEY = 'Snyk';
 const COPILOT_GITIGNORE_PATTERN = '.github/instructions/snyk_rules.instructions.md';
 const WINDSURF_GITIGNORE_PATTERN = '.windsurf/rules/snyk_rules.md';
 const CURSOR_GITIGNORE_PATTERN = '.cursor/rules/snyk_rules.mdc';
+const ANTIGRAVITY_GITIGNORE_PATTERN = '.agent/rules/snyk_rules.md';
 
 export async function configureMcpHosts(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
   const appName = vscode.env.appName.toLowerCase();
   const isWindsurf = appName.includes('windsurf');
   const isCursor = appName.includes('cursor');
   const isVsCode = appName.includes('visual studio code');
+  const isAntigravity = appName.includes('antigravity');
 
+  if (isAntigravity) {
+    await configureAntigravity(vscodeContext, configuration);
+    return;
+  }
   if (isCursor) {
     await configureCursor(vscodeContext, configuration);
     return;
@@ -131,6 +137,41 @@ export async function configureWindsurf(vscodeContext: vscode.ExtensionContext, 
     await ensureInGitignore([WINDSURF_GITIGNORE_PATTERN]);
   } catch {
     Logger.error('Failed to publish Windsurf rules');
+  }
+}
+
+export async function configureAntigravity(vscodeContext: vscode.ExtensionContext, configuration: IConfiguration) {
+  const autoConfigureMcpServer = configuration.getAutoConfigureMcpServer();
+  const secureAtInceptionExecutionFrequency = configuration.getSecureAtInceptionExecutionFrequency();
+  try {
+    if (autoConfigureMcpServer) {
+      const baseDir = path.join(os.homedir(), '.gemini', 'antigravity');
+      const configPath = path.join(baseDir, 'mcp_config.json');
+      if (!fs.existsSync(baseDir)) {
+        Logger.debug(`Antigravity base directory not found at ${baseDir}, skipping MCP configuration.`);
+      } else {
+        const cliPath = await configuration.getCliPath();
+        const env = getSnykMcpEnv(configuration);
+        await ensureMcpServerInJson(configPath, SERVER_KEY, cliPath, ['mcp', '-t', 'stdio'], env);
+        Logger.debug(`Ensured Antigravity MCP config at ${configPath}`);
+      }
+    }
+  } catch {
+    Logger.error('Failed to update Antigravity MCP config');
+  }
+
+  const localPath = path.join('.agent', 'rules', 'snyk_rules.md');
+  try {
+    if (secureAtInceptionExecutionFrequency === 'Manual') {
+      // Delete rules from project
+      await deleteLocalRulesForIde(localPath);
+      return;
+    }
+    const rulesContent = await readBundledRules(vscodeContext, secureAtInceptionExecutionFrequency);
+    await writeLocalRulesForIde(localPath, rulesContent);
+    await ensureInGitignore([ANTIGRAVITY_GITIGNORE_PATTERN]);
+  } catch {
+    Logger.error('Failed to publish Antigravity rules');
   }
 }
 
