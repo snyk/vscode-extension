@@ -8,6 +8,7 @@ import { IProductService } from '../../../../snyk/common/services/productService
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { OssService } from '../../../../snyk/snykOss/ossService';
+import { envMock } from '../../mocks/env.mock';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
@@ -28,6 +29,7 @@ suite('CommandController', () => {
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,
       windowMock,
+      envMock,
       new LanguageServerMock(),
       new LoggerMock(),
       {} as IConfiguration,

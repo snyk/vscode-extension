@@ -1,6 +1,7 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { IConfiguration } from '../../../snyk/common/configuration/configuration';
+import { IFolderConfigs } from '../../../snyk/common/configuration/folderConfigs';
 import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolders';
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { CodeIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
@@ -39,13 +40,14 @@ suite('Code Service', () => {
       } as ICodeActionKindAdapter,
       viewManagerService,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
       languagesMock,
       {} as IDiagnosticsIssueProvider<CodeIssueData>,
       new LoggerMock(),
+      {} as IFolderConfigs,
     );
   });
 
@@ -57,9 +59,7 @@ suite('Code Service', () => {
     ls.scan$.next({
       product: ScanProduct.OpenSource,
       folderPath: 'test/path',
-      issues: [],
       status: ScanStatus.InProgress,
-      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);

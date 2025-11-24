@@ -7,6 +7,7 @@ import { NODE_ICONS, TreeNode } from './treeNode';
 import { TreeNodeProvider } from './treeNodeProvider';
 import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../constants/general';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
+import { PresentableError } from '../languageServer/types';
 
 export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
   constructor(protected readonly configuration: IConfiguration, private statusProvider: AnalysisStatusProvider) {
@@ -69,20 +70,18 @@ export abstract class AnalysisTreeNodeProvider extends TreeNodeProvider {
     return null;
   }
 
-  protected getErrorEncounteredTreeNode(
-    errorMessage: string = messages.clickToProblem,
-    showErrorIcon: boolean = true,
-  ): TreeNode {
+  protected getErrorEncounteredTreeNode(error: PresentableError, showErrorIcon: boolean = true): TreeNode {
     return new TreeNode({
       ...(showErrorIcon ? { icon: NODE_ICONS.error } : {}),
-      text: messages.scanFailed,
-      description: errorMessage,
+      text: '',
+      description: messages.clickToProblem,
       internal: {
         isError: true,
       },
       command: {
         command: SNYK_SHOW_LS_OUTPUT_COMMAND,
         title: '',
+        arguments: [error],
       },
     });
   }

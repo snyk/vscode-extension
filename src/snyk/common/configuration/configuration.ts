@@ -7,6 +7,7 @@ import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
+  ADVANCED_AUTO_SELECT_ORGANIZATION,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_BASE_DOWNLOAD_URL,
@@ -33,6 +34,7 @@ import {
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { WorkspaceFolder } from '../vscode/types';
 
 export const NEWISSUES = 'Net new issues';
 export const ALLISSUES = 'All issues';
@@ -50,12 +52,33 @@ export type ScanCommandConfig = {
   postScanOnlyReferenceFolder: boolean;
 };
 
+export type LocalCodeEngine = {
+  allowCloudUpload: boolean;
+  url: string;
+  enabled: boolean;
+};
+
+export type SastSettings = {
+  sastEnabled: boolean;
+  localCodeEngine: LocalCodeEngine;
+  org: string;
+  supportedLanguages: string[];
+  reportFalsePositivesEnabled: boolean;
+  autofixEnabled: boolean;
+};
+
 export type FolderConfig = {
   folderPath: string;
   baseBranch: string;
   localBranches: string[] | undefined;
   referenceFolderPath: string | undefined;
   scanCommandConfig?: Record<string, ScanCommandConfig>;
+  featureFlags?: Record<string, boolean>;
+  orgSetByUser: boolean;
+  preferredOrg: string;
+  autoDeterminedOrg: string;
+  orgMigratedFromGlobalConfig: boolean;
+  sastSettings?: SastSettings;
 };
 
 export interface IssueViewOptions {
@@ -87,6 +110,8 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   medium: true,
   low: true,
 };
+
+const DEFAULT_AUTO_ORGANIZATION = false; // Should match value in package.json.
 
 export type PreviewFeatures = Record<string, never>;
 
@@ -120,7 +145,46 @@ export interface IConfiguration {
 
   snykCodeUrl: string;
 
+  /**
+   * Gets the organization setting from the global & workspace scopes only.
+   */
   organization: string | undefined;
+
+  /**
+   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns true if auto organization is enabled, false otherwise
+   */
+  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean;
+
+  /**
+   * Sets the auto organization setting at the workspace folder level.
+   * @param workspaceFolder - The workspace folder to set the setting for
+   * @param autoSelectOrganization - Whether auto organization should be enabled
+   */
+  setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void>;
+
+  /**
+   * Gets the organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns The organization ID/name, or undefined if not set
+   */
+  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
+
+  /**
+   * Gets the organization setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * @param workspaceFolder - The workspace folder to check the setting for
+   * @returns The organization ID/name set specifically at folder level, or undefined if not set at folder level
+   */
+  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined;
+
+  /**
+   * Sets the organization at the workspace folder level.
+   * If the empty string or undefined is provided, the organization will be cleared.
+   * @param workspaceFolder - The workspace folder to set the organization for
+   * @param organization - The organization ID/name to set, or undefined to clear
+   */
+  setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
   getAdditionalCliParameters(): string | undefined;
 
@@ -174,6 +238,8 @@ export interface IConfiguration {
   getFolderConfigs(): FolderConfig[];
 
   setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined;
 
   getSecureAtInceptionExecutionFrequency(): string;
 
@@ -300,8 +366,14 @@ export class Configuration implements IConfiguration {
     this.featureFlag[flagName] = value;
   }
 
-  private static async getPackageJsonConfig(): Promise<{ version: string; preview: boolean }> {
-    return (await import(path.join('../../../..', 'package.json'))) as { version: string; preview: boolean };
+  private static async getPackageJsonConfig(): Promise<{
+    version: string;
+    preview: boolean;
+  }> {
+    return (await import(path.join('../../../..', 'package.json'))) as {
+      version: string;
+      preview: boolean;
+    };
   }
 
   get isDevelopment(): boolean {
@@ -536,8 +608,52 @@ export class Configuration implements IConfiguration {
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
+  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
+    return (
+      this.workspace.getConfiguration<boolean>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION),
+        workspaceFolder,
+      ) ?? DEFAULT_AUTO_ORGANIZATION
+    );
+  }
+
+  async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION),
+      autoSelectOrganization,
+      workspaceFolder,
+    );
+  }
+
   get organization(): string | undefined {
     return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
+  }
+
+  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
+    return this.workspace.getConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      workspaceFolder,
+    );
+  }
+
+  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined {
+    return this.workspace.inspectConfiguration<string>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      workspaceFolder,
+    )?.workspaceFolderValue;
+  }
+
+  async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
+    await this.workspace.updateConfiguration(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(ADVANCED_ORGANIZATION),
+      organization === '' ? undefined : organization,
+      workspaceFolder,
+    );
   }
 
   getPreviewFeatures(): PreviewFeatures {
@@ -622,6 +738,19 @@ export class Configuration implements IConfiguration {
       this.inMemoryFolderConfigs,
       true,
     );
+  }
+
+  /**
+   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * Returns undefined if the setting is not specifically set at the folder level.
+   */
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
+    const inspectionResult = this.workspace.inspectConfiguration<T>(
+      CONFIGURATION_IDENTIFIER,
+      this.getConfigName(configSettingName),
+      workspaceFolder,
+    );
+    return inspectionResult?.workspaceFolderValue;
   }
 
   private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
