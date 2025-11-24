@@ -104,14 +104,14 @@
           "snyk.advanced.autoSelectOrganization": {
             "order": 4,
             "type": "boolean",
-            "markdownDescription": "Use automatic organization selection. When enabled, Snyk will automatically select the most appropriate organization for your project using context found in your repository and your authentication. If an organization is configured manually, this feature will be overridden. If an appropriate organization cannot be identified automatically, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used as a fallback.",
+            "markdownDescription": "\\[Experimental\\] Use automatic organization selection. When enabled, Snyk will automatically select the most appropriate organization for your project using context found in your repository and your authentication. If an organization is configured manually, this feature will be overridden. If an appropriate organization cannot be identified automatically, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used as a fallback.",
             "scope": "resource",
             "default": false
           },
           "snyk.advanced.organization": {
             "order": 5,
             "type": "string",
-            "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used.",
+            "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used. Setting the organization at the Folder level is currently Experimental.",
             "scope": "resource"
           },
           "snyk.yesCrashReport": {
@@ -139,7 +139,7 @@
             "order": 2,
             "type": "boolean",
             "title": "Snyk Code security issues",
-            "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, note that it must be enabled for the organization.",
+            "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, Snyk Code must be enabled for your organization in Snyk settings.",
             "default": true
           },
           "snyk.features.infrastructureAsCode": {
@@ -200,7 +200,7 @@
               }
             },
             "additionalProperties": false,
-            "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) is a feature which provides consistent handling of \"ignore\" rules for code security findings across all surfaces - such as the CLI, IDE, and Snyk UI.\n\nNote: These filters will do nothing if Code Consistent Ignores (CCI) is disabled for the organization.\n\nShow the following issues:",
+            "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) helps your teams focus on important tasks by filtering out distractions. It ensures that once an ignore is created, it is consistently respected regardless of how and where the test is run and what branch is being tested.\n\nNote: These filters will have no effect if Code Consistent Ignores is disabled for the organization.\n\nShow the following issues:",
             "scope": "window"
           },
           "snyk.allIssuesVsNetNewIssues": {
