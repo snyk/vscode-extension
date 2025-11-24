@@ -442,6 +442,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.experimentService.load();
 
+    // Skip LS initialization during integration tests to prevent LS interferening with tests
+    if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
+
     this.initDependencyDownload();
 
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(

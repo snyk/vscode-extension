@@ -54,6 +54,9 @@ async function main() {
     // Skip the prelaunch setup that compiles and prepares built-in extensions
     process.env.VSCODE_SKIP_PRELAUNCH = '1';
 
+    // Set integration test mode to prevent LS initialization during tests
+    process.env.SNYK_INTEGRATION_TEST_MODE = 'true';
+
     // Download VS Code, unzip it and run the integration test
     await runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs });
   } catch (err) {

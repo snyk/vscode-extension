@@ -287,7 +287,8 @@ suite('Configuration', () => {
       );
     });
 
-    // Skipped: Relies on real LS, which we aren't doing in integration tests (at time of writing)
+    // Skipped: Relies on real LS, which we aren't doing in integration tests
+    // (at time of writing we skip LS init when `SNYK_INTEGRATION_TEST_MODE` is `true`)
     test.skip('should handle config migration when LS sends orgMigratedFromGlobalConfig and orgSetByUser', async function () {
       this.timeout(15000);
 
@@ -355,7 +356,8 @@ suite('Configuration', () => {
       strictEqual(folderLevelOrg, 'user-set-org', 'Workspace folder level org setting should remain unchanged');
     });
 
-    // Skipped: Relies on real LS, which we aren't doing in integration tests (at time of writing)
+    // Skipped: Relies on real LS, which we aren't doing in integration tests
+    // (at time of writing we skip LS init when `SNYK_INTEGRATION_TEST_MODE` is `true`)
     test.skip('should handle config migration with multiple workspace folders', async function () {
       this.timeout(15000);
 
