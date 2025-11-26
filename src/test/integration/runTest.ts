@@ -1,4 +1,6 @@
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { runTests } from '@vscode/test-electron';
 
 async function main() {
@@ -19,7 +21,41 @@ async function main() {
     // Passed to --extensionTestsPath
     const extensionTestsPath = path.resolve(__dirname, './index');
 
-    const launchArgs = [path.resolve(__dirname, '../../../src/test/integration/mocked_data')];
+    // Create a fresh workspace file in a temp directory for each test run to help ensure clean state
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-test-'));
+    const workspaceFilePath = path.join(tempDir, 'test.code-workspace');
+    const workspaceConfig = {
+      folders: [
+        {
+          path: path.resolve(__dirname, '../../../src/test/integration/mocked_data'),
+        },
+      ],
+      settings: {
+        'window.restoreWindows': 'none',
+      },
+    };
+    fs.writeFileSync(workspaceFilePath, JSON.stringify(workspaceConfig, null, 2));
+    console.log('Created temporary workspace file:', workspaceFilePath);
+
+    const launchArgs = [
+      '--new-window',
+      '--use-inmemory-secretstorage', // Prevent OS keychain pop-ups
+      '--skip-add-to-recently-opened',
+      '--skip-welcome',
+      '--skip-release-notes',
+      '--disable-workspace-trust',
+      '--disable-extensions', // Doesn't disable our extension
+      '--disable-telemetry',
+      '--disable-experiments',
+      '--disable-updates',
+      workspaceFilePath,
+    ];
+
+    // Skip the prelaunch setup that compiles and prepares built-in extensions
+    process.env.VSCODE_SKIP_PRELAUNCH = '1';
+
+    // Set integration test mode to prevent LS initialization during tests
+    process.env.SNYK_INTEGRATION_TEST_MODE = 'true';
 
     // Download VS Code, unzip it and run the integration test
     await runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs });

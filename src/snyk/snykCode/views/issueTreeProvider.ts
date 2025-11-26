@@ -160,6 +160,9 @@ export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
       if (totalIssueCount === 0) {
         return analysisMessages.congratsNoIssuesFound;
       } else {
+        if (ignoredIssueCount === 0) {
+          return `✋ ${openIssuesText}`;
+        }
         return `✋ ${openIssuesText} & ${ignoredIssuesText}`;
       }
     }

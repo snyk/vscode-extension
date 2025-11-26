@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs';
 import { IConfiguration } from '../common/configuration/configuration';
 import { IWorkspaceTrust } from '../common/configuration/trustedFolders';
+import { IFolderConfigs } from '../common/configuration/folderConfigs';
 import { ILanguageServer } from '../common/languageServer/languageServer';
 import { CodeIssueData, LsScanProduct, Scan, ScanProduct } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
@@ -30,6 +31,7 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     languages: IVSCodeLanguages,
     readonly diagnosticsIssueProvider: IDiagnosticsIssueProvider<CodeIssueData>,
     logger: ILog,
+    readonly folderConfigs: IFolderConfigs,
   ) {
     super(
       extensionContext,
@@ -46,12 +48,19 @@ export class SnykCodeService extends ProductService<CodeIssueData> {
     );
 
     this.registerCodeActionsProvider(
-      new SnykCodeActionsProvider(this.result, codeActionAdapter, codeActionKindAdapter, languages, config),
+      new SnykCodeActionsProvider(
+        this.result,
+        codeActionAdapter,
+        codeActionKindAdapter,
+        languages,
+        config,
+        folderConfigs,
+      ),
     );
   }
 
   subscribeToLsScanMessages(): Subscription {
-    return this.languageServer.scan$.subscribe((scan: Scan<CodeIssueData>) => {
+    return this.languageServer.scan$.subscribe((scan: Scan) => {
       if (scan.product !== ScanProduct.Code) {
         return;
       }

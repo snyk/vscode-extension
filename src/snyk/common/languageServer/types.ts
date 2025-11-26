@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver-types';
+import { hasOptionalPropertyOfType, hasPropertyOfType } from '../tsUtil';
 
 export enum ScanProduct {
   Code = 'code',
@@ -19,17 +20,31 @@ export enum ScanStatus {
   Error = 'error',
 }
 
-export enum LsErrorMessage {
-  repositoryInvalidError = 'repository does not exist',
-  missingDeltaReferenceError = 'must specify reference for delta scans',
+export type PresentableError = {
+  code?: number;
+  error?: string;
+  path?: string;
+  command?: string;
+  showNotification: boolean;
+  treeNodeSuffix: string;
+};
+
+export function isPresentableError(result: unknown): result is PresentableError {
+  return (
+    hasOptionalPropertyOfType(result, 'code', 'number') &&
+    hasOptionalPropertyOfType(result, 'error', 'string') &&
+    hasOptionalPropertyOfType(result, 'path', 'string') &&
+    hasOptionalPropertyOfType(result, 'command', 'string') &&
+    hasPropertyOfType(result, 'showNotification', 'boolean') &&
+    hasPropertyOfType(result, 'treeNodeSuffix', 'string')
+  );
 }
 
-export type Scan<T> = {
+export type Scan = {
   folderPath: string;
   product: ScanProduct;
   status: ScanStatus;
-  issues: Issue<T>[];
-  errorMessage: string;
+  presentableError?: PresentableError;
 };
 
 export type Issue<T> = {

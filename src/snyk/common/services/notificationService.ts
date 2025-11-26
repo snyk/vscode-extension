@@ -55,13 +55,13 @@ export class NotificationService implements INotificationService {
   }
 
   async showErrorNotificationWithLinkAction(message: string, actionText: string, actionLink: string): Promise<void> {
-    await this.window
-      .showErrorMessage(message, actionText)
-      .then(async selectedAction => {
+    await this.window.showErrorMessage(message, actionText).then(
+      async selectedAction => {
         if (selectedAction == actionText) {
           await this.commands.executeCommand(SNYK_OPEN_BROWSER_COMMAND, actionLink);
         }
-      })
-      .catch(err => ErrorHandler.handle(err, this.logger, 'error occurred during error handling'));
+      },
+      err => ErrorHandler.handle(err, this.logger, 'error occurred during error handling'),
+    );
   }
 }

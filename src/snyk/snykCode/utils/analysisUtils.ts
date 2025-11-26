@@ -21,7 +21,7 @@ export const getAbsoluteMarkerFilePath = (
     return suggestionFilePath;
   }
 
-  const workspaceFolders = workspace.getWorkspaceFolders();
+  const workspaceFolders = workspace.getWorkspaceFolderPaths();
   if (workspaceFolders.length > 1) {
     return markerFilePath;
   }

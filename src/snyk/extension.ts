@@ -7,6 +7,7 @@ import { EmptyTreeDataProvider } from './base/views/emptyTreeDataProvider';
 import { SupportProvider } from './base/views/supportProvider';
 import { CommandController } from './common/commands/commandController';
 import { OpenIssueCommandArg } from './common/commands/types';
+import { PresentableError } from './common/languageServer/types';
 import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
@@ -56,6 +57,7 @@ import SecretStorageAdapter from './common/vscode/secretStorage';
 import { TextDocumentAdapter } from './common/vscode/textdocument';
 import { ThemeColorAdapter } from './common/vscode/theme';
 import { Range, Uri } from './common/vscode/types';
+import { vsCodeEnv } from './common/vscode/env';
 import { UriAdapter } from './common/vscode/uri';
 import { vsCodeWindow } from './common/vscode/window';
 import { vsCodeWorkspace } from './common/vscode/workspace';
@@ -169,7 +171,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // set the workspace context so that the text to add folders is only shown if really the case
     // initializing after LS startup and just before scan is too late
-    const workspacePaths = vsCodeWorkspace.getWorkspaceFolders();
+    const workspacePaths = vsCodeWorkspace.getWorkspaceFolderPaths();
     await this.setWorkspaceContext(workspacePaths);
 
     this.user = await User.getAnonymous(this.context, Logger);
@@ -254,6 +256,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       new DiagnosticsIssueProvider<CodeIssueData>(),
       Logger,
+      this.folderConfigs,
     );
 
     const ossSuggestionProvider = new OssDetailPanelProvider(
@@ -313,6 +316,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       vsCodeCommands,
       vsCodeWindow,
+      vsCodeEnv,
       this.languageServer,
       Logger,
       configuration,
@@ -437,6 +441,9 @@ class SnykExtension extends SnykLib implements IExtension {
     this.checkAdvancedMode().catch(err => Logger.error(err));
 
     this.experimentService.load();
+
+    // Skip LS initialization during integration tests to prevent LS interferening with tests
+    if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
 
     this.initDependencyDownload();
 
@@ -565,7 +572,9 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.openIssueCommand(arg),
       ),
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
-      vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, () => this.commandController.showLsOutputChannel()),
+      vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, (presentableError?: PresentableError) =>
+        this.commandController.showLsOutputChannel(presentableError),
+      ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {
         const referenceBranch = 'Select a reference branch';
