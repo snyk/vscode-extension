@@ -89,6 +89,7 @@ import {
 } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
+import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfigurationWebviewProvider';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
@@ -96,6 +97,8 @@ import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { configureMcpHosts } from './cli/mcp/mcp';
 
 class SnykExtension extends SnykLib implements IExtension {
+  private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
+
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
     if (!summaryWebviewViewProvider) {
@@ -305,6 +308,12 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeLanguages,
       new DiagnosticsIssueProvider<IacIssueData>(),
       Logger,
+    );
+
+    this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
+      extensionContext,
+      Logger,
+      vsCodeCommands,
     );
 
     this.commandController = new CommandController(
@@ -564,7 +573,9 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () =>
+        this.workspaceConfigurationProvider?.showPanel(),
+      ),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),
