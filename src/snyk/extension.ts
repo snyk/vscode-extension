@@ -573,9 +573,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () =>
-        this.workspaceConfigurationProvider?.showPanel(),
-      ),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.workspaceConfigurationProvider?.showPanel()),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),

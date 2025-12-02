@@ -38,11 +38,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
       getExtensionUri: () => ({ fsPath: '/test/path' } as any),
     } as ExtensionContext;
 
-    provider = new WorkspaceConfigurationWebviewProvider(
-      contextMock,
-      logger,
-      commandExecutorMock,
-    );
+    provider = new WorkspaceConfigurationWebviewProvider(contextMock, logger, commandExecutorMock);
   });
 
   teardown(() => {

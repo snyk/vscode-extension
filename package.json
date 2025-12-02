@@ -61,7 +61,57 @@
       {
         "id": "snyk",
         "title": "Snyk Security",
-        "properties": {}
+        "properties": {
+          "snyk.folderConfigs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "folderPath": {
+                  "type": "string"
+                },
+                "baseBranch": {
+                  "type": "string"
+                },
+                "localBranches": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "referenceFolderPath": {
+                  "type": "string"
+                },
+                "riskScoreThreshold": {
+                  "type": "number"
+                },
+                "orgSetByUser": {
+                  "type": "boolean"
+                },
+                "preferredOrg": {
+                  "type": "string"
+                },
+                "autoDeterminedOrg": {
+                  "type": "string"
+                },
+                "orgMigratedFromGlobalConfig": {
+                  "type": "boolean"
+                },
+                "featureFlags": {
+                  "type": "object"
+                },
+                "sastSettings": {
+                  "type": "object"
+                },
+                "scanCommandConfig": {
+                  "type": "object"
+                }
+              }
+            },
+            "scope": "resource",
+            "markdownDescription": "Folder-specific configuration settings for Snyk scans. This includes risk score thresholds, organization settings, and other folder-level preferences."
+          }
+        }
       },
       {
         "id": "cli",
