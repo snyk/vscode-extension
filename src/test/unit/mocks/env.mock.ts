@@ -1,11 +1,16 @@
 import sinon from 'sinon';
 import { IVSCodeEnv } from '../../../snyk/common/vscode/env';
-import { clipboardMock } from './clipboard.mock';
+import { ClipboardMock } from './clipboard.mock';
 
-export const envMock = {
-  getRemoteName: sinon.fake(),
-  getAppHost: sinon.fake(),
-  getAppName: sinon.fake(),
-  getUiKind: sinon.fake(),
-  getClipboard: sinon.fake.returns(clipboardMock),
-} as IVSCodeEnv;
+export class EnvMock implements IVSCodeEnv {
+  private clipboardMock = new ClipboardMock();
+
+  getRemoteName = sinon.stub();
+  getAppHost = sinon.stub();
+  getAppName = sinon.stub();
+  getUiKind = sinon.stub();
+
+  getClipboard() {
+    return this.clipboardMock;
+  }
+}

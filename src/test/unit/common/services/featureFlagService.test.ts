@@ -1,17 +1,16 @@
 import { strictEqual } from 'assert';
 import sinon from 'sinon';
-import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { CommandsMock } from '../../mocks/commands.mock';
 import { FeatureFlagService } from '../../../../snyk/common/services/featureFlagService';
 import { SNYK_FEATURE_FLAG_COMMAND } from '../../../../snyk/common/constants/commands';
 
 suite('FeatureFlagService', () => {
-  let commands: IVSCodeCommands;
-  const executeCommandFake = sinon.fake();
+  let commandsMock: CommandsMock;
+  let featureFlagService: FeatureFlagService;
+
   setup(() => {
-    executeCommandFake.resetHistory();
-    commands = {
-      executeCommand: executeCommandFake,
-    } as IVSCodeCommands;
+    commandsMock = new CommandsMock();
+    featureFlagService = new FeatureFlagService(commandsMock);
   });
 
   teardown(() => {
@@ -19,10 +18,8 @@ suite('FeatureFlagService', () => {
   });
 
   test('getCodeLesson executes correct command', async () => {
-    const featureFlagService = new FeatureFlagService(commands);
-
     await featureFlagService.fetchFeatureFlag('test');
-    strictEqual(executeCommandFake.calledOnce, true);
-    strictEqual(executeCommandFake.calledWith(SNYK_FEATURE_FLAG_COMMAND, 'test'), true);
+    strictEqual(commandsMock.executeCommand.calledOnce, true);
+    strictEqual(commandsMock.executeCommand.calledWith(SNYK_FEATURE_FLAG_COMMAND, 'test'), true);
   });
 });

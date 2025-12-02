@@ -7,7 +7,7 @@ import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../../mocks/logger.mock';
-import { windowMock } from '../../mocks/window.mock';
+import { WindowMock } from '../../mocks/window.mock';
 
 suite('DownloadService', () => {
   let logger: ILog;
@@ -15,6 +15,7 @@ suite('DownloadService', () => {
   let context: ExtensionContext;
   let downloader: Downloader;
   let configuration: IConfiguration;
+  let windowMock: WindowMock;
 
   // Stubbed functions to re-wrap
   let contextGetGlobalStateValue: sinon.SinonStub;
@@ -47,6 +48,8 @@ suite('DownloadService', () => {
       getCliReleaseChannel: () => Promise.resolve('stable'),
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
+
+    windowMock = new WindowMock();
 
     downloader = new Downloader(configuration, cliApi, windowMock, logger, context);
   });

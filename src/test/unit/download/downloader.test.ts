@@ -8,7 +8,7 @@ import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { IStaticCliApi } from '../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../snyk/common/logger/interfaces';
 import { LoggerMock } from '../mocks/logger.mock';
-import { windowMock } from '../mocks/window.mock';
+import { WindowMock } from '../mocks/window.mock';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 
 suite('CLI Downloader (CLI)', () => {
@@ -16,6 +16,7 @@ suite('CLI Downloader (CLI)', () => {
   let cliApi: IStaticCliApi;
   let configuration: IConfiguration;
   let extensionContextMock: ExtensionContext;
+
   setup(() => {
     cliApi = {
       getLatestCliVersion: sinon.fake(),
@@ -46,13 +47,13 @@ suite('CLI Downloader (CLI)', () => {
   });
 
   test('Download of CLI fails if platform is not supported', async () => {
-    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
+    const downloader = new Downloader(configuration, cliApi, new WindowMock(), logger, extensionContextMock);
     sinon.stub(CliExecutable, 'getCurrentWithArch').throws(new Error());
     await rejects(() => downloader.download());
   });
 
   test('Download of CLI removes executable, if it exists', async () => {
-    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
+    const downloader = new Downloader(configuration, cliApi, new WindowMock(), logger, extensionContextMock);
 
     sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
     sinon.stub(fs, 'access').returns(Promise.resolve());
@@ -64,7 +65,7 @@ suite('CLI Downloader (CLI)', () => {
   });
 
   test('Rejects downloaded CLI when integrity check fails', async () => {
-    const downloader = new Downloader(configuration, cliApi, windowMock, logger, extensionContextMock);
+    const downloader = new Downloader(configuration, cliApi, new WindowMock(), logger, extensionContextMock);
     sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
     sinon.stub(fs);
 
