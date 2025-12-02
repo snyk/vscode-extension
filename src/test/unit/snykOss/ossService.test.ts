@@ -37,7 +37,7 @@ suite('OSS Service', () => {
       { getQuickFix: sinon.fake() } as ICodeActionKindAdapter,
       viewManagerService,
       {
-        getWorkspaceFolders: () => [''],
+        getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
@@ -57,9 +57,7 @@ suite('OSS Service', () => {
     ls.scan$.next({
       product: ScanProduct.OpenSource,
       folderPath: 'test/path',
-      issues: [],
       status: ScanStatus.InProgress,
-      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, true);
@@ -70,9 +68,7 @@ suite('OSS Service', () => {
     ls.scan$.next({
       product: ScanProduct.Code,
       folderPath: 'test/path',
-      issues: [],
       status: ScanStatus.InProgress,
-      errorMessage: '',
     });
 
     strictEqual(service.isAnalysisRunning, false);

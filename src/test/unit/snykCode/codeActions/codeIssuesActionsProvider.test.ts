@@ -9,10 +9,13 @@ import { CodeActionContext, CodeActionKind, Range, TextDocument } from '../../..
 import { SnykCodeActionsProvider } from '../../../../snyk/snykCode/codeActions/codeIssuesActionsProvider';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
+import { FEATURE_FLAGS } from '../../../../snyk/common/constants/featureFlags';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;
   let configuration: IConfiguration;
+  let folderConfigs: IFolderConfigs;
   let codeResults: Map<string, WorkspaceFolderResult<CodeIssueData>>;
   let codeActionAdapter: ICodeActionAdapter;
   let codeActionKindAdapter: ICodeActionKindAdapter;
@@ -50,12 +53,25 @@ suite('Snyk Code actions provider', () => {
       },
     } as IConfiguration;
 
+    folderConfigs = {
+      getFolderConfig: (_config: IConfiguration, _folderPath: string) => ({
+        folderPath: 'folderName',
+        baseBranch: '',
+        localBranches: undefined,
+        referenceFolderPath: undefined,
+        featureFlags: {
+          [FEATURE_FLAGS.snykCodeInlineIgnore]: true,
+        },
+      }),
+    } as IFolderConfigs;
+
     issuesActionsProvider = new SnykCodeActionsProvider(
       codeResults,
       codeActionAdapter,
       codeActionKindAdapter,
       {} as IVSCodeLanguages,
       configuration,
+      folderConfigs,
     );
   });
 
@@ -71,16 +87,25 @@ suite('Snyk Code actions provider', () => {
       },
     } as unknown as TextDocument;
 
+    const folderConfigsDisabled = {
+      getFolderConfig: (_config: IConfiguration, _folderPath: string) => ({
+        folderPath: 'folderName',
+        baseBranch: '',
+        localBranches: undefined,
+        referenceFolderPath: undefined,
+        featureFlags: {
+          [FEATURE_FLAGS.snykCodeInlineIgnore]: false,
+        },
+      }),
+    } as IFolderConfigs;
+
     issuesActionsProvider = new SnykCodeActionsProvider(
       codeResults,
       codeActionAdapter,
       codeActionKindAdapter,
       {} as IVSCodeLanguages,
-      {
-        getFeatureFlag(_: string): boolean {
-          return false;
-        },
-      } as IConfiguration,
+      configuration,
+      folderConfigsDisabled,
     );
 
     // act

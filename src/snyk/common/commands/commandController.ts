@@ -15,11 +15,12 @@ import {
 import { COMMAND_DEBOUNCE_INTERVAL } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { CodeIssueData, IacIssueData } from '../languageServer/types';
+import { CodeIssueData, IacIssueData, PresentableError } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
 import { IVSCodeCommands } from '../vscode/commands';
+import { IVSCodeEnv } from '../vscode/env';
 import { Range, Uri } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import { IVSCodeWindow } from '../vscode/window';
@@ -40,6 +41,7 @@ export class CommandController {
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
     private window: IVSCodeWindow,
+    private env: IVSCodeEnv,
     private languageServer: ILanguageServer,
     private logger: ILog,
     private configuration: IConfiguration,
@@ -63,7 +65,10 @@ export class CommandController {
 
   async openLocal(path: Uri, range?: Range): Promise<void> {
     try {
-      await this.window.showTextDocumentViaUri(path, { viewColumn: 1, selection: range });
+      await this.window.showTextDocumentViaUri(path, {
+        viewColumn: 1,
+        selection: range,
+      });
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
@@ -71,7 +76,10 @@ export class CommandController {
 
   async openLocalFile(filePath: string, range?: Range): Promise<void> {
     try {
-      await this.window.showTextDocumentViaFilepath(filePath, { viewColumn: 1, selection: range });
+      await this.window.showTextDocumentViaFilepath(filePath, {
+        viewColumn: 1,
+        selection: range,
+      });
     } catch (e) {
       ErrorHandler.handle(e, this.logger);
     }
@@ -95,7 +103,7 @@ export class CommandController {
 
   async createDCIgnore(custom = false, uriAdapter: IUriAdapter, path?: string): Promise<void> {
     if (!path) {
-      const paths = this.workspace.getWorkspaceFolders();
+      const paths = this.workspace.getWorkspaceFolderPaths();
       const promises = [];
       for (const p of paths) {
         promises.push(createDCIgnoreUtil(p, custom, this.workspace, this.window, uriAdapter));
@@ -161,9 +169,32 @@ export class CommandController {
     return this.logger.showOutput();
   }
 
-  showLsOutputChannel(): void {
+  async showLsOutputChannel(presentableError?: PresentableError): Promise<void> {
     // To get an instance of an OutputChannel use createOutputChannel.
-    return this.languageServer.showOutputChannel();
+    this.languageServer.showOutputChannel();
+
+    if (presentableError?.error) {
+      // Format JSON as rows, excluding showNotification, treeNodeSuffix, and empty values
+      const details = Object.entries(presentableError)
+        .filter(([key]) => key !== 'showNotification' && key !== 'treeNodeSuffix')
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+        .join('\n');
+
+      const copyButton = 'Copy';
+      const result = await this.window.showInformationMessage(
+        details,
+        {
+          modal: true,
+          detail: `You can copy the error message and use the filter field in the output channel to locate it.`,
+        },
+        copyButton,
+      );
+
+      if (result === copyButton) {
+        await this.env.getClipboard().writeText(presentableError.error);
+      }
+    }
   }
 
   async executeCommand(
