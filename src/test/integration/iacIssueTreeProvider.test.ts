@@ -109,7 +109,7 @@ suite('IaC Issue Tree Provider', () => {
           contextService,
           {
             ...iacService,
-            result: new Map([['fake-dir', testCase.issues]]),
+            result: new Map([['fake-dir', { isSuccess: true, issues: testCase.issues }]]),
           } as IProductService<IacIssueData>,
           configuration,
           languages,

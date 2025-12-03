@@ -2,7 +2,7 @@ import { CodeAction, Range, TextDocument, Uri } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { CodeActionsProvider } from '../../common/editor/codeActionsProvider';
-import { Issue, isPresentableError, IssueSeverity, OssIssueData } from '../../common/languageServer/types';
+import { Issue, IssueSeverity, OssIssueData } from '../../common/languageServer/types';
 import { ProductResult } from '../../common/services/productService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
@@ -98,7 +98,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
   private getVulnerabilities(folderPath: string, context: CodeActionContext): Issue<OssIssueData>[] | undefined {
     // get all OSS vulnerabilities for the folder
     const ossResult = this.issues.get(folderPath);
-    if (!ossResult || isPresentableError(ossResult)) {
+    if (!ossResult || !ossResult.isSuccess) {
       return;
     }
 
@@ -111,7 +111,7 @@ export class OssCodeActionsProvider extends CodeActionsProvider<OssIssueData> {
     // find the corresponding Issue<OssIssueData> objects from ossDiagnostics
     const vulnerabilities: Issue<OssIssueData>[] = [];
     for (const diagnostic of ossDiagnostics) {
-      const vulnerability = ossResult.find(
+      const vulnerability = ossResult.issues.find(
         ossIssue => ossIssue.id === (diagnostic.code as { value: string | number; target: Uri }).value,
       );
       if (!vulnerability) {

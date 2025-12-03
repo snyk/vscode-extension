@@ -189,7 +189,9 @@ suite('Code Security Issue Tree Provider', () => {
           testCase.consistentIgnores,
           testCase.consistentIgnores ? testCase.issueViewOptions : undefined,
         );
-        const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', testCase.issues]]));
+        const issueTreeProvider = createIssueTreeProvider(
+          new Map([['fake-dir', { isSuccess: true, issues: testCase.issues }]]),
+        );
         sinon.stub(issueTreeProvider, 'getResultNodes').returns([]); // Not checking the issue nodes are created properly.
 
         // Act
@@ -215,7 +217,9 @@ suite('Code Security Issue Tree Provider', () => {
         treeNodeSuffix: '(repository not found)',
       };
       await setCCIAndIVOs(false);
-      const issueTreeProvider = createIssueTreeProvider(new Map([['fake-dir', repositoryInvalidError]]));
+      const issueTreeProvider = createIssueTreeProvider(
+        new Map([['fake-dir', { isSuccess: false, error: repositoryInvalidError }]]),
+      );
 
       // Act
       const rootChildren = issueTreeProvider.getRootChildren();
@@ -241,7 +245,9 @@ suite('Code Security Issue Tree Provider', () => {
         showNotification: false,
         treeNodeSuffix: '(scan failed)',
       };
-      const issueTreeProvider = createIssueTreeProvider(new Map(folderNames.map(name => [name, scanError])));
+      const issueTreeProvider = createIssueTreeProvider(
+        new Map(folderNames.map(name => [name, { isSuccess: false, error: scanError }])),
+      );
 
       // Act
       const rootChildren = issueTreeProvider.getRootChildren();

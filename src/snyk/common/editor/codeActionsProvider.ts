@@ -1,4 +1,4 @@
-import { Issue, isPresentableError } from '../languageServer/types';
+import { Issue } from '../languageServer/types';
 import { ICodeActionKindAdapter } from '../vscode/codeAction';
 import { CodeAction, CodeActionContext, CodeActionProvider, Range, TextDocument } from '../vscode/types';
 import { ProductResult } from '../services/productService';
@@ -24,12 +24,12 @@ export abstract class CodeActionsProvider<T> implements CodeActionProvider {
       return undefined;
     }
 
-    for (const [folderPath, issues] of this.issues.entries()) {
-      if (isPresentableError(issues) || !issues) {
+    for (const [folderPath, result] of this.issues.entries()) {
+      if (!result || !result.isSuccess) {
         continue;
       }
 
-      const { issue, range } = this.findIssueWithRange(issues, document, clickedRange);
+      const { issue, range } = this.findIssueWithRange(result.issues, document, clickedRange);
       if (!issue || !range) {
         continue;
       }

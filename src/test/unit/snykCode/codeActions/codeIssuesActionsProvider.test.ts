@@ -22,14 +22,17 @@ suite('Snyk Code actions provider', () => {
 
   setup(() => {
     codeResults = new Map<string, WorkspaceFolderResult<CodeIssueData>>();
-    codeResults.set('folderName', [
-      {
-        filePath: '//folderName//test.js',
-        additionalData: {
-          rule: 'some-rule',
-        },
-      } as unknown as Issue<CodeIssueData>,
-    ]);
+    codeResults.set('folderName', {
+      isSuccess: true,
+      issues: [
+        {
+          filePath: '//folderName//test.js',
+          additionalData: {
+            rule: 'some-rule',
+          },
+        } as unknown as Issue<CodeIssueData>,
+      ],
+    });
 
     codeActionAdapter = {
       create: (_: string, _kind?: CodeActionKind) => ({
