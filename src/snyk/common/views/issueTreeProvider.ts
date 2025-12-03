@@ -1,7 +1,7 @@
-import _, { flatten } from 'lodash';
+import _ from 'lodash';
 import * as vscode from 'vscode'; // todo: invert dependency
 import { IConfiguration } from '../configuration/configuration';
-import { Issue, isPresentableError, IssueSeverity } from '../languageServer/types';
+import { Issue, IssueSeverity } from '../languageServer/types';
 import { messages as commonMessages } from '../../common/messages/analysisMessages';
 import { IContextService } from '../services/contextService';
 import { IProductService } from '../services/productService';
@@ -97,7 +97,7 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     nodes.push(...this.getResultNodes());
 
     const folderResults = Array.from(this.productService.result.values());
-    const allFailed = folderResults.every(folderResult => isPresentableError(folderResult));
+    const allFailed = folderResults.every(folderResult => !folderResult.isSuccess);
     if (allFailed) {
       return nodes;
     }
@@ -149,11 +149,13 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   }
 
   getFilteredIssues(): Issue<T>[] {
-    const folderResults = Array.from(this.productService.result.values());
-    const successfulResults = flatten<Issue<T>>(
-      folderResults.filter((result): result is Issue<T>[] => Array.isArray(result)),
-    );
-    return this.filterIssues(successfulResults);
+    const allIssues: Issue<T>[] = [];
+    for (const result of this.productService.result.values()) {
+      if (result.isSuccess) {
+        allIssues.push(...result.issues);
+      }
+    }
+    return this.filterIssues(allIssues);
   }
 
   getTotalIssueCount(): number {
@@ -225,16 +227,19 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
       let folderIcon: INodeIcon;
       let folderDescription: string | undefined;
 
-      if (isPresentableError(folderResult)) {
+      if (!folderResult.isSuccess) {
         folderIcon = NODE_ICONS.error;
-        folderDescription = folderResult.treeNodeSuffix;
+        folderDescription = folderResult.error.treeNodeSuffix;
 
         if (singleFolderWorkspace) {
           addTo.push(this.createFolderNode(folderName, folderDescription, folderIcon));
         }
-        addTo.push(this.getErrorEncounteredTreeNode(folderResult, false));
+        addTo.push(this.getErrorEncounteredTreeNode(folderResult.error, false));
       } else {
-        const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(folderResult, folderPath);
+        const { fileNodes, folderVulnCount, folderSeverityCounts } = this.processFolderFiles(
+          folderResult.issues,
+          folderPath,
+        );
         addTo.push(...fileNodes);
 
         const folderSeverity = ProductIssueTreeProvider.getHighestSeverity(folderSeverityCounts);
