@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { Issue, IssueSeverity, OssIssueData } from '../common/languageServer/types';
 import { IWebViewProvider } from '../common/views/webviewProvider';
-import { CliError } from '../cli/services/cliService';
 
 export interface IOssSuggestionWebviewProvider extends IWebViewProvider<Issue<OssIssueData>> {
   openIssueId: string | undefined;
@@ -12,8 +11,6 @@ export type OssIssueCommandArg = Issue<OssIssueData> & {
   overviewHtml: string;
   folderPath: string;
 };
-
-export type OssFileResult = OssResultBody | CliError;
 
 export type OssResultBody = {
   vulnerabilities: OssVulnerability[];
@@ -57,10 +54,6 @@ enum OssSeverity {
   Medium = 'medium',
   High = 'high',
   Critical = 'critical',
-}
-
-export function isResultCliError(fileResult: OssFileResult): fileResult is CliError {
-  return (fileResult as CliError).error !== undefined;
 }
 
 function convertSeverity(severity: IssueSeverity): OssSeverity {
