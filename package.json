@@ -150,6 +150,27 @@
             "markdownDescription": "Sets path to Snyk CLI extension dependency."
           }
         }
+      },
+      {
+        "id": "initialization",
+        "title": "Initialization",
+        "order": 5,
+        "properties": {
+          "snyk.trustedFolders": {
+            "order": 1,
+            "type": "array",
+            "default": [],
+            "description": "Folders to trust for Snyk scans.",
+            "scope": "application"
+          },
+          "snyk.yesWelcomeNotification": {
+            "order": 2,
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show welcome notification after installation and restart",
+            "scope": "application"
+          }
+        }
       }
     ],
     "viewsContainers": {

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
+import * as vscode from 'vscode';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
@@ -797,11 +798,14 @@ export class Configuration implements IConfiguration {
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {
+    // Write to user settings (global) since snyk.trustedFolders has scope "application"
+    // This prevents workspace settings from overriding the security configuration
+    // Use vscode.ConfigurationTarget.Global explicitly to ensure it writes to user settings
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(TRUSTED_FOLDERS),
       trustedFolders,
-      true,
+      vscode.ConfigurationTarget.Global,
     );
   }
 
