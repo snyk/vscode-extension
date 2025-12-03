@@ -317,8 +317,12 @@
           "snyk.trustedFolders": {
             "order": 1,
             "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "scope": "application",
             "default": [],
-            "description": "Folders to trust for Snyk scans."
+            "markdownDescription": "List of trusted folder paths. These folders are considered safe for Snyk to scan. This setting can only be configured in user settings and cannot be overridden by workspace settings for security reasons."
           }
         }
       },
