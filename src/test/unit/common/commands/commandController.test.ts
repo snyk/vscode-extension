@@ -63,7 +63,8 @@ suite('CommandController', () => {
 
   test('Connectivity check displays results in modal', async () => {
     // Arrange
-    const mockOutput = 'Checking for proxy configuration...\n\nTesting connectivity to Snyk endpoints...\n\n✓ All checks passed';
+    const mockOutput =
+      'Checking for proxy configuration...\n\nTesting connectivity to Snyk endpoints...\n\n✓ All checks passed';
     commandsMock.executeCommand.withArgs('snyk.performConnectivityCheck').resolves(mockOutput);
 
     // Configure mock behavior

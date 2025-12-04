@@ -57,6 +57,9 @@ suite('LearnService', () => {
 
     await learnService.getCodeLesson(issue);
     strictEqual(commandsMock.executeCommand.calledOnce, true);
-    strictEqual(commandsMock.executeCommand.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2), true);
+    strictEqual(
+      commandsMock.executeCommand.calledWith(SNYK_GET_LESSON_COMMAND, 'nosqli', 'javascript', 'CWE-79', '', 2),
+      true,
+    );
   });
 });
