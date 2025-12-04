@@ -197,6 +197,33 @@ export class CommandController {
     }
   }
 
+  async connectivityCheck(): Promise<void> {
+    try {
+      // Execute the language server connectivity check command
+      const result = await this.commands.executeCommand<string>('snyk.performConnectivityCheck');
+
+      if (!result) {
+        await this.window.showErrorMessage('Connectivity check failed to return results.');
+        return;
+      }
+
+      const copyButton = 'Copy Results to Clipboard';
+      const response = await this.window.showInformationMessage(
+        'Snyk Connectivity Check Results',
+        {
+          modal: true,
+        },
+        copyButton,
+      );
+
+      if (response === copyButton) {
+        await this.env.getClipboard().writeText(result);
+      }
+    } catch (error) {
+      ErrorHandler.handle(error, this.logger, 'Connectivity check failed');
+    }
+  }
+
   async executeCommand(
     name: string,
     fn: (...args: unknown[]) => Promise<unknown>,

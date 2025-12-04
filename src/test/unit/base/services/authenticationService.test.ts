@@ -11,7 +11,7 @@ import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
 import { LoggerMock } from '../../mocks/logger.mock';
-import { windowMock } from '../../mocks/window.mock';
+import { WindowMock } from '../../mocks/window.mock';
 
 suite('AuthenticationService', () => {
   let contextService: IContextService;
@@ -23,6 +23,7 @@ suite('AuthenticationService', () => {
   let setEndpointSpy: sinon.SinonSpy;
   let setTokenSpy: sinon.SinonSpy;
   let clearTokenSpy: sinon.SinonSpy;
+  let windowMock: WindowMock;
 
   setup(() => {
     baseModule = {} as IBaseSnykModule;
@@ -31,6 +32,7 @@ suite('AuthenticationService', () => {
     setTokenSpy = sinon.fake();
     clearTokenSpy = sinon.fake();
     languageClientSendNotification = sinon.fake();
+    windowMock = new WindowMock();
 
     const languageClient = {
       sendNotification: languageClientSendNotification,
@@ -66,7 +68,7 @@ suite('AuthenticationService', () => {
       languageClientAdapter,
       {} as IVSCodeCommands,
     );
-    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(Promise.resolve('')));
+    windowMock.showInputBox.resolves('');
 
     await service.setToken();
 
@@ -85,7 +87,7 @@ suite('AuthenticationService', () => {
       {} as IVSCodeCommands,
     );
     const tokenValue = 'token-value';
-    sinon.replace(windowMock, 'showInputBox', sinon.fake.returns(Promise.resolve(tokenValue)));
+    windowMock.showInputBox.resolves(tokenValue);
 
     await service.setToken();
 
