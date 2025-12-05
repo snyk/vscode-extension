@@ -536,6 +536,11 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   public initDependencyDownload(): DownloadService {
+    // Skip during integration tests, as we do not need to download the CLI an extra time.
+    if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') {
+      return this.downloadService;
+    }
+
     this.downloadService.downloadOrUpdate().catch(err => {
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotification((err as Error).message);

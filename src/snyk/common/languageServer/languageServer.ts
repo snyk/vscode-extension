@@ -95,6 +95,12 @@ export class LanguageServer implements ILanguageServer {
   // Starts the language server and the client. LS will be downloaded if missing.
   // Returns a promise that resolves when the language server is ready to receive requests.
   async start(): Promise<void> {
+    // Skip during integration tests to prevent LS from interfering with tests
+    if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') {
+      this.logger.info('Skipping Language Server start in integration test mode');
+      return;
+    }
+
     // wait until Snyk LS is downloaded
     await firstValueFrom(this.downloadService.downloadReady$);
     this.logger.info('Starting Snyk Language Server');
