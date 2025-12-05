@@ -24,6 +24,7 @@ import {
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
+  RISK_SCORE_THRESHOLD_SETTING,
   SCANNING_MODE,
   AUTO_CONFIGURE_MCP_SERVER,
   SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
@@ -93,7 +94,7 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   openIssues: true,
 };
 
-export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
+export const DEFAULT_RISK_SCORE_THRESHOLD = 0; // Should match value in package.json.
 
 export interface SeverityFilter {
   critical: boolean;
@@ -112,6 +113,8 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
 };
 
 const DEFAULT_AUTO_ORGANIZATION = false; // Should match value in package.json.
+
+export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
 export type PreviewFeatures = Record<string, never>;
 
@@ -216,6 +219,8 @@ export interface IConfiguration {
   isFedramp: boolean;
 
   issueViewOptions: IssueViewOptions;
+
+  riskScoreThreshold: number;
 
   severityFilter: SeverityFilter;
 
@@ -597,6 +602,15 @@ export class Configuration implements IConfiguration {
     );
 
     return config ?? DEFAULT_ISSUE_VIEW_OPTIONS;
+  }
+
+  get riskScoreThreshold(): number {
+    return (
+      this.workspace.getConfiguration<number>(
+        CONFIGURATION_IDENTIFIER,
+        this.getConfigName(RISK_SCORE_THRESHOLD_SETTING),
+      ) ?? DEFAULT_RISK_SCORE_THRESHOLD
+    );
   }
 
   get severityFilter(): SeverityFilter {
