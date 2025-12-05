@@ -28,7 +28,7 @@ export interface IVSCodeWorkspace {
     configurationIdentifier: string,
     section: string,
     value: unknown,
-    configurationTarget?: boolean | WorkspaceFolder,
+    configurationTarget?: boolean | WorkspaceFolder | vscode.ConfigurationTarget,
     overrideInLanguage?: boolean,
   ): Promise<void>;
 
@@ -80,12 +80,12 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
     configurationIdentifier: string,
     section: string,
     value: unknown,
-    configurationTarget?: boolean | WorkspaceFolder,
+    configurationTarget?: boolean | WorkspaceFolder | vscode.ConfigurationTarget,
     overrideInLanguage?: boolean,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       let workspaceFolder: WorkspaceFolder | undefined;
-      if (typeof configurationTarget === 'object') {
+      if (typeof configurationTarget === 'object' && 'uri' in configurationTarget) {
         // configurationTarget is a WorkspaceFolder - set at folder level
         workspaceFolder = configurationTarget;
         configurationTarget = undefined; // undefined == folder level
