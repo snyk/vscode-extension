@@ -92,14 +92,18 @@ suite('Configuration', () => {
       }
       workspaceFolder = folders[0];
 
+      // Clear state before config changes so the watcher doesn't skip them due to stale state
+      LanguageServer.clearLSUpdatingOrgState();
+
       await clearOrganizationAtAllLevels();
       await configuration.setFolderConfigs([]);
-
-      LanguageServer.clearLSUpdatingOrgState();
     });
 
     teardown(async () => {
       await sleep(200); // Allow VS Code time to fully work out its workspace situation before cleanup
+
+      // Clear state before config changes so the watcher doesn't skip them due to stale state
+      LanguageServer.clearLSUpdatingOrgState();
 
       await clearOrganizationAtAllLevels();
       await configuration.setFolderConfigs([]);
@@ -117,6 +121,7 @@ suite('Configuration', () => {
         }
       }
 
+      // Clear again after cleanup to ensure clean state for next test
       LanguageServer.clearLSUpdatingOrgState();
     });
 
