@@ -180,8 +180,17 @@
             "description": "Severity issues to display.",
             "scope": "window"
           },
-          "snyk.issueViewOptions": {
+          "snyk.riskScoreThreshold": {
             "order": 6,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0,
+            "markdownDescription": "[Early Access] Filters Open Source issues by [risk score](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/risk-score). Only issues with a risk score >= threshold are shown. Set to 0 to show all issues.",
+            "scope": "window"
+          },
+          "snyk.issueViewOptions": {
+            "order": 7,
             "type": "object",
             "default": {
               "openIssues": true,
@@ -215,13 +224,13 @@
               "Shows all issues that have been identified, including both new and existing issues.",
               "Shows only new issues filtering out previously known issues in a base branch"
             ],
-            "order": 7
+            "order": 8
           },
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
             "scope": "window",
-            "order": 8
+            "order": 9
           }
         }
       },

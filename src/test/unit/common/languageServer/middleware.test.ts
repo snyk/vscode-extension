@@ -2,6 +2,7 @@ import assert from 'assert';
 import sinon from 'sinon';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -55,6 +56,7 @@ suite('Language Server: Middleware', () => {
         return defaultFeaturesConfigurationStub;
       },
       severityFilter: DEFAULT_SEVERITY_FILTER,
+      riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
       issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders: () => ['/trusted/test/folder'],
       getFolderConfigs(): FolderConfig[] {

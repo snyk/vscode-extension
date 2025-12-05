@@ -10,9 +10,7 @@ import {
   ADVANCED_AUTO_SELECT_ORGANIZATION,
   ADVANCED_ORGANIZATION,
   IAC_ENABLED_SETTING,
-  ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
-  SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
   FOLDER_CONFIGS,
@@ -59,10 +57,6 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
-    } else if (key === ISSUE_VIEW_OPTIONS_SETTING) {
-      extension.viewManagerService.refreshAllViews();
-    } else if (key === SEVERITY_FILTER_SETTING) {
-      return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
@@ -108,13 +102,11 @@ class ConfigurationWatcher implements IWatcher {
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         IAC_ENABLED_SETTING,
-        SEVERITY_FILTER_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CLI_PATH,
         ADVANCED_CLI_RELEASE_CHANNEL,
         ADVANCED_AUTHENTICATION_METHOD,
         TRUSTED_FOLDERS,
-        ISSUE_VIEW_OPTIONS_SETTING,
         DELTA_FINDINGS,
         FOLDER_CONFIGS,
         AUTO_CONFIGURE_MCP_SERVER,
