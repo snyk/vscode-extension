@@ -287,64 +287,13 @@ export class WorkspaceConfigurationWebviewProvider
     const updates = this.mapConfigToSettings(config);
     const updatedSettings = { ...currentSettings, ...updates };
 
-    // Validate JSON can be stringified
-    let jsonContent: string;
+    // Write to settings.json
     try {
-      jsonContent = JSON.stringify(updatedSettings, null, 2);
-    } catch (e) {
-      this.logger.error(`Failed to serialize settings to JSON: ${e}`);
-      throw new Error(`Cannot serialize settings: ${e}`);
-    }
-
-    // Atomic write: write to temp file first, then rename
-    const tempPath = `${settingsPath}.tmp`;
-    const backupPath = `${settingsPath}.backup`;
-
-    try {
-      // Create backup of original file if it exists
-      if (originalContent) {
-        await fs.writeFile(backupPath, originalContent, 'utf-8');
-      }
-
-      // Write to temp file
-      await fs.writeFile(tempPath, jsonContent, 'utf-8');
-
-      // Verify temp file is valid JSON
-      const verifyContent = await fs.readFile(tempPath, 'utf-8');
-      JSON.parse(verifyContent);
-
-      // Atomic rename
-      await fs.rename(tempPath, settingsPath);
-
-      // Clean up backup on success
-      if (originalContent) {
-        await fs.unlink(backupPath).catch(() => {
-          /* ignore cleanup errors */
-        });
-      }
-
+      const jsonContent = JSON.stringify(updatedSettings, null, 2);
+      await fs.writeFile(settingsPath, jsonContent, 'utf-8');
       this.logger.info('Successfully wrote to settings.json');
     } catch (e) {
       this.logger.error(`Failed to write settings.json: ${e}`);
-
-      // Restore from backup if available
-      try {
-        if (originalContent) {
-          await fs.writeFile(settingsPath, originalContent, 'utf-8');
-          this.logger.info('Restored settings.json from backup');
-        }
-      } catch (restoreError) {
-        this.logger.error(`Failed to restore settings.json from backup: ${restoreError}`);
-      }
-
-      // Clean up temp and backup files
-      await fs.unlink(tempPath).catch(() => {
-        /* ignore */
-      });
-      await fs.unlink(backupPath).catch(() => {
-        /* ignore */
-      });
-
       throw new Error(`Failed to save configuration: ${e}`);
     }
   }
