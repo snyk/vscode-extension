@@ -4,6 +4,7 @@ import { Configuration } from '../../snyk/common/configuration/configuration';
 import { VSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 import { ILog, LogLevel } from '../../snyk/common/logger/interfaces';
 import { CliSupportedPlatform } from '../../snyk/cli/supportedPlatforms';
+import { isStableCLIReleased } from '../../snyk/common/constants/languageServer';
 import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,14 +15,25 @@ suite('StaticCliApi - Integration Tests', function () {
   // Set a longer timeout for network operations
   this.timeout(30000); // 30 seconds
 
+  // Use preview channel if stable isn't released yet
+  const defaultCLIReleaseChannel = isStableCLIReleased ? 'stable' : 'preview';
+
+  let firstSetup = true;
   let api: StaticCliApi;
   let workspace: VSCodeWorkspace;
   let configuration: Configuration;
   let logger: ILog;
 
-  setup(() => {
+  setup(async () => {
     workspace = new VSCodeWorkspace();
     configuration = new Configuration(process.env, workspace);
+
+    // Set the test default CLI release channel in configuration
+    await configuration.setCliReleaseChannel(defaultCLIReleaseChannel);
+    if (firstSetup) {
+      console.log(`Test suite using ${defaultCLIReleaseChannel} CLI channel where unspecified`);
+      firstSetup = false;
+    }
 
     // Create a simple logger implementation
     logger = {
@@ -36,7 +48,28 @@ suite('StaticCliApi - Integration Tests', function () {
     api = new StaticCliApi(workspace, configuration, logger);
   });
 
-  test('getLatestCliVersion returns a valid version string', async () => {
+  test('Release pipeline check: ensure stable CLI is released when ENSURE_STABLE_CLI is set', function () {
+    // This test enforces that we don't release without a stable CLI
+    // The ENSURE_STABLE_CLI env var should be set in the release pipeline
+    if (process.env.ENSURE_STABLE_CLI === '1') {
+      ok(
+        isStableCLIReleased,
+        'You must update `isStableCLIReleased` to true before a stable release of the VS Code extension',
+      );
+    } else {
+      // Not in release pipeline, this test passes
+      ok(true, 'Not in release pipeline (ENSURE_STABLE_CLI not set), skipping check');
+    }
+  });
+
+  test('getLatestCliVersion with stable channel returns a valid version string', async function () {
+    // Skip this test if no stable CLI has been released yet for the current protocol version
+    if (!isStableCLIReleased) {
+      console.log(
+        'Skipping stable channel test: No stable CLI released yet for current protocol version (expected during development)',
+      );
+      this.skip();
+    }
     const version = await api.getLatestCliVersion('stable');
 
     // Version should be in format like "1.1234.0" or "v1.1234.0"
@@ -44,11 +77,25 @@ suite('StaticCliApi - Integration Tests', function () {
     ok(/^v?\d+\.\d+\.\d+/.test(version), `Version "${version}" should match semantic version pattern`);
   });
 
-  test('getLatestCliVersion with preview channel returns a version', async () => {
+  test('getLatestCliVersion with preview channel returns a valid version string', async () => {
     const version = await api.getLatestCliVersion('preview');
 
     ok(version, 'Preview version should not be empty');
     ok(/^v?\d+\.\d+\.\d+/.test(version), `Preview version "${version}" should match semantic version pattern`);
+  });
+
+  test('getLatestCliVersion with stable channel should fail when isStableCLIReleased is false', async function () {
+    // Only run this test if no stable CLI has been released yet
+    if (isStableCLIReleased) {
+      console.log('Skipping test: stable CLI is already released');
+      this.skip();
+    }
+
+    // Attempting to get stable CLI version should fail when none exists for the protocol version
+    await rejects(
+      api.getLatestCliVersion('stable'),
+      'Should throw an error when stable CLI does not exist for current protocol version. If stable is released, update isStableCLIReleased flag.',
+    );
   });
 
   test('downloadBinary downloads actual CLI binary stream', async () => {
@@ -96,7 +143,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
   test('getSha256Checksum returns valid checksum', async () => {
     // Get a version first
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion(defaultCLIReleaseChannel);
     const platform: CliSupportedPlatform = 'linux';
 
     const checksum = await api.getSha256Checksum(version, platform);
@@ -108,7 +155,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getSha256Checksum handles version with and without v prefix', async () => {
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion(defaultCLIReleaseChannel);
     const platform: CliSupportedPlatform = 'linux';
 
     // Remove 'v' prefix if present for testing
@@ -125,7 +172,7 @@ suite('StaticCliApi - Integration Tests', function () {
     const platform: CliSupportedPlatform = 'linux';
 
     // Get latest version
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion(defaultCLIReleaseChannel);
     console.log(`Testing with CLI version: ${version}`);
 
     // Get the expected checksum
@@ -183,7 +230,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
     // This should throw an error
     try {
-      await invalidApi.getLatestCliVersion('stable');
+      await invalidApi.getLatestCliVersion(defaultCLIReleaseChannel);
       throw new Error('Expected getLatestCliVersion to throw an error');
     } catch (err) {
       // Accept any error since we're using an invalid domain

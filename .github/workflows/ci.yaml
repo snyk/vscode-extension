@@ -1,9 +1,13 @@
 name: CI
 on:
   pull_request:
-    branches:
-      - 'main'
   workflow_call:
+    inputs:
+      ensure_stable_cli:
+        description: 'Set to true to enforce stable CLI release check'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -39,8 +43,12 @@ jobs:
           sudo apt-get install xvfb
           xvfb-run --auto-servernum npm run test:integration
         if: runner.os == 'Linux'
+        env:
+          ENSURE_STABLE_CLI: ${{ inputs.ensure_stable_cli && '1' || '0' }}
       - name: Run integration tests
         run: npm run test:integration
         if: runner.os != 'Linux'
+        env:
+          ENSURE_STABLE_CLI: ${{ inputs.ensure_stable_cli && '1' || '0' }}
 
 
