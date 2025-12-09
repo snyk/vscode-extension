@@ -327,7 +327,8 @@
             "order": 1,
             "type": "array",
             "default": [],
-            "description": "Folders to trust for Snyk scans."
+            "description": "Folders to trust for Snyk scans.",
+            "scope": "machine"
           }
         }
       },
