@@ -47,6 +47,12 @@ export type Scan = {
   presentableError?: PresentableError;
 };
 
+export type McpConfig = {
+  cmd: string;
+  args: string[];
+  env: Record<string, string>;
+};
+
 export type Issue<T> = {
   id: string;
   title: string;

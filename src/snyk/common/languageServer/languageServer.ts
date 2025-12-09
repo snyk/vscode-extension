@@ -1,9 +1,11 @@
+import * as vscode from 'vscode';
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
+  SNYK_CONFIGURE_MCP,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -21,7 +23,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { Scan, ShowIssueDetailTopicParams } from './types';
+import { McpConfig, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
@@ -29,6 +31,7 @@ import { IUriAdapter } from '../vscode/uri';
 import { IMarkdownStringAdapter } from '../vscode/markdownString';
 import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { Logger } from '../logger/logger';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -72,6 +75,7 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
+    private readonly vscodeContext: vscode.ExtensionContext,
     private extensionRetriever: IExtensionRetriever,
     private summaryProvider: ISummaryProviderService,
     private readonly uriAdapter: IUriAdapter,
@@ -248,6 +252,32 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
+    });
+
+    client.onNotification(SNYK_CONFIGURE_MCP, (mcpConfig: McpConfig) => {
+      try {
+        this.vscodeContext.subscriptions.push(
+          /* eslint-disable @typescript-eslint/no-unsafe-argument */
+          /* eslint-disable @typescript-eslint/no-unsafe-call */
+          /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+          // @ts-expect-error backward compatibility for older VS Code versions
+          vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
+            onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
+            provideMcpServerDefinitions: async () => {
+              // @ts-expect-error backward compatibility for older VS Code versions
+              const output: vscode.McpServerDefinition[][] = [];
+              // @ts-expect-error backward compatibility for older VS Code versions
+              output.push(new vscode.McpStdioServerDefinition('Snyk', mcpConfig.cmd, mcpConfig.args, mcpConfig.env));
+
+              return output;
+            },
+          }),
+        );
+      } catch (err) {
+        Logger.debug(
+          `VS Code MCP Server Definition Provider API is not available. This feature requires VS Code version > 1.101.0.`,
+        );
+      }
     });
   }
 

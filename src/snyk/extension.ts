@@ -219,6 +219,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      vscodeContext,
       {
         extensionPath: extensionContext.extensionPath,
         getExtension(id: string): Extension | undefined {
