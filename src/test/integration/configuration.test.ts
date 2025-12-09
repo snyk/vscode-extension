@@ -10,6 +10,7 @@ import {
   CONFIGURATION_IDENTIFIER,
 } from '../../snyk/common/constants/settings';
 import { assertEventually } from '../util/testUtils';
+import { LanguageServer } from '../../snyk/common/languageServer/languageServer';
 
 suite('Configuration', () => {
   test('settings change is reflected', async () => {
@@ -93,6 +94,8 @@ suite('Configuration', () => {
 
       await clearOrganizationAtAllLevels();
       await configuration.setFolderConfigs([]);
+
+      LanguageServer.clearLSUpdatingOrgState();
     });
 
     teardown(async () => {
@@ -113,6 +116,8 @@ suite('Configuration', () => {
           await sleep(200); // Allow VS Code to fully remove the workspace folder
         }
       }
+
+      LanguageServer.clearLSUpdatingOrgState();
     });
 
     test('should sync folder-level organization setting to folder config', async () => {

@@ -56,6 +56,13 @@ export class LanguageServer implements ILanguageServer {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
   }
 
+  /**
+   * Should only be needed by tests.
+   */
+  static clearLSUpdatingOrgState(): void {
+    LanguageServer.foldersBeingUpdatedByLS.clear();
+  }
+
   constructor(
     private user: User,
     private configuration: IConfiguration,
