@@ -186,7 +186,7 @@
             "minimum": 0,
             "maximum": 1000,
             "default": 0,
-            "markdownDescription": "[Early Access] Filters Open Source issues by [risk score](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/risk-score). Only issues with a risk score >= threshold are shown. Set to 0 to show all issues.",
+            "markdownDescription": "[Closed Beta] Filters Open Source issues by [risk score](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/risk-score). Only issues with a risk score >= threshold are shown. Set to 0 to show all issues. This filter will apply in conjunction with other filters such as Severity and Issue View Options.",
             "scope": "window"
           },
           "snyk.issueViewOptions": {
