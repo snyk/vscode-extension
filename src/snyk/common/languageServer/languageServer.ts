@@ -263,7 +263,7 @@ export class LanguageServer implements ILanguageServer {
           // @ts-expect-error backward compatibility for older VS Code versions
           vscode.lm.registerMcpServerDefinitionProvider('snyk-security-scanner', {
             onDidChangeMcpServerDefinitions: new vscode.EventEmitter<void>().event,
-            provideMcpServerDefinitions: async () => {
+            provideMcpServerDefinitions: () => {
               // @ts-expect-error backward compatibility for older VS Code versions
               const output: vscode.McpServerDefinition[][] = [];
               // @ts-expect-error backward compatibility for older VS Code versions
