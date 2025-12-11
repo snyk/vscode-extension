@@ -5,7 +5,7 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
-  SNYK_CONFIGURE_MCP,
+  SNYK_REGISTER_MCP,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -254,7 +254,7 @@ export class LanguageServer implements ILanguageServer {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
 
-    client.onNotification(SNYK_CONFIGURE_MCP, (mcpConfig: McpConfig) => {
+    client.onNotification(SNYK_REGISTER_MCP, (mcpConfig: McpConfig) => {
       try {
         this.vscodeContext.subscriptions.push(
           /* eslint-disable @typescript-eslint/no-unsafe-argument */
