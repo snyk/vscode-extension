@@ -530,8 +530,7 @@
     ]
   },
   "scripts": {
-    "copy-assets": "cp -r src/snyk/assets out/",
-    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map && npm run copy-assets",
+    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
     "build": "npm run vscode:prepublish",
     "clean": "rm -rf ./out",
     "rebuild": "npm run clean && npm run build",
