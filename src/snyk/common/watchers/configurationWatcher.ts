@@ -80,6 +80,8 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
+    } else if (key === AUTO_CONFIGURE_MCP_SERVER || key === SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY) {
+      return;
     }
     // from here on only for OSS and trusted folders
 
