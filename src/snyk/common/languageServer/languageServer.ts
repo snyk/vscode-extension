@@ -4,6 +4,7 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
+  SNYK_REGISTER_MCP,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
@@ -29,6 +30,7 @@ import { IUriAdapter } from '../vscode/uri';
 import { IMarkdownStringAdapter } from '../vscode/markdownString';
 import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
+import { IMcpProvider } from '../vscode/mcpProvider';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -72,6 +74,7 @@ export class LanguageServer implements ILanguageServer {
     private authenticationService: IAuthenticationService,
     private readonly logger: ILog,
     private downloadService: DownloadService,
+    private readonly mcpProvider: IMcpProvider,
     private extensionRetriever: IExtensionRetriever,
     private summaryProvider: ISummaryProviderService,
     private readonly uriAdapter: IUriAdapter,
@@ -249,6 +252,13 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_SCANSUMMARY, ({ scanSummary }: { scanSummary: string }) => {
       this.summaryProvider.updateSummaryPanel(scanSummary);
     });
+
+    client.onNotification(
+      SNYK_REGISTER_MCP,
+      (mcpConfig: { cmd: string; args: string[]; env: Record<string, string> }) => {
+        this.mcpProvider.registerMcpServer(mcpConfig);
+      },
+    );
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

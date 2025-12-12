@@ -44,6 +44,12 @@ suite('LanguageServerSettings', () => {
         riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
         issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         scanningMode: 'scan-mode',
+        getSecureAtInceptionExecutionFrequency(): string {
+          return 'Manual';
+        },
+        getAutoConfigureMcpServer(): boolean {
+          return false;
+        },
       } as unknown as IConfiguration;
 
       const serverSettings = await LanguageServerSettings.fromConfiguration(mockConfiguration, mockUser);
