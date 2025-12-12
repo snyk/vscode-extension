@@ -60,6 +60,12 @@ suite('Language Server: Middleware', () => {
       getFolderConfigs(): FolderConfig[] {
         return [];
       },
+      getSecureAtInceptionExecutionFrequency(): string {
+        return 'Manual';
+      },
+      getAutoConfigureMcpServer(): boolean {
+        return false;
+      },
     } as IConfiguration;
   });
 
