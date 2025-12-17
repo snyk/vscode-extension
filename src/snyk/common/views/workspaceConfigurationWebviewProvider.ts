@@ -8,6 +8,7 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { ErrorHandler } from '../error/errorHandler';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
+import { hasPropertyOfType, hasOptionalPropertyOfType, isStringKeyedRecord } from '../tsUtil';
 
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
@@ -162,10 +163,19 @@ export class WorkspaceConfigurationWebviewProvider
     }
   }
 
-  private async handleMessage(message: any): Promise<void> {
+  private async handleMessage(message: unknown): Promise<void> {
     try {
+      if (!this.isWebviewMessage(message)) {
+        this.logger.warn('Received invalid message from workspace configuration webview');
+        return;
+      }
+
       switch (message.type) {
         case 'saveConfig':
+          if (!message.config) {
+            this.logger.warn('Received invalid configuration from workspace configuration webview');
+            return;
+          }
           await this.handleSaveConfig(message.config);
           break;
         case 'login':
@@ -182,9 +192,16 @@ export class WorkspaceConfigurationWebviewProvider
     }
   }
 
+  private isWebviewMessage(message: unknown): message is { type: string; config?: string } {
+    return hasPropertyOfType(message, 'type', 'string') && hasOptionalPropertyOfType(message, 'config', 'string');
+  }
+
   private async handleSaveConfig(configJson: string): Promise<void> {
     try {
-      const config = JSON.parse(configJson);
+      const config = JSON.parse(configJson) as unknown;
+      if (!isStringKeyedRecord(config)) {
+        throw new Error('Invalid configuration format: expected an object');
+      }
       this.logger.info('Saving workspace configuration');
 
       await this.saveConfigToVSCodeSettings(config);
@@ -196,12 +213,12 @@ export class WorkspaceConfigurationWebviewProvider
     }
   }
 
-  private async saveConfigToVSCodeSettings(config: any): Promise<void> {
+  private async saveConfigToVSCodeSettings(config: Record<string, unknown>): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
     const settingsMap = this.mapConfigToSettings(config);
 
-    for (const [settingKey, value] of Object.entries(settingsMap)) {
+    const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
       try {
         // Extract the configuration section and key
         const settingName = settingKey.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
@@ -218,13 +235,15 @@ export class WorkspaceConfigurationWebviewProvider
         this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
         throw new Error(`Failed to save setting ${settingKey}: ${e}`);
       }
-    }
+    });
+
+    await Promise.all(updates);
 
     this.logger.info('Successfully wrote all settings to VS Code configuration');
   }
 
-  private mapConfigToSettings(config: any): Record<string, any> {
-    const settings: Record<string, any> = {};
+  private mapConfigToSettings(config: Record<string, unknown>): Record<string, unknown> {
+    const settings: Record<string, unknown> = {};
 
     const fieldMappings: Record<string, string> = {
       endpoint: 'snyk.advanced.customEndpoint',
@@ -239,22 +258,35 @@ export class WorkspaceConfigurationWebviewProvider
     };
 
     for (const [htmlField, vscodeSetting] of Object.entries(fieldMappings)) {
-      if (config[htmlField] !== undefined && config[htmlField] !== null && config[htmlField] !== '') {
-        let value = config[htmlField];
+      const fieldValue = config[htmlField];
+      if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+        let value: unknown = fieldValue;
         if (value === 'true') value = true;
         if (value === 'false') value = false;
         settings[vscodeSetting] = value;
       }
     }
 
-    if (config.enableDeltaFindings !== undefined) {
-      const value = config.enableDeltaFindings === 'true' || config.enableDeltaFindings === true;
+    const enableDeltaFindings = config.enableDeltaFindings;
+    if (enableDeltaFindings !== undefined) {
+      const value = enableDeltaFindings === 'true' || enableDeltaFindings === true;
       settings['snyk.allIssuesVsNetNewIssues'] = value ? 'Net new issues' : 'All issues';
     }
 
-    if (config.filterSeverity) settings['snyk.severity'] = config.filterSeverity;
-    if (config.issueViewOptions) settings['snyk.issueViewOptions'] = config.issueViewOptions;
-    if (config.folderConfigs && config.folderConfigs.length > 0) settings['snyk.folderConfigs'] = config.folderConfigs;
+    const filterSeverity = config.filterSeverity;
+    if (filterSeverity !== undefined && filterSeverity !== null) {
+      settings['snyk.severity'] = filterSeverity;
+    }
+
+    const issueViewOptions = config.issueViewOptions;
+    if (issueViewOptions !== undefined && issueViewOptions !== null) {
+      settings['snyk.issueViewOptions'] = issueViewOptions;
+    }
+
+    const folderConfigs = config.folderConfigs;
+    if (Array.isArray(folderConfigs) && folderConfigs.length > 0) {
+      settings['snyk.folderConfigs'] = folderConfigs;
+    }
 
     return settings;
   }

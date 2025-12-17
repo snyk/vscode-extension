@@ -45,7 +45,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
 
     contextMock = {
       extensionPath: '/test/path',
-      getExtensionUri: () => ({ fsPath: '/test/path' } as any),
+      getExtensionUri: () => ({ fsPath: '/test/path' }),
     } as ExtensionContext;
 
     provider = new WorkspaceConfigurationWebviewProvider(contextMock, logger, commandExecutorMock, workspaceMock);
@@ -57,14 +57,14 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
 
   test('fetchConfigurationHtml calls language server command', async () => {
     // Access private method for testing
-    const html = await (provider as any).fetchConfigurationHtml();
+    const html = await provider['fetchConfigurationHtml']();
 
     sinon.assert.calledOnceWithExactly(executeCommandStub, 'snyk.workspace.configuration', 'ls');
     strictEqual(html, sampleHtml);
   });
 
   test('fetchConfigurationHtml returns sample HTML content', async () => {
-    const html = await (provider as any).fetchConfigurationHtml();
+    const html = await provider['fetchConfigurationHtml']();
 
     ok(html, 'HTML should not be null or undefined');
     ok(html.includes('<!DOCTYPE html>'), 'HTML should be a complete document');
@@ -75,13 +75,13 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
   test('fetchConfigurationHtml handles error gracefully', async () => {
     executeCommandStub.rejects(new Error('LS command failed'));
 
-    const html = await (provider as any).fetchConfigurationHtml();
+    const html = await provider['fetchConfigurationHtml']();
 
     strictEqual(html, undefined);
   });
 
   test('injectIdeScripts injects IDE bridge functions', () => {
-    const processed = (provider as any).injectIdeScripts(sampleHtml);
+    const processed = provider['injectIdeScripts'](sampleHtml);
 
     console.log('processed', processed);
 
@@ -92,7 +92,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
   });
 
   test('getErrorHtml returns valid error HTML', () => {
-    const errorHtml = (provider as any).getErrorHtml('Test error message');
+    const errorHtml = provider['getErrorHtml']('Test error message');
 
     ok(errorHtml.includes('<!DOCTYPE html>'), 'Error HTML should be a complete document');
     ok(errorHtml.includes('Test error message'), 'Error HTML should contain error message');
