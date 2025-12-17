@@ -314,6 +314,7 @@ class SnykExtension extends SnykLib implements IExtension {
       extensionContext,
       Logger,
       vsCodeCommands,
+      vsCodeWorkspace,
     );
 
     this.commandController = new CommandController(
@@ -573,7 +574,14 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.workspaceConfigurationProvider?.showPanel()),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => {
+        const useHTMLSettings = process.env.SNYK_USE_HTML_SETTINGS === 'true';
+        if (useHTMLSettings) {
+          this.workspaceConfigurationProvider?.showPanel();
+        } else {
+          this.commandController.openSettings();
+        }
+      }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),

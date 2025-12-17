@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import path from 'path';
 import { URL } from 'url';
-import * as vscode from 'vscode';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import {
@@ -80,7 +79,6 @@ export type FolderConfig = {
   autoDeterminedOrg: string;
   orgMigratedFromGlobalConfig: boolean;
   sastSettings?: SastSettings;
-  riskScoreThreshold?: number;
 };
 
 export interface IssueViewOptions {
@@ -715,82 +713,8 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  /**
-   * Normalizes a value to a boolean, handling string representations like "true" and "false"
-   */
-  private normalizeBoolean(value: boolean | string | undefined, defaultValue: boolean): boolean {
-    if (value === undefined || value === null) {
-      return defaultValue;
-    }
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return defaultValue;
-  }
-
-  /**
-   * Normalizes a FolderConfig to ensure boolean fields are properly typed
-   */
-  private normalizeFolderConfig(config: FolderConfig): FolderConfig {
-    return {
-      ...config,
-      orgSetByUser: this.normalizeBoolean(config.orgSetByUser, false),
-      orgMigratedFromGlobalConfig: this.normalizeBoolean(config.orgMigratedFromGlobalConfig, false),
-    };
-  }
-
   getFolderConfigs(): FolderConfig[] {
-    // Read folder configs from VS Code settings (source of truth for user-set values)
-    const vscodeFolderConfigs =
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      [];
-
-    // Normalize all folder configs to ensure boolean fields are properly typed
-    const normalizedVscodeConfigs = vscodeFolderConfigs.map(fc => this.normalizeFolderConfig(fc));
-    const normalizedInMemoryConfigs = this.inMemoryFolderConfigs.map(fc => this.normalizeFolderConfig(fc));
-
-    // If we have in-memory configs (from Language Server), merge them with VS Code settings
-    // VS Code settings take precedence for user-configurable fields like riskScoreThreshold
-    if (normalizedInMemoryConfigs.length > 0) {
-      // Start with in-memory configs as base
-      const mergedConfigs = normalizedInMemoryConfigs.map((inMemoryFc: FolderConfig) => {
-        const vscodeFc = normalizedVscodeConfigs.find((vfc: FolderConfig) => vfc.folderPath === inMemoryFc.folderPath);
-        if (vscodeFc) {
-          // Merge: use in-memory config as base, but preserve user-set values from VS Code settings
-          return {
-            ...inMemoryFc,
-            // Preserve user-configurable fields from VS Code settings
-            riskScoreThreshold:
-              vscodeFc.riskScoreThreshold !== undefined ? vscodeFc.riskScoreThreshold : inMemoryFc.riskScoreThreshold,
-            preferredOrg:
-              vscodeFc.preferredOrg !== undefined && vscodeFc.preferredOrg !== ''
-                ? vscodeFc.preferredOrg
-                : inMemoryFc.preferredOrg,
-            orgSetByUser: vscodeFc.orgSetByUser !== undefined ? vscodeFc.orgSetByUser : inMemoryFc.orgSetByUser,
-          };
-        }
-        // If no VS Code config for this folder, return in-memory config as-is
-        return inMemoryFc;
-      });
-
-      // Also include any VS Code configs that don't have a corresponding in-memory config
-      normalizedVscodeConfigs.forEach((vscodeFc: FolderConfig) => {
-        const existsInMemory = normalizedInMemoryConfigs.some(
-          (imFc: FolderConfig) => imFc.folderPath === vscodeFc.folderPath,
-        );
-        if (!existsInMemory) {
-          mergedConfigs.push(vscodeFc);
-        }
-      });
-
-      return mergedConfigs;
-    }
-
-    // If no in-memory configs, return normalized VS Code settings
-    return normalizedVscodeConfigs;
+    return this.inMemoryFolderConfigs;
   }
 
   get scanningMode(): string | undefined {
@@ -798,56 +722,20 @@ export class Configuration implements IConfiguration {
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {
-    // Write to user settings (global) since snyk.trustedFolders has scope "application"
-    // This prevents workspace settings from overriding the security configuration
-    // Use vscode.ConfigurationTarget.Global explicitly to ensure it writes to user settings
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(TRUSTED_FOLDERS),
       trustedFolders,
-      vscode.ConfigurationTarget.Global,
+      true,
     );
   }
 
   async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
-    // Read existing VS Code settings to preserve user-set values
-    const existingVscodeConfigs =
-      this.workspace.getConfiguration<FolderConfig[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(FOLDER_CONFIGS)) ||
-      [];
-
-    // Normalize incoming folder configs and existing configs to ensure boolean fields are properly typed
-    const normalizedFolderConfigs = folderConfigs.map(fc => this.normalizeFolderConfig(fc));
-    const normalizedExistingConfigs = existingVscodeConfigs.map(fc => this.normalizeFolderConfig(fc));
-
-    // Merge: preserve user-set values from VS Code settings when updating
-    const mergedConfigs = normalizedFolderConfigs.map((lsFc: FolderConfig) => {
-      const existingFc = normalizedExistingConfigs.find(
-        (vscodeFc: FolderConfig) => vscodeFc.folderPath === lsFc.folderPath,
-      );
-      if (existingFc) {
-        // Preserve user-configurable fields from VS Code settings
-        return {
-          ...lsFc,
-          riskScoreThreshold:
-            existingFc.riskScoreThreshold !== undefined ? existingFc.riskScoreThreshold : lsFc.riskScoreThreshold,
-          preferredOrg:
-            existingFc.preferredOrg !== undefined && existingFc.preferredOrg !== ''
-              ? existingFc.preferredOrg
-              : lsFc.preferredOrg,
-          orgSetByUser: existingFc.orgSetByUser !== undefined ? existingFc.orgSetByUser : lsFc.orgSetByUser,
-        };
-      }
-      return lsFc;
-    });
-
-    // Update in-memory configs
-    this.inMemoryFolderConfigs = mergedConfigs;
-
-    // Write merged configs to VS Code settings
+    this.inMemoryFolderConfigs = folderConfigs;
     await this.workspace.updateConfiguration(
       CONFIGURATION_IDENTIFIER,
       this.getConfigName(FOLDER_CONFIGS),
-      mergedConfigs,
+      this.inMemoryFolderConfigs,
       true,
     );
   }

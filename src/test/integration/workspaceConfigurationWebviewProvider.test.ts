@@ -1,18 +1,21 @@
-// ABOUTME: Unit tests for WorkspaceConfigurationWebviewProvider
+// ABOUTME: Integration tests for WorkspaceConfigurationWebviewProvider
 // ABOUTME: Tests HTML fetching and webview panel creation
 import { strictEqual, ok } from 'assert';
 import sinon from 'sinon';
-import { WorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfigurationWebviewProvider';
-import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
-import { LoggerMock } from '../../mocks/logger.mock';
-import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { WorkspaceConfigurationWebviewProvider } from '../../snyk/common/views/workspaceConfigurationWebviewProvider';
+import { ExtensionContext } from '../../snyk/common/vscode/extensionContext';
+import { LoggerMock } from '../unit/mocks/logger.mock';
+import { IVSCodeCommands } from '../../snyk/common/vscode/commands';
+import { IVSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 
 suite('WorkspaceConfigurationWebviewProvider', () => {
   let provider: WorkspaceConfigurationWebviewProvider;
   let commandExecutorMock: IVSCodeCommands;
+  let workspaceMock: IVSCodeWorkspace;
   let contextMock: ExtensionContext;
   let logger: LoggerMock;
   let executeCommandStub: sinon.SinonStub;
+  let updateConfigurationStub: sinon.SinonStub;
 
   const sampleHtml = `<!DOCTYPE html>
 <html>
@@ -33,12 +36,19 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
       executeCommand: executeCommandStub,
     } as unknown as IVSCodeCommands;
 
+    updateConfigurationStub = sinon.stub().resolves();
+    workspaceMock = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub(),
+      getWorkspaceFolders: sinon.stub().returns([]),
+    } as unknown as IVSCodeWorkspace;
+
     contextMock = {
       extensionPath: '/test/path',
       getExtensionUri: () => ({ fsPath: '/test/path' } as any),
     } as ExtensionContext;
 
-    provider = new WorkspaceConfigurationWebviewProvider(contextMock, logger, commandExecutorMock);
+    provider = new WorkspaceConfigurationWebviewProvider(contextMock, logger, commandExecutorMock, workspaceMock);
   });
 
   teardown(() => {
@@ -70,10 +80,15 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     strictEqual(html, undefined);
   });
 
-  test('processHtml returns HTML as-is for complete documents', () => {
-    const processed = (provider as any).processHtml(sampleHtml);
+  test('injectIdeScripts injects IDE bridge functions', () => {
+    const processed = (provider as any).injectIdeScripts(sampleHtml);
 
-    strictEqual(processed, sampleHtml);
+    console.log('processed', processed);
+
+    ok(processed.includes('__ideSaveConfig__'), 'Should inject save config function');
+    ok(processed.includes('__ideLogin__'), 'Should inject login function');
+    ok(processed.includes('__ideLogout__'), 'Should inject logout function');
+    ok(processed.includes('acquireVsCodeApi'), 'Should inject VS Code API call');
   });
 
   test('getErrorHtml returns valid error HTML', () => {

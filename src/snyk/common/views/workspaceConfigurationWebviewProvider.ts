@@ -1,14 +1,13 @@
 // ABOUTME: WebviewProvider for displaying the workspace configuration HTML settings page
 // ABOUTME: from snyk-ls instead of VS Code's native settings
 import * as vscode from 'vscode';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as os from 'os';
 import { WebviewProvider } from './webviewProvider';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { ILog } from '../logger/interfaces';
 import { IVSCodeCommands } from '../vscode/commands';
+import { IVSCodeWorkspace } from '../vscode/workspace';
 import { ErrorHandler } from '../error/errorHandler';
+import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
@@ -26,6 +25,7 @@ export class WorkspaceConfigurationWebviewProvider
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
     private readonly commandExecutor: IVSCodeCommands,
+    private readonly workspace: IVSCodeWorkspace,
   ) {
     super(context, logger);
   }
@@ -187,7 +187,7 @@ export class WorkspaceConfigurationWebviewProvider
       const config = JSON.parse(configJson);
       this.logger.info('Saving workspace configuration');
 
-      await this.writeToSettingsJson(config);
+      await this.saveConfigToVSCodeSettings(config);
 
       this.logger.info('Workspace configuration saved successfully');
     } catch (e) {
@@ -196,106 +196,31 @@ export class WorkspaceConfigurationWebviewProvider
     }
   }
 
-  private getUserSettingsPath(): string {
-    const homeDir = os.homedir();
-    const appName = vscode.env.appName.toLowerCase();
+  private async saveConfigToVSCodeSettings(config: any): Promise<void> {
+    this.logger.info('Writing configuration to VS Code settings');
 
-    // Detect editor variant (same pattern as mcp.ts)
-    let appDirName = 'Code';
-    if (appName.includes('insiders')) {
-      appDirName = 'Code - Insiders';
-    } else if (appName.includes('cursor')) {
-      appDirName = 'Cursor';
-    } else if (appName.includes('windsurf')) {
-      appDirName = 'Windsurf';
-    }
+    const settingsMap = this.mapConfigToSettings(config);
 
-    if (process.platform === 'win32') {
-      return path.join(
-        process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming'),
-        appDirName,
-        'User',
-        'settings.json',
-      );
-    } else if (process.platform === 'darwin') {
-      return path.join(homeDir, 'Library', 'Application Support', appDirName, 'User', 'settings.json');
-    } else {
-      return path.join(homeDir, '.config', appDirName, 'User', 'settings.json');
-    }
-  }
-
-  private async writeToSettingsJson(config: any): Promise<void> {
-    const settingsPath = this.getUserSettingsPath();
-    this.logger.info(`Writing to settings.json at: ${settingsPath}`);
-
-    let currentSettings: any = {};
-    let originalContent = '';
-
-    // Read current settings
-    try {
-      originalContent = await fs.readFile(settingsPath, 'utf-8');
-    } catch (e: any) {
-      // File doesn't exist - start with empty settings
-      if (e.code === 'ENOENT') {
-        this.logger.info('settings.json does not exist, will create new file');
-        currentSettings = {};
-      } else {
-        // Other read errors - fail fast to avoid data loss
-        this.logger.error(`Failed to read settings.json: ${e}`);
-        throw new Error(`Cannot read settings.json: ${e.message}`);
-      }
-    }
-
-    // Parse existing content if we read it successfully
-    if (originalContent) {
+    for (const [settingKey, value] of Object.entries(settingsMap)) {
       try {
-        // Use VS Code's jsonc-parser for proper JSONC parsing
-        // For now, use a more conservative approach to strip comments
-        const lines = originalContent.split('\n');
-        const cleanedLines = lines.map(line => {
-          // Remove inline comments but preserve strings with //
-          const stringMatches: string[] = [];
-          let cleaned = line.replace(/"(?:[^"\\]|\\.)*"/g, match => {
-            stringMatches.push(match);
-            return `__STRING_${stringMatches.length - 1}__`;
-          });
+        // Extract the configuration section and key
+        const settingName = settingKey.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
 
-          // Now remove comments
-          cleaned = cleaned.replace(/\/\/.*$/, '');
+        await this.workspace.updateConfiguration(
+          CONFIGURATION_IDENTIFIER,
+          settingName,
+          value,
+          true, // TODO - We will write back to the level it was previously set at.
+        );
 
-          // Restore strings
-          cleaned = cleaned.replace(/__STRING_(\d+)__/g, (_, index) => stringMatches[parseInt(index)]);
-
-          return cleaned;
-        });
-
-        let cleanContent = cleanedLines.join('\n');
-        // Remove block comments
-        cleanContent = cleanContent.replace(/\/\*[\s\S]*?\*\//g, '');
-        // Remove trailing commas
-        cleanContent = cleanContent.replace(/,(\s*[}\]])/g, '$1');
-
-        currentSettings = JSON.parse(cleanContent);
+        this.logger.debug(`Updated setting: ${settingKey}`);
       } catch (e) {
-        // Parsing failed - fail fast to avoid data loss
-        this.logger.error(`Failed to parse settings.json: ${e}`);
-        throw new Error(`Cannot parse settings.json. Please check for syntax errors: ${e}`);
+        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
+        throw new Error(`Failed to save setting ${settingKey}: ${e}`);
       }
     }
 
-    // Map and merge
-    const updates = this.mapConfigToSettings(config);
-    const updatedSettings = { ...currentSettings, ...updates };
-
-    // Write to settings.json
-    try {
-      const jsonContent = JSON.stringify(updatedSettings, null, 2);
-      await fs.writeFile(settingsPath, jsonContent, 'utf-8');
-      this.logger.info('Successfully wrote to settings.json');
-    } catch (e) {
-      this.logger.error(`Failed to write settings.json: ${e}`);
-      throw new Error(`Failed to save configuration: ${e}`);
-    }
+    this.logger.info('Successfully wrote all settings to VS Code configuration');
   }
 
   private mapConfigToSettings(config: any): Record<string, any> {
