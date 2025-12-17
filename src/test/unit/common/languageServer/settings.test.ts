@@ -1,6 +1,7 @@
 import assert from 'assert';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -40,6 +41,7 @@ suite('LanguageServerSettings', () => {
           return 'oauth';
         },
         severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
         issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         scanningMode: 'scan-mode',
       } as unknown as IConfiguration;

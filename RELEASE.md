@@ -5,6 +5,12 @@
 - Ensure the Snyk Language Server Protocol version is correct in the plugin. 
   - `PROTOCOL_VERSION`  in  `src/snyk/common/constants/languageServer.ts`  
 
+**Preview Version Verification**
+
+- Trigger or wait for the preview release workflow to build a preview version on the commit that will be used for the release.
+  - The preview release workflow runs automatically on pushes to main.
+- Install the preview version from the marketplace and verify that the changes listed in the changelog are present and working correctly.
+
 **Initiate Release**
 
 - If you want to do a hotfix with a subset of commits from main, create a hotfix branch off the previous release tag.
