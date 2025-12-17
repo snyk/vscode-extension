@@ -5,6 +5,7 @@ import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -93,6 +94,7 @@ suite('Language Server', () => {
         return true;
       },
       severityFilter: DEFAULT_SEVERITY_FILTER,
+      riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
       issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
@@ -266,6 +268,7 @@ suite('Language Server', () => {
           manageBinariesAutomatically: 'true',
           deviceId: user.anonymousId,
           filterSeverity: DEFAULT_SEVERITY_FILTER,
+          riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
           issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
           enableTrustedFoldersFeature: 'true',
           trustedFolders: ['/trusted/test/folder'],
