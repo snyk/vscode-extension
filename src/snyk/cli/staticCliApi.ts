@@ -78,9 +78,9 @@ export class StaticCliApi implements IStaticCliApi {
     }
   }
 
-  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
+  async downloadBinary(platform: CliSupportedPlatform, protocolVersion: number = PROTOCOL_VERSION): Promise<[Promise<DownloadResponse>, CancelToken]> {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
-    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel, protocolVersion);
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
     // Create a cancel token compatible with our interface

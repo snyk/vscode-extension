@@ -46,7 +46,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getLatestCliVersion with preview channel returns a version', async () => {
-    const version = await api.getLatestCliVersion('preview', TEST_PROTOCOL_VERSION);
+    const version = await api.getLatestCliVersion('preview');
 
     ok(version, 'Preview version should not be empty');
     ok(/^v?\d+\.\d+\.\d+/.test(version), `Preview version "${version}" should match semantic version pattern`);
@@ -55,7 +55,7 @@ suite('StaticCliApi - Integration Tests', function () {
   test('downloadBinary downloads actual CLI binary stream', async () => {
     // Test with Linux platform as it's smaller than other binaries
     const platform: CliSupportedPlatform = 'linux';
-    const [downloadPromise, cancelToken] = await api.downloadBinary(platform);
+    const [downloadPromise, cancelToken] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
 
     ok(downloadPromise, 'Download promise should exist');
     ok(cancelToken, 'Cancel token should exist');
@@ -86,7 +86,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
   test('downloadBinary can be cancelled', async () => {
     const platform: CliSupportedPlatform = 'linux';
-    const [downloadPromise, cancelToken] = await api.downloadBinary(platform);
+    const [downloadPromise, cancelToken] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
 
     // Cancel immediately
     cancelToken.cancel();
@@ -134,7 +134,7 @@ suite('StaticCliApi - Integration Tests', function () {
     console.log(`Expected checksum: ${expectedChecksum}`);
 
     // Download the binary
-    const [downloadPromise] = await api.downloadBinary(platform);
+    const [downloadPromise] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
     const response = await downloadPromise;
 
     // Write to temporary file to calculate checksum
