@@ -37,7 +37,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getLatestCliVersion returns a valid version string', async () => {
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion('preview');
 
     // Version should be in format like "1.1234.0" or "v1.1234.0"
     ok(version, 'Version should not be empty');
