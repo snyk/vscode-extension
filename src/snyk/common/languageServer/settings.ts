@@ -35,6 +35,7 @@ export type ServerSettings = {
 
   // Security and scanning settings
   filterSeverity?: SeverityFilter;
+  riskScoreThreshold?: number;
   issueViewOptions?: IssueViewOptions;
   scanningMode?: string;
   insecure?: string;
@@ -95,6 +96,7 @@ export class LanguageServerSettings {
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
       filterSeverity: configuration.severityFilter,
+      riskScoreThreshold: configuration.riskScoreThreshold,
       issueViewOptions: configuration.issueViewOptions,
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
