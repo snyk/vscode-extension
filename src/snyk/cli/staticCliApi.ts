@@ -10,7 +10,7 @@ import * as https from 'https';
 import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
-  getLatestCliVersion(releaseChannel: string): Promise<string>;
+  getLatestCliVersion(releaseChannel: string, protocolVersion?: number): Promise<string>;
   downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]>;
   getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string>;
 }
@@ -45,8 +45,8 @@ export class StaticCliApi implements IStaticCliApi {
     configure(httpProxy || undefined, proxyStrictSSL);
   }
 
-  private getLatestVersionDownloadUrl(releaseChannel: string): string {
-    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${PROTOCOL_VERSION}`;
+  private getLatestVersionDownloadUrl(releaseChannel: string, protocolVersion: number): string {
+    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${protocolVersion}`;
   }
 
   private getDownloadUrl(version: string, platform: CliSupportedPlatform): string {
@@ -60,10 +60,10 @@ export class StaticCliApi implements IStaticCliApi {
     return `${this.getDownloadUrl(version, platform)}.sha256`;
   }
 
-  async getLatestCliVersion(releaseChannel: string): Promise<string> {
+  async getLatestCliVersion(releaseChannel: string, protocolVersion: number = PROTOCOL_VERSION): Promise<string> {
     try {
       const response = await xhr({
-        url: this.getLatestVersionDownloadUrl(releaseChannel),
+        url: this.getLatestVersionDownloadUrl(releaseChannel, protocolVersion),
       });
 
       if (response.status >= 200 && response.status < 300) {
@@ -78,9 +78,12 @@ export class StaticCliApi implements IStaticCliApi {
     }
   }
 
-  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
+  async downloadBinary(
+    platform: CliSupportedPlatform,
+    protocolVersion: number = PROTOCOL_VERSION,
+  ): Promise<[Promise<DownloadResponse>, CancelToken]> {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
-    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel, protocolVersion);
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
     // Create a cancel token compatible with our interface

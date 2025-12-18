@@ -59,6 +59,10 @@ export type ServerSettings = {
   osArch?: string;
   osPlatform?: string;
   additionalEnv?: string;
+
+  // Secure At Inception settings
+  secureAtInceptionExecutionFrequency?: string;
+  autoConfigureSnykMcpServer?: string;
 };
 
 export class LanguageServerSettings {
@@ -105,6 +109,8 @@ export class LanguageServerSettings {
       folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
       hoverVerbosity: 1,
+      secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
+      autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
     };
   }
 }

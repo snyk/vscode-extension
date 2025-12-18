@@ -93,7 +93,7 @@ import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
-import { configureMcpHosts } from './cli/mcp/mcp';
+import { McpProvider } from './common/vscode/mcpProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
@@ -184,6 +184,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.statusBarItem.show();
 
     const languageClientAdapter = new LanguageClientAdapter();
+    const mcpProvider = new McpProvider();
     this.authService = new AuthenticationService(
       this.contextService,
       this,
@@ -220,6 +221,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      mcpProvider,
       {
         extensionPath: extensionContext.extensionPath,
         getExtension(id: string): Extension | undefined {
@@ -345,7 +347,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    await configureMcpHosts(vscodeContext, configuration);
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       codeSecurityTree,
