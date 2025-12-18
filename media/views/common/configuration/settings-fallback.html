@@ -1,0 +1,331 @@
+<!--
+  Fallback settings page shown when the Language Server is not yet available.
+  Once the CLI is downloaded and the LS is running, the full settings
+  panel will be served by the LS and this fallback will be replaced automatically.
+
+  Template placeholders:
+    {{MANAGE_BINARIES_CHECKED}} - "checked" or ""
+    {{CLI_BASE_DOWNLOAD_URL}} - download URL string
+    {{CLI_PATH}} - CLI path string
+    {{CHANNEL_STABLE_SELECTED}} - "selected" or ""
+    {{CHANNEL_RC_SELECTED}} - "selected" or ""
+    {{CHANNEL_PREVIEW_SELECTED}} - "selected" or ""
+    {{INSECURE_CHECKED}} - "checked" or ""
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyk Settings</title>
+  <style nonce="ideNonce">
+    :root {
+      /* Spacing - fixed values that don't need theme adaptation */
+      --container-padding: 20px;
+      --section-padding: 15px;
+      --input-padding: 8px;
+      --form-group-margin: 15px;
+      --section-margin: 30px;
+      --checkbox-gap: 8px;
+      --label-margin-bottom: 5px;
+
+      /* Border radius - fixed values */
+      --border-radius: 4px;
+      --border-radius-small: 2px;
+
+      /* Layout - fixed values */
+      --max-form-width: 1400px;
+
+      /* Typography - fixed values */
+      --h1-font-size: 24px;
+      --h2-font-size: 18px;
+      --base-font-size: 13px;
+      --small-font-size: 12px;
+      --tiny-font-size: 11px;
+
+      /* Badge styling - fixed values matching Bootstrap */
+      --badge-background-color: #6c757d;
+      --badge-color: #fff;
+      --badge-padding: 2px 6px;
+
+      /* Tooltip styling - fixed values */
+      --tooltip-background-color: #000;
+      --tooltip-color: #fff;
+    }
+
+    body {
+      font-family: var(--default-font);
+      font-size: var(--base-font-size);
+      color: var(--text-color);
+      background-color: var(--background-color);
+      padding: var(--container-padding);
+      margin: 0;
+    }
+
+    form {
+      max-width: var(--max-form-width);
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: var(--h1-font-size);
+      margin-bottom: var(--container-padding);
+      color: var(--text-color);
+      max-width: var(--max-form-width);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    h2 {
+      font-size: var(--h2-font-size);
+      margin-top: 0;
+      margin-bottom: var(--section-padding);
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: var(--checkbox-gap);
+      flex-shrink: 0;
+    }
+
+    .section {
+      margin-bottom: var(--section-margin);
+      padding: var(--section-padding);
+      background-color: var(--section-background-color);
+      border-radius: var(--border-radius);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group {
+      margin-bottom: var(--form-group-margin);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      display: block;
+      margin-bottom: var(--label-margin-bottom);
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      margin-right: var(--checkbox-gap);
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: var(--input-padding);
+      background-color: var(--input-background-color);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-small);
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 1px solid var(--focus-color);
+      outline-offset: -1px;
+    }
+
+    .info-message {
+      padding: var(--section-padding);
+      background-color: var(--section-background-color);
+      border: 1px solid var(--focus-color);
+      border-radius: var(--border-radius);
+      margin-bottom: var(--container-padding);
+      max-width: var(--max-form-width);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    a {
+      color: var(--link-color);
+    }
+
+    /* Bootstrap badge base styles */
+    .badge {
+      --bs-badge-padding-x: 0.65em;
+      --bs-badge-padding-y: 0.35em;
+      --bs-badge-font-size: 0.75em;
+      --bs-badge-font-weight: 700;
+      --bs-badge-border-radius: 0.375rem;
+      display: inline-block;
+      padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
+      font-size: var(--bs-badge-font-size);
+      font-weight: var(--bs-badge-font-weight);
+      line-height: 1;
+      color: var(--badge-color);
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: baseline;
+      border-radius: var(--bs-badge-border-radius);
+    }
+
+    .bg-secondary {
+      background-color: var(--badge-background-color) !important;
+    }
+
+    /* Tooltip overrides to match LS HTML */
+    .badge.bg-secondary[data-bs-toggle="tooltip"] {
+      margin-left: var(--checkbox-gap);
+      vertical-align: middle;
+      cursor: help;
+      font-size: var(--tiny-font-size);
+      padding: var(--badge-padding);
+      position: relative;
+    }
+
+    .badge.bg-secondary[data-bs-toggle="tooltip"]:hover::after {
+      content: attr(title);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 100%;
+      margin-bottom: var(--checkbox-gap);
+      padding: var(--checkbox-gap) var(--small-font-size);
+      background-color: var(--tooltip-background-color);
+      color: var(--tooltip-color);
+      border-radius: var(--border-radius);
+      font-size: var(--small-font-size);
+      font-weight: normal;
+      white-space: normal;
+      width: 250px;
+      max-width: 300px;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .badge.bg-secondary[data-bs-toggle="tooltip"]:hover::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 100%;
+      margin-bottom: var(--border-radius-small);
+      border: 6px solid transparent;
+      border-top-color: var(--tooltip-background-color);
+    }
+  </style>
+</head>
+<body>
+<h1>Snyk Settings</h1>
+
+<div class="info-message">
+  <strong>Note:</strong> The Snyk CLI is not yet available. Configure the executable settings below to download and set up the CLI.
+  <br><br>
+  <strong>Limited settings mode:</strong> Only CLI download settings are currently available. Once the CLI is downloaded,
+  additional options will appear including authentication, scan types, severity filters, and organization settings.
+</div>
+
+<form id="configForm">
+  <div class="section">
+    <h2>CLI Configuration</h2>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="manageBinariesAutomatically" id="manageBinariesAutomatically" {{MANAGE_BINARIES_CHECKED}}>
+        Manage Binaries Automatically
+        <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Automatically download and manage Snyk CLI binaries">?</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="cliBaseDownloadURL">Base URL <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Base URL for downloading Snyk CLI binaries. The default is https://downloads.snyk.io. For FIPS-enabled CLIs (Windows/Linux only), use https://downloads.snyk.io/fips">?</span></label>
+      <input type="text" id="cliBaseDownloadURL" name="cliBaseDownloadURL" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="insecure" id="insecure" {{INSECURE_CHECKED}}>
+        Insecure (Skip SSL Verification)
+        <span class="badge bg-secondary" data-bs-toggle="tooltip" title="If enabled, the plugin will ignore SSL certificate errors. Use this when connecting to self-signed or internal CA servers.">?</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="cliPath">CLI Path <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Path to Snyk CLI executable">?</span></label>
+      <input type="text" id="cliPath" name="cliPath" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
+    </div>
+
+    <div class="form-group">
+      <label for="cliReleaseChannel">CLI Release Channel <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Release channel for Snyk CLI downloads (stable, preview, or rc)">?</span></label>
+      <select id="cliReleaseChannel" name="cliReleaseChannel">
+        <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
+        <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
+        <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
+      </select>
+    </div>
+  </div>
+</form>
+
+<script>
+  (function() {
+    window.__modified__ = false;
+
+    function get(id) {
+      return document.getElementById(id);
+    }
+
+    function collectData() {
+      return {
+        cliPath: get('cliPath').value,
+        manageBinariesAutomatically: get('manageBinariesAutomatically').checked,
+        cliBaseDownloadURL: get('cliBaseDownloadURL').value,
+        cliReleaseChannel: get('cliReleaseChannel').value,
+        insecure: get('insecure').checked
+      };
+    }
+
+    function markModified() {
+      window.__modified__ = true;
+      if (typeof window.__onFormDirtyChange__ === 'function') {
+        window.__onFormDirtyChange__(true);
+      }
+    }
+
+    window.getAndSaveIdeConfig = function() {
+      var data = collectData();
+      var jsonString = JSON.stringify(data);
+      try {
+        if (typeof window.__saveIdeConfig__ === 'function') {
+          window.__saveIdeConfig__(jsonString);
+          window.__modified__ = false;
+        }
+      } catch (e) {
+        console.error('Error saving configuration:', e);
+      }
+    };
+
+    window.addEventListener('load', function() {
+      var form = get('configForm');
+      if (!form) return;
+
+      var inputs = form.getElementsByTagName('input');
+      var selects = form.getElementsByTagName('select');
+
+      for (var i = 0; i < inputs.length; i++) {
+        inputs[i].addEventListener('input', markModified);
+        inputs[i].addEventListener('change', markModified);
+      }
+
+      for (var j = 0; j < selects.length; j++) {
+        selects[j].addEventListener('change', markModified);
+      }
+    });
+  })();
+</script>
+</body>
+</html>
