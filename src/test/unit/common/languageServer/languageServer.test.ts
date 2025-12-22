@@ -28,6 +28,7 @@ import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
+import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -49,6 +50,7 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
+      {} as IMcpProvider,
       {} as IExtensionRetriever,
       {} as ISummaryProviderService,
       {} as IUriAdapter,
@@ -101,6 +103,12 @@ suite('Language Server', () => {
         return [];
       },
       scanningMode: 'auto',
+      getSecureAtInceptionExecutionFrequency(): string {
+        return 'Manual';
+      },
+      getAutoConfigureMcpServer(): boolean {
+        return false;
+      },
     } as IConfiguration;
 
     downloadServiceMock = {
@@ -271,6 +279,8 @@ suite('Language Server', () => {
           authenticationMethod: 'oauth',
           enableSnykOSSQuickFixCodeActions: 'true',
           hoverVerbosity: 1,
+          secureAtInceptionExecutionFrequency: 'Manual',
+          autoConfigureSnykMcpServer: 'false',
         };
 
         const initializationOptions = await languageServer.getInitializationOptions();

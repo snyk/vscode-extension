@@ -28,7 +28,6 @@ import SecretStorageAdapter from '../vscode/secretStorage';
 import { vsCodeWorkspace } from '../vscode/workspace';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
-import { handleSecurityAtInceptionChange } from '../configuration/securityAtInceptionHandler';
 import { User } from '../user';
 import { LanguageServer } from '../languageServer/languageServer';
 
@@ -76,9 +75,8 @@ class ConfigurationWatcher implements IWatcher {
       extension.workspaceTrust.resetTrustedFoldersCache();
       extension.viewManagerService.refreshAllViews();
     } else if (key === AUTO_CONFIGURE_MCP_SERVER || key === SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY) {
-      return handleSecurityAtInceptionChange(extension, this.logger, this.user, this.vscodeContext);
+      return;
     }
-
     // from here on only for OSS and trusted folders
 
     const extensionConfig = vscode.workspace.getConfiguration('snyk');
