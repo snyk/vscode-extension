@@ -132,6 +132,8 @@ export interface IConfiguration {
 
   setFeatureFlag(flagName: string, value: boolean): void;
 
+  getPreviewFeature(featureName: string): boolean;
+
   getToken(): Promise<string | undefined>;
 
   setToken(token: string | undefined): Promise<void>;
@@ -369,6 +371,12 @@ export class Configuration implements IConfiguration {
 
   setFeatureFlag(flagName: string, value: boolean): void {
     this.featureFlag[flagName] = value;
+  }
+
+  getPreviewFeature(featureName: string): boolean {
+    const previewFeatures =
+      this.workspace.getConfiguration<Record<string, boolean>>(CONFIGURATION_IDENTIFIER, 'features.preview') ?? {};
+    return previewFeatures[featureName] ?? false;
   }
 
   private static async getPackageJsonConfig(): Promise<{

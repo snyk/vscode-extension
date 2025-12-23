@@ -307,7 +307,13 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
-            "properties": {}
+            "properties": {
+              "htmlSettings": {
+                "type": "boolean",
+                "default": true,
+                "description": "Use new HTML-based settings UI instead of VS Code's native settings"
+              }
+            }
           }
         }
       },
