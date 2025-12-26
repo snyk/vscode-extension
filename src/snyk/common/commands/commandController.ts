@@ -5,7 +5,6 @@ import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssService } from '../../snykOss/ossService';
 import {
-  SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_LOGIN_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
@@ -54,7 +53,7 @@ export class CommandController {
 
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
-    await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
+    await this.executeCommand(SNYK_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
     await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
     await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
   }

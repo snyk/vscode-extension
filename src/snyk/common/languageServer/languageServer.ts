@@ -31,6 +31,7 @@ import { IMarkdownStringAdapter } from '../vscode/markdownString';
 import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 import { IMcpProvider } from '../vscode/mcpProvider';
+import { IWorkspaceConfigurationWebviewProvider } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -38,6 +39,8 @@ export interface ILanguageServer {
   stop(): Promise<void>;
 
   showOutputChannel(): void;
+
+  setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void;
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
@@ -53,6 +56,7 @@ export class LanguageServer implements ILanguageServer {
   public static ReceivedFolderConfigsFromLs = false;
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
+  private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -63,6 +67,10 @@ export class LanguageServer implements ILanguageServer {
    */
   static clearLSUpdatingOrgState(): void {
     LanguageServer.foldersBeingUpdatedByLS.clear();
+  }
+
+  setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
+    this.workspaceConfigurationProvider = provider;
   }
 
   constructor(
@@ -207,9 +215,17 @@ export class LanguageServer implements ILanguageServer {
 
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
-      this.authenticationService.updateTokenAndEndpoint(token, apiUrl).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
-      });
+      this.authenticationService
+        .updateTokenAndEndpoint(token, apiUrl)
+        .then(() => {
+          // Update the workspace configuration webview with the new token only if auth was successful
+          if (this.workspaceConfigurationProvider) {
+            this.workspaceConfigurationProvider.setAuthToken(token);
+          }
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {

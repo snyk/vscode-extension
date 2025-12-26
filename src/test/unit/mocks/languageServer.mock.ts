@@ -7,6 +7,7 @@ export class LanguageServerMock implements ILanguageServer {
   start = sinon.fake();
   stop = sinon.fake();
   showOutputChannel = sinon.fake();
+  setWorkspaceConfigurationProvider = sinon.fake();
 
   cliReady$ = new ReplaySubject<string>(1);
   scan$ = new Subject<Scan>();

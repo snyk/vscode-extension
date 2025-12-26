@@ -15,7 +15,8 @@ import {
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_LOGIN_COMMAND,
+  SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -89,7 +90,12 @@ import {
 } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
-import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfigurationWebviewProvider';
+import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/WorkspaceConfigurationWebviewProvider';
+import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/ScopeDetectionService';
+import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/ConfigurationMappingService';
+import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/HtmlInjectionService';
+import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/ConfigurationPersistenceService';
+import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/MessageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
@@ -312,12 +318,34 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    // Initialize workspace configuration services
+    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
+    const configMappingService = new ConfigurationMappingService();
+    const htmlInjectionService = new HtmlInjectionService();
+    const configPersistenceService = new ConfigurationPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      configMappingService,
+      Logger,
+    );
+    const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
+
     this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
       extensionContext,
       Logger,
       vsCodeCommands,
       vsCodeWorkspace,
+      configuration,
+      htmlInjectionService,
+      configMappingService,
+      scopeDetectionService,
+      messageHandlerFactory,
     );
+
+    // Connect the workspace configuration provider to the language server
+    // so it can update the token in the webview when authentication completes
+    this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
 
     this.commandController = new CommandController(
       this.openerService,
@@ -562,7 +590,8 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
-      vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_LOGOUT_COMMAND, () => this.authService.initiateLogout()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
       vscode.commands.registerCommand(
         SNYK_CLEAR_PERSISTED_CACHE_COMMAND,

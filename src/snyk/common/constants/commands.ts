@@ -5,7 +5,7 @@ export const VSCODE_ADD_COMMENT_COMMAND = 'editor.action.addCommentLine';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
-export const SNYK_INITIATE_LOGIN_COMMAND = 'snyk.initiateLogin';
+export const SNYK_LOGIN_COMMAND = 'snyk.login';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
 export const SNYK_ENABLE_CODE_COMMAND = 'snyk.enableCode';
 export const SNYK_SETTINGS_COMMAND = 'snyk.settings';
@@ -22,8 +22,9 @@ export const SNYK_GET_LESSON_COMMAND = 'snyk.getLearnLesson';
 export const SNYK_GET_SETTINGS_SAST_ENABLED = 'snyk.getSettingsSastEnabled';
 export const SNYK_SET_DELTA_REFERENCE_COMMAND = 'snyk.setDeltaReference';
 export const SNYK_TOGGLE_DELTA = 'snyk.toggleDelta';
-export const SNYK_LOGIN_COMMAND = 'snyk.login';
+export const SNYK_LOGOUT_COMMAND = 'snyk.logout';
 export const SNYK_WORKSPACE_SCAN_COMMAND = 'snyk.workspace.scan';
+export const SNYK_WORKSPACE_CONFIGURATION_COMMAND = 'snyk.workspace.configuration';
 export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_GET_ACTIVE_USER = 'snyk.getActiveUser';
 export const SNYK_CODE_FIX_DIFFS_COMMAND = 'snyk.code.fixDiffs';
