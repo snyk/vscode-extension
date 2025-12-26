@@ -2,7 +2,9 @@
 // ABOUTME: Handles token storage and workspace/user-level settings updates
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
 import { ILog } from '../../../logger/interfaces';
+import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './ConfigurationMappingService';
@@ -18,6 +20,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly configuration: IConfiguration,
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly configMappingService: IConfigurationMappingService,
+    private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
   ) {}
 
@@ -26,14 +29,16 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       const config = JSON.parse(configJson) as IdeConfigData;
       this.logger.info('Saving workspace configuration');
 
+      await this.saveConfigToVSCodeSettings(config);
       // Persist token to secret storage only if it has changed
       const existingToken = await this.configuration.getToken();
-      if (config.token !== existingToken) {
+      // Normalize empty/null/undefined to empty string for comparison
+      const normalizedNewToken = config.token?.trim() || '';
+      const normalizedExistingToken = existingToken?.trim() || '';
+      if (normalizedNewToken !== normalizedExistingToken) {
         await this.configuration.setToken(config.token);
-        this.logger.debug('Token persisted to secret storage');
+        await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
       }
-
-      await this.saveConfigToVSCodeSettings(config);
 
       this.logger.info('Workspace configuration saved successfully');
     } catch (e) {

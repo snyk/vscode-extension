@@ -15,8 +15,8 @@ import {
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
-  SNYK_LOGIN_COMMAND,
-  SNYK_LOGOUT_COMMAND,
+  SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_INITIATE_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -327,6 +327,7 @@ class SnykExtension extends SnykLib implements IExtension {
       configuration,
       scopeDetectionService,
       configMappingService,
+      languageClientAdapter,
       Logger,
     );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
@@ -590,8 +591,8 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_OPEN_LOCAL_COMMAND, (path: Uri, range?: Range | undefined) =>
         this.commandController.openLocal(path, range),
       ),
-      vscode.commands.registerCommand(SNYK_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
-      vscode.commands.registerCommand(SNYK_LOGOUT_COMMAND, () => this.authService.initiateLogout()),
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGOUT_COMMAND, () => this.commandController.initiateLogout()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
       vscode.commands.registerCommand(
         SNYK_CLEAR_PERSISTED_CACHE_COMMAND,

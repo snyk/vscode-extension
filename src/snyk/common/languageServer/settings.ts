@@ -81,7 +81,7 @@ export class LanguageServerSettings {
       ? 'true'
       : `${featuresConfiguration?.codeSecurityEnabled}`;
 
-    return {
+    const settings = {
       activateSnykCodeSecurity: codeSecurityEnabled,
       activateSnykOpenSource: ossEnabled,
       activateSnykIac: iacEnabled,
@@ -112,5 +112,6 @@ export class LanguageServerSettings {
       secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
       autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
     };
+    return settings;
   }
 }

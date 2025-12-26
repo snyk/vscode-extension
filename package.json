@@ -439,12 +439,12 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.login 'Connect with Snyk')",
+        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && !snyk:authMethodChanged"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.login 'Re-authenticate')",
+        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && snyk:authMethodChanged"
       },
       {
@@ -477,11 +477,11 @@
       ],
       "commandPalette": [
         {
-          "command": "snyk.login",
+          "command": "snyk.initiateLogin",
           "when": "!snyk:loggedIn"
         },
         {
-          "command": "snyk.logout",
+          "command": "snyk.initiateLogout",
           "when": "snyk:loggedIn"
         },
         {
@@ -504,7 +504,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "snyk.login",
+        "command": "snyk.initiateLogin",
         "title": "Log In",
         "category": "Snyk",
         "icon": "$(sign-in)"
@@ -516,7 +516,7 @@
         "icon": "$(sign-in)"
       },
       {
-        "command": "snyk.logout",
+        "command": "snyk.initiateLogout",
         "title": "Log Out",
         "category": "Snyk",
         "icon": "$(sign-out)"

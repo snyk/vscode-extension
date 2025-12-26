@@ -17,7 +17,6 @@ import {
   SEVERITY_FILTER_SETTING,
   RISK_SCORE_THRESHOLD_SETTING,
   FOLDER_CONFIGS,
-  ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
 } from '../../../constants/settings';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 
@@ -27,6 +26,13 @@ export interface IConfigurationMappingService {
 }
 
 export class ConfigurationMappingService implements IConfigurationMappingService {
+  // Map LS HTML values (pat/token/oauth) to package.json enum values
+  private readonly authMethodMap: Record<string, string> = {
+    oauth: 'OAuth2 (Recommended)',
+    pat: 'Personal Access Token',
+    token: 'API Token (Legacy)',
+  };
+
   private readonly htmlKeyToVSCodeSettingMap: Record<string, string> = {
     // Scan Settings
     activateSnykOpenSource: OSS_ENABLED_SETTING,
@@ -51,19 +57,28 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     // CLI Settings
     cliPath: ADVANCED_CLI_PATH,
     manageBinariesAutomatically: ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
-    cliBaseDownloadURL: ADVANCED_CLI_BASE_DOWNLOAD_URL,
+    baseUrl: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     cliReleaseChannel: ADVANCED_CLI_RELEASE_CHANNEL,
 
     // Filter Settings
     filterSeverity: SEVERITY_FILTER_SETTING,
-
-    // Miscellaneous Settings
-    additionalParams: ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
     riskScoreThreshold: RISK_SCORE_THRESHOLD_SETTING,
 
     // Folder Configs
     folderConfigs: FOLDER_CONFIGS,
   };
+
+  /**
+   * Converts LS HTML auth method values (pat/token/oauth) to package.json enum values
+   */
+  private normalizeAuthenticationMethod(value: string | undefined): string {
+    if (!value) {
+      return this.authMethodMap.oauth; // Default to OAuth2
+    }
+
+    const normalized = value.toLowerCase().trim();
+    return this.authMethodMap[normalized] || this.authMethodMap.oauth;
+  }
 
   mapConfigToSettings(config: IdeConfigData): Record<string, unknown> {
     return {
@@ -78,7 +93,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [DELTA_FINDINGS]: config.enableDeltaFindings ? 'Net new issues' : 'All issues',
 
       // Authentication Settings
-      [ADVANCED_AUTHENTICATION_METHOD]: config.authenticationMethod,
+      [ADVANCED_AUTHENTICATION_METHOD]: this.normalizeAuthenticationMethod(config.authenticationMethod),
 
       // Connection Settings
       [ADVANCED_CUSTOM_ENDPOINT]: config.endpoint,
