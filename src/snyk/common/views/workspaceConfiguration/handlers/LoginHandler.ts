@@ -7,10 +7,7 @@ import { WebviewMessage } from '../types/workspaceConfiguration.types';
 import { IMessageHandler } from './MessageHandlerFactory';
 
 export class LoginHandler implements IMessageHandler {
-  constructor(
-    private readonly commandExecutor: IVSCodeCommands,
-    private readonly logger: ILog,
-  ) {}
+  constructor(private readonly commandExecutor: IVSCodeCommands, private readonly logger: ILog) {}
 
   async handle(_message: WebviewMessage): Promise<void> {
     this.logger.info('Triggering login from workspace configuration');

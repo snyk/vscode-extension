@@ -17,7 +17,6 @@ import {
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
   CODE_SECURITY_ENABLED_SETTING,
-  CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
   FOLDER_CONFIGS,
@@ -354,8 +353,8 @@ export class Configuration implements IConfiguration {
   }
 
   getPreviewFeature(featureName: string): boolean {
-    const previewFeatures =
-      this.workspace.getConfiguration<Record<string, boolean>>(CONFIGURATION_IDENTIFIER, 'features.preview') ?? {};
+    const { configurationId, section } = Configuration.getConfigName(FEATURES_PREVIEW_SETTING);
+    const previewFeatures = this.workspace.getConfiguration<Record<string, boolean>>(configurationId, section) ?? {};
     return previewFeatures[featureName] ?? false;
   }
 
@@ -682,7 +681,10 @@ export class Configuration implements IConfiguration {
    * @param settingKey - The full setting key (e.g., 'snyk.advanced.cliPath')
    * @returns An object with configurationId and section (setting name without prefix)
    */
-  public static getConfigName(settingKey: string): { configurationId: string; section: string } {
+  public static getConfigName(settingKey: string): {
+    configurationId: string;
+    section: string;
+  } {
     const parts = settingKey.split('.');
     const configurationId = parts[0];
     const section = parts.slice(1).join('.');

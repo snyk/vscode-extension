@@ -123,13 +123,11 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     strictEqual(html, undefined);
   });
 
-  test('injectIdeScripts injects IDE bridge functions', () => {
+  test('injectIdeScripts injects IDE bridge functions', async () => {
     // This functionality is now in HtmlInjectionService, test it via the service
-    const htmlInjectionService = htmlInjectionServiceMock as any;
-
-    // Restore the stub temporarily to test actual injection
-    htmlInjectionService.injectIdeScripts.restore();
-    const { HtmlInjectionService } = require('../../snyk/common/views/workspaceConfiguration/services/HtmlInjectionService');
+    const { HtmlInjectionService } = await import(
+      '../../snyk/common/views/workspaceConfiguration/services/HtmlInjectionService'
+    );
     const actualService = new HtmlInjectionService();
     const processed = actualService.injectIdeScripts(sampleHtml);
 
@@ -137,9 +135,6 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     ok(processed.includes('__ideLogin__'), 'Should inject login function');
     ok(processed.includes('__ideLogout__'), 'Should inject logout function');
     ok(processed.includes('acquireVsCodeApi'), 'Should inject VS Code API call');
-
-    // Re-stub for other tests
-    htmlInjectionService.injectIdeScripts = sinon.stub().returnsArg(0);
   });
 
   test('getErrorHtml returns valid error HTML', () => {

@@ -366,6 +366,7 @@
               "rc",
               "preview"
             ],
+            "scope": "machine",
             "markdownDescription": "CLI release channel."
           },
           "snyk.advanced.cliPath": {

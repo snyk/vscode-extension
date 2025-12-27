@@ -50,7 +50,3 @@ export function isThenable<T>(v: unknown): v is Thenable<T> {
 export function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
-
-export function isStringKeyedRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && Object.keys(value).every(key => typeof key === 'string');
-}

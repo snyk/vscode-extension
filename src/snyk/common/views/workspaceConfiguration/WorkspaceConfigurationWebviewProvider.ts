@@ -97,32 +97,31 @@ export class WorkspaceConfigurationWebviewProvider
   }
 
   private async fetchConfigurationHtml(): Promise<string | undefined> {
-    const maxRetries = 3;
-    const timeoutMs = 3000;
+    return this.fetchWithRetry(1, 3, 3000);
+  }
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        this.logger.debug(`Fetching configuration HTML from LS (attempt ${attempt}/${maxRetries})`);
+  private async fetchWithRetry(attempt: number, maxRetries: number, timeoutMs: number): Promise<string | undefined> {
+    try {
+      this.logger.debug(`Fetching configuration HTML from LS (attempt ${attempt}/${maxRetries})`);
 
-        const result = await Promise.race([
-          this.commandExecutor.executeCommand<string>(SNYK_WORKSPACE_CONFIGURATION_COMMAND, 'ls'),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeoutMs)),
-        ]);
+      const result = await Promise.race([
+        this.commandExecutor.executeCommand<string>(SNYK_WORKSPACE_CONFIGURATION_COMMAND, 'ls'),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeoutMs)),
+      ]);
 
-        return result;
-      } catch (e) {
-        if (attempt === maxRetries) {
-          ErrorHandler.handle(
-            e,
-            this.logger,
-            'Failed to fetch configuration HTML from language server after all retries',
-          );
-          return undefined;
-        }
-        this.logger.warn(`Failed to fetch configuration HTML (attempt ${attempt}/${maxRetries}): ${e}`);
+      return result;
+    } catch (e) {
+      if (attempt === maxRetries) {
+        ErrorHandler.handle(
+          e,
+          this.logger,
+          'Failed to fetch configuration HTML from language server after all retries',
+        );
+        return undefined;
       }
+      this.logger.warn(`Failed to fetch configuration HTML (attempt ${attempt}/${maxRetries}): ${e}`);
+      return this.fetchWithRetry(attempt + 1, maxRetries, timeoutMs);
     }
-    return undefined;
   }
 
   private getFallbackHtml(): string {
