@@ -243,7 +243,7 @@
     </div>
 
     <div class="form-group">
-      <label for="cliBaseDownloadURL">Base URL <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Base URL for downloading Snyk CLI binaries. The default is https://downloads.snyk.io. For FIPS-enabled CLIs (Windows/Linux only), use https://downloads.snyk.io/fips">?</span></label>
+      <label for="cliBaseDownloadURL">CLI Download Base URL <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Base URL for downloading Snyk CLI binaries. The default is https://downloads.snyk.io. For FIPS-enabled CLIs (Windows/Linux only), use https://downloads.snyk.io/fips">?</span></label>
       <input type="text" id="cliBaseDownloadURL" name="cliBaseDownloadURL" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
     </div>
 
@@ -275,12 +275,18 @@
   (function() {
     window.__modified__ = false;
 
+    // Check if auto-save is enabled (default false)
+    if (typeof window.__IS_IDE_AUTOSAVE_ENABLED__ === "undefined") {
+      window.__IS_IDE_AUTOSAVE_ENABLED__ = false;
+    }
+
     function get(id) {
       return document.getElementById(id);
     }
 
     function collectData() {
       return {
+        isFallbackForm: true,
         cliPath: get('cliPath').value,
         manageBinariesAutomatically: get('manageBinariesAutomatically').checked,
         cliBaseDownloadURL: get('cliBaseDownloadURL').value,
@@ -289,10 +295,15 @@
       };
     }
 
-    function markModified() {
+    function markDirtyAndSave() {
       window.__modified__ = true;
       if (typeof window.__onFormDirtyChange__ === 'function') {
         window.__onFormDirtyChange__(true);
+      }
+
+      // Auto-save if enabled
+      if (window.__IS_IDE_AUTOSAVE_ENABLED__) {
+        window.getAndSaveIdeConfig();
       }
     }
 
@@ -303,10 +314,20 @@
         if (typeof window.__saveIdeConfig__ === 'function') {
           window.__saveIdeConfig__(jsonString);
           window.__modified__ = false;
+
+          // Notify dirty state change
+          if (typeof window.__onFormDirtyChange__ === 'function') {
+            window.__onFormDirtyChange__(false);
+          }
         }
       } catch (e) {
         console.error('Error saving configuration:', e);
       }
+    };
+
+    // Expose dirty state query function
+    window.__isFormDirty__ = function() {
+      return window.__modified__;
     };
 
     window.addEventListener('load', function() {
@@ -317,12 +338,19 @@
       var selects = form.getElementsByTagName('select');
 
       for (var i = 0; i < inputs.length; i++) {
-        inputs[i].addEventListener('input', markModified);
-        inputs[i].addEventListener('change', markModified);
+        var input = inputs[i];
+        if (input.type === 'checkbox') {
+          // Checkboxes: use change event (blur is unreliable)
+          input.addEventListener('change', markDirtyAndSave);
+        } else {
+          // Text inputs: use blur event
+          input.addEventListener('blur', markDirtyAndSave);
+        }
       }
 
       for (var j = 0; j < selects.length; j++) {
-        selects[j].addEventListener('change', markModified);
+        // Selects: use change event
+        selects[j].addEventListener('change', markDirtyAndSave);
       }
     });
   })();

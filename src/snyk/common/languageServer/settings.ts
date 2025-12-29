@@ -20,6 +20,7 @@ export type ServerSettings = {
   // Endpoint path, and organization
   path?: string;
   cliPath?: string;
+  cliBaseDownloadURL?: string;
   endpoint?: string;
   organization?: string;
 
@@ -88,6 +89,7 @@ export class LanguageServerSettings {
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: await configuration.getCliPath(),
+      cliBaseDownloadURL: configuration.getCliBaseDownloadUrl(),
       endpoint: configuration.snykApiEndpoint,
       organization: configuration.organization,
       token: await configuration.getToken(),

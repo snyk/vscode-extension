@@ -1,5 +1,6 @@
 // ABOUTME: Service for mapping between IdeConfigData and VS Code settings
 // ABOUTME: Contains mapping tables and transformation logic for configuration data
+import { ALLISSUES, NEWISSUES } from '../../../configuration/configuration';
 import {
   OSS_ENABLED_SETTING,
   CODE_SECURITY_ENABLED_SETTING,
@@ -21,7 +22,7 @@ import {
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 
 export interface IConfigurationMappingService {
-  mapConfigToSettings(config: IdeConfigData): Record<string, unknown>;
+  mapConfigToSettings(config: IdeConfigData, isCliOnly: boolean): Record<string, unknown>;
   mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined;
 }
 
@@ -57,7 +58,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     // CLI Settings
     cliPath: ADVANCED_CLI_PATH,
     manageBinariesAutomatically: ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
-    baseUrl: ADVANCED_CLI_BASE_DOWNLOAD_URL,
+    cliBaseDownloadURL: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     cliReleaseChannel: ADVANCED_CLI_RELEASE_CHANNEL,
 
     // Filter Settings
@@ -80,8 +81,19 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     return this.authMethodMap[normalized] || this.authMethodMap.oauth;
   }
 
-  mapConfigToSettings(config: IdeConfigData): Record<string, unknown> {
-    return {
+  mapConfigToSettings(config: IdeConfigData, isCliOnly: boolean): Record<string, unknown> {
+    const mapping = {
+      // CLI Settings
+      [ADVANCED_CLI_PATH]: config.cliPath,
+      [ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT]: config.manageBinariesAutomatically,
+      [ADVANCED_CLI_BASE_DOWNLOAD_URL]: config.cliBaseDownloadURL,
+      [ADVANCED_CLI_RELEASE_CHANNEL]: config.cliReleaseChannel,
+      'http.proxyStrictSSL': config.insecure !== undefined ? !config.insecure : undefined,
+    };
+    if (isCliOnly) {
+      return mapping;
+    }
+    return Object.assign(mapping, {
       // Scan Settings
       [OSS_ENABLED_SETTING]: config.activateSnykOpenSource,
       [CODE_SECURITY_ENABLED_SETTING]: config.activateSnykCode,
@@ -90,23 +102,16 @@ export class ConfigurationMappingService implements IConfigurationMappingService
 
       // Issue View Settings
       [ISSUE_VIEW_OPTIONS_SETTING]: config.issueViewOptions,
-      [DELTA_FINDINGS]: config.enableDeltaFindings ? 'Net new issues' : 'All issues',
+      [DELTA_FINDINGS]: config.enableDeltaFindings ? NEWISSUES : ALLISSUES,
 
       // Authentication Settings
       [ADVANCED_AUTHENTICATION_METHOD]: this.normalizeAuthenticationMethod(config.authenticationMethod),
 
       // Connection Settings
       [ADVANCED_CUSTOM_ENDPOINT]: config.endpoint,
-      'http.proxyStrictSSL': config.insecure !== undefined ? !config.insecure : undefined,
 
       // Trusted Folders
       [TRUSTED_FOLDERS]: config.trustedFolders,
-
-      // CLI Settings
-      [ADVANCED_CLI_PATH]: config.cliPath,
-      [ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT]: config.manageBinariesAutomatically,
-      [ADVANCED_CLI_BASE_DOWNLOAD_URL]: config.baseUrl,
-      [ADVANCED_CLI_RELEASE_CHANNEL]: config.cliReleaseChannel,
 
       // Filter Settings
       [SEVERITY_FILTER_SETTING]: config.filterSeverity,
@@ -114,7 +119,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
 
       // Folder Configs
       [FOLDER_CONFIGS]: config.folderConfigs,
-    };
+    });
   }
 
   mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined {

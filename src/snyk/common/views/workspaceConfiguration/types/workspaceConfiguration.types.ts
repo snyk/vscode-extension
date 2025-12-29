@@ -48,7 +48,7 @@ export interface IdeConfigData {
   // CLI Settings
   cliPath?: string;
   manageBinariesAutomatically?: boolean;
-  baseUrl?: string;
+  cliBaseDownloadURL?: string;
   cliReleaseChannel?: string;
 
   // Filter Settings

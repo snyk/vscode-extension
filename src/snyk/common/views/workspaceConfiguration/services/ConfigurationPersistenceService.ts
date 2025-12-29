@@ -9,6 +9,20 @@ import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './ConfigurationMappingService';
 import { IScopeDetectionService } from './ScopeDetectionService';
+import {
+  ADVANCED_CLI_PATH,
+  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
+  ADVANCED_CLI_BASE_DOWNLOAD_URL,
+  ADVANCED_CLI_RELEASE_CHANNEL,
+} from '../../../constants/settings';
+
+const CLI_ONLY_SETTINGS = [
+  ADVANCED_CLI_PATH,
+  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
+  ADVANCED_CLI_BASE_DOWNLOAD_URL,
+  ADVANCED_CLI_RELEASE_CHANNEL,
+  'http.proxyStrictSSL',
+];
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
@@ -26,18 +40,25 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
   async handleSaveConfig(configJson: string): Promise<void> {
     try {
-      const config = JSON.parse(configJson) as IdeConfigData;
-      this.logger.info('Saving workspace configuration');
+      const config = JSON.parse(configJson) as IdeConfigData & {
+        isFallbackForm?: boolean;
+      };
+      const isCliOnly = config.isFallbackForm ?? false;
+      this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
 
-      await this.saveConfigToVSCodeSettings(config);
-      // Persist token to secret storage only if it has changed
-      const existingToken = await this.configuration.getToken();
-      // Normalize empty/null/undefined to empty string for comparison
-      const normalizedNewToken = config.token?.trim() || '';
-      const normalizedExistingToken = existingToken?.trim() || '';
-      if (normalizedNewToken !== normalizedExistingToken) {
-        await this.configuration.setToken(config.token);
-        await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+      await this.saveConfigToVSCodeSettings(config, isCliOnly);
+
+      // Only handle token when not in CLI-only mode
+      if (!isCliOnly) {
+        // Persist token to secret storage only if it has changed
+        const existingToken = await this.configuration.getToken();
+        // Normalize empty/null/undefined to empty string for comparison
+        const normalizedNewToken = config.token?.trim() || '';
+        const normalizedExistingToken = existingToken?.trim() || '';
+        if (normalizedNewToken !== normalizedExistingToken) {
+          await this.configuration.setToken(config.token);
+          await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+        }
       }
 
       this.logger.info('Workspace configuration saved successfully');
@@ -47,10 +68,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  private async saveConfigToVSCodeSettings(config: IdeConfigData): Promise<void> {
+  private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
-    const settingsMap = this.configMappingService.mapConfigToSettings(config);
+    const settingsMap = this.configMappingService.mapConfigToSettings(config, isCliOnly);
 
     const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
       try {
