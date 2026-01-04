@@ -15,6 +15,7 @@ export interface FilterSeverity {
 }
 
 export interface FolderConfigData {
+  folderPath: string;
   additionalParameters?: string;
   additionalEnv?: string;
   preferredOrg?: string;
@@ -24,6 +25,8 @@ export interface FolderConfigData {
 }
 
 export interface IdeConfigData {
+  isFallbackForm?: boolean;
+
   // Scan Settings
   activateSnykOpenSource?: boolean;
   activateSnykCode?: boolean;

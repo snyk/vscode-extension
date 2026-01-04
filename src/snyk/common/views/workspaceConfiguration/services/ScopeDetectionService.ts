@@ -1,11 +1,19 @@
 // ABOUTME: Service for detecting VS Code configuration scope (user/workspace/folder/default)
 // ABOUTME: and populating scope indicators in HTML
+import { WorkspaceFolder } from 'vscode';
 import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
+import _ from 'lodash';
 
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
   populateScopeIndicators(html: string, mapHtmlKeyToVSCodeSetting: (htmlKey: string) => string | undefined): string;
+  isSettingsWithDefaultValue(
+    configurationId: string,
+    settingName: string,
+    value: unknown,
+    workspaceFolder?: WorkspaceFolder,
+  ): boolean;
 }
 
 export class ScopeDetectionService implements IScopeDetectionService {
@@ -42,5 +50,29 @@ export class ScopeDetectionService implements IScopeDetectionService {
       <span class="scope-indicator">(Modified in Workspace)</span>
     </span>`;
     });
+  }
+
+  isSettingsWithDefaultValue(
+    configurationId: string,
+    settingName: string,
+    value: unknown,
+    workspaceFolder?: WorkspaceFolder,
+  ): boolean {
+    const inspection = this.workspace.inspectConfiguration(configurationId, settingName, workspaceFolder);
+
+    if (!inspection) {
+      return false;
+    }
+
+    const isDefaultValue = _.isEqual(value, inspection.defaultValue);
+
+    // Only skip if value is at default and hasn't been explicitly set by user at any level
+    const hasExplicitValue = workspaceFolder
+      ? inspection.workspaceFolderValue !== undefined ||
+        inspection.workspaceValue !== undefined ||
+        inspection.globalValue !== undefined
+      : inspection.workspaceValue !== undefined || inspection.globalValue !== undefined;
+
+    return isDefaultValue && !hasExplicitValue;
   }
 }

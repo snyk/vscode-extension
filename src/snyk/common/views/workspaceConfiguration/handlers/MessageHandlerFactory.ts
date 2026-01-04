@@ -5,32 +5,18 @@ import { IVSCodeCommands } from '../../../vscode/commands';
 import { hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
 import { WebviewMessage } from '../types/workspaceConfiguration.types';
 import { IConfigurationPersistenceService } from '../services/ConfigurationPersistenceService';
-import { SaveConfigHandler } from './SaveConfigHandler';
-import { LoginHandler } from './LoginHandler';
-import { LogoutHandler } from './LogoutHandler';
-
-export interface IMessageHandler {
-  handle(message: WebviewMessage): Promise<void>;
-}
+import { SNYK_INITIATE_LOGIN_COMMAND, SNYK_INITIATE_LOGOUT_COMMAND } from '../../../constants/commands';
 
 export interface IMessageHandlerFactory {
   handleMessage(message: unknown): Promise<void>;
 }
 
 export class MessageHandlerFactory implements IMessageHandlerFactory {
-  private readonly saveConfigHandler: SaveConfigHandler;
-  private readonly loginHandler: LoginHandler;
-  private readonly logoutHandler: LogoutHandler;
-
   constructor(
     private readonly commandExecutor: IVSCodeCommands,
-    configPersistenceService: IConfigurationPersistenceService,
+    private readonly configPersistenceService: IConfigurationPersistenceService,
     private readonly logger: ILog,
-  ) {
-    this.saveConfigHandler = new SaveConfigHandler(configPersistenceService, logger);
-    this.loginHandler = new LoginHandler(commandExecutor, logger);
-    this.logoutHandler = new LogoutHandler(commandExecutor, logger);
-  }
+  ) {}
 
   async handleMessage(message: unknown): Promise<void> {
     try {
@@ -45,13 +31,15 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
             this.logger.warn('Received invalid configuration from workspace configuration webview');
             return;
           }
-          await this.saveConfigHandler.handle(message);
+          await this.configPersistenceService.handleSaveConfig(message.config);
           break;
         case 'login':
-          await this.loginHandler.handle(message);
+          this.logger.info('Triggering login from workspace configuration');
+          await this.commandExecutor.executeCommand(SNYK_INITIATE_LOGIN_COMMAND);
           break;
         case 'logout':
-          await this.logoutHandler.handle(message);
+          this.logger.info('Triggering logout from workspace configuration');
+          await this.commandExecutor.executeCommand(SNYK_INITIATE_LOGOUT_COMMAND);
           break;
         default:
           this.logger.warn(`Unknown message type from workspace configuration webview: ${message.type}`);
