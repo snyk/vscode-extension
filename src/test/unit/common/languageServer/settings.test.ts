@@ -23,6 +23,7 @@ suite('LanguageServerSettings', () => {
         getToken: async () => 'snyk-token',
         getFeaturesConfiguration: () => ({ iacEnabled: true, codeSecurityEnabled: true }), // advisorEnabled is removed
         getCliPath: () => '/path/to/cli',
+        getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
         getAdditionalCliParameters: () => '--all-projects -d',
         getTrustedFolders: () => ['/trusted/path'],
         getInsecure: () => false,

@@ -18,6 +18,10 @@ import {
   SEVERITY_FILTER_SETTING,
   RISK_SCORE_THRESHOLD_SETTING,
   FOLDER_CONFIGS,
+  AUTH_METHOD_OAUTH,
+  AUTH_METHOD_PAT,
+  AUTH_METHOD_TOKEN,
+  HTTP_PROXY_STRICT_SSL_SETTING,
 } from '../../../constants/settings';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 
@@ -29,9 +33,9 @@ export interface IConfigurationMappingService {
 export class ConfigurationMappingService implements IConfigurationMappingService {
   // Map LS HTML values (pat/token/oauth) to package.json enum values
   private readonly authMethodMap: Record<string, string> = {
-    oauth: 'OAuth2 (Recommended)',
-    pat: 'Personal Access Token',
-    token: 'API Token (Legacy)',
+    oauth: AUTH_METHOD_OAUTH,
+    pat: AUTH_METHOD_PAT,
+    token: AUTH_METHOD_TOKEN,
   };
 
   private readonly htmlKeyToVSCodeSettingMap: Record<string, string> = {
@@ -50,7 +54,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
 
     // Connection Settings
     endpoint: ADVANCED_CUSTOM_ENDPOINT,
-    insecure: 'http.proxyStrictSSL',
+    insecure: HTTP_PROXY_STRICT_SSL_SETTING,
 
     // Trusted Folders
     trustedFolders: TRUSTED_FOLDERS,
@@ -88,7 +92,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT]: config.manageBinariesAutomatically,
       [ADVANCED_CLI_BASE_DOWNLOAD_URL]: config.cliBaseDownloadURL,
       [ADVANCED_CLI_RELEASE_CHANNEL]: config.cliReleaseChannel,
-      'http.proxyStrictSSL': config.insecure !== undefined ? !config.insecure : undefined,
+      [HTTP_PROXY_STRICT_SSL_SETTING]: config.insecure !== undefined ? !config.insecure : undefined,
     };
     if (isCliOnly) {
       return mapping;

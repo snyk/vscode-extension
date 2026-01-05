@@ -4,7 +4,7 @@ import { ILog } from '../../../logger/interfaces';
 import { IVSCodeCommands } from '../../../vscode/commands';
 import { hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
 import { WebviewMessage } from '../types/workspaceConfiguration.types';
-import { IConfigurationPersistenceService } from '../services/ConfigurationPersistenceService';
+import { IConfigurationPersistenceService } from '../services/configurationPersistenceService';
 import { SNYK_INITIATE_LOGIN_COMMAND, SNYK_INITIATE_LOGOUT_COMMAND } from '../../../constants/commands';
 
 export interface IMessageHandlerFactory {

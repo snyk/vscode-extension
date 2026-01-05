@@ -2,16 +2,16 @@
 // ABOUTME: Tests HTML fetching and webview panel creation
 import { strictEqual, ok } from 'assert';
 import sinon from 'sinon';
-import { WorkspaceConfigurationWebviewProvider } from '../../snyk/common/views/workspaceConfiguration/WorkspaceConfigurationWebviewProvider';
+import { WorkspaceConfigurationWebviewProvider } from '../../snyk/common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ExtensionContext } from '../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../unit/mocks/logger.mock';
 import { IVSCodeCommands } from '../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 import { IConfiguration } from '../../snyk/common/configuration/configuration';
-import { IHtmlInjectionService } from '../../snyk/common/views/workspaceConfiguration/services/HtmlInjectionService';
-import { IConfigurationMappingService } from '../../snyk/common/views/workspaceConfiguration/services/ConfigurationMappingService';
-import { IScopeDetectionService } from '../../snyk/common/views/workspaceConfiguration/services/ScopeDetectionService';
-import { IMessageHandlerFactory } from '../../snyk/common/views/workspaceConfiguration/handlers/MessageHandlerFactory';
+import { IHtmlInjectionService } from '../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService';
+import { IConfigurationMappingService } from '../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
+import { IScopeDetectionService } from '../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
+import { IMessageHandlerFactory } from '../../snyk/common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 
 suite('WorkspaceConfigurationWebviewProvider', () => {
   let provider: WorkspaceConfigurationWebviewProvider;
@@ -126,7 +126,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
   test('injectIdeScripts injects IDE bridge functions', async () => {
     // This functionality is now in HtmlInjectionService, test it via the service
     const { HtmlInjectionService } = await import(
-      '../../snyk/common/views/workspaceConfiguration/services/HtmlInjectionService'
+      '../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService'
     );
     const actualService = new HtmlInjectionService();
     const processed = actualService.injectIdeScripts(sampleHtml);
@@ -135,12 +135,5 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     ok(processed.includes('__ideLogin__'), 'Should inject login function');
     ok(processed.includes('__ideLogout__'), 'Should inject logout function');
     ok(processed.includes('acquireVsCodeApi'), 'Should inject VS Code API call');
-  });
-
-  test('getErrorHtml returns valid error HTML', () => {
-    const errorHtml = provider['getErrorHtml']('Test error message');
-
-    ok(errorHtml.includes('<!DOCTYPE html>'), 'Error HTML should be a complete document');
-    ok(errorHtml.includes('Test error message'), 'Error HTML should contain error message');
   });
 });

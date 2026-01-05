@@ -24,6 +24,17 @@ export const ADVANCED_CLI_BASE_DOWNLOAD_URL = `${CONFIGURATION_IDENTIFIER}.advan
 export const ADVANCED_CLI_RELEASE_CHANNEL = `${CONFIGURATION_IDENTIFIER}.advanced.cliReleaseChannel`;
 export const ADVANCED_AUTHENTICATION_METHOD = `${CONFIGURATION_IDENTIFIER}.advanced.authenticationMethod`;
 
+// Authentication method values - must match package.json enum values
+export const AUTH_METHOD_OAUTH = 'OAuth2 (Recommended)';
+export const AUTH_METHOD_PAT = 'Personal Access Token';
+export const AUTH_METHOD_TOKEN = 'API Token (Legacy)';
+
+// VS Code HTTP settings (not in snyk namespace)
+export const HTTP_CONFIGURATION_IDENTIFIER = 'http';
+export const HTTP_PROXY = 'proxy';
+export const HTTP_PROXY_STRICT_SSL = 'proxyStrictSSL';
+export const HTTP_PROXY_STRICT_SSL_SETTING = `${HTTP_CONFIGURATION_IDENTIFIER}.${HTTP_PROXY_STRICT_SSL}`;
+
 export const ISSUE_VIEW_OPTIONS_SETTING = `${CONFIGURATION_IDENTIFIER}.issueViewOptions`;
 export const RISK_SCORE_THRESHOLD_SETTING = `${CONFIGURATION_IDENTIFIER}.riskScoreThreshold`;
 export const SEVERITY_FILTER_SETTING = `${CONFIGURATION_IDENTIFIER}.severity`;

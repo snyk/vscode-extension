@@ -3,11 +3,12 @@
 import { WorkspaceFolder } from 'vscode';
 import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
+import { IConfigurationMappingService } from './configurationMappingService';
 import _ from 'lodash';
 
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
-  populateScopeIndicators(html: string, mapHtmlKeyToVSCodeSetting: (htmlKey: string) => string | undefined): string;
+  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string;
   isSettingsWithDefaultValue(
     configurationId: string,
     settingName: string,
@@ -33,22 +34,30 @@ export class ScopeDetectionService implements IScopeDetectionService {
     return 'default';
   }
 
-  populateScopeIndicators(html: string, mapHtmlKeyToVSCodeSetting: (htmlKey: string) => string | undefined): string {
-    const slotRegex = /<span[^>]*class="config-scope-slot"[^>]*data-setting-key="([^"]*)"[^>]*><\/span>/g;
+  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string {
+    const slotRegex =
+      /(?<prefix><span[^>]*class="config-scope-slot"[^>]*data-setting-key=")(?<settingKey>[^"]*)(?<suffix>"[^>]*>)(?<content>.*?)(?<closing><\/span>)/g;
 
-    return html.replace(slotRegex, (v, settingKey: string) => {
-      const vscodeSetting = mapHtmlKeyToVSCodeSetting(settingKey);
-      if (!vscodeSetting) return v;
+    return html.replace(slotRegex, (match, ...args) => {
+      const groups = args[args.length - 1] as {
+        prefix: string;
+        settingKey: string;
+        suffix: string;
+        content: string;
+        closing: string;
+      };
+
+      const vscodeSetting = configMappingService.mapHtmlKeyToVSCodeSetting(groups.settingKey);
+      if (!vscodeSetting) return match;
       const scope = this.getSettingScope(vscodeSetting);
 
       if (scope !== 'workspace') {
-        return v;
+        return match;
       }
 
-      // Create scope indicator text like VS Code does
-      return `<span class="config-scope-slot" data-config-scope-slot="true" data-setting-key="${settingKey}">
-      <span class="scope-indicator">(Modified in Workspace)</span>
-    </span>`;
+      // Create scope indicator text like VS Code does - preserve original attributes
+      const scopeIndicator = '<span class="scope-indicator">(Modified in Workspace)</span>';
+      return `${groups.prefix}${groups.settingKey}${groups.suffix}${scopeIndicator}${groups.closing}`;
     });
   }
 

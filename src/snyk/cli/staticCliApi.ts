@@ -1,5 +1,6 @@
 import { IConfiguration } from '../common/configuration/configuration';
 import { PROTOCOL_VERSION } from '../common/constants/languageServer';
+import { HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY, HTTP_PROXY_STRICT_SSL } from '../common/constants/settings';
 import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
@@ -39,8 +40,9 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   private configureProxy(): void {
-    const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
-    const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+    const httpProxy = this.workspace.getConfiguration<string>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY);
+    const proxyStrictSSL =
+      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
 
     configure(httpProxy || undefined, proxyStrictSSL);
   }
@@ -117,7 +119,8 @@ export class StaticCliApi implements IStaticCliApi {
 
     return new Promise((resolve, reject) => {
       // Get SSL verification setting from VSCode configuration
-      const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+      const proxyStrictSSL =
+        this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
 
       const options: https.RequestOptions = {
         hostname: parsedUrl.hostname,

@@ -74,6 +74,9 @@ suite('Language Server', () => {
       getCliPath(): Promise<string | undefined> {
         return Promise.resolve('testPath');
       },
+      getCliBaseDownloadUrl(): string {
+        return 'https://downloads.snyk.io';
+      },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
       },

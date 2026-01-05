@@ -16,7 +16,11 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  AUTH_METHOD_PAT,
+  AUTH_METHOD_TOKEN,
   CODE_SECURITY_ENABLED_SETTING,
+  HTTP_CONFIGURATION_IDENTIFIER,
+  HTTP_PROXY_STRICT_SSL,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
   FOLDER_CONFIGS,
@@ -268,6 +272,31 @@ export class Configuration implements IConfiguration {
 
   constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
 
+  /**
+   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * Returns undefined if the setting is not specifically set at the folder level.
+   */
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
+    const { configurationId, section } = Configuration.getConfigName(configSettingName);
+    const inspectionResult = this.workspace.inspectConfiguration<T>(configurationId, section, workspaceFolder);
+    return inspectionResult?.workspaceFolderValue;
+  }
+
+  /**
+   * Parses a setting key to extract configuration identifier and setting name.
+   * @param settingKey - The full setting key (e.g., 'snyk.advanced.cliPath')
+   * @returns An object with configurationId and section (setting name without prefix)
+   */
+  public static getConfigName(settingKey: string): {
+    configurationId: string;
+    section: string;
+  } {
+    const parts = settingKey.split('.');
+    const configurationId = parts[0];
+    const section = parts.slice(1).join('.');
+    return { configurationId, section };
+  }
+
   getExtensionId(): string {
     return this.extensionId;
   }
@@ -330,7 +359,8 @@ export class Configuration implements IConfiguration {
   }
 
   getInsecure(): boolean {
-    const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+    const strictSSL =
+      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
     return !strictSSL;
   }
 
@@ -428,9 +458,9 @@ export class Configuration implements IConfiguration {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTHENTICATION_METHOD);
     const setting = this.workspace.getConfiguration<string>(configurationId, section);
     const authMethod = setting?.toLowerCase() ?? '';
-    if (authMethod === 'api token (legacy)') {
+    if (authMethod === AUTH_METHOD_TOKEN.toLowerCase()) {
       return 'token';
-    } else if (authMethod === 'personal access token') {
+    } else if (authMethod === AUTH_METHOD_PAT.toLowerCase()) {
       return 'pat';
     } else {
       return 'oauth';
@@ -664,31 +694,6 @@ export class Configuration implements IConfiguration {
     this.inMemoryFolderConfigs = folderConfigs;
     const { configurationId, section } = Configuration.getConfigName(FOLDER_CONFIGS);
     await this.workspace.updateConfiguration(configurationId, section, this.inMemoryFolderConfigs, true);
-  }
-
-  /**
-   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
-   * Returns undefined if the setting is not specifically set at the folder level.
-   */
-  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
-    const { configurationId, section } = Configuration.getConfigName(configSettingName);
-    const inspectionResult = this.workspace.inspectConfiguration<T>(configurationId, section, workspaceFolder);
-    return inspectionResult?.workspaceFolderValue;
-  }
-
-  /**
-   * Parses a setting key to extract configuration identifier and setting name.
-   * @param settingKey - The full setting key (e.g., 'snyk.advanced.cliPath')
-   * @returns An object with configurationId and section (setting name without prefix)
-   */
-  public static getConfigName(settingKey: string): {
-    configurationId: string;
-    section: string;
-  } {
-    const parts = settingKey.split('.');
-    const configurationId = parts[0];
-    const section = parts.slice(1).join('.');
-    return { configurationId, section };
   }
 
   async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {

@@ -8,8 +8,8 @@ import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
-import { IConfigurationMappingService } from './ConfigurationMappingService';
-import { IScopeDetectionService } from './ScopeDetectionService';
+import { IConfigurationMappingService } from './configurationMappingService';
+import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
