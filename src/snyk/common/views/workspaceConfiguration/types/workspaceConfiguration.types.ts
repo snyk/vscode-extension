@@ -32,6 +32,7 @@ export interface IdeConfigData {
   activateSnykCode?: boolean;
   activateSnykIac?: boolean;
   scanningMode?: string;
+  organization?: string;
 
   // Issue View Settings
   issueViewOptions?: IssueViewOptions;

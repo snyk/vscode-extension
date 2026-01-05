@@ -478,7 +478,7 @@
       ],
       "commandPalette": [
         {
-          "command": "snyk.initiateLogin",
+          "command": "snyk.login",
           "when": "!snyk:loggedIn"
         },
         {
@@ -505,7 +505,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "snyk.initiateLogin",
+        "command": "snyk.login",
         "title": "Log In",
         "category": "Snyk",
         "icon": "$(sign-in)"
