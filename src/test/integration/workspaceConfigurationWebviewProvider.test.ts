@@ -12,6 +12,7 @@ import { IHtmlInjectionService } from '../../snyk/common/views/workspaceConfigur
 import { IConfigurationMappingService } from '../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { IScopeDetectionService } from '../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { IMessageHandlerFactory } from '../../snyk/common/views/workspaceConfiguration/handlers/messageHandlerFactory';
+import { SNYK_WORKSPACE_CONFIGURATION_COMMAND } from '../../snyk/common/constants/commands';
 
 suite('WorkspaceConfigurationWebviewProvider', () => {
   let provider: WorkspaceConfigurationWebviewProvider;
@@ -102,7 +103,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     // Access private method for testing
     const html = await provider['fetchConfigurationHtml']();
 
-    sinon.assert.calledOnceWithExactly(executeCommandStub, 'snyk.workspace.configuration', 'ls');
+    sinon.assert.calledOnceWithExactly(executeCommandStub, SNYK_WORKSPACE_CONFIGURATION_COMMAND);
     strictEqual(html, sampleHtml);
   });
 

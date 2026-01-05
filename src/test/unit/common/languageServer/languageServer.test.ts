@@ -261,6 +261,7 @@ suite('Language Server', () => {
           activateSnykIac: 'true',
           token: 'testToken',
           cliPath: 'testPath',
+          cliBaseDownloadURL: 'https://downloads.snyk.io',
           sendErrorReports: 'true',
           integrationName: 'VS_CODE',
           integrationVersion: '0.0.0',
