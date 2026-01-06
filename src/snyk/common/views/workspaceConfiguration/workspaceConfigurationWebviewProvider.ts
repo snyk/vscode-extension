@@ -70,7 +70,7 @@ export class WorkspaceConfigurationWebviewProvider
         vscode.Uri.file(this.context.extensionPath),
         'media',
         'images',
-        'icon.png',
+        'snyk_extension_icon_new.svg',
       );
 
       const html = await this.fetchConfigurationHtml();
