@@ -692,6 +692,7 @@ export class Configuration implements IConfiguration {
 
   async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
     this.inMemoryFolderConfigs = folderConfigs;
+    // We never read from the folder config in the JSON, we only write to it for debugging purposes and to trigger a configuration change event.
     const { configurationId, section } = Configuration.getConfigName(FOLDER_CONFIGS);
     await this.workspace.updateConfiguration(configurationId, section, this.inMemoryFolderConfigs, true);
   }

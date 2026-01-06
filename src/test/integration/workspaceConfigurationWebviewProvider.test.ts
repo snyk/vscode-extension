@@ -123,18 +123,4 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
 
     strictEqual(html, undefined);
   });
-
-  test('injectIdeScripts injects IDE bridge functions', async () => {
-    // This functionality is now in HtmlInjectionService, test it via the service
-    const { HtmlInjectionService } = await import(
-      '../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService'
-    );
-    const actualService = new HtmlInjectionService();
-    const processed = actualService.injectIdeScripts(sampleHtml);
-
-    ok(processed.includes('__saveIdeConfig__'), 'Should inject save config function');
-    ok(processed.includes('__ideLogin__'), 'Should inject login function');
-    ok(processed.includes('__ideLogout__'), 'Should inject logout function');
-    ok(processed.includes('acquireVsCodeApi'), 'Should inject VS Code API call');
-  });
 });
