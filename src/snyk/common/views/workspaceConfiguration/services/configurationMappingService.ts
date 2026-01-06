@@ -45,7 +45,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     activateSnykCode: CODE_SECURITY_ENABLED_SETTING,
     activateSnykIac: IAC_ENABLED_SETTING,
     scanningMode: SCANNING_MODE,
-    organization: ADVANCED_ORGANIZATION,
+    // organization: ADVANCED_ORGANIZATION,
 
     // Issue View Settings
     issueViewOptions: ISSUE_VIEW_OPTIONS_SETTING,
@@ -70,9 +70,6 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     // Filter Settings
     filterSeverity: SEVERITY_FILTER_SETTING,
     riskScoreThreshold: RISK_SCORE_THRESHOLD_SETTING,
-
-    // Folder Configs
-    folderConfigs: FOLDER_CONFIGS,
   };
 
   /**
@@ -105,7 +102,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [CODE_SECURITY_ENABLED_SETTING]: config.activateSnykCode,
       [IAC_ENABLED_SETTING]: config.activateSnykIac,
       [SCANNING_MODE]: config.scanningMode,
-      [ADVANCED_ORGANIZATION]: config.organization,
+      // [ADVANCED_ORGANIZATION]: config.organization,
 
       // Issue View Settings
       [ISSUE_VIEW_OPTIONS_SETTING]: config.issueViewOptions,
@@ -123,9 +120,6 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       // Filter Settings
       [SEVERITY_FILTER_SETTING]: config.filterSeverity,
       [RISK_SCORE_THRESHOLD_SETTING]: config.riskScoreThreshold,
-
-      // Folder Configs
-      [FOLDER_CONFIGS]: config.folderConfigs,
     });
   }
 

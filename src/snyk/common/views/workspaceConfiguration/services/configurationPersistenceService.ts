@@ -53,64 +53,28 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  private async extractAndSaveFolderLevelOrgSettings(folderConfigs: Array<FolderConfigData>): Promise<void> {
-    const workspaceFolders = this.workspace.getWorkspaceFolders();
+  /**
+   * Special handling for folder configs, write in-memory and send to language-server
+   * and then folder notification handler will persist it (standard flow for folder configs)
+   */
+  private async saveFolderConfigs(folderConfigs?: Array<FolderConfigData>): Promise<void> {
+    if (!folderConfigs) return;
 
-    const updates = folderConfigs.map(async (config): Promise<void> => {
-      const folderPath = config.folderPath;
+    const currentFolderConfigs = this.configuration.getFolderConfigs();
 
-      if (!folderPath) return;
+    const folderConfigMap = new Map(folderConfigs.map(fc => [fc.folderPath, fc]));
 
-      const workspaceFolder = workspaceFolders.find(f => f.uri.fsPath === folderPath);
-      if (!workspaceFolder) {
-        this.logger.warn(`No workspace folder found for path: ${folderPath}`);
-        return;
-      }
+    const updatedFolderConfigs = currentFolderConfigs.map(currentFolderConfig => {
+      const folderConfig = folderConfigMap.get(currentFolderConfig.folderPath);
+      if (!folderConfig) return currentFolderConfig;
 
-      // Determine which org to display
-      const orgToDisplay = config.orgSetByUser ? config.preferredOrg : config.autoDeterminedOrg;
-
-      // Save organization at folder level
-      if (orgToDisplay !== undefined) {
-        const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-
-        // Skip if value is default and not explicitly set
-        if (
-          !this.scopeDetectionService.isSettingsWithDefaultValue(
-            configurationId,
-            section,
-            orgToDisplay,
-            workspaceFolder,
-          )
-        ) {
-          await this.workspace.updateConfiguration(configurationId, section, orgToDisplay, workspaceFolder);
-          this.logger.debug(`Set organization "${orgToDisplay}" for workspace folder: ${folderPath}`);
-        } else {
-          this.logger.debug(`Skipping organization for ${folderPath}: value is at default and not explicitly set`);
-        }
-      }
-
-      if (config.orgSetByUser !== undefined) {
-        const autoSelectOrg = !config.orgSetByUser;
-        const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
-
-        if (
-          !this.scopeDetectionService.isSettingsWithDefaultValue(
-            configurationId,
-            section,
-            autoSelectOrg,
-            workspaceFolder,
-          )
-        ) {
-          await this.workspace.updateConfiguration(configurationId, section, autoSelectOrg, workspaceFolder);
-          this.logger.debug(`Set auto-select organization to ${autoSelectOrg} for workspace folder: ${folderPath}`);
-        } else {
-          this.logger.debug(`Skipping auto-select org for ${folderPath}: value is at default and not explicitly set`);
-        }
-      }
+      return {
+        ...currentFolderConfig,
+        ...folderConfig,
+      };
     });
 
-    await Promise.all(updates);
+    await this.configuration.setFolderConfigs(updatedFolderConfigs);
   }
 
   private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
@@ -118,10 +82,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     const settingsMap = this.configMappingService.mapConfigToSettings(config, isCliOnly);
 
-    // Special handling: Extract organization settings from folder configs and save at folder level
-    if (!isCliOnly && config.folderConfigs) {
-      await this.extractAndSaveFolderLevelOrgSettings(config.folderConfigs);
-    }
+    if (!isCliOnly) await this.saveFolderConfigs(config.folderConfigs);
 
     const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
       try {

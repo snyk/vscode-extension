@@ -14,14 +14,21 @@ export interface FilterSeverity {
   low?: boolean;
 }
 
+export type ScanCommandConfig = {
+  preScanCommand: string;
+  preScanOnlyReferenceFolder: boolean;
+  postScanCommand: string;
+  postScanOnlyReferenceFolder: boolean;
+};
+
 export interface FolderConfigData {
   folderPath: string;
-  additionalParameters?: string;
-  additionalEnv?: string;
-  preferredOrg?: string;
-  autoDeterminedOrg?: string;
-  orgSetByUser?: boolean;
-  scanCommandConfig?: Record<string, unknown>;
+  additionalParameters: string[];
+  additionalEnv: string;
+  preferredOrg: string;
+  autoDeterminedOrg: string;
+  orgSetByUser: boolean;
+  scanCommandConfig: Record<string, ScanCommandConfig>;
 }
 
 export interface IdeConfigData {
