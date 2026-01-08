@@ -111,7 +111,7 @@
           "snyk.advanced.organization": {
             "order": 5,
             "type": "string",
-            "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used. This setting will be moved to the Snyk Settings page in a future release.",
+            "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used.\n\n**Note:** This setting will be moved to the Snyk Settings page in a future release.",
             "scope": "resource"
           },
           "snyk.yesCrashReport": {
