@@ -40,6 +40,7 @@ suite('Language Server: Middleware', () => {
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
       getCliPath: (): Promise<string> => Promise.resolve('/path/to/cli'),
+      getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
       getInsecure(): boolean {
         return true;
       },

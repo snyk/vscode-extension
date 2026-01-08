@@ -17,6 +17,7 @@ jobs:
           # Add each resource as a key, value pair, mapping the local resource to the reference file (which should be stored in the language server repository). For example:
           # resources["<path_to_local_file>"]="<url_of_reference_file>"
           resources["media/views/scanSummary/ScanSummaryInit.html"]="https://raw.githubusercontent.com/snyk/snyk-ls/refs/heads/main/shared_ide_resources/ui/html/ScanSummaryInit.html"
+          resources["media/views/common/configuration/settings-fallback.html"]="https://raw.githubusercontent.com/snyk/snyk-ls/refs/heads/main/shared_ide_resources/ui/html/settings-fallback.html"
           for key in ${!resources[@]}; do
             candidate=$(sha512sum $key | awk {'print $1'})
             candidate=${candidate:="null"}

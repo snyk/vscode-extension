@@ -74,6 +74,9 @@ suite('Language Server', () => {
       getCliPath(): Promise<string | undefined> {
         return Promise.resolve('testPath');
       },
+      getCliBaseDownloadUrl(): string {
+        return 'https://downloads.snyk.io';
+      },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
       },
@@ -258,6 +261,7 @@ suite('Language Server', () => {
           activateSnykIac: 'true',
           token: 'testToken',
           cliPath: 'testPath',
+          cliBaseDownloadURL: 'https://downloads.snyk.io',
           sendErrorReports: 'true',
           integrationName: 'VS_CODE',
           integrationVersion: '0.0.0',

@@ -16,6 +16,7 @@ import {
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_INITIATE_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -89,6 +90,12 @@ import {
 } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
+import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
+import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
+import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/configurationMappingService';
+import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
+import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
@@ -96,6 +103,8 @@ import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
+  private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
+
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
     if (!summaryWebviewViewProvider) {
@@ -308,6 +317,36 @@ class SnykExtension extends SnykLib implements IExtension {
       new DiagnosticsIssueProvider<IacIssueData>(),
       Logger,
     );
+
+    // Initialize workspace configuration services
+    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
+    const configMappingService = new ConfigurationMappingService();
+    const htmlInjectionService = new HtmlInjectionService();
+    const configPersistenceService = new ConfigurationPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      configMappingService,
+      languageClientAdapter,
+      Logger,
+    );
+    const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
+
+    this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
+      extensionContext,
+      Logger,
+      vsCodeCommands,
+      vsCodeWorkspace,
+      configuration,
+      htmlInjectionService,
+      configMappingService,
+      scopeDetectionService,
+      messageHandlerFactory,
+    );
+
+    // Connect the workspace configuration provider to the language server
+    // so it can update the token in the webview when authentication completes
+    this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
 
     this.commandController = new CommandController(
       this.openerService,
@@ -553,6 +592,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.openLocal(path, range),
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGOUT_COMMAND, () => this.commandController.initiateLogout()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
       vscode.commands.registerCommand(
         SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
@@ -565,7 +605,14 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
+        const useHTMLSettings = configuration.getPreviewFeature('htmlSettings');
+        if (useHTMLSettings) {
+          await this.workspaceConfigurationProvider?.showPanel();
+        } else {
+          this.commandController.openSettings();
+        }
+      }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),

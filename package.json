@@ -307,7 +307,13 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
-            "properties": {}
+            "properties": {
+              "htmlSettings": {
+                "type": "boolean",
+                "default": true,
+                "description": "Use new HTML-based settings UI instead of VS Code's native settings"
+              }
+            }
           }
         }
       },
@@ -360,6 +366,7 @@
               "rc",
               "preview"
             ],
+            "scope": "machine",
             "markdownDescription": "CLI release channel."
           },
           "snyk.advanced.cliPath": {
@@ -475,7 +482,7 @@
           "when": "!snyk:loggedIn"
         },
         {
-          "command": "snyk.logout",
+          "command": "snyk.initiateLogout",
           "when": "snyk:loggedIn"
         },
         {
@@ -510,7 +517,7 @@
         "icon": "$(sign-in)"
       },
       {
-        "command": "snyk.logout",
+        "command": "snyk.initiateLogout",
         "title": "Log Out",
         "category": "Snyk",
         "icon": "$(sign-out)"
