@@ -19,14 +19,14 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../.
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
-import { windowMock } from '../../mocks/window.mock';
+import { WindowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
-import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { CommandsMock } from '../../mocks/commands.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 
@@ -46,7 +46,7 @@ suite('Language Server', () => {
       configurationMock,
       languageClientAdapter,
       workspace,
-      windowMock,
+      new WindowMock(),
       authServiceMock,
       logger,
       downloadServiceMock,
@@ -55,7 +55,7 @@ suite('Language Server', () => {
       {} as ISummaryProviderService,
       {} as IUriAdapter,
       {} as IMarkdownStringAdapter,
-      {} as IVSCodeCommands,
+      new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
     );
   };

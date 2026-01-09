@@ -8,7 +8,7 @@ import { LoggerMock } from '../../mocks/logger.mock';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
-import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { CommandsMock } from '../../mocks/commands.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 /**
@@ -16,8 +16,8 @@ import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diag
  * This test verifies that the workspace scan command is called with the 'LLM' source parameter.
  */
 suite('Workspace Scan Command Parameter Test', () => {
-  let executeCommandStub: sinon.SinonStub;
   let geminiIntegrationService: GeminiIntegrationService;
+  let commandsMock: CommandsMock;
 
   setup(() => {
     // Create stubs and mocks
@@ -38,11 +38,9 @@ suite('Workspace Scan Command Parameter Test', () => {
       get: sinon.stub().returns({ isTrusted: false, supportHtml: false }),
     } as unknown as IMarkdownStringAdapter;
 
-    // Create the command stub which is the main focus of our test
-    executeCommandStub = sinon.stub().resolves();
-    const commandsMock = {
-      executeCommand: executeCommandStub,
-    } as unknown as IVSCodeCommands;
+    // Create the command mock which is the main focus of our test
+    commandsMock = new CommandsMock();
+    commandsMock.executeCommand.resolves();
 
     const diagnosticsProviderMock = {} as IDiagnosticsIssueProvider<unknown>;
 
@@ -76,7 +74,7 @@ suite('Workspace Scan Command Parameter Test', () => {
     await commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND, 'LLM');
 
     // Assert - Verify the executeCommand was called with the right parameters
-    sinon.assert.calledWith(executeCommandStub, SNYK_WORKSPACE_SCAN_COMMAND, 'LLM');
-    sinon.assert.calledOnce(executeCommandStub);
+    sinon.assert.calledWith(commandsMock.executeCommand, SNYK_WORKSPACE_SCAN_COMMAND, 'LLM');
+    sinon.assert.calledOnce(commandsMock.executeCommand);
   });
 });
