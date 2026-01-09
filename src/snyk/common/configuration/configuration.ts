@@ -115,7 +115,7 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-const DEFAULT_AUTO_ORGANIZATION = false; // Should match value in package.json.
+const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
 
 export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
