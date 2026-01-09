@@ -1,7 +1,9 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.17.0
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.43.0
     hooks:
-      - id: gitleaks
+      - id: ggshield
+        language_version: python3
+        stages: [pre-commit]
