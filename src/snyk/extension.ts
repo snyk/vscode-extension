@@ -523,41 +523,67 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async sendPluginInstalledEvent() {
+    const focused = vscode.window.state.focused;
+    if (!focused) {
+      return;
+    }
+
     // start analytics sender and send plugin installed event
     const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
 
-    const pluginInstalledSent =
-      extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
+    const pluginInstalledSent = await this.checkGlobalStateSafely(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT);
 
-    if (!pluginInstalledSent) {
-      const category = [];
-      category.push('install');
-      const pluginInstalleEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-      analyticsSender.logEvent(pluginInstalleEvent, () => {
-        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
-      });
+    if (pluginInstalledSent) {
+      return;
+    }
 
-      const secureAtInceptionModal =
-        extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
+    const category = [];
+    category.push('install');
 
-      if (!secureAtInceptionModal) {
-        await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
-        const options = ['Yes'] as const;
-        const picked = await vscode.window.showInformationMessage(
-          'Do you want to enable Snyk to automatically scan and secure AI generated code?',
-          {
-            modal: true,
-            detail:
-              ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
-          },
-          ...options,
-        );
+    const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+    analyticsSender.logEvent(pluginInstalledEvent, () => {
+      void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+    });
 
-        if (picked) {
-          await configuration.setAutoConfigureMcpServer(true);
-          await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
-        }
-      }
+    const secureAtInceptionModal = await this.checkGlobalStateSafely(MEMENTO_SECURE_AT_INCEPTION_MODAL);
+
+    if (secureAtInceptionModal) {
+      return;
+    }
+
+    await this.configureSecureAtInception();
+  }
+
+  async checkGlobalStateSafely(stateKey: string) {
+    const focused = vscode.window.state.focused;
+    const state = extensionContext.getGlobalStateValue<boolean>(stateKey) ?? false;
+
+    if (state || !focused) {
+      return state;
+    }
+
+    // random wait to lower chance of race conditions
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 200));
+
+    return extensionContext.getGlobalStateValue<boolean>(stateKey) ?? false;
+  }
+
+  async configureSecureAtInception() {
+    await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+    const options = ['Yes'] as const;
+    const picked = await vscode.window.showInformationMessage(
+      'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+      {
+        modal: true,
+        detail:
+          ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
+      },
+      ...options,
+    );
+
+    if (picked) {
+      await configuration.setAutoConfigureMcpServer(true);
+      await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
     }
   }
 
