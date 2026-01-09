@@ -117,14 +117,6 @@ export class IacSuggestionWebviewProvider
     this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
   }
 
-  disposePanel(): void {
-    super.disposePanel();
-  }
-
-  protected onPanelDispose(): void {
-    super.onPanelDispose();
-  }
-
   private async handleMessage(message: unknown) {
     try {
       const { type, value } = message as { type: string; value: unknown };

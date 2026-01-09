@@ -20,6 +20,7 @@ export type ServerSettings = {
   // Endpoint path, and organization
   path?: string;
   cliPath?: string;
+  cliBaseDownloadURL?: string;
   endpoint?: string;
   organization?: string;
 
@@ -81,13 +82,14 @@ export class LanguageServerSettings {
       ? 'true'
       : `${featuresConfiguration?.codeSecurityEnabled}`;
 
-    return {
+    const settings = {
       activateSnykCodeSecurity: codeSecurityEnabled,
       activateSnykOpenSource: ossEnabled,
       activateSnykIac: iacEnabled,
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: await configuration.getCliPath(),
+      cliBaseDownloadURL: configuration.getCliBaseDownloadUrl(),
       endpoint: configuration.snykApiEndpoint,
       organization: configuration.organization,
       token: await configuration.getToken(),
@@ -112,5 +114,6 @@ export class LanguageServerSettings {
       secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
       autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
     };
+    return settings;
   }
 }
