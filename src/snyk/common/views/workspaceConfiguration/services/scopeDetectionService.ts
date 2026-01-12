@@ -9,7 +9,13 @@ import _ from 'lodash';
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
   populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string;
-  isSettingsWithDefaultValue(
+  /**
+   * Determines whether a setting update should be skipped.
+   * Returns true if:
+   * 1. The new value is the same as the current effective value (no actual change), OR
+   * 2. The new value is the default value and hasn't been explicitly set by the user at any level
+   */
+  shouldSkipSettingUpdate(
     configurationId: string,
     settingName: string,
     value: unknown,
@@ -61,7 +67,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
     });
   }
 
-  isSettingsWithDefaultValue(
+  shouldSkipSettingUpdate(
     configurationId: string,
     settingName: string,
     value: unknown,
@@ -71,6 +77,19 @@ export class ScopeDetectionService implements IScopeDetectionService {
 
     if (!inspection) {
       return false;
+    }
+
+    // Get the current effective value based on priority
+    const currentValue = workspaceFolder
+      ? inspection.workspaceFolderValue ??
+        inspection.workspaceValue ??
+        inspection.globalValue ??
+        inspection.defaultValue
+      : inspection.workspaceValue ?? inspection.globalValue ?? inspection.defaultValue;
+
+    // Return true if new value is same as current value (no actual change)
+    if (_.isEqual(value, currentValue)) {
+      return true;
     }
 
     const isDefaultValue = _.isEqual(value, inspection.defaultValue);

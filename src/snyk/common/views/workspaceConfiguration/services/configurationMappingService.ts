@@ -17,12 +17,10 @@ import {
   ADVANCED_CLI_RELEASE_CHANNEL,
   SEVERITY_FILTER_SETTING,
   RISK_SCORE_THRESHOLD_SETTING,
-  FOLDER_CONFIGS,
   AUTH_METHOD_OAUTH,
   AUTH_METHOD_PAT,
   AUTH_METHOD_TOKEN,
   HTTP_PROXY_STRICT_SSL_SETTING,
-  ADVANCED_ORGANIZATION,
 } from '../../../constants/settings';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 

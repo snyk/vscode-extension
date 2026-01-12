@@ -145,6 +145,11 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
+          outputChannel: {
+            show(): void {
+              return;
+            },
+          },
         } as unknown as LanguageClient;
       },
     });
@@ -187,6 +192,11 @@ suite('Language Server', () => {
           },
           onReady(): Promise<void> {
             return Promise.resolve();
+          },
+          outputChannel: {
+            show(): void {
+              return;
+            },
           },
         } as unknown as LanguageClient;
       },
@@ -348,7 +358,7 @@ suite('Language Server', () => {
       orgMigratedFromGlobalConfig: true,
     });
 
-    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', () => {
+    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', async () => {
       const testCases = [
         {
           // User unticked the "Auto-select organization" checkbox, so preferredOrg was blanked by LS
@@ -368,7 +378,7 @@ suite('Language Server', () => {
 
       const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
       strictEqual(setAutoSelectOrganizationStub.callCount, testCases.length);
@@ -381,14 +391,14 @@ suite('Language Server', () => {
     });
 
     for (const currentAutoOrg of [true, false]) {
-      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, () => {
+      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, async () => {
         const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
         getWorkspaceFoldersStub.returns([workspaceFolder]);
         isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
 
         const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
 
-        languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+        await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
         strictEqual(setOrganizationStub.callCount, 1);
         strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
@@ -401,7 +411,7 @@ suite('Language Server', () => {
       });
     }
 
-    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', () => {
+    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', async () => {
       const testCases = [
         {
           // User blanked the org manually
@@ -421,7 +431,7 @@ suite('Language Server', () => {
 
       const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
       strictEqual(setAutoSelectOrganizationStub.callCount, 0);
@@ -431,7 +441,7 @@ suite('Language Server', () => {
       });
     });
 
-    test('should warn and skip folder configs without matching workspace folders', () => {
+    test('should warn and skip folder configs without matching workspace folders', async () => {
       const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
       getWorkspaceFoldersStub.returns([workspaceFolder]);
       isAutoSelectOrganizationEnabledStub.returns(true);
@@ -442,7 +452,7 @@ suite('Language Server', () => {
       ];
 
       const loggerWarnSpy = sinon.spy(logger, 'warn');
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       // Should only process the existing folder
       strictEqual(setOrganizationStub.callCount, 1);

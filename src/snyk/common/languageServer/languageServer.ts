@@ -32,6 +32,7 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 import { IMcpProvider } from '../vscode/mcpProvider';
 import { IWorkspaceConfigurationWebviewProvider } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
+import { NotificationQueue } from './notificationQueue';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -57,6 +58,7 @@ export class LanguageServer implements ILanguageServer {
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
+  private notificationQueue: NotificationQueue;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -91,6 +93,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
   ) {
     this.downloadService = downloadService;
+    this.notificationQueue = new NotificationQueue(this.logger);
     this.geminiIntegrationService = new GeminiIntegrationService(
       this.logger,
       this.configuration,
@@ -215,17 +218,18 @@ export class LanguageServer implements ILanguageServer {
 
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
-      this.authenticationService
-        .updateTokenAndEndpoint(token, apiUrl)
-        .then(() => {
+      void this.notificationQueue.enqueue({
+        id: `authenticated-${Date.now()}`,
+        type: SNYK_HAS_AUTHENTICATED,
+        data: { token, apiUrl },
+        processor: async () => {
+          await this.authenticationService.updateTokenAndEndpoint(token, apiUrl);
           // Update the workspace configuration webview with the new token only if auth was successful
           if (this.workspaceConfigurationProvider) {
             this.workspaceConfigurationProvider.setAuthToken(token);
           }
-        })
-        .catch((error: Error) => {
-          ErrorHandler.handle(error, this.logger, error.message);
-        });
+        },
+      });
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
@@ -243,20 +247,32 @@ export class LanguageServer implements ILanguageServer {
         return folderConfig;
       });
 
-      // Update org settings in VS Code UI to reflect the current state
-      this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
+      // Enqueue async processing to handle org settings and save folder configs
+      void this.notificationQueue.enqueue({
+        id: `folder-config-${Date.now()}`,
+        type: SNYK_FOLDERCONFIG,
+        data: processedFolderConfigs,
+        processor: async () => {
+          // Update org settings in VS Code UI to reflect the current state
+          await this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
 
-      // Set global flag after first folder config received (used for initialization options)
-      LanguageServer.ReceivedFolderConfigsFromLs = true;
+          // Set global flag after first folder config received (used for initialization options)
+          LanguageServer.ReceivedFolderConfigsFromLs = true;
 
-      this.configuration.setFolderConfigs(processedFolderConfigs).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error instanceof Error ? error.message : 'An error occurred');
+          // Save folder configs
+          await this.configuration.setFolderConfigs(processedFolderConfigs);
+        },
       });
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
-      this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
-        ErrorHandler.handle(error, this.logger, error.message);
+      void this.notificationQueue.enqueue({
+        id: `trusted-folders-${Date.now()}`,
+        type: SNYK_ADD_TRUSTED_FOLDERS,
+        data: trustedFolders,
+        processor: async () => {
+          await this.configuration.setTrustedFolders(trustedFolders);
+        },
       });
     });
 
@@ -291,13 +307,15 @@ export class LanguageServer implements ILanguageServer {
     this.client.outputChannel.show();
   }
 
-  private handleOrgSettingsFromFolderConfigs(folderConfigs: FolderConfig[]): void {
+  private async handleOrgSettingsFromFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
     const currentWorkspaceFolders = this.workspace.getWorkspaceFolders();
 
-    folderConfigs.forEach(folderConfig => {
+    // Process folder configs sequentially to avoid race conditions
+    // eslint-disable-next-line no-await-in-loop
+    for (const folderConfig of folderConfigs) {
       // Only write folder level org settings for folders that have been migrated from global config
       if (!folderConfig.orgMigratedFromGlobalConfig) {
-        return;
+        continue;
       }
 
       // Only set organization for folders that are part of the current VS Code workspace
@@ -307,7 +325,7 @@ export class LanguageServer implements ILanguageServer {
 
       if (!workspaceFolder) {
         this.logger.warn(`No workspace folder found for path: ${folderConfig.folderPath}`);
-        return;
+        continue;
       }
 
       const orgToDisplay = folderConfig.orgSetByUser ? folderConfig.preferredOrg : folderConfig.autoDeterminedOrg;
@@ -315,23 +333,18 @@ export class LanguageServer implements ILanguageServer {
       // Mark this folder as being updated by LS to prevent circular updates in the watcher
       LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
 
-      // TODO - await this call when we update vscode-languageclient to a version that supports async notification handlers.
-      this.configuration
-        .setOrganization(workspaceFolder, orgToDisplay)
-        .then(
-          () => {
-            this.logger.debug(
-              `Set organization "${orgToDisplay}" for workspace folder: ${folderConfig.folderPath} (orgSetByUser: ${folderConfig.orgSetByUser})`,
-            );
-          },
-          error => {
-            this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
-          },
-        )
-        .finally(() => {
-          // Clear the flag after update completes (whether success or error)
-          LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
-        });
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this.configuration.setOrganization(workspaceFolder, orgToDisplay);
+        this.logger.debug(
+          `Set organization "${orgToDisplay}" for workspace folder: ${folderConfig.folderPath} (orgSetByUser: ${folderConfig.orgSetByUser})`,
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
+      } finally {
+        // Clear the flag after update completes (whether success or error)
+        LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
+      }
 
       // Set auto-organization at workspace folder level only if the desired value differs from
       // the current configuration value when querying all levels (folder, workspace, global, default).
@@ -340,19 +353,17 @@ export class LanguageServer implements ILanguageServer {
       const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
-        // TODO - await this call when we update vscode-languageclient to a version that supports async notification handlers.
-        this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg).then(
-          () => {
-            this.logger.debug(
-              `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
-            );
-          },
-          error => {
-            this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
-          },
-        );
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg);
+          this.logger.debug(
+            `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
+          );
+        } catch (error) {
+          this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
+        }
       }
-    });
+    }
   }
 
   private mergeOrgSettingsIntoLSFolderConfig(folderConfig: FolderConfig): FolderConfig {
@@ -379,6 +390,10 @@ export class LanguageServer implements ILanguageServer {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
+
+    // Stop the notification queue first to prevent new notifications from being processed
+    await this.notificationQueue.stop();
+
     if (!this.client) {
       return Promise.resolve();
     }

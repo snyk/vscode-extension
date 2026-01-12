@@ -2,7 +2,6 @@
 // ABOUTME: Handles token storage and workspace/user-level settings updates
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
-import { ADVANCED_ORGANIZATION, ADVANCED_AUTO_SELECT_ORGANIZATION } from '../../../constants/settings';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
@@ -90,8 +89,8 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
         const scope = this.scopeDetectionService.getSettingScope(settingKey);
 
-        if (this.scopeDetectionService.isSettingsWithDefaultValue(configurationId, settingName, value)) {
-          this.logger.debug(`Skipping ${settingKey}: value is at default and not explicitly set`);
+        if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value)) {
+          this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
           return;
         }
 
