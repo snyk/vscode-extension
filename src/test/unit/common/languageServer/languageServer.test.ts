@@ -145,11 +145,6 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
-          outputChannel: {
-            show(): void {
-              return;
-            },
-          },
         } as unknown as LanguageClient;
       },
     });
@@ -192,11 +187,6 @@ suite('Language Server', () => {
           },
           onReady(): Promise<void> {
             return Promise.resolve();
-          },
-          outputChannel: {
-            show(): void {
-              return;
-            },
           },
         } as unknown as LanguageClient;
       },

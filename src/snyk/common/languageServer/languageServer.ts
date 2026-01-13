@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { catchError, concatMap, firstValueFrom, of, ReplaySubject, Subject, Subscription } from 'rxjs';
+import { firstValueFrom, ReplaySubject, Subject, Subscription, switchMap } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
@@ -57,8 +57,11 @@ export class LanguageServer implements ILanguageServer {
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
-  private notification$ = new Subject<{ type: string; processor: () => Promise<void> }>();
-  private notificationSubscription?: Subscription;
+  private folderConfig$ = new Subject<{
+    type: string;
+    processor: () => Promise<void>;
+  }>();
+  private folderConfigSubscription?: Subscription;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -94,18 +97,17 @@ export class LanguageServer implements ILanguageServer {
   ) {
     this.downloadService = downloadService;
 
-    // Set up notification processing pipeline with sequential execution
-    this.notificationSubscription = this.notification$
+    // Set up folder config processing pipeline with switchMap to take latest and cancel previous
+    this.folderConfigSubscription = this.folderConfig$
       .pipe(
-        concatMap(({ type, processor }) =>
+        switchMap(({ type, processor }) =>
           processor()
             .then(() => {
-              this.logger.debug(`Completed notification processing for type: ${type}`);
+              this.logger.debug(`Completed folder config processing for type: ${type}`);
             })
             .catch(error => {
               const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              this.logger.error(`Error processing notification ${type}: ${errorMessage}`);
-              // Continue processing other notifications even if this one fails
+              this.logger.error(`Error processing folder config ${type}: ${errorMessage}`);
             }),
         ),
       )
@@ -235,39 +237,40 @@ export class LanguageServer implements ILanguageServer {
 
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
-      this.notification$.next({
-        type: SNYK_HAS_AUTHENTICATED,
-        processor: async () => {
-          await this.authenticationService.updateTokenAndEndpoint(token, apiUrl);
+      this.authenticationService
+        .updateTokenAndEndpoint(token, apiUrl)
+        .then(() => {
           // Update the workspace configuration webview with the new token only if auth was successful
           if (this.workspaceConfigurationProvider) {
             this.workspaceConfigurationProvider.setAuthToken(token);
           }
-        },
-      });
+        })
+        .catch((error: Error) => {
+          ErrorHandler.handle(error, this.logger, error.message);
+        });
     });
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
-      // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
-      let didFolderConfigMergeHappen = false;
-      const processedFolderConfigs = folderConfigs.map(folderConfig => {
-        const isFirstReceipt = !this.configuration
-          .getFolderConfigs()
-          .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
-        if (isFirstReceipt) {
-          // First time receiving config for this folder - merge VS Code settings into LS config
-          didFolderConfigMergeHappen = true;
-          return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
-        }
-
-        // Subsequent receipt - return as-is (will be handled by handleOrgSettingsFromFolderConfigs)
-        return folderConfig;
-      });
-
-      // Enqueue async processing to handle org settings and save folder configs
-      this.notification$.next({
+      // Send to folder config stream (uses switchMap to take latest and cancel previous)
+      this.folderConfig$.next({
         type: SNYK_FOLDERCONFIG,
         processor: async () => {
+          // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
+          let didFolderConfigMergeHappen = false;
+          const processedFolderConfigs = folderConfigs.map(folderConfig => {
+            const isFirstReceipt = !this.configuration
+              .getFolderConfigs()
+              .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
+            if (isFirstReceipt) {
+              // First time receiving config for this folder - merge VS Code settings into LS config
+              didFolderConfigMergeHappen = true;
+              return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
+            }
+
+            // Subsequent receipt - return as-is (will be handled by handleOrgSettingsFromFolderConfigs)
+            return folderConfig;
+          });
+
           // Update org settings in VS Code UI to reflect the current state
           await this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
 
@@ -281,11 +284,8 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
-      this.notification$.next({
-        type: SNYK_ADD_TRUSTED_FOLDERS,
-        processor: async () => {
-          await this.configuration.setTrustedFolders(trustedFolders);
-        },
+      this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
+        ErrorHandler.handle(error, this.logger, error.message);
       });
     });
 
@@ -402,9 +402,9 @@ export class LanguageServer implements ILanguageServer {
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
 
-    // Complete the notification stream and unsubscribe to prevent new notifications from being processed
-    this.notification$.complete();
-    this.notificationSubscription?.unsubscribe();
+    // Complete the folder config stream and unsubscribe to prevent new notifications from being processed
+    this.folderConfig$.complete();
+    this.folderConfigSubscription?.unsubscribe();
 
     if (!this.client) {
       return Promise.resolve();
