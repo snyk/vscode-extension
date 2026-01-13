@@ -233,12 +233,14 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
       // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
+      let didFolderConfigMergeHappen = false;
       const processedFolderConfigs = folderConfigs.map(folderConfig => {
         const isFirstReceipt = !this.configuration
           .getFolderConfigs()
           .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
         if (isFirstReceipt) {
           // First time receiving config for this folder - merge VS Code settings into LS config
+          didFolderConfigMergeHappen = true;
           return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
         }
 
@@ -258,7 +260,7 @@ export class LanguageServer implements ILanguageServer {
           LanguageServer.ReceivedFolderConfigsFromLs = true;
 
           // Save folder configs
-          await this.configuration.setFolderConfigs(processedFolderConfigs);
+          await this.configuration.setFolderConfigs(processedFolderConfigs, didFolderConfigMergeHappen);
         },
       });
     });

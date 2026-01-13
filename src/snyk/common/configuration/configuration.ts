@@ -3,6 +3,9 @@ import path from 'path';
 import { URL } from 'url';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
+import { ILanguageClientAdapter } from '../vscode/languageClient';
+import { IViewManagerService } from '../services/viewManagerService';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -23,7 +26,6 @@ import {
   HTTP_PROXY_STRICT_SSL,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
-  FOLDER_CONFIGS,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
@@ -247,7 +249,7 @@ export interface IConfiguration {
 
   getFolderConfigs(): FolderConfig[];
 
-  setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+  setFolderConfigs(folderConfig: FolderConfig[], triggerConfigChangeEvent?: boolean): Promise<void>;
 
   getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined;
 
@@ -258,6 +260,10 @@ export interface IConfiguration {
   getAutoConfigureMcpServer(): boolean;
 
   setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void>;
+
+  setViewManagerService(viewManagerService: IViewManagerService): void;
+
+  setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void;
 }
 
 export class Configuration implements IConfiguration {
@@ -270,7 +276,12 @@ export class Configuration implements IConfiguration {
   private extensionId: string;
   private inMemoryFolderConfigs: FolderConfig[] = [];
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(
+    private processEnv: NodeJS.ProcessEnv = process.env,
+    private workspace: IVSCodeWorkspace,
+    private viewManagerService?: IViewManagerService,
+    private languageClientAdapter?: ILanguageClientAdapter,
+  ) {}
 
   /**
    * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
@@ -321,6 +332,14 @@ export class Configuration implements IConfiguration {
     const { configurationId, section } = Configuration.getConfigName(AUTO_CONFIGURE_MCP_SERVER);
     const value = this.workspace.getConfiguration<boolean>(configurationId, section);
     return value ?? false;
+  }
+
+  setViewManagerService(viewManagerService: IViewManagerService): void {
+    this.viewManagerService = viewManagerService;
+  }
+
+  setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void {
+    this.languageClientAdapter = languageClientAdapter;
   }
 
   getSecureAtInceptionExecutionFrequency(): string {
@@ -690,11 +709,18 @@ export class Configuration implements IConfiguration {
     await this.workspace.updateConfiguration(configurationId, section, trustedFolders, true);
   }
 
-  async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
+  async setFolderConfigs(folderConfigs: FolderConfig[], triggerConfigChangeEvent: boolean = false): Promise<void> {
     this.inMemoryFolderConfigs = folderConfigs;
-    // We never read from the folder config in the JSON, we only write to it for debugging purposes and to trigger a configuration change event.
-    const { configurationId, section } = Configuration.getConfigName(FOLDER_CONFIGS);
-    await this.workspace.updateConfiguration(configurationId, section, this.inMemoryFolderConfigs, true);
+
+    // Always refresh views when folder configs change
+    if (this.viewManagerService) {
+      this.viewManagerService.refreshAllViews();
+    }
+
+    // Optionally trigger configuration change event for language server
+    if (triggerConfigChangeEvent && this.languageClientAdapter) {
+      await this.languageClientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+    }
   }
 
   async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {

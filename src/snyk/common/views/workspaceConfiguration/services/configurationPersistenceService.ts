@@ -73,7 +73,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       };
     });
 
-    await this.configuration.setFolderConfigs(updatedFolderConfigs);
+    await this.configuration.setFolderConfigs(updatedFolderConfigs, true);
   }
 
   private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
