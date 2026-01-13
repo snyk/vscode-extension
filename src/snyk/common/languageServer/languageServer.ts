@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
+import { catchError, concatMap, firstValueFrom, of, ReplaySubject, Subject, Subscription } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
@@ -32,7 +32,6 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 import { IMcpProvider } from '../vscode/mcpProvider';
 import { IWorkspaceConfigurationWebviewProvider } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
-import { NotificationQueue } from './notificationQueue';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -58,7 +57,8 @@ export class LanguageServer implements ILanguageServer {
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
-  private notificationQueue: NotificationQueue;
+  private notification$ = new Subject<{ type: string; processor: () => Promise<void> }>();
+  private notificationSubscription?: Subscription;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -93,7 +93,24 @@ export class LanguageServer implements ILanguageServer {
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
   ) {
     this.downloadService = downloadService;
-    this.notificationQueue = new NotificationQueue(this.logger);
+
+    // Set up notification processing pipeline with sequential execution
+    this.notificationSubscription = this.notification$
+      .pipe(
+        concatMap(({ type, processor }) =>
+          processor()
+            .then(() => {
+              this.logger.debug(`Completed notification processing for type: ${type}`);
+            })
+            .catch(error => {
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              this.logger.error(`Error processing notification ${type}: ${errorMessage}`);
+              // Continue processing other notifications even if this one fails
+            }),
+        ),
+      )
+      .subscribe();
+
     this.geminiIntegrationService = new GeminiIntegrationService(
       this.logger,
       this.configuration,
@@ -218,9 +235,8 @@ export class LanguageServer implements ILanguageServer {
 
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
-      void this.notificationQueue.enqueue({
+      this.notification$.next({
         type: SNYK_HAS_AUTHENTICATED,
-        data: { token, apiUrl },
         processor: async () => {
           await this.authenticationService.updateTokenAndEndpoint(token, apiUrl);
           // Update the workspace configuration webview with the new token only if auth was successful
@@ -249,9 +265,8 @@ export class LanguageServer implements ILanguageServer {
       });
 
       // Enqueue async processing to handle org settings and save folder configs
-      void this.notificationQueue.enqueue({
+      this.notification$.next({
         type: SNYK_FOLDERCONFIG,
-        data: processedFolderConfigs,
         processor: async () => {
           // Update org settings in VS Code UI to reflect the current state
           await this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
@@ -266,9 +281,8 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
-      void this.notificationQueue.enqueue({
+      this.notification$.next({
         type: SNYK_ADD_TRUSTED_FOLDERS,
-        data: trustedFolders,
         processor: async () => {
           await this.configuration.setTrustedFolders(trustedFolders);
         },
@@ -388,8 +402,9 @@ export class LanguageServer implements ILanguageServer {
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
 
-    // Stop the notification queue first to prevent new notifications from being processed
-    await this.notificationQueue.stop();
+    // Complete the notification stream and unsubscribe to prevent new notifications from being processed
+    this.notification$.complete();
+    this.notificationSubscription?.unsubscribe();
 
     if (!this.client) {
       return Promise.resolve();

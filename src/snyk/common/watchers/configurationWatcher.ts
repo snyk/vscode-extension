@@ -134,6 +134,8 @@ class ConfigurationWatcher implements IWatcher {
       return;
     }
 
+    let isLSNotifyRequired = false;
+
     const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
       const workspaceFolder = affectedWorkspaceFolders.find(
         workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
@@ -147,6 +149,8 @@ class ConfigurationWatcher implements IWatcher {
         return folderConfig;
       }
 
+      isLSNotifyRequired = true;
+
       // Get the effective value considering all levels (global, workspace, folder)
       const autoOrgEnabled = configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
@@ -156,7 +160,7 @@ class ConfigurationWatcher implements IWatcher {
       };
     });
 
-    await configuration.setFolderConfigs(updatedFolderConfigs, true);
+    await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);
   }
 
   private async syncFolderConfigPreferredOrgOnWorkspaceFolderOrgSettingChanged(
@@ -170,6 +174,8 @@ class ConfigurationWatcher implements IWatcher {
       return;
     }
 
+    let isLSNotifyRequired = false;
+
     const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
       const workspaceFolder = affectedWorkspaceFolders.find(
         workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
@@ -182,6 +188,8 @@ class ConfigurationWatcher implements IWatcher {
       if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
         return folderConfig;
       }
+
+      isLSNotifyRequired = true;
 
       const orgValueAtFolderLevel = configuration.getConfigurationAtFolderLevelOnly<string>(
         ADVANCED_ORGANIZATION,
@@ -196,7 +204,7 @@ class ConfigurationWatcher implements IWatcher {
       };
     });
 
-    await configuration.setFolderConfigs(updatedFolderConfigs, true);
+    await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);
   }
 }
 
