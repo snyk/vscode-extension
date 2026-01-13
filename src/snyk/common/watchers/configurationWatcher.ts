@@ -144,6 +144,11 @@ class ConfigurationWatcher implements IWatcher {
         return folderConfig;
       }
 
+      // Skip updates triggered by LS changing the field
+      if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
+        return folderConfig;
+      }
+
       // Get the effective value considering all levels (global, workspace, folder)
       const autoOrgEnabled = configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
@@ -175,7 +180,7 @@ class ConfigurationWatcher implements IWatcher {
         return folderConfig;
       }
 
-      // Skip updates triggered by LS displaying org from folder configs
+      // Skip updates triggered by LS changing the field
       if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
         return folderConfig;
       }

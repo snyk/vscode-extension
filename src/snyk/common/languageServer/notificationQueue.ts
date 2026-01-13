@@ -4,7 +4,7 @@
 import { ILog } from '../logger/interfaces';
 
 export interface QueueItem<T> {
-  id: string;
+  id?: string;
   type: string;
   data: T;
   processor: () => Promise<void>;
@@ -16,21 +16,39 @@ export class NotificationQueue {
   private queue: QueueItem<unknown>[] = [];
   private processingChain: Promise<void> = Promise.resolve();
   private stopped = false;
+  private idCounter = 0;
 
   constructor(private readonly logger: ILog) {}
+
+  /**
+   * Generates a unique ID for a queue item.
+   * Combines timestamp, counter, and random value to ensure uniqueness.
+   */
+  private generateId(type: string): string {
+    const timestamp = Date.now();
+    const counter = ++this.idCounter;
+    const random = Math.random().toString(36).substring(2, 9);
+    return `${type}-${timestamp}-${counter}-${random}`;
+  }
 
   /**
    * Enqueues an item for processing. Items are processed sequentially in FIFO order.
    * Uses a promise chain to ensure sequential processing without explicit locks or void.
    */
   enqueue<T>(item: QueueItem<T>): void {
+    // Generate ID if not provided
+    const itemWithId = {
+      ...item,
+      id: item.id ?? this.generateId(item.type),
+    };
+
     if (this.stopped) {
-      this.logger.debug(`Queue is stopped, not enqueuing item ${item.id}`);
+      this.logger.debug(`Queue is stopped, not enqueuing item ${itemWithId.id}`);
       return;
     }
 
-    this.queue.push(item);
-    this.logger.debug(`Enqueued item ${item.id} (type: ${item.type}), queue size: ${this.queue.length}`);
+    this.queue.push(itemWithId);
+    this.logger.debug(`Enqueued item ${itemWithId.id} (type: ${itemWithId.type}), queue size: ${this.queue.length}`);
 
     // Chain the next processing operation to the existing chain
     // This ensures items are processed sequentially without race conditions

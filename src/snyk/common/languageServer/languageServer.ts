@@ -219,7 +219,6 @@ export class LanguageServer implements ILanguageServer {
   private registerListeners(client: LanguageClient): void {
     client.onNotification(SNYK_HAS_AUTHENTICATED, ({ token, apiUrl }: { token: string; apiUrl: string }) => {
       void this.notificationQueue.enqueue({
-        id: `authenticated-${Date.now()}`,
         type: SNYK_HAS_AUTHENTICATED,
         data: { token, apiUrl },
         processor: async () => {
@@ -249,7 +248,6 @@ export class LanguageServer implements ILanguageServer {
 
       // Enqueue async processing to handle org settings and save folder configs
       void this.notificationQueue.enqueue({
-        id: `folder-config-${Date.now()}`,
         type: SNYK_FOLDERCONFIG,
         data: processedFolderConfigs,
         processor: async () => {
@@ -267,7 +265,6 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
       void this.notificationQueue.enqueue({
-        id: `trusted-folders-${Date.now()}`,
         type: SNYK_ADD_TRUSTED_FOLDERS,
         data: trustedFolders,
         processor: async () => {
@@ -341,28 +338,26 @@ export class LanguageServer implements ILanguageServer {
         );
       } catch (error) {
         this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
-      } finally {
-        // Clear the flag after update completes (whether success or error)
-        LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
       }
-
       // Set auto-organization at workspace folder level only if the desired value differs from
       // the current configuration value when querying all levels (folder, workspace, global, default).
       // Unless the desired auto-org is true (selected), then it should be written at the folder level.
       const desiredAutoOrg = !folderConfig.orgSetByUser;
       const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
-      if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
-        try {
-          // eslint-disable-next-line no-await-in-loop
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
           await this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg);
           this.logger.debug(
             `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
           );
-        } catch (error) {
-          this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
         }
+      } catch (error) {
+        this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
       }
+      // Clear the flag after update completes (whether success or error)
+      LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
     }
   }
 
