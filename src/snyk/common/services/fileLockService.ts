@@ -44,6 +44,7 @@ export class FileLockService implements IFileLockService {
     }
   }
 
+  // eslint-disable-next-line no-await-in-loop -- Intentional: retry loop requires sequential await for lock acquisition
   private async acquireLock(lockPath: string, options?: LockOptions): Promise<void> {
     const maxRetries = options?.retries ?? 10;
     const baseDelay = options?.retryDelay ?? 50;
@@ -55,22 +56,28 @@ export class FileLockService implements IFileLockService {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // O_CREAT | O_EXCL = atomic create-if-not-exists
+        // eslint-disable-next-line no-await-in-loop
         const fd = await fs.promises.open(lockPath, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
         // Write PID and timestamp for stale detection
         const lockContent: LockFileContent = { pid: process.pid, timestamp: Date.now() };
+        // eslint-disable-next-line no-await-in-loop
         await fd.write(JSON.stringify(lockContent));
+        // eslint-disable-next-line no-await-in-loop
         await fd.close();
         return; // Lock acquired
       } catch (err: unknown) {
         const nodeErr = err as NodeJS.ErrnoException;
         if (nodeErr.code === 'EEXIST') {
           // Lock file exists - check if stale
+          // eslint-disable-next-line no-await-in-loop
           if (await this.isLockStale(lockPath, staleThreshold)) {
+            // eslint-disable-next-line no-await-in-loop
             await this.safeUnlink(lockPath);
             continue; // Retry immediately after removing stale lock
           }
           // Wait with exponential backoff (capped)
           const delay = Math.min(baseDelay * Math.pow(2, attempt), 1000);
+          // eslint-disable-next-line no-await-in-loop
           await new Promise(r => setTimeout(r, delay));
         } else {
           throw err;

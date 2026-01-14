@@ -18,6 +18,7 @@ suite('FileLockService', () => {
     try {
       const files = await fs.promises.readdir(tempDir);
       for (const file of files) {
+        // eslint-disable-next-line no-await-in-loop -- Sequential cleanup is intentional
         await fs.promises.unlink(path.join(tempDir, file));
       }
       await fs.promises.rmdir(tempDir);
