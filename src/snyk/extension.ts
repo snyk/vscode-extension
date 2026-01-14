@@ -81,6 +81,7 @@ import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
+import { FileLockService } from './common/services/fileLockService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
@@ -523,49 +524,49 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async sendPluginInstalledEvent() {
-    const focused = vscode.window.state.focused;
-    if (!focused) {
+    // Use file locking to prevent race conditions when multiple windows activate simultaneously
+    const lockService = new FileLockService(extensionContext.globalStoragePath);
+
+    let shouldShowModal = false;
+
+    try {
+      await lockService.withLock('plugin-installed-event', async () => {
+        // Check if plugin installed event was already sent (while holding lock)
+        const pluginInstalledSent =
+          extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
+
+        if (pluginInstalledSent) {
+          return;
+        }
+
+        // Start analytics sender and send plugin installed event
+        const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
+
+        const category = ['install'];
+        const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+        analyticsSender.logEvent(pluginInstalledEvent, () => {
+          void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+        });
+
+        // Check if secure at inception modal was already shown (while holding lock)
+        const secureAtInceptionModal =
+          extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
+
+        if (!secureAtInceptionModal) {
+          await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+          shouldShowModal = true;
+        }
+      });
+    } catch (err) {
+      // If we fail to acquire lock (e.g., another window is handling this), just skip
+      Logger.debug(`Failed to acquire lock for plugin installed event: ${err}`);
       return;
     }
 
-    // start analytics sender and send plugin installed event
-    const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
-
-    const pluginInstalledSent = await this.checkGlobalStateSafely(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT);
-
-    if (pluginInstalledSent) {
-      return;
+    // Show modal outside of lock (doesn't need protection, only one window will reach here)
+    if (shouldShowModal) {
+      await this.configureSecureAtInception();
     }
-
-    const category = [];
-    category.push('install');
-
-    const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-    analyticsSender.logEvent(pluginInstalledEvent, () => {
-      void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
-    });
-
-    const secureAtInceptionModal = await this.checkGlobalStateSafely(MEMENTO_SECURE_AT_INCEPTION_MODAL);
-
-    if (secureAtInceptionModal) {
-      return;
-    }
-
-    await this.configureSecureAtInception();
-  }
-
-  async checkGlobalStateSafely(stateKey: string) {
-    const focused = vscode.window.state.focused;
-    const state = extensionContext.getGlobalStateValue<boolean>(stateKey) ?? false;
-
-    if (state || !focused) {
-      return state;
-    }
-
-    // random wait to lower chance of race conditions
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 200));
-
-    return extensionContext.getGlobalStateValue<boolean>(stateKey) ?? false;
   }
 
   async configureSecureAtInception() {
