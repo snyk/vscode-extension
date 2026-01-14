@@ -544,9 +544,8 @@ class SnykExtension extends SnykLib implements IExtension {
 
         const category = ['install'];
         const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-        analyticsSender.logEvent(pluginInstalledEvent, () => {
-          void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
-        });
+        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+        analyticsSender.logEvent(pluginInstalledEvent, () => {});
 
         // Check if secure at inception modal was already shown (while holding lock)
         const secureAtInceptionModal =
