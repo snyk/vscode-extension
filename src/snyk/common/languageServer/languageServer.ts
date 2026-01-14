@@ -362,8 +362,8 @@ export class LanguageServer implements ILanguageServer {
       const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       try {
-        // eslint-disable-next-line no-await-in-loop
         if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
+          // eslint-disable-next-line no-await-in-loop
           await this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg);
           this.logger.debug(
             `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,

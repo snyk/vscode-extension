@@ -1,6 +1,5 @@
 // ABOUTME: Service for detecting VS Code configuration scope (user/workspace/folder/default)
 // ABOUTME: and populating scope indicators in HTML
-import { WorkspaceFolder } from 'vscode';
 import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { IConfigurationMappingService } from './configurationMappingService';
@@ -15,12 +14,7 @@ export interface IScopeDetectionService {
    * 1. The new value is the same as the current effective value (no actual change), OR
    * 2. The new value is the default value and hasn't been explicitly set by the user at any level
    */
-  shouldSkipSettingUpdate(
-    configurationId: string,
-    settingName: string,
-    value: unknown,
-    workspaceFolder?: WorkspaceFolder,
-  ): boolean;
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean;
 }
 
 export class ScopeDetectionService implements IScopeDetectionService {
@@ -67,39 +61,34 @@ export class ScopeDetectionService implements IScopeDetectionService {
     });
   }
 
-  shouldSkipSettingUpdate(
-    configurationId: string,
-    settingName: string,
-    value: unknown,
-    workspaceFolder?: WorkspaceFolder,
-  ): boolean {
-    const inspection = this.workspace.inspectConfiguration(configurationId, settingName, workspaceFolder);
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean {
+    const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
 
     if (!inspection) {
       return false;
     }
 
-    // Get the current effective value based on priority
-    const currentValue = workspaceFolder
-      ? inspection.workspaceFolderValue ??
-        inspection.workspaceValue ??
-        inspection.globalValue ??
-        inspection.defaultValue
-      : inspection.workspaceValue ?? inspection.globalValue ?? inspection.defaultValue;
+    let currentValue: unknown;
+    switch (scope) {
+      case 'workspace':
+        currentValue = inspection.workspaceValue;
+        break;
+      case 'user':
+        currentValue = inspection.globalValue;
+        break;
+      default:
+        return false;
+    }
 
-    // Return true if new value is same as current value (no actual change)
+    // Return true if new value is same as current value at this scope (no actual change)
     if (_.isEqual(value, currentValue)) {
       return true;
     }
 
     const isDefaultValue = _.isEqual(value, inspection.defaultValue);
 
-    // Only skip if value is at default and hasn't been explicitly set by user at any level
-    const hasExplicitValue = workspaceFolder
-      ? inspection.workspaceFolderValue !== undefined ||
-        inspection.workspaceValue !== undefined ||
-        inspection.globalValue !== undefined
-      : inspection.workspaceValue !== undefined || inspection.globalValue !== undefined;
+    // Only skip if value is at default and this specific scope doesn't have an explicit value
+    const hasExplicitValue = currentValue !== undefined;
 
     return isDefaultValue && !hasExplicitValue;
   }
