@@ -88,29 +88,52 @@ export class FileLockService implements IFileLockService {
   }
 
   private async isLockStale(lockPath: string, threshold: number): Promise<boolean> {
-    try {
-      const content = await fs.promises.readFile(lockPath, 'utf-8');
+    // Wait for valid JSON content or until mtime is older than threshold
+    // This prevents race conditions where we read while another process is still writing
+    const maxContentRetries = 5;
+    const contentRetryDelay = 50; // ms
 
-      // Try to parse JSON content
-      if (content && content.trim().length > 0) {
-        try {
-          const lockData = JSON.parse(content) as LockFileContent;
-          if (typeof lockData.timestamp === 'number') {
-            // Valid JSON with timestamp - check if stale
-            return Date.now() - lockData.timestamp > threshold;
+    for (let attempt = 0; attempt < maxContentRetries; attempt++) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const content = await fs.promises.readFile(lockPath, 'utf-8');
+
+        // Try to parse JSON content
+        if (content && content.trim().length > 0) {
+          try {
+            const lockData = JSON.parse(content) as LockFileContent;
+            if (typeof lockData.timestamp === 'number') {
+              // Valid JSON with timestamp - check if stale
+              return Date.now() - lockData.timestamp > threshold;
+            }
+          } catch {
+            // JSON parse failed - content might still be written, continue waiting
           }
-        } catch {
-          // JSON parse failed - fall through to mtime check
         }
-      }
 
-      // If content is empty/invalid, check file modification time as fallback
-      // This handles both: race condition (file being written) and orphaned locks
-      return this.isFileModificationTimeStale(lockPath, threshold);
-    } catch {
-      // If we can't read the file at all, check mtime
-      return this.isFileModificationTimeStale(lockPath, threshold);
+        // Content is empty or invalid JSON - check if mtime is old enough to consider stale
+        // eslint-disable-next-line no-await-in-loop
+        const mtimeStale = await this.isFileModificationTimeStale(lockPath, threshold);
+        if (mtimeStale) {
+          // File is old enough with invalid content - definitely stale/orphaned
+          return true;
+        }
+
+        // mtime is recent, content might still be written - wait and retry
+        if (attempt < maxContentRetries - 1) {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(r => setTimeout(r, contentRetryDelay));
+        }
+      } catch {
+        // Can't read file - check mtime as fallback
+        // eslint-disable-next-line no-await-in-loop
+        return this.isFileModificationTimeStale(lockPath, threshold);
+      }
     }
+
+    // After all retries, if we still can't get valid JSON but mtime is recent,
+    // assume the lock is valid (not stale) to be safe
+    return false;
   }
 
   private async isFileModificationTimeStale(lockPath: string, threshold: number): Promise<boolean> {
