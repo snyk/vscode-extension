@@ -93,7 +93,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           const workspaceFolders = this.workspace.getWorkspaceFolders();
           const isSingleFolderWorkspace = workspaceFolders.length === 1;
           const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
-          const hasBeenModifiedOnWorkspaceLevel = Boolean(inspection?.workspaceValue);
+          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
           const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
           await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
           this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
