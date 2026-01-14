@@ -159,6 +159,70 @@ suite('FileLockService', () => {
     );
   });
 
+  test('treats recently created empty lock file as valid (not stale) to prevent race condition', async () => {
+    const lockPath = path.join(tempDir, 'test-lock.lock');
+
+    // Create an empty lock file (simulating a lock being written)
+    // With fresh mtime, it should NOT be considered stale
+    await fs.promises.writeFile(lockPath, '');
+
+    // Should fail to acquire lock because mtime is recent (not stale)
+    await rejects(
+      lockService.withLock(
+        'test-lock',
+        () => {
+          return Promise.resolve();
+        },
+        { retries: 2, retryDelay: 10, staleThreshold: 60000 }, // 1 minute threshold
+      ),
+      /Failed to acquire lock after 2 attempts/,
+    );
+  });
+
+  test('treats recently created invalid JSON lock file as valid (not stale) to prevent race condition', async () => {
+    const lockPath = path.join(tempDir, 'test-lock.lock');
+
+    // Create a lock file with partial/invalid JSON (simulating interrupted write)
+    // With fresh mtime, it should NOT be considered stale
+    await fs.promises.writeFile(lockPath, '{"pid":123');
+
+    // Should fail to acquire lock because mtime is recent (not stale)
+    await rejects(
+      lockService.withLock(
+        'test-lock',
+        () => {
+          return Promise.resolve();
+        },
+        { retries: 2, retryDelay: 10, staleThreshold: 60000 }, // 1 minute threshold
+      ),
+      /Failed to acquire lock after 2 attempts/,
+    );
+  });
+
+  test('treats old empty lock file as stale based on mtime', async () => {
+    const lockPath = path.join(tempDir, 'test-lock.lock');
+
+    // Create an empty lock file
+    await fs.promises.writeFile(lockPath, '');
+
+    // Set file mtime to 2 minutes ago (older than threshold)
+    const oldTime = new Date(Date.now() - 120000);
+    await fs.promises.utimes(lockPath, oldTime, oldTime);
+
+    // Should acquire lock because mtime makes it stale
+    let executed = false;
+    await lockService.withLock(
+      'test-lock',
+      () => {
+        executed = true;
+        return Promise.resolve();
+      },
+      { staleThreshold: 60000 }, // 1 minute threshold
+    );
+
+    strictEqual(executed, true);
+  });
+
   test('creates lock directory if it does not exist', async () => {
     const nestedDir = path.join(tempDir, 'nested', 'dir');
     const nestedLockService = new FileLockService(nestedDir);

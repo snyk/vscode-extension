@@ -90,11 +90,37 @@ export class FileLockService implements IFileLockService {
   private async isLockStale(lockPath: string, threshold: number): Promise<boolean> {
     try {
       const content = await fs.promises.readFile(lockPath, 'utf-8');
-      const lockData = JSON.parse(content) as LockFileContent;
-      return Date.now() - lockData.timestamp > threshold;
+
+      // Try to parse JSON content
+      if (content && content.trim().length > 0) {
+        try {
+          const lockData = JSON.parse(content) as LockFileContent;
+          if (typeof lockData.timestamp === 'number') {
+            // Valid JSON with timestamp - check if stale
+            return Date.now() - lockData.timestamp > threshold;
+          }
+        } catch {
+          // JSON parse failed - fall through to mtime check
+        }
+      }
+
+      // If content is empty/invalid, check file modification time as fallback
+      // This handles both: race condition (file being written) and orphaned locks
+      return this.isFileModificationTimeStale(lockPath, threshold);
     } catch {
-      // If we can't read it (corrupted, empty, etc.), treat as stale
-      return true;
+      // If we can't read the file at all, check mtime
+      return this.isFileModificationTimeStale(lockPath, threshold);
+    }
+  }
+
+  private async isFileModificationTimeStale(lockPath: string, threshold: number): Promise<boolean> {
+    try {
+      const stats = await fs.promises.stat(lockPath);
+      const mtime = stats.mtimeMs;
+      return Date.now() - mtime > threshold;
+    } catch {
+      // If we can't stat the file, assume it's not stale (file might have been deleted)
+      return false;
     }
   }
 
