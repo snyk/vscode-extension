@@ -7,13 +7,14 @@ import {
   ADVANCED_CLI_RELEASE_CHANNEL,
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
+  ADVANCED_ORGANIZATION,
   FEATURES_PREVIEW_SETTING,
   SCANNING_MODE,
   CONFIGURATION_IDENTIFIER,
 } from '../../../snyk/common/constants/settings';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
-import { stubWorkspaceConfiguration } from '../mocks/workspace.mock';
+import { createWorkspaceMockWithInspection, stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { Platform } from '../../../snyk/common/platform';
 import path from 'path';
@@ -229,6 +230,72 @@ suite('Configuration', () => {
           expectedValue,
           true,
         );
+      });
+    });
+  });
+
+  suite('Organization Configuration - Critical Paths', () => {
+    suite('Single-Folder Workspace', () => {
+      test('organization getter returns ONLY global value in single-folder workspace', () => {
+        const workspace = createWorkspaceMockWithInspection<string>(
+          ADVANCED_ORGANIZATION,
+          {
+            globalValue: 'global-org',
+            workspaceValue: 'workspace-org',
+          },
+          1, // single folder
+        );
+
+        const configuration = new Configuration({}, workspace);
+
+        strictEqual(configuration.organization, 'global-org');
+      });
+
+      test('organization getter ignores workspace value even if set in single-folder workspace', () => {
+        const workspace = createWorkspaceMockWithInspection<string>(
+          ADVANCED_ORGANIZATION,
+          {
+            globalValue: undefined,
+            workspaceValue: 'workspace-org',
+          },
+          1, // single folder
+        );
+
+        const configuration = new Configuration({}, workspace);
+
+        strictEqual(configuration.organization, undefined);
+      });
+    });
+
+    suite('Multi-Folder Workspace', () => {
+      test('organization getter prioritizes workspace value over global in multi-folder workspace', () => {
+        const workspace = createWorkspaceMockWithInspection<string>(
+          ADVANCED_ORGANIZATION,
+          {
+            globalValue: 'global-org',
+            workspaceValue: 'workspace-org',
+          },
+          2, // multi folder
+        );
+
+        const configuration = new Configuration({}, workspace);
+
+        strictEqual(configuration.organization, 'workspace-org');
+      });
+
+      test('organization getter falls back to global when no workspace value in multi-folder', () => {
+        const workspace = createWorkspaceMockWithInspection<string>(
+          ADVANCED_ORGANIZATION,
+          {
+            globalValue: 'global-org',
+            workspaceValue: undefined,
+          },
+          2, // multi folder
+        );
+
+        const configuration = new Configuration({}, workspace);
+
+        strictEqual(configuration.organization, 'global-org');
       });
     });
   });
