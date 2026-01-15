@@ -599,7 +599,7 @@
   },
   "dependencies": {
     "@amplitude/experiment-node-server": "^1.8.2",
-    "@babel/parser": "^7.23.9",
+    "@babel/parser": "^7.28.5",
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
