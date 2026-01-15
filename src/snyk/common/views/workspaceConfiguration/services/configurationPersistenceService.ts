@@ -2,8 +2,8 @@
 // ABOUTME: Handles token storage and workspace/user-level settings updates
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
-import { ADVANCED_ORGANIZATION, ADVANCED_AUTO_SELECT_ORGANIZATION } from '../../../constants/settings';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
+import { ADVANCED_ORGANIZATION } from '../../../constants/settings';
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
@@ -74,7 +74,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       };
     });
 
-    await this.configuration.setFolderConfigs(updatedFolderConfigs);
+    await this.configuration.setFolderConfigs(updatedFolderConfigs, true);
   }
 
   private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
@@ -88,16 +88,27 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       try {
         const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
 
-        const scope = this.scopeDetectionService.getSettingScope(settingKey);
+        if (settingKey === ADVANCED_ORGANIZATION) {
+          // Special handling for global org
+          const workspaceFolders = this.workspace.getWorkspaceFolders();
+          const isSingleFolderWorkspace = workspaceFolders.length === 1;
+          const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
+          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
+          const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
+          await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
+          this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
+        } else {
+          const scope = this.scopeDetectionService.getSettingScope(settingKey);
 
-        if (this.scopeDetectionService.isSettingsWithDefaultValue(configurationId, settingName, value)) {
-          this.logger.debug(`Skipping ${settingKey}: value is at default and not explicitly set`);
-          return;
+          if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
+            this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
+            return;
+          }
+
+          await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
+
+          this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
         }
-
-        await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
-
-        this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
         this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
       }

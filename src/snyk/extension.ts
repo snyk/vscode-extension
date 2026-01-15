@@ -195,6 +195,10 @@ class SnykExtension extends SnykLib implements IExtension {
 
     const languageClientAdapter = new LanguageClientAdapter();
     const mcpProvider = new McpProvider();
+
+    configuration.setViewManagerService(this.viewManagerService);
+    configuration.setLanguageClientAdapter(languageClientAdapter);
+
     this.authService = new AuthenticationService(
       this.contextService,
       this,

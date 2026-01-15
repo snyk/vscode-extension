@@ -268,12 +268,6 @@
         "title": "Experimental",
         "order": 4,
         "properties": {
-          "snyk.folderConfigs": {
-            "order": 1,
-            "type": "array",
-            "default": [],
-            "description": "Folder configuration for Snyk scans. This value is read-only, any changes made will be overridden."
-          },
           "snyk.securityAtInception.autoConfigureSnykMcpServer": {
             "order": 2,
             "type": "boolean",

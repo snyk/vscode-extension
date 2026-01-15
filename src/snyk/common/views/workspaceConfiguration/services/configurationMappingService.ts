@@ -17,7 +17,6 @@ import {
   ADVANCED_CLI_RELEASE_CHANNEL,
   SEVERITY_FILTER_SETTING,
   RISK_SCORE_THRESHOLD_SETTING,
-  FOLDER_CONFIGS,
   AUTH_METHOD_OAUTH,
   AUTH_METHOD_PAT,
   AUTH_METHOD_TOKEN,
@@ -45,7 +44,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     activateSnykCode: CODE_SECURITY_ENABLED_SETTING,
     activateSnykIac: IAC_ENABLED_SETTING,
     scanningMode: SCANNING_MODE,
-    // organization: ADVANCED_ORGANIZATION,
+    organization: ADVANCED_ORGANIZATION,
 
     // Issue View Settings
     issueViewOptions: ISSUE_VIEW_OPTIONS_SETTING,
@@ -102,6 +101,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [CODE_SECURITY_ENABLED_SETTING]: config.activateSnykCode,
       [IAC_ENABLED_SETTING]: config.activateSnykIac,
       [SCANNING_MODE]: config.scanningMode,
+      // TODO enable after LS with global org in the html settings page is merged to cli
       // [ADVANCED_ORGANIZATION]: config.organization,
 
       // Issue View Settings

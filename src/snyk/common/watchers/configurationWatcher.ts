@@ -13,7 +13,6 @@ import {
   OSS_ENABLED_SETTING,
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
-  FOLDER_CONFIGS,
   ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
@@ -69,7 +68,7 @@ class ConfigurationWatcher implements IWatcher {
       await extension.stopLanguageServer();
       extension.initDependencyDownload();
       return;
-    } else if (key === FOLDER_CONFIGS || key == DELTA_FINDINGS) {
+    } else if (key == DELTA_FINDINGS) {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
@@ -106,7 +105,6 @@ class ConfigurationWatcher implements IWatcher {
         ADVANCED_AUTHENTICATION_METHOD,
         TRUSTED_FOLDERS,
         DELTA_FINDINGS,
-        FOLDER_CONFIGS,
         AUTO_CONFIGURE_MCP_SERVER,
         SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
       ].find(config => event.affectsConfiguration(config));
@@ -136,6 +134,8 @@ class ConfigurationWatcher implements IWatcher {
       return;
     }
 
+    let isLSNotifyRequired = false;
+
     const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
       const workspaceFolder = affectedWorkspaceFolders.find(
         workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
@@ -143,6 +143,13 @@ class ConfigurationWatcher implements IWatcher {
       if (!workspaceFolder) {
         return folderConfig;
       }
+
+      // Skip updates triggered by LS changing the field
+      if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
+        return folderConfig;
+      }
+
+      isLSNotifyRequired = true;
 
       // Get the effective value considering all levels (global, workspace, folder)
       const autoOrgEnabled = configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
@@ -153,7 +160,7 @@ class ConfigurationWatcher implements IWatcher {
       };
     });
 
-    await configuration.setFolderConfigs(updatedFolderConfigs);
+    await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);
   }
 
   private async syncFolderConfigPreferredOrgOnWorkspaceFolderOrgSettingChanged(
@@ -167,6 +174,8 @@ class ConfigurationWatcher implements IWatcher {
       return;
     }
 
+    let isLSNotifyRequired = false;
+
     const updatedFolderConfigs = configuration.getFolderConfigs().map(folderConfig => {
       const workspaceFolder = affectedWorkspaceFolders.find(
         workspaceFolder => workspaceFolder.uri.fsPath === folderConfig.folderPath,
@@ -175,10 +184,12 @@ class ConfigurationWatcher implements IWatcher {
         return folderConfig;
       }
 
-      // Skip updates triggered by LS displaying org from folder configs
+      // Skip updates triggered by LS changing the field
       if (LanguageServer.isLSUpdatingOrg(folderConfig.folderPath)) {
         return folderConfig;
       }
+
+      isLSNotifyRequired = true;
 
       const orgValueAtFolderLevel = configuration.getConfigurationAtFolderLevelOnly<string>(
         ADVANCED_ORGANIZATION,
@@ -193,7 +204,7 @@ class ConfigurationWatcher implements IWatcher {
       };
     });
 
-    await configuration.setFolderConfigs(updatedFolderConfigs);
+    await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);
   }
 }
 
