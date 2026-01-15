@@ -2,11 +2,11 @@ import sinon from 'sinon';
 import { IVSCodeLanguages } from '../../../snyk/common/vscode/languages';
 import { DiagnosticRelatedInformation, Position, Range as vsRange, Uri } from '../../../snyk/common/vscode/types';
 
-export const languagesMock = {
-  createDiagnostic: sinon.fake(),
-  createDiagnosticCollection: sinon.fake(),
-  registerCodeActionsProvider: sinon.fake(),
-  registerHoverProvider: sinon.fake(),
+export class LanguagesMock implements IVSCodeLanguages {
+  createDiagnostic = sinon.stub();
+  createDiagnosticCollection = sinon.stub();
+  registerCodeActionsProvider = sinon.stub();
+  registerHoverProvider = sinon.stub();
 
   createDiagnosticRelatedInformation(
     uri: Uri,
@@ -33,7 +33,7 @@ export const languagesMock = {
         range,
       },
     };
-  },
+  }
 
   createRange(startLine: number, startCharacter: number, endLine: number, endCharacter: number): vsRange {
     return {
@@ -46,8 +46,8 @@ export const languagesMock = {
         character: endCharacter,
       } as unknown as Position,
     } as unknown as vsRange;
-  },
-} as IVSCodeLanguages;
+  }
+}
 
 function isRange(pet: vsRange | Position): pet is vsRange {
   return (pet as vsRange).start !== undefined;
