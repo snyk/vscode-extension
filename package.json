@@ -538,8 +538,13 @@
         "category": "Snyk"
       },
       {
-        "command": "snyk.connectivityCheck",
-        "title": "Connectivity Check",
+        "command": "snyk.collectConnectivityDiagnostics",
+        "title": "Collect Connectivity Diagnostics",
+        "category": "Snyk"
+      },
+      {
+        "command": "snyk.collectDirectoryDiagnostics",
+        "title": "Collect Directory Diagnostics",
         "category": "Snyk"
       }
     ]

@@ -12,7 +12,8 @@ import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
   SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
-  SNYK_CONNECTIVITY_CHECK_COMMAND,
+  SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND,
+  SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -654,8 +655,11 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, (presentableError?: PresentableError) =>
         this.commandController.showLsOutputChannel(presentableError),
       ),
-      vscode.commands.registerCommand(SNYK_CONNECTIVITY_CHECK_COMMAND, () =>
+      vscode.commands.registerCommand(SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND, () =>
         this.commandController.connectivityCheck(),
+      ),
+      vscode.commands.registerCommand(SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND, () =>
+        this.commandController.directoryDiagnostics(),
       ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {

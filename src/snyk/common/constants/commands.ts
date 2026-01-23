@@ -39,7 +39,8 @@ export const SNYK_GENERATE_ISSUE_DESCRIPTION = 'snyk.generateIssueDescription';
 export const SNYK_REPORT_ANALYTICS = 'snyk.reportAnalytics';
 export const SNYK_EXECUTE_MCP_TOOL_COMMAND = 'snyk.executeMCPToolCall';
 export const SNYK_SUBMIT_IGNORE_COMMAND = 'snyk.submitIgnoreRequest';
-export const SNYK_CONNECTIVITY_CHECK_COMMAND = 'snyk.connectivityCheck';
+export const SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND = 'snyk.collectConnectivityDiagnostics';
+export const SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND = 'snyk.collectDirectoryDiagnostics';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

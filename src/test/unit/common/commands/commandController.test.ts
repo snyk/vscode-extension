@@ -80,4 +80,35 @@ suite('CommandController', () => {
     sinon.assert.calledOnce(windowMock.showInformationMessage);
     sinon.assert.calledWith(envMock.getClipboard().writeText, mockOutput);
   });
+
+  test('Directory diagnostics displays results in modal and passes default CLI path', async () => {
+    // Arrange
+    const mockOutput =
+      'IDE Directory Diagnostics\n\nCurrent User: testuser\n\nDirectory: /test/path\n  ✓ Exists\n  ✓ Writable';
+
+    commandsMock.executeCommand.withArgs('snyk.diagnostics.checkDirectories', sinon.match.array).resolves(mockOutput);
+
+    // Configure mock behavior
+    windowMock.showInformationMessage.resolves('Copy Results to Clipboard');
+    envMock.getClipboard().writeText.resolves();
+
+    // Act
+    await controller.directoryDiagnostics();
+
+    // Assert
+    sinon.assert.calledOnce(commandsMock.executeCommand);
+    sinon.assert.calledWith(
+      commandsMock.executeCommand,
+      'snyk.diagnostics.checkDirectories',
+      sinon.match((dirs: { pathWanted: string; purpose: string; mayContainCLI: boolean }[]) => {
+        return (
+          dirs.length === 1 &&
+          dirs[0].purpose === 'VS Code Default CLI Download Location' &&
+          dirs[0].mayContainCLI === true
+        );
+      }),
+    );
+    sinon.assert.calledOnce(windowMock.showInformationMessage);
+    sinon.assert.calledWith(envMock.getClipboard().writeText, mockOutput);
+  });
 });
