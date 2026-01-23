@@ -20,6 +20,7 @@ export type ServerSettings = {
   // Endpoint path, and organization
   path?: string;
   cliPath?: string;
+  cliBaseDownloadURL?: string;
   endpoint?: string;
   organization?: string;
 
@@ -35,6 +36,7 @@ export type ServerSettings = {
 
   // Security and scanning settings
   filterSeverity?: SeverityFilter;
+  riskScoreThreshold?: number;
   issueViewOptions?: IssueViewOptions;
   scanningMode?: string;
   insecure?: string;
@@ -58,6 +60,10 @@ export type ServerSettings = {
   osArch?: string;
   osPlatform?: string;
   additionalEnv?: string;
+
+  // Secure At Inception settings
+  secureAtInceptionExecutionFrequency?: string;
+  autoConfigureSnykMcpServer?: string;
 };
 
 export class LanguageServerSettings {
@@ -76,13 +82,14 @@ export class LanguageServerSettings {
       ? 'true'
       : `${featuresConfiguration?.codeSecurityEnabled}`;
 
-    return {
+    const settings = {
       activateSnykCodeSecurity: codeSecurityEnabled,
       activateSnykOpenSource: ossEnabled,
       activateSnykIac: iacEnabled,
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: await configuration.getCliPath(),
+      cliBaseDownloadURL: configuration.getCliBaseDownloadUrl(),
       endpoint: configuration.snykApiEndpoint,
       organization: configuration.organization,
       token: await configuration.getToken(),
@@ -91,6 +98,7 @@ export class LanguageServerSettings {
       additionalParams: configuration.getAdditionalCliParameters(),
       manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
       filterSeverity: configuration.severityFilter,
+      riskScoreThreshold: configuration.riskScoreThreshold,
       issueViewOptions: configuration.issueViewOptions,
       scanningMode: configuration.scanningMode,
       insecure: `${configuration.getInsecure()}`,
@@ -103,6 +111,9 @@ export class LanguageServerSettings {
       folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
       hoverVerbosity: 1,
+      secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
+      autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
     };
+    return settings;
   }
 }

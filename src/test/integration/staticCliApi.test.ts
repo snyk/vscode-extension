@@ -10,6 +10,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
+const TEST_PROTOCOL_VERSION = 21;
+
 suite('StaticCliApi - Integration Tests', function () {
   // Set a longer timeout for network operations
   this.timeout(30000); // 30 seconds
@@ -37,8 +39,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getLatestCliVersion returns a valid version string', async () => {
-    const version = await api.getLatestCliVersion('stable');
-
+    const version = await api.getLatestCliVersion('stable', TEST_PROTOCOL_VERSION);
     // Version should be in format like "1.1234.0" or "v1.1234.0"
     ok(version, 'Version should not be empty');
     ok(/^v?\d+\.\d+\.\d+/.test(version), `Version "${version}" should match semantic version pattern`);
@@ -54,7 +55,7 @@ suite('StaticCliApi - Integration Tests', function () {
   test('downloadBinary downloads actual CLI binary stream', async () => {
     // Test with Linux platform as it's smaller than other binaries
     const platform: CliSupportedPlatform = 'linux';
-    const [downloadPromise, cancelToken] = await api.downloadBinary(platform);
+    const [downloadPromise, cancelToken] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
 
     ok(downloadPromise, 'Download promise should exist');
     ok(cancelToken, 'Cancel token should exist');
@@ -85,7 +86,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
   test('downloadBinary can be cancelled', async () => {
     const platform: CliSupportedPlatform = 'linux';
-    const [downloadPromise, cancelToken] = await api.downloadBinary(platform);
+    const [downloadPromise, cancelToken] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
 
     // Cancel immediately
     cancelToken.cancel();
@@ -96,7 +97,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
   test('getSha256Checksum returns valid checksum', async () => {
     // Get a version first
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion('stable', TEST_PROTOCOL_VERSION);
     const platform: CliSupportedPlatform = 'linux';
 
     const checksum = await api.getSha256Checksum(version, platform);
@@ -108,7 +109,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getSha256Checksum handles version with and without v prefix', async () => {
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion('stable', TEST_PROTOCOL_VERSION);
     const platform: CliSupportedPlatform = 'linux';
 
     // Remove 'v' prefix if present for testing
@@ -125,7 +126,7 @@ suite('StaticCliApi - Integration Tests', function () {
     const platform: CliSupportedPlatform = 'linux';
 
     // Get latest version
-    const version = await api.getLatestCliVersion('stable');
+    const version = await api.getLatestCliVersion('stable', TEST_PROTOCOL_VERSION);
     console.log(`Testing with CLI version: ${version}`);
 
     // Get the expected checksum
@@ -133,7 +134,7 @@ suite('StaticCliApi - Integration Tests', function () {
     console.log(`Expected checksum: ${expectedChecksum}`);
 
     // Download the binary
-    const [downloadPromise] = await api.downloadBinary(platform);
+    const [downloadPromise] = await api.downloadBinary(platform, TEST_PROTOCOL_VERSION);
     const response = await downloadPromise;
 
     // Write to temporary file to calculate checksum
@@ -183,7 +184,7 @@ suite('StaticCliApi - Integration Tests', function () {
 
     // This should throw an error
     try {
-      await invalidApi.getLatestCliVersion('stable');
+      await invalidApi.getLatestCliVersion('stable', TEST_PROTOCOL_VERSION);
       throw new Error('Expected getLatestCliVersion to throw an error');
     } catch (err) {
       // Accept any error since we're using an invalid domain

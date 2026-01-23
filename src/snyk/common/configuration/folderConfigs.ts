@@ -80,6 +80,6 @@ export class FolderConfigs implements IFolderConfigs {
     const finalFolderConfigs = currentFolderConfigs.map(i =>
       i.folderPath === folderConfig.folderPath ? folderConfig : i,
     );
-    await config.setFolderConfigs(finalFolderConfigs);
+    await config.setFolderConfigs(finalFolderConfigs, true);
   }
 }

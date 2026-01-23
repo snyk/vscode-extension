@@ -17,6 +17,7 @@ import {
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_INITIATE_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_OPEN_ISSUE_COMMAND,
   SNYK_OPEN_LOCAL_COMMAND,
@@ -81,6 +82,7 @@ import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
 import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
+import { FileLockService } from './common/services/fileLockService';
 import { InMemory, Persisted } from './common/constants/general';
 import { GitAPI, GitExtension, Repository } from './common/git';
 import { AnalyticsSender } from './common/analytics/AnalyticsSender';
@@ -90,13 +92,21 @@ import {
 } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
+import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
+import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
+import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/configurationMappingService';
+import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
+import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
-import { configureMcpHosts } from './cli/mcp/mcp';
+import { McpProvider } from './common/vscode/mcpProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
+  private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
+
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
     const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
     if (!summaryWebviewViewProvider) {
@@ -185,6 +195,11 @@ class SnykExtension extends SnykLib implements IExtension {
     this.statusBarItem.show();
 
     const languageClientAdapter = new LanguageClientAdapter();
+    const mcpProvider = new McpProvider();
+
+    configuration.setViewManagerService(this.viewManagerService);
+    configuration.setLanguageClientAdapter(languageClientAdapter);
+
     this.authService = new AuthenticationService(
       this.contextService,
       this,
@@ -221,6 +236,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       Logger,
       this.downloadService,
+      mcpProvider,
       {
         extensionPath: extensionContext.extensionPath,
         getExtension(id: string): Extension | undefined {
@@ -308,6 +324,36 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    // Initialize workspace configuration services
+    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
+    const configMappingService = new ConfigurationMappingService();
+    const htmlInjectionService = new HtmlInjectionService();
+    const configPersistenceService = new ConfigurationPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      configMappingService,
+      languageClientAdapter,
+      Logger,
+    );
+    const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
+
+    this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
+      extensionContext,
+      Logger,
+      vsCodeCommands,
+      vsCodeWorkspace,
+      configuration,
+      htmlInjectionService,
+      configMappingService,
+      scopeDetectionService,
+      messageHandlerFactory,
+    );
+
+    // Connect the workspace configuration provider to the language server
+    // so it can update the token in the webview when authentication completes
+    this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
+
     this.commandController = new CommandController(
       this.openerService,
       this.authService,
@@ -346,7 +392,6 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       LsScanProduct.Code,
     );
-    await configureMcpHosts(vscodeContext, configuration);
     vscodeContext.subscriptions.push(
       vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
       codeSecurityTree,
@@ -484,41 +529,66 @@ class SnykExtension extends SnykLib implements IExtension {
   }
 
   private async sendPluginInstalledEvent() {
-    // start analytics sender and send plugin installed event
-    const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
+    // Use file locking to prevent race conditions when multiple windows activate simultaneously
+    const lockService = new FileLockService(extensionContext.globalStoragePath);
 
-    const pluginInstalledSent =
-      extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
+    let shouldShowModal = false;
 
-    if (!pluginInstalledSent) {
-      const category = [];
-      category.push('install');
-      const pluginInstalleEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-      analyticsSender.logEvent(pluginInstalleEvent, () => {
-        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
-      });
+    try {
+      await lockService.withLock('plugin-installed-event', async () => {
+        // Check if plugin installed event was already sent (while holding lock)
+        const pluginInstalledSent =
+          extensionContext.getGlobalStateValue<boolean>(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT) ?? false;
 
-      const secureAtInceptionModal =
-        extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
-
-      if (!secureAtInceptionModal) {
-        await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
-        const options = ['Yes'] as const;
-        const picked = await vscode.window.showInformationMessage(
-          'Do you want to enable Snyk to automatically scan and secure AI generated code?',
-          {
-            modal: true,
-            detail:
-              ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
-          },
-          ...options,
-        );
-
-        if (picked) {
-          await configuration.setAutoConfigureMcpServer(true);
-          await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
+        if (pluginInstalledSent) {
+          return;
         }
-      }
+
+        // Start analytics sender and send plugin installed event
+        const analyticsSender = AnalyticsSender.getInstance(Logger, configuration, vsCodeCommands, this.contextService);
+
+        const category = ['install'];
+        const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+        analyticsSender.logEvent(pluginInstalledEvent, () => {});
+
+        // Check if secure at inception modal was already shown (while holding lock)
+        const secureAtInceptionModal =
+          extensionContext.getGlobalStateValue<boolean>(MEMENTO_SECURE_AT_INCEPTION_MODAL) ?? false;
+
+        if (!secureAtInceptionModal) {
+          await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+          shouldShowModal = true;
+        }
+      });
+    } catch (err) {
+      // If we fail to acquire lock (e.g., another window is handling this), just skip
+      Logger.debug(`Failed to acquire lock for plugin installed event: ${err}`);
+      return;
+    }
+
+    // Show modal outside of lock (doesn't need protection, only one window will reach here)
+    if (shouldShowModal) {
+      await this.configureSecureAtInception();
+    }
+  }
+
+  async configureSecureAtInception() {
+    await extensionContext.updateGlobalStateValue(MEMENTO_SECURE_AT_INCEPTION_MODAL, true);
+    const options = ['Yes'] as const;
+    const picked = await vscode.window.showInformationMessage(
+      'Do you want to enable Snyk to automatically scan and secure AI generated code?',
+      {
+        modal: true,
+        detail:
+          ' Consider enabling this if you’re using an AI agent in your IDE. You can customize the scan frequency on Snyk Security’s settings page.',
+      },
+      ...options,
+    );
+
+    if (picked) {
+      await configuration.setAutoConfigureMcpServer(true);
+      await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
     }
   }
 
@@ -553,6 +623,7 @@ class SnykExtension extends SnykLib implements IExtension {
         this.commandController.openLocal(path, range),
       ),
       vscode.commands.registerCommand(SNYK_INITIATE_LOGIN_COMMAND, () => this.commandController.initiateLogin()),
+      vscode.commands.registerCommand(SNYK_INITIATE_LOGOUT_COMMAND, () => this.commandController.initiateLogout()),
       vscode.commands.registerCommand(SNYK_SET_TOKEN_COMMAND, () => this.commandController.setToken()),
       vscode.commands.registerCommand(
         SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
@@ -565,7 +636,14 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
-      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, () => this.commandController.openSettings()),
+      vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
+        const useHTMLSettings = configuration.getPreviewFeature('htmlSettings');
+        if (useHTMLSettings) {
+          await this.workspaceConfigurationProvider?.showPanel();
+        } else {
+          this.commandController.openSettings();
+        }
+      }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
       ),

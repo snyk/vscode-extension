@@ -28,6 +28,10 @@ export class ExtensionContext {
     return this.acquireContext().extensionPath;
   }
 
+  get globalStoragePath(): string {
+    return this.acquireContext().globalStorageUri.fsPath;
+  }
+
   get subscriptions(): { dispose(): unknown }[] {
     return this.acquireContext().subscriptions;
   }

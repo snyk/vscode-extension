@@ -118,12 +118,4 @@ export class OssDetailPanelProvider
     this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
   }
-
-  disposePanel(): void {
-    super.disposePanel();
-  }
-
-  protected onPanelDispose(): void {
-    super.onPanelDispose();
-  }
 }

@@ -2,6 +2,7 @@ import assert from 'assert';
 import sinon from 'sinon';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -39,6 +40,7 @@ suite('Language Server: Middleware', () => {
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
       getCliPath: (): Promise<string> => Promise.resolve('/path/to/cli'),
+      getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
       getInsecure(): boolean {
         return true;
       },
@@ -55,10 +57,17 @@ suite('Language Server: Middleware', () => {
         return defaultFeaturesConfigurationStub;
       },
       severityFilter: DEFAULT_SEVERITY_FILTER,
+      riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
       issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders: () => ['/trusted/test/folder'],
       getFolderConfigs(): FolderConfig[] {
         return [];
+      },
+      getSecureAtInceptionExecutionFrequency(): string {
+        return 'Manual';
+      },
+      getAutoConfigureMcpServer(): boolean {
+        return false;
       },
     } as IConfiguration;
   });

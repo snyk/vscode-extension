@@ -6,7 +6,9 @@ import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
 import { OssService } from '../../snykOss/ossService';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
+  SNYK_INITIATE_LOGOUT_COMMAND,
   SNYK_LOGIN_COMMAND,
+  SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
   SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
@@ -57,6 +59,12 @@ export class CommandController {
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
     await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
     await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
+  }
+
+  async initiateLogout(): Promise<void> {
+    this.logger.info('Initiating logout');
+    await this.executeCommand(SNYK_INITIATE_LOGOUT_COMMAND, this.authService.initiateLogout.bind(this.authService));
+    await this.commands.executeCommand(SNYK_LOGOUT_COMMAND);
   }
 
   async setToken(): Promise<void> {

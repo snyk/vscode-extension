@@ -1,6 +1,7 @@
 import assert from 'assert';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -22,6 +23,7 @@ suite('LanguageServerSettings', () => {
         getToken: async () => 'snyk-token',
         getFeaturesConfiguration: () => ({ iacEnabled: true, codeSecurityEnabled: true }), // advisorEnabled is removed
         getCliPath: () => '/path/to/cli',
+        getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
         getAdditionalCliParameters: () => '--all-projects -d',
         getTrustedFolders: () => ['/trusted/path'],
         getInsecure: () => false,
@@ -40,8 +42,15 @@ suite('LanguageServerSettings', () => {
           return 'oauth';
         },
         severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
         issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
         scanningMode: 'scan-mode',
+        getSecureAtInceptionExecutionFrequency(): string {
+          return 'Manual';
+        },
+        getAutoConfigureMcpServer(): boolean {
+          return false;
+        },
       } as unknown as IConfiguration;
 
       const serverSettings = await LanguageServerSettings.fromConfiguration(mockConfiguration, mockUser);

@@ -5,6 +5,7 @@ import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import {
   DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
   FolderConfig,
   IConfiguration,
@@ -27,6 +28,7 @@ import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
 import { CommandsMock } from '../../mocks/commands.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
+import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -48,6 +50,7 @@ suite('Language Server', () => {
       authServiceMock,
       logger,
       downloadServiceMock,
+      {} as IMcpProvider,
       {} as IExtensionRetriever,
       {} as ISummaryProviderService,
       {} as IUriAdapter,
@@ -71,6 +74,9 @@ suite('Language Server', () => {
       getCliPath(): Promise<string | undefined> {
         return Promise.resolve('testPath');
       },
+      getCliBaseDownloadUrl(): string {
+        return 'https://downloads.snyk.io';
+      },
       getToken(): Promise<string | undefined> {
         return Promise.resolve('testToken');
       },
@@ -91,6 +97,7 @@ suite('Language Server', () => {
         return true;
       },
       severityFilter: DEFAULT_SEVERITY_FILTER,
+      riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
       issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
       getTrustedFolders(): string[] {
         return ['/trusted/test/folder'];
@@ -99,6 +106,12 @@ suite('Language Server', () => {
         return [];
       },
       scanningMode: 'auto',
+      getSecureAtInceptionExecutionFrequency(): string {
+        return 'Manual';
+      },
+      getAutoConfigureMcpServer(): boolean {
+        return false;
+      },
     } as IConfiguration;
 
     downloadServiceMock = {
@@ -248,6 +261,7 @@ suite('Language Server', () => {
           activateSnykIac: 'true',
           token: 'testToken',
           cliPath: 'testPath',
+          cliBaseDownloadURL: 'https://downloads.snyk.io',
           sendErrorReports: 'true',
           integrationName: 'VS_CODE',
           integrationVersion: '0.0.0',
@@ -258,6 +272,7 @@ suite('Language Server', () => {
           manageBinariesAutomatically: 'true',
           deviceId: user.anonymousId,
           filterSeverity: DEFAULT_SEVERITY_FILTER,
+          riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
           issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
           enableTrustedFoldersFeature: 'true',
           trustedFolders: ['/trusted/test/folder'],
@@ -268,6 +283,8 @@ suite('Language Server', () => {
           authenticationMethod: 'oauth',
           enableSnykOSSQuickFixCodeActions: 'true',
           hoverVerbosity: 1,
+          secureAtInceptionExecutionFrequency: 'Manual',
+          autoConfigureSnykMcpServer: 'false',
         };
 
         const initializationOptions = await languageServer.getInitializationOptions();
@@ -331,7 +348,7 @@ suite('Language Server', () => {
       orgMigratedFromGlobalConfig: true,
     });
 
-    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', () => {
+    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', async () => {
       const testCases = [
         {
           // User unticked the "Auto-select organization" checkbox, so preferredOrg was blanked by LS
@@ -351,7 +368,7 @@ suite('Language Server', () => {
 
       const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
       strictEqual(setAutoSelectOrganizationStub.callCount, testCases.length);
@@ -364,14 +381,14 @@ suite('Language Server', () => {
     });
 
     for (const currentAutoOrg of [true, false]) {
-      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, () => {
+      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, async () => {
         const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
         getWorkspaceFoldersStub.returns([workspaceFolder]);
         isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
 
         const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
 
-        languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+        await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
         strictEqual(setOrganizationStub.callCount, 1);
         strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
@@ -384,7 +401,7 @@ suite('Language Server', () => {
       });
     }
 
-    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', () => {
+    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', async () => {
       const testCases = [
         {
           // User blanked the org manually
@@ -404,7 +421,7 @@ suite('Language Server', () => {
 
       const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
 
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       strictEqual(setOrganizationStub.callCount, testCases.length);
       strictEqual(setAutoSelectOrganizationStub.callCount, 0);
@@ -414,7 +431,7 @@ suite('Language Server', () => {
       });
     });
 
-    test('should warn and skip folder configs without matching workspace folders', () => {
+    test('should warn and skip folder configs without matching workspace folders', async () => {
       const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
       getWorkspaceFoldersStub.returns([workspaceFolder]);
       isAutoSelectOrganizationEnabledStub.returns(true);
@@ -425,7 +442,7 @@ suite('Language Server', () => {
       ];
 
       const loggerWarnSpy = sinon.spy(logger, 'warn');
-      languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
       // Should only process the existing folder
       strictEqual(setOrganizationStub.callCount, 1);

@@ -3,6 +3,9 @@ import path from 'path';
 import { URL } from 'url';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
+import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
+import { ILanguageClientAdapter } from '../vscode/languageClient';
+import { IViewManagerService } from '../services/viewManagerService';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
@@ -16,14 +19,17 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  AUTH_METHOD_PAT,
+  AUTH_METHOD_TOKEN,
   CODE_SECURITY_ENABLED_SETTING,
-  CONFIGURATION_IDENTIFIER,
+  HTTP_CONFIGURATION_IDENTIFIER,
+  HTTP_PROXY_STRICT_SSL,
   DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
-  FOLDER_CONFIGS,
   IAC_ENABLED_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
   OSS_ENABLED_SETTING,
+  RISK_SCORE_THRESHOLD_SETTING,
   SCANNING_MODE,
   AUTO_CONFIGURE_MCP_SERVER,
   SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
@@ -93,7 +99,7 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
   openIssues: true,
 };
 
-export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
+export const DEFAULT_RISK_SCORE_THRESHOLD = 0; // Should match value in package.json.
 
 export interface SeverityFilter {
   critical: boolean;
@@ -111,7 +117,9 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-const DEFAULT_AUTO_ORGANIZATION = false; // Should match value in package.json.
+const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
+
+export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
 export type PreviewFeatures = Record<string, never>;
 
@@ -128,6 +136,8 @@ export interface IConfiguration {
   getFeatureFlag(flagName: string): boolean;
 
   setFeatureFlag(flagName: string, value: boolean): void;
+
+  getPreviewFeature(featureName: string): boolean;
 
   getToken(): Promise<string | undefined>;
 
@@ -217,6 +227,8 @@ export interface IConfiguration {
 
   issueViewOptions: IssueViewOptions;
 
+  riskScoreThreshold: number;
+
   severityFilter: SeverityFilter;
 
   scanningMode: string | undefined;
@@ -237,7 +249,7 @@ export interface IConfiguration {
 
   getFolderConfigs(): FolderConfig[];
 
-  setFolderConfigs(folderConfig: FolderConfig[]): Promise<void>;
+  setFolderConfigs(folderConfig: FolderConfig[], triggerConfigChangeEvent?: boolean): Promise<void>;
 
   getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined;
 
@@ -248,6 +260,10 @@ export interface IConfiguration {
   getAutoConfigureMcpServer(): boolean;
 
   setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void>;
+
+  setViewManagerService(viewManagerService: IViewManagerService): void;
+
+  setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void;
 }
 
 export class Configuration implements IConfiguration {
@@ -260,7 +276,37 @@ export class Configuration implements IConfiguration {
   private extensionId: string;
   private inMemoryFolderConfigs: FolderConfig[] = [];
 
-  constructor(private processEnv: NodeJS.ProcessEnv = process.env, private workspace: IVSCodeWorkspace) {}
+  constructor(
+    private processEnv: NodeJS.ProcessEnv = process.env,
+    private workspace: IVSCodeWorkspace,
+    private viewManagerService?: IViewManagerService,
+    private languageClientAdapter?: ILanguageClientAdapter,
+  ) {}
+
+  /**
+   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
+   * Returns undefined if the setting is not specifically set at the folder level.
+   */
+  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
+    const { configurationId, section } = Configuration.getConfigName(configSettingName);
+    const inspectionResult = this.workspace.inspectConfiguration<T>(configurationId, section, workspaceFolder);
+    return inspectionResult?.workspaceFolderValue;
+  }
+
+  /**
+   * Parses a setting key to extract configuration identifier and setting name.
+   * @param settingKey - The full setting key (e.g., 'snyk.advanced.cliPath')
+   * @returns An object with configurationId and section (setting name without prefix)
+   */
+  public static getConfigName(settingKey: string): {
+    configurationId: string;
+    section: string;
+  } {
+    const parts = settingKey.split('.');
+    const configurationId = parts[0];
+    const section = parts.slice(1).join('.');
+    return { configurationId, section };
+  }
 
   getExtensionId(): string {
     return this.extensionId;
@@ -272,46 +318,40 @@ export class Configuration implements IConfiguration {
 
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
-    return this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
-      releaseChannel,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL);
+    return this.workspace.updateConfiguration(configurationId, section, releaseChannel, true);
   }
 
   async setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void> {
     if (!baseDownloadUrl) return;
-    return this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL),
-      baseDownloadUrl,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL);
+    return this.workspace.updateConfiguration(configurationId, section, baseDownloadUrl, true);
   }
 
   getAutoConfigureMcpServer(): boolean {
-    const value = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(AUTO_CONFIGURE_MCP_SERVER),
-    );
+    const { configurationId, section } = Configuration.getConfigName(AUTO_CONFIGURE_MCP_SERVER);
+    const value = this.workspace.getConfiguration<boolean>(configurationId, section);
     return value ?? false;
   }
 
+  setViewManagerService(viewManagerService: IViewManagerService): void {
+    this.viewManagerService = viewManagerService;
+  }
+
+  setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void {
+    this.languageClientAdapter = languageClientAdapter;
+  }
+
   getSecureAtInceptionExecutionFrequency(): string {
-    const value = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY),
-    );
+    const { configurationId, section } = Configuration.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY);
+    const value = this.workspace.getConfiguration<string>(configurationId, section);
 
     return value ?? 'Manual';
   }
 
   async getCliReleaseChannel(): Promise<string> {
-    let releaseChannel = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL);
+    let releaseChannel = this.workspace.getConfiguration<string>(configurationId, section);
     const extensionId = this.getExtensionId();
     // If Extension is preview and has default value of release Channel we override it to preview.
     if (extensionId && extensionId.includes('preview') && releaseChannel === this.defaultCliReleaseChannel) {
@@ -324,12 +364,8 @@ export class Configuration implements IConfiguration {
   }
 
   getCliBaseDownloadUrl(): string {
-    return (
-      this.workspace.getConfiguration<string>(
-        CONFIGURATION_IDENTIFIER,
-        this.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL),
-      ) ?? this.defaultCliBaseDownloadUrl
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL);
+    return this.workspace.getConfiguration<string>(configurationId, section) ?? this.defaultCliBaseDownloadUrl;
   }
 
   getOssQuickFixCodeActionsEnabled(): boolean {
@@ -337,14 +373,13 @@ export class Configuration implements IConfiguration {
   }
 
   getSnykLanguageServerPath(): string | undefined {
-    return this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_LS_PATH),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CUSTOM_LS_PATH);
+    return this.workspace.getConfiguration<string>(configurationId, section);
   }
 
   getInsecure(): boolean {
-    const strictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+    const strictSSL =
+      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
     return !strictSSL;
   }
 
@@ -366,6 +401,12 @@ export class Configuration implements IConfiguration {
     this.featureFlag[flagName] = value;
   }
 
+  getPreviewFeature(featureName: string): boolean {
+    const { configurationId, section } = Configuration.getConfigName(FEATURES_PREVIEW_SETTING);
+    const previewFeatures = this.workspace.getConfiguration<Record<string, boolean>>(configurationId, section) ?? {};
+    return previewFeatures[featureName] ?? false;
+  }
+
   private static async getPackageJsonConfig(): Promise<{
     version: string;
     preview: boolean;
@@ -381,10 +422,8 @@ export class Configuration implements IConfiguration {
   }
 
   private get customEndpoint(): string | undefined {
-    return this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_ENDPOINT),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CUSTOM_ENDPOINT);
+    return this.workspace.getConfiguration<string>(configurationId, section);
   }
 
   get authHost(): string {
@@ -398,12 +437,8 @@ export class Configuration implements IConfiguration {
   }
 
   async setEndpoint(endpoint: string): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CUSTOM_ENDPOINT),
-      endpoint.toString(),
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CUSTOM_ENDPOINT);
+    await this.workspace.updateConfiguration(configurationId, section, endpoint.toString(), true);
   }
 
   get isFedramp(): boolean {
@@ -433,19 +468,18 @@ export class Configuration implements IConfiguration {
   }
 
   getDeltaFindingsEnabled(): boolean {
-    const value = this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(DELTA_FINDINGS));
+    const { configurationId, section } = Configuration.getConfigName(DELTA_FINDINGS);
+    const value = this.workspace.getConfiguration<string>(configurationId, section);
     return value === NEWISSUES;
   }
 
   getAuthenticationMethod(): string {
-    const setting = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_AUTHENTICATION_METHOD),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTHENTICATION_METHOD);
+    const setting = this.workspace.getConfiguration<string>(configurationId, section);
     const authMethod = setting?.toLowerCase() ?? '';
-    if (authMethod === 'api token (legacy)') {
+    if (authMethod === AUTH_METHOD_TOKEN.toLowerCase()) {
       return 'token';
-    } else if (authMethod === 'personal access token') {
+    } else if (authMethod === AUTH_METHOD_PAT.toLowerCase()) {
       return 'pat';
     } else {
       return 'oauth';
@@ -474,12 +508,8 @@ export class Configuration implements IConfiguration {
     if (!cliPath) {
       cliPath = await CliExecutable.getPath();
     }
-    return this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CLI_PATH),
-      cliPath,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_PATH);
+    return this.workspace.updateConfiguration(configurationId, section, cliPath, true);
   }
 
   async setDeltaFindingsEnabled(isEnabled: boolean): Promise<void> {
@@ -487,12 +517,8 @@ export class Configuration implements IConfiguration {
     if (!isEnabled) {
       deltaValue = ALLISSUES;
     }
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(DELTA_FINDINGS),
-      deltaValue,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(DELTA_FINDINGS);
+    await this.workspace.updateConfiguration(configurationId, section, deltaValue, true);
   }
 
   async clearToken(): Promise<void> {
@@ -507,18 +533,15 @@ export class Configuration implements IConfiguration {
   }
 
   getFeaturesConfiguration(): FeaturesConfiguration {
-    const ossEnabled = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(OSS_ENABLED_SETTING),
-    );
-    const codeSecurityEnabled = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
-    );
-    const iacEnabled = this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(IAC_ENABLED_SETTING),
-    );
+    const { configurationId: ossConfigId, section: ossSection } = Configuration.getConfigName(OSS_ENABLED_SETTING);
+    const ossEnabled = this.workspace.getConfiguration<boolean>(ossConfigId, ossSection);
+
+    const { configurationId: codeConfigId, section: codeSection } =
+      Configuration.getConfigName(CODE_SECURITY_ENABLED_SETTING);
+    const codeSecurityEnabled = this.workspace.getConfiguration<boolean>(codeConfigId, codeSection);
+
+    const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
+    const iacEnabled = this.workspace.getConfiguration<boolean>(iacConfigId, iacSection);
 
     if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(iacEnabled)) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
@@ -533,124 +556,102 @@ export class Configuration implements IConfiguration {
   }
 
   async setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(OSS_ENABLED_SETTING),
-      config?.ossEnabled,
-      true,
-    );
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(CODE_SECURITY_ENABLED_SETTING),
-      config?.codeSecurityEnabled,
-      true,
-    );
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(IAC_ENABLED_SETTING),
-      config?.iacEnabled,
-      true,
-    );
+    const { configurationId: ossConfigId, section: ossSection } = Configuration.getConfigName(OSS_ENABLED_SETTING);
+    await this.workspace.updateConfiguration(ossConfigId, ossSection, config?.ossEnabled, true);
+
+    const { configurationId: codeConfigId, section: codeSection } =
+      Configuration.getConfigName(CODE_SECURITY_ENABLED_SETTING);
+    await this.workspace.updateConfiguration(codeConfigId, codeSection, config?.codeSecurityEnabled, true);
+
+    const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
+    await this.workspace.updateConfiguration(iacConfigId, iacSection, config?.iacEnabled, true);
   }
 
   get shouldReportErrors(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_CRASH_REPORT_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(YES_CRASH_REPORT_SETTING);
+    return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
   get shouldShowWelcomeNotification(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_WELCOME_NOTIFICATION_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(YES_WELCOME_NOTIFICATION_SETTING);
+    return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
   async hideWelcomeNotification(): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(YES_WELCOME_NOTIFICATION_SETTING),
-      false,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(YES_WELCOME_NOTIFICATION_SETTING);
+    await this.workspace.updateConfiguration(configurationId, section, false, true);
   }
 
   get shouldShowAdvancedView(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_ADVANCED_MODE_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADVANCED_MODE_SETTING);
+    return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
   get shouldAutoScanOss(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_AUTOSCAN_OSS_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTOSCAN_OSS_SETTING);
+    return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
   get issueViewOptions(): IssueViewOptions {
-    const config = this.workspace.getConfiguration<IssueViewOptions>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ISSUE_VIEW_OPTIONS_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ISSUE_VIEW_OPTIONS_SETTING);
+    const config = this.workspace.getConfiguration<IssueViewOptions>(configurationId, section);
 
     return config ?? DEFAULT_ISSUE_VIEW_OPTIONS;
   }
 
+  get riskScoreThreshold(): number {
+    const { configurationId, section } = Configuration.getConfigName(RISK_SCORE_THRESHOLD_SETTING);
+    return this.workspace.getConfiguration<number>(configurationId, section) ?? DEFAULT_RISK_SCORE_THRESHOLD;
+  }
+
   get severityFilter(): SeverityFilter {
-    const config = this.workspace.getConfiguration<SeverityFilter>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SEVERITY_FILTER_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(SEVERITY_FILTER_SETTING);
+    const config = this.workspace.getConfiguration<SeverityFilter>(configurationId, section);
 
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
   isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
     return (
-      this.workspace.getConfiguration<boolean>(
-        CONFIGURATION_IDENTIFIER,
-        this.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION),
-        workspaceFolder,
-      ) ?? DEFAULT_AUTO_ORGANIZATION
+      this.workspace.getConfiguration<boolean>(configurationId, section, workspaceFolder) ?? DEFAULT_AUTO_ORGANIZATION
     );
   }
 
   async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION),
-      autoSelectOrganization,
-      workspaceFolder,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
+    await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
   }
 
   get organization(): string | undefined {
-    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(ADVANCED_ORGANIZATION));
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    const workspaceFolders = this.workspace.getWorkspaceFolders();
+    const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
+
+    // If only 1 folder in workspace, return user (global) scope only
+    if (workspaceFolders.length === 1) {
+      return inspection?.globalValue;
+    }
+
+    // If multiple folders, return workspace scope, falling back to user (global) scope
+    return inspection?.workspaceValue ?? inspection?.globalValue;
   }
 
   getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
-    return this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_ORGANIZATION),
-      workspaceFolder,
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    return this.workspace.getConfiguration<string>(configurationId, section, workspaceFolder);
   }
 
   getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined {
-    return this.workspace.inspectConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_ORGANIZATION),
-      workspaceFolder,
-    )?.workspaceFolderValue;
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    return this.workspace.inspectConfiguration<string>(configurationId, section, workspaceFolder)?.workspaceFolderValue;
   }
 
   async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
     await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_ORGANIZATION),
+      configurationId,
+      section,
       organization === '' ? undefined : organization,
       workspaceFolder,
     );
@@ -659,11 +660,8 @@ export class Configuration implements IConfiguration {
   getPreviewFeatures(): PreviewFeatures {
     const defaultSetting: PreviewFeatures = {};
 
-    const userSetting =
-      this.workspace.getConfiguration<PreviewFeatures>(
-        CONFIGURATION_IDENTIFIER,
-        this.getConfigName(FEATURES_PREVIEW_SETTING),
-      ) || {};
+    const { configurationId, section } = Configuration.getConfigName(FEATURES_PREVIEW_SETTING);
+    const userSetting = this.workspace.getConfiguration<PreviewFeatures>(configurationId, section) || {};
 
     return {
       ...defaultSetting,
@@ -672,24 +670,18 @@ export class Configuration implements IConfiguration {
   }
 
   getAdditionalCliParameters(): string | undefined {
-    return this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING);
+    return this.workspace.getConfiguration<string>(configurationId, section);
   }
 
   isAutomaticDependencyManagementEnabled(): boolean {
-    return !!this.workspace.getConfiguration<boolean>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT);
+    return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
   async getCliPath(): Promise<string> {
-    let cliPath = this.workspace.getConfiguration<string>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(ADVANCED_CLI_PATH),
-    );
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_PATH);
+    let cliPath = this.workspace.getConfiguration<string>(configurationId, section);
     if (!cliPath) {
       cliPath = await this.determineCliPath();
       await this.setCliPath(cliPath);
@@ -708,9 +700,8 @@ export class Configuration implements IConfiguration {
   }
 
   getTrustedFolders(): string[] {
-    return (
-      this.workspace.getConfiguration<string[]>(CONFIGURATION_IDENTIFIER, this.getConfigName(TRUSTED_FOLDERS)) || []
-    );
+    const { configurationId, section } = Configuration.getConfigName(TRUSTED_FOLDERS);
+    return this.workspace.getConfiguration<string[]>(configurationId, section) || [];
   }
 
   getFolderConfigs(): FolderConfig[] {
@@ -718,58 +709,36 @@ export class Configuration implements IConfiguration {
   }
 
   get scanningMode(): string | undefined {
-    return this.workspace.getConfiguration<string>(CONFIGURATION_IDENTIFIER, this.getConfigName(SCANNING_MODE));
+    const { configurationId, section } = Configuration.getConfigName(SCANNING_MODE);
+    return this.workspace.getConfiguration<string>(configurationId, section);
   }
 
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(TRUSTED_FOLDERS),
-      trustedFolders,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(TRUSTED_FOLDERS);
+    await this.workspace.updateConfiguration(configurationId, section, trustedFolders, true);
   }
 
-  async setFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
+  async setFolderConfigs(folderConfigs: FolderConfig[], triggerConfigChangeEvent: boolean = false): Promise<void> {
     this.inMemoryFolderConfigs = folderConfigs;
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(FOLDER_CONFIGS),
-      this.inMemoryFolderConfigs,
-      true,
-    );
-  }
 
-  /**
-   * Gets a configuration setting ONLY at the workspace folder level (no fallback to workspace/global).
-   * Returns undefined if the setting is not specifically set at the folder level.
-   */
-  getConfigurationAtFolderLevelOnly<T>(configSettingName: string, workspaceFolder: WorkspaceFolder): T | undefined {
-    const inspectionResult = this.workspace.inspectConfiguration<T>(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(configSettingName),
-      workspaceFolder,
-    );
-    return inspectionResult?.workspaceFolderValue;
-  }
+    // Always refresh views when folder configs change
+    if (this.viewManagerService) {
+      this.viewManagerService.refreshAllViews();
+    }
 
-  private getConfigName = (setting: string) => setting.replace(`${CONFIGURATION_IDENTIFIER}.`, '');
+    // Optionally trigger configuration change event for language server
+    if (triggerConfigChangeEvent && this.languageClientAdapter) {
+      await this.languageClientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+    }
+  }
 
   async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY),
-      frequency,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY);
+    await this.workspace.updateConfiguration(configurationId, section, frequency, true);
   }
 
   async setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void> {
-    await this.workspace.updateConfiguration(
-      CONFIGURATION_IDENTIFIER,
-      this.getConfigName(AUTO_CONFIGURE_MCP_SERVER),
-      autoConfigureMcpServer,
-      true,
-    );
+    const { configurationId, section } = Configuration.getConfigName(AUTO_CONFIGURE_MCP_SERVER);
+    await this.workspace.updateConfiguration(configurationId, section, autoConfigureMcpServer, true);
   }
 }

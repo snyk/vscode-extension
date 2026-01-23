@@ -1,5 +1,6 @@
 import { IConfiguration } from '../common/configuration/configuration';
 import { PROTOCOL_VERSION } from '../common/constants/languageServer';
+import { HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY, HTTP_PROXY_STRICT_SSL } from '../common/constants/settings';
 import { ILog } from '../common/logger/interfaces';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
 import { CliExecutable } from './cliExecutable';
@@ -10,7 +11,7 @@ import * as https from 'https';
 import { ERRORS } from '../common/constants/errors';
 
 export interface IStaticCliApi {
-  getLatestCliVersion(releaseChannel: string): Promise<string>;
+  getLatestCliVersion(releaseChannel: string, protocolVersion?: number): Promise<string>;
   downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]>;
   getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string>;
 }
@@ -39,14 +40,15 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   private configureProxy(): void {
-    const httpProxy = this.workspace.getConfiguration<string>('http', 'proxy');
-    const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+    const httpProxy = this.workspace.getConfiguration<string>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY);
+    const proxyStrictSSL =
+      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
 
     configure(httpProxy || undefined, proxyStrictSSL);
   }
 
-  private getLatestVersionDownloadUrl(releaseChannel: string): string {
-    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${PROTOCOL_VERSION}`;
+  private getLatestVersionDownloadUrl(releaseChannel: string, protocolVersion: number): string {
+    return `${this.configuration.getCliBaseDownloadUrl()}/cli/${releaseChannel}/ls-protocol-version-${protocolVersion}`;
   }
 
   private getDownloadUrl(version: string, platform: CliSupportedPlatform): string {
@@ -60,10 +62,10 @@ export class StaticCliApi implements IStaticCliApi {
     return `${this.getDownloadUrl(version, platform)}.sha256`;
   }
 
-  async getLatestCliVersion(releaseChannel: string): Promise<string> {
+  async getLatestCliVersion(releaseChannel: string, protocolVersion: number = PROTOCOL_VERSION): Promise<string> {
     try {
       const response = await xhr({
-        url: this.getLatestVersionDownloadUrl(releaseChannel),
+        url: this.getLatestVersionDownloadUrl(releaseChannel, protocolVersion),
       });
 
       if (response.status >= 200 && response.status < 300) {
@@ -78,9 +80,12 @@ export class StaticCliApi implements IStaticCliApi {
     }
   }
 
-  async downloadBinary(platform: CliSupportedPlatform): Promise<[Promise<DownloadResponse>, CancelToken]> {
+  async downloadBinary(
+    platform: CliSupportedPlatform,
+    protocolVersion: number = PROTOCOL_VERSION,
+  ): Promise<[Promise<DownloadResponse>, CancelToken]> {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
-    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel);
+    const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel, protocolVersion);
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
 
     // Create a cancel token compatible with our interface
@@ -114,7 +119,8 @@ export class StaticCliApi implements IStaticCliApi {
 
     return new Promise((resolve, reject) => {
       // Get SSL verification setting from VSCode configuration
-      const proxyStrictSSL = this.workspace.getConfiguration<boolean>('http', 'proxyStrictSSL') ?? true;
+      const proxyStrictSSL =
+        this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
 
       const options: https.RequestOptions = {
         hostname: parsedUrl.hostname,
