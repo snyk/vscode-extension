@@ -65,7 +65,7 @@ suite('CommandController', () => {
     // Arrange
     const mockOutput =
       'Checking for proxy configuration...\n\nTesting connectivity to Snyk endpoints...\n\n✓ All checks passed';
-    commandsMock.executeCommand.withArgs('snyk.performConnectivityCheck').resolves(mockOutput);
+    commandsMock.executeCommand.withArgs('snyk.collectConnectivityDiagnostics').resolves(mockOutput);
 
     // Configure mock behavior
     windowMock.showInformationMessage.resolves('Copy Results to Clipboard');
@@ -76,7 +76,7 @@ suite('CommandController', () => {
 
     // Assert
     sinon.assert.calledOnce(commandsMock.executeCommand);
-    sinon.assert.calledWith(commandsMock.executeCommand, 'snyk.performConnectivityCheck');
+    sinon.assert.calledWith(commandsMock.executeCommand, 'snyk.collectConnectivityDiagnostics');
     sinon.assert.calledOnce(windowMock.showInformationMessage);
     sinon.assert.calledWith(envMock.getClipboard().writeText, mockOutput);
   });
@@ -86,7 +86,7 @@ suite('CommandController', () => {
     const mockOutput =
       'IDE Directory Diagnostics\n\nCurrent User: testuser\n\nDirectory: /test/path\n  ✓ Exists\n  ✓ Writable';
 
-    commandsMock.executeCommand.withArgs('snyk.diagnostics.checkDirectories', sinon.match.array).resolves(mockOutput);
+    commandsMock.executeCommand.withArgs('snyk.collectDirectoryDiagnostics', sinon.match.array).resolves(mockOutput);
 
     // Configure mock behavior
     windowMock.showInformationMessage.resolves('Copy Results to Clipboard');
@@ -99,11 +99,11 @@ suite('CommandController', () => {
     sinon.assert.calledOnce(commandsMock.executeCommand);
     sinon.assert.calledWith(
       commandsMock.executeCommand,
-      'snyk.diagnostics.checkDirectories',
+      'snyk.collectDirectoryDiagnostics',
       sinon.match((dirs: { pathWanted: string; purpose: string; mayContainCLI: boolean }[]) => {
         return (
           dirs.length === 1 &&
-          dirs[0].purpose === 'VS Code Default CLI Download Location' &&
+          dirs[0].purpose === "Running IDE's Default CLI Download Location" &&
           dirs[0].mayContainCLI === true
         );
       }),

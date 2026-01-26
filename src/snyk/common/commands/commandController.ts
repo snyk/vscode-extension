@@ -210,7 +210,7 @@ export class CommandController {
   async connectivityCheck(): Promise<void> {
     try {
       // Execute the language server connectivity check command
-      const result = await this.commands.executeCommand<string>('snyk.performConnectivityCheck');
+      const result = await this.commands.executeCommand<string>('snyk.collectConnectivityDiagnostics');
 
       if (!result) {
         await this.window.showErrorMessage('Connectivity check failed to return results.');
@@ -252,7 +252,7 @@ export class CommandController {
       }
 
       // Execute the language server directory diagnostics command with additional directories
-      const result = await this.commands.executeCommand<string>('snyk.diagnostics.checkDirectories', additionalDirs);
+      const result = await this.commands.executeCommand<string>('snyk.collectDirectoryDiagnostics', additionalDirs);
 
       if (!result) {
         await this.window.showErrorMessage('Directory diagnostics failed to return results.');
