@@ -4,7 +4,7 @@ import { IConfiguration } from '../../../snyk/common/configuration/configuration
 import { SNYK_CONTEXT } from '../../../snyk/common/constants/views';
 import { IContextService } from '../../../snyk/common/services/contextService';
 import { IOpenerService } from '../../../snyk/common/services/openerService';
-import { IVSCodeCommands } from '../../../snyk/common/vscode/commands';
+import { CommandsMock } from '../mocks/commands.mock';
 import { CodeSettings, ICodeSettings } from '../../../snyk/snykCode/codeSettings';
 
 suite('Snyk Code Settings', () => {
@@ -23,7 +23,7 @@ suite('Snyk Code Settings', () => {
       viewContext: {},
     };
 
-    settings = new CodeSettings(contextService, {} as IConfiguration, {} as IOpenerService, {} as IVSCodeCommands);
+    settings = new CodeSettings(contextService, {} as IConfiguration, {} as IOpenerService, new CommandsMock());
   });
 
   teardown(() => {
