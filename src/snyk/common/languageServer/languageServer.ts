@@ -300,7 +300,7 @@ export class LanguageServer implements ILanguageServer {
 
     client.onNotification(
       SNYK_REGISTER_MCP,
-      (mcpConfig: { cmd: string; args: string[]; env: Record<string, string> }) => {
+      (mcpConfig: { command: string; args: string[]; env: Record<string, string> }) => {
         this.mcpProvider.registerMcpServer(mcpConfig);
       },
     );
