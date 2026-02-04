@@ -48,7 +48,7 @@ export type Scan = {
 };
 
 export type McpConfig = {
-  cmd: string;
+  command: string;
   args: string[];
   env: Record<string, string>;
 };

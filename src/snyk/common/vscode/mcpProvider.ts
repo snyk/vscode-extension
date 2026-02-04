@@ -19,7 +19,7 @@ export class McpProvider implements IMcpProvider {
           // @ts-expect-error backward compatibility for older VS Code versions
           const output: vscode.McpServerDefinition[][] = [];
           // @ts-expect-error backward compatibility for older VS Code versions
-          output.push(new vscode.McpStdioServerDefinition('Snyk', mcpConfig.cmd, mcpConfig.args, mcpConfig.env));
+          output.push(new vscode.McpStdioServerDefinition('Snyk', mcpConfig.command, mcpConfig.args, mcpConfig.env));
 
           return output;
         },
