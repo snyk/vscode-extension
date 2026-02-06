@@ -380,26 +380,41 @@ suite('Language Server', () => {
       });
     });
 
-    for (const currentAutoOrg of [true, false]) {
-      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, async () => {
-        const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
-        getWorkspaceFoldersStub.returns([workspaceFolder]);
-        isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
+    test('should skip writing auto-org when orgSetByUser is false and currentAutoOrg is already true (default)', async () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+      isAutoSelectOrganizationEnabledStub.returns(true);
 
-        const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
+      const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
 
-        await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
 
-        strictEqual(setOrganizationStub.callCount, 1);
-        strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
+      strictEqual(setOrganizationStub.callCount, 1);
+      strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
+      strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
 
-        // We still write it to ensure it is set at the folder level
-        strictEqual(setAutoSelectOrganizationStub.callCount, 1);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], true);
-      });
-    }
+      // Should NOT write auto-org — desired (true) matches current (true), no write needed
+      strictEqual(setAutoSelectOrganizationStub.callCount, 0);
+    });
+
+    test('should clear folder-level auto-org override when orgSetByUser is false and currentAutoOrg is false', async () => {
+      const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
+      getWorkspaceFoldersStub.returns([workspaceFolder]);
+      isAutoSelectOrganizationEnabledStub.returns(false);
+
+      const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
+
+      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
+
+      strictEqual(setOrganizationStub.callCount, 1);
+      strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
+      strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
+
+      // Should write undefined to clear the folder-level override, falling back to default (true)
+      strictEqual(setAutoSelectOrganizationStub.callCount, 1);
+      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
+      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], undefined);
+    });
 
     test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', async () => {
       const testCases = [
