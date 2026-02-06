@@ -29,54 +29,100 @@ export class DownloadService {
   }
 
   async downloadOrUpdate(): Promise<boolean> {
-    const cliInstalled = await this.isCliInstalled();
-    if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
+    this.logger.info('Starting CLI download or update check.');
+    try {
+      const cliInstalled = await this.isCliInstalled();
+      const autoManagementEnabled = this.configuration.isAutomaticDependencyManagementEnabled();
+
+      this.logger.info(
+        `CLI installed: ${cliInstalled}, automatic dependency management enabled: ${autoManagementEnabled}.`,
+      );
+
+      if (!autoManagementEnabled) {
+        this.logger.info(
+          'Automatic dependency management is disabled — skipping CLI download/update. ' +
+            'Enable "Automatic Dependency Management" in Snyk settings to allow automatic CLI updates.',
+        );
+        return false;
+      }
+
+      if (!cliInstalled) {
+        this.logger.info('CLI is not installed. Starting fresh download.');
+        const downloaded = await this.download();
+        this.logger.info(`Fresh download completed successfully: ${downloaded}.`);
+        return downloaded;
+      }
+
+      this.logger.info('CLI is already installed. Checking for available updates.');
+      const updated = await this.update();
+      this.logger.info(`Update check completed. CLI was updated: ${updated}.`);
+      return updated;
+    } finally {
+      this.logger.info('CLI download/update check finished, signaling readiness to Language Server.');
       this.downloadReady$.next();
-      return false;
     }
-
-    if (!cliInstalled) {
-      const downloaded = await this.download();
-      this.downloadReady$.next();
-      return downloaded;
-    }
-
-    const updated = await this.update();
-    this.downloadReady$.next();
-
-    return updated;
   }
 
   async download(): Promise<boolean> {
     this.logger.info(messages.startingDownload);
+    this.logger.info('Initiating CLI binary download.');
     const executable = await this.downloader.download();
     if (!executable) {
+      this.logger.error('CLI download did not produce an executable — the download may have failed or been cancelled.');
       return false;
     }
 
+    this.logger.info(
+      `CLI download successful: version ${executable.version}, checksum ${executable.checksum.checksum}.`,
+    );
     await this.setCliChecksum(executable.checksum);
     await this.setCliVersion(executable.version);
+    await this.setCurrentLspVersion();
     this.logger.info(messages.downloadFinished(executable.version));
+    this.logger.info(`Persisted CLI version ${executable.version} with protocol version ${PROTOCOL_VERSION}.`);
     return true;
   }
 
   async update(): Promise<boolean> {
     const platform = await CliExecutable.getCurrentWithArch();
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    this.logger.info(`Checking for CLI updates on platform ${platform}, release channel "${cliReleaseChannel}".`);
+
     const version = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
     if (!version) {
+      this.logger.error(
+        'The server did not return a CLI version — the version endpoint may be unavailable. Aborting update.',
+      );
       return false;
     }
+    this.logger.info(`Latest CLI version available from server: ${version}.`);
+
     const cliInstalled = await this.isCliInstalled();
     const cliVersionHasUpdated = this.hasCliVersionUpdated(version);
-    const needsUpdate = cliVersionHasUpdated || this.hasLspVersionUpdated();
+    const lspVersionHasUpdated = this.hasLspVersionUpdated();
+    const needsUpdate = cliVersionHasUpdated || lspVersionHasUpdated;
+
+    this.logger.info(
+      `Update decision: CLI installed=${cliInstalled}, CLI version changed=${cliVersionHasUpdated}, ` +
+        `protocol version changed=${lspVersionHasUpdated}, update needed=${needsUpdate}.`,
+    );
+
     if (!cliInstalled || needsUpdate) {
+      this.logger.info('An update is needed. Verifying the update is available by comparing checksums.');
       const updateAvailable = await this.isCliUpdateAvailable(platform);
       if (!updateAvailable) {
+        this.logger.info(
+          'Local CLI binary checksum already matches the latest version on the server — no download required.',
+        );
         return false;
       }
+
+      this.logger.info('Update confirmed available. Starting CLI download.');
       const executable = await this.downloader.download();
       if (!executable) {
+        this.logger.error(
+          'CLI update download did not produce an executable — the download may have failed or been cancelled.',
+        );
         return false;
       }
 
@@ -84,28 +130,57 @@ export class DownloadService {
       await this.setCliVersion(executable.version);
       await this.setCurrentLspVersion();
       this.logger.info(messages.downloadFinished(executable.version));
+      this.logger.info(
+        `Persisted updated CLI: version ${executable.version}, checksum ${executable.checksum.checksum}, protocol ${PROTOCOL_VERSION}.`,
+      );
       return true;
     }
+
+    this.logger.info(
+      'No update needed — CLI version and protocol version are both current. ' +
+        `Installed version: ${this.getCliVersion()}, latest version: ${version}, ` +
+        `stored protocol: ${this.getLsProtocolVersion()}, required protocol: ${PROTOCOL_VERSION}.`,
+    );
     return false;
   }
 
   async isCliInstalled() {
-    const cliExecutableExists = await CliExecutable.exists(await this.configuration.getCliPath());
+    const cliPath = await this.configuration.getCliPath();
+    const cliExecutableExists = await CliExecutable.exists(cliPath);
     const cliChecksumWritten = !!this.getCliChecksum();
+    const installed = cliExecutableExists && cliChecksumWritten;
 
-    return cliExecutableExists && cliChecksumWritten;
+    this.logger.info(
+      `CLI install check: path="${cliPath}", file exists on disk=${cliExecutableExists}, ` +
+        `checksum stored from previous download=${cliChecksumWritten}, considered installed=${installed}.`,
+    );
+
+    return installed;
   }
 
   private async isCliUpdateAvailable(platform: CliSupportedPlatform): Promise<boolean> {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
+    this.logger.info(
+      `Checking if a CLI update is available for platform ${platform}, release channel "${cliReleaseChannel}".`,
+    );
+
     const version = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
     if (!version) {
+      this.logger.error('The server did not return a CLI version — cannot determine if an update is available.');
       return false;
     }
+    this.logger.info(`Latest version from server: ${version}.`);
+
     const latestChecksum = await this.cliApi.getSha256Checksum(version, platform);
+    this.logger.info(`Server-side checksum for ${version} on ${platform}: ${latestChecksum}.`);
+
     const path = await this.configuration.getCliPath();
     // migration for moving from default extension path to xdg dirs.
     if (CliExecutable.isPathInExtensionDirectory(this.extensionContext.extensionPath, path)) {
+      this.logger.info(
+        `CLI binary at "${path}" is inside the old extension directory "${this.extensionContext.extensionPath}". ` +
+          'Migrating to the standard data directory.',
+      );
       try {
         await fsPromises.unlink(path);
       } catch {
@@ -114,18 +189,29 @@ export class DownloadService {
       await this.configuration.setCliPath(await CliExecutable.getPath());
       return true;
     }
+
     // Update is available if fetched checksum not matching the current one
     try {
       const checksum = await Checksum.getChecksumOf(path, latestChecksum);
+      this.logger.info(
+        `Local CLI binary checksum: ${checksum.checksum}, ` +
+          `server checksum: ${latestChecksum}, match: ${checksum.verify()}.`,
+      );
       if (checksum.verify()) {
         this.logger.info(messages.isLatest);
         return false;
       }
-    } catch {
+    } catch (error) {
       // if checksum check fails; force an update
+      this.logger.error(
+        `Could not verify local CLI binary integrity (${
+          error instanceof Error ? error.message : error
+        }). Forcing re-download.`,
+      );
       return true;
     }
 
+    this.logger.info('Local CLI binary checksum does not match the server — an update is available.');
     return true;
   }
 
@@ -138,8 +224,12 @@ export class DownloadService {
   }
 
   private hasLspVersionUpdated(): boolean {
-    const currentProtoclVersion = this.getLsProtocolVersion();
-    return currentProtoclVersion != PROTOCOL_VERSION;
+    const storedProtocolVersion = this.getLsProtocolVersion();
+    const updated = storedProtocolVersion != PROTOCOL_VERSION;
+    this.logger.info(
+      `Protocol version check: stored=${storedProtocolVersion}, required=${PROTOCOL_VERSION}, changed=${updated}.`,
+    );
+    return updated;
   }
 
   private async setCurrentLspVersion(): Promise<void> {
@@ -151,8 +241,10 @@ export class DownloadService {
   }
 
   private hasCliVersionUpdated(cliVersion: string): boolean {
-    const currentVersion = this.getCliVersion();
-    return currentVersion != cliVersion;
+    const storedVersion = this.getCliVersion();
+    const updated = storedVersion != cliVersion;
+    this.logger.info(`CLI version check: installed=${storedVersion}, latest=${cliVersion}, changed=${updated}.`);
+    return updated;
   }
 
   private getCliVersion(): string | undefined {
@@ -168,24 +260,27 @@ export class DownloadService {
    * Returns true if CLI is valid or was successfully redownloaded.
    */
   async verifyAndRepairCli(): Promise<boolean> {
+    this.logger.info('Starting CLI integrity verification.');
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
-      this.logger.info('Automatic dependency management disabled, skipping CLI verification');
+      this.logger.info('Automatic dependency management is disabled — skipping CLI verification.');
       return false;
     }
 
     try {
       const cliPath = await this.configuration.getCliPath();
       const platform = await CliExecutable.getCurrentWithArch();
+      this.logger.info(`Verifying CLI at "${cliPath}" for platform ${platform}.`);
 
       if (!platform) {
-        this.logger.error('Unsupported platform for CLI verification');
+        this.logger.error('Cannot verify CLI: the current platform is not supported.');
         return false;
       }
 
       // Check if CLI file exists
       const cliExists = await CliExecutable.exists(cliPath);
+      this.logger.info(`CLI binary exists on disk: ${cliExists}.`);
       if (!cliExists) {
-        this.logger.info('CLI binary not found, downloading...');
+        this.logger.info('CLI binary not found on disk. Downloading a fresh copy.');
         return await this.download();
       }
 
@@ -193,24 +288,30 @@ export class DownloadService {
       const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
       const latestVersion = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
       const expectedChecksum = await this.cliApi.getSha256Checksum(latestVersion, platform);
+      this.logger.info(`Expected CLI: version ${latestVersion}, checksum ${expectedChecksum}.`);
 
       // Verify the actual file checksum
       const actualChecksum = await Checksum.getChecksumOf(cliPath, expectedChecksum);
+      this.logger.info(
+        `Actual CLI binary checksum: ${actualChecksum.checksum}, matches expected: ${actualChecksum.verify()}.`,
+      );
 
       if (actualChecksum.verify()) {
-        this.logger.info('CLI checksum verification passed');
+        this.logger.info('CLI integrity verification passed — binary is valid.');
         return true;
       } else {
-        this.logger.info('CLI checksum verification failed, redownloading...');
+        this.logger.error(
+          'CLI integrity verification failed — the binary on disk does not match the expected checksum. Re-downloading.',
+        );
         return await this.download();
       }
     } catch (error) {
-      this.logger.error(`CLI verification failed: ${error}`);
-      this.logger.info('Attempting to redownload CLI...');
+      this.logger.error(`CLI verification encountered an error: ${error}`);
+      this.logger.info('Attempting to recover by re-downloading the CLI.');
       try {
         return await this.download();
       } catch (downloadError) {
-        this.logger.error(`CLI redownload failed: ${downloadError}`);
+        this.logger.error(`CLI re-download also failed: ${downloadError}`);
         return false;
       }
     }
