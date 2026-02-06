@@ -102,10 +102,10 @@ export class DownloadService {
     const lspVersionHasUpdated = this.hasLspVersionUpdated();
     const needsUpdate = cliVersionHasUpdated || lspVersionHasUpdated;
 
-    this.logger.info(
-      `Update decision: CLI installed=${cliInstalled}, CLI version changed=${cliVersionHasUpdated}, ` +
-        `protocol version changed=${lspVersionHasUpdated}, update needed=${needsUpdate}.`,
-    );
+    this.logger.info(`Update decision: CLI installed=${cliInstalled}.`);
+    this.logger.info(`Update decision: CLI version changed=${cliVersionHasUpdated}.`);
+    this.logger.info(`Update decision: protocol version changed=${lspVersionHasUpdated}.`);
+    this.logger.info(`Update decision: update needed=${needsUpdate}.`);
 
     if (!cliInstalled || needsUpdate) {
       this.logger.info('An update is needed. Verifying the update is available by comparing checksums.');
@@ -206,7 +206,7 @@ export class DownloadService {
       this.logger.error(
         `Could not verify local CLI binary integrity (${
           error instanceof Error ? error.message : error
-        }). Forcing re-download.`,
+        }). Attempting to recover by forcing a re-download.`,
       );
       return true;
     }
@@ -262,7 +262,10 @@ export class DownloadService {
   async verifyAndRepairCli(): Promise<boolean> {
     this.logger.info('Starting CLI integrity verification.');
     if (!this.configuration.isAutomaticDependencyManagementEnabled()) {
-      this.logger.info('Automatic dependency management is disabled — skipping CLI verification.');
+      this.logger.info(
+        'Automatic dependency management is disabled — skipping CLI verification. ' +
+          'Enable "Automatic Dependency Management" in Snyk settings to allow CLI integrity checks.',
+      );
       return false;
     }
 
