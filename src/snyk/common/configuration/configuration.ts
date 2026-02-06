@@ -157,8 +157,9 @@ export interface IConfiguration {
 
   /**
    * Gets the organization setting from the global & workspace scopes only.
+   * Returns empty string if not set.
    */
-  organization: string | undefined;
+  organization: string;
 
   /**
    * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
@@ -623,18 +624,18 @@ export class Configuration implements IConfiguration {
     await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
   }
 
-  get organization(): string | undefined {
+  get organization(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
     const workspaceFolders = this.workspace.getWorkspaceFolders();
     const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
 
     // If only 1 folder in workspace, return user (global) scope only
     if (workspaceFolders.length === 1) {
-      return inspection?.globalValue;
+      return inspection?.globalValue ?? '';
     }
 
     // If multiple folders, return workspace scope, falling back to user (global) scope
-    return inspection?.workspaceValue ?? inspection?.globalValue;
+    return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
   }
 
   getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
