@@ -112,20 +112,21 @@ export class DownloadService {
     this.logger.info(`Update decision: protocol version changed=${lspVersionHasUpdated}.`);
     this.logger.info(`Update decision: update needed=${needsUpdate}.`);
 
-    if (needsUpdate) {
-      this.logger.info('An update is needed. Verifying the update is available by comparing checksums.');
-      const updateAvailable = await this.isCliUpdateAvailable(platform);
-      if (!updateAvailable) {
-        this.logger.info(
-          'Local CLI binary checksum already matches the latest version on the server — no download required. ' +
-            'Persisting current metadata to avoid redundant checks on next startup.',
+    // Always verify the on-disk binary against the server, even when metadata says no update is needed.
+    // The binary could have been replaced externally or corrupted since the last download.
+    this.logger.info('Verifying on-disk binary integrity by comparing checksum with server.');
+    const updateAvailable = await this.isCliUpdateAvailable(platform);
+
+    if (updateAvailable) {
+      if (!needsUpdate) {
+        this.logger.error(
+          'Binary on disk does not match the expected checksum despite version and protocol metadata being current. ' +
+            'The binary may have been replaced or corrupted. Re-downloading.',
         );
-        await this.setCliVersion(version);
-        await this.setCurrentLspVersion();
-        return true;
+      } else {
+        this.logger.info('Update confirmed available. Starting CLI download.');
       }
 
-      this.logger.info('Update confirmed available. Starting CLI download.');
       const executable = await this.downloader.download();
       if (!executable) {
         this.logger.error(
@@ -144,11 +145,21 @@ export class DownloadService {
       return true;
     }
 
-    this.logger.info(
-      'No update needed — CLI version and protocol version are both current. ' +
-        `Installed version: ${this.getCliVersion()}, latest version: ${version}, ` +
-        `stored protocol: ${this.getLsProtocolVersion()}, required protocol: ${PROTOCOL_VERSION}.`,
-    );
+    // Binary matches the server. Persist metadata if version or protocol changed to avoid redundant checks.
+    if (needsUpdate) {
+      this.logger.info(
+        'Local CLI binary checksum already matches the latest version on the server — no download required. ' +
+          'Persisting current metadata to avoid redundant checks on next startup.',
+      );
+      await this.setCliVersion(version);
+      await this.setCurrentLspVersion();
+    } else {
+      this.logger.info(
+        'No update needed — CLI version, protocol version, and binary checksum are all current. ' +
+          `Installed version: ${this.getCliVersion()}, latest version: ${version}, ` +
+          `stored protocol: ${this.getLsProtocolVersion()}, required protocol: ${PROTOCOL_VERSION}.`,
+      );
+    }
     return true;
   }
 

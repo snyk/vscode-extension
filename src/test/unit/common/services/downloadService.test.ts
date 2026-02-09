@@ -7,7 +7,11 @@ import { IStaticCliApi } from '../../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
-import { MEMENTO_CLI_VERSION, MEMENTO_LS_PROTOCOL_VERSION } from '../../../../snyk/common/constants/globalState';
+import {
+  MEMENTO_CLI_CHECKSUM,
+  MEMENTO_CLI_VERSION,
+  MEMENTO_LS_PROTOCOL_VERSION,
+} from '../../../../snyk/common/constants/globalState';
 import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { messages } from '../../../../snyk/cli/messages/messages';
@@ -237,20 +241,29 @@ suite('DownloadService', () => {
     strictEqual(result, false, 'Should return false without throwing when CLI exists but auto-management is disabled');
   });
 
-  test('update() returns true when no update is needed', async () => {
+  test('update() returns true when no update is needed and binary matches', async () => {
     cliApi = {
       ...cliApi,
       getLatestCliVersion: sinon.stub().resolves('1.1300.0'),
+      getSha256Checksum: sinon.stub().resolves('abc123'),
     };
     // Stored version matches latest, stored protocol matches current
     contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION).returns('1.1300.0');
     contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION);
 
+    sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
+    sinon.stub(CliExecutable, 'exists').resolves(true);
+    sinon.stub(CliExecutable, 'isPathInExtensionDirectory').returns(false);
+    // Binary checksum matches server
+    sinon.stub(Checksum, 'getChecksumOf').resolves(Checksum.fromDigest('abc123', 'abc123'));
+
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
+    const downloadStub = stub(downloader, 'download');
 
     const result = await service.update();
 
     strictEqual(result, true, 'Should return true when CLI is already up-to-date');
+    strictEqual(downloadStub.called, false, 'Should not download when binary already matches');
   });
 
   test('update() persists metadata and returns true when checksum matches but metadata is stale', async () => {
@@ -280,6 +293,35 @@ suite('DownloadService', () => {
       .getCalls()
       .some((call: sinon.SinonSpyCall) => call.args[0] === MEMENTO_LS_PROTOCOL_VERSION);
     strictEqual(protocolPersisted, true, 'Should persist the current protocol version');
+  });
+
+  test('update() re-downloads when metadata matches but on-disk binary checksum does not', async () => {
+    cliApi = {
+      ...cliApi,
+      getLatestCliVersion: sinon.stub().resolves('1.1302.1'),
+      getSha256Checksum: sinon.stub().resolves('server-checksum-abc'),
+    };
+    // Metadata says everything is current (needsUpdate=false)
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_VERSION).returns('1.1302.1');
+    contextGetGlobalStateValue.withArgs(MEMENTO_LS_PROTOCOL_VERSION).returns(PROTOCOL_VERSION);
+    contextGetGlobalStateValue.withArgs(MEMENTO_CLI_CHECKSUM).returns('old-checksum');
+
+    sinon.stub(CliExecutable, 'getCurrentWithArch').resolves('macos_arm64');
+    sinon.stub(CliExecutable, 'exists').resolves(true);
+    sinon.stub(CliExecutable, 'isPathInExtensionDirectory').returns(false);
+    // On-disk binary has a DIFFERENT checksum than the server expects
+    sinon.stub(Checksum, 'getChecksumOf').resolves(Checksum.fromDigest('wrong-local-checksum', 'server-checksum-abc'));
+
+    const mockChecksum = Checksum.fromDigest('server-checksum-abc', 'server-checksum-abc');
+    const mockExecutable = { version: '1.1302.1', checksum: mockChecksum };
+
+    const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
+    const downloadStub = stub(downloader, 'download').resolves(mockExecutable as never);
+
+    const result = await service.update();
+
+    strictEqual(downloadStub.calledOnce, true, 'Should re-download when binary checksum does not match server');
+    strictEqual(result, true, 'Should return true after successful re-download');
   });
 
   test('download() shows progress notification pop-up during CLI download', async () => {
