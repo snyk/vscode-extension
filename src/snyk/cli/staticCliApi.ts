@@ -63,19 +63,23 @@ export class StaticCliApi implements IStaticCliApi {
   }
 
   async getLatestCliVersion(releaseChannel: string, protocolVersion: number = PROTOCOL_VERSION): Promise<string> {
+    const url = this.getLatestVersionDownloadUrl(releaseChannel, protocolVersion);
+    this.logger.info(`Fetching latest CLI version from "${url}".`);
     try {
-      const response = await xhr({
-        url: this.getLatestVersionDownloadUrl(releaseChannel, protocolVersion),
-      });
+      const response = await xhr({ url });
 
-      if (response.status >= 200 && response.status < 300) {
+      if (response.status >= 200 && response.status < 400) {
         // The response is plain text with the version string
-        return response.responseText.replace('\n', '').trim();
+        const version = response.responseText.replace('\n', '').trim();
+        this.logger.info(`Version endpoint responded with status ${response.status}: version "${version}".`);
+        return version;
       } else {
-        throw new Error(`Failed to fetch CLI version: ${response.status}`);
+        throw new Error(`Version endpoint returned unexpected HTTP status ${response.status}`);
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `Failed to fetch latest CLI version from "${url}": ${error instanceof Error ? error.message : error}`,
+      );
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
@@ -87,6 +91,9 @@ export class StaticCliApi implements IStaticCliApi {
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const latestCliVersion = await this.getLatestCliVersion(cliReleaseChannel, protocolVersion);
     const downloadUrl = this.getDownloadUrl(latestCliVersion, platform);
+    this.logger.info(
+      `Downloading CLI binary: version ${latestCliVersion}, platform ${platform}, url "${downloadUrl}".`,
+    );
 
     // Create a cancel token compatible with our interface
     let isCancelled = false;
@@ -156,25 +163,31 @@ export class StaticCliApi implements IStaticCliApi {
 
   async getSha256Checksum(version: string, platform: CliSupportedPlatform): Promise<string> {
     const fileName = CliExecutable.getFileName(platform);
+    const url = this.getSha256DownloadUrl(version, platform);
+    this.logger.info(`Fetching SHA-256 checksum from "${url}".`);
 
     try {
-      const response = await xhr({
-        url: this.getSha256DownloadUrl(version, platform),
-      });
+      const response = await xhr({ url });
 
       if (response.status >= 200 && response.status < 300) {
         const checksum = response.responseText.replace(fileName, '').replace('\n', '').trim();
+        this.logger.info(
+          `Checksum endpoint responded with status ${response.status}: "${checksum}" for ${version} on ${platform}.`,
+        );
 
         if (!checksum) {
+          this.logger.error(
+            'Checksum response was received but contained no valid checksum after parsing. The server response may be malformed.',
+          );
           return Promise.reject(new Error('Checksum not found'));
         }
 
         return checksum;
       } else {
-        throw new Error(`Failed to fetch checksum: ${response.status}`);
+        throw new Error(`Checksum endpoint returned unexpected HTTP status ${response.status}.`);
       }
     } catch (error) {
-      this.logger.error(`Failed to fetch checksum: ${error}`);
+      this.logger.error(`Failed to fetch checksum from "${url}": ${error instanceof Error ? error.message : error}`);
       throw error;
     }
   }

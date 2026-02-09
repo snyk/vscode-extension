@@ -30,12 +30,14 @@ export class Downloader {
   async download(): Promise<CliExecutable | null> {
     try {
       const platform = await CliExecutable.getCurrentWithArch();
+      this.logger.info(`Detected platform: ${platform}.`);
       if (platform === null) {
+        this.logger.error('Cannot download CLI: the current operating system/architecture is not supported.');
         return Promise.reject(!messages.notSupported);
       }
       return await this.getCliExecutable(platform);
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error(`CLI download failed: ${e instanceof Error ? e.message : e}`);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
@@ -43,24 +45,42 @@ export class Downloader {
   private async getCliExecutable(platform: CliSupportedPlatform): Promise<CliExecutable | null> {
     const cliPath = await this.configuration.getCliPath();
     const cliDir = path.dirname(cliPath);
+    this.logger.info(`Downloading CLI to "${cliPath}" (directory: "${cliDir}") for platform ${platform}.`);
+
     mkdirSync(cliDir, { recursive: true });
-    if (await this.binaryExists(cliPath)) {
+    const existingBinary = await this.binaryExists(cliPath);
+    this.logger.info(`Existing CLI binary at download path: ${existingBinary}.`);
+    if (existingBinary) {
+      this.logger.info('Removing existing CLI binary before downloading the new version.');
       await this.deleteFileAtPath(cliPath);
     }
+
     const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
     const cliVersion = await this.cliApi.getLatestCliVersion(cliReleaseChannel);
+    this.logger.info(`Resolved CLI version ${cliVersion} from "${cliReleaseChannel}" release channel.`);
+
     const sha256 = await this.cliApi.getSha256Checksum(cliVersion, platform);
+    this.logger.info(`Expected SHA-256 checksum for download: ${sha256}.`);
+
+    this.logger.info('Initiating CLI binary download.');
     const checksum = await this.downloadCli(cliPath, platform, sha256);
 
     if (!checksum) {
+      this.logger.error(
+        'No checksum was returned from the download — this means the download failed or was cancelled.',
+      );
       return null;
     }
 
     const checksumCorrect = checksum.verify();
+    this.logger.info(
+      `Download integrity check: actual checksum ${checksum.checksum}, expected ${sha256}, match: ${checksumCorrect}.`,
+    );
     if (!checksumCorrect) {
       return Promise.reject(messages.integrityCheckFailed);
     }
 
+    this.logger.info(`Successfully downloaded CLI version ${cliVersion}.`);
     return new CliExecutable(cliVersion, checksum);
   }
 
