@@ -43,22 +43,27 @@ export class DownloadService {
           'Automatic dependency management is disabled — skipping CLI download/update. ' +
             'Enable "Automatic Dependency Management" in Snyk settings to allow automatic CLI updates.',
         );
+        if (!cliInstalled) {
+          throw new Error(
+            'The Snyk CLI is not installed. Please download it manually or enable "Automatic Dependency Management" in Snyk settings.',
+          );
+        }
         return false;
       }
 
       if (!cliInstalled) {
         this.logger.info('CLI is not installed. Starting fresh download.');
-        const downloaded = await this.download();
-        this.logger.info(`Fresh download completed successfully: ${downloaded}.`);
-        return downloaded;
+        const freshDownloadsuccessStatus = await this.download();
+        this.logger.info(`Fresh download completed successfully: ${freshDownloadsuccessStatus}.`);
+        return freshDownloadsuccessStatus;
       }
 
       this.logger.info('CLI is already installed. Checking for available updates.');
-      const updated = await this.update();
-      this.logger.info(`Update check completed. CLI was updated: ${updated}.`);
-      return updated;
+      const cliReady = await this.update();
+      this.logger.info(`Update check completed. CLI is ready: ${cliReady}.`);
+      return cliReady;
     } finally {
-      this.logger.info('CLI download/update check finished, signaling readiness to Language Server.');
+      this.logger.info('CLI download/update check finished, signaling readiness to start Language Server.');
       this.downloadReady$.next();
     }
   }
@@ -78,8 +83,10 @@ export class DownloadService {
     await this.setCliChecksum(executable.checksum);
     await this.setCliVersion(executable.version);
     await this.setCurrentLspVersion();
-    this.logger.info(messages.downloadFinished(executable.version));
-    this.logger.info(`Persisted CLI version ${executable.version} with protocol version ${PROTOCOL_VERSION}.`);
+    const message = `${messages.downloadFinished(executable.version)} Persisted CLI version ${
+      executable.version
+    } with protocol version ${PROTOCOL_VERSION}.`;
+    this.logger.info(message);
     return true;
   }
 
@@ -97,24 +104,25 @@ export class DownloadService {
     }
     this.logger.info(`Latest CLI version available from server: ${version}.`);
 
-    const cliInstalled = await this.isCliInstalled();
     const cliVersionHasUpdated = this.hasCliVersionUpdated(version);
     const lspVersionHasUpdated = this.hasLspVersionUpdated();
     const needsUpdate = cliVersionHasUpdated || lspVersionHasUpdated;
 
-    this.logger.info(`Update decision: CLI installed=${cliInstalled}.`);
     this.logger.info(`Update decision: CLI version changed=${cliVersionHasUpdated}.`);
     this.logger.info(`Update decision: protocol version changed=${lspVersionHasUpdated}.`);
     this.logger.info(`Update decision: update needed=${needsUpdate}.`);
 
-    if (!cliInstalled || needsUpdate) {
+    if (needsUpdate) {
       this.logger.info('An update is needed. Verifying the update is available by comparing checksums.');
       const updateAvailable = await this.isCliUpdateAvailable(platform);
       if (!updateAvailable) {
         this.logger.info(
-          'Local CLI binary checksum already matches the latest version on the server — no download required.',
+          'Local CLI binary checksum already matches the latest version on the server — no download required. ' +
+            'Persisting current metadata to avoid redundant checks on next startup.',
         );
-        return false;
+        await this.setCliVersion(version);
+        await this.setCurrentLspVersion();
+        return true;
       }
 
       this.logger.info('Update confirmed available. Starting CLI download.');
@@ -141,7 +149,7 @@ export class DownloadService {
         `Installed version: ${this.getCliVersion()}, latest version: ${version}, ` +
         `stored protocol: ${this.getLsProtocolVersion()}, required protocol: ${PROTOCOL_VERSION}.`,
     );
-    return false;
+    return true;
   }
 
   async isCliInstalled() {

@@ -68,20 +68,18 @@ export class StaticCliApi implements IStaticCliApi {
     try {
       const response = await xhr({ url });
 
-      if (response.status >= 200 && response.status < 300) {
+      if (response.status >= 200 && response.status < 400) {
         // The response is plain text with the version string
         const version = response.responseText.replace('\n', '').trim();
         this.logger.info(`Version endpoint responded with status ${response.status}: version "${version}".`);
         return version;
       } else {
-        this.logger.error(`Version endpoint returned unexpected HTTP status ${response.status}.`);
-        throw new Error(`Failed to fetch CLI version: ${response.status}`);
+        throw new Error(`Version endpoint returned unexpected HTTP status ${response.status}`);
       }
     } catch (error) {
       this.logger.error(
         `Failed to fetch latest CLI version from "${url}": ${error instanceof Error ? error.message : error}`,
       );
-      this.logger.error(error);
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
@@ -186,12 +184,10 @@ export class StaticCliApi implements IStaticCliApi {
 
         return checksum;
       } else {
-        this.logger.error(`Checksum endpoint returned unexpected HTTP status ${response.status}.`);
-        throw new Error(`Failed to fetch checksum: ${response.status}`);
+        throw new Error(`Checksum endpoint returned unexpected HTTP status ${response.status}.`);
       }
     } catch (error) {
       this.logger.error(`Failed to fetch checksum from "${url}": ${error instanceof Error ? error.message : error}`);
-      this.logger.error(`Failed to fetch checksum: ${error}`);
       throw error;
     }
   }

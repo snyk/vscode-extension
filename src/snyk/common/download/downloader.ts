@@ -37,7 +37,6 @@ export class Downloader {
       }
       return await this.getCliExecutable(platform);
     } catch (e) {
-      this.logger.error(e);
       this.logger.error(`CLI download failed: ${e instanceof Error ? e.message : e}`);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
@@ -63,6 +62,7 @@ export class Downloader {
     const sha256 = await this.cliApi.getSha256Checksum(cliVersion, platform);
     this.logger.info(`Expected SHA-256 checksum for download: ${sha256}.`);
 
+    this.logger.info('Initiating CLI binary download.');
     const checksum = await this.downloadCli(cliPath, platform, sha256);
 
     if (!checksum) {

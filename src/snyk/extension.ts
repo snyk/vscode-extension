@@ -490,7 +490,7 @@ class SnykExtension extends SnykLib implements IExtension {
     // Skip LS initialization during integration tests to prevent LS interferening with tests
     if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
 
-    this.initDependencyDownload();
+    const cliReady = this.initDependencyDownload();
 
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
       vsCodeWorkspace,
