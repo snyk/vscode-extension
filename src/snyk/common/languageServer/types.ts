@@ -5,12 +5,14 @@ export enum ScanProduct {
   Code = 'code',
   OpenSource = 'oss',
   InfrastructureAsCode = 'iac',
+  Secrets = 'secrets',
 }
 
 export enum LsScanProduct {
   Code = 'Snyk Code',
   OpenSource = 'Snyk Open Source',
   InfrastructureAsCode = 'Snyk IaC',
+  Secrets = 'Snyk Secrets',
   Unknown = '',
 }
 
@@ -157,6 +159,20 @@ export type IacIssueData = {
   resolve?: string;
   references?: string[];
   customUIContent: string;
+};
+
+// Snyk Secrets
+export type SecretIssueData = {
+  key: string;
+  title: string;
+  message: string;
+  ruleId: string;
+  ruleName: string;
+  cwe: string[];
+  categories: string[];
+  cols: Point;
+  rows: Point;
+  fingerprint: string;
 };
 
 export type AutofixUnifiedDiffSuggestion = {

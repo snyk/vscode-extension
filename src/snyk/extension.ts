@@ -36,6 +36,7 @@ import {
   SNYK_VIEW_ANALYSIS_CODE_SECURITY,
   SNYK_VIEW_ANALYSIS_IAC,
   SNYK_VIEW_ANALYSIS_OSS,
+  SNYK_VIEW_ANALYSIS_SECRETS,
   SNYK_VIEW_SUMMARY,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_WELCOME,
@@ -71,6 +72,9 @@ import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeS
 import { IacService } from './snykIac/iacService';
 import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
+import { SecretsService } from './snykSecrets/secretsService';
+import SecretsIssueTreeProvider from './snykSecrets/views/secretsIssueTreeProvider';
+import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
@@ -79,7 +83,13 @@ import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvid
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
-import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
+import {
+  CodeIssueData,
+  IacIssueData,
+  LsScanProduct,
+  OssIssueData,
+  SecretIssueData,
+} from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { FileLockService } from './common/services/fileLockService';
 import { InMemory, Persisted } from './common/constants/general';
@@ -323,6 +333,28 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    const secretsSuggestionProvider = new SecretsSuggestionWebviewProvider(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+      vsCodeCommands,
+    );
+
+    this.secretsService = new SecretsService(
+      this.context,
+      configuration,
+      secretsSuggestionProvider,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      vsCodeLanguages,
+      new DiagnosticsIssueProvider<SecretIssueData>(),
+      Logger,
+    );
+
     // Initialize workspace configuration services
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configMappingService = new ConfigurationMappingService();
@@ -358,6 +390,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.authService,
       this.snykCode,
       this.iacService,
+      this.secretsService,
       this.ossService,
       vsCodeWorkspace,
       vsCodeCommands,
@@ -462,6 +495,33 @@ class SnykExtension extends SnykLib implements IExtension {
       iacSecurityTreeViewService,
     );
 
+    const secretsIssueProvider = new SecretsIssueTreeProvider(
+      Logger,
+      this.viewManagerService,
+      this.contextService,
+      this.secretsService,
+      configuration,
+      vsCodeLanguages,
+      this.folderConfigs,
+    );
+
+    const secretsTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_SECRETS, {
+      treeDataProvider: secretsIssueProvider,
+    });
+
+    const secretsTreeViewService = new ProductTreeViewService(
+      secretsTree,
+      secretsIssueProvider,
+      this.languageServer,
+      LsScanProduct.Secrets,
+    );
+
+    vscodeContext.subscriptions.push(
+      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_SECRETS, secretsIssueProvider),
+      secretsTree,
+      secretsTreeViewService,
+    );
+
     // Fill the view container to expose views for tests
     const viewContainer = this.viewManagerService.viewContainer;
     viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
@@ -479,6 +539,7 @@ class SnykExtension extends SnykLib implements IExtension {
     this.snykCode.activateWebviewProviders();
     this.iacService.activateWebviewProviders();
     this.ossService.activateWebviewProviders();
+    this.secretsService.activateWebviewProviders();
 
     // noinspection ES6MissingAwait
     void this.notificationService.init();
@@ -515,6 +576,10 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
+    await this.contextService.setContext(
+      SNYK_CONTEXT.SECRETS_ENABLED,
+      configuration.getFeaturesConfiguration()?.secretsEnabled,
+    );
 
     // Fetch feature flag to determine whether to use the new LSP-based rendering.
     // feature flags depend on the language server

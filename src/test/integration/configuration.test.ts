@@ -38,6 +38,7 @@ suite('Configuration', () => {
         ossEnabled: false,
         codeSecurityEnabled: false,
         iacEnabled: false,
+        secretsEnabled: false,
       } as FeaturesConfiguration;
 
       await configuration.setFeaturesConfiguration(featuresConfig);
@@ -52,12 +53,14 @@ suite('Configuration', () => {
         ossEnabled: true,
         codeSecurityEnabled: true,
         iacEnabled: true,
+        secretsEnabled: true,
       });
 
       const enabledFeaturesConfig = {
         ossEnabled: true,
         codeSecurityEnabled: true,
         iacEnabled: true,
+        secretsEnabled: true,
       } as FeaturesConfiguration;
       await configuration.setFeaturesConfiguration(enabledFeaturesConfig);
     }

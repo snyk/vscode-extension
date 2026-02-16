@@ -149,8 +149,15 @@
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
           },
-          "snyk.severity": {
+          "snyk.features.secretsSecurity": {
             "order": 5,
+            "type": "boolean",
+            "title": "Snyk Secrets",
+            "description": "Find and remediate hardcoded secrets in your codebase.",
+            "default": false
+          },
+          "snyk.severity": {
+            "order": 6,
             "type": "object",
             "default": {
               "critical": true,
@@ -411,6 +418,11 @@
           "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
+          "id": "snyk.views.analysis.secrets",
+          "name": "Secrets",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:secretsEnabled && snyk:workspaceFound && !snyk:error"
+        },
+        {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
           "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
@@ -461,12 +473,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration' || view == 'snyk.views.analysis.secrets'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration' || view == 'snyk.views.analysis.secrets'",
           "group": "navigation"
         }
       ],

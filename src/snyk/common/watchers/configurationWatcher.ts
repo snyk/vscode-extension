@@ -11,6 +11,7 @@ import {
   ADVANCED_ORGANIZATION,
   IAC_ENABLED_SETTING,
   OSS_ENABLED_SETTING,
+  SECRETS_ENABLED_SETTING,
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
   ADVANCED_AUTHENTICATION_METHOD,
@@ -55,6 +56,12 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllCodeAnalysisViews();
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
+    } else if (key === SECRETS_ENABLED_SETTING) {
+      await extension.contextService.setContext(
+        SNYK_CONTEXT.SECRETS_ENABLED,
+        configuration.getFeaturesConfiguration()?.secretsEnabled,
+      );
+      return extension.viewManagerService.refreshSecretsView();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
@@ -99,6 +106,7 @@ class ConfigurationWatcher implements IWatcher {
         OSS_ENABLED_SETTING,
         CODE_SECURITY_ENABLED_SETTING,
         IAC_ENABLED_SETTING,
+        SECRETS_ENABLED_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
         ADVANCED_CLI_PATH,
         ADVANCED_CLI_RELEASE_CHANNEL,

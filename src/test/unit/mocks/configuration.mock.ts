@@ -4,4 +4,5 @@ export const defaultFeaturesConfigurationStub: FeaturesConfiguration = {
   ossEnabled: false,
   codeSecurityEnabled: true,
   iacEnabled: true,
+  secretsEnabled: true,
 };

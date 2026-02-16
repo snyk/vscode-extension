@@ -3,6 +3,7 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
+import { SecretIssueCommandArg } from '../../snykSecrets/views/interfaces';
 import { OssService } from '../../snykOss/ossService';
 import {
   SNYK_INITIATE_LOGIN_COMMAND,
@@ -17,7 +18,7 @@ import {
 import { COMMAND_DEBOUNCE_INTERVAL } from '../constants/general';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILanguageServer } from '../languageServer/languageServer';
-import { CodeIssueData, IacIssueData, PresentableError } from '../languageServer/types';
+import { CodeIssueData, IacIssueData, PresentableError, SecretIssueData } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
 import { IOpenerService } from '../services/openerService';
 import { IProductService } from '../services/productService';
@@ -39,6 +40,7 @@ export class CommandController {
     private authService: IAuthenticationService,
     private snykCode: IProductService<CodeIssueData>,
     private iacService: IProductService<IacIssueData>,
+    private secretsService: IProductService<SecretIssueData>,
     private ossService: OssService,
     private workspace: IVSCodeWorkspace,
     private commands: IVSCodeCommands,
@@ -167,6 +169,21 @@ export class CommandController {
 
       try {
         await this.iacService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
+      } catch (e) {
+        ErrorHandler.handle(e, this.logger);
+      }
+    } else if (arg.issueType == OpenCommandIssueType.SecretsIssue) {
+      const issueArgs = arg.issue as SecretIssueCommandArg;
+      const issue = this.secretsService.getIssue(issueArgs.folderPath, issueArgs.id);
+      if (!issue) {
+        this.logger.warn(`Failed to find the issue ${issueArgs.id}.`);
+        return;
+      }
+
+      await this.openLocalFile(issue.filePath, issueArgs.range);
+
+      try {
+        await this.secretsService.showSuggestionProvider(issueArgs.folderPath, issueArgs.id);
       } catch (e) {
         ErrorHandler.handle(e, this.logger);
       }

@@ -10,6 +10,7 @@ export const SNYK_VIEW_SUGGESTION_CODE = 'snyk.views.suggestion.code';
 export const SNYK_VIEW_SUGGESTION_OSS = 'snyk.views.suggestion.oss';
 export const SNYK_VIEW_SUGGESTION_IAC = 'snyk.views.suggestion.iac';
 export const SNYK_VIEW_ANALYSIS_IAC = 'snyk.views.analysis.configuration';
+export const SNYK_VIEW_ANALYSIS_SECRETS = 'snyk.views.analysis.secrets';
 
 // Having multiple boolean contexts instead of a single context
 // with multiple values helps us to avoid flickering UI.
@@ -26,6 +27,7 @@ export const SNYK_CONTEXT = {
   ADVANCED: 'advanced',
   DELTA_FINDINGS_ENABLED: 'deltaFindingsEnabled',
   SCANSUMMARY: 'scanSummaryHtml',
+  SECRETS_ENABLED: 'secretsEnabled',
 };
 
 export const SNYK_ANALYSIS_STATUS = {
@@ -36,4 +38,5 @@ export const SNYK_ANALYSIS_STATUS = {
   OSS_DISABLED: 'Snyk Open Source Security is disabled. Enable it in settings to use it.',
   CODE_SECURITY_DISABLED: 'Snyk Code Security is disabled. Enable it in settings to use it.',
   IAC_DISABLED: 'Snyk Configuration is disabled. Enable it in settings to use it.',
+  SECRETS_DISABLED: 'Snyk Secrets is disabled. Enable it in settings to use it.',
 };

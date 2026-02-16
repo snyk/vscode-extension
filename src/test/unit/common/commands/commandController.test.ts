@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { CommandController } from '../../../../snyk/common/commands/commandController';
-import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
+import { CodeIssueData, IacIssueData, SecretIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IProductService } from '../../../../snyk/common/services/productService';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
@@ -25,6 +25,7 @@ suite('CommandController', () => {
       {} as IAuthenticationService,
       {} as IProductService<CodeIssueData>,
       {} as IProductService<IacIssueData>,
+      {} as IProductService<SecretIssueData>,
       {} as OssService,
       {} as IVSCodeWorkspace,
       {} as IVSCodeCommands,

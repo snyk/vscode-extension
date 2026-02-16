@@ -7,6 +7,7 @@ export interface IContextService {
   shouldShowCodeAnalysis: boolean;
   shouldShowOssAnalysis: boolean;
   shouldShowIacAnalysis: boolean;
+  shouldShowSecretsAnalysis: boolean;
 
   setContext(key: string, value: unknown): Promise<void>;
 }
@@ -34,6 +35,10 @@ export class ContextService implements IContextService {
 
   get shouldShowIacAnalysis(): boolean {
     return this.shouldShowAnalysis;
+  }
+
+  get shouldShowSecretsAnalysis(): boolean {
+    return this.shouldShowAnalysis && !!this.viewContext[SNYK_CONTEXT.SECRETS_ENABLED];
   }
 
   private get shouldShowAnalysis(): boolean {
