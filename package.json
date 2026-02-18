@@ -149,11 +149,11 @@
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
           },
-          "snyk.features.secretsSecurity": {
+          "snyk.features.secrets": {
             "order": 5,
             "type": "boolean",
             "title": "Snyk Secrets",
-            "description": "Find and remediate hardcoded secrets in your codebase.",
+            "description": "[Closed Beta] Find and remediate hardcoded secrets in your codebase.",
             "default": false
           },
           "snyk.severity": {
