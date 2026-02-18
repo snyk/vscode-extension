@@ -3,8 +3,11 @@ import { Command, Range } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
 import { configuration } from '../../common/configuration/instance';
-import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
+import { SNYK_OPEN_ISSUE_COMMAND, VSCODE_GO_TO_SETTINGS_COMMAND } from '../../common/constants/commands';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
+import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
+import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../../common/constants/general';
+import { messages as analysisMessages } from '../../common/messages/analysisMessages';
 import { Issue, SecretIssueData } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
@@ -130,7 +133,10 @@ export default class SecretsIssueTreeProvider extends ProductIssueTreeProvider<S
 
   getRunTestMessage = () => messages.runTest;
 
-  getIssueTitle = (issue: Issue<SecretIssueData>) => issue.title;
+  getIssueTitle(issue: Issue<SecretIssueData>): string {
+    const prefix = issue.isIgnored ? '[ Ignored ] ' : '';
+    return prefix + issue.title;
+  }
 
   getIssueRange(issue: Issue<SecretIssueData>): Range {
     return this.languages.createRange(
@@ -162,5 +168,63 @@ export default class SecretsIssueTreeProvider extends ProductIssueTreeProvider<S
         } as OpenIssueCommandArg,
       ],
     };
+  }
+
+  protected getIssueFoundText(totalIssueCount: number, openIssueCount: number, ignoredIssueCount: number): string {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    if (!isIgnoresEnabled) {
+      return super.getIssueFoundText(totalIssueCount, openIssueCount, ignoredIssueCount);
+    }
+
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+    const showingIgnored = this.configuration.issueViewOptions.ignoredIssues;
+
+    const openIssuesText = `${openIssueCount} open issue${openIssueCount === 1 ? '' : 's'}`;
+    const ignoredIssuesText = `${ignoredIssueCount} ignored issue${ignoredIssueCount === 1 ? '' : 's'}`;
+
+    if (showingOpen && showingIgnored) {
+      if (totalIssueCount === 0) {
+        return analysisMessages.congratsNoIssuesFound;
+      }
+      if (ignoredIssueCount === 0) {
+        return `✋ ${openIssuesText}`;
+      }
+      return `✋ ${openIssuesText} & ${ignoredIssuesText}`;
+    }
+    if (showingOpen) {
+      return openIssueCount === 0 ? analysisMessages.congratsNoOpenIssuesFound : `✋ ${openIssuesText}`;
+    }
+    if (showingIgnored) {
+      return ignoredIssueCount === 0
+        ? analysisMessages.noIgnoredIssues
+        : `✋ ${ignoredIssuesText}, open issues are disabled`;
+    }
+    return analysisMessages.openAndIgnoredIssuesAreDisabled;
+  }
+
+  protected getNoIssueViewOptionsSelectedTreeNode(): TreeNode | null {
+    const isIgnoresEnabled = this.configuration.getFeatureFlag(FEATURE_FLAGS.consistentIgnores);
+    if (!isIgnoresEnabled) {
+      return null;
+    }
+
+    const showingOpen = this.configuration.issueViewOptions.openIssues;
+    const showingIgnored = this.configuration.issueViewOptions.ignoredIssues;
+    const settingsCommand = {
+      command: VSCODE_GO_TO_SETTINGS_COMMAND,
+      title: '',
+      arguments: [`@ext:${SNYK_PUBLISHER}.${SNYK_NAME_EXTENSION} snyk.issueViewOptions`],
+    };
+
+    if (!showingOpen && !showingIgnored) {
+      return new TreeNode({ text: analysisMessages.allIssueViewOptionsDisabled, command: settingsCommand });
+    }
+    if (!showingOpen) {
+      return new TreeNode({ text: analysisMessages.openIssueViewOptionDisabled, command: settingsCommand });
+    }
+    if (!showingIgnored) {
+      return new TreeNode({ text: analysisMessages.ignoredIssueViewOptionDisabled, command: settingsCommand });
+    }
+    return null;
   }
 }
