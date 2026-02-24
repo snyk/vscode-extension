@@ -70,7 +70,7 @@ export class SecretsSuggestionWebviewProvider
         vscode.Uri.file(this.context.extensionPath),
         'media',
         'images',
-        'snyk-code.svg',
+        'snyk-secrets.svg',
       );
 
       await this.panel.webview.postMessage({ type: 'set', args: issue });
