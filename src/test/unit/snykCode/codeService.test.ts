@@ -13,7 +13,7 @@ import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { SnykCodeService } from '../../../snyk/snykCode/codeService';
 import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/interfaces';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
-import { languagesMock } from '../mocks/languages.mock';
+import { LanguagesMock } from '../mocks/languages.mock';
 import { LoggerMock } from '../mocks/logger.mock';
 import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsService';
 
@@ -44,7 +44,7 @@ suite('Code Service', () => {
       } as IVSCodeWorkspace,
       new WorkspaceTrust(),
       ls,
-      languagesMock,
+      new LanguagesMock(),
       {} as IDiagnosticsIssueProvider<CodeIssueData>,
       new LoggerMock(),
       {} as IFolderConfigs,

@@ -1,5 +1,7 @@
 import _ from 'lodash';
+import * as path from 'path';
 import { IAuthenticationService } from '../../base/services/authenticationService';
+import { CliExecutable } from '../../cli/cliExecutable';
 import { createDCIgnore as createDCIgnoreUtil } from '../../snykCode/utils/ignoreFileUtils';
 import { CodeIssueCommandArg } from '../../snykCode/views/interfaces';
 import { IacIssueCommandArg } from '../../snykIac/views/interfaces';
@@ -202,6 +204,75 @@ export class CommandController {
       if (result === copyButton) {
         await this.env.getClipboard().writeText(presentableError.error);
       }
+    }
+  }
+
+  async connectivityCheck(): Promise<void> {
+    try {
+      // Execute the language server connectivity check command
+      const result = await this.commands.executeCommand<string>('snyk.diagnostics.checkConnectivity');
+
+      if (!result) {
+        await this.window.showErrorMessage('Connectivity check failed to return results.');
+        return;
+      }
+
+      const copyButton = 'Copy Results to Clipboard';
+      const response = await this.window.showInformationMessage(
+        'Snyk Connectivity Check Results',
+        {
+          modal: true,
+        },
+        copyButton,
+      );
+
+      if (response === copyButton) {
+        await this.env.getClipboard().writeText(result);
+      }
+    } catch (error) {
+      ErrorHandler.handle(error, this.logger, 'Connectivity check failed');
+    }
+  }
+
+  async directoryDiagnostics(): Promise<void> {
+    try {
+      // Build additional directories to check based on VS Code configuration
+      const additionalDirs: { pathWanted: string; purpose: string; mayContainCLI: boolean }[] = [];
+
+      // Add VS Code's default CLI download location
+      // This is the path VS Code uses when no custom path is configured
+      const defaultCliPath = await CliExecutable.getPath();
+      if (defaultCliPath) {
+        const defaultCliDir = path.dirname(defaultCliPath);
+        additionalDirs.push({
+          pathWanted: defaultCliDir,
+          purpose: "Running IDE's Default CLI Download Location",
+          mayContainCLI: true,
+        });
+      }
+
+      // Execute the language server directory diagnostics command with additional directories
+      const result = await this.commands.executeCommand<string>('snyk.diagnostics.checkDirectories', additionalDirs);
+
+      if (!result) {
+        await this.window.showErrorMessage('Directory diagnostics failed to return results.');
+        return;
+      }
+
+      const copyButton = 'Copy Results to Clipboard';
+      const response = await this.window.showInformationMessage(
+        'Snyk Directory Diagnostics Results',
+        {
+          modal: true,
+        },
+        copyButton,
+      );
+
+      if (response === copyButton) {
+        await this.env.getClipboard().writeText(result);
+      }
+    } catch (error) {
+      ErrorHandler.handle(error, this.logger, 'Directory diagnostics failed');
     }
   }
 

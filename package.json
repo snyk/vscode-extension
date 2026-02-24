@@ -536,6 +536,16 @@
         "command": "snyk.clearPersistedCache",
         "title": "Clear Persisted Cache",
         "category": "Snyk"
+      },
+      {
+        "command": "snyk.collectConnectivityDiagnostics",
+        "title": "Collect Connectivity Diagnostics",
+        "category": "Snyk"
+      },
+      {
+        "command": "snyk.collectDirectoryDiagnostics",
+        "title": "Collect Directory Diagnostics",
+        "category": "Snyk"
       }
     ]
   },
