@@ -85,7 +85,7 @@ import {
   IacIssueData,
   LsScanProduct,
   OssIssueData,
-  SecretIssueData,
+  SecretsIssueData,
 } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { FileLockService } from './common/services/fileLockService';
@@ -367,7 +367,7 @@ class SnykExtension extends SnykLib implements IExtension {
       this.workspaceTrust,
       this.languageServer,
       vsCodeLanguages,
-      new DiagnosticsIssueProvider<SecretIssueData>(),
+      new DiagnosticsIssueProvider<SecretsIssueData>(),
       Logger,
     );
 

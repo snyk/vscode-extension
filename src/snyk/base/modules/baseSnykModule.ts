@@ -3,7 +3,7 @@ import { FolderConfigs, IFolderConfigs } from '../../common/configuration/folder
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
-import { CodeIssueData, IacIssueData, SecretIssueData } from '../../common/languageServer/types';
+import { CodeIssueData, IacIssueData, SecretsIssueData } from '../../common/languageServer/types';
 import { IClearCacheService } from '../../common/services/CacheService';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
@@ -60,7 +60,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected codeSettings: ICodeSettings;
 
   iacService: IProductService<IacIssueData>;
-  protected secretsService: IProductService<SecretIssueData>;
+  protected secretsService: IProductService<SecretsIssueData>;
 
   readonly loadingBadge: ILoadingBadge;
   protected user: User;

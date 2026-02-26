@@ -187,7 +187,7 @@ export type ShowIssueDetailTopicParams = {
 };
 
 // Snyk Secrets
-export type SecretIssueData = {
+export type SecretsIssueData = {
   key: string;
   title: string;
   message: string;

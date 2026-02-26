@@ -5,7 +5,7 @@ import {
   SNYK_SUBMIT_IGNORE_COMMAND,
 } from '../../../common/constants/commands';
 import { ErrorHandler } from '../../../common/error/errorHandler';
-import { Issue, SecretIssueData as SecretsIssueData } from '../../../common/languageServer/types';
+import { Issue, SecretsIssueData as SecretsIssueData } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
 import { getNonce } from '../../../common/views/nonce';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
