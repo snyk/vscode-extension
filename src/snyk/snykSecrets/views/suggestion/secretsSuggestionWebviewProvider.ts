@@ -16,6 +16,8 @@ import { IVSCodeWorkspace } from '../../../common/vscode/workspace';
 import { readFileSync } from 'fs';
 import { IVSCodeCommands } from '../../../common/vscode/commands';
 
+type SecretsMessage = { type: string; args?: Record<string, unknown>; value?: unknown };
+
 const SNYK_VIEW_SUGGESTION_SECRETS = 'snyk.views.suggestion.secrets';
 
 export class SecretsSuggestionWebviewProvider
@@ -124,10 +126,14 @@ document.getElementById('position-line')?.addEventListener('click', function() {
 
     this.panel.onDidDispose(() => this.onPanelDispose(), null, this.disposables);
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
-    this.panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg), undefined, this.disposables);
+    this.panel.webview.onDidReceiveMessage(
+      (msg: SecretsMessage) => this.handleMessage(msg),
+      undefined,
+      this.disposables,
+    );
   }
 
-  private async handleMessage(message: { type: string; args?: Record<string, unknown>; value?: unknown }) {
+  private async handleMessage(message: SecretsMessage) {
     try {
       switch (message.type) {
         case 'openBrowser': {
