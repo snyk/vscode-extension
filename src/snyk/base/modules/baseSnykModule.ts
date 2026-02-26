@@ -3,7 +3,7 @@ import { FolderConfigs, IFolderConfigs } from '../../common/configuration/folder
 import { IWorkspaceTrust, WorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { ExperimentService } from '../../common/experiment/services/experimentService';
 import { ILanguageServer } from '../../common/languageServer/languageServer';
-import { CodeIssueData, IacIssueData } from '../../common/languageServer/types';
+import { CodeIssueData, IacIssueData, SecretIssueData } from '../../common/languageServer/types';
 import { IClearCacheService } from '../../common/services/CacheService';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
@@ -26,6 +26,7 @@ import { IAuthenticationService } from '../services/authenticationService';
 import { ScanModeService } from '../services/scanModeService';
 import SnykStatusBarItem, { IStatusBarItem } from '../statusBarItem/statusBarItem';
 import { ISummaryProviderService } from '../summary/summaryProviderService';
+import { ITreeViewProviderService } from '../treeView/treeViewProviderService';
 import { ILoadingBadge, LoadingBadge } from '../views/loadingBadge';
 import { IBaseSnykModule } from './interfaces';
 
@@ -37,6 +38,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected readonly editorsWatcher: IWatcher;
   protected configurationWatcher: IWatcher;
   protected summaryProviderService: ISummaryProviderService;
+  protected treeViewProviderService: ITreeViewProviderService;
   readonly contextService: IContextService;
   cacheService: IClearCacheService;
   readonly openerService: IOpenerService;
@@ -58,6 +60,7 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   protected codeSettings: ICodeSettings;
 
   iacService: IProductService<IacIssueData>;
+  protected secretsService: IProductService<SecretIssueData>;
 
   readonly loadingBadge: ILoadingBadge;
   protected user: User;

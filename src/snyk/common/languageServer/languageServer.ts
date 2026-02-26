@@ -10,7 +10,9 @@ import {
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
   SNYK_SCANSUMMARY,
+  SNYK_TREEVIEW,
 } from '../constants/languageServer';
+import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -25,6 +27,7 @@ import { LanguageServerSettings, ServerSettings } from './settings';
 import { Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
+import { ITreeViewProviderService } from '../../base/treeView/treeViewProviderService';
 import { GeminiIntegrationService } from '../llm/geminiIntegrationService';
 import { IUriAdapter } from '../vscode/uri';
 import { IMarkdownStringAdapter } from '../vscode/markdownString';
@@ -94,6 +97,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
+    private readonly treeViewProvider?: ITreeViewProviderService,
   ) {
     this.downloadService = downloadService;
 
@@ -177,7 +181,16 @@ export class LanguageServer implements ILanguageServer {
       synchronize: {
         configurationSection: CONFIGURATION_IDENTIFIER,
       },
-      middleware: new LanguageClientMiddleware(this.logger, this.configuration, this.user, this.showIssueDetailTopic$),
+      middleware: new LanguageClientMiddleware(
+        this.logger,
+        this.configuration,
+        this.user,
+        this.showIssueDetailTopic$,
+        async (uriString, selection) => {
+          const uri = this.uriAdapter.parse(uriString);
+          await this.codeCommands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, selection);
+        },
+      ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
        * See: https://github.com/microsoft/vscode-languageserver-node/blob/cdf4d6fdaefe329ce417621cf0f8b14e0b9bb39d/client/src/common/client.ts#L2789
@@ -304,6 +317,12 @@ export class LanguageServer implements ILanguageServer {
         this.mcpProvider.registerMcpServer(mcpConfig);
       },
     );
+
+    client.onNotification(SNYK_TREEVIEW, ({ treeViewHtml }: { treeViewHtml: string }) => {
+      if (this.treeViewProvider) {
+        this.treeViewProvider.updateTreeViewPanel(treeViewHtml);
+      }
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

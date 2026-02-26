@@ -14,3 +14,4 @@ export const SNYK_SCAN = '$/snyk.scan';
 export const SNYK_FOLDERCONFIG = '$/snyk.folderConfigs';
 export const SNYK_SCANSUMMARY = '$/snyk.scanSummary';
 export const SNYK_REGISTER_MCP = '$/snyk.registerMcp';
+export const SNYK_TREEVIEW = '$/snyk.treeView';
