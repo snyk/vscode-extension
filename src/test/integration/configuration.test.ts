@@ -38,6 +38,7 @@ suite('Configuration', () => {
         ossEnabled: false,
         codeSecurityEnabled: false,
         iacEnabled: false,
+        secretsEnabled: false,
       } as FeaturesConfiguration;
 
       await configuration.setFeaturesConfiguration(featuresConfig);
