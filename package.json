@@ -615,11 +615,11 @@
     "@babel/traverse": "^7.23.9",
     "@babel/types": "^7.23.9",
     "@deepcode/dcignore": "^1.0.4",
-    "glob": "^9.3.5",
+    "glob": "^12.0.0",
     "he": "^1.2.0",
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "marked": "^11.2.0",
     "needle": "^3.3.1",
     "open": "^7.4.2",
@@ -628,7 +628,7 @@
     "string-argv": "^0.3.2",
     "uuid": "^8.3.2",
     "validate-npm-package-name": "^3.0.0",
-    "vscode-languageclient": "8.1.0",
+    "vscode-languageclient": "9.0.1",
     "vscode-languageserver-textdocument": "^1.0.10"
   }
 }
