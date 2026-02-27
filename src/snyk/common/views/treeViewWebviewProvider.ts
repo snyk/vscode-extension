@@ -52,6 +52,22 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
     };
     this.webviewView.webview.onDidReceiveMessage((msg: TreeViewCommandMessage) => this.handleMessage(msg));
+    this.showInitializingContent();
+  }
+
+  private showInitializingContent() {
+    if (!this.webviewView) return;
+    const nonce = getNonce();
+    const initHtmlPath = vscode.Uri.joinPath(
+      vscode.Uri.file(this.context.extensionPath),
+      'media',
+      'views',
+      'treeView',
+      'TreeViewInit.html',
+    );
+    let html = readFileSync(initHtmlPath.fsPath, 'utf8');
+    html = html.replace(/\${nonce}/g, nonce);
+    this.webviewView.webview.html = html;
   }
 
   private async handleMessage(message: TreeViewCommandMessage) {
