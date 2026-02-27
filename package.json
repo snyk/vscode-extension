@@ -612,5 +612,10 @@
     "validate-npm-package-name": "^3.0.0",
     "vscode-languageclient": "9.0.1",
     "vscode-languageserver-textdocument": "^1.0.10"
+  },
+  "overrides": {
+    "vscode-languageclient": {
+      "minimatch": "==5.1.7"
+    }
   }
 }
