@@ -628,7 +628,7 @@
     "string-argv": "^0.3.2",
     "uuid": "^8.3.2",
     "validate-npm-package-name": "^3.0.0",
-    "vscode-languageclient": "9.0.1",
+    "vscode-languageclient": "8.1.0",
     "vscode-languageserver-textdocument": "^1.0.10"
   },
   "overrides": {
