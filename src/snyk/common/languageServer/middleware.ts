@@ -1,8 +1,10 @@
 import { IConfiguration } from '../configuration/configuration';
+import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
 import { productToLsProduct } from '../services/mappings';
 import { isEnumStringValueOf, isThenable } from '../tsUtil';
 import { User } from '../user';
+import { IVSCodeCommands } from '../vscode/commands';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -14,15 +16,10 @@ import type {
   WindowMiddleware,
   WorkspaceMiddleware,
 } from '../vscode/types';
+import { IUriAdapter } from '../vscode/uri';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
-
-export type LspRange = {
-  start: { line: number; character: number };
-  end: { line: number; character: number };
-};
-export type OpenFileInEditorFn = (uri: string, selection?: LspRange) => Promise<void>;
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
@@ -38,8 +35,14 @@ export class LanguageClientMiddleware implements Middleware {
     private configuration: IConfiguration,
     private user: User,
     private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
-    private openFileInEditor?: OpenFileInEditorFn,
+    private uriAdapter: IUriAdapter,
+    private commands: IVSCodeCommands,
   ) {}
+
+  private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
+    const uri = this.uriAdapter.parse(uriString);
+    await this.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, selection);
+  }
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (
@@ -78,8 +81,8 @@ export class LanguageClientMiddleware implements Middleware {
 
       // Looking for 'snyk://filePath?product=Snyk+Code&issueId=123abc456&action=showInDetailPanel'
       if (uri.protocol !== 'snyk:' || uri.searchParams.get('action') !== SnykURIAction.ShowInDetailPanel) {
-        if (this.openFileInEditor && uri.protocol === 'file:') {
-          await this.openFileInEditor(params.uri, params.selection as LspRange | undefined);
+        if (uri.protocol === 'file:') {
+          await this.openFileInEditor(params.uri, params.selection);
           return { success: true };
         }
         return await callNext(params);

@@ -18,6 +18,8 @@ import type {
   ShowDocumentParams,
   ShowDocumentRequestHandlerSignature,
 } from '../../../../snyk/common/vscode/types';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
+import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
@@ -82,6 +84,8 @@ suite('Language Server: Middleware', () => {
       configuration,
       user,
       new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
     );
     const params: ConfigurationParams = {
       items: [
@@ -127,6 +131,8 @@ suite('Language Server: Middleware', () => {
       configuration,
       user,
       new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
     );
     const params: ConfigurationParams = {
       items: [
@@ -170,6 +176,8 @@ suite('Language Server: Middleware', () => {
       {} as IConfiguration,
       {} as User,
       showIssueDetailTopic$,
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
     );
     const params: ShowDocumentParams = {
       uri: `snyk:///fake/file/path?product=${product.replaceAll(' ', '+')}&issueId=${issueId}&action=${
@@ -180,6 +188,7 @@ suite('Language Server: Middleware', () => {
       return { success: false };
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const res = await middleware.window.showDocument?.(params, failOnNextHandler);
     if (res === undefined) {
       assert.fail('Failed to call showDocument');

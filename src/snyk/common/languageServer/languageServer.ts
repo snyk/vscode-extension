@@ -12,7 +12,6 @@ import {
   SNYK_SCANSUMMARY,
   SNYK_TREEVIEW,
 } from '../constants/languageServer';
-import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -186,10 +185,8 @@ export class LanguageServer implements ILanguageServer {
         this.configuration,
         this.user,
         this.showIssueDetailTopic$,
-        async (uriString, selection) => {
-          const uri = this.uriAdapter.parse(uriString);
-          await this.codeCommands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, selection);
-        },
+        this.uriAdapter,
+        this.codeCommands,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
