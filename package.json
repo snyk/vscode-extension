@@ -149,8 +149,15 @@
             "description": "Find and fix your IaC misconfigurations.",
             "default": true
           },
-          "snyk.severity": {
+          "snyk.features.secrets": {
             "order": 5,
+            "type": "boolean",
+            "title": "Snyk Secrets",
+            "description": "[Closed Beta] Find and remediate hard-coded secrets in your codebase.",
+            "default": false
+          },          
+          "snyk.severity": {
+            "order": 6,
             "type": "object",
             "default": {
               "critical": true,
@@ -306,6 +313,11 @@
                 "type": "boolean",
                 "default": true,
                 "description": "Use new HTML-based settings UI instead of VS Code's native settings"
+              },
+              "htmlTreeView": {
+                "type": "boolean",
+                "default": false,
+                "description": "Use server-driven HTML tree view instead of native tree views"
               }
             }
           }
@@ -398,22 +410,28 @@
         {
           "id": "snyk.views.analysis.oss",
           "name": "Open Source Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
         },
         {
           "id": "snyk.views.analysis.code.security",
           "name": "Code Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
         },
         {
           "id": "snyk.views.analysis.configuration",
           "name": "Configuration Issues",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
         },
         {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
-          "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
+          "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
+        },
+        {
+          "type": "webview",
+          "id": "snyk.views.treeView",
+          "name": "Snyk Results",
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && snyk:htmlTreeViewEnabled"
         },
         {
           "id": "snyk.views.support",

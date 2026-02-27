@@ -19,6 +19,7 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   AUTO_CONFIGURE_MCP_SERVER,
   SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
+  SECRETS_ENABLED_SETTING,
 } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
@@ -107,6 +108,7 @@ class ConfigurationWatcher implements IWatcher {
         DELTA_FINDINGS,
         AUTO_CONFIGURE_MCP_SERVER,
         SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
+        SECRETS_ENABLED_SETTING,
       ].find(config => event.affectsConfiguration(config));
 
       if (change) {

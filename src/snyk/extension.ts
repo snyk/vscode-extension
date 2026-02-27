@@ -38,6 +38,7 @@ import {
   SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUMMARY,
   SNYK_VIEW_SUPPORT,
+  SNYK_VIEW_TREEVIEW,
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
@@ -79,7 +80,13 @@ import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvid
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
-import { CodeIssueData, IacIssueData, LsScanProduct, OssIssueData } from './common/languageServer/types';
+import {
+  CodeIssueData,
+  IacIssueData,
+  LsScanProduct,
+  OssIssueData,
+  SecretsIssueData,
+} from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { FileLockService } from './common/services/fileLockService';
 import { InMemory, Persisted } from './common/constants/general';
@@ -98,10 +105,15 @@ import { HtmlInjectionService } from './common/views/workspaceConfiguration/serv
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
+import { TreeViewProviderService } from './base/treeView/treeViewProviderService';
+import { TreeViewWebviewProvider } from './common/views/treeViewWebviewProvider';
 import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
+import { HTML_SETTINGS, HTML_TREE_VIEW } from './common/constants/settings';
+import { SecretsService } from './snykSecrets/secretsService';
+import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 
 class SnykExtension extends SnykLib implements IExtension {
   private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
@@ -226,6 +238,19 @@ class SnykExtension extends SnykLib implements IExtension {
 
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
+    const htmlTreeViewEnabled = configuration.getPreviewFeature(HTML_TREE_VIEW);
+    await this.contextService.setContext(SNYK_CONTEXT.HTML_TREE_VIEW_ENABLED, htmlTreeViewEnabled);
+
+    if (htmlTreeViewEnabled) {
+      const treeViewWebviewProvider = TreeViewWebviewProvider.getInstance(vscodeContext, vsCodeCommands);
+      if (treeViewWebviewProvider) {
+        this.treeViewProviderService = new TreeViewProviderService(Logger, treeViewWebviewProvider);
+        vscodeContext.subscriptions.push(
+          vscode.window.registerWebviewViewProvider(SNYK_VIEW_TREEVIEW, treeViewWebviewProvider),
+        );
+      }
+    }
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -247,6 +272,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
+      this.treeViewProviderService,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -320,6 +346,28 @@ class SnykExtension extends SnykLib implements IExtension {
       this.languageServer,
       vsCodeLanguages,
       new DiagnosticsIssueProvider<IacIssueData>(),
+      Logger,
+    );
+
+    const secretsSuggestionProvider = new SecretsSuggestionWebviewProvider(
+      vsCodeWindow,
+      extensionContext,
+      Logger,
+      vsCodeLanguages,
+      vsCodeWorkspace,
+      vsCodeCommands,
+    );
+
+    this.secretsService = new SecretsService(
+      extensionContext,
+      configuration,
+      secretsSuggestionProvider,
+      this.viewManagerService,
+      vsCodeWorkspace,
+      this.workspaceTrust,
+      this.languageServer,
+      vsCodeLanguages,
+      new DiagnosticsIssueProvider<SecretsIssueData>(),
       Logger,
     );
 
@@ -636,7 +684,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
-        const useHTMLSettings = configuration.getPreviewFeature('htmlSettings');
+        const useHTMLSettings = configuration.getPreviewFeature(HTML_SETTINGS);
         if (useHTMLSettings) {
           await this.workspaceConfigurationProvider?.showPanel();
         } else {

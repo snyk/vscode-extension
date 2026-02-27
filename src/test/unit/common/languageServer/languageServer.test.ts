@@ -29,6 +29,7 @@ import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownS
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
+import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -40,7 +41,11 @@ suite('Language Server', () => {
 
   const logger = new LoggerMockFailOnErrors();
 
-  const createFakeLanguageServer = (languageClientAdapter: ILanguageClientAdapter, workspace: IVSCodeWorkspace) => {
+  const createFakeLanguageServer = (
+    languageClientAdapter: ILanguageClientAdapter,
+    workspace: IVSCodeWorkspace,
+    treeViewProvider?: ITreeViewProviderService,
+  ) => {
     return new LanguageServer(
       user,
       configurationMock,
@@ -57,6 +62,7 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       {} as IVSCodeCommands,
       {} as IDiagnosticsIssueProvider<unknown>,
+      treeViewProvider,
     );
   };
 
@@ -456,6 +462,76 @@ suite('Language Server', () => {
       // Should warn about the missing folder
       strictEqual(loggerWarnSpy.callCount, 1);
       strictEqual(loggerWarnSpy.getCall(0).args[0], 'No workspace folder found for path: /path/to/missing/folder');
+    });
+  });
+
+  suite('treeView notification', () => {
+    test('should forward treeView notification to treeViewProvider', async () => {
+      const updateStub = sinon.stub();
+      const treeViewProviderMock: ITreeViewProviderService = {
+        updateTreeViewPanel: updateStub,
+      };
+
+      type NotificationHandler = (params: unknown) => void;
+      const notificationHandlers: Record<string, NotificationHandler> = {};
+
+      const lca = {
+        create(): LanguageClient {
+          return {
+            start: sinon.stub().resolves(),
+            onNotification(method: string, handler: NotificationHandler): void {
+              notificationHandlers[method] = handler;
+            },
+            onReady: sinon.stub().resolves(),
+          } as unknown as LanguageClient;
+        },
+      };
+
+      languageServer = createFakeLanguageServer(
+        lca as unknown as ILanguageClientAdapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        treeViewProviderMock,
+      );
+      downloadServiceMock.downloadReady$.next();
+      await languageServer.start();
+
+      const handler = notificationHandlers['$/snyk.treeView'];
+      assert(handler, 'treeView notification handler should be registered');
+
+      handler({ treeViewHtml: '<html>tree</html>' });
+
+      sinon.assert.calledOnce(updateStub);
+      sinon.assert.calledWith(updateStub, '<html>tree</html>');
+    });
+
+    test('should not fail when treeViewProvider is undefined', async () => {
+      type NotificationHandler = (params: unknown) => void;
+      const notificationHandlers: Record<string, NotificationHandler> = {};
+
+      const lca = {
+        create(): LanguageClient {
+          return {
+            start: sinon.stub().resolves(),
+            onNotification(method: string, handler: NotificationHandler): void {
+              notificationHandlers[method] = handler;
+            },
+            onReady: sinon.stub().resolves(),
+          } as unknown as LanguageClient;
+        },
+      };
+
+      languageServer = createFakeLanguageServer(
+        lca as unknown as ILanguageClientAdapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      );
+      downloadServiceMock.downloadReady$.next();
+      await languageServer.start();
+
+      const handler = notificationHandlers['$/snyk.treeView'];
+      assert(handler, 'treeView notification handler should be registered');
+
+      // Should not throw when provider is undefined
+      handler({ treeViewHtml: '<html>tree</html>' });
     });
   });
 });
