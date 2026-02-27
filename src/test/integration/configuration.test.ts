@@ -52,14 +52,14 @@ suite('Configuration', () => {
         ossEnabled: true,
         codeSecurityEnabled: true,
         iacEnabled: true,
-        secretsEnabled: true,
+        secretsEnabled: false,
       });
 
       const enabledFeaturesConfig = {
         ossEnabled: true,
         codeSecurityEnabled: true,
         iacEnabled: true,
-        secretsEnabled: true,
+        secretsEnabled: false,
       } as FeaturesConfiguration;
       await configuration.setFeaturesConfiguration(enabledFeaturesConfig);
     }
