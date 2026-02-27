@@ -356,17 +356,19 @@ export class LanguageServer implements ILanguageServer {
         this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
       }
       // Set auto-organization at workspace folder level only if the desired value differs from
-      // the current configuration value when querying all levels (folder, workspace, global, default).
-      // Unless the desired auto-org is true (selected), then it should be written at the folder level.
+      // the current effective value (considering folder, workspace, global, and default levels).
       const desiredAutoOrg = !folderConfig.orgSetByUser;
       const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
       try {
-        if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
+        if (desiredAutoOrg !== currentAutoOrg) {
+          // Write false explicitly when user opts out; write undefined to clear
+          // folder-level override and fall back to the default (true).
+          const valueToWrite = desiredAutoOrg ? undefined : false;
           // eslint-disable-next-line no-await-in-loop
-          await this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg);
+          await this.configuration.setAutoSelectOrganization(workspaceFolder, valueToWrite);
           this.logger.debug(
-            `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
+            `Set auto-organization to ${String(valueToWrite)} for workspace folder: ${folderConfig.folderPath}`,
           );
         }
       } catch (error) {
