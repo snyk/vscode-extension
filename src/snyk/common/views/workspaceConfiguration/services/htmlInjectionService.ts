@@ -1,5 +1,3 @@
-// ABOUTME: Service for injecting IDE-specific scripts and styles into HTML
-// ABOUTME: Handles CSP nonce generation and HTML template processing
 import { getNonce } from '../../nonce';
 
 export interface IHtmlInjectionService {
@@ -45,15 +43,11 @@ export class HtmlInjectionService implements IHtmlInjectionService {
 
           window.__IS_IDE_AUTOSAVE_ENABLED__ = true;
 
-          window.__ideLogin__ = function() {
+          window.__ideExecuteCommand__ = function(cmd, args) {
             vscode.postMessage({
-              type: 'login'
-            });
-          };
-
-          window.__ideLogout__ = function() {
-            vscode.postMessage({
-              type: 'logout'
+              type: 'executeCommand',
+              command: cmd,
+              arguments: args
             });
           };
 

@@ -79,4 +79,6 @@ export interface IWorkspaceConfigurationWebviewProvider {
 export interface WebviewMessage {
   type: string;
   config?: string;
+  command?: string;
+  arguments?: unknown[];
 }
