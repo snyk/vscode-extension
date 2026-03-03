@@ -27,6 +27,20 @@ export type OAuthToken = {
 };
 
 export class AuthenticationService implements IAuthenticationService {
+  // Guard flag to prevent configurationWatcher from clearing the token when the auth flow sets the endpoint
+  private static authFlowUpdatingEndpoint = false;
+
+  static isAuthFlowUpdatingEndpoint(): boolean {
+    return AuthenticationService.authFlowUpdatingEndpoint;
+  }
+
+  /**
+   * Should only be needed by tests.
+   */
+  static clearAuthFlowState(): void {
+    AuthenticationService.authFlowUpdatingEndpoint = false;
+  }
+
   constructor(
     private readonly contextService: IContextService,
     private readonly baseModule: IBaseSnykModule,
@@ -106,7 +120,12 @@ export class AuthenticationService implements IAuthenticationService {
       if (!this.validateToken(token)) return Promise.reject(new Error('The entered token has an invalid format.'));
 
       if (apiUrl !== null && apiUrl !== undefined && apiUrl.trim().length > 0) {
-        await this.configuration.setEndpoint(apiUrl);
+        AuthenticationService.authFlowUpdatingEndpoint = true;
+        try {
+          await this.configuration.setEndpoint(apiUrl);
+        } finally {
+          AuthenticationService.authFlowUpdatingEndpoint = false;
+        }
       }
 
       await this.configuration.setToken(token);

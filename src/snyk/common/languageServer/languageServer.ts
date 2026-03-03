@@ -240,10 +240,7 @@ export class LanguageServer implements ILanguageServer {
       this.authenticationService
         .updateTokenAndEndpoint(token, apiUrl)
         .then(() => {
-          // Update the workspace configuration webview with the new token only if auth was successful
-          if (this.workspaceConfigurationProvider) {
-            this.workspaceConfigurationProvider.setAuthToken(token);
-          }
+          this.workspaceConfigurationProvider?.setAuthToken(token);
         })
         .catch((error: Error) => {
           ErrorHandler.handle(error, this.logger, error.message);
