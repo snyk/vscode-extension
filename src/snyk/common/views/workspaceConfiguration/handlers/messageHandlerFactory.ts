@@ -1,20 +1,25 @@
 import { ILog } from '../../../logger/interfaces';
 import { IVSCodeCommands } from '../../../vscode/commands';
-import { hasProperty, hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
+import { hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
 import { WebviewMessage } from '../types/workspaceConfiguration.types';
 import { IConfigurationPersistenceService } from '../services/configurationPersistenceService';
 import { ErrorHandler } from '../../../error/errorHandler';
+import { ExecuteCommandBridge } from '../../executeCommandBridge';
 
 export interface IMessageHandlerFactory {
   handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void>;
 }
 
 export class MessageHandlerFactory implements IMessageHandlerFactory {
+  private readonly executeCommandBridge: ExecuteCommandBridge;
+
   constructor(
-    private readonly commandExecutor: IVSCodeCommands,
+    commandExecutor: IVSCodeCommands,
     private readonly configPersistenceService: IConfigurationPersistenceService,
     private readonly logger: ILog,
-  ) {}
+  ) {
+    this.executeCommandBridge = new ExecuteCommandBridge(commandExecutor, logger);
+  }
 
   async handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void> {
     try {
@@ -31,17 +36,8 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
           }
           await this.configPersistenceService.handleSaveConfig(message.config);
           break;
-        case 'executeCommand': {
-          if (!message.command) {
-            this.logger.warn('Received executeCommand message without command from workspace configuration webview');
-            return;
-          }
-          const result = await this.commandExecutor.executeCommand(message.command, ...(message.arguments ?? []));
-          if (message.callbackId) {
-            return { callbackId: message.callbackId, result };
-          }
-          break;
-        }
+        case 'executeCommand':
+          return await this.executeCommandBridge.handleMessage(message);
       }
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Error handling message from workspace configuration webview');
@@ -56,15 +52,6 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
       return hasOptionalPropertyOfType(message, 'config', 'string');
     }
 
-    if (type === 'executeCommand') {
-      return (
-        hasOptionalPropertyOfType(message, 'command', 'string') &&
-        (!hasProperty(message, 'arguments') ||
-          (message as { arguments: unknown }).arguments === undefined ||
-          Array.isArray((message as { arguments: unknown }).arguments))
-      );
-    }
-
-    return false;
+    return type === 'executeCommand';
   }
 }
