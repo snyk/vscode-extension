@@ -8,6 +8,8 @@ export function productToLsProduct(product: ScanProduct): LsScanProduct {
       return LsScanProduct.InfrastructureAsCode;
     case ScanProduct.OpenSource:
       return LsScanProduct.OpenSource;
+    case ScanProduct.Secrets:
+      return LsScanProduct.Secrets;
     default:
       return LsScanProduct.Unknown;
   }
