@@ -53,4 +53,12 @@ suite('HtmlInjectionService', () => {
     const bodyCloseIndex = processed.indexOf('</body>');
     ok(scriptIndex < bodyCloseIndex, 'Script should appear before closing body tag');
   });
+
+  test('injectIdeScripts does not inject scripts when no closing body tag', () => {
+    const htmlWithoutBodyClose = '<html><head></head><body><p>content</p></html>';
+
+    const processed = service.injectIdeScripts(htmlWithoutBodyClose);
+
+    strictEqual(processed.includes('__ideExecuteCommand__'), false, 'Should not inject script when no </body> tag');
+  });
 });

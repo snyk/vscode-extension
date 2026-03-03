@@ -75,6 +75,36 @@ suite('MessageHandlerFactory', () => {
       sinon.assert.calledOnce(commandExecutorStub.executeCommand);
       sinon.assert.calledWith(commandExecutorStub.executeCommand, 'snyk.login');
     });
+
+    test('warns and skips when command field is missing', async () => {
+      await factory.handleMessage({ type: 'executeCommand' });
+
+      sinon.assert.notCalled(commandExecutorStub.executeCommand);
+      sinon.assert.called(loggerStub.warn);
+    });
+
+    test('treats message with non-array arguments as invalid', async () => {
+      await factory.handleMessage({
+        type: 'executeCommand',
+        command: 'snyk.login',
+        arguments: 'not-an-array',
+      });
+
+      sinon.assert.notCalled(commandExecutorStub.executeCommand);
+      sinon.assert.called(loggerStub.warn);
+    });
+
+    test('logs error and resolves when commandExecutor throws', async () => {
+      (commandExecutorStub.executeCommand as sinon.SinonStub).rejects(new Error('command failed'));
+
+      await factory.handleMessage({
+        type: 'executeCommand',
+        command: 'snyk.login',
+        arguments: [],
+      });
+
+      sinon.assert.calledOnce(loggerStub.error);
+    });
   });
 
   suite('saveConfig message type', () => {
@@ -85,6 +115,13 @@ suite('MessageHandlerFactory', () => {
 
       sinon.assert.calledOnce(configPersistenceStub.handleSaveConfig);
       sinon.assert.calledWith(configPersistenceStub.handleSaveConfig, configJson);
+    });
+
+    test('warns and skips when config field is missing', async () => {
+      await factory.handleMessage({ type: 'saveConfig' });
+
+      sinon.assert.notCalled(configPersistenceStub.handleSaveConfig);
+      sinon.assert.called(loggerStub.warn);
     });
   });
 

@@ -1,3 +1,4 @@
+import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
@@ -122,10 +123,8 @@ suite('CommandController', () => {
 
       await makeCtrl(commandsStub, configurationStub).initiateLogin();
 
-      const calls = executeCommandStub.args.map((a: unknown[]) => a[0]);
-      const trustIndex = calls.indexOf(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
-      const loginIndex = calls.indexOf(SNYK_LOGIN_COMMAND);
-      sinon.assert.match(trustIndex < loginIndex, true);
+      strictEqual(executeCommandStub.getCall(0).args[0], SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
+      strictEqual(executeCommandStub.getCall(1).args[0], SNYK_LOGIN_COMMAND);
     });
   });
 });

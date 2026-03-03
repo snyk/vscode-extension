@@ -1,8 +1,9 @@
 import { ILog } from '../../../logger/interfaces';
 import { IVSCodeCommands } from '../../../vscode/commands';
-import { hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
+import { hasProperty, hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
 import { WebviewMessage } from '../types/workspaceConfiguration.types';
 import { IConfigurationPersistenceService } from '../services/configurationPersistenceService';
+import { ErrorHandler } from '../../../error/errorHandler';
 
 export interface IMessageHandlerFactory {
   handleMessage(message: unknown): Promise<void>;
@@ -37,19 +38,29 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
           }
           await this.commandExecutor.executeCommand(message.command, ...(message.arguments ?? []));
           break;
-        default:
-          this.logger.warn(`Unknown message type from workspace configuration webview: ${message.type}`);
       }
     } catch (e) {
-      this.logger.error(`Error handling message from workspace configuration webview: ${e}`);
+      ErrorHandler.handle(e, this.logger, 'Error handling message from workspace configuration webview');
     }
   }
 
   private isWebviewMessage(message: unknown): message is WebviewMessage {
-    return (
-      hasPropertyOfType(message, 'type', 'string') &&
-      hasOptionalPropertyOfType(message, 'config', 'string') &&
-      hasOptionalPropertyOfType(message, 'command', 'string')
-    );
+    if (!hasPropertyOfType(message, 'type', 'string')) return false;
+    const { type } = message as { type: string };
+
+    if (type === 'saveConfig') {
+      return hasOptionalPropertyOfType(message, 'config', 'string');
+    }
+
+    if (type === 'executeCommand') {
+      return (
+        hasOptionalPropertyOfType(message, 'command', 'string') &&
+        (!hasProperty(message, 'arguments') ||
+          (message as { arguments: unknown }).arguments === undefined ||
+          Array.isArray((message as { arguments: unknown }).arguments))
+      );
+    }
+
+    return false;
   }
 }

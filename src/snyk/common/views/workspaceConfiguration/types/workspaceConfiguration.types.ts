@@ -76,9 +76,15 @@ export interface IWorkspaceConfigurationWebviewProvider {
   setAuthToken(token: string): void;
 }
 
-export interface WebviewMessage {
-  type: string;
+export interface SaveConfigMessage {
+  type: 'saveConfig';
   config?: string;
+}
+
+export interface ExecuteCommandMessage {
+  type: 'executeCommand';
   command?: string;
   arguments?: unknown[];
 }
+
+export type WebviewMessage = SaveConfigMessage | ExecuteCommandMessage;
