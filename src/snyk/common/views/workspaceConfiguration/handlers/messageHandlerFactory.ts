@@ -6,7 +6,7 @@ import { IConfigurationPersistenceService } from '../services/configurationPersi
 import { ErrorHandler } from '../../../error/errorHandler';
 
 export interface IMessageHandlerFactory {
-  handleMessage(message: unknown): Promise<void>;
+  handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void>;
 }
 
 export class MessageHandlerFactory implements IMessageHandlerFactory {
@@ -16,7 +16,7 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
     private readonly logger: ILog,
   ) {}
 
-  async handleMessage(message: unknown): Promise<void> {
+  async handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void> {
     try {
       if (!this.isWebviewMessage(message)) {
         this.logger.warn('Received invalid message from workspace configuration webview');
@@ -31,13 +31,17 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
           }
           await this.configPersistenceService.handleSaveConfig(message.config);
           break;
-        case 'executeCommand':
+        case 'executeCommand': {
           if (!message.command) {
             this.logger.warn('Received executeCommand message without command from workspace configuration webview');
             return;
           }
-          await this.commandExecutor.executeCommand(message.command, ...(message.arguments ?? []));
+          const result = await this.commandExecutor.executeCommand(message.command, ...(message.arguments ?? []));
+          if (message.callbackId) {
+            return { callbackId: message.callbackId, result };
+          }
           break;
+        }
       }
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Error handling message from workspace configuration webview');

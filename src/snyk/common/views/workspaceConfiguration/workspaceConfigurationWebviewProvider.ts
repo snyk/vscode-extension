@@ -156,7 +156,16 @@ export class WorkspaceConfigurationWebviewProvider
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
 
     this.panel.webview.onDidReceiveMessage(
-      (msg: unknown) => this.messageHandlerFactory.handleMessage(msg),
+      async (msg: unknown) => {
+        const callbackResult = await this.messageHandlerFactory.handleMessage(msg);
+        if (callbackResult?.callbackId) {
+          void this.panel?.webview.postMessage({
+            type: 'commandResult',
+            callbackId: callbackResult.callbackId,
+            result: callbackResult.result,
+          });
+        }
+      },
       undefined,
       this.disposables,
     );

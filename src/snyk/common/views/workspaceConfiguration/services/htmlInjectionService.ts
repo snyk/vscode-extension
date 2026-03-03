@@ -43,11 +43,20 @@ export class HtmlInjectionService implements IHtmlInjectionService {
 
           window.__IS_IDE_AUTOSAVE_ENABLED__ = true;
 
-          window.__ideExecuteCommand__ = function(cmd, args) {
+          window.__ideCallbacks__ = {};
+          let __ideCallbackCounter = 0;
+
+          window.__ideExecuteCommand__ = function(cmd, args, callback) {
+            let callbackId = null;
+            if (typeof callback === 'function') {
+              callbackId = '__cb_' + (++__ideCallbackCounter);
+              window.__ideCallbacks__[callbackId] = callback;
+            }
             vscode.postMessage({
               type: 'executeCommand',
               command: cmd,
-              arguments: args
+              arguments: args,
+              callbackId: callbackId,
             });
           };
 
@@ -55,7 +64,14 @@ export class HtmlInjectionService implements IHtmlInjectionService {
           window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'setAuthToken' && message.token) {
-                window.setAuthToken(message.token);
+              window.setAuthToken(message.token);
+            }
+            if (message.type === 'commandResult' && message.callbackId) {
+              const cb = window.__ideCallbacks__[message.callbackId];
+              if (typeof cb === 'function') {
+                delete window.__ideCallbacks__[message.callbackId];
+                cb(message.result);
+              }
             }
           });
         })();

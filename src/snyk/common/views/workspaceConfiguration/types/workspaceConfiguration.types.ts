@@ -85,6 +85,7 @@ export interface ExecuteCommandMessage {
   type: 'executeCommand';
   command?: string;
   arguments?: unknown[];
+  callbackId?: string;
 }
 
 export type WebviewMessage = SaveConfigMessage | ExecuteCommandMessage;
