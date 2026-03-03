@@ -104,8 +104,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [IAC_ENABLED_SETTING]: config.activateSnykIac,
       [SECRETS_ENABLED_SETTING]: config.activateSnykSecrets,
       [SCANNING_MODE]: config.scanningMode,
-      // TODO enable after LS with global org in the html settings page is merged to cli
-      // [ADVANCED_ORGANIZATION]: config.organization,
+      [ADVANCED_ORGANIZATION]: config.organization,
 
       // Issue View Settings
       [ISSUE_VIEW_OPTIONS_SETTING]: config.issueViewOptions,
