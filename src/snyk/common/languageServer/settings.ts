@@ -17,7 +17,7 @@ export type ServerSettings = {
   activateSnykOpenSource?: string;
   activateSnykIac?: string;
   activateSnykSecrets?: string;
-  
+
   // Endpoint path, and organization
   path?: string;
   cliPath?: string;
