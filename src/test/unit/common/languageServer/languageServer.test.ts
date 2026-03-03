@@ -265,6 +265,7 @@ suite('Language Server', () => {
           enableDeltaFindings: 'false',
           activateSnykOpenSource: 'false',
           activateSnykIac: 'true',
+          activateSnykSecrets: 'false',
           token: 'testToken',
           cliPath: 'testPath',
           cliBaseDownloadURL: 'https://downloads.snyk.io',

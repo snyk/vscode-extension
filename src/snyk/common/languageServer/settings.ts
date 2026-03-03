@@ -16,7 +16,8 @@ export type ServerSettings = {
   activateSnykCodeSecurity?: string;
   activateSnykOpenSource?: string;
   activateSnykIac?: string;
-
+  activateSnykSecrets?: string;
+  
   // Endpoint path, and organization
   path?: string;
   cliPath?: string;
@@ -82,10 +83,15 @@ export class LanguageServerSettings {
       ? 'true'
       : `${featuresConfiguration?.codeSecurityEnabled}`;
 
+    const secretsEnabled = _.isUndefined(featuresConfiguration?.secretsEnabled)
+      ? 'true'
+      : `${featuresConfiguration?.secretsEnabled}`;
+
     const settings = {
       activateSnykCodeSecurity: codeSecurityEnabled,
       activateSnykOpenSource: ossEnabled,
       activateSnykIac: iacEnabled,
+      activateSnykSecrets: secretsEnabled,
       enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
       sendErrorReports: `${configuration.shouldReportErrors}`,
       cliPath: await configuration.getCliPath(),

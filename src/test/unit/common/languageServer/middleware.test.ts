@@ -112,6 +112,7 @@ suite('Language Server: Middleware', () => {
     assert.strictEqual(serverResult.activateSnykCodeSecurity, 'true');
     assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
     assert.strictEqual(serverResult.activateSnykIac, 'true');
+    assert.strictEqual(serverResult.activateSnykSecrets, 'false');
     assert.strictEqual(serverResult.endpoint, configuration.snykApiEndpoint);
     assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
     assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);

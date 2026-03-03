@@ -22,6 +22,7 @@ import {
   AUTH_METHOD_TOKEN,
   HTTP_PROXY_STRICT_SSL_SETTING,
   ADVANCED_ORGANIZATION,
+  SECRETS_ENABLED_SETTING,
 } from '../../../constants/settings';
 import { IdeConfigData } from '../types/workspaceConfiguration.types';
 
@@ -43,6 +44,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     activateSnykOpenSource: OSS_ENABLED_SETTING,
     activateSnykCode: CODE_SECURITY_ENABLED_SETTING,
     activateSnykIac: IAC_ENABLED_SETTING,
+    activateSnykSecrets: SECRETS_ENABLED_SETTING,
     scanningMode: SCANNING_MODE,
     organization: ADVANCED_ORGANIZATION,
 
@@ -100,6 +102,7 @@ export class ConfigurationMappingService implements IConfigurationMappingService
       [OSS_ENABLED_SETTING]: config.activateSnykOpenSource,
       [CODE_SECURITY_ENABLED_SETTING]: config.activateSnykCode,
       [IAC_ENABLED_SETTING]: config.activateSnykIac,
+      [SECRETS_ENABLED_SETTING]: config.activateSnykSecrets,
       [SCANNING_MODE]: config.scanningMode,
       // TODO enable after LS with global org in the html settings page is merged to cli
       // [ADVANCED_ORGANIZATION]: config.organization,
