@@ -73,7 +73,7 @@ export interface IdeConfigData {
 export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
-  setAuthToken(token: string): void;
+  setAuthToken(token: string, apiUrl?: string): void;
 }
 
 export interface SaveConfigMessage {

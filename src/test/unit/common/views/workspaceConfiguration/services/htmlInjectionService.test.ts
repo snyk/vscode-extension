@@ -61,4 +61,10 @@ suite('HtmlInjectionService', () => {
 
     strictEqual(processed.includes('__ideExecuteCommand__'), false, 'Should not inject script when no </body> tag');
   });
+
+  test('injectIdeScripts passes apiUrl from message to window.setAuthToken', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('message.apiUrl'), 'Should forward apiUrl from message to window.setAuthToken');
+  });
 });

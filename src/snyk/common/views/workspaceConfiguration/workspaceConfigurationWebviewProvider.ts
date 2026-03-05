@@ -171,7 +171,7 @@ export class WorkspaceConfigurationWebviewProvider
     );
   }
 
-  public setAuthToken(token: string): void {
+  public setAuthToken(token: string, apiUrl?: string): void {
     if (!this.panel) {
       this.logger.debug('Cannot set auth token: webview panel not initialized');
       return;
@@ -181,6 +181,7 @@ export class WorkspaceConfigurationWebviewProvider
       .postMessage({
         type: 'setAuthToken',
         token: token,
+        apiUrl: apiUrl,
       })
       .then(
         success => {
