@@ -240,7 +240,7 @@ export class LanguageServer implements ILanguageServer {
       this.authenticationService
         .updateTokenAndEndpoint(token, apiUrl)
         .then(() => {
-          this.workspaceConfigurationProvider?.setAuthToken(token);
+          this.workspaceConfigurationProvider?.setAuthToken(token, apiUrl);
         })
         .catch((error: Error) => {
           ErrorHandler.handle(error, this.logger, error.message);

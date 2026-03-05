@@ -41,6 +41,14 @@ export class AuthenticationService implements IAuthenticationService {
     AuthenticationService.authFlowUpdatingEndpoint = false;
   }
 
+  /**
+   * Sets the auth flow updating endpoint flag. Used by external callers (e.g. MessageHandlerFactory)
+   * that set the endpoint during an auth flow and need to suppress ConfigurationWatcher.
+   */
+  static setAuthFlowUpdatingEndpoint(value: boolean): void {
+    AuthenticationService.authFlowUpdatingEndpoint = value;
+  }
+
   constructor(
     private readonly contextService: IContextService,
     private readonly baseModule: IBaseSnykModule,

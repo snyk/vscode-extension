@@ -255,6 +255,7 @@ suite('AuthenticationService', () => {
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
+
   });
 
   suite('AuthenticationService', () => {
