@@ -43,7 +43,10 @@ export class DownloadService {
           'Automatic dependency management is disabled — skipping CLI download/update. ' +
             'Enable "Automatic Dependency Management" in Snyk settings to allow automatic CLI updates.',
         );
-        if (!cliInstalled) {
+        // Check for a configured CLI path. We don't examine checksum here, as we aren't auto-downloading.
+        const cliPath = await this.configuration.getCliPath();
+        const cliExecutableExists = await CliExecutable.exists(cliPath);
+        if (!cliExecutableExists) {
           throw new Error(
             'The Snyk CLI is not installed. Please download it manually or enable "Automatic Dependency Management" in Snyk settings.',
           );
