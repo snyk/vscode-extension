@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+  <style nonce="${nonce}">
+    body {
+      font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+      font-size: var(--vscode-font-size, 13px);
+      margin: 0; padding: 0;
+      background-color: var(--vscode-sideBar-background, inherit);
+      color: var(--vscode-foreground, inherit);
+    }
+    .tree-container { font-size: var(--vscode-font-size, 13px); line-height: 1.4; padding: 0; margin: 0; }
+    .tree-node { cursor: default; -webkit-user-select: none; user-select: none; }
+    .tree-node-row { display: block; padding: 3px 4px 3px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tree-node-row:hover { background-color: var(--vscode-list-hoverBackground, #8080801a); }
+    .tree-chevron { display: none; }
+    .tree-label { vertical-align: middle; margin-left: 4px; }
+    .product-icon { display: inline-block; width: 16px; height: 16px; vertical-align: middle; }
+    .product-icon svg { display: block; width: 16px; height: 16px; }
+    .tree-node-disabled .tree-node-row { opacity: 0.5; }
+    .tree-filters { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border, #80808033); white-space: nowrap; }
+    .filter-group { display: inline-block; vertical-align: middle; }
+    .filter-separator { display: inline-block; width: 1px; height: 16px; background-color: var(--vscode-panel-border, #8080804d); vertical-align: middle; margin: 0 6px; }
+    .filter-label { display: inline-block; vertical-align: middle; font-size: 12px; color: var(--vscode-descriptionForeground, #888); margin-right: 4px; }
+    .filter-btn { display: inline-block; padding: 2px 6px; margin: 0 2px; border: 1px solid var(--vscode-panel-border, #8080804d); border-radius: 3px; background-color: transparent; color: var(--vscode-descriptionForeground, #888); font-size: 11px; cursor: pointer; vertical-align: middle; line-height: 1.4; }
+    .filter-btn-icon { padding: 2px 3px; line-height: 0; }
+    .filter-btn-icon svg { display: inline-block; width: 16px; height: 16px; vertical-align: middle; }
+    .filter-btn-icon:not(.filter-active) { opacity: 0.4; }
+    .filter-btn-icon.filter-active { background-color: transparent; border-color: transparent; color: inherit; opacity: 1; }
+    .action-btn { display: inline-flex; align-items: center; justify-content: center; padding: 2px 4px; margin: 0 2px; border: 1px solid var(--vscode-panel-border, #8080804d); border-radius: 3px; background-color: transparent; color: var(--vscode-descriptionForeground, #888); font-size: 11px; cursor: pointer; vertical-align: middle; line-height: 1.4; }
+    .action-btn:hover { background-color: var(--vscode-list-hoverBackground, #8080801a); }
+  </style>
+</head>
+<body>
+  <div class="tree-filters" id="filterToolbar">
+    <span class="filter-group">
+      <span class="filter-label">Severity:</span>
+      <button data-filter-type="severity" data-filter-value="critical" class="filter-btn filter-btn-icon filter-active" title="Critical"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" rx="8" fill="#AB1A1A"/><rect width="16" height="16" rx="8" fill="url(#paint0_linear_17_2)" fill-opacity="0.1"/><path d="M11.2048 6.81746H9.87672C9.83884 6.59966 9.769 6.40671 9.6672 6.23862C9.5654 6.06817 9.43875 5.92376 9.28723 5.80538C9.13572 5.68701 8.96289 5.59823 8.76877 5.53905C8.577 5.4775 8.36985 5.44672 8.14732 5.44672C7.75196 5.44672 7.40158 5.54615 7.09618 5.74501C6.79078 5.94151 6.55167 6.23034 6.37885 6.61149C6.20603 6.99028 6.11962 7.45311 6.11962 7.99999C6.11962 8.55633 6.20603 9.02508 6.37885 9.40624C6.55404 9.78502 6.79315 10.0715 7.09618 10.2656C7.40158 10.4574 7.75077 10.5533 8.14377 10.5533C8.36157 10.5533 8.56517 10.5248 8.75456 10.468C8.94632 10.4088 9.11796 10.3224 9.26948 10.2088C9.42336 10.0952 9.55238 9.95548 9.65655 9.78976C9.76308 9.62404 9.83647 9.43465 9.87672 9.22158L11.2048 9.22868C11.1551 9.57432 11.0474 9.89866 10.8817 10.2017C10.7183 10.5047 10.5041 10.7722 10.2389 11.0042C9.97378 11.2339 9.66365 11.4138 9.30854 11.544C8.95342 11.6719 8.55925 11.7358 8.12601 11.7358C7.48681 11.7358 6.91626 11.5878 6.41436 11.2919C5.91247 10.996 5.51711 10.5686 5.22828 10.0099C4.93946 9.45122 4.79504 8.78124 4.79504 7.99999C4.79504 7.21637 4.94064 6.54639 5.23183 5.99004C5.52303 5.43133 5.91957 5.00401 6.42146 4.70808C6.92336 4.41215 7.49154 4.26419 8.12601 4.26419C8.53084 4.26419 8.90726 4.32101 9.25527 4.43465C9.60328 4.54828 9.91341 4.71519 10.1857 4.93536C10.4579 5.15316 10.6816 5.42068 10.8568 5.73791C11.0344 6.05278 11.1504 6.41263 11.2048 6.81746Z" fill="white"/><defs><linearGradient id="paint0_linear_17_2" x1="8" y1="0" x2="8" y2="16" gradientUnits="userSpaceOnUse"><stop stop-opacity="0"/><stop offset="1"/></linearGradient></defs></svg></button>
+      <button data-filter-type="severity" data-filter-value="high" class="filter-btn filter-btn-icon filter-active" title="High"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" rx="8" fill="#D93600"/><rect width="16" height="16" rx="8" fill="url(#paint0_linear_17_4)" fill-opacity="0.1"/><path d="M4.99573 11.6364V4.36365H6.3132V7.44248H9.68323V4.36365H11.0043V11.6364H9.68323V8.54689H6.3132V11.6364H4.99573Z" fill="white"/><defs><linearGradient id="paint0_linear_17_4" x1="8" y1="0" x2="8" y2="16" gradientUnits="userSpaceOnUse"><stop stop-opacity="0"/><stop offset="1"/></linearGradient></defs></svg></button>
+      <button data-filter-type="severity" data-filter-value="medium" class="filter-btn filter-btn-icon filter-active" title="Medium"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" rx="8" fill="#D68000"/><rect width="16" height="16" rx="8" fill="url(#paint0_linear_17_6)" fill-opacity="0.1"/><path d="M4.18604 4.36365H5.79825L7.95734 9.63353H8.04257L10.2017 4.36365H11.8139V11.6364H10.5497V6.63993H10.4822L8.47226 11.6151H7.52765L5.51771 6.62927H5.45024V11.6364H4.18604V4.36365Z" fill="white"/><defs><linearGradient id="paint0_linear_17_6" x1="8" y1="0" x2="8" y2="16" gradientUnits="userSpaceOnUse"><stop stop-opacity="0"/><stop offset="1"/></linearGradient></defs></svg></button>
+      <button data-filter-type="severity" data-filter-value="low" class="filter-btn filter-btn-icon filter-active" title="Low"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" rx="8" fill="#8F8FB3"/><rect width="16" height="16" rx="8" fill="url(#paint0_linear_17_8)" fill-opacity="0.1"/><path d="M5.73975 11.6364V4.36365H7.05722V10.532H10.2603V11.6364H5.73975Z" fill="white"/><defs><linearGradient id="paint0_linear_17_8" x1="8" y1="0" x2="8" y2="16" gradientUnits="userSpaceOnUse"><stop stop-opacity="0"/><stop offset="1"/></linearGradient></defs></svg></button>
+    </span>
+    <span class="filter-separator"></span>
+    <span class="filter-group">
+      <button id="expandAllBtn" class="action-btn" title="Expand All"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3l5 4.5L13 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8.5l5 4.5L13 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="collapseAllBtn" class="action-btn" title="Collapse All"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 13l5-4.5L13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 7.5L8 3l5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </span>
+  </div>
+
+  <div class="tree-container" id="treeContainer" data-total-issues="0">
+    <div class="tree-node" data-node-id="product-oss">
+      <div class="tree-node-row">
+        <span class="tree-chevron"></span>
+        <span class="product-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.90401 14.9967C6.93584 15.0011 6.96816 15.0011 7 14.9967C7.03184 15.0011 7.06416 15.0011 7.096 14.9967C7.39644 14.8983 7.6849 14.7923 7.9615 14.6786L4.84383 12.7349L4.81834 12.7159C4.59509 12.5489 4.38635 12.249 4.38635 11.8722C4.38635 11.5563 4.533 11.2013 4.85406 11.0018L4.8447 10.996L4.81834 10.9763C4.5951 10.8093 4.38635 10.5095 4.38635 10.1326C4.38635 9.75576 4.5951 9.45593 4.81834 9.28891L4.84068 9.2722L4.81835 9.25549C4.61962 9.10682 4.38636 8.83178 4.38636 8.41179C4.38636 8.08426 4.54407 7.71458 4.89047 7.51994L9.52716 4.62931L9.533 4.62582C9.86392 4.42777 10.2724 4.42777 10.6033 4.62582L10.6092 4.62931L12.9997 6.11961V3.05264C13.0027 2.98839 12.9838 2.92496 12.9458 2.87226C12.9078 2.81956 12.8529 2.78056 12.7897 2.76133L7.09 1.01342C7.03141 0.995527 6.96859 0.995527 6.91001 1.01342L1.2103 2.76133C1.14709 2.78056 1.09221 2.81956 1.05423 2.87226C1.01624 2.92496 0.997285 2.98839 1.00031 3.05264V6.54846C1.00031 10.9969 2.87522 13.677 6.90401 14.9967Z" fill="url(#paint0_linear_2201_6)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M9.91815 11.5355C10.0119 11.5916 10.1244 11.5916 10.2182 11.5355L14.8687 8.65495C14.9437 8.59883 15 8.50531 15 8.41179C15 8.31826 14.9437 8.22474 14.8687 8.16862L10.2182 5.26937C10.1244 5.21325 10.0119 5.21325 9.91815 5.26937L5.26762 8.16862C5.19261 8.20603 5.13635 8.29956 5.13635 8.41179C5.13635 8.52401 5.19261 8.59883 5.26762 8.65495L9.91815 11.5355ZM14.4187 11.3484L10.2182 13.9484C10.1244 14.0045 10.0119 14.0045 9.91815 13.9484L5.73642 11.3484L5.26762 11.629C5.19261 11.6664 5.13635 11.7599 5.13635 11.8722C5.13635 11.9657 5.19261 12.0592 5.26762 12.1153L9.91815 15.0146C10.0119 15.0707 10.1244 15.0707 10.2182 15.0146L14.8687 12.1153C14.9437 12.0592 15 11.9657 15 11.8722C15 11.7786 14.9437 11.6851 14.8687 11.629L14.4187 11.3484ZM10.2182 12.2089L14.4187 9.60888L14.8687 9.88946C14.9437 9.94557 15 10.0391 15 10.1326C15 10.2261 14.9437 10.3197 14.8687 10.3758L10.2182 13.2563C10.1244 13.3125 10.0119 13.3125 9.91815 13.2563L5.26762 10.3758C5.19261 10.3197 5.13635 10.2261 5.13635 10.1326C5.13635 10.0391 5.19261 9.94557 5.26762 9.88946L5.73642 9.60888L9.91815 12.2089C10.0119 12.265 10.1244 12.265 10.2182 12.2089Z" fill="url(#paint1_linear_2201_6)"/><defs><linearGradient id="paint0_linear_2201_6" x1="2.69521" y1="0.999998" x2="17.0423" y2="4.36802" gradientUnits="userSpaceOnUse"><stop stop-color="#9043C6"/><stop offset="1" stop-color="#145DEB"/></linearGradient><linearGradient id="paint1_linear_2201_6" x1="6.56033" y1="5.22728" x2="18.3352" y2="8.55569" gradientUnits="userSpaceOnUse"><stop stop-color="#43B59A"/><stop offset="1" stop-color="#145DEB"/></linearGradient></defs></svg></span>
+        <span class="tree-label"><strong>Open Source</strong></span>
+      </div>
+      <div class="tree-node-children"></div>
+    </div>
+
+    <div class="tree-node" data-node-id="product-code">
+      <div class="tree-node-row">
+        <span class="tree-chevron"></span>
+        <span class="product-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.90401 14.9967C6.93584 15.0011 6.96816 15.0011 7 14.9967C7.03184 15.0011 7.06416 15.0011 7.096 14.9967C8.10019 14.6677 8.97057 14.2543 9.71145 13.75H7.375C6.75368 13.75 6.25 13.2463 6.25 12.625V5.875C6.25 5.25368 6.75368 4.75 7.375 4.75H12.9997V3.05264C13.0027 2.98839 12.9838 2.92496 12.9458 2.87226C12.9078 2.81956 12.8529 2.78056 12.7897 2.76133L7.09 1.01342C7.03141 0.995527 6.96859 0.995527 6.91001 1.01342L1.2103 2.76133C1.14709 2.78056 1.09221 2.81956 1.05423 2.87226C1.01624 2.92496 0.997285 2.98839 1.00031 3.05264V6.54846C1.00031 10.9969 2.87522 13.677 6.90401 14.9967Z" fill="url(#paint0_linear_2201_19)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M7.375 5.5C7.16789 5.5 7 5.66789 7 5.875V12.625C7 12.8321 7.16789 13 7.375 13H14.125C14.3321 13 14.5 12.8321 14.5 12.625V5.875C14.5 5.66789 14.3321 5.5 14.125 5.5H7.375ZM11.2631 7.4033C11.0689 7.35269 10.8704 7.46907 10.8198 7.66326L10.0255 10.7105C9.97491 10.9047 10.0913 11.1032 10.2855 11.1538C10.4797 11.2044 10.6781 11.088 10.7287 10.8938L11.523 7.84655C11.5736 7.65237 11.4572 7.45392 11.2631 7.4033ZM11.9451 7.82805C12.0741 7.67433 12.3033 7.65428 12.457 7.78327L13.6248 8.76316C13.7786 8.89215 13.7986 9.12134 13.6696 9.27506C13.666 9.27932 13.6624 9.28347 13.6587 9.28752L12.6685 10.4676C12.5395 10.6213 12.3103 10.6413 12.1566 10.5123C12.0029 10.3834 11.9828 10.1542 12.1118 10.0004L12.8791 9.08605L11.9899 8.33996C11.8362 8.21097 11.8161 7.98178 11.9451 7.82805ZM9.34172 7.78327C9.49544 7.65428 9.72463 7.67433 9.85362 7.82805C9.98262 7.98178 9.96256 8.21097 9.80884 8.33996L8.91968 9.08605L9.68582 9.9991C9.81482 10.1528 9.79476 10.382 9.64104 10.511C9.48731 10.64 9.25812 10.6199 9.12913 10.4662L8.14008 9.28752C8.13636 9.28347 8.13271 9.27932 8.12915 9.27506C8.00015 9.12134 8.02021 8.89215 8.17393 8.76316L9.34172 7.78327Z" fill="url(#paint1_linear_2201_19)"/><defs><linearGradient id="paint0_linear_2201_19" x1="3.19521" y1="0.999997" x2="17.5423" y2="4.36802" gradientUnits="userSpaceOnUse"><stop stop-color="#9043C6"/><stop offset="1" stop-color="#145DEB"/></linearGradient><linearGradient id="paint1_linear_2201_19" x1="5.85417" y1="5.5" x2="16.1667" y2="15.3958" gradientUnits="userSpaceOnUse"><stop stop-color="#14B7EB"/><stop offset="1" stop-color="#145DEB"/></linearGradient></defs></svg></span>
+        <span class="tree-label"><strong>Code Security</strong></span>
+      </div>
+      <div class="tree-node-children"></div>
+    </div>
+
+    <div class="tree-node" data-node-id="product-iac">
+      <div class="tree-node-row">
+        <span class="tree-chevron"></span>
+        <span class="product-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 14.9967C6.96816 15.0011 6.93584 15.0011 6.90401 14.9967C2.87522 13.677 1.00031 10.9969 1.00031 6.54846V3.05264C0.997285 2.98839 1.01624 2.92496 1.05423 2.87226C1.09221 2.81956 1.14709 2.78056 1.2103 2.76133L6.91001 1.01342C6.96859 0.995527 7.03141 0.995527 7.09 1.01342L12.7897 2.76133C12.8529 2.78056 12.9078 2.81956 12.9458 2.87226C12.9838 2.92496 13.0027 2.98839 12.9997 3.05264V4.88396C12.701 5.05691 12.5 5.37999 12.5 5.75V6.75C12.5 6.75487 12.5 6.75974 12.5001 6.7646C12.5002 6.76809 12.5002 6.77158 12.5003 6.77507C12.4194 6.75863 12.3357 6.75 12.25 6.75H11C10.3096 6.75 9.75 7.30964 9.75 8V9.25C9.75 9.6589 9.94634 10.0219 10.2499 10.25H8.25C7.55964 10.25 7 10.8096 7 11.5V14.5C7 14.6758 7.03628 14.8431 7.10175 14.9948C7.09984 14.9954 7.09792 14.9961 7.09599 14.9967C7.06416 15.0011 7.03184 15.0011 7 14.9967Z" fill="url(#paint0_linear_2201_54)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.75 5.75C14.75 5.61193 14.6381 5.5 14.5 5.5H13.5C13.3619 5.5 13.25 5.61193 13.25 5.75V6.75C13.25 6.88807 13.3619 7 13.5 7H14.5C14.6381 7 14.75 6.88807 14.75 6.75V5.75ZM12.75 8C12.75 7.72386 12.5261 7.5 12.25 7.5H11C10.7239 7.5 10.5 7.72386 10.5 8V9.25C10.5 9.52614 10.7239 9.75 11 9.75H12.25C12.5261 9.75 12.75 9.52614 12.75 9.25V8ZM14.5 12.5C14.7761 12.5 15 12.7239 15 13V14.5C15 14.7761 14.7761 15 14.5 15H13C12.7239 15 12.5 14.7761 12.5 14.5V13C12.5 12.7239 12.7239 12.5 13 12.5H14.5ZM11.75 11.5C11.75 11.2239 11.5261 11 11.25 11H8.25C7.97386 11 7.75 11.2239 7.75 11.5V14.5C7.75 14.7761 7.97386 15 8.25 15H11.25C11.5261 15 11.75 14.7761 11.75 14.5V11.5ZM14.5 9.75C14.7761 9.75 15 9.97386 15 10.25V11.25C15 11.5261 14.7761 11.75 14.5 11.75H13.5C13.2239 11.75 13 11.5261 13 11.25V10.25C13 9.97386 13.2239 9.75 13.5 9.75H14.5Z" fill="url(#paint1_linear_2201_54)"/><defs><linearGradient id="paint0_linear_2201_54" x1="2.6963" y1="0.999999" x2="17.0419" y2="4.39173" gradientUnits="userSpaceOnUse"><stop stop-color="#9043C6"/><stop offset="1" stop-color="#145DEB"/></linearGradient><linearGradient id="paint1_linear_2201_54" x1="15" y1="5.5" x2="6.25579" y2="7.1683" gradientUnits="userSpaceOnUse"><stop stop-color="#43B59A"/><stop offset="1" stop-color="#FFE792"/></linearGradient></defs></svg></span>
+        <span class="tree-label"><strong>Infrastructure As Code</strong></span>
+      </div>
+      <div class="tree-node-children"></div>
+    </div>
+
+    <div class="tree-node" data-node-id="product-secrets">
+      <div class="tree-node-row">
+        <span class="tree-chevron"></span>
+        <span class="product-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="url(#paint0_linear_secrets)" d="M7.287 1.014c.057-.018.119-.018.176 0l5.581 1.748c.116.036.201.147.206.267V6.25h-1.939l-.634-.634A1.25 1.25 0 0 0 9.793 5.25H7a1.25 1.25 0 0 0-1.25 1.25v6A1.25 1.25 0 0 0 7 13.75h3.004c-1.101.87-2.169 1.247-2.629 1.247C6.25 14.997 1.5 12.75 1.5 6.548V3.029c.005-.12.09-.231.206-.267z"/><path fill="url(#paint1_linear_secrets)" fill-rule="evenodd" d="M9.793 6a.5.5 0 0 1 .354.147l.707.707a.5.5 0 0 0 .353.146H14a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5V6.5A.5.5 0 0 1 7 6zm.707 2.25a1 1 0 0 0-.5 1.866V11.25a.5.5 0 1 0 1 0v-1.134a1 1 0 0 0-.5-1.866" clip-rule="evenodd"/><defs><linearGradient id="paint0_linear_secrets" x1="3.196" y1="1" x2="17.541" y2="4.392" gradientUnits="userSpaceOnUse"><stop stop-color="#9043C6"/><stop offset="1" stop-color="#145DEB"/></linearGradient><linearGradient id="paint1_linear_secrets" x1="14.5" y1="13" x2="7.562" y2="5.071" gradientUnits="userSpaceOnUse"><stop stop-color="#E555AC"/><stop offset="1" stop-color="#F99048"/></linearGradient></defs></svg></span>
+        <span class="tree-label"><strong>Secrets</strong></span>
+      </div>
+      <div class="tree-node-children"></div>
+    </div>
+  </div>
+</body>
+</html>

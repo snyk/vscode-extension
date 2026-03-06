@@ -5,12 +5,14 @@ export enum ScanProduct {
   Code = 'code',
   OpenSource = 'oss',
   InfrastructureAsCode = 'iac',
+  Secrets = 'secrets',
 }
 
 export enum LsScanProduct {
   Code = 'Snyk Code',
   OpenSource = 'Snyk Open Source',
   InfrastructureAsCode = 'Snyk IaC',
+  Secrets = 'Snyk Secrets',
   Unknown = '',
 }
 
@@ -48,7 +50,7 @@ export type Scan = {
 };
 
 export type McpConfig = {
-  cmd: string;
+  command: string;
   args: string[];
   env: Record<string, string>;
 };
@@ -182,4 +184,18 @@ export enum SnykURIAction {
 export type ShowIssueDetailTopicParams = {
   issueId: string;
   product: LsScanProduct;
+};
+
+// Snyk Secrets
+export type SecretsIssueData = {
+  key: string;
+  title: string;
+  message: string;
+  ruleId: string;
+  ruleName: string;
+  cwe: string[];
+  categories: string[];
+  cols: Point;
+  rows: Point;
+  fingerprint: string;
 };

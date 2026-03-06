@@ -11,6 +11,6 @@ export const messages = {
   lsDownloadFailed: 'Failed to download or update Snyk dependencies.',
 
   downloadFinished: (version: string): string =>
-    `Snyk dependencies (Language Server v${version}) have been successfully downloaded.`,
+    `Snyk dependencies (CLI v${version}) have been successfully downloaded.`,
   updateFinished: (version: string): string => `Snyk dependencies have been updated (Language Server to v${version}).`,
 };

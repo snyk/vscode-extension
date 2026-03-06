@@ -263,7 +263,7 @@ suite('Configuration', () => {
 
         const configuration = new Configuration({}, workspace);
 
-        strictEqual(configuration.organization, undefined);
+        strictEqual(configuration.organization, '');
       });
     });
 

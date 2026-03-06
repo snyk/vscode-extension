@@ -1,6 +1,5 @@
 // ABOUTME: Unit tests for ConfigurationPersistenceService
 // ABOUTME: Tests organization persistence scope detection logic
-import { strictEqual } from 'assert';
 import sinon from 'sinon';
 import { Uri } from 'vscode';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';

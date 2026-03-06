@@ -37,6 +37,7 @@ import {
   TRUSTED_FOLDERS,
   YES_CRASH_REPORT_SETTING,
   YES_WELCOME_NOTIFICATION_SETTING,
+  SECRETS_ENABLED_SETTING,
 } from '../constants/settings';
 import SecretStorageAdapter from '../vscode/secretStorage';
 import { IVSCodeWorkspace } from '../vscode/workspace';
@@ -49,6 +50,7 @@ export type FeaturesConfiguration = {
   ossEnabled: boolean | undefined;
   codeSecurityEnabled: boolean | undefined;
   iacEnabled: boolean | undefined;
+  secretsEnabled: boolean | undefined;
 };
 
 export type ScanCommandConfig = {
@@ -157,8 +159,9 @@ export interface IConfiguration {
 
   /**
    * Gets the organization setting from the global & workspace scopes only.
+   * Returns empty string if not set.
    */
-  organization: string | undefined;
+  organization: string;
 
   /**
    * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
@@ -543,15 +546,25 @@ export class Configuration implements IConfiguration {
     const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
     const iacEnabled = this.workspace.getConfiguration<boolean>(iacConfigId, iacSection);
 
-    if (_.isUndefined(ossEnabled) && _.isUndefined(codeSecurityEnabled) && _.isUndefined(iacEnabled)) {
+    const { configurationId: secretsConfigId, section: secretsSection } =
+      Configuration.getConfigName(SECRETS_ENABLED_SETTING);
+    const secretsEnabled = this.workspace.getConfiguration<boolean>(secretsConfigId, secretsSection);
+
+    if (
+      _.isUndefined(ossEnabled) &&
+      _.isUndefined(codeSecurityEnabled) &&
+      _.isUndefined(iacEnabled) &&
+      _.isUndefined(secretsEnabled)
+    ) {
       // TODO: return 'undefined' to render feature selection screen once OSS integration is available
-      return { ossEnabled: true, codeSecurityEnabled: true, iacEnabled: true };
+      return { ossEnabled: true, codeSecurityEnabled: true, iacEnabled: true, secretsEnabled: true };
     }
 
     return {
       ossEnabled,
       codeSecurityEnabled,
       iacEnabled,
+      secretsEnabled,
     };
   }
 
@@ -565,6 +578,10 @@ export class Configuration implements IConfiguration {
 
     const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
     await this.workspace.updateConfiguration(iacConfigId, iacSection, config?.iacEnabled, true);
+
+    const { configurationId: secretsConfigId, section: secretsSection } =
+      Configuration.getConfigName(SECRETS_ENABLED_SETTING);
+    await this.workspace.updateConfiguration(secretsConfigId, secretsSection, config?.secretsEnabled, true);
   }
 
   get shouldReportErrors(): boolean {
@@ -623,18 +640,18 @@ export class Configuration implements IConfiguration {
     await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
   }
 
-  get organization(): string | undefined {
+  get organization(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
     const workspaceFolders = this.workspace.getWorkspaceFolders();
     const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
 
     // If only 1 folder in workspace, return user (global) scope only
     if (workspaceFolders.length === 1) {
-      return inspection?.globalValue;
+      return inspection?.globalValue ?? '';
     }
 
     // If multiple folders, return workspace scope, falling back to user (global) scope
-    return inspection?.workspaceValue ?? inspection?.globalValue;
+    return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
   }
 
   getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
