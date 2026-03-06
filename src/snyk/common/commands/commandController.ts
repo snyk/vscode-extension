@@ -33,6 +33,8 @@ import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
 import { IConfiguration } from '../configuration/configuration';
 
+const COPY_RESULTS_TO_CLIPBOARD = 'Copy Results to Clipboard';
+
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
 
@@ -213,20 +215,19 @@ export class CommandController {
       const result = await this.commands.executeCommand<string>('snyk.diagnostics.checkConnectivity');
 
       if (!result) {
-        await this.window.showErrorMessage('Connectivity check failed to return results.');
+        void this.window.showErrorMessage('Connectivity check failed to return results.');
         return;
       }
 
-      const copyButton = 'Copy Results to Clipboard';
       const response = await this.window.showInformationMessage(
         'Snyk Connectivity Check Results',
         {
           modal: true,
         },
-        copyButton,
+        COPY_RESULTS_TO_CLIPBOARD,
       );
 
-      if (response === copyButton) {
+      if (response === COPY_RESULTS_TO_CLIPBOARD) {
         await this.env.getClipboard().writeText(result);
       }
     } catch (error) {
@@ -255,20 +256,19 @@ export class CommandController {
       const result = await this.commands.executeCommand<string>('snyk.diagnostics.checkDirectories', additionalDirs);
 
       if (!result) {
-        await this.window.showErrorMessage('Directory diagnostics failed to return results.');
+        void this.window.showErrorMessage('Directory diagnostics failed to return results.');
         return;
       }
 
-      const copyButton = 'Copy Results to Clipboard';
       const response = await this.window.showInformationMessage(
         'Snyk Directory Diagnostics Results',
         {
           modal: true,
         },
-        copyButton,
+        COPY_RESULTS_TO_CLIPBOARD,
       );
 
-      if (response === copyButton) {
+      if (response === COPY_RESULTS_TO_CLIPBOARD) {
         await this.env.getClipboard().writeText(result);
       }
     } catch (error) {
