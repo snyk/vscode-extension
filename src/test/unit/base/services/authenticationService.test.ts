@@ -97,6 +97,10 @@ suite('AuthenticationService', () => {
     let service: AuthenticationService;
     const setLoadingBadgeFake = sinon.fake();
 
+    teardown(() => {
+      AuthenticationService.clearAuthFlowState();
+    });
+
     setup(() => {
       baseModule = {
         loadingBadge: {
@@ -158,6 +162,60 @@ suite('AuthenticationService', () => {
       sinon.assert.notCalled(setTokenSpy);
     });
 
+    test('isAuthFlowUpdatingEndpoint() is true while setEndpoint is running', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      const apiUrl = 'https://api.snyk.io';
+      let flagDuringCall = false;
+
+      setEndpointSpy = sinon.fake(async () => {
+        flagDuringCall = AuthenticationService.isAuthFlowUpdatingEndpoint();
+      });
+      config = { ...config, setEndpoint: setEndpointSpy } as unknown as IConfiguration;
+      service = new AuthenticationService(
+        contextService,
+        baseModule,
+        config,
+        windowMock,
+        new LoggerMock(),
+        languageClientAdapter,
+        { executeCommand: sinon.fake() } as IVSCodeCommands,
+      );
+
+      await service.updateTokenAndEndpoint(token, apiUrl);
+
+      strictEqual(flagDuringCall, true);
+    });
+
+    test('isAuthFlowUpdatingEndpoint() is false after updateTokenAndEndpoint completes', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      const apiUrl = 'https://api.snyk.io';
+
+      await service.updateTokenAndEndpoint(token, apiUrl);
+
+      strictEqual(AuthenticationService.isAuthFlowUpdatingEndpoint(), false);
+    });
+
+    test('isAuthFlowUpdatingEndpoint() is false after updateTokenAndEndpoint errors on setEndpoint', async () => {
+      const token = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      const apiUrl = 'https://api.snyk.io';
+
+      setEndpointSpy = sinon.fake.rejects(new Error('setEndpoint failed'));
+      config = { ...config, setEndpoint: setEndpointSpy } as unknown as IConfiguration;
+      service = new AuthenticationService(
+        contextService,
+        baseModule,
+        config,
+        windowMock,
+        new LoggerMock(),
+        languageClientAdapter,
+        { executeCommand: sinon.fake() } as IVSCodeCommands,
+      );
+
+      await rejects(service.updateTokenAndEndpoint(token, apiUrl));
+
+      strictEqual(AuthenticationService.isAuthFlowUpdatingEndpoint(), false);
+    });
+
     test('accepts oauth token', async () => {
       const oauthToken: OAuthToken = {
         // eslint-disable-next-line camelcase
@@ -197,6 +255,7 @@ suite('AuthenticationService', () => {
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
+
   });
 
   suite('AuthenticationService', () => {

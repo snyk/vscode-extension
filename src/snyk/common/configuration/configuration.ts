@@ -244,6 +244,10 @@ export interface IConfiguration {
 
   setEndpoint(endpoint: string): Promise<void>;
 
+  setAuthenticationMethod(method: string): Promise<void>;
+
+  setInsecure(insecure: boolean): Promise<void>;
+
   getDeltaFindingsEnabled(): boolean;
 
   setDeltaFindingsEnabled(isEnabled: boolean): Promise<void>;
@@ -442,6 +446,15 @@ export class Configuration implements IConfiguration {
   async setEndpoint(endpoint: string): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CUSTOM_ENDPOINT);
     await this.workspace.updateConfiguration(configurationId, section, endpoint.toString(), true);
+  }
+
+  async setAuthenticationMethod(method: string): Promise<void> {
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTHENTICATION_METHOD);
+    await this.workspace.updateConfiguration(configurationId, section, method, true);
+  }
+
+  async setInsecure(insecure: boolean): Promise<void> {
+    await this.workspace.updateConfiguration(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL, !insecure, true);
   }
 
   get isFedramp(): boolean {

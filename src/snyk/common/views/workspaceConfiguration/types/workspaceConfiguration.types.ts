@@ -74,10 +74,19 @@ export interface IdeConfigData {
 export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
-  setAuthToken(token: string): void;
+  setAuthToken(token: string, apiUrl?: string): void;
 }
 
-export interface WebviewMessage {
-  type: string;
+export interface SaveConfigMessage {
+  type: 'saveConfig';
   config?: string;
 }
+
+export interface ExecuteCommandMessage {
+  type: 'executeCommand';
+  command?: string;
+  arguments?: unknown[];
+  callbackId?: string;
+}
+
+export type WebviewMessage = SaveConfigMessage | ExecuteCommandMessage;
