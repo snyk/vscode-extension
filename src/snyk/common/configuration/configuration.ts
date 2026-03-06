@@ -173,9 +173,12 @@ export interface IConfiguration {
   /**
    * Sets the auto organization setting at the workspace folder level.
    * @param workspaceFolder - The workspace folder to set the setting for
-   * @param autoSelectOrganization - Whether auto organization should be enabled
+   * @param autoSelectOrganization - Whether auto organization should be enabled, or undefined to clear the folder-level override
    */
-  setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void>;
+  setAutoSelectOrganization(
+    workspaceFolder: WorkspaceFolder,
+    autoSelectOrganization: boolean | undefined,
+  ): Promise<void>;
 
   /**
    * Gets the organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
@@ -635,7 +638,10 @@ export class Configuration implements IConfiguration {
     );
   }
 
-  async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
+  async setAutoSelectOrganization(
+    workspaceFolder: WorkspaceFolder,
+    autoSelectOrganization: boolean | undefined,
+  ): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
     await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
   }
