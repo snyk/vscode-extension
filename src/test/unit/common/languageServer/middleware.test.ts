@@ -153,8 +153,7 @@ suite('Language Server: Middleware', () => {
 
     const res = await middleware.workspace.configuration(params, token, handler);
     if (!(res instanceof Error)) {
-      console.log(res);
-      assert.fail("Handler didn't return an error");
+      assert.fail(`Handler didn't return an error, got: ${JSON.stringify(res)}`);
     }
   });
 

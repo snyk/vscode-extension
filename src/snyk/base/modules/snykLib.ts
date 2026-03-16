@@ -67,7 +67,6 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
     fulfilledResults.forEach(({ value }) => {
       const { flag, isEnabled } = value;
       configuration.setFeatureFlag(flag, isEnabled);
-      Logger.info(`Feature flag ${flag} is ${isEnabled ? 'enabled' : 'disabled'}`);
     });
 
     const rejectedResults = featureFlagResults.filter(

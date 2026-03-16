@@ -3,10 +3,10 @@ import { SNYK_NAME } from '../constants/general';
 import { ILog, LogLevel } from './interfaces';
 
 class Log implements ILog {
-  private output: vscode.OutputChannel;
+  private output: vscode.LogOutputChannel;
 
   constructor() {
-    this.output = vscode.window.createOutputChannel(SNYK_NAME);
+    this.output = vscode.window.createOutputChannel(SNYK_NAME, { log: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -30,12 +30,24 @@ class Log implements ILog {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  log(level: LogLevel, message: string | Error | unknown): void {
-    if (level == 'Debug') {
-      return console.log(message);
+  private log(level: LogLevel, message: string | Error | unknown): void {
+    switch (level) {
+      case 'Error':
+        this.output.error(`${message}`);
+        break;
+      case 'Warn':
+        this.output.warn(`${message}`);
+        break;
+      case 'Info':
+        this.output.info(`${message}`);
+        break;
+      case 'Debug':
+        this.output.debug(`${message}`);
+        break;
+      default:
+        this.output.appendLine(`${message}`);
+        break;
     }
-
-    this.output.appendLine(`[${level}] ${message}`);
   }
 
   showOutput() {

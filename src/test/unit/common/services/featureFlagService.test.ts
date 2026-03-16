@@ -3,10 +3,13 @@ import sinon from 'sinon';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { FeatureFlagService } from '../../../../snyk/common/services/featureFlagService';
 import { SNYK_FEATURE_FLAG_COMMAND } from '../../../../snyk/common/constants/commands';
+import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 
 suite('FeatureFlagService', () => {
   let commands: IVSCodeCommands;
   const executeCommandFake = sinon.fake();
+  const logger = new LoggerMockFailOnErrors();
+
   setup(() => {
     executeCommandFake.resetHistory();
     commands = {
@@ -19,7 +22,7 @@ suite('FeatureFlagService', () => {
   });
 
   test('getCodeLesson executes correct command', async () => {
-    const featureFlagService = new FeatureFlagService(commands);
+    const featureFlagService = new FeatureFlagService(commands, logger);
 
     await featureFlagService.fetchFeatureFlag('test');
     strictEqual(executeCommandFake.calledOnce, true);

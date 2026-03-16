@@ -216,7 +216,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     this.learnService = new LearnService(vsCodeCommands);
-    this.cacheService = new ClearCacheService(vsCodeCommands);
+    this.cacheService = new ClearCacheService(vsCodeCommands, Logger);
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
 
@@ -561,7 +561,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Fetch feature flag to determine whether to use the new LSP-based rendering.
     // feature flags depend on the language server
-    this.featureFlagService = new FeatureFlagService(vsCodeCommands);
+    this.featureFlagService = new FeatureFlagService(vsCodeCommands, Logger);
     await this.setupFeatureFlags();
 
     await this.sendPluginInstalledEvent();
