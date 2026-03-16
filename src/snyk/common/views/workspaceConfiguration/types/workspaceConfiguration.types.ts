@@ -38,6 +38,7 @@ export interface IdeConfigData {
   activateSnykOpenSource?: boolean;
   activateSnykCode?: boolean;
   activateSnykIac?: boolean;
+  activateSnykSecrets?: boolean;
   scanningMode?: string;
   organization?: string;
 

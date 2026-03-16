@@ -106,7 +106,7 @@ suite('DownloadService', () => {
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
-    stub(service, 'isCliInstalled').resolves(true);
+    stub(CliExecutable, 'exists').resolves(true);
     const downloadSpy = stub(service, 'download');
     const updateSpy = stub(service, 'update');
 
@@ -193,7 +193,7 @@ suite('DownloadService', () => {
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
-    stub(service, 'isCliInstalled').resolves(true);
+    stub(CliExecutable, 'exists').resolves(true);
 
     await service.downloadOrUpdate();
 
@@ -210,7 +210,7 @@ suite('DownloadService', () => {
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
-    stub(service, 'isCliInstalled').resolves(false);
+    stub(CliExecutable, 'exists').resolves(false);
 
     let thrownError: Error | undefined;
     try {
@@ -234,7 +234,7 @@ suite('DownloadService', () => {
       getCliPath: () => Promise.resolve('path/to/cli'),
     } as IConfiguration;
     const service = new DownloadService(context, configuration, cliApi, windowMock, logger, downloader);
-    stub(service, 'isCliInstalled').resolves(true);
+    stub(CliExecutable, 'exists').resolves(true);
 
     const result = await service.downloadOrUpdate();
 
