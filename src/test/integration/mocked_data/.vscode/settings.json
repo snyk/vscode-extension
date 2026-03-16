@@ -1,0 +1,8 @@
+{
+  "snyk.issueViewOptions": {
+    "ignoredIssues": true,
+    "openIssues": true
+  },
+  "snyk.advanced.authenticationMethod": "API Token (Legacy)",
+  "snyk.scanningMode": "manual"
+}

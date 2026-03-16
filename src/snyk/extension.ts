@@ -534,7 +534,8 @@ class SnykExtension extends SnykLib implements IExtension {
     this.experimentService.load();
 
     // Skip LS initialization during integration tests to prevent LS interferening with tests
-    if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
+    // See `TestEnvVars.INTEGRATION_MODE` in 'testConstants.ts'.
+    if (process.env.SNYK_VSCE_TEST_INTEGRATION_MODE === 'true') return;
 
     this.initDependencyDownload();
 

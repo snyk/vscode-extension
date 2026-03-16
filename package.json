@@ -580,6 +580,7 @@
     "test:unit": "npm run rebuild && mocha --ui tdd -c 'out/test/unit/**/*.test.js'",
     "test:unit:watch": "npm run rebuild && mocha --ui tdd -w -c 'out/test/unit/**/*.test.js'",
     "test:integration": "npm run rebuild && node ./out/test/integration/runTest.js",
+    "test:e2e": "npm run rebuild && node ./out/test/e2e/runE2ETest.js",
     "lint": "npx eslint \"src/**/*.ts\"",
     "lint:fix": "npx eslint --fix \"src/**/*.ts\"",
     "vscode:uninstall": "node ./out/uninstall",

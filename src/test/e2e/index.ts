@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { glob } from 'glob';
 import Mocha from 'mocha';
 import path from 'path';
@@ -5,6 +6,7 @@ import path from 'path';
 import { loadOptions } from 'mocha/lib/cli/cli';
 import { getExtension } from '../../extension';
 import { isStringArray } from '../../snyk/common/tsUtil';
+import { ADVANCED_CUSTOM_ENDPOINT } from '../../snyk/common/constants/settings';
 import { TestEnvVars } from '../testConstants';
 import { Logger } from '../../snyk/common/logger/logger';
 
@@ -13,9 +15,16 @@ export async function run(): Promise<void> {
   const baseOptions: Mocha.MochaOptions = {
     ui: 'tdd',
     color: true,
-    slow: 150, // double the default, as integration tests are slow
+    slow: 150,
     timeout: process.env[TestEnvVars.DEVELOPMENT] ? 60000 : undefined,
     rootHooks: {
+      async beforeAll() {
+        // Clear any stale customEndpoint left in Global settings by previous test runs
+        // (e.g. integration tests writing api.dev.snyk.io)
+        await vscode.workspace
+          .getConfiguration()
+          .update(ADVANCED_CUSTOM_ENDPOINT, undefined, vscode.ConfigurationTarget.Global);
+      },
       beforeEach() {
         Logger.info('vvv About to run next test vvv');
       },
@@ -35,7 +44,7 @@ export async function run(): Promise<void> {
   };
 
   // Parse additional Mocha options forwarded from runTest.ts via the environment variable.
-  // E.g. if you ran: `npm run test:integration -- --grep 'my test name'`,
+  // E.g. if you ran: `npm run test:e2e -- --grep 'my test name'`,
   // then the environment variable would contain "--grep 'my test name'".
   const mochaCliArgsJSONStringified = process.env[TestEnvVars.MOCHA_CLI_ARGS];
   let additionalOptions: Mocha.MochaOptions = {};
@@ -54,9 +63,20 @@ export async function run(): Promise<void> {
     }
   }
 
+  // If --grep was provided, wrap it so tests prefixed with "CORE: " always run.
+  // These are setup tests (auth, trust) that later tests depend on.
+  // Mocha matches grep against the full title (suite + test name), so "CORE: "
+  // appears mid-string — no ^ anchor.
+  if (additionalOptions.grep) {
+    const userGrep =
+      typeof additionalOptions.grep === 'string' ? additionalOptions.grep : additionalOptions.grep.source;
+    additionalOptions.grep = new RegExp(`((CORE: )|(${userGrep}))`);
+    console.log(`[e2e] Wrapped --grep to always include CORE tests: ${additionalOptions.grep}`);
+  }
+
   const mocha = new Mocha({
     ...additionalOptions,
-    ...baseOptions, // The base options must take priority, as `loadOptions` returns the defaults as well.
+    ...baseOptions, // Base options take priority (loadOptions returns defaults too)
   });
 
   try {
@@ -68,14 +88,14 @@ export async function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname, '.');
 
   try {
-    const files = await glob('./**/**.test.js', { cwd: testsRoot });
+    const files = (await glob('./**/**.test.js', { cwd: testsRoot })).sort();
 
     files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
 
     return new Promise((resolve, reject) => {
       mocha.run(failures => {
         if (failures > 0) {
-          reject(new Error(`${failures} tests failed.`));
+          reject(new Error(`${failures} E2E tests failed.`));
         } else {
           resolve();
         }
@@ -83,6 +103,6 @@ export async function run(): Promise<void> {
     });
   } catch (err) {
     console.error(err);
-    throw err; // Rethrow the error for the caller to handle
+    throw err;
   }
 }

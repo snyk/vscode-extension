@@ -51,6 +51,10 @@ export default class SnykLib extends BaseSnykModule implements ISnykLib {
   }
 
   async setupFeatureFlags(): Promise<void> {
+    if (!this.featureFlagService) {
+      return;
+    }
+
     const flags = [
       { flag: FEATURE_FLAGS.consistentIgnores, fallback: false },
       { flag: FEATURE_FLAGS.snykCodeInlineIgnore, fallback: true },

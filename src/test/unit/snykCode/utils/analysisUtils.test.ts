@@ -1,18 +1,14 @@
 import { strictEqual } from 'assert';
 import path from 'path';
-import sinon from 'sinon';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { getAbsoluteMarkerFilePath } from '../../../../snyk/snykCode/utils/analysisUtils';
 
 suite('Snyk Code Analysis Utils', () => {
-  const createRangeMock = sinon.mock();
   let workspace: IVSCodeWorkspace;
 
   setup(() => {
     workspace = {} as IVSCodeWorkspace;
   });
-
-  teardown(() => createRangeMock.reset());
 
   test('Returns correct absolute path if no marker file path provided', () => {
     // arrange
