@@ -155,7 +155,7 @@
             "title": "Snyk Secrets",
             "description": "[Closed Beta] Find and remediate hard-coded secrets in your codebase.",
             "default": false
-          },          
+          },
           "snyk.severity": {
             "order": 6,
             "type": "object",
@@ -633,7 +633,7 @@
   },
   "overrides": {
     "vscode-languageclient": {
-      "minimatch": "==5.1.7"
+      "minimatch": "==5.1.9"
     }
   }
 }
