@@ -10,7 +10,7 @@ import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
 import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings';
 import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
-import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
+import { LogMockFailOnErrors } from '../unit/mocks/logger.mock';
 import CodeSecurityIssueTreeProvider from '../../snyk/snykCode/views/securityIssueTreeProvider';
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
@@ -35,7 +35,7 @@ suite('Code Security Issue Tree Provider', () => {
 
   function createIssueTreeProvider(resultData: ProductResult<CodeIssueData>): CodeSecurityIssueTreeProvider {
     return new CodeSecurityIssueTreeProvider(
-      new LoggerMockFailOnErrors(),
+      new LogMockFailOnErrors(),
       viewManagerService,
       contextService,
       {

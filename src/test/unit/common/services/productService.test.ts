@@ -12,7 +12,7 @@ import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContex
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerMock } from '../../mocks/languageServer.mock';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LogMock } from '../../mocks/logger.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 
 type MockProductData = {
@@ -62,7 +62,7 @@ suite('Product Service', () => {
         getIssuesFromDiagnostics: () => [],
         getIssuesFromDiagnosticsForFolder: () => [],
       } as IDiagnosticsIssueProvider<MockProductData>,
-      new LoggerMock(),
+      new LogMock(),
       LsScanProduct.Code,
     );
   });

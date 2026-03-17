@@ -23,7 +23,7 @@ import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
-import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
+import { LogMockFailOnErrors } from '../../mocks/logger.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
@@ -80,7 +80,7 @@ suite('Language Server: Middleware', () => {
 
   test('Configuration request should translate settings', async () => {
     const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
+      new LogMockFailOnErrors(),
       configuration,
       user,
       new Subject<ShowIssueDetailTopicParams>(),
@@ -128,7 +128,7 @@ suite('Language Server: Middleware', () => {
 
   test('Configuration request should return an error', async () => {
     const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
+      new LogMockFailOnErrors(),
       configuration,
       user,
       new Subject<ShowIssueDetailTopicParams>(),
@@ -172,7 +172,7 @@ suite('Language Server: Middleware', () => {
     });
 
     const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
+      new LogMockFailOnErrors(),
       {} as IConfiguration,
       {} as User,
       showIssueDetailTopic$,

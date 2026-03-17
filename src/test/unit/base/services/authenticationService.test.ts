@@ -10,7 +10,7 @@ import { IContextService } from '../../../../snyk/common/services/contextService
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { LanguageClient } from '../../../../snyk/common/vscode/types';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LogMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
 suite('AuthenticationService', () => {
@@ -62,7 +62,7 @@ suite('AuthenticationService', () => {
       baseModule,
       config,
       windowMock,
-      new LoggerMock(),
+      new LogMock(),
       languageClientAdapter,
       {} as IVSCodeCommands,
     );
@@ -80,7 +80,7 @@ suite('AuthenticationService', () => {
       baseModule,
       config,
       windowMock,
-      new LoggerMock(),
+      new LogMock(),
       languageClientAdapter,
       {} as IVSCodeCommands,
     );
@@ -109,7 +109,7 @@ suite('AuthenticationService', () => {
         baseModule,
         config,
         windowMock,
-        new LoggerMock(),
+        new LogMock(),
         languageClientAdapter,
         {
           executeCommand: sinon.fake(),
@@ -211,7 +211,7 @@ suite('AuthenticationService', () => {
           {} as IBaseSnykModule,
           {} as IConfiguration,
           windowMock,
-          new LoggerMock(),
+          new LogMock(),
           {} as ILanguageClientAdapter,
           {} as IVSCodeCommands,
         );

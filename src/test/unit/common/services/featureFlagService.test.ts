@@ -3,12 +3,12 @@ import sinon from 'sinon';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { FeatureFlagService } from '../../../../snyk/common/services/featureFlagService';
 import { SNYK_FEATURE_FLAG_COMMAND } from '../../../../snyk/common/constants/commands';
-import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
+import { LogMockFailOnErrors } from '../../mocks/logger.mock';
 
 suite('FeatureFlagService', () => {
   let commands: IVSCodeCommands;
   const executeCommandFake = sinon.fake();
-  const logger = new LoggerMockFailOnErrors();
+  const logger = new LogMockFailOnErrors();
 
   setup(() => {
     executeCommandFake.resetHistory();

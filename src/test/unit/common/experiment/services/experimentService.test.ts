@@ -5,14 +5,14 @@ import { IConfiguration } from '../../../../../snyk/common/configuration/configu
 import { SnykConfiguration } from '../../../../../snyk/common/configuration/snykConfiguration';
 import { ExperimentKey, ExperimentService } from '../../../../../snyk/common/experiment/services/experimentService';
 import { User } from '../../../../../snyk/common/user';
-import { LoggerMock } from '../../../mocks/logger.mock';
+import { LogMock } from '../../../mocks/logger.mock';
 
 suite('ExperimentService', () => {
   let user: User;
   let fetchStub: sinon.SinonStub;
 
   setup(() => {
-    user = new User(undefined, undefined, new LoggerMock());
+    user = new User(undefined, undefined, new LogMock());
 
     sinon.stub(SnykConfiguration, 'get').resolves({
       amplitudeExperimentApiKey: 'test',
@@ -33,7 +33,7 @@ suite('ExperimentService', () => {
       shouldReportEvents: false,
     } as unknown as IConfiguration;
 
-    const service = new ExperimentService(user, new LoggerMock(), config);
+    const service = new ExperimentService(user, new LogMock(), config);
     const loaded = service.load();
 
     strictEqual(loaded, false);
@@ -44,7 +44,7 @@ suite('ExperimentService', () => {
       shouldReportEvents: false,
     } as unknown as IConfiguration;
 
-    const service = new ExperimentService(user, new LoggerMock(), config);
+    const service = new ExperimentService(user, new LogMock(), config);
 
     const isUserPartOfExperiment = await service.isUserPartOfExperiment(ExperimentKey.TestExperiment);
 
@@ -57,7 +57,7 @@ suite('ExperimentService', () => {
     } as unknown as IConfiguration;
 
     const snykConfig = new SnykConfiguration('test', 'test');
-    const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
+    const service = new ExperimentService(user, new LogMock(), config, snykConfig);
     service.load();
 
     fetchStub.returns({});
@@ -74,7 +74,7 @@ suite('ExperimentService', () => {
     } as unknown as IConfiguration;
 
     const snykConfig = new SnykConfiguration('test', 'test');
-    const service = new ExperimentService(user, new LoggerMock(), config, snykConfig);
+    const service = new ExperimentService(user, new LogMock(), config, snykConfig);
     service.load();
 
     fetchStub.returns({});

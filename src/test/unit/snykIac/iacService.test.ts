@@ -13,7 +13,7 @@ import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { IacService } from '../../../snyk/snykIac/iacService';
 import { IacSuggestionWebviewProvider } from '../../../snyk/snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
-import { LoggerMock } from '../mocks/logger.mock';
+import { LogMock } from '../mocks/logger.mock';
 import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsService';
 
 suite('IaC Service', () => {
@@ -47,7 +47,7 @@ suite('IaC Service', () => {
         registerCodeActionsProvider: sinon.fake(),
       } as unknown as IVSCodeLanguages,
       {} as IDiagnosticsIssueProvider<IacIssueData>,
-      new LoggerMock(),
+      new LogMock(),
     );
   });
 

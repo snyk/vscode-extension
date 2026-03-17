@@ -4,7 +4,7 @@ import { strictEqual, ok } from 'assert';
 import sinon from 'sinon';
 import { WorkspaceConfigurationWebviewProvider } from '../../snyk/common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ExtensionContext } from '../../snyk/common/vscode/extensionContext';
-import { LoggerMock } from '../unit/mocks/logger.mock';
+import { LogMock } from '../unit/mocks/logger.mock';
 import { IVSCodeCommands } from '../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 import { IConfiguration } from '../../snyk/common/configuration/configuration';
@@ -24,7 +24,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
   let configMappingServiceMock: IConfigurationMappingService;
   let scopeDetectionServiceMock: IScopeDetectionService;
   let messageHandlerFactoryMock: IMessageHandlerFactory;
-  let logger: LoggerMock;
+  let logger: LogMock;
   let executeCommandStub: sinon.SinonStub;
   let updateConfigurationStub: sinon.SinonStub;
 
@@ -40,7 +40,7 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
 </html>`;
 
   setup(() => {
-    logger = new LoggerMock();
+    logger = new LogMock();
 
     executeCommandStub = sinon.stub().resolves(sampleHtml);
     commandExecutorMock = {

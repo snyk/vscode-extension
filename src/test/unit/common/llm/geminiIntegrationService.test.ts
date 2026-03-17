@@ -4,7 +4,7 @@ import { GeminiIntegrationService } from '../../../../snyk/common/llm/geminiInte
 import { SNYK_WORKSPACE_SCAN_COMMAND } from '../../../../snyk/common/constants/commands';
 import { Scan } from '../../../../snyk/common/languageServer/types';
 import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LogMock } from '../../mocks/logger.mock';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
@@ -21,7 +21,7 @@ suite('Workspace Scan Command Parameter Test', () => {
 
   setup(() => {
     // Create stubs and mocks
-    const loggerMock = new LoggerMock();
+    const loggerMock = new LogMock();
     const configurationMock = {
       getFeaturesConfiguration: () => ({
         ossEnabled: true,

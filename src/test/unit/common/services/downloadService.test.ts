@@ -16,7 +16,7 @@ import { Checksum } from '../../../../snyk/cli/checksum';
 import { CliExecutable } from '../../../../snyk/cli/cliExecutable';
 import { messages } from '../../../../snyk/cli/messages/messages';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LogMock } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 
 suite('DownloadService', () => {
@@ -42,7 +42,7 @@ suite('DownloadService', () => {
       getSha256Checksum: apigetSha256Checksum,
     };
 
-    logger = new LoggerMock();
+    logger = new LogMock();
 
     context = {
       extensionPath: 'test/path',

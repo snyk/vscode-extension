@@ -7,7 +7,7 @@ import { Downloader } from '../../../snyk/common/download/downloader';
 import { CliExecutable } from '../../../snyk/cli/cliExecutable';
 import { IStaticCliApi } from '../../../snyk/cli/staticCliApi';
 import { ILog } from '../../../snyk/common/logger/interfaces';
-import { LoggerMock } from '../mocks/logger.mock';
+import { LogMock } from '../mocks/logger.mock';
 import { windowMock } from '../mocks/window.mock';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 
@@ -22,7 +22,7 @@ suite('CLI Downloader (CLI)', () => {
       downloadBinary: sinon.fake(),
       getSha256Checksum: sinon.fake(),
     };
-    logger = new LoggerMock();
+    logger = new LogMock();
     configuration = {
       isAutomaticDependencyManagementEnabled: () => true,
       getCliReleaseChannel: () => Promise.resolve('stable'),

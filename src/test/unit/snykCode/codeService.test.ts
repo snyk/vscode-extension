@@ -14,7 +14,7 @@ import { SnykCodeService } from '../../../snyk/snykCode/codeService';
 import { ICodeSuggestionWebviewProvider } from '../../../snyk/snykCode/views/interfaces';
 import { LanguageServerMock } from '../mocks/languageServer.mock';
 import { languagesMock } from '../mocks/languages.mock';
-import { LoggerMock } from '../mocks/logger.mock';
+import { LogMock } from '../mocks/logger.mock';
 import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnosticsService';
 
 suite('Code Service', () => {
@@ -46,7 +46,7 @@ suite('Code Service', () => {
       ls,
       languagesMock,
       {} as IDiagnosticsIssueProvider<CodeIssueData>,
-      new LoggerMock(),
+      new LogMock(),
       {} as IFolderConfigs,
     );
   });

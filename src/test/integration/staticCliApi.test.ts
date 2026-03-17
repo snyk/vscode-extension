@@ -3,7 +3,7 @@ import { StaticCliApi } from '../../snyk/cli/staticCliApi';
 import { Configuration } from '../../snyk/common/configuration/configuration';
 import { VSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 import { ILog } from '../../snyk/common/logger/interfaces';
-import { LoggerMock } from '../unit/mocks/logger.mock';
+import { LogMock } from '../unit/mocks/logger.mock';
 import { CliSupportedPlatform } from '../../snyk/cli/supportedPlatforms';
 import { Readable } from 'stream';
 import * as fs from 'fs';
@@ -25,7 +25,7 @@ suite('StaticCliApi - Integration Tests', function () {
   setup(() => {
     workspace = new VSCodeWorkspace();
     configuration = new Configuration(process.env, workspace);
-    logger = new LoggerMock();
+    logger = new LogMock();
     api = new StaticCliApi(workspace, configuration, logger);
   });
 

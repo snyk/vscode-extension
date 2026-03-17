@@ -18,7 +18,7 @@ import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageC
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../../../../snyk/common/vscode/types';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
+import { LogMock, LogMockFailOnErrors } from '../../mocks/logger.mock';
 import { windowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
@@ -33,13 +33,13 @@ import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeVie
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
-  const user = new User(v4(), undefined, new LoggerMock());
+  const user = new User(v4(), undefined, new LogMock());
 
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
 
-  const logger = new LoggerMockFailOnErrors();
+  const logger = new LogMockFailOnErrors();
 
   const createFakeLanguageServer = (
     languageClientAdapter: ILanguageClientAdapter,

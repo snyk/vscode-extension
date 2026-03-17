@@ -10,7 +10,7 @@ import { FEATURE_FLAGS } from '../../snyk/common/constants/featureFlags';
 import { configuration } from '../../snyk/common/configuration/instance';
 import { ISSUE_VIEW_OPTIONS_SETTING } from '../../snyk/common/constants/settings';
 import { IFolderConfigs } from '../../snyk/common/configuration/folderConfigs';
-import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
+import { LogMockFailOnErrors } from '../unit/mocks/logger.mock';
 import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
 import IacIssueTreeProvider from '../../snyk/snykIac/views/iacIssueTreeProvider';
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
@@ -104,7 +104,7 @@ suite('IaC Issue Tree Provider', () => {
         }
 
         const issueTreeProvider = new IacIssueTreeProvider(
-          new LoggerMockFailOnErrors(),
+          new LogMockFailOnErrors(),
           viewManagerService,
           contextService,
           {

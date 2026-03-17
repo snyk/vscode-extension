@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SNYK_NAME } from '../constants/general';
-import { ILog, LogLevel } from './interfaces';
+import { IClassLog, IFuncLog, ILog } from './interfaces';
 
 class Log implements ILog {
   private output: vscode.LogOutputChannel;
@@ -11,47 +11,66 @@ class Log implements ILog {
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   info(message: string | unknown): void {
-    this.log('Info', message);
+    this.output.info(`${message}`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   warn(message: string | Error | unknown): void {
-    this.log('Warn', message);
+    this.output.warn(`${message}`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   error(message: string | Error | unknown): void {
-    this.log('Error', message);
+    this.output.error(`${message}`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   debug(message: string | unknown): void {
-    this.log('Debug', message);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  private log(level: LogLevel, message: string | Error | unknown): void {
-    switch (level) {
-      case 'Error':
-        this.output.error(`${message}`);
-        break;
-      case 'Warn':
-        this.output.warn(`${message}`);
-        break;
-      case 'Info':
-        this.output.info(`${message}`);
-        break;
-      case 'Debug':
-        this.output.debug(`${message}`);
-        break;
-      default:
-        this.output.appendLine(`${message}`);
-        break;
-    }
+    this.output.debug(`${message}`);
   }
 
   showOutput() {
     this.output.show();
+  }
+
+  classLog(className: typeof Function.name): IClassLog {
+    return new ClassLog(this, className);
+  }
+}
+
+class ClassLog implements IClassLog {
+  constructor(private readonly baseLogger: ILog, private readonly className: typeof Function.name) {}
+
+  funcLog(funcName: typeof Function.name): IFuncLog {
+    return new FuncLog(this.baseLogger, this.className, funcName);
+  }
+}
+
+class FuncLog implements IFuncLog {
+  constructor(
+    private readonly baseLogger: ILog,
+    private readonly className: typeof Function.name,
+    private readonly funcName: typeof Function.name,
+  ) {}
+
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  info(message: string | unknown): void {
+    this.baseLogger.info(`${this.className}.${this.funcName} - ${message}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  warn(message: string | Error | unknown): void {
+    this.baseLogger.warn(`${this.className}.${this.funcName} - ${message}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  error(message: string | Error | unknown): void {
+    this.baseLogger.error(`${this.className}.${this.funcName} - ${message}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  debug(message: string | unknown): void {
+    this.baseLogger.debug(`${this.className}.${this.funcName} - ${message}`);
   }
 }
 

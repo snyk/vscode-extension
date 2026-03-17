@@ -1,10 +1,10 @@
 import sinon from 'sinon';
 import { TreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
 import { TreeViewWebviewProvider } from '../../../../snyk/common/views/treeViewWebviewProvider';
-import { LoggerMock } from '../../mocks/logger.mock';
+import { LogMock } from '../../mocks/logger.mock';
 
 suite('TreeViewProviderService', () => {
-  const logger = new LoggerMock();
+  const logger = new LogMock();
   let updateWebviewContentStub: sinon.SinonStub;
 
   teardown(() => {
