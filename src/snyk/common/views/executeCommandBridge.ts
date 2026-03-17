@@ -20,10 +20,7 @@ interface ExecuteCommandMessage {
  * - Return results to the JS callback via window.__ideCallbacks__.
  */
 export class ExecuteCommandBridge {
-  constructor(
-    private readonly commandExecutor: IVSCodeCommands,
-    private readonly logger: ILog,
-  ) {}
+  constructor(private readonly commandExecutor: IVSCodeCommands, private readonly logger: ILog) {}
 
   /**
    * Returns the client-side JavaScript that defines window.__ideExecuteCommand__ in a webview.
@@ -70,16 +67,13 @@ export class ExecuteCommandBridge {
         return;
       }
 
-      const msg = message as ExecuteCommandMessage;
+      const msg = message;
       if (!msg.command) {
         this.logger.warn('Received executeCommand message without command');
         return;
       }
 
-      const result = await this.commandExecutor.executeCommand(
-        msg.command,
-        ...(msg.arguments ?? []),
-      );
+      const result = await this.commandExecutor.executeCommand(msg.command, ...(msg.arguments ?? []));
 
       if (msg.callbackId) {
         return { callbackId: msg.callbackId, result };

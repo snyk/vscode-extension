@@ -5,7 +5,11 @@ import { IVSCodeCommands } from '../../../../../../snyk/common/vscode/commands';
 import { IConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import { IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
-import { AUTH_METHOD_OAUTH, AUTH_METHOD_PAT, AUTH_METHOD_TOKEN } from '../../../../../../snyk/common/constants/settings';
+import {
+  AUTH_METHOD_OAUTH,
+  AUTH_METHOD_PAT,
+  AUTH_METHOD_TOKEN,
+} from '../../../../../../snyk/common/constants/settings';
 import { AuthenticationService } from '../../../../../../snyk/base/services/authenticationService';
 
 suite('MessageHandlerFactory', () => {
@@ -58,13 +62,7 @@ suite('MessageHandlerFactory', () => {
       });
 
       sinon.assert.calledOnce(commandExecutorStub.executeCommand);
-      sinon.assert.calledWith(
-        commandExecutorStub.executeCommand,
-        'snyk.login',
-        'oauth2',
-        'https://api.snyk.io',
-        false,
-      );
+      sinon.assert.calledWith(commandExecutorStub.executeCommand, 'snyk.login', 'oauth2', 'https://api.snyk.io', false);
     });
 
     test('saves auth params to IDE storage when snyk.login has 3+ args', async () => {
@@ -113,7 +111,7 @@ suite('MessageHandlerFactory', () => {
 
     test('uses authFlowUpdatingEndpoint guard when saving endpoint', async () => {
       let flagDuringCall = false;
-      (configStub.setEndpoint as sinon.SinonStub).callsFake(async () => {
+      (configStub.setEndpoint as sinon.SinonStub).callsFake(() => {
         flagDuringCall = AuthenticationService.isAuthFlowUpdatingEndpoint();
       });
 

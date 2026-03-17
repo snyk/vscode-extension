@@ -21,10 +21,7 @@ suite('ExecuteCommandBridge', () => {
       error: sinon.stub(),
     } as unknown as sinon.SinonStubbedInstance<ILog>;
 
-    bridge = new ExecuteCommandBridge(
-      commandExecutorStub as unknown as IVSCodeCommands,
-      loggerStub,
-    );
+    bridge = new ExecuteCommandBridge(commandExecutorStub as unknown as IVSCodeCommands, loggerStub);
   });
 
   teardown(() => {

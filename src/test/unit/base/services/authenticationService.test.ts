@@ -167,7 +167,7 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
       let flagDuringCall = false;
 
-      setEndpointSpy = sinon.fake(async () => {
+      setEndpointSpy = sinon.fake(() => {
         flagDuringCall = AuthenticationService.isAuthFlowUpdatingEndpoint();
       });
       config = { ...config, setEndpoint: setEndpointSpy } as unknown as IConfiguration;
@@ -255,7 +255,6 @@ suite('AuthenticationService', () => {
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
       sinon.assert.notCalled(setTokenSpy);
     });
-
   });
 
   suite('AuthenticationService', () => {
