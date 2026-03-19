@@ -31,6 +31,8 @@ import { OpenCommandIssueType, OpenIssueCommandArg } from './types';
 import { IFolderConfigs } from '../configuration/folderConfigs';
 import { IConfiguration } from '../configuration/configuration';
 
+export const MAX_DISPLAY_LENGTH = 500;
+
 export class CommandController {
   private debouncedCommands: Record<string, _.DebouncedFunc<(...args: unknown[]) => Promise<unknown>>> = {};
 
@@ -49,6 +51,12 @@ export class CommandController {
     private configuration: IConfiguration,
     private folderConfigs: IFolderConfigs,
   ) {}
+
+  private truncateForDisplay(text: string): string {
+    if (text.length <= MAX_DISPLAY_LENGTH) return text;
+    const suffix = ' [...]';
+    return text.substring(0, MAX_DISPLAY_LENGTH - suffix.length) + suffix;
+  }
 
   openBrowser(url: string): unknown {
     return this.executeCommand(SNYK_OPEN_BROWSER_COMMAND, this.openerService.openBrowserUrl.bind(this), url);
@@ -194,9 +202,12 @@ export class CommandController {
         .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
         .join('\n');
 
+      // Truncate display text but keep full text for copying
+      const displayDetails = this.truncateForDisplay(details);
+
       const copyButton = 'Copy';
       const result = await this.window.showInformationMessage(
-        details,
+        displayDetails,
         {
           modal: true,
           detail: `You can copy the error message and use the filter field in the output channel to locate it.`,
