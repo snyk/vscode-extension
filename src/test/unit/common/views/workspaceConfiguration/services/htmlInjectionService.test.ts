@@ -67,4 +67,13 @@ suite('HtmlInjectionService', () => {
 
     ok(processed.includes('message.apiUrl'), 'Should forward apiUrl from message to window.setAuthToken');
   });
+
+  test('injectIdeScripts guards setAuthToken call with typeof check', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("typeof window.setAuthToken === 'function'"),
+      'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
+    );
+  });
 });

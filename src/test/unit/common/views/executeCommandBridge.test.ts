@@ -83,6 +83,34 @@ suite('ExecuteCommandBridge', () => {
       strictEqual(result?.result, 'token-value');
     });
 
+    test('drops callback and warns when callbackId does not match __cb_<digits> pattern', async () => {
+      (commandExecutorStub.executeCommand as sinon.SinonStub).resolves('result');
+
+      const result = await bridge.handleMessage({
+        type: 'executeCommand',
+        command: 'snyk.login',
+        arguments: [],
+        callbackId: '__proto__',
+      });
+
+      sinon.assert.calledOnce(commandExecutorStub.executeCommand);
+      sinon.assert.called(loggerStub.warn);
+      strictEqual(result, undefined);
+    });
+
+    test('accepts callbackId with multi-digit counter', async () => {
+      (commandExecutorStub.executeCommand as sinon.SinonStub).resolves('ok');
+
+      const result = await bridge.handleMessage({
+        type: 'executeCommand',
+        command: 'snyk.logout',
+        arguments: [],
+        callbackId: '__cb_42',
+      });
+
+      strictEqual(result?.callbackId, '__cb_42');
+    });
+
     test('returns undefined when no callbackId', async () => {
       (commandExecutorStub.executeCommand as sinon.SinonStub).resolves('result');
 

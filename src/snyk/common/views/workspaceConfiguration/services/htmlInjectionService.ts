@@ -50,7 +50,9 @@ export class HtmlInjectionService implements IHtmlInjectionService {
           window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'setAuthToken' && message.token) {
-              window.setAuthToken(message.token, message.apiUrl);
+              if (typeof window.setAuthToken === 'function') {
+                window.setAuthToken(message.token, message.apiUrl);
+              }
             }
           });
         })();

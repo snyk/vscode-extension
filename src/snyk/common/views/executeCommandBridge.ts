@@ -76,11 +76,19 @@ export class ExecuteCommandBridge {
       const result = await this.commandExecutor.executeCommand(msg.command, ...(msg.arguments ?? []));
 
       if (msg.callbackId) {
+        if (!this.isValidCallbackId(msg.callbackId)) {
+          this.logger.warn('Received executeCommand message with invalid callbackId - ignoring callback');
+          return;
+        }
         return { callbackId: msg.callbackId, result };
       }
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Error handling executeCommand message');
     }
+  }
+
+  private isValidCallbackId(callbackId: string): boolean {
+    return /^__cb_\d+$/.test(callbackId);
   }
 
   private isValidExecuteCommandMessage(message: unknown): message is ExecuteCommandMessage {
