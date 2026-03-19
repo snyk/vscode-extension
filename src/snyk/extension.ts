@@ -114,7 +114,7 @@ import { ProductTreeViewService } from './common/services/productTreeViewService
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
-import { HTML_SETTINGS, HTML_TREE_VIEW } from './common/constants/settings';
+import { HTML_TREE_VIEW } from './common/constants/settings';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 

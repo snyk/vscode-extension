@@ -46,4 +46,3 @@ export const DELTA_FINDINGS = `${CONFIGURATION_IDENTIFIER}.allIssuesVsNetNewIssu
 export const AUTO_CONFIGURE_MCP_SERVER = `${CONFIGURATION_IDENTIFIER}.securityAtInception.autoConfigureSnykMcpServer`;
 export const SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY = `${CONFIGURATION_IDENTIFIER}.securityAtInception.executionFrequency`;
 export const HTML_TREE_VIEW = `htmlTreeView`;
-export const HTML_SETTINGS = `htmlSettings`;

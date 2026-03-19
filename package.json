@@ -83,7 +83,8 @@
               "Uses Personal Access Token (PAT) authentication.",
               "Uses the legacy Snyk Token authentication."
             ],
-            "markdownDescription": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security."
+            "markdownDescription": "Specifies whether to authenticate with OAuth2, PAT, or with an API token (Legacy). \n\nNote: OAuth2 authentication is recommended as it provides enhanced security.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.tokenStorage": {
             "order": 3,
@@ -92,27 +93,31 @@
               "Always use VS Code's secret storage"
             ],
             "default": "Always use VS Code's secret storage",
-            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken)."
+            "markdownDescription": "Snyk uses VS Code's [secret storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) to safely persist API token instead of saving it in plaintext in `settings.json`. To set the token manually, run the VS Code command [Snyk: Set Token](command:snyk.setToken).",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.customEndpoint": {
             "order": 2,
             "type": "string",
             "markdownDescription": "If you're using SSO with Snyk and OAuth2, the custom endpoint configuration is automatically populated. \n\nOtherwise, for public regional instances, see our [documentation](https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions). \n\nFor private instances, contact your team or account manager.",
             "scope": "machine",
-            "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$"
+            "pattern": "^(|(https?://)api.*.(snyk|snykgov).io)$",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.organization": {
             "order": 4,
             "type": "string",
             "markdownDescription": "Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your [web account settings](https://app.snyk.io/account) will be used.\n\n**Note:** This setting will be moved to the Snyk Settings page in a future release.",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.yesCrashReport": {
             "order": 6,
             "type": "boolean",
             "default": true,
             "markdownDescription": "Send error reports to Snyk",
-            "scope": "application"
+            "scope": "application",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       },
@@ -126,28 +131,32 @@
             "type": "boolean",
             "title": "Snyk Open Source security issues",
             "description": "Find and fix open source dependency issues.",
-            "default": true
+            "default": true,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.codeSecurity": {
             "order": 2,
             "type": "boolean",
             "title": "Snyk Code security issues",
             "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, Snyk Code must be enabled for your organization in Snyk settings.",
-            "default": true
+            "default": true,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.infrastructureAsCode": {
             "order": 4,
             "type": "boolean",
             "title": "Snyk Infrastructure as Code issues",
             "description": "Find and fix your IaC misconfigurations.",
-            "default": true
+            "default": true,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.secrets": {
             "order": 5,
             "type": "boolean",
             "title": "Snyk Secrets",
             "description": "[Closed Beta] Find and remediate hard-coded secrets in your codebase.",
-            "default": false
+            "default": false,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.severity": {
             "order": 6,
@@ -178,7 +187,8 @@
             },
             "additionalProperties": false,
             "description": "Severity issues to display.",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.riskScoreThreshold": {
             "order": 6,
@@ -187,7 +197,8 @@
             "maximum": 1000,
             "default": 0,
             "markdownDescription": "[Closed Beta] Filters Open Source issues by [risk score](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/risk-score). Only issues with a risk score >= threshold are shown. Set to 0 to show all issues. This filter will apply in conjunction with other filters such as Severity and Issue View Options.",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.issueViewOptions": {
             "order": 7,
@@ -210,7 +221,8 @@
             },
             "additionalProperties": false,
             "markdownDescription": "[Code Consistent Ignores](https://docs.snyk.io/manage-risk/prioritize-issues-for-fixing/ignore-issues/consistent-ignores-for-snyk-code) helps your teams focus on important tasks by filtering out distractions. It ensures that once an ignore is created, it is consistently respected regardless of how and where the test is run and what branch is being tested.\n\nNote: These filters will have no effect if Code Consistent Ignores is disabled for the organization.\n\nShow the following issues:",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.allIssuesVsNetNewIssues": {
             "type": "string",
@@ -224,13 +236,15 @@
               "Shows all issues that have been identified, including both new and existing issues.",
               "Shows only new issues filtering out previously known issues in a base branch"
             ],
-            "order": 8
+            "order": 8,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
             "scope": "window",
-            "order": 9
+            "order": 9,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       },
@@ -252,14 +266,16 @@
             ],
             "default": "auto",
             "title": "Snyk Code scanning mode",
-            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command."
+            "description": "Choose whether to run Snyk Code scans in the background, or only when you run the `Snyk: Rescan` command.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.autoScanOpenSourceSecurity": {
             "order": 2,
             "type": "boolean",
             "default": false,
             "description": "Run Snyk Open Source Security analysis in automatic mode.",
-            "scope": "application"
+            "scope": "application",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       },
@@ -274,7 +290,8 @@
             "description": "Configure Snyk MCP server",
             "default": false,
             "markdownDescription": "Configure Snyk MCP server",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.securityAtInception.executionFrequency": {
             "order": 3,
@@ -292,7 +309,8 @@
               "The remediation of newly introduced issues will only take place when the agent is manually prompted to scan and fix security issues"
             ],
             "markdownDescription": "Choose when Snyk should scan and initiate fixes for your AI-generated code",
-            "scope": "window"
+            "scope": "window",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.preview": {
             "order": 4,
@@ -301,12 +319,8 @@
             "title": "Preview feature toggles",
             "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
             "propertyNames": true,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk.",
             "properties": {
-              "htmlSettings": {
-                "type": "boolean",
-                "default": true,
-                "description": "Use new HTML-based settings UI instead of VS Code's native settings"
-              },
               "htmlTreeView": {
                 "type": "boolean",
                 "default": true,
@@ -326,14 +340,16 @@
             "type": "boolean",
             "default": true,
             "markdownDescription": "Show welcome notification after installation and restart",
-            "scope": "application"
+            "scope": "application",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.trustedFolders": {
             "order": 1,
             "type": "array",
             "default": [],
             "description": "Folders to trust for Snyk scans.",
-            "scope": "machine"
+            "scope": "machine",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       },
@@ -347,14 +363,16 @@
             "type": "boolean",
             "default": true,
             "scope": "machine",
-            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided."
+            "markdownDescription": "Snyk will download, install and update dependencies for you. If this option is disabled, make sure valid paths to the dependencies are provided.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.cliBaseDownloadUrl": {
             "order": 2,
             "type": "string",
             "scope": "machine",
             "default": "https://downloads.snyk.io",
-            "markdownDescription": "Base URL to download the CLI."
+            "markdownDescription": "Base URL to download the CLI.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.cliReleaseChannel": {
             "order": 3,
@@ -366,13 +384,15 @@
               "preview"
             ],
             "scope": "machine",
-            "markdownDescription": "CLI release channel."
+            "markdownDescription": "CLI release channel.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.cliPath": {
             "order": 4,
             "type": "string",
             "scope": "machine",
-            "markdownDescription": "Sets path to Snyk CLI extension dependency."
+            "markdownDescription": "Sets path to Snyk CLI extension dependency.",
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       }
