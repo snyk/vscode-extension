@@ -378,12 +378,7 @@ class SnykExtension extends SnykLib implements IExtension {
       languageClientAdapter,
       Logger,
     );
-    const messageHandlerFactory = new MessageHandlerFactory(
-      vsCodeCommands,
-      configPersistenceService,
-      Logger,
-      configuration,
-    );
+    const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 
     this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
       extensionContext,

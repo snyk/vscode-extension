@@ -29,7 +29,6 @@ import { vsCodeWorkspace } from '../vscode/workspace';
 import { IWatcher } from './interfaces';
 import { SNYK_CONTEXT } from '../constants/views';
 import { User } from '../user';
-import { AuthenticationService } from '../../base/services/authenticationService';
 import { LanguageServer } from '../languageServer/languageServer';
 
 class ConfigurationWatcher implements IWatcher {
@@ -58,10 +57,7 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === IAC_ENABLED_SETTING) {
       return extension.viewManagerService.refreshIacView();
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
-      if (!AuthenticationService.isAuthFlowUpdatingEndpoint()) {
-        return configuration.clearToken();
-      }
-      return;
+      return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
       await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
       await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
