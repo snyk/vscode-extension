@@ -4,6 +4,7 @@ import { IAuthenticationService } from '../../base/services/authenticationServic
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import {
   SNYK_ADD_TRUSTED_FOLDERS,
+  SNYK_CONFIGURATION,
   SNYK_REGISTER_MCP,
   SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
@@ -23,7 +24,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
-import { Scan, ShowIssueDetailTopicParams } from './types';
+import { LspConfigurationParam, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { ITreeViewProviderService } from '../../base/treeView/treeViewProviderService';
@@ -317,6 +318,14 @@ export class LanguageServer implements ILanguageServer {
         this.treeViewProvider.updateTreeViewPanel(treeViewHtml);
       }
     });
+
+    client.onNotification(SNYK_CONFIGURATION, (params: LspConfigurationParam) => {
+      this.handleSnykConfigurationNotification(params);
+    });
+  }
+
+  private handleSnykConfigurationNotification(_params: LspConfigurationParam): void {
+    this.logger.debug('Received $/snyk.configuration notification');
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

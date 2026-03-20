@@ -186,6 +186,25 @@ export type ShowIssueDetailTopicParams = {
   product: LsScanProduct;
 };
 
+/** Payload for `$/snyk.configuration` (LS protocol v25+) and structured `workspace/didChangeConfiguration`. */
+export type LspConfigSetting = {
+  value?: unknown;
+  changed?: boolean;
+  source?: string;
+  originScope?: string;
+  isLocked?: boolean;
+};
+
+export type LspFolderConfiguration = {
+  folderPath: string;
+  settings?: Record<string, LspConfigSetting>;
+};
+
+export type LspConfigurationParam = {
+  settings?: Record<string, LspConfigSetting>;
+  folderConfigs?: LspFolderConfiguration[];
+};
+
 // Snyk Secrets
 export type SecretsIssueData = {
   key: string;

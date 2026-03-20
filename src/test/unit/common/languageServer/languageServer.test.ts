@@ -535,4 +535,49 @@ suite('Language Server', () => {
       handler({ treeViewHtml: '<html>tree</html>' });
     });
   });
+
+  suite('snyk.configuration notification', () => {
+    test('should register handler and handle payload', async () => {
+      type NotificationHandler = (params: unknown) => void;
+      const notificationHandlers: Record<string, NotificationHandler> = {};
+
+      const lca = {
+        create(): LanguageClient {
+          return {
+            start: sinon.stub().resolves(),
+            onNotification(method: string, handler: NotificationHandler): void {
+              notificationHandlers[method] = handler;
+            },
+            onReady: sinon.stub().resolves(),
+          } as unknown as LanguageClient;
+        },
+      };
+
+      const debugSpy = sinon.spy(logger, 'debug');
+
+      languageServer = createFakeLanguageServer(
+        lca as unknown as ILanguageClientAdapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      );
+      downloadServiceMock.downloadReady$.next();
+      await languageServer.start();
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      assert(handler, 'snyk.configuration notification handler should be registered');
+
+      const apiEndpointSettingKey = 'api_endpoint';
+      handler({
+        settings: {
+          [apiEndpointSettingKey]: {
+            value: 'https://api.snyk.io',
+            source: 'default',
+            isLocked: false,
+          },
+        },
+      });
+
+      sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
+      debugSpy.restore();
+    });
+  });
 });
