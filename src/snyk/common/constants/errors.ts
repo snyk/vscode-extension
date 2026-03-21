@@ -9,13 +9,35 @@ export class TransientNetworkError extends Error {
   }
 }
 
-const TRANSIENT_NETWORK_ERROR_CODES = ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ENETDOWN', 'ENETUNREACH', 'ECONNRESET', 'EPROTO'];
+const TRANSIENT_NETWORK_ERROR_CODES = [
+  'ENOTFOUND',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'ENETDOWN',
+  'ENETUNREACH',
+  'ECONNRESET',
+  'EPROTO',
+  'EHOSTUNREACH',
+];
 
 export function isNetworkConnectivityError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const code = (error as NodeJS.ErrnoException).code;
-  if (code && TRANSIENT_NETWORK_ERROR_CODES.includes(code)) return true;
-  // request-light xhr errors use status 0 for network-level failures
-  if ((error as { status?: number }).status === 0) return true;
+  if (error instanceof Error) {
+    // Node.js system errors from https.request (e.g. in Downloader.performDownload)
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code && TRANSIENT_NETWORK_ERROR_CODES.includes(code)) return true;
+  }
+
+  // request-light xhr() rejects with plain objects (not Error instances) on network failure:
+  //   { status: 500, headers: {}, responseText: "Unable to access <url>. Error: <node-message>", body: Buffer }
+  // The node error message embedded in responseText contains the error code (e.g. "ENOTFOUND").
+  if (typeof error === 'object' && error !== null) {
+    const xhrLike = error as { status?: number; responseText?: string };
+    if (xhrLike.status === 500 && typeof xhrLike.responseText === 'string') {
+      if (TRANSIENT_NETWORK_ERROR_CODES.some(code => xhrLike.responseText!.includes(code))) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }

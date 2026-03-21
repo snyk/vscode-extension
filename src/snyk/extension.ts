@@ -42,7 +42,7 @@ import {
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
-import { TransientNetworkError } from './common/constants/errors';
+import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
@@ -651,7 +651,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
-      if (err instanceof TransientNetworkError) {
+      if (err instanceof TransientNetworkError || isNetworkConnectivityError(err)) {
         Logger.info(`CLI download skipped due to no network connectivity. Will retry on next startup.`);
         return;
       }

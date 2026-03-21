@@ -191,6 +191,9 @@ export class StaticCliApi implements IStaticCliApi {
       }
     } catch (error) {
       this.logger.error(`Failed to fetch checksum from "${url}": ${error instanceof Error ? error.message : error}`);
+      if (isNetworkConnectivityError(error)) {
+        throw new TransientNetworkError(`No network connectivity: ${error instanceof Error ? error.message : error}`);
+      }
       throw error;
     }
   }
