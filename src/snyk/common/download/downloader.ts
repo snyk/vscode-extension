@@ -39,7 +39,9 @@ export class Downloader {
     } catch (e) {
       if (e instanceof TransientNetworkError || isNetworkConnectivityError(e)) {
         this.logger.info(`CLI download skipped: no network connectivity (${e instanceof Error ? e.message : e}).`);
-        throw e instanceof TransientNetworkError ? e : new TransientNetworkError(e instanceof Error ? e.message : String(e));
+        throw e instanceof TransientNetworkError
+          ? e
+          : new TransientNetworkError(e instanceof Error ? e.message : String(e));
       }
       this.logger.error(`CLI download failed: ${e instanceof Error ? e.message : e}`);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
