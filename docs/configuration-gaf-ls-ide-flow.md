@@ -66,6 +66,17 @@ Source (editable): [`docs/diagrams/configuration-gaf-ls-ide-flow.mmd`](diagrams/
 - **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks) for UI.
 - **IDE → LS:** `workspace/didChangeConfiguration` with **`LspConfigurationParam`-shaped** payload; only **changed** keys, `value: null` to clear override (per protocol).
 
+## Workspace configuration webview (VS Code)
+
+HTML is served by **snyk-ls** (or the extension fallback). The extension injects a script that listens for `inboundLspConfiguration` and applies **`isLocked`**, **`source`**, and **`originScope`** to controls that follow this DOM convention:
+
+- **Global effective keys:** elements with `data-snyk-setting-key="<pflag name>"` that are **not** inside a `[data-snyk-folder-path]` subtree.
+- **Per-folder keys:** elements with `data-snyk-setting-key` under an ancestor (or on the same element) with `data-snyk-folder-path="<absolute folder path>"` matching the merged view’s `folderSettingsByPath` key.
+
+Locked controls get `disabled` (when applicable), class `snyk-lsp-locked`, and optional `aria-readonly`. When `source` or `originScope` is set, a `snyk-lsp-setting-meta` line is inserted after the control.
+
+**Tests (IDE1638-U-002):** `WorkspaceConfigurationWebviewProvider` posts the merged view to the webview (`src/test/integration/workspaceConfigurationWebviewProvider.test.ts`); `HtmlInjectionService` injects the apply helper and message handler (`src/test/unit/common/views/workspaceConfiguration/services/htmlInjectionService.test.ts`).
+
 ## References
 
 - snyk-ls (e.g. IDE-1786 / config refactor): `ConfigSetting`, `LspConfigurationParam`, `docs/configuration.md`.

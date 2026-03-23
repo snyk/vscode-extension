@@ -1,5 +1,6 @@
 import { ok, strictEqual } from 'assert';
 import { HtmlInjectionService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService';
+import { INBOUND_LSP_CONFIGURATION_MESSAGE } from '../../../../../../snyk/common/views/workspaceConfiguration/constants';
 
 suite('HtmlInjectionService', () => {
   let service: HtmlInjectionService;
@@ -75,5 +76,13 @@ suite('HtmlInjectionService', () => {
       processed.includes("typeof window.setAuthToken === 'function'"),
       'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
     );
+  });
+
+  test('injectIdeScripts injects inbound LSP configuration UI helpers', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+    ok(processed.includes('__applyInboundLspConfiguration__'), 'Should expose apply helper for tests/debug');
+    ok(processed.includes(INBOUND_LSP_CONFIGURATION_MESSAGE), 'Should handle inbound config message type');
+    ok(processed.includes('data-snyk-setting-key'), 'Should document DOM convention for setting keys');
+    ok(processed.includes('snyk-lsp-setting-meta'), 'Should style source/origin hints');
   });
 });
