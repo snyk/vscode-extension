@@ -8,7 +8,7 @@ import { CliSupportedPlatform } from './supportedPlatforms';
 import { xhr, configure } from 'request-light';
 import { Readable } from 'stream';
 import * as https from 'https';
-import { ERRORS } from '../common/constants/errors';
+import { ERRORS, TransientNetworkError, isNetworkConnectivityError } from '../common/constants/errors';
 
 export interface IStaticCliApi {
   getLatestCliVersion(releaseChannel: string, protocolVersion?: number): Promise<string>;
@@ -80,6 +80,9 @@ export class StaticCliApi implements IStaticCliApi {
       this.logger.error(
         `Failed to fetch latest CLI version from "${url}": ${error instanceof Error ? error.message : error}`,
       );
+      if (isNetworkConnectivityError(error)) {
+        throw new TransientNetworkError(`No network connectivity: ${error instanceof Error ? error.message : error}`);
+      }
       throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
@@ -188,7 +191,10 @@ export class StaticCliApi implements IStaticCliApi {
       }
     } catch (error) {
       this.logger.error(`Failed to fetch checksum from "${url}": ${error instanceof Error ? error.message : error}`);
-      throw error;
+      if (isNetworkConnectivityError(error)) {
+        throw new TransientNetworkError(`No network connectivity: ${error instanceof Error ? error.message : error}`);
+      }
+      throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
 }

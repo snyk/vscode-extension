@@ -44,6 +44,7 @@ import {
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
+import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
@@ -121,23 +122,11 @@ class SnykExtension extends SnykLib implements IExtension {
   private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
 
   public async activate(vscodeContext: vscode.ExtensionContext): Promise<void> {
-    const summaryWebviewViewProvider = SummaryWebviewViewProvider.getInstance(vscodeContext);
-    if (!summaryWebviewViewProvider) {
-      console.log('Summary panel not initialized.');
-    } else {
-      this.summaryProviderService = new SummaryProviderService(Logger, summaryWebviewViewProvider);
-      vscodeContext.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, summaryWebviewViewProvider),
-      );
-    }
-
-    SummaryWebviewViewProvider.getInstance(vscodeContext);
     extensionContext.setContext(vscodeContext);
     this.context = extensionContext;
-    const snykConfiguration = await this.getSnykConfiguration();
 
     try {
-      await this.initializeExtension(vscodeContext, snykConfiguration);
+      await this.initializeExtension(vscodeContext);
       this.configureGitHandlers();
     } catch (e) {
       ErrorHandler.handle(e, Logger);
@@ -184,7 +173,7 @@ class SnykExtension extends SnykLib implements IExtension {
     }
   }
 
-  private async initializeExtension(vscodeContext: vscode.ExtensionContext, snykConfiguration?: SnykConfiguration) {
+  private async initializeExtension(vscodeContext: vscode.ExtensionContext) {
     // initialize context correctly
     // see package.json when each view is shown, based on context value
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, false);
@@ -206,6 +195,12 @@ class SnykExtension extends SnykLib implements IExtension {
     this.notificationService = new NotificationService(vsCodeWindow, vsCodeCommands, configuration, Logger);
 
     this.statusBarItem.show();
+
+    const summaryWebviewViewProvider = new SummaryWebviewViewProvider(Logger, vscodeContext.extensionUri.fsPath);
+    this.summaryProviderService = new SummaryProviderService(Logger, summaryWebviewViewProvider);
+    vscodeContext.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, summaryWebviewViewProvider),
+    );
 
     const languageClientAdapter = new LanguageClientAdapter();
     const mcpProvider = new McpProvider();
@@ -238,6 +233,7 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
     );
 
+    const snykConfiguration = await this.getSnykConfiguration();
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
     const htmlTreeViewEnabled = configuration.getPreviewFeature(HTML_TREE_VIEW);
@@ -657,6 +653,10 @@ class SnykExtension extends SnykLib implements IExtension {
 
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
+      if (err instanceof TransientNetworkError || isNetworkConnectivityError(err)) {
+        Logger.info(`CLI download skipped due to no network connectivity. Will retry on next startup.`);
+        return;
+      }
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotification((err as Error).message);
     });

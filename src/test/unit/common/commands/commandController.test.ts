@@ -1,7 +1,8 @@
+import * as assert from 'assert';
 import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
-import { CommandController } from '../../../../snyk/common/commands/commandController';
+import { CommandController, MAX_DISPLAY_LENGTH } from '../../../../snyk/common/commands/commandController';
 import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IProductService } from '../../../../snyk/common/services/productService';
@@ -110,5 +111,48 @@ suite('CommandController', () => {
     );
     sinon.assert.calledOnce(windowMock.showInformationMessage);
     sinon.assert.calledWith(envMock.getClipboard().writeText, mockOutput);
+  });
+
+  suite('truncateForDisplay', () => {
+    const tcs: {
+      name: string;
+      input: string;
+      expected: string;
+    }[] = [
+      {
+        name: 'returns text unchanged for short messages',
+        input: 'Short error message',
+        expected: 'Short error message',
+      },
+      {
+        name: 'returns text unchanged when length equals MAX_DISPLAY_LENGTH',
+        input: 'a'.repeat(MAX_DISPLAY_LENGTH),
+        expected: 'a'.repeat(MAX_DISPLAY_LENGTH),
+      },
+      {
+        name: 'returns text unchanged when length is one less than MAX_DISPLAY_LENGTH',
+        input: 'a'.repeat(MAX_DISPLAY_LENGTH - 1),
+        expected: 'a'.repeat(MAX_DISPLAY_LENGTH - 1),
+      },
+      {
+        name: 'truncates text when one character over MAX_DISPLAY_LENGTH',
+        input: 'a'.repeat(MAX_DISPLAY_LENGTH + 1),
+        expected: 'a'.repeat(MAX_DISPLAY_LENGTH - 6) + ' [...]',
+      },
+      {
+        name: 'truncates long text to exactly MAX_DISPLAY_LENGTH',
+        input: 'a'.repeat(Math.floor(MAX_DISPLAY_LENGTH * 1.5)),
+        expected: 'a'.repeat(MAX_DISPLAY_LENGTH - 6) + ' [...]',
+      },
+    ];
+    tcs.forEach(tc => {
+      test(tc.name, () => {
+        // Act
+        const result = controller['truncateForDisplay'](tc.input);
+
+        // Assert
+        assert.strictEqual(result, tc.expected);
+      });
+    });
   });
 });

@@ -6,15 +6,9 @@ export interface ISummaryProviderService {
 }
 
 export class SummaryProviderService implements ISummaryProviderService {
-  constructor(
-    private readonly logger: ILog,
-    private readonly summaryWebviewViewProvider: SummaryWebviewViewProvider | undefined,
-  ) {}
+  constructor(private readonly logger: ILog, private readonly summaryWebviewViewProvider: SummaryWebviewViewProvider) {}
+
   public updateSummaryPanel(scanSummary: string) {
-    if (!this.summaryWebviewViewProvider) {
-      this.logger.error('Summary Webview Provider was not initialized.');
-      return;
-    }
     try {
       this.summaryWebviewViewProvider.updateWebviewContent(scanSummary);
     } catch (error) {

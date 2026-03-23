@@ -14,7 +14,7 @@ import { CancellationToken } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { CliSupportedPlatform } from '../../cli/supportedPlatforms';
 import { ExtensionContext } from '../vscode/extensionContext';
-import { ERRORS } from '../constants/errors';
+import { ERRORS, TransientNetworkError, isNetworkConnectivityError } from '../constants/errors';
 
 export class Downloader {
   constructor(
@@ -37,6 +37,12 @@ export class Downloader {
       }
       return await this.getCliExecutable(platform);
     } catch (e) {
+      if (e instanceof TransientNetworkError || isNetworkConnectivityError(e)) {
+        this.logger.info(`CLI download skipped: no network connectivity (${e instanceof Error ? e.message : e}).`);
+        throw e instanceof TransientNetworkError
+          ? e
+          : new TransientNetworkError(e instanceof Error ? e.message : String(e));
+      }
       this.logger.error(`CLI download failed: ${e instanceof Error ? e.message : e}`);
       throw new Error(ERRORS.DOWNLOAD_FAILED);
     }
