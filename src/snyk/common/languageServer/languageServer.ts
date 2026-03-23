@@ -82,6 +82,20 @@ export class LanguageServer implements ILanguageServer {
     LanguageServer.foldersBeingUpdatedByLS.clear();
   }
 
+  /**
+   * @internal Tests — simulate `foldersBeingUpdatedByLS` while LS applies org from `$/snyk.folderConfigs`.
+   */
+  static beginLSOrgUpdateFromFolderConfigsForTests(folderPath: string): void {
+    LanguageServer.foldersBeingUpdatedByLS.add(folderPath);
+  }
+
+  /**
+   * @internal Tests — end simulated org update for one folder.
+   */
+  static endLSOrgUpdateFromFolderConfigsForTests(folderPath: string): void {
+    LanguageServer.foldersBeingUpdatedByLS.delete(folderPath);
+  }
+
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
   }
@@ -337,6 +351,23 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
+    this.scheduleInboundConfigurationNotificationToWorkspace();
+  }
+
+  /**
+   * Pushes merged inbound config to the workspace configuration UI when LS is not in the middle of
+   * applying org settings from `$/snyk.folderConfigs` (see `foldersBeingUpdatedByLS`).
+   */
+  private scheduleInboundConfigurationNotificationToWorkspace(): void {
+    const provider = this.workspaceConfigurationProvider;
+    if (!provider?.onInboundLspConfigurationUpdated) {
+      return;
+    }
+    if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
+      queueMicrotask(() => this.scheduleInboundConfigurationNotificationToWorkspace());
+      return;
+    }
+    provider.onInboundLspConfigurationUpdated(this.inboundLspConfiguration);
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

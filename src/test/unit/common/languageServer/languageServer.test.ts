@@ -30,6 +30,7 @@ import { CommandsMock } from '../../mocks/commands.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
+import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -65,6 +66,61 @@ suite('Language Server', () => {
       treeViewProvider,
     );
   };
+
+  type LspNotificationHandler = (params: unknown) => void;
+
+  function createRecordingLanguageClientAdapter(): {
+    notificationHandlers: Record<string, LspNotificationHandler>;
+    adapter: ILanguageClientAdapter;
+  } {
+    const notificationHandlers: Record<string, LspNotificationHandler> = {};
+    const adapter = {
+      create(): LanguageClient {
+        return {
+          start: sinon.stub().resolves(),
+          onNotification(method: string, handler: LspNotificationHandler): void {
+            notificationHandlers[method] = handler;
+          },
+          onReady: sinon.stub().resolves(),
+        } as unknown as LanguageClient;
+      },
+    } as unknown as ILanguageClientAdapter;
+    return { notificationHandlers, adapter };
+  }
+
+  async function startLanguageServerWithRecordingClient(options?: {
+    treeViewProvider?: ITreeViewProviderService;
+    workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
+  }): Promise<{ notificationHandlers: Record<string, LspNotificationHandler> }> {
+    const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
+    languageServer = createFakeLanguageServer(
+      adapter,
+      stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      options?.treeViewProvider,
+    );
+    if (options?.workspaceConfigurationProvider) {
+      languageServer.setWorkspaceConfigurationProvider(options.workspaceConfigurationProvider);
+    }
+    downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
+    return { notificationHandlers };
+  }
+
+  function createWorkspaceConfigurationProviderWithInboundSpy(): {
+    inboundSpy: sinon.SinonSpy;
+    workspaceConfigurationProvider: IWorkspaceConfigurationWebviewProvider;
+  } {
+    const inboundSpy = sinon.spy();
+    return {
+      inboundSpy,
+      workspaceConfigurationProvider: {
+        showPanel: sinon.stub().resolves(),
+        disposePanel: sinon.stub(),
+        setAuthToken: sinon.stub(),
+        onInboundLspConfigurationUpdated: inboundSpy,
+      },
+    };
+  }
 
   setup(() => {
     configurationMock = {
@@ -163,7 +219,6 @@ suite('Language Server', () => {
 
     await languageServer.start();
     sinon.assert.called(lca.create);
-    sinon.verify();
   });
 
   test('LanguageServer adds proxy settings to env of started binary', async () => {
@@ -205,7 +260,6 @@ suite('Language Server', () => {
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
-    sinon.verify();
   });
 
   suite('LanguageServer is initialized', () => {
@@ -473,28 +527,9 @@ suite('Language Server', () => {
         updateTreeViewPanel: updateStub,
       };
 
-      type NotificationHandler = (params: unknown) => void;
-      const notificationHandlers: Record<string, NotificationHandler> = {};
-
-      const lca = {
-        create(): LanguageClient {
-          return {
-            start: sinon.stub().resolves(),
-            onNotification(method: string, handler: NotificationHandler): void {
-              notificationHandlers[method] = handler;
-            },
-            onReady: sinon.stub().resolves(),
-          } as unknown as LanguageClient;
-        },
-      };
-
-      languageServer = createFakeLanguageServer(
-        lca as unknown as ILanguageClientAdapter,
-        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-        treeViewProviderMock,
-      );
-      downloadServiceMock.downloadReady$.next();
-      await languageServer.start();
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
+        treeViewProvider: treeViewProviderMock,
+      });
 
       const handler = notificationHandlers['$/snyk.treeView'];
       assert(handler, 'treeView notification handler should be registered');
@@ -506,27 +541,7 @@ suite('Language Server', () => {
     });
 
     test('should not fail when treeViewProvider is undefined', async () => {
-      type NotificationHandler = (params: unknown) => void;
-      const notificationHandlers: Record<string, NotificationHandler> = {};
-
-      const lca = {
-        create(): LanguageClient {
-          return {
-            start: sinon.stub().resolves(),
-            onNotification(method: string, handler: NotificationHandler): void {
-              notificationHandlers[method] = handler;
-            },
-            onReady: sinon.stub().resolves(),
-          } as unknown as LanguageClient;
-        },
-      };
-
-      languageServer = createFakeLanguageServer(
-        lca as unknown as ILanguageClientAdapter,
-        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-      );
-      downloadServiceMock.downloadReady$.next();
-      await languageServer.start();
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient();
 
       const handler = notificationHandlers['$/snyk.treeView'];
       assert(handler, 'treeView notification handler should be registered');
@@ -538,29 +553,9 @@ suite('Language Server', () => {
 
   suite('snyk.configuration notification', () => {
     test('should register handler and handle payload', async () => {
-      type NotificationHandler = (params: unknown) => void;
-      const notificationHandlers: Record<string, NotificationHandler> = {};
-
-      const lca = {
-        create(): LanguageClient {
-          return {
-            start: sinon.stub().resolves(),
-            onNotification(method: string, handler: NotificationHandler): void {
-              notificationHandlers[method] = handler;
-            },
-            onReady: sinon.stub().resolves(),
-          } as unknown as LanguageClient;
-        },
-      };
-
       const debugSpy = sinon.spy(logger, 'debug');
 
-      languageServer = createFakeLanguageServer(
-        lca as unknown as ILanguageClientAdapter,
-        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-      );
-      downloadServiceMock.downloadReady$.next();
-      await languageServer.start();
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient();
 
       const handler = notificationHandlers['$/snyk.configuration'];
       assert(handler, 'snyk.configuration notification handler should be registered');
@@ -588,6 +583,63 @@ suite('Language Server', () => {
         folderSettingsByPath: {},
       });
       debugSpy.restore();
+    });
+
+    test('Forwards merged inbound config to workspace configuration provider', async () => {
+      const { inboundSpy, workspaceConfigurationProvider } = createWorkspaceConfigurationProviderWithInboundSpy();
+
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
+        workspaceConfigurationProvider,
+      });
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      assert(handler, 'snyk.configuration notification handler should be registered');
+
+      handler({
+        settings: {
+          endpoint: { value: 'https://api.snyk.io', source: 'default', isLocked: false },
+        },
+        folderConfigs: [
+          {
+            folderPath: '/proj/a',
+            settings: { activateSnykCode: { value: true, source: 'user-override', isLocked: false } },
+          },
+        ],
+      });
+
+      sinon.assert.calledOnce(inboundSpy);
+      deepStrictEqual(inboundSpy.getCall(0).args[0], languageServer.getInboundLspConfigurationView());
+    });
+
+    test('Defers inbound push while folderConfigs org update is in progress', async () => {
+      const { inboundSpy, workspaceConfigurationProvider } = createWorkspaceConfigurationProviderWithInboundSpy();
+
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
+        workspaceConfigurationProvider,
+      });
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      assert(handler, 'snyk.configuration notification handler should be registered');
+
+      const folderPath = '/workspace/folder-a';
+      LanguageServer.clearLSUpdatingOrgState();
+      LanguageServer.beginLSOrgUpdateFromFolderConfigsForTests(folderPath);
+
+      handler({
+        settings: { endpoint: { value: 'https://api.snyk.io', source: 'default', isLocked: false } },
+      });
+
+      sinon.assert.notCalled(inboundSpy);
+
+      LanguageServer.endLSOrgUpdateFromFolderConfigsForTests(folderPath);
+
+      for (let i = 0; i < 20; i++) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+      }
+
+      sinon.assert.calledOnce(inboundSpy);
+      deepStrictEqual(inboundSpy.getCall(0).args[0], languageServer.getInboundLspConfigurationView());
     });
   });
 });
