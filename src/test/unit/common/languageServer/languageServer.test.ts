@@ -565,11 +565,11 @@ suite('Language Server', () => {
       const handler = notificationHandlers['$/snyk.configuration'];
       assert(handler, 'snyk.configuration notification handler should be registered');
 
-      const apiEndpointSettingKey = 'api_endpoint';
+      const endpointKey = 'endpoint';
       handler({
         settings: {
-          [apiEndpointSettingKey]: {
-            value: 'https://api.snyk.io',
+          [endpointKey]: {
+            value: 'https://api.dev.snyk.io',
             source: 'default',
             isLocked: false,
           },
@@ -577,6 +577,16 @@ suite('Language Server', () => {
       });
 
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
+      deepStrictEqual(languageServer.getInboundLspConfigurationView(), {
+        globalSettings: {
+          [endpointKey]: {
+            value: 'https://api.dev.snyk.io',
+            source: 'default',
+            isLocked: false,
+          },
+        },
+        folderSettingsByPath: {},
+      });
       debugSpy.restore();
     });
   });

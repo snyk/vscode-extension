@@ -22,6 +22,7 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { mergeInboundLspConfiguration, MergedLspConfigurationView } from './lspConfigurationMerge';
 import { LanguageClientMiddleware } from './middleware';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { LspConfigurationParam, Scan, ShowIssueDetailTopicParams } from './types';
@@ -65,6 +66,10 @@ export class LanguageServer implements ILanguageServer {
     processor: () => Promise<void>;
   }>();
   private folderConfigSubscription?: Subscription;
+  private inboundLspConfiguration: MergedLspConfigurationView = {
+    globalSettings: {},
+    folderSettingsByPath: {},
+  };
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -79,6 +84,11 @@ export class LanguageServer implements ILanguageServer {
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
+  }
+
+  /** Latest merged view from `$/snyk.configuration` (for UI and tests). */
+  getInboundLspConfigurationView(): MergedLspConfigurationView {
+    return this.inboundLspConfiguration;
   }
 
   constructor(
@@ -324,7 +334,8 @@ export class LanguageServer implements ILanguageServer {
     });
   }
 
-  private handleSnykConfigurationNotification(_params: LspConfigurationParam): void {
+  private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
+    this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
   }
 

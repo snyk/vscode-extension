@@ -5,6 +5,8 @@ This directory contains comprehensive documentation for the Snyk VSCode Extensio
 ## Files
 
 - **README.md** - This file, explaining the documentation structure
+- **configuration-gaf-ls-ide-flow.md** - GAF → snyk-ls → IDE configuration flow and merge points
+- **diagrams/configuration-gaf-ls-ide-flow.mmd** - Mermaid source for that diagram
 - **snyk-cli-download-logic.md** - Complete documentation of the Snyk CLI download logic
 - **snyk-cli-download-diagram.mmd** - Standalone Mermaid diagram file
 
