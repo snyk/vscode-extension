@@ -194,7 +194,7 @@ export class StaticCliApi implements IStaticCliApi {
       if (isNetworkConnectivityError(error)) {
         throw new TransientNetworkError(`No network connectivity: ${error instanceof Error ? error.message : error}`);
       }
-      throw error;
+      throw Error(ERRORS.DOWNLOAD_FAILED);
     }
   }
 }
