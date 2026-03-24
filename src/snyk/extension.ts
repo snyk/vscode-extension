@@ -12,6 +12,8 @@ import { configuration } from './common/configuration/instance';
 import { SnykConfiguration } from './common/configuration/snykConfiguration';
 import {
   SNYK_CLEAR_PERSISTED_CACHE_COMMAND,
+  SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND,
+  SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND,
   SNYK_DCIGNORE_COMMAND,
   SNYK_ENABLE_CODE_COMMAND,
   SNYK_IGNORE_ISSUE_COMMAND,
@@ -42,6 +44,7 @@ import {
   SNYK_VIEW_WELCOME,
 } from './common/constants/views';
 import { ErrorHandler } from './common/error/errorHandler';
+import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
@@ -650,6 +653,10 @@ class SnykExtension extends SnykLib implements IExtension {
 
   public initDependencyDownload(): DownloadService {
     this.downloadService.downloadOrUpdate().catch(err => {
+      if (err instanceof TransientNetworkError || isNetworkConnectivityError(err)) {
+        Logger.info(`CLI download skipped due to no network connectivity. Will retry on next startup.`);
+        return;
+      }
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotification((err as Error).message);
     });
@@ -695,6 +702,12 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
       vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, (presentableError?: PresentableError) =>
         this.commandController.showLsOutputChannel(presentableError),
+      ),
+      vscode.commands.registerCommand(SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND, () =>
+        this.commandController.connectivityCheck(),
+      ),
+      vscode.commands.registerCommand(SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND, () =>
+        this.commandController.directoryDiagnostics(),
       ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {
