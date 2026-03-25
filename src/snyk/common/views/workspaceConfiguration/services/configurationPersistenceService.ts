@@ -19,16 +19,13 @@ export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
 
   /**
-   * Writes effective LS global settings from `$/snyk.configuration` into VS Code `settings.json` (and token
-   * into secret storage) once we see a non-empty global snapshot. Returns `false` if the snapshot had no
-   * mappable keys yet (caller may retry on the next notification).
+   * Writes effective LS global settings from each merged `$/snyk.configuration` into VS Code
+   * `settings.json` (and token into secret storage). No-op when the global snapshot has no mappable keys.
    */
-  persistInboundLspConfigurationOnStartup(view: MergedLspConfigurationView): Promise<boolean>;
+  persistInboundLspConfiguration(view: MergedLspConfigurationView): Promise<void>;
 }
 
 export class ConfigurationPersistenceService implements IConfigurationPersistenceService {
-  private inboundStartupPersisted = false;
-
   constructor(
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
@@ -74,17 +71,11 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  async persistInboundLspConfigurationOnStartup(view: MergedLspConfigurationView): Promise<boolean> {
-    if (this.inboundStartupPersisted) {
-      return true;
-    }
-
+  async persistInboundLspConfiguration(view: MergedLspConfigurationView): Promise<void> {
     const partial = mergedGlobalSettingsToIdeConfigData(view.globalSettings);
     if (Object.keys(partial).length === 0) {
-      return false;
+      return;
     }
-
-    this.inboundStartupPersisted = true;
 
     const tokenFromLs = partial.token;
     const { token: _omit, ...rest } = partial;
@@ -98,7 +89,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     try {
       if (Object.keys(settingsMap).length > 0) {
-        this.logger.info('Persisting inbound Snyk Language Server configuration to VS Code settings');
+        this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
         await this.applySettingsMap(settingsMap);
       }
 
@@ -110,10 +101,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
         }
       }
-
-      return true;
     } catch (e) {
-      this.inboundStartupPersisted = false;
       this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
       throw e;
     }

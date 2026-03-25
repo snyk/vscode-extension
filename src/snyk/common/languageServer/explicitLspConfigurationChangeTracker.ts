@@ -8,7 +8,7 @@ export interface IExplicitLspConfigurationChangeTracker {
 }
 
 /**
- * Persists which pflag keys the user has explicitly overridden (IntelliJ `explicitChanges` parity).
+ * Persists which pflag keys the user has explicitly overridden.
  * Keys are merged into a set; `isExplicitlyChanged` drives `ConfigSetting.changed` on outbound LS config.
  */
 export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfigurationChangeTracker {

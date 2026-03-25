@@ -84,6 +84,7 @@ export class AuthenticationService implements IAuthenticationService {
       const oauthToken = JSON.parse(token) as OAuthToken;
       const accessOk = oauthToken.access_token.length > 0;
       const refreshOk = oauthToken.refresh_token.length > 0;
+      // TODO, verify that this is correct (revert this change if not):
       // Do not require a future expiry: the access token is often expired on disk while the
       // language server still holds a refresh token and refreshes — same state as "already logged in".
       valid = accessOk && refreshOk;

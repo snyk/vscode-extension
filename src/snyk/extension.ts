@@ -404,7 +404,7 @@ class SnykExtension extends SnykLib implements IExtension {
     // so it can update the token in the webview when authentication completes
     this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
     this.languageServer.setInboundConfigurationPersistenceHandler(view =>
-      configPersistenceService.persistInboundLspConfigurationOnStartup(view),
+      configPersistenceService.persistInboundLspConfiguration(view),
     );
 
     this.commandController = new CommandController(

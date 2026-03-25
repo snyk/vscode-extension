@@ -50,7 +50,7 @@ export interface ILanguageServer {
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void;
 
-  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<boolean>): void;
+  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<void>): void;
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
@@ -80,8 +80,9 @@ export class LanguageServer implements ILanguageServer {
   private debouncedPushStructuredConfiguration?: _.DebouncedFunc<() => void>;
   /** When true, VS Code `settings.json` updates from inbound LS persistence must not trigger outbound `didChangeConfiguration`. */
   private suppressStructuredConfigPushFromInboundPersistence = false;
-  private inboundSettingsPersistenceCompleted = false;
-  private persistInboundOnStartup?: (view: MergedLspConfigurationView) => Promise<boolean>;
+  /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
+  private inboundPersistenceChain: Promise<void> = Promise.resolve();
+  private persistInboundConfiguration?: (view: MergedLspConfigurationView) => Promise<void>;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -113,11 +114,11 @@ export class LanguageServer implements ILanguageServer {
   }
 
   /**
-   * Persists the first usable inbound `$/snyk.configuration` global snapshot into VS Code settings
-   * (see {@link ConfigurationPersistenceService.persistInboundLspConfigurationOnStartup}).
+   * Persists each inbound `$/snyk.configuration` global snapshot into VS Code settings
+   * (see {@link ConfigurationPersistenceService.persistInboundLspConfiguration}).
    */
-  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<boolean>): void {
-    this.persistInboundOnStartup = handler;
+  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<void>): void {
+    this.persistInboundConfiguration = handler;
   }
 
   /** Latest merged view from `$/snyk.configuration` (for UI and tests). */
@@ -371,7 +372,7 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_CONFIGURATION, (params: LspConfigurationParam) => {
-      -this.handleSnykConfigurationNotification(params);
+      this.handleSnykConfigurationNotification(params);
     });
   }
 
@@ -424,21 +425,26 @@ export class LanguageServer implements ILanguageServer {
     this.scheduleInboundConfigurationNotificationToWorkspace();
   }
 
-  private async runInboundPersistenceIfConfigured(): Promise<void> {
-    if (this.inboundSettingsPersistenceCompleted || !this.persistInboundOnStartup) {
+  private runInboundPersistenceIfConfigured(): void {
+    if (!this.persistInboundConfiguration) {
       return;
     }
-    this.suppressStructuredConfigPushFromInboundPersistence = true;
-    try {
-      const done = await this.persistInboundOnStartup(this.inboundLspConfiguration);
-      if (done) {
-        this.inboundSettingsPersistenceCompleted = true;
-      }
-    } catch (e) {
-      this.logger.error(`Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      this.suppressStructuredConfigPushFromInboundPersistence = false;
-    }
+    this.inboundPersistenceChain = this.inboundPersistenceChain
+      .catch(() => {
+        /* keep serialized queue alive if a prior step rejected unexpectedly */
+      })
+      .then(async () => {
+        this.suppressStructuredConfigPushFromInboundPersistence = true;
+        try {
+          await this.persistInboundConfiguration!(this.inboundLspConfiguration);
+        } catch (e) {
+          this.logger.error(
+            `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        } finally {
+          this.suppressStructuredConfigPushFromInboundPersistence = false;
+        }
+      });
   }
 
   /**

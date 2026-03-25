@@ -6,7 +6,7 @@ import type { IdeConfigData } from '../types/workspaceConfiguration.types';
 
 /**
  * Marks pflag keys as explicit user overrides when the workspace config webview save changes
- * values compared to the current {@link IConfiguration} snapshot (IntelliJ SaveConfigHandler parity).
+ * values compared to the current {@link IConfiguration} snapshot.
  */
 export async function markExplicitPflagsFromIdeConfigDiff(
   config: IdeConfigData,
