@@ -23,7 +23,7 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { mergeInboundLspConfiguration, MergedLspConfigurationView } from './lspConfigurationMerge';
+import { mergeInboundLspConfiguration, type MergedLspConfigurationView } from './lspConfigurationMerge';
 import { LanguageClientMiddleware } from './middleware';
 import { markExplicitPflagsFromConfigurationChangeEvent } from './configurationChangeToExplicitPflags';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
@@ -49,6 +49,8 @@ export interface ILanguageServer {
   showOutputChannel(): void;
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void;
+
+  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<boolean>): void;
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
@@ -76,6 +78,10 @@ export class LanguageServer implements ILanguageServer {
   };
   private configurationChangeDisposable?: Disposable;
   private debouncedPushStructuredConfiguration?: _.DebouncedFunc<() => void>;
+  /** When true, VS Code `settings.json` updates from inbound LS persistence must not trigger outbound `didChangeConfiguration`. */
+  private suppressStructuredConfigPushFromInboundPersistence = false;
+  private inboundSettingsPersistenceCompleted = false;
+  private persistInboundOnStartup?: (view: MergedLspConfigurationView) => Promise<boolean>;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -104,6 +110,14 @@ export class LanguageServer implements ILanguageServer {
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
+  }
+
+  /**
+   * Persists the first usable inbound `$/snyk.configuration` global snapshot into VS Code settings
+   * (see {@link ConfigurationPersistenceService.persistInboundLspConfigurationOnStartup}).
+   */
+  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<boolean>): void {
+    this.persistInboundOnStartup = handler;
   }
 
   /** Latest merged view from `$/snyk.configuration` (for UI and tests). */
@@ -357,7 +371,7 @@ export class LanguageServer implements ILanguageServer {
     });
 
     client.onNotification(SNYK_CONFIGURATION, (params: LspConfigurationParam) => {
-      this.handleSnykConfigurationNotification(params);
+      -this.handleSnykConfigurationNotification(params);
     });
   }
 
@@ -376,6 +390,9 @@ export class LanguageServer implements ILanguageServer {
         return;
       }
       if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
+        return;
+      }
+      if (this.suppressStructuredConfigPushFromInboundPersistence) {
         return;
       }
       markExplicitPflagsFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
@@ -403,7 +420,25 @@ export class LanguageServer implements ILanguageServer {
     this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
     void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
+    void this.runInboundPersistenceIfConfigured();
     this.scheduleInboundConfigurationNotificationToWorkspace();
+  }
+
+  private async runInboundPersistenceIfConfigured(): Promise<void> {
+    if (this.inboundSettingsPersistenceCompleted || !this.persistInboundOnStartup) {
+      return;
+    }
+    this.suppressStructuredConfigPushFromInboundPersistence = true;
+    try {
+      const done = await this.persistInboundOnStartup(this.inboundLspConfiguration);
+      if (done) {
+        this.inboundSettingsPersistenceCompleted = true;
+      }
+    } catch (e) {
+      this.logger.error(`Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      this.suppressStructuredConfigPushFromInboundPersistence = false;
+    }
   }
 
   /**

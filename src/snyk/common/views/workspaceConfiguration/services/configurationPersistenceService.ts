@@ -8,6 +8,8 @@ import type { IExplicitLspConfigurationChangeTracker } from '../../../languageSe
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
+import type { MergedLspConfigurationView } from '../../../languageServer/lspConfigurationMerge';
+import { mergedGlobalSettingsToIdeConfigData } from '../../../languageServer/inboundLspConfigurationToIdeConfig';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
 import { markExplicitPflagsFromIdeConfigDiff } from './ideConfigExplicitPflags';
@@ -15,9 +17,18 @@ import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
+
+  /**
+   * Writes effective LS global settings from `$/snyk.configuration` into VS Code `settings.json` (and token
+   * into secret storage) once we see a non-empty global snapshot. Returns `false` if the snapshot had no
+   * mappable keys yet (caller may retry on the next notification).
+   */
+  persistInboundLspConfigurationOnStartup(view: MergedLspConfigurationView): Promise<boolean>;
 }
 
 export class ConfigurationPersistenceService implements IConfigurationPersistenceService {
+  private inboundStartupPersisted = false;
+
   constructor(
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
@@ -63,6 +74,85 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
+  async persistInboundLspConfigurationOnStartup(view: MergedLspConfigurationView): Promise<boolean> {
+    if (this.inboundStartupPersisted) {
+      return true;
+    }
+
+    const partial = mergedGlobalSettingsToIdeConfigData(view.globalSettings);
+    if (Object.keys(partial).length === 0) {
+      return false;
+    }
+
+    this.inboundStartupPersisted = true;
+
+    const tokenFromLs = partial.token;
+    const { token: _omit, ...rest } = partial;
+    const ideForSettings = rest as IdeConfigData;
+
+    const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
+    const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
+      string,
+      unknown
+    >;
+
+    try {
+      if (Object.keys(settingsMap).length > 0) {
+        this.logger.info('Persisting inbound Snyk Language Server configuration to VS Code settings');
+        await this.applySettingsMap(settingsMap);
+      }
+
+      const trimmed = tokenFromLs?.trim();
+      if (trimmed) {
+        const existing = await this.configuration.getToken();
+        if (existing?.trim() !== trimmed) {
+          await this.configuration.setToken(tokenFromLs);
+          await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+        }
+      }
+
+      return true;
+    } catch (e) {
+      this.inboundStartupPersisted = false;
+      this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
+      throw e;
+    }
+  }
+
+  private async applySettingsMap(settingsMap: Record<string, unknown>): Promise<void> {
+    const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
+      try {
+        const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
+
+        if (settingKey === ADVANCED_ORGANIZATION) {
+          const workspaceFolders = this.workspace.getWorkspaceFolders();
+          const isSingleFolderWorkspace = workspaceFolders.length === 1;
+          const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
+          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
+          const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
+          await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
+          this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
+        } else {
+          const scope = this.scopeDetectionService.getSettingScope(settingKey);
+
+          if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
+            this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
+            return;
+          }
+
+          await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
+
+          this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
+        }
+      } catch (e) {
+        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
+      }
+    });
+
+    await Promise.all(updates);
+    this.logger.info('Successfully applied settings map to VS Code configuration');
+  }
+
   /**
    * Special handling for folder configs, write in-memory and send to language-server
    * and then folder notification handler will persist it (standard flow for folder configs)
@@ -94,37 +184,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     if (!isCliOnly) await this.saveFolderConfigs(config.folderConfigs);
 
-    const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
-      try {
-        const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
-
-        if (settingKey === ADVANCED_ORGANIZATION) {
-          // Special handling for global org
-          const workspaceFolders = this.workspace.getWorkspaceFolders();
-          const isSingleFolderWorkspace = workspaceFolders.length === 1;
-          const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
-          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
-          const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
-          await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
-          this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
-        } else {
-          const scope = this.scopeDetectionService.getSettingScope(settingKey);
-
-          if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
-            this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
-            return;
-          }
-
-          await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
-
-          this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
-        }
-      } catch (e) {
-        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
-      }
-    });
-
-    await Promise.all(updates);
+    await this.applySettingsMap(settingsMap);
 
     this.logger.info('Successfully wrote all settings to VS Code configuration');
   }
