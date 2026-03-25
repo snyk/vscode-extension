@@ -9,6 +9,7 @@ import { IScopeDetectionService } from '../../../../../../snyk/common/views/work
 import { IConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ADVANCED_ORGANIZATION, CONFIGURATION_IDENTIFIER } from '../../../../../../snyk/common/constants/settings';
 import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
 
@@ -33,6 +34,7 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let configMappingService: IConfigurationMappingService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
+  let explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker;
   let service: ConfigurationPersistenceService;
 
   let updateConfigurationStub: sinon.SinonStub;
@@ -55,6 +57,25 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       setToken: sinon.stub().resolves(),
       getFolderConfigs: sinon.stub().returns([]),
       setFolderConfigs: sinon.stub().resolves(),
+      getFeaturesConfiguration: sinon.stub().returns({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      }),
+      scanningMode: 'auto',
+      organization: '',
+      snykApiEndpoint: 'https://api.snyk.io',
+      getInsecure: sinon.stub().returns(false),
+      getAuthenticationMethod: sinon.stub().returns('oauth'),
+      getDeltaFindingsEnabled: sinon.stub().returns(false),
+      severityFilter: {},
+      issueViewOptions: {},
+      riskScoreThreshold: 0,
+      getTrustedFolders: sinon.stub().returns([]),
+      getCliPath: sinon.stub().resolves(''),
+      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+      getCliBaseDownloadUrl: sinon.stub().returns(''),
     } as unknown as IConfiguration;
 
     scopeDetectionService = {
@@ -81,12 +102,18 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       warn: sinon.stub(),
     } as unknown as ILog;
 
+    explicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: sinon.stub().returns(false),
+    };
+
     service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       configMappingService,
       clientAdapter,
+      explicitLspConfigurationChangeTracker,
       logger,
     );
   });

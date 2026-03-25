@@ -2,7 +2,9 @@ import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject, Subscription, switchMap } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
+import { DEFAULT_LS_DEBOUNCE_INTERVAL } from '../constants/general';
 import {
+  DID_CHANGE_CONFIGURATION_METHOD,
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CONFIGURATION,
   SNYK_REGISTER_MCP,
@@ -13,17 +15,19 @@ import {
   SNYK_SCANSUMMARY,
   SNYK_TREEVIEW,
 } from '../constants/languageServer';
-import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { DownloadService } from '../services/downloadService';
 import { User } from '../user';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
-import { LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
+import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { mergeInboundLspConfiguration, MergedLspConfigurationView } from './lspConfigurationMerge';
 import { LanguageClientMiddleware } from './middleware';
+import { markExplicitPflagsFromConfigurationChangeEvent } from './configurationChangeToExplicitPflags';
+import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import { serverSettingsToLspConfigurationParam } from './serverSettingsToLspConfigurationParam';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { LspConfigurationParam, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
@@ -70,6 +74,8 @@ export class LanguageServer implements ILanguageServer {
     globalSettings: {},
     folderSettingsByPath: {},
   };
+  private configurationChangeDisposable?: Disposable;
+  private debouncedPushStructuredConfiguration?: _.DebouncedFunc<() => void>;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -121,6 +127,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
+    private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly treeViewProvider?: ITreeViewProviderService,
   ) {
     this.downloadService = downloadService;
@@ -202,9 +209,13 @@ export class LanguageServer implements ILanguageServer {
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
       initializationOptions: await this.getInitializationOptions(),
-      synchronize: {
-        configurationSection: CONFIGURATION_IDENTIFIER,
-      },
+      // Do not set synchronize.configurationSection: it makes vscode-languageclient send
+      // workspace/didChangeConfiguration with a flat VS Code `snyk` object. snyk-ls expects
+      // DidChangeConfigurationParams.settings to deserialize as LspConfigurationParam (pflag maps).
+      // Structured outbound is sent explicitly; see docs/configuration-gaf-ls-ide-flow.md.
+      // Keep synchronize as {} so we opt into no automatic config sync by construction, instead of
+      // omitting the field and depending on vscode-languageclient defaults (which could change).
+      synchronize: {},
       middleware: new LanguageClientMiddleware(
         this.logger,
         this.configuration,
@@ -229,6 +240,7 @@ export class LanguageServer implements ILanguageServer {
 
       // Start the client. This will also launch the server
       await this.client.start();
+      this.registerStructuredConfigurationChangeListener(this.client);
       void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
@@ -253,6 +265,7 @@ export class LanguageServer implements ILanguageServer {
             );
             this.registerListeners(this.client);
             await this.client.start();
+            this.registerStructuredConfigurationChangeListener(this.client);
             void this.geminiIntegrationService.connectGeminiToMCPServer();
             this.logger.info('Snyk Language Server started successfully after CLI repair');
             return;
@@ -346,6 +359,44 @@ export class LanguageServer implements ILanguageServer {
     client.onNotification(SNYK_CONFIGURATION, (params: LspConfigurationParam) => {
       this.handleSnykConfigurationNotification(params);
     });
+  }
+
+  private registerStructuredConfigurationChangeListener(client: LanguageClient): void {
+    this.configurationChangeDisposable?.dispose();
+    this.debouncedPushStructuredConfiguration?.cancel();
+
+    this.debouncedPushStructuredConfiguration = _.debounce(() => {
+      void this.pushStructuredConfigurationToLanguageServer(client);
+    }, DEFAULT_LS_DEBOUNCE_INTERVAL);
+
+    this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
+      // `snyk.*` is obvious; also watch `http.*` because proxy/TLS settings live there (not under `snyk`)
+      // and still flow into outbound LS settings (e.g. insecure / cli behavior via IConfiguration).
+      if (!e.affectsConfiguration('snyk') && !e.affectsConfiguration('http')) {
+        return;
+      }
+      if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
+        return;
+      }
+      markExplicitPflagsFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
+      this.debouncedPushStructuredConfiguration?.();
+    });
+  }
+
+  private async pushStructuredConfigurationToLanguageServer(client: LanguageClient): Promise<void> {
+    try {
+      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+      const param = serverSettingsToLspConfigurationParam(serverSettings, pflagKey =>
+        this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(pflagKey),
+      );
+      await client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, { settings: param });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send structured workspace/didChangeConfiguration: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
@@ -465,6 +516,11 @@ export class LanguageServer implements ILanguageServer {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
+
+    this.configurationChangeDisposable?.dispose();
+    this.configurationChangeDisposable = undefined;
+    this.debouncedPushStructuredConfiguration?.cancel();
+    this.debouncedPushStructuredConfiguration = undefined;
 
     // Complete the folder config stream and unsubscribe to prevent new notifications from being processed
     this.folderConfig$.complete();

@@ -4,11 +4,13 @@ import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
 import { ADVANCED_ORGANIZATION } from '../../../constants/settings';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
+import { markExplicitPflagsFromIdeConfigDiff } from './ideConfigExplicitPflags';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
@@ -22,6 +24,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly configMappingService: IConfigurationMappingService,
     private readonly clientAdapter: ILanguageClientAdapter,
+    private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly logger: ILog,
   ) {}
 
@@ -30,6 +33,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       const config = JSON.parse(configJson) as IdeConfigData;
       const isCliOnly = config.isFallbackForm ?? false;
       this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
+
+      await markExplicitPflagsFromIdeConfigDiff(
+        config,
+        this.configuration,
+        this.explicitLspConfigurationChangeTracker,
+        isCliOnly,
+      );
 
       await this.saveConfigToVSCodeSettings(config, isCliOnly);
 

@@ -46,6 +46,7 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -249,6 +250,8 @@ class SnykExtension extends SnykLib implements IExtension {
       }
     }
 
+    const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -270,6 +273,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
+      explicitLspConfigurationChangeTracker,
       this.treeViewProviderService,
     );
 
@@ -379,6 +383,7 @@ class SnykExtension extends SnykLib implements IExtension {
       scopeDetectionService,
       configMappingService,
       languageClientAdapter,
+      explicitLspConfigurationChangeTracker,
       Logger,
     );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
