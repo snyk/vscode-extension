@@ -141,6 +141,11 @@ export interface IConfiguration {
 
   getPreviewFeature(featureName: string): boolean;
 
+  /**
+   * Reads the credential from VS Code secret storage.
+   * - Resolves `undefined` when the key has never been stored (user not logged in via this workspace).
+   * - Resolves `''` when the read failed; the implementation clears any existing token on failure.
+   */
   getToken(): Promise<string | undefined>;
 
   setToken(token: string | undefined): Promise<void>;
@@ -494,8 +499,8 @@ export class Configuration implements IConfiguration {
       SecretStorageAdapter.instance
         .get(SNYK_TOKEN_KEY)
         .then(token => resolve(token))
-        .catch(async _ => {
-          // clear the token and return empty string
+        .catch(async (err: unknown) => {
+          console.warn('Failed to read Snyk token from secret storage', err);
           await this.clearToken();
           resolve('');
         });

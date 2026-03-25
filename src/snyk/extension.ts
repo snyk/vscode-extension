@@ -564,6 +564,8 @@ class SnykExtension extends SnykLib implements IExtension {
     // The codeEnabled context depends on an LS command
     await this.languageServer.start();
 
+    await this.syncLoggedInContextFromStoredTokenIfValid();
+
     // initialize contexts
     await this.contextService.setContext(SNYK_CONTEXT.INITIALIZED, true);
 
@@ -640,6 +642,10 @@ class SnykExtension extends SnykLib implements IExtension {
       await configuration.setAutoConfigureMcpServer(true);
       await configuration.setSecureAtInceptionExecutionFrequency('On Code Generation');
     }
+  }
+
+  public syncLoggedInContextFromStoredTokenIfValid(): Promise<void> {
+    return this.authService.syncLoggedInContextFromStoredTokenIfValid();
   }
 
   public async deactivate(): Promise<void> {

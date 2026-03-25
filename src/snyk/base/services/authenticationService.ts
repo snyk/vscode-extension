@@ -18,6 +18,13 @@ export interface IAuthenticationService {
   setToken(): Promise<void>;
 
   updateTokenAndEndpoint(token: string, apiUrl: string): Promise<void>;
+
+  /**
+   * When secret storage has a token that passes the same validation as manual entry (see
+   * AuthenticationService.validateToken), the LS may not send $/snyk.hasAuthenticated. Sets
+   * snyk:loggedIn and related UI context accordingly. Does not persist credentials or trigger a workspace scan.
+   */
+  syncLoggedInContextFromStoredTokenIfValid(): Promise<void>;
 }
 
 export type OAuthToken = {
@@ -45,6 +52,7 @@ export class AuthenticationService implements IAuthenticationService {
   async initiateLogout(): Promise<void> {
     await this.configuration.clearToken();
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
+    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
   }
 
   async setToken(): Promise<void> {
@@ -74,10 +82,11 @@ export class AuthenticationService implements IAuthenticationService {
     // try to parse as json (oauth2 token)
     try {
       const oauthToken = JSON.parse(token) as OAuthToken;
-      valid =
-        oauthToken.access_token.length > 0 &&
-        Date.parse(oauthToken.expiry) > Date.now() &&
-        oauthToken.refresh_token.length > 0;
+      const accessOk = oauthToken.access_token.length > 0;
+      const refreshOk = oauthToken.refresh_token.length > 0;
+      // Do not require a future expiry: the access token is often expired on disk while the
+      // language server still holds a refresh token and refreshes — same state as "already logged in".
+      valid = accessOk && refreshOk;
       this.logger.debug(`Token ${this.maskToken(token)} parsed`);
     } catch (e) {
       this.logger.warn(`Token ${this.maskToken(token)} is not a valid UUID, PAT or OAuth2 token)}}}: ${e}`);
@@ -117,5 +126,25 @@ export class AuthenticationService implements IAuthenticationService {
       this.baseModule.loadingBadge.setLoadingBadge(false);
       await this.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
     }
+  }
+
+  async syncLoggedInContextFromStoredTokenIfValid(): Promise<void> {
+    const token = await this.configuration.getToken();
+    if (token === undefined) {
+      // Secret storage returns undefined when the key is absent — e.g. before OAuth has stored a token,
+      // or while Connect & Trust is in progress. Concurrent sync (LS config, startup) can hit this.
+      this.logger.debug('Logged-in context sync skipped: no token in secret storage yet');
+      return;
+    }
+    const trimmed = token.trim();
+    if (!this.validateToken(trimmed)) {
+      this.logger.debug('Stored token missing or invalid; not updating logged-in context');
+      return;
+    }
+
+    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
+    await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, false);
+    this.baseModule.loadingBadge.setLoadingBadge(false);
   }
 }

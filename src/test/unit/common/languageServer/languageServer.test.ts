@@ -643,6 +643,13 @@ suite('Language Server', () => {
   });
 
   suite('snyk.configuration notification', () => {
+    let syncLoggedInFromStoredTokenStub: sinon.SinonStub;
+
+    setup(() => {
+      syncLoggedInFromStoredTokenStub = sinon.stub().resolves();
+      authServiceMock.syncLoggedInContextFromStoredTokenIfValid = syncLoggedInFromStoredTokenStub;
+    });
+
     test('should register handler and handle payload', async () => {
       const debugSpy = sinon.spy(logger, 'debug');
 
@@ -663,6 +670,7 @@ suite('Language Server', () => {
       });
 
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
+      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
       deepStrictEqual(languageServer.getInboundLspConfigurationView(), {
         globalSettings: {
           [endpointKey]: {
@@ -698,6 +706,7 @@ suite('Language Server', () => {
         ],
       });
 
+      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
       sinon.assert.calledOnce(inboundSpy);
       deepStrictEqual(inboundSpy.getCall(0).args[0], languageServer.getInboundLspConfigurationView());
     });
@@ -720,6 +729,7 @@ suite('Language Server', () => {
         settings: { endpoint: { value: 'https://api.snyk.io', source: 'default', isLocked: false } },
       });
 
+      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
       sinon.assert.notCalled(inboundSpy);
 
       LanguageServer.endLSOrgUpdateFromFolderConfigsForTests(folderPath);

@@ -95,6 +95,24 @@ suite('AuthenticationService', () => {
     sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
+  test('initiateLogout clears logged-in and authenticating context', async () => {
+    const service = new AuthenticationService(
+      contextService,
+      baseModule,
+      config,
+      windowMock,
+      new LoggerMock(),
+      languageClientAdapter,
+      {} as IVSCodeCommands,
+    );
+
+    await service.initiateLogout();
+
+    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
+    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
+    sinon.assert.called(clearTokenSpy);
+  });
+
   suite('.updateTokenAndEndpoint()', () => {
     let service: AuthenticationService;
     const setLoadingBadgeFake = sinon.fake();
@@ -185,7 +203,7 @@ suite('AuthenticationService', () => {
       sinon.assert.notCalled(setTokenSpy);
     });
 
-    test('fails with error on setting expired token', async () => {
+    test('accepts oauth token with expired access when refresh token is present', async () => {
       const oauthToken: OAuthToken = {
         // eslint-disable-next-line camelcase
         access_token: 'access_token',
@@ -196,8 +214,102 @@ suite('AuthenticationService', () => {
       const oauthTokenString = JSON.stringify(oauthToken);
       const apiUrl = 'https://api.snyk.io';
 
-      await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
+      await service.updateTokenAndEndpoint(oauthTokenString, apiUrl);
+      sinon.assert.calledWith(setTokenSpy, oauthTokenString);
+      sinon.assert.calledWith(setEndpointSpy, apiUrl);
+    });
+  });
+
+  suite('.syncLoggedInContextFromStoredTokenIfValid()', () => {
+    let service: AuthenticationService;
+    let getTokenStub: sinon.SinonStub;
+    const setLoadingBadgeFake = sinon.fake();
+    const executeCommandFake = sinon.fake();
+
+    setup(() => {
+      getTokenStub = sinon.stub();
+      baseModule = {
+        loadingBadge: {
+          setLoadingBadge: setLoadingBadgeFake,
+        } as ILoadingBadge,
+      } as IBaseSnykModule;
+
+      config = {
+        ...config,
+        getToken: getTokenStub,
+      } as unknown as IConfiguration;
+
+      service = new AuthenticationService(
+        contextService,
+        baseModule,
+        config,
+        windowMock,
+        new LoggerMock(),
+        languageClientAdapter,
+        {
+          executeCommand: executeCommandFake,
+        } as IVSCodeCommands,
+      );
+    });
+
+    test('does nothing when no stored token', async () => {
+      getTokenStub.resolves(undefined);
+
+      await service.syncLoggedInContextFromStoredTokenIfValid();
+
+      sinon.assert.notCalled(setContextSpy);
+      sinon.assert.notCalled(setLoadingBadgeFake);
+      sinon.assert.notCalled(executeCommandFake);
+    });
+
+    test('does nothing when stored token is empty or whitespace only', async () => {
+      getTokenStub.resolves('  \t\n  ');
+
+      await service.syncLoggedInContextFromStoredTokenIfValid();
+
+      sinon.assert.notCalled(setContextSpy);
+      sinon.assert.notCalled(setLoadingBadgeFake);
+      sinon.assert.notCalled(executeCommandFake);
+    });
+
+    test('does nothing when stored token fails validateToken', async () => {
+      getTokenStub.resolves('not-a-valid-token');
+
+      await service.syncLoggedInContextFromStoredTokenIfValid();
+
+      sinon.assert.notCalled(setContextSpy);
+      sinon.assert.notCalled(setLoadingBadgeFake);
+      sinon.assert.notCalled(executeCommandFake);
+    });
+
+    test('sets logged-in contexts when stored token passes validateToken', async () => {
+      const validUuid = 'be30e2dd-95ac-4450-ad90-5f7cc7429258';
+      getTokenStub.resolves(validUuid);
+
+      await service.syncLoggedInContextFromStoredTokenIfValid();
+
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, true);
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, false);
+      sinon.assert.calledWith(setLoadingBadgeFake, false);
       sinon.assert.notCalled(setTokenSpy);
+      sinon.assert.notCalled(executeCommandFake);
+    });
+
+    test('sets logged-in contexts when stored oauth has expired access but refresh token', async () => {
+      const oauthToken: OAuthToken = {
+        // eslint-disable-next-line camelcase
+        access_token: 'access_token',
+        expiry: new Date(Date.now() - 60000).toISOString(),
+        // eslint-disable-next-line camelcase
+        refresh_token: 'refresh_token',
+      };
+      getTokenStub.resolves(JSON.stringify(oauthToken));
+
+      await service.syncLoggedInContextFromStoredTokenIfValid();
+
+      sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, true);
+      sinon.assert.calledWith(setLoadingBadgeFake, false);
     });
   });
 

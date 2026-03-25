@@ -402,6 +402,7 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
+    void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
     this.scheduleInboundConfigurationNotificationToWorkspace();
   }
 

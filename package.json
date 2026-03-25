@@ -398,7 +398,7 @@
         {
           "id": "snyk.views.welcome",
           "name": "Snyk",
-          "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authenticationChanged"
+          "when": "!snyk:loggedIn || snyk:error || !snyk:workspaceFound || snyk:authMethodChanged"
         },
         {
           "type": "webview",
