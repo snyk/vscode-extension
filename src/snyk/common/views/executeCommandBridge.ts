@@ -26,6 +26,14 @@ export class ExecuteCommandBridge {
    * Returns the client-side JavaScript that defines window.__ideExecuteCommand__ in a webview.
    * Assumes a variable named `vscode` (from acquireVsCodeApi()) is already in scope.
    * Safe to embed inside any IIFE that has acquired the VS Code API.
+   *
+   * Why callbackId?
+   * VS Code's webview postMessage API is a one-way fire-and-forget channel on both sides —
+   * there is no native request/response primitive (MessagePort is not available in webviews).
+   * To match an async commandResult reply to the specific call that triggered it (especially
+   * when multiple commands may be in-flight concurrently), each call is tagged with a unique
+   * callbackId. The pending callback is stored in __ideCallbacks__ under that id and invoked
+   * once the matching reply arrives, turning two one-way messages into a logical call/response.
    */
   static buildClientScript(): string {
     return `
