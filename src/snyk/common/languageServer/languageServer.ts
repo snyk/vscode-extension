@@ -64,6 +64,7 @@ export class LanguageServer implements ILanguageServer {
     processor: () => Promise<void>;
   }>();
   private folderConfigSubscription?: Subscription;
+  private starting = false;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -99,8 +100,25 @@ export class LanguageServer implements ILanguageServer {
     private readonly treeViewProvider?: ITreeViewProviderService,
   ) {
     this.downloadService = downloadService;
+    this.initFolderConfigPipeline();
 
-    // Set up folder config processing pipeline with switchMap to take latest and cancel previous
+    this.geminiIntegrationService = new GeminiIntegrationService(
+      this.logger,
+      this.configuration,
+      this.extensionRetriever,
+      this.scan$,
+      this.uriAdapter,
+      this.markdownAdapter,
+      this.codeCommands,
+      this.diagnosticsProvider,
+    );
+  }
+
+  private initFolderConfigPipeline(): void {
+    // (Re-)create the folder config processing pipeline.
+    // A previous stop() may have completed the Subject, so we create a fresh one.
+    this.folderConfigSubscription?.unsubscribe();
+    this.folderConfig$ = new Subject();
     this.folderConfigSubscription = this.folderConfig$
       .pipe(
         switchMap(({ type, processor }) =>
@@ -115,22 +133,24 @@ export class LanguageServer implements ILanguageServer {
         ),
       )
       .subscribe();
-
-    this.geminiIntegrationService = new GeminiIntegrationService(
-      this.logger,
-      this.configuration,
-      this.extensionRetriever,
-      this.scan$,
-      this.uriAdapter,
-      this.markdownAdapter,
-      this.codeCommands,
-      this.diagnosticsProvider,
-    );
   }
 
   // Starts the language server and the client. LS will be downloaded if missing.
   // Returns a promise that resolves when the language server is ready to receive requests.
   async start(): Promise<void> {
+    if (this.starting) {
+      this.logger.info('Language Server start already in progress, skipping concurrent call.');
+      return;
+    }
+    this.starting = true;
+    try {
+      await this.startInternal();
+    } finally {
+      this.starting = false;
+    }
+  }
+
+  private async startInternal(): Promise<void> {
     // wait until Snyk LS is downloaded
     await firstValueFrom(this.downloadService.downloadReady$);
     this.logger.info('Starting Snyk Language Server');
@@ -194,6 +214,9 @@ export class LanguageServer implements ILanguageServer {
        */
       outputChannel: this.client?.outputChannel ?? this.window.createOutputChannel(SNYK_LANGUAGE_SERVER_NAME),
     };
+
+    // Recreate the folder config pipeline in case a premature stop() completed the Subject
+    this.initFolderConfigPipeline();
 
     // Create the language client and start the client.
     this.client = this.languageClientAdapter.create('SnykLS', SNYK_LANGUAGE_SERVER_NAME, serverOptions, clientOptions);

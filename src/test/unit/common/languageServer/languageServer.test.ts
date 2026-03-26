@@ -466,6 +466,36 @@ suite('Language Server', () => {
     });
   });
 
+  test('concurrent start() calls should only initialize once', async () => {
+    const clientStartStub = sinon.stub().resolves();
+    const createSpy = sinon.spy({
+      create(): LanguageClient {
+        return {
+          start: clientStartStub,
+          onNotification(): void {
+            return;
+          },
+          onReady(): Promise<void> {
+            return Promise.resolve();
+          },
+        } as unknown as LanguageClient;
+      },
+    });
+
+    languageServer = createFakeLanguageServer(
+      createSpy as unknown as ILanguageClientAdapter,
+      stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+    );
+    downloadServiceMock.downloadReady$.next();
+
+    // Call start() twice concurrently — simulates the race between
+    // initializeExtension and a config-watcher-triggered restartLanguageServer.
+    await Promise.all([languageServer.start(), languageServer.start()]);
+
+    sinon.assert.calledOnce(createSpy.create);
+    sinon.assert.calledOnce(clientStartStub);
+  });
+
   suite('treeView notification', () => {
     test('should forward treeView notification to treeViewProvider', async () => {
       const updateStub = sinon.stub();
