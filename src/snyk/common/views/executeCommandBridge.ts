@@ -10,6 +10,9 @@ interface ExecuteCommandMessage {
   callbackId?: string;
 }
 
+/** Only commands in the snyk.* namespace may be invoked from a webview. */
+const ALLOWED_COMMAND_PREFIX = 'snyk.';
+
 /**
  * Shared bridge for the window.__ideExecuteCommand__ JS↔IDE contract.
  * Usable by any HTML webview panel (settings, tree view, etc.).
@@ -78,6 +81,11 @@ export class ExecuteCommandBridge {
       const msg = message;
       if (!msg.command) {
         this.logger.warn('Received executeCommand message without command');
+        return;
+      }
+
+      if (!msg.command.startsWith(ALLOWED_COMMAND_PREFIX)) {
+        this.logger.warn(`Webview attempted to execute disallowed command: ${msg.command}`);
         return;
       }
 

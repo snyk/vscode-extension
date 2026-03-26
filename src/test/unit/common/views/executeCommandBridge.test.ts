@@ -168,5 +168,24 @@ suite('ExecuteCommandBridge', () => {
       sinon.assert.notCalled(commandExecutorStub.executeCommand);
       sinon.assert.called(loggerStub.warn);
     });
+
+    suite('command allowlist', () => {
+      test('rejects non-snyk commands', async () => {
+        const result = await bridge.handleMessage({
+          type: 'executeCommand',
+          command: 'workbench.action.terminal.new',
+        });
+
+        sinon.assert.notCalled(commandExecutorStub.executeCommand);
+        sinon.assert.called(loggerStub.warn);
+        strictEqual(result, undefined);
+      });
+
+      test('dispatches snyk.* commands', async () => {
+        await bridge.handleMessage({ type: 'executeCommand', command: 'snyk.anyCommand' });
+
+        sinon.assert.calledOnce(commandExecutorStub.executeCommand);
+      });
+    });
   });
 });
