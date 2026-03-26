@@ -9,6 +9,7 @@ import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import type { MergedLspConfigurationView } from '../../../languageServer/lspConfigurationMerge';
+import { filterInboundPartialByExplicitOverrides } from '../../../languageServer/inboundLspExplicitOverrideFilter';
 import { mergedGlobalSettingsToIdeConfigData } from '../../../languageServer/inboundLspConfigurationToIdeConfig';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
@@ -34,6 +35,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly logger: ILog,
+    private readonly reconcileLanguageServerWithCurrentConfiguration?: () => void,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
@@ -77,17 +79,29 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       return;
     }
 
-    const tokenFromLs = partial.token;
-    const { token: _omit, ...rest } = partial;
-    const ideForSettings = rest as IdeConfigData;
-
-    const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
-    const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
-      string,
-      unknown
-    >;
-
+    let reconcileNeeded = false;
     try {
+      const { filtered, reconcileNeeded: needsReconcile } = await filterInboundPartialByExplicitOverrides(
+        partial,
+        this.explicitLspConfigurationChangeTracker,
+        this.configuration,
+      );
+      reconcileNeeded = needsReconcile;
+
+      if (Object.keys(filtered).length === 0) {
+        return;
+      }
+
+      const tokenFromLs = filtered.token;
+      const { token: _omit, ...rest } = filtered;
+      const ideForSettings = rest as IdeConfigData;
+
+      const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
+      const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
+        string,
+        unknown
+      >;
+
       if (Object.keys(settingsMap).length > 0) {
         this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
         await this.applySettingsMap(settingsMap);
@@ -104,6 +118,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     } catch (e) {
       this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
       throw e;
+    } finally {
+      if (reconcileNeeded) {
+        this.reconcileLanguageServerWithCurrentConfiguration?.();
+      }
     }
   }
 

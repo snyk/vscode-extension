@@ -52,6 +52,12 @@ export interface ILanguageServer {
 
   setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<void>): void;
 
+  /**
+   * Sends current IDE configuration to the language server (structured `workspace/didChangeConfiguration`).
+   * Used after inbound `$/snyk.configuration` was filtered to respect explicit user overrides.
+   */
+  reconcileLanguageServerWithCurrentConfiguration(): void;
+
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
   showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>;
@@ -256,6 +262,7 @@ export class LanguageServer implements ILanguageServer {
       // Start the client. This will also launch the server
       await this.client.start();
       this.registerStructuredConfigurationChangeListener(this.client);
+      this.scheduleInitialStructuredConfigurationPush(this.client);
       void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
@@ -281,6 +288,7 @@ export class LanguageServer implements ILanguageServer {
             this.registerListeners(this.client);
             await this.client.start();
             this.registerStructuredConfigurationChangeListener(this.client);
+            this.scheduleInitialStructuredConfigurationPush(this.client);
             void this.geminiIntegrationService.connectGeminiToMCPServer();
             this.logger.info('Snyk Language Server started successfully after CLI repair');
             return;
@@ -315,6 +323,7 @@ export class LanguageServer implements ILanguageServer {
       this.folderConfig$.next({
         type: SNYK_FOLDERCONFIG,
         processor: async () => {
+          const firstFolderConfigsBatchFromLs = !LanguageServer.ReceivedFolderConfigsFromLs;
           // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
           let didFolderConfigMergeHappen = false;
           const processedFolderConfigs = folderConfigs.map(folderConfig => {
@@ -339,6 +348,11 @@ export class LanguageServer implements ILanguageServer {
 
           // Save folder configs
           await this.configuration.setFolderConfigs(processedFolderConfigs, didFolderConfigMergeHappen);
+
+          if (firstFolderConfigsBatchFromLs) {
+            this.debouncedPushStructuredConfiguration?.cancel();
+            void this.pushStructuredConfigurationToLanguageServer(client);
+          }
         },
       });
     });
@@ -376,6 +390,16 @@ export class LanguageServer implements ILanguageServer {
     });
   }
 
+  /** One explicit outbound config after LS is ready; `setImmediate` so folder sync runs first; cancel debounce to avoid double-send. */
+  private scheduleInitialStructuredConfigurationPush(client: LanguageClient): void {
+    const c = client as LanguageClient & { onReady(): Promise<void> };
+    void c.onReady().then(async () => {
+      await new Promise<void>(resolve => setImmediate(resolve));
+      await this.pushStructuredConfigurationToLanguageServer(client);
+      this.debouncedPushStructuredConfiguration?.cancel();
+    });
+  }
+
   private registerStructuredConfigurationChangeListener(client: LanguageClient): void {
     this.configurationChangeDisposable?.dispose();
     this.debouncedPushStructuredConfiguration?.cancel();
@@ -399,6 +423,13 @@ export class LanguageServer implements ILanguageServer {
       markExplicitPflagsFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
       this.debouncedPushStructuredConfiguration?.();
     });
+  }
+
+  reconcileLanguageServerWithCurrentConfiguration(): void {
+    if (!this.client) {
+      return;
+    }
+    void this.pushStructuredConfigurationToLanguageServer(this.client);
   }
 
   private async pushStructuredConfigurationToLanguageServer(client: LanguageClient): Promise<void> {

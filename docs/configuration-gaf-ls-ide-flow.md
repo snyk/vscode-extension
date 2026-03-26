@@ -64,6 +64,7 @@ Source (editable): [`docs/diagrams/configuration-gaf-ls-ide-flow.mmd`](diagrams/
 ## Round trip
 
 - **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks) for UI.
+- **LS → `settings.json` (VS Code, optional):** `ConfigurationPersistenceService.persistInboundLspConfiguration` maps the global snapshot into VS Code settings. For pflags the user has explicitly marked (`ExplicitLspConfigurationChangeTracker`, global memento) whose LS value **differs** from the current IDE value, the inbound value is **not** applied; **`LanguageServer.reconcileLanguageServerWithCurrentConfiguration`** then sends structured `workspace/didChangeConfiguration` so the language server matches the IDE.
 - **IDE → LS:** `workspace/didChangeConfiguration` with **`LspConfigurationParam`-shaped** payload; only **changed** keys, `value: null` to clear override (per protocol).
 
 ### VS Code Language Client: why auto `didChangeConfiguration` is off for `snyk`
@@ -75,6 +76,8 @@ The VS Code **`LanguageClient`** option **`synchronize.configurationSection`** (
 Therefore the extension **does not** set **`configurationSection`** for Snyk. Outbound config updates must be sent with an **explicit** `workspace/didChangeConfiguration` (or equivalent) carrying **`{ settings: <LspConfigurationParam> }`** per the requirements below. Initialization and **`workspace/configuration`** middleware continue to supply **flat** `ServerSettings` where the protocol expects the legacy/IDE shape (e.g. pull / init).
 
 After the language client starts, **`LanguageServer`** registers **`workspace.onDidChangeConfiguration`**, reacts only when **`affectsConfiguration('snyk')`**, debounces (same interval as other LS debounces), builds **`LspConfigurationParam`** via **`LanguageServerSettings.fromConfiguration`** + **`serverSettingsToLspConfigurationParam`**, and calls **`sendNotification('workspace/didChangeConfiguration', { settings })`**. While **`foldersBeingUpdatedByLS`** is non-empty (LS applying org from **`$/snyk.folderConfigs`**), outbound pushes are skipped to avoid feedback loops.
+
+On startup, after **`client.start()`** and **`registerStructuredConfigurationChangeListener`**, the extension sends **one** structured **`workspace/didChangeConfiguration`** from **`client.onReady`** (deferred with **`setImmediate`** so workspace folders are registered with the server first), then **cancels** the pending debounced handler so a duplicate send from startup config churn is avoided. When the first **`$/snyk.folderConfigs`** batch is processed, **`folderConfigs`** become eligible in **`LanguageServerSettings`** — the extension sends **one** more outbound push so the payload includes per-folder settings (aligned with IntelliJ `addContentRoots` → `updateConfiguration`).
 
 ### IDE → LS outbound requirements (`LspConfigurationParam`)
 

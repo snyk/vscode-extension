@@ -12,6 +12,8 @@ import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ADVANCED_ORGANIZATION, CONFIGURATION_IDENTIFIER } from '../../../../../../snyk/common/constants/settings';
 import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
+import { PFLAG } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import type { MergedLspConfigurationView } from '../../../../../../snyk/common/languageServer/lspConfigurationMerge';
 
 function createMockUri(path: string): Uri {
   return {
@@ -246,5 +248,113 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
         true, // writeToUserScope should be true
       );
     });
+  });
+});
+
+suite('ConfigurationPersistenceService — persistInbound explicit overrides', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let configMappingService: IConfigurationMappingService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getWorkspaceFolders: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({
+        globalValue: undefined,
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+      getFeaturesConfiguration: sinon.stub().returns({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      }),
+      scanningMode: 'auto',
+      organization: '',
+      snykApiEndpoint: 'https://api.snyk.io',
+      getInsecure: sinon.stub().returns(false),
+      getAuthenticationMethod: sinon.stub().returns('oauth'),
+      getDeltaFindingsEnabled: sinon.stub().returns(false),
+      severityFilter: {},
+      issueViewOptions: {},
+      riskScoreThreshold: 0,
+      getTrustedFolders: sinon.stub().returns([]),
+      getCliPath: sinon.stub().resolves(''),
+      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+      getCliBaseDownloadUrl: sinon.stub().returns(''),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    configMappingService = {
+      mapConfigToSettings: sinon.stub().returns({}),
+      mapHtmlKeyToVSCodeSetting: sinon.stub().returns(undefined),
+    } as unknown as IConfigurationMappingService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({
+        sendNotification: sinon.stub().resolves(),
+      }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
+
+  test('reconciles and skips settings when explicit api endpoint disagrees with LS', async () => {
+    const reconcileStub = sinon.stub();
+    const explicitTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: sinon.stub().callsFake((k: string) => k === PFLAG.apiEndpoint),
+    };
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      configMappingService,
+      clientAdapter,
+      explicitTracker,
+      logger,
+      reconcileStub,
+    );
+
+    const view: MergedLspConfigurationView = {
+      globalSettings: {
+        [PFLAG.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
+      },
+      folderSettingsByPath: {},
+    };
+
+    await service.persistInboundLspConfiguration(view);
+
+    sinon.assert.notCalled(updateConfigurationStub);
+    sinon.assert.calledOnce(reconcileStub);
   });
 });

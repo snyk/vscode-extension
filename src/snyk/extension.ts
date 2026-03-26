@@ -385,6 +385,7 @@ class SnykExtension extends SnykLib implements IExtension {
       languageClientAdapter,
       explicitLspConfigurationChangeTracker,
       Logger,
+      () => this.languageServer.reconcileLanguageServerWithCurrentConfiguration(),
     );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 

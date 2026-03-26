@@ -218,6 +218,7 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     });
@@ -260,6 +261,7 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     });
@@ -303,7 +305,10 @@ suite('Language Server', () => {
     const clock = sinon.useFakeTimers();
     try {
       await languageServer.start();
-      sinon.assert.notCalled(sendNotification);
+      await clock.tickAsync(0);
+      sinon.assert.calledOnce(sendNotification);
+      strictEqual(sendNotification.getCall(0).args[0], DID_CHANGE_CONFIGURATION_METHOD);
+      sendNotification.resetHistory();
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' });
       await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
       sinon.assert.calledOnce(sendNotification);
@@ -345,6 +350,9 @@ suite('Language Server', () => {
     const clock = sinon.useFakeTimers();
     try {
       await languageServer.start();
+      await clock.tickAsync(0);
+      sinon.assert.calledOnce(sendNotification);
+      sendNotification.resetHistory();
       configListener({ affectsConfiguration: () => false });
       await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
       sinon.assert.notCalled(sendNotification);
