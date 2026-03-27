@@ -11,6 +11,10 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import {
+  PFLAG,
+  serverSettingsToLspInitializationOptions,
+} from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
@@ -251,8 +255,12 @@ suite('Language Server', () => {
               'options' in serverOptions ? serverOptions?.options?.env?.HTTP_PROXY : undefined,
               expectedProxy,
             );
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            assert.strictEqual(clientOptions.initializationOptions.token, 'testToken');
+            assert.strictEqual(
+              (clientOptions.initializationOptions as { settings?: Record<string, { value?: unknown }> }).settings?.[
+                PFLAG.token
+              ]?.value,
+              'testToken',
+            );
             return Promise.resolve();
           },
           onNotification(): void {
@@ -413,7 +421,7 @@ suite('Language Server', () => {
         // This is normally done in the registerListeners method when receiving a notification
         LanguageServer.ReceivedFolderConfigsFromLs = tc.simulateReceivedFolderConfigsFromLs;
 
-        const expectedInitializationOptions: ServerSettings = {
+        const expectedFlat: ServerSettings = {
           activateSnykCodeSecurity: 'true',
           enableDeltaFindings: 'false',
           activateSnykOpenSource: 'false',
@@ -448,14 +456,14 @@ suite('Language Server', () => {
         };
 
         const initializationOptions = await languageServer.getInitializationOptions();
-        deepStrictEqual(initializationOptions, expectedInitializationOptions);
+        deepStrictEqual(initializationOptions, serverSettingsToLspInitializationOptions(expectedFlat));
       });
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {
       const initOptions = await languageServer.getInitializationOptions();
 
-      strictEqual(initOptions.activateSnykCodeSecurity, `true`);
+      strictEqual(initOptions.settings[PFLAG.snykCodeEnabled]?.value, true);
     });
 
     ['auto', 'manual'].forEach(expectedScanningMode => {
@@ -463,7 +471,7 @@ suite('Language Server', () => {
         configurationMock.scanningMode = expectedScanningMode;
         const options = await languageServer.getInitializationOptions();
 
-        assert.strictEqual(options.scanningMode, expectedScanningMode);
+        assert.strictEqual(options.settings[PFLAG.scanAutomatic]?.value, expectedScanningMode !== 'manual');
       });
     });
   });

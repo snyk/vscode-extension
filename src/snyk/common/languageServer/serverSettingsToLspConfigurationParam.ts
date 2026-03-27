@@ -1,5 +1,10 @@
 import type { FolderConfig } from '../configuration/configuration';
-import type { LspConfigurationParam, LspConfigSetting, LspFolderConfiguration } from './types';
+import type {
+  LspConfigurationParam,
+  LspConfigSetting,
+  LspFolderConfiguration,
+  LspInitializationOptions,
+} from './types';
 import type { ServerSettings } from './settings';
 
 /**
@@ -244,3 +249,31 @@ export function serverSettingsToLspConfigurationParam(
   }
   return result;
 }
+
+/**
+ * Builds snyk-ls `InitializationOptions`: pflag `settings` + `folderConfigs`, plus init-only metadata
+ * fields (mirrors `internal/types/lsp.go` `InitializationOptions`).
+ */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access -- `lsp` is LspConfigurationParam; member access is safe */
+export function serverSettingsToLspInitializationOptions(flat: ServerSettings): LspInitializationOptions {
+  const lsp: LspConfigurationParam = serverSettingsToLspConfigurationParam(flat, () => true);
+  const out: LspInitializationOptions = {
+    settings: lsp.settings ?? {},
+    requiredProtocolVersion: flat.requiredProtocolVersion,
+    deviceId: flat.deviceId,
+    integrationName: flat.integrationName,
+    integrationVersion: flat.integrationVersion,
+    osPlatform: flat.osPlatform,
+    osArch: flat.osArch,
+    runtimeVersion: flat.runtimeVersion,
+    runtimeName: flat.runtimeName,
+    hoverVerbosity: flat.hoverVerbosity,
+    path: flat.path,
+    trustedFolders: flat.trustedFolders,
+  };
+  if (lsp.folderConfigs !== undefined) {
+    out.folderConfigs = lsp.folderConfigs;
+  }
+  return out;
+}
+/* eslint-enable @typescript-eslint/no-unsafe-member-access */

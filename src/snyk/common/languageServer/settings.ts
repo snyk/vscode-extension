@@ -9,7 +9,7 @@ import {
 } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { LanguageServer } from './languageServer';
+import { getReceivedFolderConfigsFromLs } from './receivedFolderConfigsFromLsState';
 
 export type ServerSettings = {
   // Feature toggles
@@ -68,7 +68,11 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
+  static async fromConfiguration(
+    configuration: IConfiguration,
+    user: User,
+    receivedFolderConfigsFromLs = getReceivedFolderConfigsFromLs(),
+  ): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const ossEnabled = _.isUndefined(featuresConfiguration?.ossEnabled)
@@ -114,7 +118,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
+      folderConfigs: receivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
       enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
       hoverVerbosity: 1,
       secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),

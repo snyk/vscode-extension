@@ -24,12 +24,16 @@ import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { mergeInboundLspConfiguration, type MergedLspConfigurationView } from './lspConfigurationMerge';
+import {
+  serverSettingsToLspConfigurationParam,
+  serverSettingsToLspInitializationOptions,
+} from './serverSettingsToLspConfigurationParam';
 import { LanguageClientMiddleware } from './middleware';
 import { markExplicitPflagsFromConfigurationChangeEvent } from './configurationChangeToExplicitPflags';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
-import { serverSettingsToLspConfigurationParam } from './serverSettingsToLspConfigurationParam';
-import { LanguageServerSettings, ServerSettings } from './settings';
-import { LspConfigurationParam, Scan, ShowIssueDetailTopicParams } from './types';
+import { LanguageServerSettings, type ServerSettings } from './settings';
+import { getReceivedFolderConfigsFromLs, setReceivedFolderConfigsFromLs } from './receivedFolderConfigsFromLsState';
+import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
 import { ITreeViewProviderService } from '../../base/treeView/treeViewProviderService';
@@ -69,7 +73,14 @@ export class LanguageServer implements ILanguageServer {
   readonly scan$ = new Subject<Scan>();
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
-  public static ReceivedFolderConfigsFromLs = false;
+
+  public static get ReceivedFolderConfigsFromLs(): boolean {
+    return getReceivedFolderConfigsFromLs();
+  }
+
+  public static set ReceivedFolderConfigsFromLs(value: boolean) {
+    setReceivedFolderConfigsFromLs(value);
+  }
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
@@ -229,7 +240,8 @@ export class LanguageServer implements ILanguageServer {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ scheme: 'file', language: '' }],
-      initializationOptions: await this.getInitializationOptions(),
+      // vscode-languageclient types `initializationOptions` loosely; value is LspInitializationOptions
+      initializationOptions: (await this.getInitializationOptions()) as unknown,
       // Do not set synchronize.configurationSection: it makes vscode-languageclient send
       // workspace/didChangeConfiguration with a flat VS Code `snyk` object. snyk-ls expects
       // DidChangeConfigurationParams.settings to deserialize as LspConfigurationParam (pflag maps).
@@ -496,8 +508,10 @@ export class LanguageServer implements ILanguageServer {
 
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
-  async getInitializationOptions(): Promise<ServerSettings> {
-    return await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+  async getInitializationOptions(): Promise<LspInitializationOptions> {
+    const flat: ServerSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- return type is LspInitializationOptions; ESLint infers `any` from mapper chain
+    return serverSettingsToLspInitializationOptions(flat);
   }
 
   showOutputChannel(): void {

@@ -205,6 +205,24 @@ export type LspConfigurationParam = {
   folderConfigs?: LspFolderConfiguration[];
 };
 
+/** Matches snyk-ls `InitializationOptions` (LSP `initialize` → `initializationOptions`, protocol v25+). */
+export type LspInitializationOptions = {
+  settings: Record<string, LspConfigSetting>;
+  folderConfigs?: LspFolderConfiguration[];
+  requiredProtocolVersion?: string;
+  deviceId?: string;
+  integrationName?: string;
+  integrationVersion?: string;
+  osPlatform?: string;
+  osArch?: string;
+  runtimeVersion?: string;
+  runtimeName?: string;
+  hoverVerbosity?: number;
+  outputFormat?: string;
+  path?: string;
+  trustedFolders?: string[];
+};
+
 // Snyk Secrets
 export type SecretsIssueData = {
   key: string;

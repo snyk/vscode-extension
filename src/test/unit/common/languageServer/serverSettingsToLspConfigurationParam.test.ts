@@ -4,6 +4,7 @@ import {
   folderConfigToLspFolderConfiguration,
   PFLAG,
   serverSettingsToLspConfigurationParam,
+  serverSettingsToLspInitializationOptions,
 } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 
@@ -162,5 +163,34 @@ suite('folderConfigToLspFolderConfiguration', () => {
     assert.strictEqual(row.folderPath, '/w');
     assert.strictEqual(row.settings?.[PFLAG.preferredOrg]?.value, 'p');
     assert.strictEqual(row.settings?.[PFLAG.preferredOrg]?.changed, true);
+  });
+});
+
+suite('serverSettingsToLspInitializationOptions', () => {
+  test('includes pflag settings map and init metadata from flat ServerSettings', () => {
+    const flat = minimalServerSettings({
+      requiredProtocolVersion: '25',
+      deviceId: 'device-1',
+      integrationName: 'VS_CODE',
+      integrationVersion: '1.2.3',
+      osPlatform: 'darwin',
+      osArch: 'arm64',
+      runtimeVersion: '20',
+      runtimeName: 'node',
+      path: '/workspace',
+      trustedFolders: ['/a'],
+    });
+    const init = serverSettingsToLspInitializationOptions(flat);
+    assert.strictEqual(init.requiredProtocolVersion, '25');
+    assert.strictEqual(init.deviceId, 'device-1');
+    assert.strictEqual(init.integrationName, 'VS_CODE');
+    assert.strictEqual(init.integrationVersion, '1.2.3');
+    assert.strictEqual(init.osPlatform, 'darwin');
+    assert.strictEqual(init.osArch, 'arm64');
+    assert.strictEqual(init.runtimeVersion, '20');
+    assert.strictEqual(init.runtimeName, 'node');
+    assert.strictEqual(init.path, '/workspace');
+    assert.deepStrictEqual(init.trustedFolders, ['/a']);
+    assert.strictEqual(init.settings[PFLAG.token]?.value, 'tok');
   });
 });

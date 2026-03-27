@@ -1,8 +1,10 @@
 import { LspConfigSetting, LspConfigurationParam } from './types';
 
 /**
- * Normalized view of an inbound `$/snyk.configuration` payload: global keys plus
- * per-folder effective settings (folder-specific keys override global for that path).
+ * Normalized view of an inbound `$/snyk.configuration` payload only (no VS Code settings,
+ * memento, or disk). `globalSettings` is the notification’s top-level `settings` map;
+ * `folderSettingsByPath[path]` is global keys shallow-merged with that folder’s `settings`
+ * from the same notification.
  */
 export type MergedLspConfigurationView = {
   globalSettings: Record<string, LspConfigSetting>;
@@ -10,9 +12,12 @@ export type MergedLspConfigurationView = {
 };
 
 /**
- * Builds a merged view from the LS notification. For each folder in `folderConfigs`,
- * effective settings are `global` settings overridden by that folder's `settings`.
- * Duplicate `folderPath` entries: last occurrence wins.
+ * Transform of a single `$/snyk.configuration` payload from the language server.
+ *
+ * - `globalSettings`: copy of `param.settings`.
+ * - For each `folderConfigs` entry: `folderSettingsByPath[folderPath] = { ...globalSettings, ...folderSpecific }`
+ *   so folder keys override the same keys from the global map for that path only.
+ * - Duplicate `folderPath` values in `folderConfigs`: last entry wins.
  */
 export function mergeInboundLspConfiguration(param: LspConfigurationParam): MergedLspConfigurationView {
   const globalSettings: Record<string, LspConfigSetting> = { ...(param.settings ?? {}) };
