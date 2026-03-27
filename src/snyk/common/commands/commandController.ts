@@ -69,7 +69,12 @@ export class CommandController {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
     await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
-    await this.commands.executeCommand(SNYK_LOGIN_COMMAND);
+    await this.commands.executeCommand(
+      SNYK_LOGIN_COMMAND,
+      this.configuration.getAuthenticationMethod(),
+      this.configuration.snykApiEndpoint,
+      this.configuration.getInsecure(),
+    );
   }
 
   async initiateLogout(): Promise<void> {

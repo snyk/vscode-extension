@@ -1,6 +1,5 @@
-// ABOUTME: Service for injecting IDE-specific scripts and styles into HTML
-// ABOUTME: Handles CSP nonce generation and HTML template processing
 import { getNonce } from '../../nonce';
+import { ExecuteCommandBridge } from '../../executeCommandBridge';
 
 export interface IHtmlInjectionService {
   injectIdeScripts(html: string): string;
@@ -45,23 +44,15 @@ export class HtmlInjectionService implements IHtmlInjectionService {
 
           window.__IS_IDE_AUTOSAVE_ENABLED__ = true;
 
-          window.__ideLogin__ = function() {
-            vscode.postMessage({
-              type: 'login'
-            });
-          };
+          ${ExecuteCommandBridge.buildClientScript()}
 
-          window.__ideLogout__ = function() {
-            vscode.postMessage({
-              type: 'logout'
-            });
-          };
-
-          // Listen for messages from the extension
+          // Listen for setAuthToken messages from the extension
           window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'setAuthToken' && message.token) {
-                window.setAuthToken(message.token);
+              if (typeof window.setAuthToken === 'function') {
+                window.setAuthToken(message.token, message.apiUrl);
+              }
             }
           });
         })();

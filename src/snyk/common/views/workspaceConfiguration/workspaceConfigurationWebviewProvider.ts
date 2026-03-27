@@ -156,13 +156,22 @@ export class WorkspaceConfigurationWebviewProvider
     this.panel.onDidChangeViewState(() => this.checkVisibility(), undefined, this.disposables);
 
     this.panel.webview.onDidReceiveMessage(
-      (msg: unknown) => this.messageHandlerFactory.handleMessage(msg),
+      async (msg: unknown) => {
+        const callbackResult = await this.messageHandlerFactory.handleMessage(msg);
+        if (callbackResult?.callbackId) {
+          void this.panel?.webview.postMessage({
+            type: 'commandResult',
+            callbackId: callbackResult.callbackId,
+            result: callbackResult.result,
+          });
+        }
+      },
       undefined,
       this.disposables,
     );
   }
 
-  public setAuthToken(token: string): void {
+  public setAuthToken(token: string, apiUrl?: string): void {
     if (!this.panel) {
       this.logger.debug('Cannot set auth token: webview panel not initialized');
       return;
@@ -172,6 +181,7 @@ export class WorkspaceConfigurationWebviewProvider
       .postMessage({
         type: 'setAuthToken',
         token: token,
+        apiUrl: apiUrl,
       })
       .then(
         success => {

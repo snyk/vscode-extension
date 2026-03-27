@@ -1,6 +1,4 @@
-// ABOUTME: Unit tests for HtmlInjectionService
-// ABOUTME: Tests IDE script injection
-import { ok } from 'assert';
+import { ok, strictEqual } from 'assert';
 import { HtmlInjectionService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService';
 
 suite('HtmlInjectionService', () => {
@@ -21,12 +19,61 @@ suite('HtmlInjectionService', () => {
     service = new HtmlInjectionService();
   });
 
-  test('injectIdeScripts injects IDE bridge functions', () => {
+  test('injectIdeScripts injects __ideExecuteCommand__ bridge function', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('__ideExecuteCommand__'), 'Should inject __ideExecuteCommand__ function');
+    ok(processed.includes("type: 'executeCommand'"), 'Should post executeCommand messages to extension host');
+  });
+
+  test('injectIdeScripts injects __saveIdeConfig__ bridge function', () => {
     const processed = service.injectIdeScripts(sampleHtml);
 
     ok(processed.includes('__saveIdeConfig__'), 'Should inject save config function');
-    ok(processed.includes('__ideLogin__'), 'Should inject login function');
-    ok(processed.includes('__ideLogout__'), 'Should inject logout function');
     ok(processed.includes('acquireVsCodeApi'), 'Should inject VS Code API call');
+  });
+
+  test('injectIdeScripts does NOT inject deprecated __ideLogin__', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    strictEqual(processed.includes('__ideLogin__'), false, 'Should NOT inject __ideLogin__ (removed)');
+  });
+
+  test('injectIdeScripts does NOT inject deprecated __ideLogout__', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    strictEqual(processed.includes('__ideLogout__'), false, 'Should NOT inject __ideLogout__ (removed)');
+  });
+
+  test('injectIdeScripts injects scripts before closing body tag', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('</body>'), 'Should preserve closing body tag');
+    const scriptIndex = processed.indexOf('<script');
+    const bodyCloseIndex = processed.indexOf('</body>');
+    ok(scriptIndex < bodyCloseIndex, 'Script should appear before closing body tag');
+  });
+
+  test('injectIdeScripts does not inject scripts when no closing body tag', () => {
+    const htmlWithoutBodyClose = '<html><head></head><body><p>content</p></html>';
+
+    const processed = service.injectIdeScripts(htmlWithoutBodyClose);
+
+    strictEqual(processed.includes('__ideExecuteCommand__'), false, 'Should not inject script when no </body> tag');
+  });
+
+  test('injectIdeScripts passes apiUrl from message to window.setAuthToken', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('message.apiUrl'), 'Should forward apiUrl from message to window.setAuthToken');
+  });
+
+  test('injectIdeScripts guards setAuthToken call with typeof check', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("typeof window.setAuthToken === 'function'"),
+      'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
+    );
   });
 });

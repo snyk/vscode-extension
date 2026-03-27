@@ -1,24 +1,27 @@
-// ABOUTME: Factory for creating appropriate message handlers based on message type
-// ABOUTME: Validates and routes webview messages to the correct handler
 import { ILog } from '../../../logger/interfaces';
 import { IVSCodeCommands } from '../../../vscode/commands';
 import { hasPropertyOfType, hasOptionalPropertyOfType } from '../../../tsUtil';
 import { WebviewMessage } from '../types/workspaceConfiguration.types';
 import { IConfigurationPersistenceService } from '../services/configurationPersistenceService';
-import { SNYK_INITIATE_LOGIN_COMMAND, SNYK_INITIATE_LOGOUT_COMMAND } from '../../../constants/commands';
+import { ErrorHandler } from '../../../error/errorHandler';
+import { ExecuteCommandBridge } from '../../executeCommandBridge';
 
 export interface IMessageHandlerFactory {
-  handleMessage(message: unknown): Promise<void>;
+  handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void>;
 }
 
 export class MessageHandlerFactory implements IMessageHandlerFactory {
+  private readonly executeCommandBridge: ExecuteCommandBridge;
+
   constructor(
-    private readonly commandExecutor: IVSCodeCommands,
+    commandExecutor: IVSCodeCommands,
     private readonly configPersistenceService: IConfigurationPersistenceService,
     private readonly logger: ILog,
-  ) {}
+  ) {
+    this.executeCommandBridge = new ExecuteCommandBridge(commandExecutor, logger);
+  }
 
-  async handleMessage(message: unknown): Promise<void> {
+  async handleMessage(message: unknown): Promise<{ callbackId: string; result: unknown } | void> {
     try {
       if (!this.isWebviewMessage(message)) {
         this.logger.warn('Received invalid message from workspace configuration webview');
@@ -33,23 +36,22 @@ export class MessageHandlerFactory implements IMessageHandlerFactory {
           }
           await this.configPersistenceService.handleSaveConfig(message.config);
           break;
-        case 'login':
-          this.logger.info('Triggering login from workspace configuration');
-          await this.commandExecutor.executeCommand(SNYK_INITIATE_LOGIN_COMMAND);
-          break;
-        case 'logout':
-          this.logger.info('Triggering logout from workspace configuration');
-          await this.commandExecutor.executeCommand(SNYK_INITIATE_LOGOUT_COMMAND);
-          break;
-        default:
-          this.logger.warn(`Unknown message type from workspace configuration webview: ${message.type}`);
+        case 'executeCommand':
+          return await this.executeCommandBridge.handleMessage(message);
       }
     } catch (e) {
-      this.logger.error(`Error handling message from workspace configuration webview: ${e}`);
+      ErrorHandler.handle(e, this.logger, 'Error handling message from workspace configuration webview');
     }
   }
 
   private isWebviewMessage(message: unknown): message is WebviewMessage {
-    return hasPropertyOfType(message, 'type', 'string') && hasOptionalPropertyOfType(message, 'config', 'string');
+    if (!hasPropertyOfType(message, 'type', 'string')) return false;
+    const { type } = message as { type: string };
+
+    if (type === 'saveConfig') {
+      return hasOptionalPropertyOfType(message, 'config', 'string');
+    }
+
+    return type === 'executeCommand';
   }
 }

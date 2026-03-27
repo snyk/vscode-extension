@@ -3,10 +3,12 @@ import sinon from 'sinon';
 import * as util from 'util';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import { CommandController, MAX_DISPLAY_LENGTH } from '../../../../snyk/common/commands/commandController';
+import { SNYK_LOGIN_COMMAND, SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND } from '../../../../snyk/common/constants/commands';
 import { CodeIssueData, IacIssueData } from '../../../../snyk/common/languageServer/types';
 import { IOpenerService } from '../../../../snyk/common/services/openerService';
 import { IProductService } from '../../../../snyk/common/services/productService';
 import { CommandsMock } from '../../mocks/commands.mock';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { OssService } from '../../../../snyk/snykOss/ossService';
 import { EnvMock } from '../../mocks/env.mock';
@@ -60,6 +62,69 @@ suite('CommandController', () => {
 
     // Assert
     sinon.assert.calledOnceWithExactly(fakeFunc, args);
+  });
+
+  suite('initiateLogin', () => {
+    function makeCtrl(commandsStub: IVSCodeCommands, configurationStub: IConfiguration): CommandController {
+      return new CommandController(
+        {} as IOpenerService,
+        { initiateLogin: sinon.stub().resolves() } as unknown as IAuthenticationService,
+        {} as IProductService<CodeIssueData>,
+        {} as IProductService<IacIssueData>,
+        {} as OssService,
+        {} as IVSCodeWorkspace,
+        commandsStub,
+        windowMock,
+        envMock,
+        new LanguageServerMock(),
+        new LoggerMock(),
+        configurationStub,
+        {} as IFolderConfigs,
+      );
+    }
+
+    test('passes authMethod, endpoint and insecure to snyk.login command', async () => {
+      const executeCommandStub = sinon.stub().resolves(undefined);
+      const commandsStub = { executeCommand: executeCommandStub } as unknown as IVSCodeCommands;
+      const configurationStub = {
+        getAuthenticationMethod: sinon.stub().returns('oauth'),
+        snykApiEndpoint: 'https://api.snyk.io',
+        getInsecure: sinon.stub().returns(false),
+      } as unknown as IConfiguration;
+
+      await makeCtrl(commandsStub, configurationStub).initiateLogin();
+
+      sinon.assert.calledWith(executeCommandStub, SNYK_LOGIN_COMMAND, 'oauth', 'https://api.snyk.io', false);
+    });
+
+    test('passes correct values when using non-default auth configuration', async () => {
+      const executeCommandStub = sinon.stub().resolves(undefined);
+      const commandsStub = { executeCommand: executeCommandStub } as unknown as IVSCodeCommands;
+      const configurationStub = {
+        getAuthenticationMethod: sinon.stub().returns('token'),
+        snykApiEndpoint: 'https://api.eu.snyk.io',
+        getInsecure: sinon.stub().returns(true),
+      } as unknown as IConfiguration;
+
+      await makeCtrl(commandsStub, configurationStub).initiateLogin();
+
+      sinon.assert.calledWith(executeCommandStub, SNYK_LOGIN_COMMAND, 'token', 'https://api.eu.snyk.io', true);
+    });
+
+    test('executes snyk.trustWorkspaceFolders before snyk.login', async () => {
+      const executeCommandStub = sinon.stub().resolves(undefined);
+      const commandsStub = { executeCommand: executeCommandStub } as unknown as IVSCodeCommands;
+      const configurationStub = {
+        getAuthenticationMethod: sinon.stub().returns('oauth'),
+        snykApiEndpoint: 'https://api.snyk.io',
+        getInsecure: sinon.stub().returns(false),
+      } as unknown as IConfiguration;
+
+      await makeCtrl(commandsStub, configurationStub).initiateLogin();
+
+      assert.strictEqual(executeCommandStub.getCall(0).args[0], SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
+      assert.strictEqual(executeCommandStub.getCall(1).args[0], SNYK_LOGIN_COMMAND);
+    });
   });
 
   test('Connectivity check displays results in modal', async () => {
