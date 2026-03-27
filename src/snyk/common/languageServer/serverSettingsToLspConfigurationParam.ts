@@ -68,7 +68,7 @@ function resolveChanged(pflagKey: string, value: unknown, isExplicitlyChanged: E
   if (PFLAG_ALWAYS_CHANGED_TRUE.has(pflagKey)) {
     return true;
   }
-  if (pflagKey === PFLAG.token && value !== undefined && value !== '') {
+  if (pflagKey === PFLAG.token && typeof value === 'string' && value.trim()) {
     return true;
   }
   if (
@@ -166,19 +166,20 @@ export function serverSettingsToLspConfigurationParam(
   putBoolStr(m, PFLAG.enableSnykOssQuickFixActions, settings.enableSnykOSSQuickFixCodeActions, isExplicitlyChanged);
   putBoolStr(m, PFLAG.autoConfigureMcpServer, settings.autoConfigureSnykMcpServer, isExplicitlyChanged);
 
-  if (settings.endpoint !== undefined && settings.endpoint !== '') {
+  if (settings.endpoint?.trim()) {
     putSetting(m, PFLAG.apiEndpoint, settings.endpoint, isExplicitlyChanged);
   }
-  if (settings.cliBaseDownloadURL !== undefined && settings.cliBaseDownloadURL !== '') {
+  if (settings.cliBaseDownloadURL?.trim()) {
     putSetting(m, PFLAG.binaryBaseUrl, settings.cliBaseDownloadURL, isExplicitlyChanged);
   }
-  if (settings.cliPath !== undefined && settings.cliPath !== '') {
+  if (settings.cliPath?.trim()) {
     putSetting(m, PFLAG.cliPath, settings.cliPath, isExplicitlyChanged);
   }
-  if (settings.token !== undefined && settings.token !== '') {
+  if (settings.token?.trim()) {
     putSetting(m, PFLAG.token, settings.token, isExplicitlyChanged);
   }
-  if (settings.organization !== undefined && settings.organization !== '') {
+  // Include empty string when set; omit only when unset (null/undefined).
+  if (settings.organization != null) {
     putSetting(m, PFLAG.organization, settings.organization, isExplicitlyChanged);
   }
   if (settings.authenticationMethod !== undefined && settings.authenticationMethod !== '') {
@@ -216,7 +217,7 @@ export function serverSettingsToLspConfigurationParam(
     putSetting(m, PFLAG.issueViewOpenIssues, ivo.openIssues, isExplicitlyChanged);
     putSetting(m, PFLAG.issueViewIgnoredIssues, ivo.ignoredIssues, isExplicitlyChanged);
   }
-  if (settings.riskScoreThreshold !== undefined) {
+  if (settings.riskScoreThreshold != null) {
     putSetting(m, PFLAG.riskScoreThreshold, settings.riskScoreThreshold, isExplicitlyChanged);
   }
   if (settings.hoverVerbosity !== undefined) {

@@ -93,7 +93,7 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.strictEqual(param.settings?.[PFLAG.scanAutomatic]?.value, false);
   });
 
-  test('omits optional globals when empty', () => {
+  test('omits optional globals when empty except organization (empty string is still sent)', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: '',
@@ -103,9 +103,54 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
     );
     assert.strictEqual(param.settings?.[PFLAG.apiEndpoint], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.organization], undefined);
+    assert.strictEqual(param.settings?.[PFLAG.organization]?.value, '');
+    assert.strictEqual(param.settings?.[PFLAG.organization]?.changed, true);
     assert.strictEqual(param.settings?.[PFLAG.token], undefined);
     assert.strictEqual(param.settings?.[PFLAG.additionalParameters], undefined);
+  });
+
+  test('omits organization when ServerSettings.organization is undefined (unset)', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        organization: undefined,
+      }),
+    );
+    assert.strictEqual(param.settings?.[PFLAG.organization], undefined);
+  });
+
+  test('omits api_endpoint, binary_base_url, cli_path, token when empty or whitespace-only', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        endpoint: '  ',
+        cliBaseDownloadURL: '\t',
+        cliPath: '',
+        token: '   ',
+      }),
+    );
+    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint], undefined);
+    assert.strictEqual(param.settings?.[PFLAG.binaryBaseUrl], undefined);
+    assert.strictEqual(param.settings?.[PFLAG.cliPath], undefined);
+    assert.strictEqual(param.settings?.[PFLAG.token], undefined);
+  });
+
+  test('risk_score_threshold only when != null; 0 is sent', () => {
+    assert.strictEqual(
+      serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: undefined })).settings?.[
+        PFLAG.riskScoreThreshold
+      ],
+      undefined,
+    );
+    assert.strictEqual(
+      serverSettingsToLspConfigurationParam({
+        ...minimalServerSettings(),
+        riskScoreThreshold: null,
+      } as unknown as ServerSettings).settings?.[PFLAG.riskScoreThreshold],
+      undefined,
+    );
+    const withZero = serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: 0 }));
+    assert.strictEqual(withZero.settings?.[PFLAG.riskScoreThreshold]?.value, 0);
+    const withFive = serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: 5 }));
+    assert.strictEqual(withFive.settings?.[PFLAG.riskScoreThreshold]?.value, 5);
   });
 
   test('maps folderConfigs to folderConfigs[].settings (pflag keys)', () => {
