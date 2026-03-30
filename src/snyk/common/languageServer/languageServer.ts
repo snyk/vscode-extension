@@ -256,6 +256,7 @@ export class LanguageServer implements ILanguageServer {
         this.showIssueDetailTopic$,
         this.uriAdapter,
         this.codeCommands,
+        this.workspace,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
@@ -446,7 +447,12 @@ export class LanguageServer implements ILanguageServer {
 
   private async pushStructuredConfigurationToLanguageServer(client: LanguageClient): Promise<void> {
     try {
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+      const serverSettings = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        this.user,
+        undefined,
+        this.workspace,
+      );
       const param = serverSettingsToLspConfigurationParam(serverSettings, pflagKey =>
         this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(pflagKey),
       );
@@ -509,7 +515,12 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<LspInitializationOptions> {
-    const flat: ServerSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+    const flat: ServerSettings = await LanguageServerSettings.fromConfiguration(
+      this.configuration,
+      this.user,
+      undefined,
+      this.workspace,
+    );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- return type is LspInitializationOptions; ESLint infers `any` from mapper chain
     return serverSettingsToLspInitializationOptions(flat);
   }

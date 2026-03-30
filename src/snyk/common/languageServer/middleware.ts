@@ -17,6 +17,7 @@ import type {
   WorkspaceMiddleware,
 } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
+import type { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageServerSettings, ServerSettings } from './settings';
 import { LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
@@ -37,6 +38,7 @@ export class LanguageClientMiddleware implements Middleware {
     private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
+    private readonly vscodeWorkspace?: IVSCodeWorkspace,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -63,7 +65,12 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
+      const serverSettings = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        this.user,
+        undefined,
+        this.vscodeWorkspace,
+      );
       return [serverSettings];
     },
   };
