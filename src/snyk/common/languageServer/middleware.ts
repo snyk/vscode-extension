@@ -68,7 +68,6 @@ export class LanguageClientMiddleware implements Middleware {
       const serverSettings = await LanguageServerSettings.fromConfiguration(
         this.configuration,
         this.user,
-        undefined,
         this.vscodeWorkspace,
       );
       return [serverSettings];

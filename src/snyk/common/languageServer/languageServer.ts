@@ -1,14 +1,13 @@
 import _ from 'lodash';
-import { firstValueFrom, ReplaySubject, Subject, Subscription, switchMap } from 'rxjs';
+import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { FolderConfig, IConfiguration } from '../configuration/configuration';
+import { IConfiguration } from '../configuration/configuration';
 import { DEFAULT_LS_DEBOUNCE_INTERVAL } from '../constants/general';
 import {
   DID_CHANGE_CONFIGURATION_METHOD,
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CONFIGURATION,
   SNYK_REGISTER_MCP,
-  SNYK_FOLDERCONFIG,
   SNYK_HAS_AUTHENTICATED,
   SNYK_LANGUAGE_SERVER_NAME,
   SNYK_SCAN,
@@ -23,7 +22,6 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { mergeFolderConfigsWithInboundLspView } from './inboundLspFolderSettingsToFolderConfig';
 import { mergeInboundLspConfiguration, type MergedLspConfigurationView } from './lspConfigurationMerge';
 import {
   serverSettingsToLspConfigurationParam,
@@ -33,7 +31,6 @@ import { LanguageClientMiddleware } from './middleware';
 import { markExplicitPflagsFromConfigurationChangeEvent } from './configurationChangeToExplicitPflags';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { LanguageServerSettings, type ServerSettings } from './settings';
-import { getReceivedFolderConfigsFromLs, setReceivedFolderConfigsFromLs } from './receivedFolderConfigsFromLsState';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
@@ -75,21 +72,9 @@ export class LanguageServer implements ILanguageServer {
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
 
-  public static get ReceivedFolderConfigsFromLs(): boolean {
-    return getReceivedFolderConfigsFromLs();
-  }
-
-  public static set ReceivedFolderConfigsFromLs(value: boolean) {
-    setReceivedFolderConfigsFromLs(value);
-  }
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
-  private folderConfig$ = new Subject<{
-    type: string;
-    processor: () => Promise<void>;
-  }>();
-  private folderConfigSubscription?: Subscription;
   private inboundLspConfiguration: MergedLspConfigurationView = {
     globalSettings: {},
     folderSettingsByPath: {},
@@ -114,7 +99,7 @@ export class LanguageServer implements ILanguageServer {
   }
 
   /**
-   * @internal Tests — simulate `foldersBeingUpdatedByLS` while LS applies org from `$/snyk.folderConfigs`.
+   * @internal Tests — simulate `foldersBeingUpdatedByLS` while LS applies org from inbound folder settings.
    */
   static beginLSOrgUpdateFromFolderConfigsForTests(folderPath: string): void {
     LanguageServer.foldersBeingUpdatedByLS.add(folderPath);
@@ -164,22 +149,6 @@ export class LanguageServer implements ILanguageServer {
     private readonly treeViewProvider?: ITreeViewProviderService,
   ) {
     this.downloadService = downloadService;
-
-    // Set up folder config processing pipeline with switchMap to take latest and cancel previous
-    this.folderConfigSubscription = this.folderConfig$
-      .pipe(
-        switchMap(({ type, processor }) =>
-          processor()
-            .then(() => {
-              this.logger.debug(`Completed folder config processing for type: ${type}`);
-            })
-            .catch(error => {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              this.logger.error(`Error processing folder config ${type}: ${errorMessage}`);
-            }),
-        ),
-      )
-      .subscribe();
 
     this.geminiIntegrationService = new GeminiIntegrationService(
       this.logger,
@@ -332,45 +301,6 @@ export class LanguageServer implements ILanguageServer {
         });
     });
 
-    client.onNotification(SNYK_FOLDERCONFIG, ({ folderConfigs }: { folderConfigs: FolderConfig[] }) => {
-      // Send to folder config stream (uses switchMap to take latest and cancel previous)
-      this.folderConfig$.next({
-        type: SNYK_FOLDERCONFIG,
-        processor: async () => {
-          const firstFolderConfigsBatchFromLs = !LanguageServer.ReceivedFolderConfigsFromLs;
-          // Process each folder config: merge on first receipt, handle org settings on subsequent receipts
-          let didFolderConfigMergeHappen = false;
-          const processedFolderConfigs = folderConfigs.map(folderConfig => {
-            const isFirstReceipt = !this.configuration
-              .getFolderConfigs()
-              .find(cachedFC => cachedFC.folderPath === folderConfig.folderPath);
-            if (isFirstReceipt) {
-              // First time receiving config for this folder - merge VS Code settings into LS config
-              didFolderConfigMergeHappen = true;
-              return this.mergeOrgSettingsIntoLSFolderConfig(folderConfig);
-            }
-
-            // Subsequent receipt - return as-is (will be handled by handleOrgSettingsFromFolderConfigs)
-            return folderConfig;
-          });
-
-          // Update org settings in VS Code UI to reflect the current state
-          await this.handleOrgSettingsFromFolderConfigs(processedFolderConfigs);
-
-          // Set global flag after first folder config received (used for initialization options)
-          LanguageServer.ReceivedFolderConfigsFromLs = true;
-
-          // Save folder configs
-          await this.configuration.setFolderConfigs(processedFolderConfigs, didFolderConfigMergeHappen);
-
-          if (firstFolderConfigsBatchFromLs) {
-            this.debouncedPushStructuredConfiguration?.cancel();
-            void this.pushStructuredConfigurationToLanguageServer(client);
-          }
-        },
-      });
-    });
-
     client.onNotification(SNYK_ADD_TRUSTED_FOLDERS, ({ trustedFolders }: { trustedFolders: string[] }) => {
       this.configuration.setTrustedFolders(trustedFolders).catch((error: Error) => {
         ErrorHandler.handle(error, this.logger, error.message);
@@ -451,7 +381,6 @@ export class LanguageServer implements ILanguageServer {
       const serverSettings = await LanguageServerSettings.fromConfiguration(
         this.configuration,
         this.user,
-        undefined,
         this.workspace,
       );
       const param = serverSettingsToLspConfigurationParam(serverSettings, pflagKey =>
@@ -470,28 +399,9 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
-    void this.applyInboundFolderConfigsFromMergedView(this.inboundLspConfiguration);
     void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
     void this.runInboundPersistenceIfConfigured();
     this.scheduleInboundConfigurationNotificationToWorkspace();
-  }
-
-  /** Keeps {@link IConfiguration#getFolderConfigs} in sync with per-folder pflags from `$/snyk.configuration`. */
-  private async applyInboundFolderConfigsFromMergedView(view: MergedLspConfigurationView): Promise<void> {
-    if (Object.keys(view.folderSettingsByPath).length === 0) {
-      return;
-    }
-    try {
-      const existing = this.configuration.getFolderConfigs();
-      const merged = mergeFolderConfigsWithInboundLspView(existing, view);
-      await this.configuration.setFolderConfigs(merged, false);
-    } catch (e) {
-      this.logger.error(
-        `Failed to merge inbound folder configs from $/snyk.configuration: ${
-          e instanceof Error ? e.message : String(e)
-        }`,
-      );
-    }
   }
 
   private runInboundPersistenceIfConfigured(): void {
@@ -518,7 +428,7 @@ export class LanguageServer implements ILanguageServer {
 
   /**
    * Pushes merged inbound config to the workspace configuration UI when LS is not in the middle of
-   * applying org settings from `$/snyk.folderConfigs` (see `foldersBeingUpdatedByLS`).
+   * applying org settings from inbound folder configuration (see `foldersBeingUpdatedByLS`).
    */
   private scheduleInboundConfigurationNotificationToWorkspace(): void {
     const provider = this.workspaceConfigurationProvider;
@@ -538,7 +448,6 @@ export class LanguageServer implements ILanguageServer {
     const flat: ServerSettings = await LanguageServerSettings.fromConfiguration(
       this.configuration,
       this.user,
-      undefined,
       this.workspace,
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- return type is LspInitializationOptions; ESLint infers `any` from mapper chain
@@ -553,85 +462,6 @@ export class LanguageServer implements ILanguageServer {
     this.client.outputChannel.show();
   }
 
-  private async handleOrgSettingsFromFolderConfigs(folderConfigs: FolderConfig[]): Promise<void> {
-    const currentWorkspaceFolders = this.workspace.getWorkspaceFolders();
-
-    // Process folder configs sequentially to avoid race conditions
-    // eslint-disable-next-line no-await-in-loop
-    for (const folderConfig of folderConfigs) {
-      // Only write folder level org settings for folders that have been migrated from global config
-      if (!folderConfig.orgMigratedFromGlobalConfig) {
-        continue;
-      }
-
-      // Only set organization for folders that are part of the current VS Code workspace
-      const workspaceFolder = currentWorkspaceFolders.find(
-        workspaceFolder => folderConfig.folderPath === workspaceFolder.uri.fsPath,
-      );
-
-      if (!workspaceFolder) {
-        this.logger.warn(`No workspace folder found for path: ${folderConfig.folderPath}`);
-        continue;
-      }
-
-      const orgToDisplay = folderConfig.orgSetByUser ? folderConfig.preferredOrg : folderConfig.autoDeterminedOrg;
-
-      // Mark this folder as being updated by LS to prevent circular updates in the watcher
-      LanguageServer.foldersBeingUpdatedByLS.add(folderConfig.folderPath);
-
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        await this.configuration.setOrganization(workspaceFolder, orgToDisplay);
-        this.logger.debug(
-          `Set organization "${orgToDisplay}" for workspace folder: ${folderConfig.folderPath} (orgSetByUser: ${folderConfig.orgSetByUser})`,
-        );
-      } catch (error) {
-        this.logger.warn(`Failed to set organization for folder ${folderConfig.folderPath}: ${error}`);
-      }
-      // Set auto-organization at workspace folder level only if the desired value differs from
-      // the current configuration value when querying all levels (folder, workspace, global, default).
-      // Unless the desired auto-org is true (selected), then it should be written at the folder level.
-      const desiredAutoOrg = !folderConfig.orgSetByUser;
-      const currentAutoOrg = this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
-
-      try {
-        if (desiredAutoOrg !== currentAutoOrg || desiredAutoOrg) {
-          // eslint-disable-next-line no-await-in-loop
-          await this.configuration.setAutoSelectOrganization(workspaceFolder, desiredAutoOrg);
-          this.logger.debug(
-            `Set auto-organization to ${desiredAutoOrg} for workspace folder: ${folderConfig.folderPath}`,
-          );
-        }
-      } catch (error) {
-        this.logger.warn(`Failed to set auto-organization for folder ${folderConfig.folderPath}: ${error}`);
-      }
-      // Clear the flag after update completes (whether success or error)
-      LanguageServer.foldersBeingUpdatedByLS.delete(folderConfig.folderPath);
-    }
-  }
-
-  private mergeOrgSettingsIntoLSFolderConfig(folderConfig: FolderConfig): FolderConfig {
-    const workspaceFolder = this.workspace.getWorkspaceFolder(folderConfig.folderPath);
-    if (!workspaceFolder) {
-      // LS must be crazy, we don't know of this folder, so we will just store it as-is.
-      return folderConfig;
-    }
-
-    const orgSetByUser = !this.configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
-    if (orgSetByUser) {
-      return {
-        ...folderConfig,
-        preferredOrg: this.configuration.getOrganizationAtWorkspaceFolderLevel(workspaceFolder) ?? '',
-        orgSetByUser: true,
-      };
-    } else {
-      return {
-        ...folderConfig,
-        orgSetByUser: false,
-      };
-    }
-  }
-
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
 
@@ -639,10 +469,6 @@ export class LanguageServer implements ILanguageServer {
     this.configurationChangeDisposable = undefined;
     this.debouncedPushStructuredConfiguration?.cancel();
     this.debouncedPushStructuredConfiguration = undefined;
-
-    // Complete the folder config stream and unsubscribe to prevent new notifications from being processed
-    this.folderConfig$.complete();
-    this.folderConfigSubscription?.unsubscribe();
 
     if (!this.client) {
       return Promise.resolve();

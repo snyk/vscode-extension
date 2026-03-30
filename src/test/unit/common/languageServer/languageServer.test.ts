@@ -381,22 +381,16 @@ suite('Language Server', () => {
       languageServer = createFakeLanguageServer(mockLanguageClientAdapter, {} as IVSCodeWorkspace);
     });
 
-    teardown(() => {
-      LanguageServer.ReceivedFolderConfigsFromLs = false;
-    });
-
     const tcs: {
       name: string;
       folderConfigs: FolderConfig[];
-      simulateReceivedFolderConfigsFromLs: boolean;
     }[] = [
       {
-        name: 'LanguageServer should provide empty folder configs when no folder configs were received (first init)',
+        name: 'LanguageServer should provide empty folder configs when in-memory folder configs are empty',
         folderConfigs: [],
-        simulateReceivedFolderConfigsFromLs: false,
       },
       {
-        name: 'LanguageServer should include folder configs when they have been received from language server (LS restarts)',
+        name: 'LanguageServer should include folder configs from configuration when non-empty',
         folderConfigs: [
           {
             folderPath: '/test/path',
@@ -409,17 +403,11 @@ suite('Language Server', () => {
             orgMigratedFromGlobalConfig: true,
           },
         ],
-        simulateReceivedFolderConfigsFromLs: true,
       },
     ];
     tcs.forEach(tc => {
       test(tc.name, async () => {
-        // Setup folder configs mock
         configurationMock.getFolderConfigs = () => tc.folderConfigs;
-
-        // Simulate language server notification about folder configs
-        // This is normally done in the registerListeners method when receiving a notification
-        LanguageServer.ReceivedFolderConfigsFromLs = tc.simulateReceivedFolderConfigsFromLs;
 
         const expectedFlat: ServerSettings = {
           activateSnykCodeSecurity: 'true',
@@ -473,157 +461,6 @@ suite('Language Server', () => {
 
         assert.strictEqual(options.settings[PFLAG.scanAutomatic]?.value, expectedScanningMode !== 'manual');
       });
-    });
-  });
-
-  suite('handleOrgSettingsFromFolderConfigs', () => {
-    let getWorkspaceFoldersStub: sinon.SinonStub;
-    let workspaceMock: IVSCodeWorkspace;
-    let setOrganizationStub: sinon.SinonStub;
-    let setAutoSelectOrganizationStub: sinon.SinonStub;
-    let isAutoSelectOrganizationEnabledStub: sinon.SinonStub;
-    let languageClientAdapter: ILanguageClientAdapter;
-    const AUTO_DETERMINED_ORG = 'auto-determined-org';
-
-    setup(() => {
-      setOrganizationStub = sinon.stub().resolves();
-      configurationMock.setOrganization = setOrganizationStub;
-      setAutoSelectOrganizationStub = sinon.stub().resolves();
-      configurationMock.setAutoSelectOrganization = setAutoSelectOrganizationStub;
-      isAutoSelectOrganizationEnabledStub = sinon.stub();
-      configurationMock.isAutoSelectOrganizationEnabled = isAutoSelectOrganizationEnabledStub;
-
-      languageClientAdapter = {
-        create: sinon.stub(),
-      } as unknown as ILanguageClientAdapter;
-
-      getWorkspaceFoldersStub = sinon.stub();
-      workspaceMock = {
-        getWorkspaceFolders: getWorkspaceFoldersStub,
-      } as unknown as IVSCodeWorkspace;
-
-      languageServer = createFakeLanguageServer(languageClientAdapter, workspaceMock);
-    });
-
-    const createFolderConfig = (folderPath: string, preferredOrg: string, orgSetByUser: boolean): FolderConfig => ({
-      folderPath,
-      baseBranch: 'main',
-      localBranches: undefined,
-      referenceFolderPath: undefined,
-      preferredOrg,
-      orgSetByUser,
-      autoDeterminedOrg: AUTO_DETERMINED_ORG,
-      orgMigratedFromGlobalConfig: true,
-    });
-
-    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', async () => {
-      const testCases = [
-        {
-          // User unticked the "Auto-select organization" checkbox, so preferredOrg was blanked by LS
-          folderPath: '/path/to/folder1',
-          preferredOrg: '',
-        },
-        {
-          // User wrote in an org name manually, so orgSetByUser was set to true by LS
-          folderPath: '/path/to/folder2',
-          preferredOrg: 'org-for-folder2',
-        },
-      ];
-
-      const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
-      getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoSelectOrganizationEnabledStub.returns(true);
-
-      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
-
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoSelectOrganizationStub.callCount, testCases.length);
-      testCases.forEach((tc, index) => {
-        strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
-        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[1], false);
-      });
-    });
-
-    for (const currentAutoOrg of [true, false]) {
-      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, async () => {
-        const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
-        getWorkspaceFoldersStub.returns([workspaceFolder]);
-        isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
-
-        const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
-
-        await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-        strictEqual(setOrganizationStub.callCount, 1);
-        strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
-
-        // We still write it to ensure it is set at the folder level
-        strictEqual(setAutoSelectOrganizationStub.callCount, 1);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], true);
-      });
-    }
-
-    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', async () => {
-      const testCases = [
-        {
-          // User blanked the org manually
-          folderPath: '/path/to/folder1',
-          preferredOrg: '',
-        },
-        {
-          // User changed the org manually
-          folderPath: '/path/to/folder2',
-          preferredOrg: 'org-for-folder2',
-        },
-      ];
-
-      const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
-      getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoSelectOrganizationEnabledStub.returns(false);
-
-      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
-
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoSelectOrganizationStub.callCount, 0);
-      testCases.forEach((tc, index) => {
-        strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
-      });
-    });
-
-    test('should warn and skip folder configs without matching workspace folders', async () => {
-      const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
-      getWorkspaceFoldersStub.returns([workspaceFolder]);
-      isAutoSelectOrganizationEnabledStub.returns(true);
-
-      const folderConfigs = [
-        createFolderConfig('/path/to/existing/folder', 'existing-org', true),
-        createFolderConfig('/path/to/missing/folder', 'missing-org', true),
-      ];
-
-      const loggerWarnSpy = sinon.spy(logger, 'warn');
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      // Should only process the existing folder
-      strictEqual(setOrganizationStub.callCount, 1);
-      strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
-      strictEqual(setOrganizationStub.getCall(0).args[1], 'existing-org');
-
-      strictEqual(setAutoSelectOrganizationStub.callCount, 1);
-      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
-      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], false);
-
-      // Should warn about the missing folder
-      strictEqual(loggerWarnSpy.callCount, 1);
-      strictEqual(loggerWarnSpy.getCall(0).args[0], 'No workspace folder found for path: /path/to/missing/folder');
     });
   });
 

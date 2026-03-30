@@ -50,7 +50,7 @@ export const PFLAG = {
   sastSettings: 'sast_settings',
 } as const;
 
-/** Returns true when the IDE should mark `ConfigSetting.changed` for outbound LS config (IDE-1639 parity). */
+/** Returns true when the IDE should mark `ConfigSetting.changed` for outbound LS config. */
 export type ExplicitChangePredicate = (pflagKey: string) => boolean;
 
 const PFLAG_ALWAYS_CHANGED_FALSE = new Set<string>([PFLAG.sendErrorReports, PFLAG.enableSnykOssQuickFixActions]);

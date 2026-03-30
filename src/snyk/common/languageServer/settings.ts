@@ -10,7 +10,6 @@ import {
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
-import { getReceivedFolderConfigsFromLs } from './receivedFolderConfigsFromLsState';
 import { synthesizeFolderConfigsFromWorkspace } from './synthesizeFolderConfigsFromWorkspace';
 
 export type ServerSettings = {
@@ -72,10 +71,9 @@ export type ServerSettings = {
 export class LanguageServerSettings {
   static resolveFolderConfigsForServerSettings(
     configuration: IConfiguration,
-    receivedFolderConfigsFromLs: boolean,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
   ): FolderConfig[] {
-    let folderConfigs = receivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [];
+    let folderConfigs = configuration.getFolderConfigs();
     const wsFolders = workspace?.getWorkspaceFolders?.();
     if (folderConfigs.length === 0 && wsFolders?.length) {
       folderConfigs = synthesizeFolderConfigsFromWorkspace(configuration, wsFolders);
@@ -86,7 +84,6 @@ export class LanguageServerSettings {
   static async fromConfiguration(
     configuration: IConfiguration,
     user: User,
-    receivedFolderConfigsFromLs = getReceivedFolderConfigsFromLs(),
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
   ): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
@@ -134,11 +131,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: LanguageServerSettings.resolveFolderConfigsForServerSettings(
-        configuration,
-        receivedFolderConfigsFromLs,
-        workspace,
-      ),
+      folderConfigs: LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, workspace),
       enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
       hoverVerbosity: 1,
       secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),

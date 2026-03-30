@@ -24,6 +24,11 @@ import {
 import { PFLAG } from './serverSettingsToLspConfigurationParam';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 
+/**
+ * Maps VS Code setting keys (`configKey`) to LSP **pflag** keys: snake_case names such as
+ * `api_endpoint` and `organization` that appear in `LspConfigurationParam` when sending config to
+ * Snyk Language Server. Key map only; does not supply values.
+ */
 const CONFIG_KEY_TO_PFLAG: Array<{ configKey: string; pflags: string[] }> = [
   { configKey: ADVANCED_CUSTOM_ENDPOINT, pflags: [PFLAG.apiEndpoint] },
   { configKey: ADVANCED_ORGANIZATION, pflags: [PFLAG.organization] },
@@ -49,7 +54,7 @@ const CONFIG_KEY_TO_PFLAG: Array<{ configKey: string; pflags: string[] }> = [
 
 /**
  * When native VS Code configuration changes, mark matching pflag keys so outbound
- * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for user edits (IDE-1639 parity).
+ * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for user edits.
  */
 export function markExplicitPflagsFromConfigurationChangeEvent(
   e: ConfigurationChangeEvent,

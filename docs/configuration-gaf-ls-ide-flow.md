@@ -1,10 +1,11 @@
 # Configuration: GAF → snyk-ls → IDE
 
-High-level flow for how settings are stored in GAF, resolved in **snyk-ls**, pushed to IDEs, and how **merges** relate to the **VS Code** extension (`mergeInboundLspConfiguration`, IDE-1638).
+High-level flow for how settings are stored in GAF, resolved in **snyk-ls**, pushed to IDEs, and how **merges** relate to the **VS Code** extension (`mergeInboundLspConfiguration`, IDE-1638). The language server delivers effective config (including per-folder rows) on **`$/snyk.configuration`** as **`LspConfigurationParam`**; the VS Code client does **not** subscribe to the legacy **`$/snyk.folderConfigs`** notification.
 
 ## Diagram
 
 ```mermaid
+%% snyk-ls → IDE: $/snyk.configuration only; folder rows in param.folderConfigs (no separate $/snyk.folderConfigs).
 flowchart TB
   subgraph external["External & inputs"]
     LDX["LDX-Sync API<br/>(remote org / machine / folder)"]
@@ -22,14 +23,13 @@ flowchart TB
   end
 
   subgraph outbound["snyk-ls — outbound to IDE"]
-    LCP["Assemble LspConfigurationParam<br/>map[string]ConfigSetting + folderConfigs[]"]
-    NCFG["$/snyk.configuration"]
-    NFOLD["$/snyk.folderConfigs<br/>(folder metadata / org — different contract)"]
+    LCP["Assemble LspConfigurationParam<br/>global settings + folderConfigs[]<br/>(per-folder ConfigSetting maps)"]
+    NCFG["JSON-RPC notify:<br/>$/snyk.configuration only<br/>(folder rows inside payload)"]
   end
 
   subgraph ide["IDE"]
     HNDL["LanguageClient<br/>onNotification"]
-    MERGE_UI["mergeInboundLspConfiguration<br/>(merge #2 — display only)"]
+    MERGE_UI["mergeInboundLspConfiguration<br/>(merge #2 — non-authoritative:<br/>global+folder overlay for UI & persistence)"]
     VIEW["Webview / settings UI<br/>locks, source, values"]
     DCC["workspace/didChangeConfiguration<br/>(partial deltas)"]
   end
@@ -41,9 +41,7 @@ flowchart TB
   PFX --> CR
   CR --> LCP
   LCP --> NCFG
-  STORE --> NFOLD
   NCFG --> HNDL
-  NFOLD --> HNDL
   HNDL --> MERGE_UI
   MERGE_UI --> VIEW
   VIEW --> DCC
@@ -58,12 +56,13 @@ Source (editable): [`docs/diagrams/configuration-gaf-ls-ide-flow.mmd`](diagrams/
 |---|----------|----------------|
 | **1** | **snyk-ls / GAF / `ConfigResolver`** | Prefix layers (`user:global`, `user:folder`, `remote:*`, defaults) → **authoritative** effective value per setting, folder, and org. This is the real precedence chain (see snyk-ls `docs/configuration.md` when present). |
 | **2** | **LS outbound** | Builds **`LspConfigurationParam`**: global `settings` map + per-folder `folderConfigs[].settings` with **`ConfigSetting`** (`value`, `source`, `originScope`, `isLocked`). Already reflects resolver output. |
-| **3** | **IDE (VS Code) — `mergeInboundLspConfiguration`** | **Presentation merge only**: spreads global map into each folder’s effective map so the UI can read one object per folder. Does **not** replace LS resolution; must use **same flag keys** as LS (pflag names). |
-| **—** | **`$/snyk.folderConfigs` vs `$/snyk.configuration`** | Not the same merge: **folderConfigs notification** carries folder/org **metadata** and related fields; **configuration notification** carries the **map-based effective config** (protocol v25+). Both can land in the IDE; keep contracts separate. |
+| **3** | **IDE (VS Code) — `mergeInboundLspConfiguration`** | **Not a second `ConfigResolver`**: shallow **`global ∪ folder`** overlay of one inbound payload into **`MergedLspConfigurationView`** for webview and persistence mappers. Does **not** re-run GAF precedence or override LS authority; pflag keys match LS. |
+| **4** | **VS Code — outbound `folderConfigs` (init + `workspace/didChangeConfiguration`)** | **`LanguageServerSettings.resolveFolderConfigsForServerSettings`**: use **`IConfiguration.getFolderConfigs()`** when non-empty; if empty and the workspace has folders, **`synthesizeFolderConfigsFromWorkspace`**. Feeds **`LanguageServerSettings.fromConfiguration`** → **`serverSettingsToLspConfigurationParam`**. |
+| **—** | **`$/snyk.configuration` (inbound)** | Carries **`LspConfigurationParam`**: global **`settings`** plus optional **`folderConfigs[]`** (per-folder paths and **`settings`** maps). VS Code merges with **`mergeInboundLspConfiguration`** for **UI + persistence** (see **#3**). **VS Code does not register** the legacy **`$/snyk.folderConfigs`** notification. |
 
 ## Round trip
 
-- **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks) for UI.
+- **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks); **`mergeInboundLspConfiguration`** shapes it for **UI and persistence** (still **not** authoritative vs merge #1).
 - **LS → `settings.json` (VS Code, optional):** `ConfigurationPersistenceService.persistInboundLspConfiguration` maps the global snapshot into VS Code settings. For pflags the user has explicitly marked (`ExplicitLspConfigurationChangeTracker`, global memento) whose LS value **differs** from the current IDE value, the inbound value is **not** applied; **`LanguageServer.reconcileLanguageServerWithCurrentConfiguration`** then sends structured `workspace/didChangeConfiguration` so the language server matches the IDE.
 - **IDE → LS:** `workspace/didChangeConfiguration` with **`LspConfigurationParam`-shaped** payload; only **changed** keys, `value: null` to clear override (per protocol).
 
@@ -75,9 +74,9 @@ The VS Code **`LanguageClient`** option **`synchronize.configurationSection`** (
 
 Therefore the extension **does not** set **`configurationSection`** for Snyk. Outbound config updates must be sent with an **explicit** `workspace/didChangeConfiguration` (or equivalent) carrying **`{ settings: <LspConfigurationParam> }`** per the requirements below. Initialization and **`workspace/configuration`** middleware continue to supply **flat** `ServerSettings` where the protocol expects the legacy/IDE shape (e.g. pull / init).
 
-After the language client starts, **`LanguageServer`** registers **`workspace.onDidChangeConfiguration`**, reacts only when **`affectsConfiguration('snyk')`**, debounces (same interval as other LS debounces), builds **`LspConfigurationParam`** via **`LanguageServerSettings.fromConfiguration`** + **`serverSettingsToLspConfigurationParam`**, and calls **`sendNotification('workspace/didChangeConfiguration', { settings })`**. While **`foldersBeingUpdatedByLS`** is non-empty (LS applying org from **`$/snyk.folderConfigs`**), outbound pushes are skipped to avoid feedback loops.
+After the language client starts, **`LanguageServer`** registers **`workspace.onDidChangeConfiguration`**, reacts when **`affectsConfiguration('snyk')`** or **`affectsConfiguration('http')`** (proxy/TLS), debounces (same interval as other LS debounces), builds **`LspConfigurationParam`** via **`LanguageServerSettings.fromConfiguration`** (which resolves **`folderConfigs`** per **#4** above) + **`serverSettingsToLspConfigurationParam`**, and calls **`sendNotification('workspace/didChangeConfiguration', { settings })`**. While **`foldersBeingUpdatedByLS`** is non-empty (IDE is applying LS-driven org updates to folder settings from inbound configuration), outbound pushes are skipped to avoid feedback loops.
 
-On startup, after **`client.start()`** and **`registerStructuredConfigurationChangeListener`**, the extension sends **one** structured **`workspace/didChangeConfiguration`** from **`client.onReady`** (deferred with **`setImmediate`** so workspace folders are registered with the server first), then **cancels** the pending debounced handler so a duplicate send from startup config churn is avoided. When the first **`$/snyk.folderConfigs`** batch is processed, **`folderConfigs`** become eligible in **`LanguageServerSettings`** — the extension sends **one** more outbound push so the payload includes per-folder settings (aligned with IntelliJ `addContentRoots` → `updateConfiguration`).
+On startup, after **`client.start()`** and **`registerStructuredConfigurationChangeListener`**, the extension sends **one** structured **`workspace/didChangeConfiguration`** from **`client.onReady`** (deferred with **`setImmediate`** so workspace folders are registered with the server first), then **cancels** the pending debounced handler so a duplicate send from startup config churn is avoided. Inbound **`$/snyk.configuration`** may update persisted folder rows (e.g. via **`mergeFolderConfigsWithInboundLspView`** / persistence); **`folderConfigs`** in every outbound payload still follow **`resolveFolderConfigsForServerSettings`** from current **`IConfiguration`**.
 
 ### IDE → LS outbound requirements (`LspConfigurationParam`)
 

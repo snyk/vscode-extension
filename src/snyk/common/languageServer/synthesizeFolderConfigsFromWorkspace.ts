@@ -1,7 +1,7 @@
 import type { FolderConfig, IConfiguration } from '../configuration/configuration';
 import type { WorkspaceFolder } from '../vscode/types';
 
-/** Minimal per-folder rows before LS sends `$/snyk.folderConfigs` (aligned with mergeOrgSettingsIntoLSFolderConfig). */
+/** Minimal per-folder rows when `getFolderConfigs()` is empty but the workspace has folders (aligned with mergeOrgSettingsIntoLSFolderConfig). */
 export function synthesizeFolderConfigsFromWorkspace(
   configuration: IConfiguration,
   workspaceFolders: readonly WorkspaceFolder[],

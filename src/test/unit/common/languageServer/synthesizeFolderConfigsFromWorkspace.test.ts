@@ -69,7 +69,7 @@ suite('LanguageServerSettings.resolveFolderConfigsForServerSettings', () => {
       getOrganization: sinon.stub(),
     } as unknown as IConfiguration;
 
-    const resolved = LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, true, {
+    const resolved = LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, {
       getWorkspaceFolders: () => [wf],
     });
     assert.strictEqual(resolved.length, 1);
@@ -93,7 +93,7 @@ suite('LanguageServerSettings.resolveFolderConfigsForServerSettings', () => {
       getFolderConfigs: () => mem,
     } as unknown as IConfiguration;
 
-    const resolved = LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, true, {
+    const resolved = LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, {
       getWorkspaceFolders: () => [workspaceFolder('/p')],
     });
     assert.strictEqual(resolved, mem);
