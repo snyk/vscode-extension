@@ -3,6 +3,7 @@ import type {
   FilterSeverity,
   IssueViewOptions,
 } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
+import type { MergedLspConfigurationView } from './lspConfigurationMerge';
 import { PFLAG } from './serverSettingsToLspConfigurationParam';
 import type { LspConfigSetting } from './types';
 
@@ -11,6 +12,28 @@ function getValue<T>(s: LspConfigSetting | undefined): T | undefined {
     return undefined;
   }
   return s.value as T;
+}
+
+/**
+ * Settings snapshot to use when persisting inbound `$/snyk.configuration` into VS Code settings.
+ * Prefer the merged global+folder map for the first workspace folder path that exists in
+ * `folderSettingsByPath` (parity with IntelliJ applying folder-scope toggles from the first folder).
+ * Otherwise use the top-level `globalSettings` only.
+ */
+export function effectiveGlobalSettingsForIdePersistence(
+  view: MergedLspConfigurationView,
+  workspaceFolderPathsOrdered: string[],
+): Record<string, LspConfigSetting> {
+  if (workspaceFolderPathsOrdered.length === 0) {
+    return view.globalSettings;
+  }
+  for (const p of workspaceFolderPathsOrdered) {
+    const merged = view.folderSettingsByPath[p];
+    if (merged !== undefined && Object.keys(merged).length > 0) {
+      return merged;
+    }
+  }
+  return view.globalSettings;
 }
 
 /**

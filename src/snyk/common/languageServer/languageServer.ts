@@ -23,6 +23,7 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
+import { mergeFolderConfigsWithInboundLspView } from './inboundLspFolderSettingsToFolderConfig';
 import { mergeInboundLspConfiguration, type MergedLspConfigurationView } from './lspConfigurationMerge';
 import {
   serverSettingsToLspConfigurationParam,
@@ -469,9 +470,28 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
     this.logger.debug('Received $/snyk.configuration notification');
+    void this.applyInboundFolderConfigsFromMergedView(this.inboundLspConfiguration);
     void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
     void this.runInboundPersistenceIfConfigured();
     this.scheduleInboundConfigurationNotificationToWorkspace();
+  }
+
+  /** Keeps {@link IConfiguration#getFolderConfigs} in sync with per-folder pflags from `$/snyk.configuration`. */
+  private async applyInboundFolderConfigsFromMergedView(view: MergedLspConfigurationView): Promise<void> {
+    if (Object.keys(view.folderSettingsByPath).length === 0) {
+      return;
+    }
+    try {
+      const existing = this.configuration.getFolderConfigs();
+      const merged = mergeFolderConfigsWithInboundLspView(existing, view);
+      await this.configuration.setFolderConfigs(merged, false);
+    } catch (e) {
+      this.logger.error(
+        `Failed to merge inbound folder configs from $/snyk.configuration: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
   }
 
   private runInboundPersistenceIfConfigured(): void {

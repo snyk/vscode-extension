@@ -10,7 +10,10 @@ import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import type { MergedLspConfigurationView } from '../../../languageServer/lspConfigurationMerge';
 import { filterInboundPartialByExplicitOverrides } from '../../../languageServer/inboundLspExplicitOverrideFilter';
-import { mergedGlobalSettingsToIdeConfigData } from '../../../languageServer/inboundLspConfigurationToIdeConfig';
+import {
+  effectiveGlobalSettingsForIdePersistence,
+  mergedGlobalSettingsToIdeConfigData,
+} from '../../../languageServer/inboundLspConfigurationToIdeConfig';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
 import { markExplicitPflagsFromIdeConfigDiff } from './ideConfigExplicitPflags';
@@ -74,7 +77,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   async persistInboundLspConfiguration(view: MergedLspConfigurationView): Promise<void> {
-    const partial = mergedGlobalSettingsToIdeConfigData(view.globalSettings);
+    const workspaceFolderPaths: string[] = this.workspace.getWorkspaceFolderPaths();
+    const effectiveSettings = effectiveGlobalSettingsForIdePersistence(view, workspaceFolderPaths);
+    const partial = mergedGlobalSettingsToIdeConfigData(effectiveSettings);
     if (Object.keys(partial).length === 0) {
       return;
     }

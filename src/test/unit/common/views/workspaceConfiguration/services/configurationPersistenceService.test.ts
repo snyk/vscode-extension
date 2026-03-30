@@ -10,7 +10,13 @@ import { IConfigurationMappingService } from '../../../../../../snyk/common/view
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { ADVANCED_ORGANIZATION, CONFIGURATION_IDENTIFIER } from '../../../../../../snyk/common/constants/settings';
+import {
+  ADVANCED_ORGANIZATION,
+  CONFIGURATION_IDENTIFIER,
+  DELTA_FINDINGS,
+} from '../../../../../../snyk/common/constants/settings';
+import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
+import { ConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
 import { PFLAG } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { MergedLspConfigurationView } from '../../../../../../snyk/common/languageServer/lspConfigurationMerge';
@@ -265,6 +271,7 @@ suite('ConfigurationPersistenceService — persistInbound explicit overrides', (
     workspace = {
       updateConfiguration: updateConfigurationStub,
       getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
       inspectConfiguration: sinon.stub().returns({
         globalValue: undefined,
         workspaceValue: undefined,
@@ -356,5 +363,42 @@ suite('ConfigurationPersistenceService — persistInbound explicit overrides', (
 
     sinon.assert.notCalled(updateConfigurationStub);
     sinon.assert.calledOnce(reconcileStub);
+  });
+
+  test('persistInbound writes delta setting when scan_net_new is folder-only (merged first folder)', async () => {
+    (workspace.getWorkspaceFolderPaths as sinon.SinonStub).returns(['/proj']);
+
+    const realMapper = new ConfigurationMappingService();
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      realMapper,
+      clientAdapter,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(false),
+      },
+      logger,
+    );
+
+    const view: MergedLspConfigurationView = {
+      globalSettings: {},
+      folderSettingsByPath: {
+        '/proj': {
+          [PFLAG.scanNetNew]: { value: true, changed: true },
+        },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(view);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''),
+      NEWISSUES,
+      true,
+    );
   });
 });

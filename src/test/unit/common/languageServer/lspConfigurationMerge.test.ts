@@ -4,8 +4,10 @@
  * (`endpoint`, `organization`, `activateSnykCode`, …).
  */
 import assert from 'assert';
+import { effectiveGlobalSettingsForIdePersistence } from '../../../../snyk/common/languageServer/inboundLspConfigurationToIdeConfig';
 import { mergeInboundLspConfiguration } from '../../../../snyk/common/languageServer/lspConfigurationMerge';
 import { LspConfigurationParam } from '../../../../snyk/common/languageServer/types';
+import { PFLAG } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('mergeInboundLspConfiguration', () => {
   test('empty payload yields empty global and no folders', () => {
@@ -109,5 +111,43 @@ suite('mergeInboundLspConfiguration', () => {
     const merged = mergeInboundLspConfiguration(param);
     assert.strictEqual(merged.folderSettingsByPath['/same']?.activateSnykCode?.value, true);
     assert.strictEqual(merged.folderSettingsByPath['/same']?.activateSnykCode?.source, 'user-override');
+  });
+});
+
+suite('effectiveGlobalSettingsForIdePersistence', () => {
+  test('no workspace folders: use global settings only', () => {
+    const view = mergeInboundLspConfiguration({
+      settings: { endpoint: { value: 'https://a', source: 'default', isLocked: false } },
+    });
+    const eff = effectiveGlobalSettingsForIdePersistence(view, []);
+    assert.deepStrictEqual(eff, view.globalSettings);
+  });
+
+  test('first workspace folder has merged row: use it (folder-only scan_net_new)', () => {
+    const param: LspConfigurationParam = {
+      folderConfigs: [
+        {
+          folderPath: '/workspace/proj',
+          settings: {
+            [PFLAG.scanNetNew]: { value: true, source: 'ldx-sync', isLocked: false },
+          },
+        },
+      ],
+    };
+    const view = mergeInboundLspConfiguration(param);
+    const eff = effectiveGlobalSettingsForIdePersistence(view, ['/workspace/proj']);
+    assert.strictEqual(eff[PFLAG.scanNetNew]?.value, true);
+  });
+
+  test('folder path mismatch: fall back to global', () => {
+    const param: LspConfigurationParam = {
+      settings: {
+        endpoint: { value: 'https://global', source: 'default', isLocked: false },
+      },
+      folderConfigs: [{ folderPath: '/other', settings: {} }],
+    };
+    const view = mergeInboundLspConfiguration(param);
+    const eff = effectiveGlobalSettingsForIdePersistence(view, ['/workspace/proj']);
+    assert.strictEqual(eff.endpoint?.value, 'https://global');
   });
 });

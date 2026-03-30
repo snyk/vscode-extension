@@ -30,3 +30,5 @@ export function mergeInboundLspConfiguration(param: LspConfigurationParam): Merg
 
   return { globalSettings, folderSettingsByPath };
 }
+
+export { effectiveGlobalSettingsForIdePersistence } from './inboundLspConfigurationToIdeConfig';
