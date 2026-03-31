@@ -82,12 +82,10 @@ export class AuthenticationService implements IAuthenticationService {
     // try to parse as json (oauth2 token)
     try {
       const oauthToken = JSON.parse(token) as OAuthToken;
-      const accessOk = oauthToken.access_token.length > 0;
-      const refreshOk = oauthToken.refresh_token.length > 0;
-      // TODO, verify that this is correct (revert this change if not):
-      // Do not require a future expiry: the access token is often expired on disk while the
-      // language server still holds a refresh token and refreshes — same state as "already logged in".
-      valid = accessOk && refreshOk;
+      valid =
+        oauthToken.access_token.length > 0 &&
+        Date.parse(oauthToken.expiry) > Date.now() &&
+        oauthToken.refresh_token.length > 0;
       this.logger.debug(`Token ${this.maskToken(token)} parsed`);
     } catch (e) {
       this.logger.warn(`Token ${this.maskToken(token)} is not a valid UUID, PAT or OAuth2 token)}}}: ${e}`);
