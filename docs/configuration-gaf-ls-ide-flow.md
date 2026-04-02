@@ -56,21 +56,21 @@ Source (editable): [`docs/diagrams/configuration-gaf-ls-ide-flow.mmd`](diagrams/
 |---|----------|----------------|
 | **1** | **snyk-ls / GAF / `ConfigResolver`** | Prefix layers (`user:global`, `user:folder`, `remote:*`, defaults) → **authoritative** effective value per setting, folder, and org. This is the real precedence chain (see snyk-ls `docs/configuration.md` when present). |
 | **2** | **LS outbound** | Builds **`LspConfigurationParam`**: global `settings` map + per-folder `folderConfigs[].settings` with **`ConfigSetting`** (`value`, `source`, `originScope`, `isLocked`). Already reflects resolver output. |
-| **3** | **IDE (VS Code) — `mergeInboundLspConfiguration`** | **Not a second `ConfigResolver`**: shallow **`global ∪ folder`** overlay of one inbound payload into **`MergedLspConfigurationView`** for webview and persistence mappers. Does **not** re-run GAF precedence or override LS authority; pflag keys match LS. |
+| **3** | **IDE (VS Code) — `mergeInboundLspConfiguration`** | **Not a second `ConfigResolver`**: shallow **`global ∪ folder`** overlay of one inbound payload into **`MergedLspConfigurationView`** for webview and persistence mappers. Does **not** re-run GAF precedence or override LS authority; LS keys match LS. |
 | **4** | **VS Code — outbound `folderConfigs` (init + `workspace/didChangeConfiguration`)** | **`LanguageServerSettings.resolveFolderConfigsForServerSettings`**: use **`IConfiguration.getFolderConfigs()`** when non-empty; if empty and the workspace has folders, **`synthesizeFolderConfigsFromWorkspace`**. Feeds **`LanguageServerSettings.fromConfiguration`** → **`serverSettingsToLspConfigurationParam`**. |
 | **—** | **`$/snyk.configuration` (inbound)** | Carries **`LspConfigurationParam`**: global **`settings`** plus optional **`folderConfigs[]`** (per-folder paths and **`settings`** maps). VS Code merges with **`mergeInboundLspConfiguration`** for **UI + persistence** (see **#3**). **VS Code does not register** the legacy **`$/snyk.folderConfigs`** notification. |
 
 ## Round trip
 
 - **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks); **`mergeInboundLspConfiguration`** shapes it for **UI and persistence** (still **not** authoritative vs merge #1).
-- **LS → `settings.json` (VS Code, optional):** `ConfigurationPersistenceService.persistInboundLspConfiguration` maps the global snapshot into VS Code settings. For pflags the user has explicitly marked (`ExplicitLspConfigurationChangeTracker`, global memento) whose LS value **differs** from the current IDE value, the inbound value is **not** applied; **`LanguageServer.reconcileLanguageServerWithCurrentConfiguration`** then sends structured `workspace/didChangeConfiguration` so the language server matches the IDE.
+- **LS → `settings.json` (VS Code, optional):** `ConfigurationPersistenceService.persistInboundLspConfiguration` maps the global snapshot into VS Code settings. For LS keys the user has explicitly marked (`ExplicitLspConfigurationChangeTracker`, global memento) whose LS value **differs** from the current IDE value, the inbound value is **not** applied; **`LanguageServer.reconcileLanguageServerWithCurrentConfiguration`** then sends structured `workspace/didChangeConfiguration` so the language server matches the IDE.
 - **IDE → LS:** `workspace/didChangeConfiguration` with **`LspConfigurationParam`-shaped** payload; only **changed** keys, `value: null` to clear override (per protocol).
 
 ### VS Code Language Client: why auto `didChangeConfiguration` is off for `snyk`
 
 The VS Code **`LanguageClient`** option **`synchronize.configurationSection`** (e.g. `'snyk'`) registers a listener that sends **`workspace/didChangeConfiguration`** whenever workspace/user configuration in that section changes. The payload is the **standard LSP shape** where **`settings`** is the **raw VS Code configuration object** (flat keys such as `endpoint`, `activateSnykOpenSource`, …).
 
-**snyk-ls** unmarshals the notification into **`DidChangeConfigurationParams`**, where **`settings`** must be an **`LspConfigurationParam`**: nested **`settings`** (pflag-keyed map of **`ConfigSetting`**) and optional **`folderConfigs`**. A flat VS Code object does **not** populate that structure, so the server does not get a reliable **push** of user edits and may fall back to **pull** via **`workspace/configuration`** or no-op paths.
+**snyk-ls** unmarshals the notification into **`DidChangeConfigurationParams`**, where **`settings`** must be an **`LspConfigurationParam`**: nested **`settings`** (LS-keyed map of **`ConfigSetting`**) and optional **`folderConfigs`**. A flat VS Code object does **not** populate that structure, so the server does not get a reliable **push** of user edits and may fall back to **pull** via **`workspace/configuration`** or no-op paths.
 
 Therefore the extension **does not** set **`configurationSection`** for Snyk. Outbound config updates must be sent with an **explicit** `workspace/didChangeConfiguration` (or equivalent) carrying **`{ settings: <LspConfigurationParam> }`** per the requirements below. Initialization and **`workspace/configuration`** middleware continue to supply **flat** `ServerSettings` where the protocol expects the legacy/IDE shape (e.g. pull / init).
 
@@ -91,7 +91,7 @@ When the IDE sends updates (including from VS Code settings or the workspace con
 
 **Global vs folder overrides**
 
-- If the user changes a setting **globally** (for the whole IDE), place it in the **root** `settings` map (pflag-keyed entries with `ConfigSetting` shape).  
+- If the user changes a setting **globally** (for the whole IDE), place it in the **root** `settings` map (LS-keyed entries with `ConfigSetting` shape).  
   - If an **org-scoped** setting is changed globally, the LS will **automatically clear** any folder-specific overrides for that setting.
 - If the user changes a setting **for a specific workspace folder**, place it in the **`settings`** map inside the matching **`folderConfigs[]`** entry (the entry whose `folderPath` matches that folder).
 
@@ -99,7 +99,7 @@ When the IDE sends updates (including from VS Code settings or the workspace con
 
 HTML is served by **snyk-ls** (or the extension fallback). The extension injects a script that listens for `inboundLspConfiguration` and applies **`isLocked`**, **`source`**, and **`originScope`** to controls that follow this DOM convention:
 
-- **Global effective keys:** elements with `data-snyk-setting-key="<pflag name>"` that are **not** inside a `[data-snyk-folder-path]` subtree.
+- **Global effective keys:** elements with `data-snyk-setting-key="<LS key name>"` that are **not** inside a `[data-snyk-folder-path]` subtree.
 - **Per-folder keys:** elements with `data-snyk-setting-key` under an ancestor (or on the same element) with `data-snyk-folder-path="<absolute folder path>"` matching the merged view’s `folderSettingsByPath` key.
 
 Locked controls get `disabled` (when applicable), class `snyk-lsp-locked`, and optional `aria-readonly`. When `source` or `originScope` is set, a `snyk-lsp-setting-meta` line is inserted after the control.
@@ -110,4 +110,4 @@ Locked controls get `disabled` (when applicable), class `snyk-lsp-locked`, and o
 
 - snyk-ls (e.g. IDE-1786 / config refactor): `ConfigSetting`, `LspConfigurationParam`, `docs/configuration.md`.
 - VS Code extension: `lspConfigurationMerge.ts`, `LanguageServer` inbound view, IDE-1638.
-- **Flat IDE settings → `LspConfigurationParam`:** `serverSettingsToLspConfigurationParam.ts` (`serverSettingsToLspConfigurationParam`, `folderConfigToLspFolderConfiguration`) mirrors snyk-ls `legacySettingsToLspConfigurationParam` / pflag names in `internal/types/ldx_sync_config.go`.
+- **Flat IDE settings → `LspConfigurationParam`:** `serverSettingsToLspConfigurationParam.ts` (`serverSettingsToLspConfigurationParam`, `folderConfigToLspFolderConfiguration`) mirrors snyk-ls `legacySettingsToLspConfigurationParam` / LS key names in `internal/types/ldx_sync_config.go`.

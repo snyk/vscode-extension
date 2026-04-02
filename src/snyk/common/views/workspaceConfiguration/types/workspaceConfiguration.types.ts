@@ -1,8 +1,6 @@
 // ABOUTME: Type definitions for workspace configuration data structures
 // ABOUTME: Defines interfaces for config data, issue view options, severity filters, and folder configs
 
-import type { MergedLspConfigurationView } from '../../../languageServer/lspConfigurationMerge';
-
 // Configuration data types matching the structure from Language Server HTML
 export interface IssueViewOptions {
   openIssues?: boolean;
@@ -77,11 +75,6 @@ export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
   setAuthToken(token: string, apiUrl?: string): void;
-  /**
-   * Latest merged `$/snyk.configuration` from the language server. Delivery is deferred while
-   * `LanguageServer` applies org settings from inbound folder configuration to avoid circular updates.
-   */
-  onInboundLspConfigurationUpdated?(view: MergedLspConfigurationView): void;
 }
 
 export interface SaveConfigMessage {

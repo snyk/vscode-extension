@@ -16,9 +16,6 @@ import { IHtmlInjectionService } from './services/htmlInjectionService';
 import { IConfigurationMappingService } from './services/configurationMappingService';
 import { IScopeDetectionService } from './services/scopeDetectionService';
 import { IMessageHandlerFactory } from './handlers/messageHandlerFactory';
-import type { MergedLspConfigurationView } from '../../languageServer/lspConfigurationMerge';
-import { INBOUND_LSP_CONFIGURATION_MESSAGE } from './constants';
-
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
 
@@ -26,8 +23,6 @@ export class WorkspaceConfigurationWebviewProvider
   extends WebviewProvider<void>
   implements IWorkspaceConfigurationWebviewProvider
 {
-  private lastInboundLspConfigurationView?: MergedLspConfigurationView;
-
   constructor(
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
@@ -86,7 +81,6 @@ export class WorkspaceConfigurationWebviewProvider
         const fallbackHtml = await this.getFallbackHtml();
         this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(fallbackHtml);
       }
-      this.pushInboundLspConfigurationToWebview();
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Failed to show workspace configuration panel');
     }
@@ -200,20 +194,5 @@ export class WorkspaceConfigurationWebviewProvider
           this.logger.error(`Error sending auth token to workspace configuration webview: ${error}`);
         },
       );
-  }
-
-  onInboundLspConfigurationUpdated(view: MergedLspConfigurationView): void {
-    this.lastInboundLspConfigurationView = view;
-    this.pushInboundLspConfigurationToWebview();
-  }
-
-  private pushInboundLspConfigurationToWebview(): void {
-    if (!this.panel || !this.lastInboundLspConfigurationView) {
-      return;
-    }
-    void this.panel.webview.postMessage({
-      type: INBOUND_LSP_CONFIGURATION_MESSAGE,
-      view: this.lastInboundLspConfigurationView,
-    });
   }
 }

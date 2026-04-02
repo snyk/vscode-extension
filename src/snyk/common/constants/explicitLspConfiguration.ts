@@ -1,1 +1,1 @@
-export const MEMENTO_EXPLICIT_LSP_CONFIGURATION_PFLAGS = 'snyk.explicitLspConfigurationPflags';
+export const MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS = 'snyk.explicitLspConfigurationLsKeys';

@@ -18,8 +18,8 @@ import {
 import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
 import { ConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
-import { PFLAG } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import type { MergedLspConfigurationView } from '../../../../../../snyk/common/languageServer/lspConfigurationMerge';
+import { LS_KEY } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
 
 function createMockUri(path: string): Uri {
   return {
@@ -257,11 +257,10 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   });
 });
 
-suite('ConfigurationPersistenceService — persistInbound explicit overrides', () => {
+suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
-  let configMappingService: IConfigurationMappingService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
@@ -311,11 +310,6 @@ suite('ConfigurationPersistenceService — persistInbound explicit overrides', (
       shouldSkipSettingUpdate: sinon.stub().returns(false),
     } as unknown as IScopeDetectionService;
 
-    configMappingService = {
-      mapConfigToSettings: sinon.stub().returns({}),
-      mapHtmlKeyToVSCodeSetting: sinon.stub().returns(undefined),
-    } as unknown as IConfigurationMappingService;
-
     clientAdapter = {
       getLanguageClient: sinon.stub().returns({
         sendNotification: sinon.stub().resolves(),
@@ -334,40 +328,33 @@ suite('ConfigurationPersistenceService — persistInbound explicit overrides', (
     sinon.restore();
   });
 
-  test('reconciles and skips settings when explicit api endpoint disagrees with LS', async () => {
-    const reconcileStub = sinon.stub();
-    const explicitTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: sinon.stub().callsFake((k: string) => k === PFLAG.apiEndpoint),
-    };
-
+  test('persists LS endpoint directly without filtering', async () => {
+    const realMapper = new ConfigurationMappingService();
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      configMappingService,
+      realMapper,
       clientAdapter,
-      explicitTracker,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(true),
+      },
       logger,
-      reconcileStub,
     );
 
-    const view: MergedLspConfigurationView = {
-      globalSettings: {
-        [PFLAG.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
       },
-      folderSettingsByPath: {},
     };
 
-    await service.persistInboundLspConfiguration(view);
+    await service.persistInboundLspConfiguration(param);
 
-    sinon.assert.notCalled(updateConfigurationStub);
-    sinon.assert.calledOnce(reconcileStub);
+    sinon.assert.called(updateConfigurationStub);
   });
 
-  test('persistInbound writes delta setting when scan_net_new is folder-only (merged first folder)', async () => {
-    (workspace.getWorkspaceFolderPaths as sinon.SinonStub).returns(['/proj']);
-
+  test('persistInbound writes delta setting from global settings', async () => {
     const realMapper = new ConfigurationMappingService();
     const service = new ConfigurationPersistenceService(
       workspace,
@@ -382,16 +369,13 @@ suite('ConfigurationPersistenceService — persistInbound explicit overrides', (
       logger,
     );
 
-    const view: MergedLspConfigurationView = {
-      globalSettings: {},
-      folderSettingsByPath: {
-        '/proj': {
-          [PFLAG.scanNetNew]: { value: true, changed: true },
-        },
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.scanNetNew]: { value: true, changed: true },
       },
     };
 
-    await service.persistInboundLspConfiguration(view);
+    await service.persistInboundLspConfiguration(param);
 
     sinon.assert.calledWith(
       updateConfigurationStub,

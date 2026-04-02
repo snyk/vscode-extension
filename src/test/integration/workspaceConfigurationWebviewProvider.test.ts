@@ -13,7 +13,6 @@ import { IConfigurationMappingService } from '../../snyk/common/views/workspaceC
 import { IScopeDetectionService } from '../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { IMessageHandlerFactory } from '../../snyk/common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SNYK_WORKSPACE_CONFIGURATION_COMMAND } from '../../snyk/common/constants/commands';
-import { INBOUND_LSP_CONFIGURATION_MESSAGE } from '../../snyk/common/views/workspaceConfiguration/constants';
 
 suite('WorkspaceConfigurationWebviewProvider', () => {
   let provider: WorkspaceConfigurationWebviewProvider;
@@ -123,50 +122,5 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     const html = await provider['fetchConfigurationHtml']();
 
     strictEqual(html, undefined);
-  });
-
-  suite('onInboundLspConfigurationUpdated', () => {
-    test('posts merged view to webview when panel is open', () => {
-      const postMessage = sinon.stub().resolves(true);
-      (provider as unknown as { panel?: { webview: { postMessage: typeof postMessage } } }).panel = {
-        webview: { postMessage },
-      };
-      const view = {
-        globalSettings: { org: { isLocked: true, source: 'policy', originScope: 'org' } },
-        folderSettingsByPath: {},
-      };
-      provider.onInboundLspConfigurationUpdated(view);
-      sinon.assert.calledOnceWithExactly(postMessage, {
-        type: INBOUND_LSP_CONFIGURATION_MESSAGE,
-        view,
-      });
-    });
-
-    test('does not throw when panel is not open', () => {
-      (provider as unknown as { panel?: undefined }).panel = undefined;
-      provider.onInboundLspConfigurationUpdated({
-        globalSettings: {},
-        folderSettingsByPath: {},
-      });
-    });
-
-    test('does not post while panel is closed; posts after panel exists on next inbound update', () => {
-      const postMessage = sinon.stub().resolves(true);
-      (provider as unknown as { panel?: undefined }).panel = undefined;
-      const view = {
-        globalSettings: { a: { isLocked: true } },
-        folderSettingsByPath: {},
-      };
-      provider.onInboundLspConfigurationUpdated(view);
-      sinon.assert.notCalled(postMessage);
-      (provider as unknown as { panel?: { webview: { postMessage: typeof postMessage } } }).panel = {
-        webview: { postMessage },
-      };
-      provider.onInboundLspConfigurationUpdated(view);
-      sinon.assert.calledOnceWithExactly(postMessage, {
-        type: INBOUND_LSP_CONFIGURATION_MESSAGE,
-        view,
-      });
-    });
   });
 });

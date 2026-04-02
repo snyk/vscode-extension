@@ -22,13 +22,12 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { mergeInboundLspConfiguration, type MergedLspConfigurationView } from './lspConfigurationMerge';
 import {
   serverSettingsToLspConfigurationParam,
   serverSettingsToLspInitializationOptions,
 } from './serverSettingsToLspConfigurationParam';
 import { LanguageClientMiddleware } from './middleware';
-import { markExplicitPflagsFromConfigurationChangeEvent } from './configurationChangeToExplicitPflags';
+import { markExplicitLsKeysFromConfigurationChangeEvent } from './configurationChangeToExplicitLsKeys';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { LanguageServerSettings, type ServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
@@ -52,13 +51,7 @@ export interface ILanguageServer {
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void;
 
-  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<void>): void;
-
-  /**
-   * Sends current IDE configuration to the language server (structured `workspace/didChangeConfiguration`).
-   * Used after inbound `$/snyk.configuration` was filtered to respect explicit user overrides.
-   */
-  reconcileLanguageServerWithCurrentConfiguration(): void;
+  setInboundConfigurationPersistenceHandler(handler: (view: LspConfigurationParam) => Promise<void>): void;
 
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
@@ -75,17 +68,13 @@ export class LanguageServer implements ILanguageServer {
   // Track folder paths where LS is updating org settings to prevent circular updates
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
-  private inboundLspConfiguration: MergedLspConfigurationView = {
-    globalSettings: {},
-    folderSettingsByPath: {},
-  };
   private configurationChangeDisposable?: Disposable;
   private debouncedPushStructuredConfiguration?: _.DebouncedFunc<() => void>;
   /** When true, VS Code `settings.json` updates from inbound LS persistence must not trigger outbound `didChangeConfiguration`. */
   private suppressStructuredConfigPushFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private inboundPersistenceChain: Promise<void> = Promise.resolve();
-  private persistInboundConfiguration?: (view: MergedLspConfigurationView) => Promise<void>;
+  private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
 
   static isLSUpdatingOrg(folderPath: string): boolean {
     return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
@@ -120,13 +109,8 @@ export class LanguageServer implements ILanguageServer {
    * Persists each inbound `$/snyk.configuration` global snapshot into VS Code settings
    * (see {@link ConfigurationPersistenceService.persistInboundLspConfiguration}).
    */
-  setInboundConfigurationPersistenceHandler(handler: (view: MergedLspConfigurationView) => Promise<void>): void {
+  setInboundConfigurationPersistenceHandler(handler: (view: LspConfigurationParam) => Promise<void>): void {
     this.persistInboundConfiguration = handler;
-  }
-
-  /** Latest merged view from `$/snyk.configuration` (for UI and tests). */
-  getInboundLspConfigurationView(): MergedLspConfigurationView {
-    return this.inboundLspConfiguration;
   }
 
   constructor(
@@ -214,7 +198,7 @@ export class LanguageServer implements ILanguageServer {
       initializationOptions: (await this.getInitializationOptions()) as unknown,
       // Do not set synchronize.configurationSection: it makes vscode-languageclient send
       // workspace/didChangeConfiguration with a flat VS Code `snyk` object. snyk-ls expects
-      // DidChangeConfigurationParams.settings to deserialize as LspConfigurationParam (pflag maps).
+      // DidChangeConfigurationParams.settings to deserialize as LspConfigurationParam (LS key maps).
       // Structured outbound is sent explicitly; see docs/configuration-gaf-ls-ide-flow.md.
       // Keep synchronize as {} so we opt into no automatic config sync by construction, instead of
       // omitting the field and depending on vscode-languageclient defaults (which could change).
@@ -364,16 +348,9 @@ export class LanguageServer implements ILanguageServer {
       if (this.suppressStructuredConfigPushFromInboundPersistence) {
         return;
       }
-      markExplicitPflagsFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
+      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
       this.debouncedPushStructuredConfiguration?.();
     });
-  }
-
-  reconcileLanguageServerWithCurrentConfiguration(): void {
-    if (!this.client) {
-      return;
-    }
-    void this.pushStructuredConfigurationToLanguageServer(this.client);
   }
 
   private async pushStructuredConfigurationToLanguageServer(client: LanguageClient): Promise<void> {
@@ -383,8 +360,8 @@ export class LanguageServer implements ILanguageServer {
         this.user,
         this.workspace,
       );
-      const param = serverSettingsToLspConfigurationParam(serverSettings, pflagKey =>
-        this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(pflagKey),
+      const param = serverSettingsToLspConfigurationParam(serverSettings, lsKey =>
+        this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
       );
       await client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, { settings: param });
     } catch (error) {
@@ -397,14 +374,18 @@ export class LanguageServer implements ILanguageServer {
   }
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
-    this.inboundLspConfiguration = mergeInboundLspConfiguration(params);
-    this.logger.debug('Received $/snyk.configuration notification');
-    void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
-    void this.runInboundPersistenceIfConfigured();
-    this.scheduleInboundConfigurationNotificationToWorkspace();
+    try {
+      this.logger.debug('Received $/snyk.configuration notification');
+      void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
+      void this.runInboundPersistence(params);
+    } catch (error) {
+      this.logger.error(
+        `Failed to handle $/snyk.configuration notification: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
-  private runInboundPersistenceIfConfigured(): void {
+  private runInboundPersistence(params: LspConfigurationParam): void {
     if (!this.persistInboundConfiguration) {
       return;
     }
@@ -415,7 +396,7 @@ export class LanguageServer implements ILanguageServer {
       .then(async () => {
         this.suppressStructuredConfigPushFromInboundPersistence = true;
         try {
-          await this.persistInboundConfiguration!(this.inboundLspConfiguration);
+          await this.persistInboundConfiguration!(params);
         } catch (e) {
           this.logger.error(
             `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -424,22 +405,6 @@ export class LanguageServer implements ILanguageServer {
           this.suppressStructuredConfigPushFromInboundPersistence = false;
         }
       });
-  }
-
-  /**
-   * Pushes merged inbound config to the workspace configuration UI when LS is not in the middle of
-   * applying org settings from inbound folder configuration (see `foldersBeingUpdatedByLS`).
-   */
-  private scheduleInboundConfigurationNotificationToWorkspace(): void {
-    const provider = this.workspaceConfigurationProvider;
-    if (!provider?.onInboundLspConfigurationUpdated) {
-      return;
-    }
-    if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
-      queueMicrotask(() => this.scheduleInboundConfigurationNotificationToWorkspace());
-      return;
-    }
-    provider.onInboundLspConfigurationUpdated(this.inboundLspConfiguration);
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here

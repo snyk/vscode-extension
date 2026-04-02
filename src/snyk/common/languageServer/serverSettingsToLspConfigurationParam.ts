@@ -8,10 +8,10 @@ import type {
 import type { ServerSettings } from './settings';
 
 /**
- * Pflag keys aligned with snyk-ls `internal/types/ldx_sync_config.go` and
+ * LSP configuration keys aligned with snyk-ls `internal/types/ldx_sync_config.go` and
  * `legacySettingsToLspConfigurationParam` in `application/server/workspace_configuration_pull.go`.
  */
-export const PFLAG = {
+export const LS_KEY = {
   apiEndpoint: 'api_endpoint',
   binaryBaseUrl: 'binary_base_url',
   cliPath: 'cli_path',
@@ -51,35 +51,35 @@ export const PFLAG = {
 } as const;
 
 /** Returns true when the IDE should mark `ConfigSetting.changed` for outbound LS config. */
-export type ExplicitChangePredicate = (pflagKey: string) => boolean;
+export type ExplicitChangePredicate = (lsKey: string) => boolean;
 
-const PFLAG_ALWAYS_CHANGED_FALSE = new Set<string>([PFLAG.sendErrorReports, PFLAG.enableSnykOssQuickFixActions]);
+const LS_KEY_ALWAYS_CHANGED_FALSE = new Set<string>([LS_KEY.sendErrorReports, LS_KEY.enableSnykOssQuickFixActions]);
 
-const PFLAG_ALWAYS_CHANGED_TRUE = new Set<string>([
-  PFLAG.trustEnabled,
-  PFLAG.automaticAuthentication,
-  PFLAG.hoverVerbosity,
+const LS_KEY_ALWAYS_CHANGED_TRUE = new Set<string>([
+  LS_KEY.trustEnabled,
+  LS_KEY.automaticAuthentication,
+  LS_KEY.hoverVerbosity,
 ]);
 
-function resolveChanged(pflagKey: string, value: unknown, isExplicitlyChanged: ExplicitChangePredicate): boolean {
-  if (PFLAG_ALWAYS_CHANGED_FALSE.has(pflagKey)) {
+function resolveChanged(lsKey: string, value: unknown, isExplicitlyChanged: ExplicitChangePredicate): boolean {
+  if (LS_KEY_ALWAYS_CHANGED_FALSE.has(lsKey)) {
     return false;
   }
-  if (PFLAG_ALWAYS_CHANGED_TRUE.has(pflagKey)) {
+  if (LS_KEY_ALWAYS_CHANGED_TRUE.has(lsKey)) {
     return true;
   }
-  if (pflagKey === PFLAG.token && typeof value === 'string' && value.trim()) {
+  if (lsKey === LS_KEY.token && typeof value === 'string' && value.trim()) {
     return true;
   }
   if (
-    pflagKey === PFLAG.trustedFolders &&
+    lsKey === LS_KEY.trustedFolders &&
     value !== undefined &&
     Array.isArray(value) &&
     (value as unknown[]).length > 0
   ) {
     return true;
   }
-  return isExplicitlyChanged(pflagKey);
+  return isExplicitlyChanged(lsKey);
 }
 
 function putSetting(
@@ -89,6 +89,24 @@ function putSetting(
   isExplicitlyChanged: ExplicitChangePredicate,
 ): void {
   out[key] = { value, changed: resolveChanged(key, value, isExplicitlyChanged) };
+}
+
+/**
+ * Emits the string value when non-empty, or `{ value: null, changed: true }` when the user has
+ * explicitly cleared the setting. This tells the LS to remove the user override and revert to
+ * the resolved default.
+ */
+function putStringOrReset(
+  out: Record<string, LspConfigSetting>,
+  key: string,
+  value: string | undefined | null,
+  isExplicitlyChanged: ExplicitChangePredicate,
+): void {
+  if (value != null && value.trim() !== '') {
+    putSetting(out, key, value, isExplicitlyChanged);
+  } else if (value == null && isExplicitlyChanged(key)) {
+    out[key] = { value: null, changed: true };
+  }
 }
 
 function putBoolStr(
@@ -109,7 +127,7 @@ function putBoolStr(
 
 /**
  * Maps IDE `FolderConfig` (in-memory / extension model) to LS `LspFolderConfiguration`
- * (pflag-keyed `settings` per folder).
+ * (LS-keyed `settings` per folder).
  */
 export function folderConfigToLspFolderConfiguration(
   fc: FolderConfig,
@@ -117,24 +135,24 @@ export function folderConfigToLspFolderConfiguration(
 ): LspFolderConfiguration {
   const settings: Record<string, LspConfigSetting> = {};
 
-  putSetting(settings, PFLAG.preferredOrg, fc.preferredOrg, isExplicitlyChanged);
+  putSetting(settings, LS_KEY.preferredOrg, fc.preferredOrg, isExplicitlyChanged);
   //autoDeterminedOrg comes from Snyk Language Server and can not be set from IDE.
-  putSetting(settings, PFLAG.autoDeterminedOrg, fc.autoDeterminedOrg, isExplicitlyChanged);
-  putSetting(settings, PFLAG.orgSetByUser, fc.orgSetByUser, isExplicitlyChanged);
+  putSetting(settings, LS_KEY.autoDeterminedOrg, fc.autoDeterminedOrg, isExplicitlyChanged);
+  putSetting(settings, LS_KEY.orgSetByUser, fc.orgSetByUser, isExplicitlyChanged);
 
   if (fc.scanCommandConfig !== undefined) {
-    putSetting(settings, PFLAG.scanCommandConfig, fc.scanCommandConfig, isExplicitlyChanged);
+    putSetting(settings, LS_KEY.scanCommandConfig, fc.scanCommandConfig, isExplicitlyChanged);
   }
   //TODO: baseBranch, localBranches, referenceFolderPath are set separatly, not as a part of updating configurations.
   //Make sure that we update branches correctly in delta flow.
   if (fc.baseBranch !== undefined && fc.baseBranch !== '') {
-    putSetting(settings, PFLAG.baseBranch, fc.baseBranch, isExplicitlyChanged);
+    putSetting(settings, LS_KEY.baseBranch, fc.baseBranch, isExplicitlyChanged);
   }
   if (fc.localBranches !== undefined && fc.localBranches.length > 0) {
-    putSetting(settings, PFLAG.localBranches, fc.localBranches, isExplicitlyChanged);
+    putSetting(settings, LS_KEY.localBranches, fc.localBranches, isExplicitlyChanged);
   }
   if (fc.referenceFolderPath !== undefined && fc.referenceFolderPath !== '') {
-    putSetting(settings, PFLAG.referenceFolder, fc.referenceFolderPath, isExplicitlyChanged);
+    putSetting(settings, LS_KEY.referenceFolder, fc.referenceFolderPath, isExplicitlyChanged);
   }
   //sastSettings set and used only in Snyk Language Server
 
@@ -143,7 +161,7 @@ export function folderConfigToLspFolderConfiguration(
 
 /**
  * Converts flat `ServerSettings` (VS Code / `LanguageServerSettings.fromConfiguration`) plus embedded
- * `folderConfigs` into snyk-ls **`LspConfigurationParam`**: global pflag `settings` and `folderConfigs`.
+ * `folderConfigs` into snyk-ls **`LspConfigurationParam`**: global LS-keyed `settings` and `folderConfigs`.
  * Each emitted `LspConfigSetting` uses **`value`** and **`changed`** derived from
  * {@link ExplicitChangePredicate} (IntelliJ explicit-changes parity; default: all `changed: true`).
  */
@@ -153,56 +171,39 @@ export function serverSettingsToLspConfigurationParam(
 ): LspConfigurationParam {
   const m: Record<string, LspConfigSetting> = {};
 
-  putBoolStr(m, PFLAG.snykCodeEnabled, settings.activateSnykCodeSecurity, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.snykOssEnabled, settings.activateSnykOpenSource, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.snykIacEnabled, settings.activateSnykIac, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.snykSecretsEnabled, settings.activateSnykSecrets, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.snykCodeEnabled, settings.activateSnykCodeSecurity, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.snykOssEnabled, settings.activateSnykOpenSource, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.snykIacEnabled, settings.activateSnykIac, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.snykSecretsEnabled, settings.activateSnykSecrets, isExplicitlyChanged);
 
-  putBoolStr(m, PFLAG.scanNetNew, settings.enableDeltaFindings, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.sendErrorReports, settings.sendErrorReports, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.trustEnabled, settings.enableTrustedFoldersFeature, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.automaticDownload, settings.manageBinariesAutomatically, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.cliInsecure, settings.insecure, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.enableSnykOssQuickFixActions, settings.enableSnykOSSQuickFixCodeActions, isExplicitlyChanged);
-  putBoolStr(m, PFLAG.autoConfigureMcpServer, settings.autoConfigureSnykMcpServer, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.scanNetNew, settings.enableDeltaFindings, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.sendErrorReports, settings.sendErrorReports, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.trustEnabled, settings.enableTrustedFoldersFeature, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.automaticDownload, settings.manageBinariesAutomatically, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.cliInsecure, settings.insecure, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.enableSnykOssQuickFixActions, settings.enableSnykOSSQuickFixCodeActions, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.autoConfigureMcpServer, settings.autoConfigureSnykMcpServer, isExplicitlyChanged);
 
-  if (settings.endpoint?.trim()) {
-    putSetting(m, PFLAG.apiEndpoint, settings.endpoint, isExplicitlyChanged);
-  }
-  if (settings.cliBaseDownloadURL?.trim()) {
-    putSetting(m, PFLAG.binaryBaseUrl, settings.cliBaseDownloadURL, isExplicitlyChanged);
-  }
-  if (settings.cliPath?.trim()) {
-    putSetting(m, PFLAG.cliPath, settings.cliPath, isExplicitlyChanged);
-  }
-  if (settings.token?.trim()) {
-    putSetting(m, PFLAG.token, settings.token, isExplicitlyChanged);
-  }
-  // Include empty string when set; omit only when unset (null/undefined).
-  if (settings.organization != null) {
-    putSetting(m, PFLAG.organization, settings.organization, isExplicitlyChanged);
-  }
-  if (settings.authenticationMethod !== undefined && settings.authenticationMethod !== '') {
-    putSetting(m, PFLAG.authenticationMethod, settings.authenticationMethod, isExplicitlyChanged);
-  }
-  putBoolStr(m, PFLAG.automaticAuthentication, settings.automaticAuthentication, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.apiEndpoint, settings.endpoint, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.binaryBaseUrl, settings.cliBaseDownloadURL, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.cliPath, settings.cliPath, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.token, settings.token, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.organization, settings.organization, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.authenticationMethod, settings.authenticationMethod, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.automaticAuthentication, settings.automaticAuthentication, isExplicitlyChanged);
 
-  if (settings.additionalParams !== undefined && settings.additionalParams !== '') {
-    putSetting(m, PFLAG.additionalParameters, settings.additionalParams, isExplicitlyChanged);
-  }
-  if (settings.additionalEnv !== undefined && settings.additionalEnv !== '') {
-    putSetting(m, PFLAG.additionalEnvironment, settings.additionalEnv, isExplicitlyChanged);
-  }
+  putStringOrReset(m, LS_KEY.additionalParameters, settings.additionalParams, isExplicitlyChanged);
+  putStringOrReset(m, LS_KEY.additionalEnvironment, settings.additionalEnv, isExplicitlyChanged);
 
   if (settings.scanningMode !== undefined && settings.scanningMode !== '') {
-    putSetting(m, PFLAG.scanAutomatic, settings.scanningMode !== 'manual', isExplicitlyChanged);
+    putSetting(m, LS_KEY.scanAutomatic, settings.scanningMode !== 'manual', isExplicitlyChanged);
   }
 
   if (settings.filterSeverity !== undefined) {
     const sf = settings.filterSeverity;
     putSetting(
       m,
-      PFLAG.enabledSeverities,
+      LS_KEY.enabledSeverities,
       {
         critical: sf.critical,
         high: sf.high,
@@ -214,18 +215,18 @@ export function serverSettingsToLspConfigurationParam(
   }
   if (settings.issueViewOptions !== undefined) {
     const ivo = settings.issueViewOptions;
-    putSetting(m, PFLAG.issueViewOpenIssues, ivo.openIssues, isExplicitlyChanged);
-    putSetting(m, PFLAG.issueViewIgnoredIssues, ivo.ignoredIssues, isExplicitlyChanged);
+    putSetting(m, LS_KEY.issueViewOpenIssues, ivo.openIssues, isExplicitlyChanged);
+    putSetting(m, LS_KEY.issueViewIgnoredIssues, ivo.ignoredIssues, isExplicitlyChanged);
   }
   if (settings.riskScoreThreshold != null) {
-    putSetting(m, PFLAG.riskScoreThreshold, settings.riskScoreThreshold, isExplicitlyChanged);
+    putSetting(m, LS_KEY.riskScoreThreshold, settings.riskScoreThreshold, isExplicitlyChanged);
   }
   if (settings.hoverVerbosity !== undefined) {
-    putSetting(m, PFLAG.hoverVerbosity, settings.hoverVerbosity, isExplicitlyChanged);
+    putSetting(m, LS_KEY.hoverVerbosity, settings.hoverVerbosity, isExplicitlyChanged);
   }
 
   if (settings.trustedFolders !== undefined && settings.trustedFolders.length > 0) {
-    putSetting(m, PFLAG.trustedFolders, settings.trustedFolders, isExplicitlyChanged);
+    putSetting(m, LS_KEY.trustedFolders, settings.trustedFolders, isExplicitlyChanged);
   }
 
   if (
@@ -234,7 +235,7 @@ export function serverSettingsToLspConfigurationParam(
   ) {
     putSetting(
       m,
-      PFLAG.secureAtInceptionExecutionFreq,
+      LS_KEY.secureAtInceptionExecutionFreq,
       settings.secureAtInceptionExecutionFrequency,
       isExplicitlyChanged,
     );
@@ -252,7 +253,7 @@ export function serverSettingsToLspConfigurationParam(
 }
 
 /**
- * Builds snyk-ls `InitializationOptions`: pflag `settings` + `folderConfigs`, plus init-only metadata
+ * Builds snyk-ls `InitializationOptions`: LS-keyed `settings` + `folderConfigs`, plus init-only metadata
  * fields (mirrors `internal/types/lsp.go` `InitializationOptions`).
  */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access -- `lsp` is LspConfigurationParam; member access is safe */

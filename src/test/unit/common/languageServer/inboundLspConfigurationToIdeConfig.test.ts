@@ -1,14 +1,14 @@
-// ABOUTME: Unit tests for mapping inbound LS pflags to IdeConfigData
+// ABOUTME: Unit tests for mapping inbound LS LS keys to IdeConfigData
 import { strict as assert } from 'assert';
 import { mergedGlobalSettingsToIdeConfigData } from '../../../../snyk/common/languageServer/inboundLspConfigurationToIdeConfig';
-import { PFLAG } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('inboundLspConfigurationToIdeConfig', () => {
-  test('maps known global pflags to IdeConfig fields', () => {
+  test('maps known global LS keys to IdeConfig fields', () => {
     const ide = mergedGlobalSettingsToIdeConfigData({
-      [PFLAG.snykOssEnabled]: { value: true },
-      [PFLAG.scanAutomatic]: { value: false },
-      [PFLAG.apiEndpoint]: { value: 'https://api.example' },
+      [LS_KEY.snykOssEnabled]: { value: true },
+      [LS_KEY.scanAutomatic]: { value: false },
+      [LS_KEY.apiEndpoint]: { value: 'https://api.example' },
     });
     assert.equal(ide.activateSnykOpenSource, true);
     assert.equal(ide.scanningMode, 'manual');

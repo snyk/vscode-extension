@@ -8,25 +8,22 @@ import type { IExplicitLspConfigurationChangeTracker } from '../../../languageSe
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
-import type { MergedLspConfigurationView } from '../../../languageServer/lspConfigurationMerge';
-import { filterInboundPartialByExplicitOverrides } from '../../../languageServer/inboundLspExplicitOverrideFilter';
-import {
-  effectiveGlobalSettingsForIdePersistence,
-  mergedGlobalSettingsToIdeConfigData,
-} from '../../../languageServer/inboundLspConfigurationToIdeConfig';
+import type { LspConfigurationParam } from '../../../languageServer/types';
+import { mergedGlobalSettingsToIdeConfigData } from '../../../languageServer/inboundLspConfigurationToIdeConfig';
+import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
 import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
-import { markExplicitPflagsFromIdeConfigDiff } from './ideConfigExplicitPflags';
+import { markExplicitLsKeysFromIdeConfigDiff } from './ideConfigExplicitLsKeys';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
 
   /**
-   * Writes effective LS global settings from each merged `$/snyk.configuration` into VS Code
-   * `settings.json` (and token into secret storage). No-op when the global snapshot has no mappable keys.
+   * Writes LS global settings from `$/snyk.configuration` into VS Code `settings.json`
+   * (and token into secret storage). No-op when the global snapshot has no mappable keys.
    */
-  persistInboundLspConfiguration(view: MergedLspConfigurationView): Promise<void>;
+  persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void>;
 }
 
 export class ConfigurationPersistenceService implements IConfigurationPersistenceService {
@@ -38,7 +35,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly logger: ILog,
-    private readonly reconcileLanguageServerWithCurrentConfiguration?: () => void,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
@@ -47,7 +43,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       const isCliOnly = config.isFallbackForm ?? false;
       this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
 
-      await markExplicitPflagsFromIdeConfigDiff(
+      await markExplicitLsKeysFromIdeConfigDiff(
         config,
         this.configuration,
         this.explicitLspConfigurationChangeTracker,
@@ -76,57 +72,45 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  async persistInboundLspConfiguration(view: MergedLspConfigurationView): Promise<void> {
-    const workspaceFolderPaths: string[] = this.workspace.getWorkspaceFolderPaths();
-    const effectiveSettings = effectiveGlobalSettingsForIdePersistence(view, workspaceFolderPaths);
-    const partial = mergedGlobalSettingsToIdeConfigData(effectiveSettings);
-    if (Object.keys(partial).length === 0) {
-      return;
-    }
-
-    let reconcileNeeded = false;
+  async persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void> {
     try {
-      const { filtered, reconcileNeeded: needsReconcile } = await filterInboundPartialByExplicitOverrides(
-        partial,
-        this.explicitLspConfigurationChangeTracker,
-        this.configuration,
-      );
-      reconcileNeeded = needsReconcile;
+      // Persist global settings to VS Code settings.json
+      const globalSettings = param.settings ?? {};
+      const partial = mergedGlobalSettingsToIdeConfigData(globalSettings);
 
-      if (Object.keys(filtered).length === 0) {
-        return;
-      }
+      if (Object.keys(partial).length > 0) {
+        const tokenFromLs = partial.token;
+        const { token: _omit, ...rest } = partial;
+        const ideForSettings = rest as IdeConfigData;
 
-      const tokenFromLs = filtered.token;
-      const { token: _omit, ...rest } = filtered;
-      const ideForSettings = rest as IdeConfigData;
+        const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
+        const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
+          string,
+          unknown
+        >;
 
-      const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
-      const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
-        string,
-        unknown
-      >;
-
-      if (Object.keys(settingsMap).length > 0) {
-        this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
-        await this.applySettingsMap(settingsMap);
-      }
-
-      const trimmed = tokenFromLs?.trim();
-      if (trimmed) {
-        const existing = await this.configuration.getToken();
-        if (existing?.trim() !== trimmed) {
-          await this.configuration.setToken(tokenFromLs);
-          await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+        if (Object.keys(settingsMap).length > 0) {
+          this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
+          await this.applySettingsMap(settingsMap);
         }
+
+        const trimmed = tokenFromLs?.trim();
+        if (trimmed) {
+          const existing = await this.configuration.getToken();
+          if (existing?.trim() !== trimmed) {
+            await this.configuration.setToken(tokenFromLs);
+            await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+          }
+        }
+      }
+
+      // Apply folder configs to in-memory storage — LS is the source of truth
+      if (param.folderConfigs && param.folderConfigs.length > 0) {
+        await this.configuration.setFolderConfigs(folderConfigsFromLspParam(param));
       }
     } catch (e) {
       this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
       throw e;
-    } finally {
-      if (reconcileNeeded) {
-        this.reconcileLanguageServerWithCurrentConfiguration?.();
-      }
     }
   }
 

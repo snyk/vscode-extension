@@ -12,7 +12,7 @@ import {
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import {
-  PFLAG,
+  LS_KEY,
   serverSettingsToLspInitializationOptions,
 } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
@@ -119,22 +119,6 @@ suite('Language Server', () => {
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     return { notificationHandlers };
-  }
-
-  function createWorkspaceConfigurationProviderWithInboundSpy(): {
-    inboundSpy: sinon.SinonSpy;
-    workspaceConfigurationProvider: IWorkspaceConfigurationWebviewProvider;
-  } {
-    const inboundSpy = sinon.spy();
-    return {
-      inboundSpy,
-      workspaceConfigurationProvider: {
-        showPanel: sinon.stub().resolves(),
-        disposePanel: sinon.stub(),
-        setAuthToken: sinon.stub(),
-        onInboundLspConfigurationUpdated: inboundSpy,
-      },
-    };
   }
 
   setup(() => {
@@ -257,7 +241,7 @@ suite('Language Server', () => {
             );
             assert.strictEqual(
               (clientOptions.initializationOptions as { settings?: Record<string, { value?: unknown }> }).settings?.[
-                PFLAG.token
+                LS_KEY.token
               ]?.value,
               'testToken',
             );
@@ -451,7 +435,7 @@ suite('Language Server', () => {
     test('LanguageServer should respect experiment setup for Code', async () => {
       const initOptions = await languageServer.getInitializationOptions();
 
-      strictEqual(initOptions.settings[PFLAG.snykCodeEnabled]?.value, true);
+      strictEqual(initOptions.settings[LS_KEY.snykCodeEnabled]?.value, true);
     });
 
     ['auto', 'manual'].forEach(expectedScanningMode => {
@@ -459,7 +443,7 @@ suite('Language Server', () => {
         configurationMock.scanningMode = expectedScanningMode;
         const options = await languageServer.getInitializationOptions();
 
-        assert.strictEqual(options.settings[PFLAG.scanAutomatic]?.value, expectedScanningMode !== 'manual');
+        assert.strictEqual(options.settings[LS_KEY.scanAutomatic]?.value, expectedScanningMode !== 'manual');
       });
     });
   });
@@ -524,76 +508,7 @@ suite('Language Server', () => {
 
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
       sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
-      deepStrictEqual(languageServer.getInboundLspConfigurationView(), {
-        globalSettings: {
-          [endpointKey]: {
-            value: 'https://api.dev.snyk.io',
-            source: 'default',
-            isLocked: false,
-          },
-        },
-        folderSettingsByPath: {},
-      });
       debugSpy.restore();
-    });
-
-    test('Forwards merged inbound config to workspace configuration provider', async () => {
-      const { inboundSpy, workspaceConfigurationProvider } = createWorkspaceConfigurationProviderWithInboundSpy();
-
-      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
-        workspaceConfigurationProvider,
-      });
-
-      const handler = notificationHandlers['$/snyk.configuration'];
-      assert(handler, 'snyk.configuration notification handler should be registered');
-
-      handler({
-        settings: {
-          endpoint: { value: 'https://api.snyk.io', source: 'default', isLocked: false },
-        },
-        folderConfigs: [
-          {
-            folderPath: '/proj/a',
-            settings: { activateSnykCode: { value: true, source: 'user-override', isLocked: false } },
-          },
-        ],
-      });
-
-      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
-      sinon.assert.calledOnce(inboundSpy);
-      deepStrictEqual(inboundSpy.getCall(0).args[0], languageServer.getInboundLspConfigurationView());
-    });
-
-    test('Defers inbound push while folderConfigs org update is in progress', async () => {
-      const { inboundSpy, workspaceConfigurationProvider } = createWorkspaceConfigurationProviderWithInboundSpy();
-
-      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
-        workspaceConfigurationProvider,
-      });
-
-      const handler = notificationHandlers['$/snyk.configuration'];
-      assert(handler, 'snyk.configuration notification handler should be registered');
-
-      const folderPath = '/workspace/folder-a';
-      LanguageServer.clearLSUpdatingOrgState();
-      LanguageServer.beginLSOrgUpdateFromFolderConfigsForTests(folderPath);
-
-      handler({
-        settings: { endpoint: { value: 'https://api.snyk.io', source: 'default', isLocked: false } },
-      });
-
-      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
-      sinon.assert.notCalled(inboundSpy);
-
-      LanguageServer.endLSOrgUpdateFromFolderConfigsForTests(folderPath);
-
-      for (let i = 0; i < 20; i++) {
-        // eslint-disable-next-line no-await-in-loop
-        await Promise.resolve();
-      }
-
-      sinon.assert.calledOnce(inboundSpy);
-      deepStrictEqual(inboundSpy.getCall(0).args[0], languageServer.getInboundLspConfigurationView());
     });
   });
 });

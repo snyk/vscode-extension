@@ -1,79 +1,61 @@
 import assert from 'assert';
-import { mergeFolderConfigsWithInboundLspView } from '../../../../snyk/common/languageServer/inboundLspFolderSettingsToFolderConfig';
-import { mergeInboundLspConfiguration } from '../../../../snyk/common/languageServer/lspConfigurationMerge';
-import { PFLAG } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import type { FolderConfig } from '../../../../snyk/common/configuration/configuration';
+import { folderConfigsFromLspParam } from '../../../../snyk/common/languageServer/inboundLspFolderSettingsToFolderConfig';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../snyk/common/languageServer/types';
 
-suite('mergeFolderConfigsWithInboundLspView', () => {
-  test('no folder rows in view leaves existing unchanged', () => {
-    const existing: FolderConfig[] = [
-      {
-        folderPath: '/a',
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        orgSetByUser: false,
-        preferredOrg: '',
-        autoDeterminedOrg: 'org-1',
-        orgMigratedFromGlobalConfig: true,
-      },
-    ];
-    const view = mergeInboundLspConfiguration({ settings: { endpoint: { value: 'https://x', source: 'd' } } });
-    const out = mergeFolderConfigsWithInboundLspView(existing, view);
-    assert.deepStrictEqual(out, existing);
+suite('folderConfigsFromLspParam', () => {
+  test('returns empty array when no folderConfigs in param', () => {
+    const param: LspConfigurationParam = { settings: { endpoint: { value: 'https://x', source: 'd' } } };
+    const out = folderConfigsFromLspParam(param);
+    assert.deepStrictEqual(out, []);
   });
 
-  test('merges folder-scoped pflags from $/snyk.configuration into existing row', () => {
-    const existing: FolderConfig[] = [
-      {
-        folderPath: '/proj',
-        baseBranch: '',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        orgSetByUser: true,
-        preferredOrg: 'keep-me',
-        autoDeterminedOrg: '',
-        orgMigratedFromGlobalConfig: false,
-      },
-    ];
+  test('builds FolderConfig from LS folder settings', () => {
     const param: LspConfigurationParam = {
       folderConfigs: [
         {
           folderPath: '/proj',
           settings: {
-            [PFLAG.baseBranch]: { value: 'develop', source: 'ls' },
-            [PFLAG.localBranches]: { value: ['develop', 'main'], source: 'ls' },
+            [LS_KEY.baseBranch]: { value: 'develop', source: 'ls' },
+            [LS_KEY.localBranches]: { value: ['develop', 'main'], source: 'ls' },
+            [LS_KEY.preferredOrg]: { value: 'my-org', source: 'ls' },
           },
         },
       ],
     };
-    const view = mergeInboundLspConfiguration(param);
-    const out = mergeFolderConfigsWithInboundLspView(existing, view);
+    const out = folderConfigsFromLspParam(param);
     assert.strictEqual(out.length, 1);
     assert.strictEqual(out[0].folderPath, '/proj');
     assert.strictEqual(out[0].baseBranch, 'develop');
     assert.deepStrictEqual(out[0].localBranches, ['develop', 'main']);
-    assert.strictEqual(out[0].preferredOrg, 'keep-me');
+    assert.strictEqual(out[0].preferredOrg, 'my-org');
+    // defaults for fields LS didn't send
+    assert.strictEqual(out[0].orgSetByUser, false);
+    assert.strictEqual(out[0].autoDeterminedOrg, '');
   });
 
-  test('appends new folder when path only appears in inbound folderConfigs', () => {
-    const existing: FolderConfig[] = [];
+  test('builds multiple folder configs', () => {
     const param: LspConfigurationParam = {
       folderConfigs: [
         {
-          folderPath: '/new',
+          folderPath: '/a',
           settings: {
-            [PFLAG.referenceFolder]: { value: '/ref', source: 'ls' },
+            [LS_KEY.referenceFolder]: { value: '/ref', source: 'ls' },
+          },
+        },
+        {
+          folderPath: '/b',
+          settings: {
+            [LS_KEY.orgSetByUser]: { value: true, source: 'ls' },
           },
         },
       ],
     };
-    const view = mergeInboundLspConfiguration(param);
-    const out = mergeFolderConfigsWithInboundLspView(existing, view);
-    assert.strictEqual(out.length, 1);
-    assert.strictEqual(out[0].folderPath, '/new');
+    const out = folderConfigsFromLspParam(param);
+    assert.strictEqual(out.length, 2);
+    assert.strictEqual(out[0].folderPath, '/a');
     assert.strictEqual(out[0].referenceFolderPath, '/ref');
-    assert.strictEqual(out[0].orgMigratedFromGlobalConfig, false);
+    assert.strictEqual(out[1].folderPath, '/b');
+    assert.strictEqual(out[1].orgSetByUser, true);
   });
 });

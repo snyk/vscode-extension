@@ -2,7 +2,7 @@ import assert from 'assert';
 import type { FolderConfig } from '../../../../snyk/common/configuration/configuration';
 import {
   folderConfigToLspFolderConfiguration,
-  PFLAG,
+  LS_KEY,
   serverSettingsToLspConfigurationParam,
   serverSettingsToLspInitializationOptions,
 } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
@@ -39,7 +39,7 @@ suite('serverSettingsToLspConfigurationParam', () => {
       minimalServerSettings({ sendErrorReports: 'true' }),
       () => true,
     );
-    assert.strictEqual(param.settings?.[PFLAG.sendErrorReports]?.changed, false);
+    assert.strictEqual(param.settings?.[LS_KEY.sendErrorReports]?.changed, false);
   });
 
   test('uses explicit predicate for changed when resolveChanged does not force true or false', () => {
@@ -49,15 +49,15 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => false,
     );
-    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint]?.changed, false);
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint]?.changed, false);
   });
 
   test('hover_verbosity uses changed: true regardless of explicit predicate', () => {
     const param = serverSettingsToLspConfigurationParam(minimalServerSettings({ hoverVerbosity: 2 }), () => false);
-    assert.strictEqual(param.settings?.[PFLAG.hoverVerbosity]?.changed, true);
+    assert.strictEqual(param.settings?.[LS_KEY.hoverVerbosity]?.changed, true);
   });
 
-  test('maps global ServerSettings to pflag keys with changed: true', () => {
+  test('maps global ServerSettings to LS keys with changed: true', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: 'https://custom.example/api',
@@ -66,12 +66,12 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
     );
 
-    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint]?.value, 'https://custom.example/api');
-    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint]?.changed, true);
-    assert.strictEqual(param.settings?.[PFLAG.organization]?.value, 'my-org');
-    assert.strictEqual(param.settings?.[PFLAG.snykOssEnabled]?.value, false);
-    assert.strictEqual(param.settings?.[PFLAG.snykOssEnabled]?.changed, true);
-    assert.strictEqual(param.settings?.[PFLAG.token]?.value, 'tok');
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint]?.value, 'https://custom.example/api');
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint]?.changed, true);
+    assert.strictEqual(param.settings?.[LS_KEY.organization]?.value, 'my-org');
+    assert.strictEqual(param.settings?.[LS_KEY.snykOssEnabled]?.value, false);
+    assert.strictEqual(param.settings?.[LS_KEY.snykOssEnabled]?.changed, true);
+    assert.strictEqual(param.settings?.[LS_KEY.token]?.value, 'tok');
   });
 
   test('maps filterSeverity to enabled_severities object', () => {
@@ -80,7 +80,7 @@ suite('serverSettingsToLspConfigurationParam', () => {
         filterSeverity: { critical: true, high: false, medium: true, low: false },
       }),
     );
-    assert.deepStrictEqual(param.settings?.[PFLAG.enabledSeverities]?.value, {
+    assert.deepStrictEqual(param.settings?.[LS_KEY.enabledSeverities]?.value, {
       critical: true,
       high: false,
       medium: true,
@@ -90,10 +90,10 @@ suite('serverSettingsToLspConfigurationParam', () => {
 
   test('scan_automatic is false when scanningMode is manual', () => {
     const param = serverSettingsToLspConfigurationParam(minimalServerSettings({ scanningMode: 'manual' }));
-    assert.strictEqual(param.settings?.[PFLAG.scanAutomatic]?.value, false);
+    assert.strictEqual(param.settings?.[LS_KEY.scanAutomatic]?.value, false);
   });
 
-  test('omits optional globals when empty except organization (empty string is still sent)', () => {
+  test('omits empty string settings even when explicitly changed', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: '',
@@ -101,24 +101,39 @@ suite('serverSettingsToLspConfigurationParam', () => {
         token: '',
         additionalParams: '',
       }),
+      () => true,
     );
-    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.organization]?.value, '');
-    assert.strictEqual(param.settings?.[PFLAG.organization]?.changed, true);
-    assert.strictEqual(param.settings?.[PFLAG.token], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.additionalParameters], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.token], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.additionalParameters], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.organization], undefined);
   });
 
-  test('omits organization when ServerSettings.organization is undefined (unset)', () => {
+  test('sends reset sentinel (value: null, changed: true) only for null/undefined when explicitly changed', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         organization: undefined,
+        endpoint: undefined,
       }),
+      () => true,
     );
-    assert.strictEqual(param.settings?.[PFLAG.organization], undefined);
+    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], { value: null, changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: null, changed: true });
   });
 
-  test('omits api_endpoint, binary_base_url, cli_path, token when empty or whitespace-only', () => {
+  test('omits null/undefined settings when not explicitly changed', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        organization: undefined,
+        endpoint: undefined,
+      }),
+      () => false,
+    );
+    assert.strictEqual(param.settings?.[LS_KEY.organization], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
+  });
+
+  test('omits whitespace-only strings (not a reset)', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: '  ',
@@ -126,17 +141,18 @@ suite('serverSettingsToLspConfigurationParam', () => {
         cliPath: '',
         token: '   ',
       }),
+      () => true,
     );
-    assert.strictEqual(param.settings?.[PFLAG.apiEndpoint], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.binaryBaseUrl], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.cliPath], undefined);
-    assert.strictEqual(param.settings?.[PFLAG.token], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.binaryBaseUrl], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.cliPath], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.token], undefined);
   });
 
   test('risk_score_threshold only when != null; 0 is sent', () => {
     assert.strictEqual(
       serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: undefined })).settings?.[
-        PFLAG.riskScoreThreshold
+        LS_KEY.riskScoreThreshold
       ],
       undefined,
     );
@@ -144,16 +160,16 @@ suite('serverSettingsToLspConfigurationParam', () => {
       serverSettingsToLspConfigurationParam({
         ...minimalServerSettings(),
         riskScoreThreshold: null,
-      } as unknown as ServerSettings).settings?.[PFLAG.riskScoreThreshold],
+      } as unknown as ServerSettings).settings?.[LS_KEY.riskScoreThreshold],
       undefined,
     );
     const withZero = serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: 0 }));
-    assert.strictEqual(withZero.settings?.[PFLAG.riskScoreThreshold]?.value, 0);
+    assert.strictEqual(withZero.settings?.[LS_KEY.riskScoreThreshold]?.value, 0);
     const withFive = serverSettingsToLspConfigurationParam(minimalServerSettings({ riskScoreThreshold: 5 }));
-    assert.strictEqual(withFive.settings?.[PFLAG.riskScoreThreshold]?.value, 5);
+    assert.strictEqual(withFive.settings?.[LS_KEY.riskScoreThreshold]?.value, 5);
   });
 
-  test('maps folderConfigs to folderConfigs[].settings (pflag keys)', () => {
+  test('maps folderConfigs to folderConfigs[].settings (LS keys)', () => {
     const folderConfigs: FolderConfig[] = [
       {
         folderPath: '/proj/a',
@@ -183,17 +199,17 @@ suite('serverSettingsToLspConfigurationParam', () => {
 
     assert.strictEqual(param.folderConfigs?.length, 1);
     assert.strictEqual(param.folderConfigs?.[0].folderPath, '/proj/a');
-    assert.strictEqual(param.folderConfigs?.[0].settings?.[PFLAG.preferredOrg]?.value, 'pref');
-    assert.strictEqual(param.folderConfigs?.[0].settings?.[PFLAG.autoDeterminedOrg]?.value, 'auto');
-    assert.strictEqual(param.folderConfigs?.[0].settings?.[PFLAG.orgSetByUser]?.value, true);
-    assert.strictEqual(param.folderConfigs?.[0].settings?.[PFLAG.baseBranch]?.value, 'main');
-    assert.deepStrictEqual(param.folderConfigs?.[0].settings?.[PFLAG.localBranches]?.value, ['main', 'dev']);
-    assert.strictEqual(param.folderConfigs?.[0].settings?.[PFLAG.referenceFolder]?.value, '/ref');
+    assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.preferredOrg]?.value, 'pref');
+    assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.autoDeterminedOrg]?.value, 'auto');
+    assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.orgSetByUser]?.value, true);
+    assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.baseBranch]?.value, 'main');
+    assert.deepStrictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.localBranches]?.value, ['main', 'dev']);
+    assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.referenceFolder]?.value, '/ref');
   });
 });
 
 suite('folderConfigToLspFolderConfiguration', () => {
-  test('exposes pflag keys with changed: true', () => {
+  test('exposes LS keys with changed: true', () => {
     const fc: FolderConfig = {
       folderPath: '/w',
       baseBranch: '',
@@ -206,13 +222,13 @@ suite('folderConfigToLspFolderConfiguration', () => {
     };
     const row = folderConfigToLspFolderConfiguration(fc);
     assert.strictEqual(row.folderPath, '/w');
-    assert.strictEqual(row.settings?.[PFLAG.preferredOrg]?.value, 'p');
-    assert.strictEqual(row.settings?.[PFLAG.preferredOrg]?.changed, true);
+    assert.strictEqual(row.settings?.[LS_KEY.preferredOrg]?.value, 'p');
+    assert.strictEqual(row.settings?.[LS_KEY.preferredOrg]?.changed, true);
   });
 });
 
 suite('serverSettingsToLspInitializationOptions', () => {
-  test('includes pflag settings map and init metadata from flat ServerSettings', () => {
+  test('includes LS settings map and init metadata from flat ServerSettings', () => {
     const flat = minimalServerSettings({
       requiredProtocolVersion: '25',
       deviceId: 'device-1',
@@ -236,6 +252,6 @@ suite('serverSettingsToLspInitializationOptions', () => {
     assert.strictEqual(init.runtimeName, 'node');
     assert.strictEqual(init.path, '/workspace');
     assert.deepStrictEqual(init.trustedFolders, ['/a']);
-    assert.strictEqual(init.settings[PFLAG.token]?.value, 'tok');
+    assert.strictEqual(init.settings[LS_KEY.token]?.value, 'tok');
   });
 });
