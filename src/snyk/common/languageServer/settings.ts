@@ -2,14 +2,15 @@ import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import {
   Configuration,
-  FolderConfig,
+  type FolderConfig,
   IConfiguration,
   IssueViewOptions,
   SeverityFilter,
 } from '../configuration/configuration';
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { LanguageServer } from './languageServer';
+import type { IVSCodeWorkspace } from '../vscode/workspace';
+import { synthesizeFolderConfigsFromWorkspace } from './synthesizeFolderConfigsFromWorkspace';
 
 export type ServerSettings = {
   // Feature toggles
@@ -68,7 +69,23 @@ export type ServerSettings = {
 };
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
+  static resolveFolderConfigsForServerSettings(
+    configuration: IConfiguration,
+    workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
+  ): FolderConfig[] {
+    let folderConfigs = configuration.getFolderConfigs();
+    const wsFolders = workspace?.getWorkspaceFolders?.();
+    if (folderConfigs.length === 0 && wsFolders?.length) {
+      folderConfigs = synthesizeFolderConfigsFromWorkspace(configuration, wsFolders);
+    }
+    return folderConfigs;
+  }
+
+  static async fromConfiguration(
+    configuration: IConfiguration,
+    user: User,
+    workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
+  ): Promise<ServerSettings> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
 
     const ossEnabled = _.isUndefined(featuresConfiguration?.ossEnabled)
@@ -114,7 +131,7 @@ export class LanguageServerSettings {
       integrationVersion: await Configuration.getVersion(),
       deviceId: user.anonymousId,
       requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
+      folderConfigs: LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, workspace),
       enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
       hoverVerbosity: 1,
       secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),

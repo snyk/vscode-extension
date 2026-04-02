@@ -46,6 +46,7 @@ export type CodeActionProviderMetadata = vscode.CodeActionProviderMetadata;
 export type ExtensionContext = vscode.ExtensionContext;
 export type WebviewOptions = vscode.WebviewOptions;
 export type TextDocumentChangeEvent = vscode.TextDocumentChangeEvent;
+export type ConfigurationChangeEvent = vscode.ConfigurationChangeEvent;
 export type InputBoxOptions = vscode.InputBoxOptions;
 
 // Language client type mappings

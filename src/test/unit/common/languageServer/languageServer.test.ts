@@ -11,6 +11,10 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import {
+  LS_KEY,
+  serverSettingsToLspInitializationOptions,
+} from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
@@ -21,7 +25,8 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { WindowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
+import { DEFAULT_LS_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
+import { DID_CHANGE_CONFIGURATION_METHOD, PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
@@ -30,6 +35,8 @@ import { CommandsMock } from '../../mocks/commands.mock';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
+import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -40,6 +47,11 @@ suite('Language Server', () => {
   let downloadServiceMock: DownloadService;
 
   const logger = new LoggerMockFailOnErrors();
+
+  const explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker = {
+    markExplicitlyChanged: sinon.stub(),
+    isExplicitlyChanged: () => true,
+  };
 
   const createFakeLanguageServer = (
     languageClientAdapter: ILanguageClientAdapter,
@@ -62,9 +74,52 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
+      explicitLspConfigurationChangeTracker,
       treeViewProvider,
     );
   };
+
+  type LspNotificationHandler = (params: unknown) => void;
+
+  function createRecordingLanguageClientAdapter(): {
+    notificationHandlers: Record<string, LspNotificationHandler>;
+    sendNotification: sinon.SinonStub;
+    adapter: ILanguageClientAdapter;
+  } {
+    const notificationHandlers: Record<string, LspNotificationHandler> = {};
+    const sendNotification = sinon.stub().resolves();
+    const adapter = {
+      create(): LanguageClient {
+        return {
+          start: sinon.stub().resolves(),
+          onNotification(method: string, handler: LspNotificationHandler): void {
+            notificationHandlers[method] = handler;
+          },
+          onReady: sinon.stub().resolves(),
+          sendNotification,
+        } as unknown as LanguageClient;
+      },
+    } as unknown as ILanguageClientAdapter;
+    return { notificationHandlers, sendNotification, adapter };
+  }
+
+  async function startLanguageServerWithRecordingClient(options?: {
+    treeViewProvider?: ITreeViewProviderService;
+    workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
+  }): Promise<{ notificationHandlers: Record<string, LspNotificationHandler> }> {
+    const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
+    languageServer = createFakeLanguageServer(
+      adapter,
+      stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      options?.treeViewProvider,
+    );
+    if (options?.workspaceConfigurationProvider) {
+      languageServer.setWorkspaceConfigurationProvider(options.workspaceConfigurationProvider);
+    }
+    downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
+    return { notificationHandlers };
+  }
 
   setup(() => {
     configurationMock = {
@@ -151,6 +206,7 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     });
@@ -163,7 +219,6 @@ suite('Language Server', () => {
 
     await languageServer.start();
     sinon.assert.called(lca.create);
-    sinon.verify();
   });
 
   test('LanguageServer adds proxy settings to env of started binary', async () => {
@@ -184,8 +239,12 @@ suite('Language Server', () => {
               'options' in serverOptions ? serverOptions?.options?.env?.HTTP_PROXY : undefined,
               expectedProxy,
             );
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            assert.strictEqual(clientOptions.initializationOptions.token, 'testToken');
+            assert.strictEqual(
+              (clientOptions.initializationOptions as { settings?: Record<string, { value?: unknown }> }).settings?.[
+                LS_KEY.token
+              ]?.value,
+              'testToken',
+            );
             return Promise.resolve();
           },
           onNotification(): void {
@@ -194,6 +253,7 @@ suite('Language Server', () => {
           onReady(): Promise<void> {
             return Promise.resolve();
           },
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     });
@@ -205,7 +265,92 @@ suite('Language Server', () => {
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
-    sinon.verify();
+  });
+
+  test('sends structured workspace/didChangeConfiguration when snyk settings change (debounced)', async () => {
+    const sendNotification = sinon.stub().resolves();
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const adapter = {
+      create(): LanguageClient {
+        return {
+          start: sinon.stub().resolves(),
+          onNotification(): void {
+            return;
+          },
+          onReady: sinon.stub().resolves(),
+          sendNotification,
+        } as unknown as LanguageClient;
+      },
+    } as unknown as ILanguageClientAdapter;
+
+    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
+    const workspace = {
+      ...baseWorkspace,
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+    } as IVSCodeWorkspace;
+
+    languageServer = createFakeLanguageServer(adapter, workspace);
+    downloadServiceMock.downloadReady$.next();
+    const clock = sinon.useFakeTimers();
+    try {
+      await languageServer.start();
+      await clock.tickAsync(0);
+      sinon.assert.calledOnce(sendNotification);
+      strictEqual(sendNotification.getCall(0).args[0], DID_CHANGE_CONFIGURATION_METHOD);
+      sendNotification.resetHistory();
+      configListener({ affectsConfiguration: (s: string) => s === 'snyk' });
+      await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
+      sinon.assert.calledOnce(sendNotification);
+      strictEqual(sendNotification.getCall(0).args[0], DID_CHANGE_CONFIGURATION_METHOD);
+      const payload = sendNotification.getCall(0).args[1] as { settings: { settings?: Record<string, unknown> } };
+      assert(payload.settings?.settings !== undefined);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  test('does not send didChangeConfiguration when only non-snyk configuration changes', async () => {
+    const sendNotification = sinon.stub().resolves();
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const adapter = {
+      create(): LanguageClient {
+        return {
+          start: sinon.stub().resolves(),
+          onNotification(): void {
+            return;
+          },
+          onReady: sinon.stub().resolves(),
+          sendNotification,
+        } as unknown as LanguageClient;
+      },
+    } as unknown as ILanguageClientAdapter;
+
+    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
+    const workspace = {
+      ...baseWorkspace,
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+    } as IVSCodeWorkspace;
+
+    languageServer = createFakeLanguageServer(adapter, workspace);
+    downloadServiceMock.downloadReady$.next();
+    const clock = sinon.useFakeTimers();
+    try {
+      await languageServer.start();
+      await clock.tickAsync(0);
+      sinon.assert.calledOnce(sendNotification);
+      sendNotification.resetHistory();
+      configListener({ affectsConfiguration: () => false });
+      await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
+      sinon.assert.notCalled(sendNotification);
+    } finally {
+      clock.restore();
+    }
   });
 
   suite('LanguageServer is initialized', () => {
@@ -220,22 +365,16 @@ suite('Language Server', () => {
       languageServer = createFakeLanguageServer(mockLanguageClientAdapter, {} as IVSCodeWorkspace);
     });
 
-    teardown(() => {
-      LanguageServer.ReceivedFolderConfigsFromLs = false;
-    });
-
     const tcs: {
       name: string;
       folderConfigs: FolderConfig[];
-      simulateReceivedFolderConfigsFromLs: boolean;
     }[] = [
       {
-        name: 'LanguageServer should provide empty folder configs when no folder configs were received (first init)',
+        name: 'LanguageServer should provide empty folder configs when in-memory folder configs are empty',
         folderConfigs: [],
-        simulateReceivedFolderConfigsFromLs: false,
       },
       {
-        name: 'LanguageServer should include folder configs when they have been received from language server (LS restarts)',
+        name: 'LanguageServer should include folder configs from configuration when non-empty',
         folderConfigs: [
           {
             folderPath: '/test/path',
@@ -248,19 +387,13 @@ suite('Language Server', () => {
             orgMigratedFromGlobalConfig: true,
           },
         ],
-        simulateReceivedFolderConfigsFromLs: true,
       },
     ];
     tcs.forEach(tc => {
       test(tc.name, async () => {
-        // Setup folder configs mock
         configurationMock.getFolderConfigs = () => tc.folderConfigs;
 
-        // Simulate language server notification about folder configs
-        // This is normally done in the registerListeners method when receiving a notification
-        LanguageServer.ReceivedFolderConfigsFromLs = tc.simulateReceivedFolderConfigsFromLs;
-
-        const expectedInitializationOptions: ServerSettings = {
+        const expectedFlat: ServerSettings = {
           activateSnykCodeSecurity: 'true',
           enableDeltaFindings: 'false',
           activateSnykOpenSource: 'false',
@@ -295,14 +428,14 @@ suite('Language Server', () => {
         };
 
         const initializationOptions = await languageServer.getInitializationOptions();
-        deepStrictEqual(initializationOptions, expectedInitializationOptions);
+        deepStrictEqual(initializationOptions, serverSettingsToLspInitializationOptions(expectedFlat));
       });
     });
 
     test('LanguageServer should respect experiment setup for Code', async () => {
       const initOptions = await languageServer.getInitializationOptions();
 
-      strictEqual(initOptions.activateSnykCodeSecurity, `true`);
+      strictEqual(initOptions.settings[LS_KEY.snykCodeEnabled]?.value, true);
     });
 
     ['auto', 'manual'].forEach(expectedScanningMode => {
@@ -310,159 +443,8 @@ suite('Language Server', () => {
         configurationMock.scanningMode = expectedScanningMode;
         const options = await languageServer.getInitializationOptions();
 
-        assert.strictEqual(options.scanningMode, expectedScanningMode);
+        assert.strictEqual(options.settings[LS_KEY.scanAutomatic]?.value, expectedScanningMode !== 'manual');
       });
-    });
-  });
-
-  suite('handleOrgSettingsFromFolderConfigs', () => {
-    let getWorkspaceFoldersStub: sinon.SinonStub;
-    let workspaceMock: IVSCodeWorkspace;
-    let setOrganizationStub: sinon.SinonStub;
-    let setAutoSelectOrganizationStub: sinon.SinonStub;
-    let isAutoSelectOrganizationEnabledStub: sinon.SinonStub;
-    let languageClientAdapter: ILanguageClientAdapter;
-    const AUTO_DETERMINED_ORG = 'auto-determined-org';
-
-    setup(() => {
-      setOrganizationStub = sinon.stub().resolves();
-      configurationMock.setOrganization = setOrganizationStub;
-      setAutoSelectOrganizationStub = sinon.stub().resolves();
-      configurationMock.setAutoSelectOrganization = setAutoSelectOrganizationStub;
-      isAutoSelectOrganizationEnabledStub = sinon.stub();
-      configurationMock.isAutoSelectOrganizationEnabled = isAutoSelectOrganizationEnabledStub;
-
-      languageClientAdapter = {
-        create: sinon.stub(),
-      } as unknown as ILanguageClientAdapter;
-
-      getWorkspaceFoldersStub = sinon.stub();
-      workspaceMock = {
-        getWorkspaceFolders: getWorkspaceFoldersStub,
-      } as unknown as IVSCodeWorkspace;
-
-      languageServer = createFakeLanguageServer(languageClientAdapter, workspaceMock);
-    });
-
-    const createFolderConfig = (folderPath: string, preferredOrg: string, orgSetByUser: boolean): FolderConfig => ({
-      folderPath,
-      baseBranch: 'main',
-      localBranches: undefined,
-      referenceFolderPath: undefined,
-      preferredOrg,
-      orgSetByUser,
-      autoDeterminedOrg: AUTO_DETERMINED_ORG,
-      orgMigratedFromGlobalConfig: true,
-    });
-
-    test('should set org settings from LS folder configs (when contains orgSetByUser as true)', async () => {
-      const testCases = [
-        {
-          // User unticked the "Auto-select organization" checkbox, so preferredOrg was blanked by LS
-          folderPath: '/path/to/folder1',
-          preferredOrg: '',
-        },
-        {
-          // User wrote in an org name manually, so orgSetByUser was set to true by LS
-          folderPath: '/path/to/folder2',
-          preferredOrg: 'org-for-folder2',
-        },
-      ];
-
-      const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
-      getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoSelectOrganizationEnabledStub.returns(true);
-
-      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
-
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoSelectOrganizationStub.callCount, testCases.length);
-      testCases.forEach((tc, index) => {
-        strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
-        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setAutoSelectOrganizationStub.getCall(index).args[1], false);
-      });
-    });
-
-    for (const currentAutoOrg of [true, false]) {
-      test(`should set org settings at workspace folder level for folder configs from LS (when orgSetByUser is false regardless of previous auto-org status, currentAutoOrg=${currentAutoOrg})`, async () => {
-        const workspaceFolder = { uri: { fsPath: '/path/to/folder' } };
-        getWorkspaceFoldersStub.returns([workspaceFolder]);
-        isAutoSelectOrganizationEnabledStub.returns(currentAutoOrg);
-
-        const folderConfigs = [createFolderConfig('/path/to/folder', '', false)];
-
-        await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-        strictEqual(setOrganizationStub.callCount, 1);
-        strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setOrganizationStub.getCall(0).args[1], AUTO_DETERMINED_ORG);
-
-        // We still write it to ensure it is set at the folder level
-        strictEqual(setAutoSelectOrganizationStub.callCount, 1);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
-        strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], true);
-      });
-    }
-
-    test('should not set auto-org setting from LS folder configs (when already opted out of auto-org and orgSetByUser is true)', async () => {
-      const testCases = [
-        {
-          // User blanked the org manually
-          folderPath: '/path/to/folder1',
-          preferredOrg: '',
-        },
-        {
-          // User changed the org manually
-          folderPath: '/path/to/folder2',
-          preferredOrg: 'org-for-folder2',
-        },
-      ];
-
-      const workspaceFolders = testCases.map(tc => ({ uri: { fsPath: tc.folderPath } }));
-      getWorkspaceFoldersStub.returns(workspaceFolders);
-      isAutoSelectOrganizationEnabledStub.returns(false);
-
-      const folderConfigs = testCases.map(tc => createFolderConfig(tc.folderPath, tc.preferredOrg, true));
-
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      strictEqual(setOrganizationStub.callCount, testCases.length);
-      strictEqual(setAutoSelectOrganizationStub.callCount, 0);
-      testCases.forEach((tc, index) => {
-        strictEqual(setOrganizationStub.getCall(index).args[0], workspaceFolders[index]);
-        strictEqual(setOrganizationStub.getCall(index).args[1], tc.preferredOrg);
-      });
-    });
-
-    test('should warn and skip folder configs without matching workspace folders', async () => {
-      const workspaceFolder = { uri: { fsPath: '/path/to/existing/folder' } };
-      getWorkspaceFoldersStub.returns([workspaceFolder]);
-      isAutoSelectOrganizationEnabledStub.returns(true);
-
-      const folderConfigs = [
-        createFolderConfig('/path/to/existing/folder', 'existing-org', true),
-        createFolderConfig('/path/to/missing/folder', 'missing-org', true),
-      ];
-
-      const loggerWarnSpy = sinon.spy(logger, 'warn');
-      await languageServer['handleOrgSettingsFromFolderConfigs'](folderConfigs);
-
-      // Should only process the existing folder
-      strictEqual(setOrganizationStub.callCount, 1);
-      strictEqual(setOrganizationStub.getCall(0).args[0], workspaceFolder);
-      strictEqual(setOrganizationStub.getCall(0).args[1], 'existing-org');
-
-      strictEqual(setAutoSelectOrganizationStub.callCount, 1);
-      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[0], workspaceFolder);
-      strictEqual(setAutoSelectOrganizationStub.getCall(0).args[1], false);
-
-      // Should warn about the missing folder
-      strictEqual(loggerWarnSpy.callCount, 1);
-      strictEqual(loggerWarnSpy.getCall(0).args[0], 'No workspace folder found for path: /path/to/missing/folder');
     });
   });
 
@@ -473,28 +455,9 @@ suite('Language Server', () => {
         updateTreeViewPanel: updateStub,
       };
 
-      type NotificationHandler = (params: unknown) => void;
-      const notificationHandlers: Record<string, NotificationHandler> = {};
-
-      const lca = {
-        create(): LanguageClient {
-          return {
-            start: sinon.stub().resolves(),
-            onNotification(method: string, handler: NotificationHandler): void {
-              notificationHandlers[method] = handler;
-            },
-            onReady: sinon.stub().resolves(),
-          } as unknown as LanguageClient;
-        },
-      };
-
-      languageServer = createFakeLanguageServer(
-        lca as unknown as ILanguageClientAdapter,
-        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-        treeViewProviderMock,
-      );
-      downloadServiceMock.downloadReady$.next();
-      await languageServer.start();
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient({
+        treeViewProvider: treeViewProviderMock,
+      });
 
       const handler = notificationHandlers['$/snyk.treeView'];
       assert(handler, 'treeView notification handler should be registered');
@@ -506,33 +469,46 @@ suite('Language Server', () => {
     });
 
     test('should not fail when treeViewProvider is undefined', async () => {
-      type NotificationHandler = (params: unknown) => void;
-      const notificationHandlers: Record<string, NotificationHandler> = {};
-
-      const lca = {
-        create(): LanguageClient {
-          return {
-            start: sinon.stub().resolves(),
-            onNotification(method: string, handler: NotificationHandler): void {
-              notificationHandlers[method] = handler;
-            },
-            onReady: sinon.stub().resolves(),
-          } as unknown as LanguageClient;
-        },
-      };
-
-      languageServer = createFakeLanguageServer(
-        lca as unknown as ILanguageClientAdapter,
-        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
-      );
-      downloadServiceMock.downloadReady$.next();
-      await languageServer.start();
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient();
 
       const handler = notificationHandlers['$/snyk.treeView'];
       assert(handler, 'treeView notification handler should be registered');
 
       // Should not throw when provider is undefined
       handler({ treeViewHtml: '<html>tree</html>' });
+    });
+  });
+
+  suite('snyk.configuration notification', () => {
+    let syncLoggedInFromStoredTokenStub: sinon.SinonStub;
+
+    setup(() => {
+      syncLoggedInFromStoredTokenStub = sinon.stub().resolves();
+      authServiceMock.syncLoggedInContextFromStoredTokenIfValid = syncLoggedInFromStoredTokenStub;
+    });
+
+    test('should register handler and handle payload', async () => {
+      const debugSpy = sinon.spy(logger, 'debug');
+
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient();
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      assert(handler, 'snyk.configuration notification handler should be registered');
+
+      const endpointKey = 'endpoint';
+      handler({
+        settings: {
+          [endpointKey]: {
+            value: 'https://api.dev.snyk.io',
+            source: 'default',
+            isLocked: false,
+          },
+        },
+      });
+
+      sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
+      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
+      debugSpy.restore();
     });
   });
 });

@@ -16,7 +16,6 @@ import { IHtmlInjectionService } from './services/htmlInjectionService';
 import { IConfigurationMappingService } from './services/configurationMappingService';
 import { IScopeDetectionService } from './services/scopeDetectionService';
 import { IMessageHandlerFactory } from './handlers/messageHandlerFactory';
-
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
 

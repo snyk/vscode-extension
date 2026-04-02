@@ -9,8 +9,17 @@ import { IScopeDetectionService } from '../../../../../../snyk/common/views/work
 import { IConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
-import { ADVANCED_ORGANIZATION, CONFIGURATION_IDENTIFIER } from '../../../../../../snyk/common/constants/settings';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import {
+  ADVANCED_ORGANIZATION,
+  CONFIGURATION_IDENTIFIER,
+  DELTA_FINDINGS,
+} from '../../../../../../snyk/common/constants/settings';
+import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
+import { ConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
+import { LS_KEY } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
 
 function createMockUri(path: string): Uri {
   return {
@@ -33,6 +42,7 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let configMappingService: IConfigurationMappingService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
+  let explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker;
   let service: ConfigurationPersistenceService;
 
   let updateConfigurationStub: sinon.SinonStub;
@@ -55,6 +65,25 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       setToken: sinon.stub().resolves(),
       getFolderConfigs: sinon.stub().returns([]),
       setFolderConfigs: sinon.stub().resolves(),
+      getFeaturesConfiguration: sinon.stub().returns({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      }),
+      scanningMode: 'auto',
+      organization: '',
+      snykApiEndpoint: 'https://api.snyk.io',
+      getInsecure: sinon.stub().returns(false),
+      getAuthenticationMethod: sinon.stub().returns('oauth'),
+      getDeltaFindingsEnabled: sinon.stub().returns(false),
+      severityFilter: {},
+      issueViewOptions: {},
+      riskScoreThreshold: 0,
+      getTrustedFolders: sinon.stub().returns([]),
+      getCliPath: sinon.stub().resolves(''),
+      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+      getCliBaseDownloadUrl: sinon.stub().returns(''),
     } as unknown as IConfiguration;
 
     scopeDetectionService = {
@@ -81,12 +110,18 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       warn: sinon.stub(),
     } as unknown as ILog;
 
+    explicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: sinon.stub().returns(false),
+    };
+
     service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       configMappingService,
       clientAdapter,
+      explicitLspConfigurationChangeTracker,
       logger,
     );
   });
@@ -219,5 +254,135 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
         true, // writeToUserScope should be true
       );
     });
+  });
+});
+
+suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({
+        globalValue: undefined,
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+      getFeaturesConfiguration: sinon.stub().returns({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      }),
+      scanningMode: 'auto',
+      organization: '',
+      snykApiEndpoint: 'https://api.snyk.io',
+      getInsecure: sinon.stub().returns(false),
+      getAuthenticationMethod: sinon.stub().returns('oauth'),
+      getDeltaFindingsEnabled: sinon.stub().returns(false),
+      severityFilter: {},
+      issueViewOptions: {},
+      riskScoreThreshold: 0,
+      getTrustedFolders: sinon.stub().returns([]),
+      getCliPath: sinon.stub().resolves(''),
+      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+      getCliBaseDownloadUrl: sinon.stub().returns(''),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({
+        sendNotification: sinon.stub().resolves(),
+      }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
+
+  test('persists LS endpoint directly without filtering', async () => {
+    const realMapper = new ConfigurationMappingService();
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      realMapper,
+      clientAdapter,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(true),
+      },
+      logger,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.called(updateConfigurationStub);
+  });
+
+  test('persistInbound writes delta setting from global settings', async () => {
+    const realMapper = new ConfigurationMappingService();
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      realMapper,
+      clientAdapter,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(false),
+      },
+      logger,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.scanNetNew]: { value: true, changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''),
+      NEWISSUES,
+      true,
+    );
   });
 });

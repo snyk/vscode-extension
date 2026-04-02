@@ -66,8 +66,10 @@ class ConfigurationWatcher implements IWatcher {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
     } else if (key === ADVANCED_CLI_RELEASE_CHANNEL) {
-      await extension.stopLanguageServer();
-      extension.initDependencyDownload();
+      if (configuration.isAutomaticDependencyManagementEnabled()) {
+        await extension.stopLanguageServer();
+        extension.initDependencyDownload();
+      }
       return;
     } else if (key == DELTA_FINDINGS) {
       return extension.viewManagerService.refreshAllViews();
@@ -122,6 +124,7 @@ class ConfigurationWatcher implements IWatcher {
 
     SecretStorageAdapter.instance.onDidChange(event => {
       if (event.key === SNYK_TOKEN_KEY) {
+        void extension.syncLoggedInContextFromStoredTokenIfValid();
         return extension.runScan();
       }
     });
