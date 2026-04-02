@@ -134,16 +134,10 @@ suite('Configuration', () => {
       }
 
       // Set up initial folder config without a preferred org
-      const initialFolderConfig = {
-        folderPath: workspaceFolder.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: '',
-        orgSetByUser: false,
-        autoDeterminedOrg: 'irrelevant-org',
-        orgMigratedFromGlobalConfig: true,
-      };
+      const initialFolderConfig = new FolderConfig(workspaceFolder.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+        auto_determined_org: { value: 'irrelevant-org', changed: true },
+      });
       await configuration.setFolderConfigs([initialFolderConfig]);
 
       // Simulate user changing organization setting at folder level
@@ -155,7 +149,7 @@ suite('Configuration', () => {
       await assertEventually(
         () => {
           const configs = configuration.getFolderConfigs();
-          return configs.length === 1 && configs[0].preferredOrg === 'test-org-123';
+          return configs.length === 1 && configs[0].preferredOrg() === 'test-org-123';
         },
         2000,
         50,
@@ -169,16 +163,12 @@ suite('Configuration', () => {
       }
 
       // Set up folder config with an organization
-      const initialFolderConfig = {
-        folderPath: workspaceFolder.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: 'existing-org',
-        orgSetByUser: true,
-        autoDeterminedOrg: 'irrelevant-org',
-        orgMigratedFromGlobalConfig: true,
-      };
+      const initialFolderConfig = new FolderConfig(workspaceFolder.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+        preferred_org: { value: 'existing-org', changed: true },
+        org_set_by_user: { value: true, changed: true },
+        auto_determined_org: { value: 'irrelevant-org', changed: true },
+      });
       await configuration.setFolderConfigs([initialFolderConfig]);
 
       // Set organization at folder level
@@ -190,7 +180,7 @@ suite('Configuration', () => {
       await assertEventually(
         () => {
           const configs = configuration.getFolderConfigs();
-          return configs.length > 0 && configs[0].preferredOrg === 'temp-org';
+          return configs.length > 0 && configs[0].preferredOrg() === 'temp-org';
         },
         2000,
         50,
@@ -206,7 +196,7 @@ suite('Configuration', () => {
       await assertEventually(
         () => {
           const configs = configuration.getFolderConfigs();
-          return configs.length === 1 && configs[0].preferredOrg === '';
+          return configs.length === 1 && configs[0].preferredOrg() === '';
         },
         2000,
         50,
@@ -220,26 +210,18 @@ suite('Configuration', () => {
       }
 
       // Set up multiple folder configs
-      const folderConfig1 = {
-        folderPath: workspaceFolder.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: 'org-1',
-        orgSetByUser: true,
-        autoDeterminedOrg: 'irrelevant-org',
-        orgMigratedFromGlobalConfig: true,
-      };
-      const folderConfig2 = {
-        folderPath: '/path/to/different/folder',
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: 'org-2',
-        orgSetByUser: true,
-        autoDeterminedOrg: 'irrelevant-org',
-        orgMigratedFromGlobalConfig: true,
-      };
+      const folderConfig1 = new FolderConfig(workspaceFolder.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+        preferred_org: { value: 'org-1', changed: true },
+        org_set_by_user: { value: true, changed: true },
+        auto_determined_org: { value: 'irrelevant-org', changed: true },
+      });
+      const folderConfig2 = new FolderConfig('/path/to/different/folder', {
+        base_branch: { value: 'main', changed: true },
+        preferred_org: { value: 'org-2', changed: true },
+        org_set_by_user: { value: true, changed: true },
+        auto_determined_org: { value: 'irrelevant-org', changed: true },
+      });
       await configuration.setFolderConfigs([folderConfig1, folderConfig2]);
 
       // Change organization only for the first workspace folder
@@ -256,7 +238,7 @@ suite('Configuration', () => {
           const config1 = configs.find(fc => fc.folderPath === workspaceFolder?.uri.fsPath);
           const config2 = configs.find(fc => fc.folderPath === '/path/to/different/folder');
 
-          return config1?.preferredOrg === 'updated-org-1' && config2?.preferredOrg === 'org-2';
+          return config1?.preferredOrg() === 'updated-org-1' && config2?.preferredOrg() === 'org-2';
         },
         2000,
         50,
@@ -270,16 +252,12 @@ suite('Configuration', () => {
       }
 
       // Set up folder config with an organization
-      const initialFolderConfig = {
-        folderPath: workspaceFolder.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: 'folder-org',
-        orgSetByUser: true,
-        autoDeterminedOrg: 'irrelevant-org',
-        orgMigratedFromGlobalConfig: true,
-      };
+      const initialFolderConfig = new FolderConfig(workspaceFolder.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+        preferred_org: { value: 'folder-org', changed: true },
+        org_set_by_user: { value: true, changed: true },
+        auto_determined_org: { value: 'irrelevant-org', changed: true },
+      });
       await configuration.setFolderConfigs([initialFolderConfig]);
 
       // Set organization at global level (not folder level)
@@ -292,7 +270,7 @@ suite('Configuration', () => {
       await assertEventually(
         () => {
           const configs = configuration.getFolderConfigs();
-          return configs.length === 1 && configs[0].preferredOrg === '';
+          return configs.length === 1 && configs[0].preferredOrg() === '';
         },
         2000,
         50,
@@ -320,29 +298,19 @@ suite('Configuration', () => {
         () => {
           const configs = configuration.getFolderConfigs();
           return (
-            configs.length === 1 &&
-            configs[0].preferredOrg === 'user-set-org' &&
-            configs[0].orgMigratedFromGlobalConfig === true &&
-            configs[0].orgSetByUser === true
+            configs.length === 1 && configs[0].preferredOrg() === 'user-set-org' && configs[0].orgSetByUser() === true
           );
         },
         5000,
         100,
-        'Folder config should eventually be migrated by LS with orgMigratedFromGlobalConfig=true and orgSetByUser=true',
+        'Folder config should eventually be migrated by LS with orgSetByUser=true',
       );
 
       // Step 3: Forcibly reset folder config back to unmigrated state
       // This will cause LS to run the migration logic and send us back a migrated folder config, which we will then process.
-      const unmigratedConfig: FolderConfig = {
-        folderPath: workspaceFolder.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: '',
-        orgSetByUser: false,
-        autoDeterminedOrg: '',
-        orgMigratedFromGlobalConfig: false,
-      };
+      const unmigratedConfig = new FolderConfig(workspaceFolder.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+      });
       await configuration.setFolderConfigs([unmigratedConfig]);
 
       // Step 4: Wait for LS to detect the unmigrated config and re-migrate it
@@ -351,10 +319,7 @@ suite('Configuration', () => {
         () => {
           const configs = configuration.getFolderConfigs();
           return (
-            configs.length === 1 &&
-            configs[0].preferredOrg === 'user-set-org' &&
-            configs[0].orgMigratedFromGlobalConfig === true &&
-            configs[0].orgSetByUser === true
+            configs.length === 1 && configs[0].preferredOrg() === 'user-set-org' && configs[0].orgSetByUser() === true
           );
         },
         5000,
@@ -431,11 +396,9 @@ suite('Configuration', () => {
           const config2 = configs.find(c => c.folderPath === folder2.uri.fsPath);
           return (
             configs.length === 2 &&
-            config1?.orgMigratedFromGlobalConfig === true &&
-            config1?.orgSetByUser === false &&
-            config2?.preferredOrg === 'folder2-org' &&
-            config2?.orgMigratedFromGlobalConfig === true &&
-            config2?.orgSetByUser === true
+            config1?.orgSetByUser() === false &&
+            config2?.preferredOrg() === 'folder2-org' &&
+            config2?.orgSetByUser() === true
           );
         },
         5000,
@@ -446,27 +409,13 @@ suite('Configuration', () => {
       // Step 3: Force reset both folders to unmigrated state
       // folder1 has no org set in its workspace folder settings
       // folder2 has an org set in its workspace folder settings
-      const unmigratedConfig1: FolderConfig = {
-        folderPath: folder1.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: '',
-        orgSetByUser: false,
-        autoDeterminedOrg: '',
-        orgMigratedFromGlobalConfig: false,
-      };
+      const unmigratedConfig1 = new FolderConfig(folder1.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+      });
 
-      const unmigratedConfig2: FolderConfig = {
-        folderPath: folder2.uri.fsPath,
-        baseBranch: 'main',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        preferredOrg: '',
-        orgSetByUser: false,
-        autoDeterminedOrg: '',
-        orgMigratedFromGlobalConfig: false,
-      };
+      const unmigratedConfig2 = new FolderConfig(folder2.uri.fsPath, {
+        base_branch: { value: 'main', changed: true },
+      });
 
       await configuration.setFolderConfigs([unmigratedConfig1, unmigratedConfig2]);
 
@@ -477,11 +426,9 @@ suite('Configuration', () => {
           const config1 = configs.find(c => c.folderPath === folder1.uri.fsPath);
           const config2 = configs.find(c => c.folderPath === folder2.uri.fsPath);
           return (
-            config1?.orgMigratedFromGlobalConfig === true &&
-            config1?.orgSetByUser === false &&
-            config2?.preferredOrg === 'folder2-org' &&
-            config2?.orgMigratedFromGlobalConfig === true &&
-            config2?.orgSetByUser === true
+            config1?.orgSetByUser() === false &&
+            config2?.preferredOrg() === 'folder2-org' &&
+            config2?.orgSetByUser() === true
           );
         },
         5000,

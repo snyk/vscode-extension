@@ -26,12 +26,12 @@ suite('folderConfigsFromLspParam', () => {
     const out = folderConfigsFromLspParam(param);
     assert.strictEqual(out.length, 1);
     assert.strictEqual(out[0].folderPath, '/proj');
-    assert.strictEqual(out[0].baseBranch, 'develop');
-    assert.deepStrictEqual(out[0].localBranches, ['develop', 'main']);
-    assert.strictEqual(out[0].preferredOrg, 'my-org');
+    assert.strictEqual(out[0].baseBranch(), 'develop');
+    assert.deepStrictEqual(out[0].localBranches(), ['develop', 'main']);
+    assert.strictEqual(out[0].preferredOrg(), 'my-org');
     // defaults for fields LS didn't send
-    assert.strictEqual(out[0].orgSetByUser, false);
-    assert.strictEqual(out[0].autoDeterminedOrg, '');
+    assert.strictEqual(out[0].orgSetByUser(), false);
+    assert.strictEqual(out[0].autoDeterminedOrg(), '');
   });
 
   test('builds multiple folder configs', () => {
@@ -54,8 +54,8 @@ suite('folderConfigsFromLspParam', () => {
     const out = folderConfigsFromLspParam(param);
     assert.strictEqual(out.length, 2);
     assert.strictEqual(out[0].folderPath, '/a');
-    assert.strictEqual(out[0].referenceFolderPath, '/ref');
+    assert.strictEqual(out[0].referenceFolderPath(), '/ref');
     assert.strictEqual(out[1].folderPath, '/b');
-    assert.strictEqual(out[1].orgSetByUser, true);
+    assert.strictEqual(out[1].orgSetByUser(), true);
   });
 });

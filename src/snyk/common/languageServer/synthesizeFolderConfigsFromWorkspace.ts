@@ -1,4 +1,4 @@
-import type { FolderConfig, IConfiguration } from '../configuration/configuration';
+import { FolderConfig, type IConfiguration } from '../configuration/configuration';
 import type { WorkspaceFolder } from '../vscode/types';
 
 /** Minimal per-folder rows when `getFolderConfigs()` is empty but the workspace has folders (aligned with mergeOrgSettingsIntoLSFolderConfig). */
@@ -7,27 +7,14 @@ export function synthesizeFolderConfigsFromWorkspace(
   workspaceFolders: readonly WorkspaceFolder[],
 ): FolderConfig[] {
   return workspaceFolders.map(wf => {
+    const fc = new FolderConfig(wf.uri.fsPath);
     const orgSetByUser = !configuration.isAutoSelectOrganizationEnabled(wf);
-    const common = {
-      folderPath: wf.uri.fsPath,
-      baseBranch: '',
-      localBranches: undefined,
-      referenceFolderPath: undefined,
-      orgMigratedFromGlobalConfig: false,
-    };
+    fc.setOrgSetByUser(orgSetByUser);
     if (orgSetByUser) {
-      return {
-        ...common,
-        orgSetByUser: true,
-        preferredOrg: configuration.getOrganizationAtWorkspaceFolderLevel(wf) ?? '',
-        autoDeterminedOrg: '',
-      };
+      fc.setPreferredOrg(configuration.getOrganizationAtWorkspaceFolderLevel(wf) ?? '');
+    } else {
+      fc.setAutoDeterminedOrg(configuration.getOrganization(wf) ?? '');
     }
-    return {
-      ...common,
-      orgSetByUser: false,
-      preferredOrg: '',
-      autoDeterminedOrg: configuration.getOrganization(wf) ?? '',
-    };
+    return fc;
   });
 }

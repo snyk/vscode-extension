@@ -1,5 +1,5 @@
 import assert from 'assert';
-import type { FolderConfig } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig } from '../../../../snyk/common/configuration/configuration';
 import {
   folderConfigToLspFolderConfiguration,
   LS_KEY,
@@ -170,17 +170,15 @@ suite('serverSettingsToLspConfigurationParam', () => {
   });
 
   test('maps folderConfigs to folderConfigs[].settings (LS keys)', () => {
-    const folderConfigs: FolderConfig[] = [
-      {
-        folderPath: '/proj/a',
-        baseBranch: 'main',
-        localBranches: ['main', 'dev'],
-        referenceFolderPath: '/ref',
-        orgSetByUser: true,
-        preferredOrg: 'pref',
-        autoDeterminedOrg: 'auto',
-        orgMigratedFromGlobalConfig: false,
-        scanCommandConfig: {
+    const fc = new FolderConfig('/proj/a', {
+      [LS_KEY.baseBranch]: { value: 'main', changed: true },
+      [LS_KEY.localBranches]: { value: ['main', 'dev'], changed: true },
+      [LS_KEY.referenceFolder]: { value: '/ref', changed: true },
+      [LS_KEY.orgSetByUser]: { value: true, changed: true },
+      [LS_KEY.preferredOrg]: { value: 'pref', changed: true },
+      [LS_KEY.autoDeterminedOrg]: { value: 'auto', changed: true },
+      [LS_KEY.scanCommandConfig]: {
+        value: {
           oss: {
             preScanCommand: 'echo',
             preScanOnlyReferenceFolder: false,
@@ -188,12 +186,14 @@ suite('serverSettingsToLspConfigurationParam', () => {
             postScanOnlyReferenceFolder: false,
           },
         },
+        changed: true,
       },
-    ];
+      some_extra_ls_setting: { value: 42, changed: true },
+    });
 
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
-        folderConfigs,
+        folderConfigs: [fc],
       }),
     );
 
@@ -205,21 +205,16 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.baseBranch]?.value, 'main');
     assert.deepStrictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.localBranches]?.value, ['main', 'dev']);
     assert.strictEqual(param.folderConfigs?.[0].settings?.[LS_KEY.referenceFolder]?.value, '/ref');
+    // Extra LS settings are forwarded
+    assert.strictEqual(param.folderConfigs?.[0].settings?.['some_extra_ls_setting']?.value, 42);
   });
 });
 
 suite('folderConfigToLspFolderConfiguration', () => {
   test('exposes LS keys with changed: true', () => {
-    const fc: FolderConfig = {
-      folderPath: '/w',
-      baseBranch: '',
-      localBranches: undefined,
-      referenceFolderPath: undefined,
-      orgSetByUser: false,
-      preferredOrg: 'p',
-      autoDeterminedOrg: '',
-      orgMigratedFromGlobalConfig: false,
-    };
+    const fc = new FolderConfig('/w', {
+      [LS_KEY.preferredOrg]: { value: 'p', changed: true },
+    });
     const row = folderConfigToLspFolderConfiguration(fc);
     assert.strictEqual(row.folderPath, '/w');
     assert.strictEqual(row.settings?.[LS_KEY.preferredOrg]?.value, 'p');

@@ -149,9 +149,18 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   /**
-   * Special handling for folder configs, write in-memory and send to language-server
-   * and then folder notification handler will persist it (standard flow for folder configs)
+   * Mapping from HTML form field names (camelCase) to LS setting keys (snake_case)
+   * for folder config fields coming from the HTML settings form.
    */
+  private static readonly htmlFieldToLsKey: Record<string, string> = {
+    additionalParameters: 'additional_parameters',
+    additionalEnv: 'additional_environment',
+    scanCommandConfig: 'scan_command_config',
+    preferredOrg: 'preferred_org',
+    autoDeterminedOrg: 'auto_determined_org',
+    orgSetByUser: 'org_set_by_user',
+  };
+
   private async saveFolderConfigs(folderConfigs?: Array<FolderConfigData>): Promise<void> {
     if (!folderConfigs) return;
 
@@ -160,13 +169,19 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     const folderConfigMap = new Map(folderConfigs.map(fc => [fc.folderPath, fc]));
 
     const updatedFolderConfigs = currentFolderConfigs.map(currentFolderConfig => {
-      const folderConfig = folderConfigMap.get(currentFolderConfig.folderPath);
-      if (!folderConfig) return currentFolderConfig;
+      const formData = folderConfigMap.get(currentFolderConfig.folderPath);
+      if (!formData) return currentFolderConfig;
 
-      return {
-        ...currentFolderConfig,
-        ...folderConfig,
-      };
+      // Map HTML form fields (camelCase) to LS setting entries (snake_case)
+      // so they are forwarded to the LS on the next outbound push.
+      for (const [htmlKey, lsKey] of Object.entries(ConfigurationPersistenceService.htmlFieldToLsKey)) {
+        const value = (formData as unknown as Record<string, unknown>)[htmlKey];
+        if (value !== undefined) {
+          currentFolderConfig.setSetting(lsKey, value);
+        }
+      }
+
+      return currentFolderConfig;
     });
 
     await this.configuration.setFolderConfigs(updatedFolderConfigs, true);

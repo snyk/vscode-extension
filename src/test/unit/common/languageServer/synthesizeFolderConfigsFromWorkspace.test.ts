@@ -1,6 +1,6 @@
 import assert from 'assert';
 import sinon from 'sinon';
-import type { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, type IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { synthesizeFolderConfigsFromWorkspace } from '../../../../snyk/common/languageServer/synthesizeFolderConfigsFromWorkspace';
 import type { WorkspaceFolder } from '../../../../snyk/common/vscode/types';
@@ -22,10 +22,9 @@ suite('synthesizeFolderConfigsFromWorkspace', () => {
     assert.strictEqual(rows.length, 1);
     const fc = rows[0];
     assert.strictEqual(fc.folderPath, '/proj');
-    assert.strictEqual(fc.orgSetByUser, true);
-    assert.strictEqual(fc.preferredOrg, 'devex_ide');
-    assert.strictEqual(fc.autoDeterminedOrg, '');
-    assert.strictEqual(fc.orgMigratedFromGlobalConfig, false);
+    assert.strictEqual(fc.orgSetByUser(), true);
+    assert.strictEqual(fc.preferredOrg(), 'devex_ide');
+    assert.strictEqual(fc.autoDeterminedOrg(), '');
   });
 
   test('auto org: autoDeterminedOrg from getOrganization, orgSetByUser false', () => {
@@ -38,9 +37,9 @@ suite('synthesizeFolderConfigsFromWorkspace', () => {
 
     const rows = synthesizeFolderConfigsFromWorkspace(configuration, [wf]);
     const fc = rows[0];
-    assert.strictEqual(fc.orgSetByUser, false);
-    assert.strictEqual(fc.preferredOrg, '');
-    assert.strictEqual(fc.autoDeterminedOrg, 'auto-org');
+    assert.strictEqual(fc.orgSetByUser(), false);
+    assert.strictEqual(fc.preferredOrg(), '');
+    assert.strictEqual(fc.autoDeterminedOrg(), 'auto-org');
   });
 
   test('maps one row per workspace folder', () => {
@@ -73,21 +72,15 @@ suite('LanguageServerSettings.resolveFolderConfigsForServerSettings', () => {
       getWorkspaceFolders: () => [wf],
     });
     assert.strictEqual(resolved.length, 1);
-    assert.strictEqual(resolved[0].preferredOrg, 'org1');
+    assert.strictEqual(resolved[0].preferredOrg(), 'org1');
   });
 
   test('uses in-memory folder configs when non-empty', () => {
     const mem: FolderConfig[] = [
-      {
-        folderPath: '/p',
-        baseBranch: '',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        orgSetByUser: true,
-        preferredOrg: 'from-ls',
-        autoDeterminedOrg: '',
-        orgMigratedFromGlobalConfig: true,
-      },
+      new FolderConfig('/p', {
+        org_set_by_user: { value: true, changed: true },
+        preferred_org: { value: 'from-ls', changed: true },
+      }),
     ];
     const configuration = {
       getFolderConfigs: () => mem,

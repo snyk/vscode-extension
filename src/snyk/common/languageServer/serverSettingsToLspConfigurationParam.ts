@@ -1,10 +1,5 @@
 import type { FolderConfig } from '../configuration/configuration';
-import type {
-  LspConfigurationParam,
-  LspConfigSetting,
-  LspFolderConfiguration,
-  LspInitializationOptions,
-} from './types';
+import type { LspConfigurationParam, LspConfigSetting, LspInitializationOptions } from './types';
 import type { ServerSettings } from './settings';
 
 /**
@@ -29,7 +24,7 @@ export const LS_KEY = {
   sendErrorReports: 'send_error_reports',
   trustEnabled: 'trust_enabled',
   automaticDownload: 'automatic_download',
-  cliInsecure: 'cli_insecure',
+  cliInsecure: 'proxy_insecure',
   enableSnykOssQuickFixActions: 'enable_snyk_oss_quick_fix_code_actions',
   autoConfigureMcpServer: 'auto_configure_mcp_server',
   scanAutomatic: 'scan_automatic',
@@ -71,12 +66,7 @@ function resolveChanged(lsKey: string, value: unknown, isExplicitlyChanged: Expl
   if (lsKey === LS_KEY.token && typeof value === 'string' && value.trim()) {
     return true;
   }
-  if (
-    lsKey === LS_KEY.trustedFolders &&
-    value !== undefined &&
-    Array.isArray(value) &&
-    (value as unknown[]).length > 0
-  ) {
+  if (lsKey === LS_KEY.trustedFolders && value !== undefined && Array.isArray(value)) {
     return true;
   }
   return isExplicitlyChanged(lsKey);
@@ -126,37 +116,11 @@ function putBoolStr(
 }
 
 /**
- * Maps IDE `FolderConfig` (in-memory / extension model) to LS `LspFolderConfiguration`
- * (LS-keyed `settings` per folder).
+ * Delegates to {@link FolderConfig.toLspFolderConfiguration} — the FolderConfig class
+ * already stores settings in LSP format, so no conversion is needed.
  */
-export function folderConfigToLspFolderConfiguration(
-  fc: FolderConfig,
-  isExplicitlyChanged: ExplicitChangePredicate = () => true,
-): LspFolderConfiguration {
-  const settings: Record<string, LspConfigSetting> = {};
-
-  putSetting(settings, LS_KEY.preferredOrg, fc.preferredOrg, isExplicitlyChanged);
-  //autoDeterminedOrg comes from Snyk Language Server and can not be set from IDE.
-  putSetting(settings, LS_KEY.autoDeterminedOrg, fc.autoDeterminedOrg, isExplicitlyChanged);
-  putSetting(settings, LS_KEY.orgSetByUser, fc.orgSetByUser, isExplicitlyChanged);
-
-  if (fc.scanCommandConfig !== undefined) {
-    putSetting(settings, LS_KEY.scanCommandConfig, fc.scanCommandConfig, isExplicitlyChanged);
-  }
-  //TODO: baseBranch, localBranches, referenceFolderPath are set separatly, not as a part of updating configurations.
-  //Make sure that we update branches correctly in delta flow.
-  if (fc.baseBranch !== undefined && fc.baseBranch !== '') {
-    putSetting(settings, LS_KEY.baseBranch, fc.baseBranch, isExplicitlyChanged);
-  }
-  if (fc.localBranches !== undefined && fc.localBranches.length > 0) {
-    putSetting(settings, LS_KEY.localBranches, fc.localBranches, isExplicitlyChanged);
-  }
-  if (fc.referenceFolderPath !== undefined && fc.referenceFolderPath !== '') {
-    putSetting(settings, LS_KEY.referenceFolder, fc.referenceFolderPath, isExplicitlyChanged);
-  }
-  //sastSettings set and used only in Snyk Language Server
-
-  return { folderPath: fc.folderPath, settings };
+export function folderConfigToLspFolderConfiguration(fc: FolderConfig) {
+  return fc.toLspFolderConfiguration();
 }
 
 /**
@@ -225,7 +189,7 @@ export function serverSettingsToLspConfigurationParam(
     putSetting(m, LS_KEY.hoverVerbosity, settings.hoverVerbosity, isExplicitlyChanged);
   }
 
-  if (settings.trustedFolders !== undefined && settings.trustedFolders.length > 0) {
+  if (settings.trustedFolders !== undefined) {
     putSetting(m, LS_KEY.trustedFolders, settings.trustedFolders, isExplicitlyChanged);
   }
 
@@ -242,7 +206,7 @@ export function serverSettingsToLspConfigurationParam(
   }
 
   const folderConfigs = settings.folderConfigs?.length
-    ? settings.folderConfigs.map(fc => folderConfigToLspFolderConfiguration(fc, isExplicitlyChanged))
+    ? settings.folderConfigs.map(fc => folderConfigToLspFolderConfiguration(fc))
     : undefined;
 
   const result: LspConfigurationParam = { settings: m };

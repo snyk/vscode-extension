@@ -79,7 +79,7 @@ export function mergedGlobalSettingsToIdeConfigData(
   if (risk !== undefined) out.riskScoreThreshold = risk;
 
   const trusted = getValue<string[]>(globalSettings[LS_KEY.trustedFolders]);
-  if (trusted !== undefined && trusted.length > 0) out.trustedFolders = trusted;
+  if (trusted !== undefined) out.trustedFolders = trusted;
 
   const token = getValue<string>(globalSettings[LS_KEY.token]);
   if (token !== undefined && token !== '') out.token = token;

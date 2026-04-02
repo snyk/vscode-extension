@@ -159,10 +159,8 @@ class ConfigurationWatcher implements IWatcher {
       // Get the effective value considering all levels (global, workspace, folder)
       const autoOrgEnabled = configuration.isAutoSelectOrganizationEnabled(workspaceFolder);
 
-      return {
-        ...folderConfig,
-        orgSetByUser: !autoOrgEnabled,
-      };
+      folderConfig.setOrgSetByUser(!autoOrgEnabled);
+      return folderConfig;
     });
 
     await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);
@@ -202,11 +200,9 @@ class ConfigurationWatcher implements IWatcher {
       );
 
       // Update preferredOrg with the new value and set orgSetByUser to true.
-      return {
-        ...folderConfig,
-        orgSetByUser: true,
-        preferredOrg: orgValueAtFolderLevel ?? '',
-      };
+      folderConfig.setOrgSetByUser(true);
+      folderConfig.setPreferredOrg(orgValueAtFolderLevel ?? '');
+      return folderConfig;
     });
 
     await configuration.setFolderConfigs(updatedFolderConfigs, isLSNotifyRequired);

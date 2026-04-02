@@ -376,16 +376,13 @@ suite('Language Server', () => {
       {
         name: 'LanguageServer should include folder configs from configuration when non-empty',
         folderConfigs: [
-          {
-            folderPath: '/test/path',
-            baseBranch: 'main',
-            localBranches: ['main', 'develop'],
-            referenceFolderPath: undefined,
-            preferredOrg: 'irrelevant-org',
-            orgSetByUser: true,
-            autoDeterminedOrg: 'irrelevant-org',
-            orgMigratedFromGlobalConfig: true,
-          },
+          new FolderConfig('/test/path', {
+            base_branch: { value: 'main', changed: true },
+            local_branches: { value: ['main', 'develop'], changed: true },
+            preferred_org: { value: 'irrelevant-org', changed: true },
+            org_set_by_user: { value: true, changed: true },
+            auto_determined_org: { value: 'irrelevant-org', changed: true },
+          }),
         ],
       },
     ];
