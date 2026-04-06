@@ -76,8 +76,9 @@ export class LanguageClientMiddleware implements Middleware {
         this.user,
         this.vscodeWorkspace,
       );
-      const lspParam = serverSettingsToLspConfigurationParam(serverSettings, lsKey =>
-        this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+      const lspParam = serverSettingsToLspConfigurationParam(
+        serverSettings,
+        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
       );
       return [{ settings: lspParam }];
     },

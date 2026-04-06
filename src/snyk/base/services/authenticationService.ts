@@ -82,10 +82,10 @@ export class AuthenticationService implements IAuthenticationService {
     // try to parse as json (oauth2 token)
     try {
       const oauthToken = JSON.parse(token) as OAuthToken;
-      valid =
-        oauthToken.access_token.length > 0 &&
-        Date.parse(oauthToken.expiry) > Date.now() &&
-        oauthToken.refresh_token.length > 0;
+      const hasAccessToken = oauthToken.access_token.length > 0;
+      const hasRefreshToken = oauthToken.refresh_token.length > 0;
+      const isNotExpired = Date.parse(oauthToken.expiry) > Date.now();
+      valid = hasAccessToken && (isNotExpired || hasRefreshToken);
       this.logger.debug(`Token ${this.maskToken(token)} parsed`);
     } catch (e) {
       this.logger.warn(`Token ${this.maskToken(token)} is not a valid UUID, PAT or OAuth2 token)}}}: ${e}`);
