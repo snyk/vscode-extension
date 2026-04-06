@@ -8,7 +8,7 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
-import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { User } from '../../../../snyk/common/user';
 import type {
   CancellationToken,
@@ -21,7 +21,12 @@ import type {
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from '../../../../snyk/common/languageServer/types';
+import {
+  LspConfigurationParam,
+  ShowIssueDetailTopicParams,
+  LsScanProduct,
+  SnykURIAction,
+} from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
 import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 
@@ -108,22 +113,19 @@ suite('Language Server: Middleware', () => {
       assert.fail('Handler returned an error');
     }
 
-    const serverResult = res[0] as ServerSettings;
-    assert.strictEqual(serverResult.activateSnykCodeSecurity, 'true');
-    assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
-    assert.strictEqual(serverResult.activateSnykIac, 'true');
-    assert.strictEqual(serverResult.activateSnykSecrets, 'false');
-    assert.strictEqual(serverResult.endpoint, configuration.snykApiEndpoint);
-    assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
-    assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
-    assert.strictEqual(serverResult.organization, `${configuration.organization}`);
-    assert.strictEqual(
-      serverResult.manageBinariesAutomatically,
-      `${configuration.isAutomaticDependencyManagementEnabled()}`,
-    );
-    assert.strictEqual(serverResult.cliPath, await configuration.getCliPath());
-    assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
-    assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());
+    const pullResponse = res[0] as { settings: LspConfigurationParam };
+    assert(pullResponse.settings, 'Response should have settings');
+    const settings = pullResponse.settings.settings!;
+    assert.strictEqual(settings[LS_KEY.snykCodeEnabled]?.value, true);
+    assert.strictEqual(settings[LS_KEY.snykOssEnabled]?.value, false);
+    assert.strictEqual(settings[LS_KEY.snykIacEnabled]?.value, true);
+    assert.strictEqual(settings[LS_KEY.snykSecretsEnabled]?.value, false);
+    assert.strictEqual(settings[LS_KEY.apiEndpoint]?.value, configuration.snykApiEndpoint);
+    assert.strictEqual(settings[LS_KEY.organization]?.value, `${configuration.organization}`);
+    assert.strictEqual(settings[LS_KEY.sendErrorReports]?.value, false);
+    assert.strictEqual(settings[LS_KEY.automaticDownload]?.value, true);
+    assert.strictEqual(settings[LS_KEY.cliPath]?.value, await configuration.getCliPath());
+    assert.strictEqual(settings[LS_KEY.trustEnabled]?.value, true);
   });
 
   test('Configuration request should return an error', async () => {

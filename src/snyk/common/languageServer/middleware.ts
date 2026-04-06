@@ -18,16 +18,21 @@ import type {
 } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
-import { LanguageServerSettings, ServerSettings } from './settings';
-import { LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
+import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import { serverSettingsToLspConfigurationParam } from './serverSettingsToLspConfigurationParam';
+import { LanguageServerSettings } from './settings';
+import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
+
+/** snyk-ls unmarshals the pull response as `[]DidChangeConfigurationParams` where each element is `{ settings: LspConfigurationParam }`. */
+type LspPullResponseItem = { settings: LspConfigurationParam };
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
     params: ConfigurationParams,
     token: CancellationToken,
     next: ConfigurationRequestHandlerSignature,
-  ) => Promise<ResponseError<void> | ServerSettings[]>;
+  ) => Promise<ResponseError<void> | LspPullResponseItem[]>;
 };
 
 export class LanguageClientMiddleware implements Middleware {
@@ -39,6 +44,7 @@ export class LanguageClientMiddleware implements Middleware {
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
     private readonly vscodeWorkspace?: IVSCodeWorkspace,
+    private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -70,7 +76,10 @@ export class LanguageClientMiddleware implements Middleware {
         this.user,
         this.vscodeWorkspace,
       );
-      return [serverSettings];
+      const lspParam = serverSettingsToLspConfigurationParam(serverSettings, lsKey =>
+        this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+      );
+      return [{ settings: lspParam }];
     },
   };
   window: WindowMiddleware = {

@@ -25,8 +25,7 @@ import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock
 import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { WindowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
-import { DEFAULT_LS_DEBOUNCE_INTERVAL } from '../../../../snyk/common/constants/general';
-import { DID_CHANGE_CONFIGURATION_METHOD, PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
+import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
@@ -267,8 +266,12 @@ suite('Language Server', () => {
     sinon.assert.called(lca.create);
   });
 
-  test('sends structured workspace/didChangeConfiguration when snyk settings change (debounced)', async () => {
-    const sendNotification = sinon.stub().resolves();
+  test('marks explicit LS keys when snyk settings change', async () => {
+    const markStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: markStub,
+      isExplicitlyChanged: () => true,
+    };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
       create(): LanguageClient {
@@ -278,7 +281,7 @@ suite('Language Server', () => {
             return;
           },
           onReady: sinon.stub().resolves(),
-          sendNotification,
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     } as unknown as ILanguageClientAdapter;
@@ -292,28 +295,36 @@ suite('Language Server', () => {
       },
     } as IVSCodeWorkspace;
 
-    languageServer = createFakeLanguageServer(adapter, workspace);
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+    );
     downloadServiceMock.downloadReady$.next();
-    const clock = sinon.useFakeTimers();
-    try {
-      await languageServer.start();
-      await clock.tickAsync(0);
-      sinon.assert.calledOnce(sendNotification);
-      strictEqual(sendNotification.getCall(0).args[0], DID_CHANGE_CONFIGURATION_METHOD);
-      sendNotification.resetHistory();
-      configListener({ affectsConfiguration: (s: string) => s === 'snyk' });
-      await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
-      sinon.assert.calledOnce(sendNotification);
-      strictEqual(sendNotification.getCall(0).args[0], DID_CHANGE_CONFIGURATION_METHOD);
-      const payload = sendNotification.getCall(0).args[1] as { settings: { settings?: Record<string, unknown> } };
-      assert(payload.settings?.settings !== undefined);
-    } finally {
-      clock.restore();
-    }
+    await languageServer.start();
+    configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+    sinon.assert.called(markStub);
   });
 
-  test('does not send didChangeConfiguration when only non-snyk configuration changes', async () => {
-    const sendNotification = sinon.stub().resolves();
+  test('does not mark explicit LS keys when only non-snyk configuration changes', async () => {
+    const markStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: markStub,
+      isExplicitlyChanged: () => true,
+    };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
       create(): LanguageClient {
@@ -323,7 +334,7 @@ suite('Language Server', () => {
             return;
           },
           onReady: sinon.stub().resolves(),
-          sendNotification,
+          sendNotification: sinon.stub().resolves(),
         } as unknown as LanguageClient;
       },
     } as unknown as ILanguageClientAdapter;
@@ -337,20 +348,28 @@ suite('Language Server', () => {
       },
     } as IVSCodeWorkspace;
 
-    languageServer = createFakeLanguageServer(adapter, workspace);
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+    );
     downloadServiceMock.downloadReady$.next();
-    const clock = sinon.useFakeTimers();
-    try {
-      await languageServer.start();
-      await clock.tickAsync(0);
-      sinon.assert.calledOnce(sendNotification);
-      sendNotification.resetHistory();
-      configListener({ affectsConfiguration: () => false });
-      await clock.tickAsync(DEFAULT_LS_DEBOUNCE_INTERVAL);
-      sinon.assert.notCalled(sendNotification);
-    } finally {
-      clock.restore();
-    }
+    await languageServer.start();
+    configListener({ affectsConfiguration: () => false });
+    sinon.assert.notCalled(markStub);
   });
 
   suite('LanguageServer is initialized', () => {

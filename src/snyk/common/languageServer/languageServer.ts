@@ -2,9 +2,7 @@ import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { IConfiguration } from '../configuration/configuration';
-import { DEFAULT_LS_DEBOUNCE_INTERVAL } from '../constants/general';
 import {
-  DID_CHANGE_CONFIGURATION_METHOD,
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CONFIGURATION,
   SNYK_REGISTER_MCP,
@@ -14,6 +12,7 @@ import {
   SNYK_SCANSUMMARY,
   SNYK_TREEVIEW,
 } from '../constants/languageServer';
+import { CONFIGURATION_IDENTIFIER } from '../constants/settings';
 import { ErrorHandler } from '../error/errorHandler';
 import { ILog } from '../logger/interfaces';
 import { DownloadService } from '../services/downloadService';
@@ -22,10 +21,7 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import {
-  serverSettingsToLspConfigurationParam,
-  serverSettingsToLspInitializationOptions,
-} from './serverSettingsToLspConfigurationParam';
+import { serverSettingsToLspInitializationOptions } from './serverSettingsToLspConfigurationParam';
 import { LanguageClientMiddleware } from './middleware';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from './configurationChangeToExplicitLsKeys';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
@@ -69,9 +65,8 @@ export class LanguageServer implements ILanguageServer {
   private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
   private configurationChangeDisposable?: Disposable;
-  private debouncedPushStructuredConfiguration?: _.DebouncedFunc<() => void>;
-  /** When true, VS Code `settings.json` updates from inbound LS persistence must not trigger outbound `didChangeConfiguration`. */
-  private suppressStructuredConfigPushFromInboundPersistence = false;
+  /** When true, VS Code `settings.json` updates from inbound LS persistence must not mark keys as explicitly changed. */
+  private suppressExplicitKeyMarkingFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private inboundPersistenceChain: Promise<void> = Promise.resolve();
   private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
@@ -196,13 +191,9 @@ export class LanguageServer implements ILanguageServer {
       documentSelector: [{ scheme: 'file', language: '' }],
       // vscode-languageclient types `initializationOptions` loosely; value is LspInitializationOptions
       initializationOptions: (await this.getInitializationOptions()) as unknown,
-      // Do not set synchronize.configurationSection: it makes vscode-languageclient send
-      // workspace/didChangeConfiguration with a flat VS Code `snyk` object. snyk-ls expects
-      // DidChangeConfigurationParams.settings to deserialize as LspConfigurationParam (LS key maps).
-      // Structured outbound is sent explicitly; see docs/configuration-gaf-ls-ide-flow.md.
-      // Keep synchronize as {} so we opt into no automatic config sync by construction, instead of
-      // omitting the field and depending on vscode-languageclient defaults (which could change).
-      synchronize: {},
+      synchronize: {
+        configurationSection: CONFIGURATION_IDENTIFIER,
+      },
       middleware: new LanguageClientMiddleware(
         this.logger,
         this.configuration,
@@ -211,6 +202,7 @@ export class LanguageServer implements ILanguageServer {
         this.uriAdapter,
         this.codeCommands,
         this.workspace,
+        this.explicitLspConfigurationChangeTracker,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
@@ -228,8 +220,7 @@ export class LanguageServer implements ILanguageServer {
 
       // Start the client. This will also launch the server
       await this.client.start();
-      this.registerStructuredConfigurationChangeListener(this.client);
-      this.scheduleInitialStructuredConfigurationPush(this.client);
+      this.registerExplicitKeyMarkingListener();
       void this.geminiIntegrationService.connectGeminiToMCPServer();
       this.logger.info('Snyk Language Server started');
     } catch (error) {
@@ -254,8 +245,7 @@ export class LanguageServer implements ILanguageServer {
             );
             this.registerListeners(this.client);
             await this.client.start();
-            this.registerStructuredConfigurationChangeListener(this.client);
-            this.scheduleInitialStructuredConfigurationPush(this.client);
+            this.registerExplicitKeyMarkingListener();
             void this.geminiIntegrationService.connectGeminiToMCPServer();
             this.logger.info('Snyk Language Server started successfully after CLI repair');
             return;
@@ -318,59 +308,25 @@ export class LanguageServer implements ILanguageServer {
     });
   }
 
-  /** One explicit outbound config after LS is ready; `setImmediate` so folder sync runs first; cancel debounce to avoid double-send. */
-  private scheduleInitialStructuredConfigurationPush(client: LanguageClient): void {
-    const c = client as LanguageClient & { onReady(): Promise<void> };
-    void c.onReady().then(async () => {
-      await new Promise<void>(resolve => setImmediate(resolve));
-      await this.pushStructuredConfigurationToLanguageServer(client);
-      this.debouncedPushStructuredConfiguration?.cancel();
-    });
-  }
-
-  private registerStructuredConfigurationChangeListener(client: LanguageClient): void {
+  /**
+   * Marks which LS keys the user explicitly changed via native VS Code settings,
+   * so the middleware can set `changed: true` on the next `workspace/configuration` pull response.
+   */
+  private registerExplicitKeyMarkingListener(): void {
     this.configurationChangeDisposable?.dispose();
-    this.debouncedPushStructuredConfiguration?.cancel();
-
-    this.debouncedPushStructuredConfiguration = _.debounce(() => {
-      void this.pushStructuredConfigurationToLanguageServer(client);
-    }, DEFAULT_LS_DEBOUNCE_INTERVAL);
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      // `snyk.*` is obvious; also watch `http.*` because proxy/TLS settings live there (not under `snyk`)
-      // and still flow into outbound LS settings (e.g. insecure / cli behavior via IConfiguration).
       if (!e.affectsConfiguration('snyk') && !e.affectsConfiguration('http')) {
         return;
       }
       if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
         return;
       }
-      if (this.suppressStructuredConfigPushFromInboundPersistence) {
+      if (this.suppressExplicitKeyMarkingFromInboundPersistence) {
         return;
       }
       markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
-      this.debouncedPushStructuredConfiguration?.();
     });
-  }
-
-  private async pushStructuredConfigurationToLanguageServer(client: LanguageClient): Promise<void> {
-    try {
-      const serverSettings = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        this.user,
-        this.workspace,
-      );
-      const param = serverSettingsToLspConfigurationParam(serverSettings, lsKey =>
-        this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
-      );
-      await client.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, { settings: param });
-    } catch (error) {
-      this.logger.error(
-        `Failed to send structured workspace/didChangeConfiguration: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
   }
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
@@ -394,7 +350,7 @@ export class LanguageServer implements ILanguageServer {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
       .then(async () => {
-        this.suppressStructuredConfigPushFromInboundPersistence = true;
+        this.suppressExplicitKeyMarkingFromInboundPersistence = true;
         try {
           await this.persistInboundConfiguration!(params);
         } catch (e) {
@@ -402,7 +358,7 @@ export class LanguageServer implements ILanguageServer {
             `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,
           );
         } finally {
-          this.suppressStructuredConfigPushFromInboundPersistence = false;
+          this.suppressExplicitKeyMarkingFromInboundPersistence = false;
         }
       });
   }
@@ -432,8 +388,6 @@ export class LanguageServer implements ILanguageServer {
 
     this.configurationChangeDisposable?.dispose();
     this.configurationChangeDisposable = undefined;
-    this.debouncedPushStructuredConfiguration?.cancel();
-    this.debouncedPushStructuredConfiguration = undefined;
 
     if (!this.client) {
       return Promise.resolve();
