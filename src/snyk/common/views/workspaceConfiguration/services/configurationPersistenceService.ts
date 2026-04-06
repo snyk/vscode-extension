@@ -78,30 +78,20 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       const globalSettings = param.settings ?? {};
       const partial = mergedGlobalSettingsToIdeConfigData(globalSettings);
 
-      if (Object.keys(partial).length > 0) {
-        const tokenFromLs = partial.token;
-        const { token: _omit, ...rest } = partial;
-        const ideForSettings = rest as IdeConfigData;
+      // Token is excluded: snyk-ls marks it as writeOnly so it never appears in
+      // $/snyk.configuration; the token arrives only via $/snyk.hasAuthenticated.
+      const { token: _omit, ...rest } = partial;
+      const ideForSettings = rest as IdeConfigData;
 
-        const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
-        const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
-          string,
-          unknown
-        >;
+      const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
+      const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
+        string,
+        unknown
+      >;
 
-        if (Object.keys(settingsMap).length > 0) {
-          this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
-          await this.applySettingsMap(settingsMap);
-        }
-
-        const trimmed = tokenFromLs?.trim();
-        if (trimmed) {
-          const existing = await this.configuration.getToken();
-          if (existing?.trim() !== trimmed) {
-            await this.configuration.setToken(tokenFromLs);
-            await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
-          }
-        }
+      if (Object.keys(settingsMap).length > 0) {
+        this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
+        await this.applySettingsMap(settingsMap);
       }
 
       // Apply folder configs to in-memory storage — LS is the source of truth
