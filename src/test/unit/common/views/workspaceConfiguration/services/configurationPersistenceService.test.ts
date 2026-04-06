@@ -1,5 +1,6 @@
 // ABOUTME: Unit tests for ConfigurationPersistenceService
 // ABOUTME: Tests organization persistence scope detection logic
+import assert from 'assert';
 import sinon from 'sinon';
 import { Uri } from 'vscode';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
@@ -112,6 +113,7 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
 
     explicitLspConfigurationChangeTracker = {
       markExplicitlyChanged: sinon.stub(),
+      unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: sinon.stub().returns(false),
     };
 
@@ -338,6 +340,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       clientAdapter,
       {
         markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
         isExplicitlyChanged: sinon.stub().returns(true),
       },
       logger,
@@ -364,6 +367,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       clientAdapter,
       {
         markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
         isExplicitlyChanged: sinon.stub().returns(false),
       },
       logger,
@@ -384,5 +388,61 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       NEWISSUES,
       true,
     );
+  });
+
+  test('persistInbound clears folder configs when LS sends empty array', async () => {
+    const realMapper = new ConfigurationMappingService();
+    const svc = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      realMapper,
+      clientAdapter,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(false),
+      },
+      logger,
+    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
+
+    const param: LspConfigurationParam = {
+      settings: {},
+      folderConfigs: [],
+    };
+
+    await svc.persistInboundLspConfiguration(param);
+
+    sinon.assert.calledOnce(setFolderConfigsStub);
+    assert.deepStrictEqual(setFolderConfigsStub.firstCall.args[0], []);
+  });
+
+  test('persistInbound does not call setFolderConfigs when folderConfigs is absent', async () => {
+    const realMapper = new ConfigurationMappingService();
+    const svc = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      realMapper,
+      clientAdapter,
+      {
+        markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(false),
+      },
+      logger,
+    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
+
+    const param: LspConfigurationParam = {
+      settings: {},
+    };
+
+    await svc.persistInboundLspConfiguration(param);
+
+    sinon.assert.notCalled(setFolderConfigsStub);
   });
 });

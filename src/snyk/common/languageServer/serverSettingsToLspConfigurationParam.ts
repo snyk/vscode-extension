@@ -42,7 +42,6 @@ export const LS_KEY = {
   baseBranch: 'base_branch',
   localBranches: 'local_branches',
   referenceFolder: 'reference_folder',
-  sastSettings: 'sast_settings',
 } as const;
 
 /** Returns true when the IDE should mark `ConfigSetting.changed` for outbound LS config. */
@@ -91,8 +90,12 @@ function putStringOrReset(
 ): void {
   if (value != null && value.trim() !== '') {
     putSetting(out, key, value, isExplicitlyChanged);
-  } else if (value == null && isExplicitlyChanged(key)) {
+  } else if (value === null && isExplicitlyChanged(key)) {
+    // Explicit null: user reset the setting — tell LS to revert to the resolved default.
     out[key] = { value: null, changed: true };
+  } else if (value != null && isExplicitlyChanged(key)) {
+    // Empty/whitespace string: forward as-is so LS sees the user's intent.
+    putSetting(out, key, value, isExplicitlyChanged);
   }
 }
 

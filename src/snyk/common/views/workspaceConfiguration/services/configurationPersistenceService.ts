@@ -94,8 +94,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         await this.applySettingsMap(settingsMap);
       }
 
-      // Apply folder configs to in-memory storage — LS is the source of truth
-      if (param.folderConfigs && param.folderConfigs.length > 0) {
+      // Apply folder configs to in-memory storage — LS is the source of truth.
+      // An empty array means "clear all folder overrides".
+      if (param.folderConfigs !== undefined) {
         await this.configuration.setFolderConfigs(folderConfigsFromLspParam(param));
       }
     } catch (e) {

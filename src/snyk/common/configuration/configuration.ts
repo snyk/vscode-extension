@@ -83,7 +83,7 @@ export type SastSettings = {
  */
 export class FolderConfig {
   readonly folderPath: string;
-  readonly settings: Record<string, LspConfigSetting>;
+  settings: Record<string, LspConfigSetting>;
 
   /** LS setting keys used by the class.  Kept here so both read and write paths share them. */
   static readonly LS_KEY = {

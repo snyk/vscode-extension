@@ -80,6 +80,17 @@ export class LanguageClientMiddleware implements Middleware {
         serverSettings,
         lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
       );
+
+      // After sending a reset (value: null, changed: true) the LS clears the override,
+      // so unmark the key to avoid permanently re-sending changed: true on future pulls.
+      if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
+        for (const [key, entry] of Object.entries(lspParam.settings)) {
+          if (entry.value === null && entry.changed === true) {
+            this.explicitLspConfigurationChangeTracker.unmarkExplicitlyChanged(key);
+          }
+        }
+      }
+
       return [{ settings: lspParam }];
     },
   };

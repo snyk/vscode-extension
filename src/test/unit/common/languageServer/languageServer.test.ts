@@ -49,6 +49,7 @@ suite('Language Server', () => {
 
   const explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker = {
     markExplicitlyChanged: sinon.stub(),
+    unmarkExplicitlyChanged: sinon.stub(),
     isExplicitlyChanged: () => true,
   };
 
@@ -270,6 +271,7 @@ suite('Language Server', () => {
     const markStub = sinon.stub();
     const tracker: IExplicitLspConfigurationChangeTracker = {
       markExplicitlyChanged: markStub,
+      unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: () => true,
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
@@ -323,6 +325,7 @@ suite('Language Server', () => {
     const markStub = sinon.stub();
     const tracker: IExplicitLspConfigurationChangeTracker = {
       markExplicitlyChanged: markStub,
+      unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: () => true,
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};

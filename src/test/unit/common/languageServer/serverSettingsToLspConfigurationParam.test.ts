@@ -101,7 +101,7 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.strictEqual(param.settings?.[LS_KEY.scanAutomatic]?.value, false);
   });
 
-  test('omits empty string settings even when explicitly changed', () => {
+  test('forwards empty string settings when explicitly changed', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: '',
@@ -111,17 +111,29 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => true,
     );
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: '', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.token], { value: '', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.additionalParameters], { value: '', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], { value: '', changed: true });
+  });
+
+  test('omits empty string settings when not explicitly changed', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        endpoint: '',
+        organization: '',
+      }),
+      () => false,
+    );
     assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
-    assert.strictEqual(param.settings?.[LS_KEY.token], undefined);
-    assert.strictEqual(param.settings?.[LS_KEY.additionalParameters], undefined);
     assert.strictEqual(param.settings?.[LS_KEY.organization], undefined);
   });
 
-  test('sends reset sentinel (value: null, changed: true) only for null/undefined when explicitly changed', () => {
+  test('sends reset (value: null, changed: true) only for explicit null when explicitly changed', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
-        organization: undefined,
-        endpoint: undefined,
+        organization: null as unknown as string,
+        endpoint: null as unknown as string,
       }),
       () => true,
     );
@@ -129,11 +141,23 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: null, changed: true });
   });
 
-  test('omits null/undefined settings when not explicitly changed', () => {
+  test('omits undefined settings even when explicitly changed (undefined means no value)', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         organization: undefined,
         endpoint: undefined,
+      }),
+      () => true,
+    );
+    assert.strictEqual(param.settings?.[LS_KEY.organization], undefined);
+    assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
+  });
+
+  test('omits null settings when not explicitly changed', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        organization: null as unknown as string,
+        endpoint: null as unknown as string,
       }),
       () => false,
     );
@@ -141,7 +165,7 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
   });
 
-  test('omits whitespace-only strings (not a reset)', () => {
+  test('forwards whitespace-only strings when explicitly changed', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
         endpoint: '  ',
@@ -151,10 +175,22 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => true,
     );
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: '  ', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.binaryBaseUrl], { value: '\t', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.cliPath], { value: '', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.token], { value: '   ', changed: true });
+  });
+
+  test('omits whitespace-only strings when not explicitly changed', () => {
+    const param = serverSettingsToLspConfigurationParam(
+      minimalServerSettings({
+        endpoint: '  ',
+        cliBaseDownloadURL: '\t',
+      }),
+      () => false,
+    );
     assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint], undefined);
     assert.strictEqual(param.settings?.[LS_KEY.binaryBaseUrl], undefined);
-    assert.strictEqual(param.settings?.[LS_KEY.cliPath], undefined);
-    assert.strictEqual(param.settings?.[LS_KEY.token], undefined);
   });
 
   test('risk_score_threshold only when != null; 0 is sent', () => {

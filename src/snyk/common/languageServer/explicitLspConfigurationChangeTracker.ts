@@ -4,6 +4,8 @@ import { MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS } from '../constants/explici
 export interface IExplicitLspConfigurationChangeTracker {
   markExplicitlyChanged(lsKey: string): void;
 
+  unmarkExplicitlyChanged(lsKey: string): void;
+
   isExplicitlyChanged(lsKey: string): boolean;
 }
 
@@ -26,6 +28,14 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
       return;
     }
     this.keys.add(lsKey);
+    void this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, [...this.keys]);
+  }
+
+  unmarkExplicitlyChanged(lsKey: string): void {
+    if (!this.keys.has(lsKey)) {
+      return;
+    }
+    this.keys.delete(lsKey);
     void this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, [...this.keys]);
   }
 

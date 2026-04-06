@@ -9,6 +9,7 @@ import {
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { User } from '../../../../snyk/common/user';
 import type {
   CancellationToken,
@@ -206,5 +207,41 @@ suite('Language Server: Middleware', () => {
       product,
       issueId,
     });
+  });
+
+  test('unmarks explicitly changed keys after emitting a reset (value: null)', async () => {
+    const unmarkStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      unmarkExplicitlyChanged: unmarkStub,
+      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
+    };
+
+    // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
+    const configWithNullOrg = {
+      ...configuration,
+      organization: null as unknown as string,
+    } as IConfiguration;
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configWithNullOrg,
+      user,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      tracker,
+    );
+
+    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
+    const token: CancellationToken = {
+      isCancellationRequested: false,
+      onCancellationRequested: sinon.fake(),
+    };
+
+    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+
+    assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
   });
 });
