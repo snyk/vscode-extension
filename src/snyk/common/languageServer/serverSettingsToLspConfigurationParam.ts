@@ -63,9 +63,6 @@ function resolveChanged(lsKey: string, value: unknown, isExplicitlyChanged: Expl
   if (LS_KEY_ALWAYS_CHANGED_TRUE.has(lsKey)) {
     return true;
   }
-  if (lsKey === LS_KEY.token && typeof value === 'string' && value.trim()) {
-    return true;
-  }
   if (lsKey === LS_KEY.trustedFolders && value !== undefined && Array.isArray(value)) {
     return true;
   }

@@ -52,6 +52,14 @@ suite('serverSettingsToLspConfigurationParam', () => {
     assert.strictEqual(param.settings?.[LS_KEY.apiEndpoint]?.changed, false);
   });
 
+  test('token uses explicit predicate for changed flag', () => {
+    const paramNotChanged = serverSettingsToLspConfigurationParam(minimalServerSettings({ token: 'tok' }), () => false);
+    assert.strictEqual(paramNotChanged.settings?.[LS_KEY.token]?.changed, false);
+
+    const paramChanged = serverSettingsToLspConfigurationParam(minimalServerSettings({ token: 'tok' }), () => true);
+    assert.strictEqual(paramChanged.settings?.[LS_KEY.token]?.changed, true);
+  });
+
   test('hover_verbosity uses changed: true regardless of explicit predicate', () => {
     const param = serverSettingsToLspConfigurationParam(minimalServerSettings({ hoverVerbosity: 2 }), () => false);
     assert.strictEqual(param.settings?.[LS_KEY.hoverVerbosity]?.changed, true);
