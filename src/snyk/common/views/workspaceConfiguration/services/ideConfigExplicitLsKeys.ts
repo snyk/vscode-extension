@@ -56,7 +56,7 @@ export async function markExplicitLsKeysFromIdeConfigDiff(
   }
 
   if (config.insecure !== undefined && config.insecure !== configuration.getInsecure()) {
-    tracker.markExplicitlyChanged(LS_KEY.cliInsecure);
+    tracker.markExplicitlyChanged(LS_KEY.proxyInsecure);
   }
 
   if (

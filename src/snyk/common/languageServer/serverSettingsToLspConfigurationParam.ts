@@ -24,7 +24,7 @@ export const LS_KEY = {
   sendErrorReports: 'send_error_reports',
   trustEnabled: 'trust_enabled',
   automaticDownload: 'automatic_download',
-  cliInsecure: 'proxy_insecure',
+  proxyInsecure: 'proxy_insecure',
   enableSnykOssQuickFixActions: 'enable_snyk_oss_quick_fix_code_actions',
   autoConfigureMcpServer: 'auto_configure_mcp_server',
   scanAutomatic: 'scan_automatic',
@@ -74,7 +74,10 @@ function putSetting(
   value: unknown,
   isExplicitlyChanged: ExplicitChangePredicate,
 ): void {
-  out[key] = { value, changed: resolveChanged(key, value, isExplicitlyChanged) };
+  out[key] = {
+    value,
+    changed: resolveChanged(key, value, isExplicitlyChanged),
+  };
 }
 
 /**
@@ -144,7 +147,7 @@ export function serverSettingsToLspConfigurationParam(
   putBoolStr(m, LS_KEY.sendErrorReports, settings.sendErrorReports, isExplicitlyChanged);
   putBoolStr(m, LS_KEY.trustEnabled, settings.enableTrustedFoldersFeature, isExplicitlyChanged);
   putBoolStr(m, LS_KEY.automaticDownload, settings.manageBinariesAutomatically, isExplicitlyChanged);
-  putBoolStr(m, LS_KEY.cliInsecure, settings.insecure, isExplicitlyChanged);
+  putBoolStr(m, LS_KEY.proxyInsecure, settings.insecure, isExplicitlyChanged);
   putBoolStr(m, LS_KEY.enableSnykOssQuickFixActions, settings.enableSnykOSSQuickFixCodeActions, isExplicitlyChanged);
   putBoolStr(m, LS_KEY.autoConfigureMcpServer, settings.autoConfigureSnykMcpServer, isExplicitlyChanged);
 

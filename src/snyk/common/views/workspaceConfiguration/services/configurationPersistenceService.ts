@@ -3,7 +3,6 @@
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
-import { ADVANCED_ORGANIZATION } from '../../../constants/settings';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
@@ -61,9 +60,11 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         const normalizedExistingToken = existingToken?.trim() || '';
         if (normalizedNewToken !== normalizedExistingToken) {
           await this.configuration.setToken(config.token);
-          await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
         }
       }
+
+      // Notify the LS once after all settings (including token) have been written
+      await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
 
       this.logger.info('Workspace configuration saved successfully');
     } catch (e) {
@@ -106,36 +107,25 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   private async applySettingsMap(settingsMap: Record<string, unknown>): Promise<void> {
-    const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
+    for (const [settingKey, value] of Object.entries(settingsMap)) {
       try {
         const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
 
-        if (settingKey === ADVANCED_ORGANIZATION) {
-          const workspaceFolders = this.workspace.getWorkspaceFolders();
-          const isSingleFolderWorkspace = workspaceFolders.length === 1;
-          const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
-          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
-          const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
-          await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
-          this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
-        } else {
-          const scope = this.scopeDetectionService.getSettingScope(settingKey);
+        const scope = this.scopeDetectionService.getSettingScope(settingKey);
 
-          if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
-            this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
-            return;
-          }
-
-          await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
-
-          this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
+        if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
+          this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
+          continue;
         }
+
+        await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
+
+        this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
         this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
       }
-    });
+    }
 
-    await Promise.all(updates);
     this.logger.info('Successfully applied settings map to VS Code configuration');
   }
 
@@ -175,7 +165,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       return currentFolderConfig;
     });
 
-    await this.configuration.setFolderConfigs(updatedFolderConfigs, true);
+    await this.configuration.setFolderConfigs(updatedFolderConfigs, false);
   }
 
   private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {

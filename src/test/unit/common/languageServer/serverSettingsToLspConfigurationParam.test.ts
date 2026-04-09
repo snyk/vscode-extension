@@ -85,7 +85,12 @@ suite('serverSettingsToLspConfigurationParam', () => {
   test('maps filterSeverity to enabled_severities object', () => {
     const param = serverSettingsToLspConfigurationParam(
       minimalServerSettings({
-        filterSeverity: { critical: true, high: false, medium: true, low: false },
+        filterSeverity: {
+          critical: true,
+          high: false,
+          medium: true,
+          low: false,
+        },
       }),
     );
     assert.deepStrictEqual(param.settings?.[LS_KEY.enabledSeverities]?.value, {
@@ -111,10 +116,22 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => true,
     );
-    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: '', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.token], { value: '', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.additionalParameters], { value: '', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], { value: '', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], {
+      value: '',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.token], {
+      value: '',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.additionalParameters], {
+      value: '',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], {
+      value: '',
+      changed: true,
+    });
   });
 
   test('omits empty string settings when not explicitly changed', () => {
@@ -137,8 +154,14 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => true,
     );
-    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], { value: null, changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: null, changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.organization], {
+      value: null,
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], {
+      value: null,
+      changed: true,
+    });
   });
 
   test('omits undefined settings even when explicitly changed (undefined means no value)', () => {
@@ -175,10 +198,22 @@ suite('serverSettingsToLspConfigurationParam', () => {
       }),
       () => true,
     );
-    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], { value: '  ', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.binaryBaseUrl], { value: '\t', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.cliPath], { value: '', changed: true });
-    assert.deepStrictEqual(param.settings?.[LS_KEY.token], { value: '   ', changed: true });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.apiEndpoint], {
+      value: '  ',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.binaryBaseUrl], {
+      value: '\t',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.cliPath], {
+      value: '',
+      changed: true,
+    });
+    assert.deepStrictEqual(param.settings?.[LS_KEY.token], {
+      value: '   ',
+      changed: true,
+    });
   });
 
   test('omits whitespace-only strings when not explicitly changed', () => {
@@ -298,10 +333,10 @@ suite('serverSettingsToLspInitializationOptions', () => {
     const flat = minimalServerSettings({
       insecure: 'true',
     });
-    const init = serverSettingsToLspInitializationOptions(flat, lsKey => lsKey === LS_KEY.cliInsecure);
+    const init = serverSettingsToLspInitializationOptions(flat, lsKey => lsKey === LS_KEY.proxyInsecure);
 
-    assert.strictEqual(init.settings[LS_KEY.cliInsecure]?.value, true);
-    assert.strictEqual(init.settings[LS_KEY.cliInsecure]?.changed, true);
+    assert.strictEqual(init.settings[LS_KEY.proxyInsecure]?.value, true);
+    assert.strictEqual(init.settings[LS_KEY.proxyInsecure]?.changed, true);
 
     assert.strictEqual(init.settings[LS_KEY.snykCodeEnabled]?.value, true);
     assert.strictEqual(init.settings[LS_KEY.snykCodeEnabled]?.changed, false);

@@ -55,7 +55,7 @@ export function mergedGlobalSettingsToIdeConfigData(
   const autoDl = getValue<boolean>(globalSettings[LS_KEY.automaticDownload]);
   if (autoDl !== undefined) out.manageBinariesAutomatically = autoDl;
 
-  const cliInsecure = getValue<boolean>(globalSettings[LS_KEY.cliInsecure]);
+  const cliInsecure = getValue<boolean>(globalSettings[LS_KEY.proxyInsecure]);
   if (cliInsecure !== undefined) out.insecure = cliInsecure;
 
   const scanAuto = getValue<boolean>(globalSettings[LS_KEY.scanAutomatic]);

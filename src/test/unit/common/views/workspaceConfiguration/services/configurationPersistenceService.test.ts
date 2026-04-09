@@ -2,7 +2,6 @@
 // ABOUTME: Tests organization persistence scope detection logic
 import assert from 'assert';
 import sinon from 'sinon';
-import { Uri } from 'vscode';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../../../../snyk/common/vscode/workspace';
@@ -18,23 +17,8 @@ import {
 } from '../../../../../../snyk/common/constants/settings';
 import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
 import { ConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
-import { WorkspaceFolder } from '../../../../../../snyk/common/vscode/types';
 import { LS_KEY } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
-
-function createMockUri(path: string): Uri {
-  return {
-    fsPath: path,
-    scheme: 'file',
-    authority: '',
-    path: path,
-    query: '',
-    fragment: '',
-    with: () => createMockUri(path),
-    toString: () => `file://${path}`,
-    toJSON: () => ({ fsPath: path }),
-  } as Uri;
-}
 
 suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let workspace: IVSCodeWorkspace;
@@ -47,18 +31,14 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let service: ConfigurationPersistenceService;
 
   let updateConfigurationStub: sinon.SinonStub;
-  let getWorkspaceFoldersStub: sinon.SinonStub;
-  let inspectConfigurationStub: sinon.SinonStub;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
-    getWorkspaceFoldersStub = sinon.stub();
-    inspectConfigurationStub = sinon.stub();
 
     workspace = {
       updateConfiguration: updateConfigurationStub,
-      getWorkspaceFolders: getWorkspaceFoldersStub,
-      inspectConfiguration: inspectConfigurationStub,
+      getWorkspaceFolders: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({}),
     } as unknown as IVSCodeWorkspace;
 
     configuration = {
@@ -132,24 +112,10 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
     sinon.restore();
   });
 
-  suite('Scope Detection Logic - Line 91', () => {
-    test('writes to user scope in single-folder workspace', async () => {
-      // Setup single-folder workspace
-      const mockFolder: WorkspaceFolder = {
-        uri: createMockUri('/test/folder'),
-        name: 'folder',
-        index: 0,
-      };
-      getWorkspaceFoldersStub.returns([mockFolder]);
+  suite('Organization uses scopeDetectionService', () => {
+    test('writes org to user scope via scopeDetectionService', async () => {
+      (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('user');
 
-      // Setup inspection to return no workspace value
-      inspectConfigurationStub.returns({
-        globalValue: undefined,
-        workspaceValue: undefined,
-        workspaceFolderValue: undefined,
-      });
-
-      // Mock mapConfigToSettings to return organization setting
       (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
         [ADVANCED_ORGANIZATION]: 'test-org',
       });
@@ -161,38 +127,18 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
 
       await service.handleSaveConfig(configJson);
 
-      // Verify updateConfiguration was called with user scope (true)
       sinon.assert.calledWith(
         updateConfigurationStub,
         CONFIGURATION_IDENTIFIER,
         'advanced.organization',
         'test-org',
-        true, // writeToUserScope should be true
+        true, // user scope → writeToUserScope = true
       );
     });
 
-    test('writes to workspace scope when previously modified at workspace level in multi-folder', async () => {
-      // Setup multi-folder workspace
-      const mockFolder1: WorkspaceFolder = {
-        uri: createMockUri('/test/folder1'),
-        name: 'folder1',
-        index: 0,
-      };
-      const mockFolder2: WorkspaceFolder = {
-        uri: createMockUri('/test/folder2'),
-        name: 'folder2',
-        index: 1,
-      };
-      getWorkspaceFoldersStub.returns([mockFolder1, mockFolder2]);
+    test('writes org to workspace scope via scopeDetectionService', async () => {
+      (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('workspace');
 
-      // Setup inspection to show workspace value exists
-      inspectConfigurationStub.returns({
-        globalValue: undefined,
-        workspaceValue: 'existing-workspace-org',
-        workspaceFolderValue: undefined,
-      });
-
-      // Mock mapConfigToSettings to return organization setting
       (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
         [ADVANCED_ORGANIZATION]: 'new-org',
       });
@@ -204,38 +150,19 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
 
       await service.handleSaveConfig(configJson);
 
-      // Verify updateConfiguration was called with workspace scope (false)
       sinon.assert.calledWith(
         updateConfigurationStub,
         CONFIGURATION_IDENTIFIER,
         'advanced.organization',
         'new-org',
-        false, // writeToUserScope should be false
+        false, // workspace scope → writeToUserScope = false
       );
     });
 
-    test('writes to user scope when NOT previously modified in multi-folder workspace', async () => {
-      // Setup multi-folder workspace
-      const mockFolder1: WorkspaceFolder = {
-        uri: createMockUri('/test/folder1'),
-        name: 'folder1',
-        index: 0,
-      };
-      const mockFolder2: WorkspaceFolder = {
-        uri: createMockUri('/test/folder2'),
-        name: 'folder2',
-        index: 1,
-      };
-      getWorkspaceFoldersStub.returns([mockFolder1, mockFolder2]);
+    test('skips org update when shouldSkipSettingUpdate returns true', async () => {
+      (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('user');
+      (scopeDetectionService.shouldSkipSettingUpdate as sinon.SinonStub).returns(true);
 
-      // Setup inspection to show NO workspace value
-      inspectConfigurationStub.returns({
-        globalValue: 'global-org',
-        workspaceValue: undefined,
-        workspaceFolderValue: undefined,
-      });
-
-      // Mock mapConfigToSettings to return organization setting
       (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
         [ADVANCED_ORGANIZATION]: 'test-org',
       });
@@ -247,14 +174,7 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
 
       await service.handleSaveConfig(configJson);
 
-      // Verify updateConfiguration was called with user scope (true)
-      sinon.assert.calledWith(
-        updateConfigurationStub,
-        CONFIGURATION_IDENTIFIER,
-        'advanced.organization',
-        'test-org',
-        true, // writeToUserScope should be true
-      );
+      sinon.assert.notCalled(updateConfigurationStub);
     });
   });
 });

@@ -427,9 +427,8 @@ export class Configuration implements IConfiguration {
   }
 
   getInsecure(): boolean {
-    const strictSSL =
-      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
-    return !strictSSL;
+    const strictSSL = this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL);
+    return !(strictSSL ?? true);
   }
 
   static async getVersion(): Promise<string> {
