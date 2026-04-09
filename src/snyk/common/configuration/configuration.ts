@@ -11,7 +11,6 @@ import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
-  ADVANCED_AUTO_SELECT_ORGANIZATION,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_BASE_DOWNLOAD_URL,
@@ -199,8 +198,6 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   low: true,
 };
 
-const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
-
 export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
 export type PreviewFeatures = Record<string, never>;
@@ -247,42 +244,6 @@ export interface IConfiguration {
    * Returns empty string if not set.
    */
   organization: string;
-
-  /**
-   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns true if auto organization is enabled, false otherwise
-   */
-  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean;
-
-  /**
-   * Sets the auto organization setting at the workspace folder level.
-   * @param workspaceFolder - The workspace folder to set the setting for
-   * @param autoSelectOrganization - Whether auto organization should be enabled
-   */
-  setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void>;
-
-  /**
-   * Gets the organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns The organization ID/name, or undefined if not set
-   */
-  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
-
-  /**
-   * Gets the organization setting ONLY at the workspace folder level (no fallback to workspace/global).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns The organization ID/name set specifically at folder level, or undefined if not set at folder level
-   */
-  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined;
-
-  /**
-   * Sets the organization at the workspace folder level.
-   * If the empty string or undefined is provided, the organization will be cleared.
-   * @param workspaceFolder - The workspace folder to set the organization for
-   * @param organization - The organization ID/name to set, or undefined to clear
-   */
-  setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
   getAdditionalCliParameters(): string | undefined;
 
@@ -713,18 +674,6 @@ export class Configuration implements IConfiguration {
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
-  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
-    return (
-      this.workspace.getConfiguration<boolean>(configurationId, section, workspaceFolder) ?? DEFAULT_AUTO_ORGANIZATION
-    );
-  }
-
-  async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
-    await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
-  }
-
   get organization(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
     const workspaceFolders = this.workspace.getWorkspaceFolders();
@@ -737,26 +686,6 @@ export class Configuration implements IConfiguration {
 
     // If multiple folders, return workspace scope, falling back to user (global) scope
     return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
-  }
-
-  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    return this.workspace.getConfiguration<string>(configurationId, section, workspaceFolder);
-  }
-
-  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    return this.workspace.inspectConfiguration<string>(configurationId, section, workspaceFolder)?.workspaceFolderValue;
-  }
-
-  async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    await this.workspace.updateConfiguration(
-      configurationId,
-      section,
-      organization === '' ? undefined : organization,
-      workspaceFolder,
-    );
   }
 
   getPreviewFeatures(): PreviewFeatures {

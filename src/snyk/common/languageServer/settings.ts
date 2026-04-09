@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import {
   Configuration,
-  type FolderConfig,
+  FolderConfig,
   IConfiguration,
   IssueViewOptions,
   SeverityFilter,
@@ -10,8 +10,6 @@ import {
 import { User } from '../user';
 import { PROTOCOL_VERSION } from '../constants/languageServer';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
-import { synthesizeFolderConfigsFromWorkspace } from './synthesizeFolderConfigsFromWorkspace';
-
 export type ServerSettings = {
   // Feature toggles
   activateSnykCodeSecurity?: string;
@@ -76,7 +74,7 @@ export class LanguageServerSettings {
     let folderConfigs = configuration.getFolderConfigs();
     const wsFolders = workspace?.getWorkspaceFolders?.();
     if (folderConfigs.length === 0 && wsFolders?.length) {
-      folderConfigs = synthesizeFolderConfigsFromWorkspace(configuration, wsFolders);
+      folderConfigs = wsFolders.map(wf => new FolderConfig(wf.uri.fsPath));
     }
     return folderConfigs;
   }

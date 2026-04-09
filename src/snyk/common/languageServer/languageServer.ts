@@ -61,8 +61,6 @@ export class LanguageServer implements ILanguageServer {
   private geminiIntegrationService: GeminiIntegrationService;
   readonly showIssueDetailTopic$ = new Subject<ShowIssueDetailTopicParams>();
 
-  // Track folder paths where LS is updating org settings to prevent circular updates
-  private static foldersBeingUpdatedByLS = new Set<string>();
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
   private configurationChangeDisposable?: Disposable;
   /** When true, VS Code `settings.json` updates from inbound LS persistence must not mark keys as explicitly changed. */
@@ -70,31 +68,6 @@ export class LanguageServer implements ILanguageServer {
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private inboundPersistenceChain: Promise<void> = Promise.resolve();
   private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
-
-  static isLSUpdatingOrg(folderPath: string): boolean {
-    return LanguageServer.foldersBeingUpdatedByLS.has(folderPath);
-  }
-
-  /**
-   * Should only be needed by tests.
-   */
-  static clearLSUpdatingOrgState(): void {
-    LanguageServer.foldersBeingUpdatedByLS.clear();
-  }
-
-  /**
-   * @internal Tests — simulate `foldersBeingUpdatedByLS` while LS applies org from inbound folder settings.
-   */
-  static beginLSOrgUpdateFromFolderConfigsForTests(folderPath: string): void {
-    LanguageServer.foldersBeingUpdatedByLS.add(folderPath);
-  }
-
-  /**
-   * @internal Tests — end simulated org update for one folder.
-   */
-  static endLSOrgUpdateFromFolderConfigsForTests(folderPath: string): void {
-    LanguageServer.foldersBeingUpdatedByLS.delete(folderPath);
-  }
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
@@ -317,9 +290,6 @@ export class LanguageServer implements ILanguageServer {
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
       if (!e.affectsConfiguration('snyk') && !e.affectsConfiguration('http')) {
-        return;
-      }
-      if (LanguageServer.foldersBeingUpdatedByLS.size > 0) {
         return;
       }
       if (this.suppressExplicitKeyMarkingFromInboundPersistence) {
