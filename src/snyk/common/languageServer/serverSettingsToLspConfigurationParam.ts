@@ -221,8 +221,11 @@ export function serverSettingsToLspConfigurationParam(
  * fields (mirrors `internal/types/lsp.go` `InitializationOptions`).
  */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access -- `lsp` is LspConfigurationParam; member access is safe */
-export function serverSettingsToLspInitializationOptions(flat: ServerSettings): LspInitializationOptions {
-  const lsp: LspConfigurationParam = serverSettingsToLspConfigurationParam(flat, () => true);
+export function serverSettingsToLspInitializationOptions(
+  flat: ServerSettings,
+  isExplicitlyChanged: ExplicitChangePredicate,
+): LspInitializationOptions {
+  const lsp: LspConfigurationParam = serverSettingsToLspConfigurationParam(flat, isExplicitlyChanged);
   const out: LspInitializationOptions = {
     settings: lsp.settings ?? {},
     requiredProtocolVersion: flat.requiredProtocolVersion,

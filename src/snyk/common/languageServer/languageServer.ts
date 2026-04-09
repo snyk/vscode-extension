@@ -342,7 +342,9 @@ export class LanguageServer implements ILanguageServer {
       this.workspace,
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- return type is LspInitializationOptions; ESLint infers `any` from mapper chain
-    return serverSettingsToLspInitializationOptions(flat);
+    return serverSettingsToLspInitializationOptions(flat, lsKey =>
+      this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
+    );
   }
 
   showOutputChannel(): void {

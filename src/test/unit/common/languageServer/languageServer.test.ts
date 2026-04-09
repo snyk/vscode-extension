@@ -447,7 +447,10 @@ suite('Language Server', () => {
         };
 
         const initializationOptions = await languageServer.getInitializationOptions();
-        deepStrictEqual(initializationOptions, serverSettingsToLspInitializationOptions(expectedFlat));
+        deepStrictEqual(
+          initializationOptions,
+          serverSettingsToLspInitializationOptions(expectedFlat, () => true),
+        );
       });
     });
 

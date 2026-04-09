@@ -280,7 +280,7 @@ suite('serverSettingsToLspInitializationOptions', () => {
       path: '/workspace',
       trustedFolders: ['/a'],
     });
-    const init = serverSettingsToLspInitializationOptions(flat);
+    const init = serverSettingsToLspInitializationOptions(flat, () => true);
     assert.strictEqual(init.requiredProtocolVersion, '25');
     assert.strictEqual(init.deviceId, 'device-1');
     assert.strictEqual(init.integrationName, 'VS_CODE');
@@ -292,5 +292,18 @@ suite('serverSettingsToLspInitializationOptions', () => {
     assert.strictEqual(init.path, '/workspace');
     assert.deepStrictEqual(init.trustedFolders, ['/a']);
     assert.strictEqual(init.settings[LS_KEY.token]?.value, 'tok');
+  });
+
+  test('respects explicit change predicate for changed flags', () => {
+    const flat = minimalServerSettings({
+      insecure: 'true',
+    });
+    const init = serverSettingsToLspInitializationOptions(flat, lsKey => lsKey === LS_KEY.cliInsecure);
+
+    assert.strictEqual(init.settings[LS_KEY.cliInsecure]?.value, true);
+    assert.strictEqual(init.settings[LS_KEY.cliInsecure]?.changed, true);
+
+    assert.strictEqual(init.settings[LS_KEY.snykCodeEnabled]?.value, true);
+    assert.strictEqual(init.settings[LS_KEY.snykCodeEnabled]?.changed, false);
   });
 });
