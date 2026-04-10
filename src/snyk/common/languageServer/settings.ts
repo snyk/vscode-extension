@@ -101,6 +101,7 @@ export class LanguageServerSettings {
       putSetting(m, LS_KEY.riskScoreThreshold, riskScoreThreshold, isExplicitlyChanged);
     }
 
+    putSetting(m, LS_KEY.hoverVerbosity, 1, isExplicitlyChanged);
     putSetting(m, LS_KEY.trustedFolders, configuration.getTrustedFolders(), isExplicitlyChanged);
     putStringOrReset(
       m,
