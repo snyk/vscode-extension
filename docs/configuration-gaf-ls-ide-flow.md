@@ -1,6 +1,6 @@
 # Configuration: GAF → snyk-ls → IDE
 
-High-level flow for how settings are stored in GAF, resolved in **snyk-ls**, pushed to IDEs, and how **merges** relate to the **VS Code** extension (`mergeInboundLspConfiguration`, IDE-1638). The language server delivers effective config (including per-folder rows) on **`$/snyk.configuration`** as **`LspConfigurationParam`**; the VS Code client does **not** subscribe to the legacy **`$/snyk.folderConfigs`** notification.
+High-level flow for how settings are stored in GAF, resolved in **snyk-ls**, pushed to IDEs, and how **merges** relate to the **VS Code** extension (`handleSnykConfigurationNotification` + `persistInboundLspConfiguration`, IDE-1638). The language server delivers effective config (including per-folder rows) on **`$/snyk.configuration`** as **`LspConfigurationParam`**; the VS Code client does **not** subscribe to the legacy **`$/snyk.folderConfigs`** notification.
 
 ## Diagram
 
@@ -29,7 +29,7 @@ flowchart TB
 
   subgraph ide["IDE"]
     HNDL["LanguageClient<br/>onNotification"]
-    MERGE_UI["mergeInboundLspConfiguration<br/>(merge #2 — non-authoritative:<br/>global+folder overlay for UI & persistence)"]
+    MERGE_UI["handleSnykConfigurationNotification<br/>(merge #2 — non-authoritative:<br/>global+folder overlay for UI & persistence)"]
     VIEW["Webview / settings UI<br/>locks, source, values"]
     DCC["workspace/didChangeConfiguration<br/>(partial deltas)"]
   end
@@ -56,13 +56,13 @@ Source (editable): [`docs/diagrams/configuration-gaf-ls-ide-flow.mmd`](diagrams/
 |---|----------|----------------|
 | **1** | **snyk-ls / GAF / `ConfigResolver`** | Prefix layers (`user:global`, `user:folder`, `remote:*`, defaults) → **authoritative** effective value per setting, folder, and org. This is the real precedence chain (see snyk-ls `docs/configuration.md` when present). |
 | **2** | **LS outbound** | Builds **`LspConfigurationParam`**: global `settings` map + per-folder `folderConfigs[].settings` with **`ConfigSetting`** (`value`, `source`, `originScope`, `isLocked`). Already reflects resolver output. |
-| **3** | **IDE (VS Code) — `mergeInboundLspConfiguration`** | **Not a second `ConfigResolver`**: shallow **`global ∪ folder`** overlay of one inbound payload into **`MergedLspConfigurationView`** for webview and persistence mappers. Does **not** re-run GAF precedence or override LS authority; LS keys match LS. |
-| **4** | **VS Code — outbound `folderConfigs` (init + `workspace/didChangeConfiguration`)** | **`LanguageServerSettings.resolveFolderConfigsForServerSettings`**: use **`IConfiguration.getFolderConfigs()`** when non-empty; if empty and the workspace has folders, **`synthesizeFolderConfigsFromWorkspace`**. Feeds **`LanguageServerSettings.fromConfiguration`** → **`serverSettingsToLspConfigurationParam`**. |
-| **—** | **`$/snyk.configuration` (inbound)** | Carries **`LspConfigurationParam`**: global **`settings`** plus optional **`folderConfigs[]`** (per-folder paths and **`settings`** maps). VS Code merges with **`mergeInboundLspConfiguration`** for **UI + persistence** (see **#3**). **VS Code does not register** the legacy **`$/snyk.folderConfigs`** notification. |
+| **3** | **IDE (VS Code) — `handleSnykConfigurationNotification`** | **Not a second `ConfigResolver`**: receives the inbound `LspConfigurationParam` payload and forwards it to `persistInboundLspConfiguration` for webview and persistence mappers. Does **not** re-run GAF precedence or override LS authority; LS keys match LS. |
+| **4** | **VS Code — outbound `folderConfigs` (init + `workspace/didChangeConfiguration`)** | **`LanguageServerSettings.resolveFolderConfigsForServerSettings`**: use **`IConfiguration.getFolderConfigs()`** when non-empty; if empty and the workspace has folders, synthesize per-folder rows from workspace folders inline. Feeds **`LanguageServerSettings.fromConfiguration`** → **`serverSettingsToLspConfigurationParam`**. |
+| **—** | **`$/snyk.configuration` (inbound)** | Carries **`LspConfigurationParam`**: global **`settings`** plus optional **`folderConfigs[]`** (per-folder paths and **`settings`** maps). VS Code handles via **`handleSnykConfigurationNotification`** → **`persistInboundLspConfiguration`** for **UI + persistence** (see **#3**). **VS Code does not register** the legacy **`$/snyk.folderConfigs`** notification. |
 
 ## Round trip
 
-- **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks); **`mergeInboundLspConfiguration`** shapes it for **UI and persistence** (still **not** authoritative vs merge #1).
+- **LS → IDE:** `$/snyk.configuration` pushes effective state (and locks); **`handleSnykConfigurationNotification`** forwards it to **`persistInboundLspConfiguration`** for **UI and persistence** (still **not** authoritative vs merge #1).
 - **LS → `settings.json` (VS Code, optional):** `ConfigurationPersistenceService.persistInboundLspConfiguration` maps the global snapshot into VS Code settings. While inbound persistence is running, explicit key marking is suppressed (`suppressExplicitKeyMarkingFromInboundPersistence`) so LS-originated writes are not mistakenly recorded as user overrides.
 - **IDE → LS (pull model):** `synchronize.configurationSection` triggers **`workspace/didChangeConfiguration`** with a flat VS Code settings payload whenever the `snyk` section changes. snyk-ls cannot parse this flat payload as **`LspConfigurationParam`**, so it falls back to the **pull model**: snyk-ls sends a **`workspace/configuration`** request, and the **`LanguageClientMiddleware`** responds with **`[{ settings: LspConfigurationParam }]`** — structured config with proper **`changed`** flags. Only settings marked as **explicitly changed** by the user (tracked via **`ExplicitLspConfigurationChangeTracker`**) have **`changed: true`**; all others have **`changed: false`** so snyk-ls does not treat them as user overrides.
 
@@ -72,7 +72,7 @@ The extension sets **`synchronize.configurationSection`** to `'snyk'`. When the 
 
 The **`LanguageClientMiddleware`** intercepts this request and builds a structured **`LspConfigurationParam`** response via **`serverSettingsToLspConfigurationParam`**, using **`ExplicitLspConfigurationChangeTracker.isExplicitlyChanged()`** to set the **`changed`** flag on each setting. The middleware returns **`[{ settings: <LspConfigurationParam> }]`** (matching the **`[]DidChangeConfigurationParams`** shape snyk-ls expects).
 
-**Explicit key tracking:** After the language client starts, **`LanguageServer`** registers **`workspace.onDidChangeConfiguration`** to mark which LS keys the user has explicitly changed (via **`markExplicitLsKeysFromConfigurationChangeEvent`**). This marking is suppressed while **`foldersBeingUpdatedByLS`** is non-empty or during inbound persistence, to avoid recording LS-originated changes as user overrides.
+**Explicit key tracking:** After the language client starts, **`LanguageServer`** registers **`workspace.onDidChangeConfiguration`** to mark which LS keys the user has explicitly changed (via **`markExplicitLsKeysFromConfigurationChangeEvent`**). This marking is suppressed during inbound persistence (`suppressExplicitKeyMarkingFromInboundPersistence`), to avoid recording LS-originated changes as user overrides.
 
 ### IDE → LS outbound requirements (`LspConfigurationParam`)
 
@@ -105,5 +105,5 @@ Locked controls get `disabled` (when applicable), class `snyk-lsp-locked`, and o
 ## References
 
 - snyk-ls (e.g. IDE-1786 / config refactor): `ConfigSetting`, `LspConfigurationParam`, `docs/configuration.md`.
-- VS Code extension: `lspConfigurationMerge.ts`, `LanguageServer` inbound view, IDE-1638.
+- VS Code extension: `languageServer.ts`, `configurationPersistenceService.ts`, IDE-1638.
 - **Flat IDE settings → `LspConfigurationParam`:** `serverSettingsToLspConfigurationParam.ts` (`serverSettingsToLspConfigurationParam`, `folderConfigToLspFolderConfiguration`) mirrors snyk-ls `legacySettingsToLspConfigurationParam` / LS key names in `internal/types/ldx_sync_config.go`.

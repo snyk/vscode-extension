@@ -502,13 +502,6 @@ suite('Language Server', () => {
   });
 
   suite('snyk.configuration notification', () => {
-    let syncLoggedInFromStoredTokenStub: sinon.SinonStub;
-
-    setup(() => {
-      syncLoggedInFromStoredTokenStub = sinon.stub().resolves();
-      authServiceMock.syncLoggedInContextFromStoredTokenIfValid = syncLoggedInFromStoredTokenStub;
-    });
-
     test('should register handler and handle payload', async () => {
       const debugSpy = sinon.spy(logger, 'debug');
 
@@ -529,7 +522,6 @@ suite('Language Server', () => {
       });
 
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
-      sinon.assert.calledOnce(syncLoggedInFromStoredTokenStub);
       debugSpy.restore();
     });
   });

@@ -302,7 +302,6 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     try {
       this.logger.debug('Received $/snyk.configuration notification');
-      void this.authenticationService.syncLoggedInContextFromStoredTokenIfValid();
       void this.runInboundPersistence(params);
     } catch (error) {
       this.logger.error(

@@ -32,5 +32,4 @@ export interface IExtension extends IBaseSnykModule, ISnykLib {
   stopLanguageServer(): Promise<void>;
   restartLanguageServer(): Promise<void>;
   initDependencyDownload(): DownloadService;
-  syncLoggedInContextFromStoredTokenIfValid(): Promise<void>;
 }

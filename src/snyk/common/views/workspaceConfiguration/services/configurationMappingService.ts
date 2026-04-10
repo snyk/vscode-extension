@@ -2,12 +2,15 @@
 // ABOUTME: Uses LS_KEY_TO_VSCODE_KEY as single source of truth for key mapping
 import { ALLISSUES, NEWISSUES } from '../../../configuration/configuration';
 import {
+  ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_CLI_RELEASE_CHANNEL,
   AUTH_METHOD_OAUTH,
   AUTH_METHOD_PAT,
   AUTH_METHOD_TOKEN,
+  DELTA_FINDINGS,
   HTTP_PROXY_STRICT_SSL_SETTING,
   ISSUE_VIEW_OPTIONS_SETTING,
+  SCANNING_MODE,
   SEVERITY_FILTER_SETTING,
 } from '../../../constants/settings';
 import { LS_KEY } from '../../../languageServer/serverSettingsToLspConfigurationParam';
@@ -71,11 +74,9 @@ export class ConfigurationMappingService implements IConfigurationMappingService
     }
 
     if (!isCliOnly) {
-      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.scanNetNew]] = config.scan_net_new ? NEWISSUES : ALLISSUES;
-      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.scanAutomatic]] = config.scan_automatic ? 'auto' : 'manual';
-      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.authenticationMethod]] = this.normalizeAuthenticationMethod(
-        config.authentication_method,
-      );
+      result[DELTA_FINDINGS] = config.scan_net_new ? NEWISSUES : ALLISSUES;
+      result[SCANNING_MODE] = config.scan_automatic ? 'auto' : 'manual';
+      result[ADVANCED_AUTHENTICATION_METHOD] = this.normalizeAuthenticationMethod(config.authentication_method);
 
       // Composite: two LS keys → one VS Code setting
       if (config.issue_view_open_issues !== undefined || config.issue_view_ignored_issues !== undefined) {

@@ -117,7 +117,6 @@ class ConfigurationWatcher implements IWatcher {
 
     SecretStorageAdapter.instance.onDidChange(event => {
       if (event.key === SNYK_TOKEN_KEY) {
-        void extension.syncLoggedInContextFromStoredTokenIfValid();
         return extension.runScan();
       }
     });
