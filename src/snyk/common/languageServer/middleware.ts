@@ -19,6 +19,7 @@ import type {
 import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import { unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
 import { serverSettingsToLspConfigurationParam } from './serverSettingsToLspConfigurationParam';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
@@ -81,14 +82,8 @@ export class LanguageClientMiddleware implements Middleware {
         lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
       );
 
-      // After sending a reset (value: null, changed: true) the LS clears the override,
-      // so unmark the key to avoid permanently re-sending changed: true on future pulls.
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
-        for (const [key, entry] of Object.entries(lspParam.settings)) {
-          if (entry.value === null && entry.changed === true) {
-            this.explicitLspConfigurationChangeTracker.unmarkExplicitlyChanged(key);
-          }
-        }
+        unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
       }
 
       return [{ settings: lspParam }];

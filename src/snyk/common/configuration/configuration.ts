@@ -5,6 +5,7 @@ import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
 import type { LspConfigSetting, LspFolderConfiguration } from '../languageServer/types';
+import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { IViewManagerService } from '../services/viewManagerService';
 import {
@@ -84,18 +85,6 @@ export class FolderConfig {
   readonly folderPath: string;
   settings: Record<string, LspConfigSetting>;
 
-  /** LS setting keys used by the class.  Kept here so both read and write paths share them. */
-  static readonly LS_KEY = {
-    baseBranch: 'base_branch',
-    localBranches: 'local_branches',
-    referenceFolder: 'reference_folder',
-    preferredOrg: 'preferred_org',
-    autoDeterminedOrg: 'auto_determined_org',
-    orgSetByUser: 'org_set_by_user',
-    featureFlags: 'feature_flags',
-    scanCommandConfig: 'scan_command_config',
-  } as const;
-
   constructor(folderPath: string, settings: Record<string, LspConfigSetting> = {}) {
     this.folderPath = folderPath;
     this.settings = settings;
@@ -104,35 +93,35 @@ export class FolderConfig {
   // --- typed getters ---------------------------------------------------
 
   baseBranch(): string {
-    return (this.settings[FolderConfig.LS_KEY.baseBranch]?.value as string) ?? '';
+    return (this.settings[LS_KEY.baseBranch]?.value as string) ?? '';
   }
 
   localBranches(): string[] | undefined {
-    return this.settings[FolderConfig.LS_KEY.localBranches]?.value as string[] | undefined;
+    return this.settings[LS_KEY.localBranches]?.value as string[] | undefined;
   }
 
   referenceFolderPath(): string | undefined {
-    return this.settings[FolderConfig.LS_KEY.referenceFolder]?.value as string | undefined;
+    return this.settings[LS_KEY.referenceFolder]?.value as string | undefined;
   }
 
   preferredOrg(): string {
-    return (this.settings[FolderConfig.LS_KEY.preferredOrg]?.value as string) ?? '';
+    return (this.settings[LS_KEY.preferredOrg]?.value as string) ?? '';
   }
 
   autoDeterminedOrg(): string {
-    return (this.settings[FolderConfig.LS_KEY.autoDeterminedOrg]?.value as string) ?? '';
+    return (this.settings[LS_KEY.autoDeterminedOrg]?.value as string) ?? '';
   }
 
   orgSetByUser(): boolean {
-    return (this.settings[FolderConfig.LS_KEY.orgSetByUser]?.value as boolean) ?? false;
+    return (this.settings[LS_KEY.orgSetByUser]?.value as boolean) ?? false;
   }
 
   featureFlags(): Record<string, boolean> | undefined {
-    return this.settings[FolderConfig.LS_KEY.featureFlags]?.value as Record<string, boolean> | undefined;
+    return this.settings[LS_KEY.featureFlags]?.value as Record<string, boolean> | undefined;
   }
 
   scanCommandConfig(): Record<string, ScanCommandConfig> | undefined {
-    return this.settings[FolderConfig.LS_KEY.scanCommandConfig]?.value as Record<string, ScanCommandConfig> | undefined;
+    return this.settings[LS_KEY.scanCommandConfig]?.value as Record<string, ScanCommandConfig> | undefined;
   }
 
   // --- setters (mark changed: true so LS picks them up) ----------------
@@ -142,23 +131,23 @@ export class FolderConfig {
   }
 
   setBaseBranch(v: string): void {
-    this.setSetting(FolderConfig.LS_KEY.baseBranch, v);
+    this.setSetting(LS_KEY.baseBranch, v);
   }
 
   setReferenceFolderPath(v: string | undefined): void {
-    this.setSetting(FolderConfig.LS_KEY.referenceFolder, v);
+    this.setSetting(LS_KEY.referenceFolder, v);
   }
 
   setOrgSetByUser(v: boolean): void {
-    this.setSetting(FolderConfig.LS_KEY.orgSetByUser, v);
+    this.setSetting(LS_KEY.orgSetByUser, v);
   }
 
   setPreferredOrg(v: string): void {
-    this.setSetting(FolderConfig.LS_KEY.preferredOrg, v);
+    this.setSetting(LS_KEY.preferredOrg, v);
   }
 
   setAutoDeterminedOrg(v: string): void {
-    this.setSetting(FolderConfig.LS_KEY.autoDeterminedOrg, v);
+    this.setSetting(LS_KEY.autoDeterminedOrg, v);
   }
 
   // --- LSP conversion --------------------------------------------------

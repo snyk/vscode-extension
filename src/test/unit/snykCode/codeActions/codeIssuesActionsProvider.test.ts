@@ -11,6 +11,7 @@ import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
 import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 import { FEATURE_FLAGS } from '../../../../snyk/common/constants/featureFlags';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;
@@ -59,7 +60,7 @@ suite('Snyk Code actions provider', () => {
     folderConfigs = {
       getFolderConfig: (_config: IConfiguration, _folderPath: string) =>
         new FolderConfig('folderName', {
-          feature_flags: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: true }, changed: false },
+          [LS_KEY.featureFlags]: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: true }, changed: false },
         }),
     } as IFolderConfigs;
 
@@ -88,7 +89,7 @@ suite('Snyk Code actions provider', () => {
     const folderConfigsDisabled = {
       getFolderConfig: (_config: IConfiguration, _folderPath: string) =>
         new FolderConfig('folderName', {
-          feature_flags: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: false }, changed: false },
+          [LS_KEY.featureFlags]: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: false }, changed: false },
         }),
     } as IFolderConfigs;
 

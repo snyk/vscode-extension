@@ -1,137 +1,110 @@
-// ABOUTME: Service for mapping between IdeConfigData and VS Code settings
-// ABOUTME: Contains mapping tables and transformation logic for configuration data
+// ABOUTME: Service for mapping between HtmlSettingsData and VS Code settings
+// ABOUTME: Uses LS_KEY_TO_VSCODE_KEY as single source of truth for key mapping
 import { ALLISSUES, NEWISSUES } from '../../../configuration/configuration';
 import {
-  OSS_ENABLED_SETTING,
-  CODE_SECURITY_ENABLED_SETTING,
-  IAC_ENABLED_SETTING,
-  SCANNING_MODE,
-  ISSUE_VIEW_OPTIONS_SETTING,
-  DELTA_FINDINGS,
-  ADVANCED_AUTHENTICATION_METHOD,
-  ADVANCED_CUSTOM_ENDPOINT,
-  TRUSTED_FOLDERS,
-  ADVANCED_CLI_PATH,
-  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
-  ADVANCED_CLI_BASE_DOWNLOAD_URL,
   ADVANCED_CLI_RELEASE_CHANNEL,
-  SEVERITY_FILTER_SETTING,
-  RISK_SCORE_THRESHOLD_SETTING,
   AUTH_METHOD_OAUTH,
   AUTH_METHOD_PAT,
   AUTH_METHOD_TOKEN,
   HTTP_PROXY_STRICT_SSL_SETTING,
-  ADVANCED_ORGANIZATION,
-  SECRETS_ENABLED_SETTING,
+  ISSUE_VIEW_OPTIONS_SETTING,
+  SEVERITY_FILTER_SETTING,
 } from '../../../constants/settings';
-import { IdeConfigData } from '../types/workspaceConfiguration.types';
+import { LS_KEY } from '../../../languageServer/serverSettingsToLspConfigurationParam';
+import { LS_KEY_TO_VSCODE_KEY, lsKeyToVscodeKey } from '../../../languageServer/lsKeyToVscodeKeyMap';
+import { HtmlSettingsData } from '../types/workspaceConfiguration.types';
 
 export interface IConfigurationMappingService {
-  mapConfigToSettings(config: IdeConfigData, isCliOnly: boolean): Record<string, unknown>;
+  mapConfigToSettings(config: HtmlSettingsData, isCliOnly: boolean): Record<string, unknown>;
   mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined;
 }
 
+/** LS keys that need value transformation before writing to VS Code settings. */
+const SKIP_IN_LOOP = new Set<string>([
+  LS_KEY.proxyInsecure,
+  LS_KEY.scanNetNew,
+  LS_KEY.scanAutomatic,
+  LS_KEY.authenticationMethod,
+  LS_KEY.issueViewOpenIssues,
+  LS_KEY.issueViewIgnoredIssues,
+]);
+
+/** LS keys that belong to the CLI-only fallback form subset. */
+const CLI_ONLY_LS_KEYS = new Set<string>([
+  LS_KEY.cliPath,
+  LS_KEY.automaticDownload,
+  LS_KEY.binaryBaseUrl,
+  LS_KEY.proxyInsecure,
+]);
+
 export class ConfigurationMappingService implements IConfigurationMappingService {
-  // Map LS HTML values (pat/token/oauth) to package.json enum values
   private readonly authMethodMap: Record<string, string> = {
     oauth: AUTH_METHOD_OAUTH,
     pat: AUTH_METHOD_PAT,
     token: AUTH_METHOD_TOKEN,
   };
 
-  private readonly htmlKeyToVSCodeSettingMap: Record<string, string> = {
-    // Scan Settings
-    activateSnykOpenSource: OSS_ENABLED_SETTING,
-    activateSnykCode: CODE_SECURITY_ENABLED_SETTING,
-    activateSnykIac: IAC_ENABLED_SETTING,
-    activateSnykSecrets: SECRETS_ENABLED_SETTING,
-    scanningMode: SCANNING_MODE,
-    organization: ADVANCED_ORGANIZATION,
-
-    // Issue View Settings
-    issueViewOptions: ISSUE_VIEW_OPTIONS_SETTING,
-    enableDeltaFindings: DELTA_FINDINGS,
-
-    // Authentication Settings
-    authenticationMethod: ADVANCED_AUTHENTICATION_METHOD,
-
-    // Connection Settings
-    endpoint: ADVANCED_CUSTOM_ENDPOINT,
-    insecure: HTTP_PROXY_STRICT_SSL_SETTING,
-
-    // Trusted Folders
-    trustedFolders: TRUSTED_FOLDERS,
-
-    // CLI Settings
-    cliPath: ADVANCED_CLI_PATH,
-    manageBinariesAutomatically: ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
-    cliBaseDownloadURL: ADVANCED_CLI_BASE_DOWNLOAD_URL,
-    cliReleaseChannel: ADVANCED_CLI_RELEASE_CHANNEL,
-
-    // Filter Settings
-    filterSeverity: SEVERITY_FILTER_SETTING,
-    riskScoreThreshold: RISK_SCORE_THRESHOLD_SETTING,
-  };
-
-  /**
-   * Converts LS HTML auth method values (pat/token/oauth) to package.json enum values
-   */
   private normalizeAuthenticationMethod(value: string | undefined): string {
-    if (!value) {
-      return this.authMethodMap.oauth; // Default to OAuth2
-    }
-
+    if (!value) return this.authMethodMap.oauth;
     const normalized = value.toLowerCase().trim();
     return this.authMethodMap[normalized] || this.authMethodMap.oauth;
   }
 
-  mapConfigToSettings(config: IdeConfigData, isCliOnly: boolean): Record<string, unknown> {
-    const mapping = {
-      // CLI Settings
-      [ADVANCED_CLI_PATH]: config.cliPath,
-      [ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT]: config.manageBinariesAutomatically,
-      [ADVANCED_CLI_BASE_DOWNLOAD_URL]: config.cliBaseDownloadURL,
-      [ADVANCED_CLI_RELEASE_CHANNEL]: config.cliReleaseChannel,
-      [HTTP_PROXY_STRICT_SSL_SETTING]: config.insecure !== undefined ? !config.insecure : undefined,
-    };
-    if (isCliOnly) {
-      return mapping;
+  mapConfigToSettings(config: HtmlSettingsData, isCliOnly: boolean): Record<string, unknown> {
+    const configRecord = config as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+
+    // Data-driven: iterate the single LS_KEY_TO_VSCODE_KEY mapping
+    for (const [lsKey, vscodeKey] of Object.entries(LS_KEY_TO_VSCODE_KEY)) {
+      if (SKIP_IN_LOOP.has(lsKey)) continue;
+      if (isCliOnly && !CLI_ONLY_LS_KEYS.has(lsKey)) continue;
+
+      const value = configRecord[lsKey];
+      if (value !== undefined) {
+        result[vscodeKey] = value;
+      }
     }
-    return Object.assign(mapping, {
-      // Scan Settings
-      [OSS_ENABLED_SETTING]: config.activateSnykOpenSource,
-      [CODE_SECURITY_ENABLED_SETTING]: config.activateSnykCode,
-      [IAC_ENABLED_SETTING]: config.activateSnykIac,
-      [SECRETS_ENABLED_SETTING]: config.activateSnykSecrets,
-      [SCANNING_MODE]: config.scanningMode,
-      [ADVANCED_ORGANIZATION]: config.organization,
 
-      // Issue View Settings
-      [ISSUE_VIEW_OPTIONS_SETTING]: config.issueViewOptions,
-      [DELTA_FINDINGS]: config.enableDeltaFindings ? NEWISSUES : ALLISSUES,
+    // Fields with value transformations
+    if (config.proxy_insecure !== undefined) {
+      result[HTTP_PROXY_STRICT_SSL_SETTING] = !config.proxy_insecure;
+    }
 
-      // Authentication Settings
-      [ADVANCED_AUTHENTICATION_METHOD]: this.normalizeAuthenticationMethod(config.authenticationMethod),
+    if (!isCliOnly) {
+      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.scanNetNew]] = config.scan_net_new ? NEWISSUES : ALLISSUES;
+      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.scanAutomatic]] = config.scan_automatic ? 'auto' : 'manual';
+      result[LS_KEY_TO_VSCODE_KEY[LS_KEY.authenticationMethod]] = this.normalizeAuthenticationMethod(
+        config.authentication_method,
+      );
 
-      // Connection Settings
-      [ADVANCED_CUSTOM_ENDPOINT]: config.endpoint,
+      // Composite: two LS keys → one VS Code setting
+      if (config.issue_view_open_issues !== undefined || config.issue_view_ignored_issues !== undefined) {
+        result[ISSUE_VIEW_OPTIONS_SETTING] = {
+          openIssues: config.issue_view_open_issues,
+          ignoredIssues: config.issue_view_ignored_issues,
+        };
+      }
+    }
 
-      // Trusted Folders
-      [TRUSTED_FOLDERS]: config.trustedFolders,
+    // IDE-only field (not in LS_KEY_TO_VSCODE_KEY)
+    if (config.cli_release_channel !== undefined) {
+      result[ADVANCED_CLI_RELEASE_CHANNEL] = config.cli_release_channel;
+    }
 
-      // Filter Settings
-      [SEVERITY_FILTER_SETTING]: config.filterSeverity,
-      [RISK_SCORE_THRESHOLD_SETTING]: config.riskScoreThreshold,
-    });
+    return result;
   }
 
   mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined {
-    // Handle special cases like filterSeverity_critical
+    // Handle severity sub-keys like enabled_severities_critical
+    const severityPrefix = `${LS_KEY.enabledSeverities}_`;
+    if (htmlKey.startsWith(severityPrefix)) {
+      return `${SEVERITY_FILTER_SETTING}.${htmlKey.replace(severityPrefix, '')}`;
+    }
+    // Legacy camelCase support for LS-generated HTML during transition
     if (htmlKey.startsWith('filterSeverity_')) {
-      const severity = htmlKey.replace('filterSeverity_', '');
-      return `${SEVERITY_FILTER_SETTING}.${severity}`;
+      return `${SEVERITY_FILTER_SETTING}.${htmlKey.replace('filterSeverity_', '')}`;
     }
 
-    return this.htmlKeyToVSCodeSettingMap[htmlKey];
+    return lsKeyToVscodeKey(htmlKey);
   }
 }

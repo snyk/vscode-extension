@@ -1,7 +1,6 @@
 // ABOUTME: Type definitions for workspace configuration data structures
 // ABOUTME: Defines interfaces for config data, issue view options, severity filters, and folder configs
 
-// Configuration data types matching the structure from Language Server HTML
 export interface IssueViewOptions {
   openIssues?: boolean;
   ignoredIssues?: boolean;
@@ -21,54 +20,51 @@ export type ScanCommandConfig = {
   postScanOnlyReferenceFolder: boolean;
 };
 
-export interface FolderConfigData {
+/**
+ * Folder-level settings received from the HTML settings form.
+ * Field names are LS key strings (snake_case) so they map directly to the LS protocol.
+ */
+export interface HtmlFolderSettingsData {
   folderPath: string;
-  additionalParameters: string[];
-  additionalEnv: string;
-  preferredOrg: string;
-  autoDeterminedOrg: string;
-  orgSetByUser: boolean;
-  scanCommandConfig: Record<string, ScanCommandConfig>;
+  additional_parameters?: string[];
+  additional_environment?: string;
+  preferred_org?: string;
+  auto_determined_org?: string;
+  org_set_by_user?: boolean;
+  scan_command_config?: Record<string, ScanCommandConfig>;
 }
 
-export interface IdeConfigData {
+/**
+ * HTML settings form data contract.
+ * Field names are LS key strings (snake_case) — access as `config.snyk_oss_enabled`.
+ * The single mapping from LS keys to VS Code settings lives in {@link LS_KEY_TO_VSCODE_KEY}.
+ */
+export interface HtmlSettingsData {
+  // IDE-only (not LS keys)
   isFallbackForm?: boolean;
+  cli_release_channel?: string;
+  folderConfigs?: HtmlFolderSettingsData[];
 
-  // Scan Settings
-  activateSnykOpenSource?: boolean;
-  activateSnykCode?: boolean;
-  activateSnykIac?: boolean;
-  activateSnykSecrets?: boolean;
-  scanningMode?: string;
+  // LS-keyed settings — field names match LS_KEY values
+  snyk_oss_enabled?: boolean;
+  snyk_code_enabled?: boolean;
+  snyk_iac_enabled?: boolean;
+  snyk_secrets_enabled?: boolean;
+  scan_automatic?: boolean;
   organization?: string;
-
-  // Issue View Settings
-  issueViewOptions?: IssueViewOptions;
-  enableDeltaFindings?: boolean;
-
-  // Authentication Settings
-  authenticationMethod?: string;
-
-  // Connection Settings
-  endpoint?: string;
+  scan_net_new?: boolean;
+  authentication_method?: string;
+  api_endpoint?: string;
   token?: string;
-  insecure?: boolean;
-
-  // Trusted Folders
-  trustedFolders?: string[];
-
-  // CLI Settings
-  cliPath?: string;
-  manageBinariesAutomatically?: boolean;
-  cliBaseDownloadURL?: string;
-  cliReleaseChannel?: string;
-
-  // Filter Settings
-  filterSeverity?: FilterSeverity;
-  riskScoreThreshold?: number;
-
-  // Folder Configs
-  folderConfigs?: FolderConfigData[];
+  proxy_insecure?: boolean;
+  trusted_folders?: string[];
+  cli_path?: string;
+  automatic_download?: boolean;
+  binary_base_url?: string;
+  enabled_severities?: FilterSeverity;
+  risk_score_threshold?: number;
+  issue_view_open_issues?: boolean;
+  issue_view_ignored_issues?: boolean;
 }
 
 export interface IWorkspaceConfigurationWebviewProvider {

@@ -3,8 +3,9 @@ import type { LspConfigurationParam, LspConfigSetting, LspInitializationOptions 
 import type { ServerSettings } from './settings';
 
 /**
- * LSP configuration keys aligned with snyk-ls `internal/types/ldx_sync_config.go` and
- * `legacySettingsToLspConfigurationParam` in `application/server/workspace_configuration_pull.go`.
+ * LSP configuration keys aligned with snyk-ls `internal/types/ldx_sync_config.go`.
+ * Single source of truth: renaming a value here propagates via {@link HtmlSettingsLsFields}
+ * to {@link HtmlSettingsData} and all access sites that use `config[LS_KEY.x]`.
  */
 export const LS_KEY = {
   apiEndpoint: 'api_endpoint',
@@ -42,6 +43,7 @@ export const LS_KEY = {
   baseBranch: 'base_branch',
   localBranches: 'local_branches',
   referenceFolder: 'reference_folder',
+  featureFlags: 'feature_flags',
 } as const;
 
 /** Returns true when the IDE should mark `ConfigSetting.changed` for outbound LS config. */

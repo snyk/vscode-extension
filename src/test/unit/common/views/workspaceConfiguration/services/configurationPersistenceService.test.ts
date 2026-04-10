@@ -9,7 +9,6 @@ import { IScopeDetectionService } from '../../../../../../snyk/common/views/work
 import { IConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import {
   ADVANCED_ORGANIZATION,
   CONFIGURATION_IDENTIFIER,
@@ -27,7 +26,6 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let configMappingService: IConfigurationMappingService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
-  let explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker;
   let service: ConfigurationPersistenceService;
 
   let updateConfigurationStub: sinon.SinonStub;
@@ -91,19 +89,12 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    explicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: sinon.stub().returns(false),
-    };
-
     service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       configMappingService,
       clientAdapter,
-      explicitLspConfigurationChangeTracker,
       logger,
     );
   });
@@ -258,11 +249,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       scopeDetectionService,
       realMapper,
       clientAdapter,
-      {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: sinon.stub().returns(true),
-      },
       logger,
     );
 
@@ -285,11 +271,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       scopeDetectionService,
       realMapper,
       clientAdapter,
-      {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: sinon.stub().returns(false),
-      },
       logger,
     );
 
@@ -318,11 +299,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       scopeDetectionService,
       realMapper,
       clientAdapter,
-      {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: sinon.stub().returns(false),
-      },
       logger,
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -347,11 +323,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       scopeDetectionService,
       realMapper,
       clientAdapter,
-      {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: sinon.stub().returns(false),
-      },
       logger,
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method

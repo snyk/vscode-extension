@@ -23,7 +23,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { serverSettingsToLspInitializationOptions } from './serverSettingsToLspConfigurationParam';
 import { LanguageClientMiddleware } from './middleware';
-import { markExplicitLsKeysFromConfigurationChangeEvent } from './configurationChangeToExplicitLsKeys';
+import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { LanguageServerSettings, type ServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';

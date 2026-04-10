@@ -3,16 +3,14 @@
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
 import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import type { LspConfigurationParam } from '../../../languageServer/types';
-import { mergedGlobalSettingsToIdeConfigData } from '../../../languageServer/inboundLspConfigurationToIdeConfig';
+import { mapLspSettingsToHtmlSettings } from '../../../languageServer/inboundLspConfigurationToHtmlSettings';
 import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
-import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
+import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import { IConfigurationMappingService } from './configurationMappingService';
-import { markExplicitLsKeysFromIdeConfigDiff } from './ideConfigExplicitLsKeys';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
@@ -32,22 +30,14 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly configMappingService: IConfigurationMappingService,
     private readonly clientAdapter: ILanguageClientAdapter,
-    private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly logger: ILog,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
     try {
-      const config = JSON.parse(configJson) as IdeConfigData;
+      const config = JSON.parse(configJson) as HtmlSettingsData;
       const isCliOnly = config.isFallbackForm ?? false;
       this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
-
-      await markExplicitLsKeysFromIdeConfigDiff(
-        config,
-        this.configuration,
-        this.explicitLspConfigurationChangeTracker,
-        isCliOnly,
-      );
 
       await this.saveConfigToVSCodeSettings(config, isCliOnly);
 
@@ -77,12 +67,12 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     try {
       // Persist global settings to VS Code settings.json
       const globalSettings = param.settings ?? {};
-      const partial = mergedGlobalSettingsToIdeConfigData(globalSettings);
+      const partial = mapLspSettingsToHtmlSettings(globalSettings);
 
       // Token is excluded: snyk-ls marks it as writeOnly so it never appears in
       // $/snyk.configuration; the token arrives only via $/snyk.hasAuthenticated.
       const { token: _omit, ...rest } = partial;
-      const ideForSettings = rest as IdeConfigData;
+      const ideForSettings = rest as HtmlSettingsData;
 
       const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
       const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
@@ -129,20 +119,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     this.logger.info('Successfully applied settings map to VS Code configuration');
   }
 
-  /**
-   * Mapping from HTML form field names (camelCase) to LS setting keys (snake_case)
-   * for folder config fields coming from the HTML settings form.
-   */
-  private static readonly htmlFieldToLsKey: Record<string, string> = {
-    additionalParameters: 'additional_parameters',
-    additionalEnv: 'additional_environment',
-    scanCommandConfig: 'scan_command_config',
-    preferredOrg: 'preferred_org',
-    autoDeterminedOrg: 'auto_determined_org',
-    orgSetByUser: 'org_set_by_user',
-  };
-
-  private async saveFolderConfigs(folderConfigs?: Array<FolderConfigData>): Promise<void> {
+  private async saveFolderConfigs(folderConfigs?: Array<HtmlFolderSettingsData>): Promise<void> {
     if (!folderConfigs) return;
 
     const currentFolderConfigs = this.configuration.getFolderConfigs();
@@ -153,13 +130,12 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       const formData = folderConfigMap.get(currentFolderConfig.folderPath);
       if (!formData) return currentFolderConfig;
 
-      // Map HTML form fields (camelCase) to LS setting entries (snake_case)
-      // so they are forwarded to the LS on the next outbound push.
-      for (const [htmlKey, lsKey] of Object.entries(ConfigurationPersistenceService.htmlFieldToLsKey)) {
-        const value = (formData as unknown as Record<string, unknown>)[htmlKey];
-        if (value !== undefined) {
-          currentFolderConfig.setSetting(lsKey, value);
-        }
+      // HtmlFolderSettingsData field names ARE LS key strings (snake_case),
+      // so they pass directly to FolderConfig.setSetting().
+      const formRecord = formData as unknown as Record<string, unknown>;
+      for (const [key, value] of Object.entries(formRecord)) {
+        if (key === 'folderPath' || value === undefined) continue;
+        currentFolderConfig.setSetting(key, value);
       }
 
       return currentFolderConfig;
@@ -168,7 +144,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     await this.configuration.setFolderConfigs(updatedFolderConfigs, false);
   }
 
-  private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
+  private async saveConfigToVSCodeSettings(config: HtmlSettingsData, isCliOnly: boolean): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
     const settingsMap = this.configMappingService.mapConfigToSettings(config, isCliOnly);
