@@ -1,5 +1,5 @@
 import type { ConfigurationChangeEvent } from '../vscode/types';
-import { vscodeKeyToLsKeys, LS_KEY_TO_VSCODE_KEY } from './lsKeyToVscodeKeyMap';
+import { VSCODE_KEY_TO_LS_KEYS } from './lsKeyToVscodeKeyMap';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import type { LspConfigSetting } from './types';
 
@@ -7,20 +7,15 @@ import type { LspConfigSetting } from './types';
  * When native VS Code configuration changes, mark matching LS keys so outbound
  * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for user edits.
  *
- * Derives the VS Code → LS key mapping from the unified {@link LS_KEY_TO_VSCODE_KEY} registry.
+ * Uses the pre-computed {@link VSCODE_KEY_TO_LS_KEYS} reverse index directly.
  */
 export function markExplicitLsKeysFromConfigurationChangeEvent(
   e: ConfigurationChangeEvent,
   tracker: IExplicitLspConfigurationChangeTracker,
 ): void {
-  const seenVscodeKeys = new Set<string>();
-
-  for (const vscodeKey of Object.values(LS_KEY_TO_VSCODE_KEY)) {
-    if (seenVscodeKeys.has(vscodeKey)) continue;
-    seenVscodeKeys.add(vscodeKey);
-
+  for (const [vscodeKey, lsKeys] of Object.entries(VSCODE_KEY_TO_LS_KEYS)) {
     if (e.affectsConfiguration(vscodeKey)) {
-      for (const lsKey of vscodeKeyToLsKeys(vscodeKey)) {
+      for (const lsKey of lsKeys) {
         tracker.markExplicitlyChanged(lsKey);
       }
     }

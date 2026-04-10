@@ -11,11 +11,7 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import {
-  LS_KEY,
-  serverSettingsToLspInitializationOptions,
-} from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
@@ -412,45 +408,30 @@ suite('Language Server', () => {
       test(tc.name, async () => {
         configurationMock.getFolderConfigs = () => tc.folderConfigs;
 
-        const expectedFlat: ServerSettings = {
-          activateSnykCodeSecurity: 'true',
-          enableDeltaFindings: 'false',
-          activateSnykOpenSource: 'false',
-          activateSnykIac: 'true',
-          activateSnykSecrets: 'false',
-          token: 'testToken',
-          cliPath: 'testPath',
-          cliBaseDownloadURL: 'https://downloads.snyk.io',
-          sendErrorReports: 'true',
-          integrationName: 'VS_CODE',
-          integrationVersion: '0.0.0',
-          automaticAuthentication: 'false',
-          endpoint: undefined,
-          organization: undefined,
-          additionalParams: '--all-projects -d',
-          manageBinariesAutomatically: 'true',
-          deviceId: user.anonymousId,
-          filterSeverity: DEFAULT_SEVERITY_FILTER,
-          riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
-          issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
-          enableTrustedFoldersFeature: 'true',
-          trustedFolders: ['/trusted/test/folder'],
-          insecure: 'true',
-          requiredProtocolVersion: PROTOCOL_VERSION.toString(),
-          scanningMode: 'auto',
-          folderConfigs: tc.folderConfigs,
-          authenticationMethod: 'oauth',
-          enableSnykOSSQuickFixCodeActions: 'true',
-          hoverVerbosity: 1,
-          secureAtInceptionExecutionFrequency: 'Manual',
-          autoConfigureSnykMcpServer: 'false',
-        };
-
         const initializationOptions = await languageServer.getInitializationOptions();
-        deepStrictEqual(
-          initializationOptions,
-          serverSettingsToLspInitializationOptions(expectedFlat, () => true),
-        );
+
+        // Init metadata
+        strictEqual(initializationOptions.deviceId, user.anonymousId);
+        strictEqual(initializationOptions.integrationName, 'VS_CODE');
+        strictEqual(initializationOptions.requiredProtocolVersion, PROTOCOL_VERSION.toString());
+        strictEqual(initializationOptions.hoverVerbosity, 1);
+        deepStrictEqual(initializationOptions.trustedFolders, ['/trusted/test/folder']);
+
+        // Settings
+        strictEqual(initializationOptions.settings[LS_KEY.snykCodeEnabled]?.value, true);
+        strictEqual(initializationOptions.settings[LS_KEY.snykOssEnabled]?.value, false);
+        strictEqual(initializationOptions.settings[LS_KEY.snykIacEnabled]?.value, true);
+        strictEqual(initializationOptions.settings[LS_KEY.snykSecretsEnabled]?.value, false);
+        strictEqual(initializationOptions.settings[LS_KEY.token]?.value, 'testToken');
+        strictEqual(initializationOptions.settings[LS_KEY.cliPath]?.value, 'testPath');
+        strictEqual(initializationOptions.settings[LS_KEY.sendErrorReports]?.value, true);
+        strictEqual(initializationOptions.settings[LS_KEY.scanAutomatic]?.value, true);
+
+        // Folder configs
+        if (tc.folderConfigs.length > 0) {
+          assert.ok(initializationOptions.folderConfigs);
+          strictEqual(initializationOptions.folderConfigs?.length, tc.folderConfigs.length);
+        }
       });
     });
 

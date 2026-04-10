@@ -8,13 +8,11 @@ import {
   PreviewFeatures,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
-import { User } from '../../../../snyk/common/user';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('LanguageServerSettings', () => {
   suite('fromConfiguration', () => {
-    test('should generate server settings with default true values for undefined feature toggles', async () => {
-      const mockUser = { anonymousId: 'anonymous-id' } as User;
-
+    test('should generate settings with default true values for undefined feature toggles', async () => {
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
         snykApiEndpoint: 'https://dev.snyk.io/api',
@@ -53,16 +51,111 @@ suite('LanguageServerSettings', () => {
         },
       } as unknown as IConfiguration;
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(mockConfiguration, mockUser);
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
 
-      assert.strictEqual(serverSettings.activateSnykCodeSecurity, 'true');
-      assert.strictEqual(serverSettings.activateSnykIac, 'true');
-      assert.strictEqual(serverSettings.deviceId, 'anonymous-id');
+      assert.strictEqual(result.settings?.[LS_KEY.snykCodeEnabled]?.value, true);
+      assert.strictEqual(result.settings?.[LS_KEY.snykIacEnabled]?.value, true);
+      assert.strictEqual(result.settings?.[LS_KEY.sendErrorReports]?.value, false);
+      assert.strictEqual(result.settings?.[LS_KEY.cliPath]?.value, '/path/to/cli');
+      assert.strictEqual(result.settings?.[LS_KEY.token]?.value, 'snyk-token');
+    });
 
-      assert.strictEqual(serverSettings.sendErrorReports, 'false');
-      assert.strictEqual(serverSettings.cliPath, '/path/to/cli');
+    test('uses explicit predicate for changed flag', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: 'https://custom.example/api',
+        organization: 'my-org',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => 'tok',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '/cli',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'auto',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
 
-      assert.strictEqual(serverSettings.token, 'snyk-token');
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => false);
+      assert.strictEqual(result.settings?.[LS_KEY.apiEndpoint]?.changed, false);
+
+      const resultChanged = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      assert.strictEqual(resultChanged.settings?.[LS_KEY.apiEndpoint]?.changed, true);
+    });
+
+    test('maps scanningMode manual to scan_automatic false', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: '',
+        organization: '',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => 'tok',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'manual',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
+
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      assert.strictEqual(result.settings?.[LS_KEY.scanAutomatic]?.value, false);
+    });
+
+    test('maps filterSeverity to enabled_severities object', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: '',
+        organization: '',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => 'tok',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: { critical: true, high: false, medium: true, low: false },
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'auto',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
+
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      assert.deepStrictEqual(result.settings?.[LS_KEY.enabledSeverities]?.value, {
+        critical: true,
+        high: false,
+        medium: true,
+        low: false,
+      });
     });
   });
 });

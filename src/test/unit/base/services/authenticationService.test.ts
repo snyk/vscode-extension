@@ -95,7 +95,7 @@ suite('AuthenticationService', () => {
     sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
-  test('initiateLogout clears logged-in and authenticating context', async () => {
+  test('initiateLogout clears logged-in context', async () => {
     const service = new AuthenticationService(
       contextService,
       baseModule,
@@ -109,7 +109,6 @@ suite('AuthenticationService', () => {
     await service.initiateLogout();
 
     sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
-    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.AUTHENTICATING, false);
     sinon.assert.called(clearTokenSpy);
   });
 

@@ -1,8 +1,10 @@
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
-import { IConfiguration } from '../configuration/configuration';
+import { Configuration, IConfiguration } from '../configuration/configuration';
+import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import {
+  PROTOCOL_VERSION,
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CONFIGURATION,
   SNYK_REGISTER_MCP,
@@ -21,11 +23,10 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { serverSettingsToLspInitializationOptions } from './serverSettingsToLspConfigurationParam';
 import { LanguageClientMiddleware } from './middleware';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
-import { LanguageServerSettings, type ServerSettings } from './settings';
+import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
 import { ISummaryProviderService } from '../../base/summary/summaryProviderService';
@@ -66,7 +67,7 @@ export class LanguageServer implements ILanguageServer {
   /** When true, VS Code `settings.json` updates from inbound LS persistence must not mark keys as explicitly changed. */
   private suppressExplicitKeyMarkingFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
-  private inboundPersistenceChain: Promise<void> = Promise.resolve();
+  private configPersistenceQueue: Promise<void> = Promise.resolve();
   private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
@@ -170,7 +171,6 @@ export class LanguageServer implements ILanguageServer {
       middleware: new LanguageClientMiddleware(
         this.logger,
         this.configuration,
-        this.user,
         this.showIssueDetailTopic$,
         this.uriAdapter,
         this.codeCommands,
@@ -289,9 +289,6 @@ export class LanguageServer implements ILanguageServer {
     this.configurationChangeDisposable?.dispose();
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      if (!e.affectsConfiguration('snyk') && !e.affectsConfiguration('http')) {
-        return;
-      }
       if (this.suppressExplicitKeyMarkingFromInboundPersistence) {
         return;
       }
@@ -314,7 +311,7 @@ export class LanguageServer implements ILanguageServer {
     if (!this.persistInboundConfiguration) {
       return;
     }
-    this.inboundPersistenceChain = this.inboundPersistenceChain
+    this.configPersistenceQueue = this.configPersistenceQueue
       .catch(() => {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
@@ -335,15 +332,21 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<LspInitializationOptions> {
-    const flat: ServerSettings = await LanguageServerSettings.fromConfiguration(
+    const config = await LanguageServerSettings.fromConfiguration(
       this.configuration,
-      this.user,
+      lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
       this.workspace,
     );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- return type is LspInitializationOptions; ESLint infers `any` from mapper chain
-    return serverSettingsToLspInitializationOptions(flat, lsKey =>
-      this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
-    );
+    return {
+      settings: config.settings ?? {},
+      folderConfigs: config.folderConfigs,
+      requiredProtocolVersion: `${PROTOCOL_VERSION}`,
+      deviceId: this.user.anonymousId,
+      integrationName: CLI_INTEGRATION_NAME,
+      integrationVersion: await Configuration.getVersion(),
+      hoverVerbosity: 1,
+      trustedFolders: this.configuration.getTrustedFolders(),
+    };
   }
 
   showOutputChannel(): void {

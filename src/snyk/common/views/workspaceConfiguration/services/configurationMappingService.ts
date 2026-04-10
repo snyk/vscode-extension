@@ -22,16 +22,6 @@ export interface IConfigurationMappingService {
   mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined;
 }
 
-/** LS keys that need value transformation before writing to VS Code settings. */
-const SKIP_IN_LOOP = new Set<string>([
-  LS_KEY.proxyInsecure,
-  LS_KEY.scanNetNew,
-  LS_KEY.scanAutomatic,
-  LS_KEY.authenticationMethod,
-  LS_KEY.issueViewOpenIssues,
-  LS_KEY.issueViewIgnoredIssues,
-]);
-
 /** LS keys that belong to the CLI-only fallback form subset. */
 const CLI_ONLY_LS_KEYS = new Set<string>([
   LS_KEY.cliPath,
@@ -40,51 +30,65 @@ const CLI_ONLY_LS_KEYS = new Set<string>([
   LS_KEY.proxyInsecure,
 ]);
 
+/**
+ * LS keys that require value transformation before writing to VS Code settings.
+ * Maps each LS key to a function that takes the raw HtmlSettingsData value and returns
+ * the VS Code setting key + transformed value.
+ */
+const VALUE_TRANSFORMATIONS: Readonly<Record<string, (value: unknown) => { key: string; value: unknown }>> = {
+  [LS_KEY.proxyInsecure]: (v: unknown) => ({ key: HTTP_PROXY_STRICT_SSL_SETTING, value: !v }),
+  [LS_KEY.scanNetNew]: (v: unknown) => ({ key: DELTA_FINDINGS, value: v ? NEWISSUES : ALLISSUES }),
+  [LS_KEY.scanAutomatic]: (v: unknown) => ({ key: SCANNING_MODE, value: v ? 'auto' : 'manual' }),
+  [LS_KEY.authenticationMethod]: (v: unknown) => ({
+    key: ADVANCED_AUTHENTICATION_METHOD,
+    value: normalizeAuthenticationMethod(v as string | undefined),
+  }),
+  [LS_KEY.issueViewOpenIssues]: () => ({ key: '', value: undefined }), // handled as composite below
+  [LS_KEY.issueViewIgnoredIssues]: () => ({ key: '', value: undefined }), // handled as composite below
+};
+
+const AUTH_METHOD_MAP: Record<string, string> = {
+  oauth: AUTH_METHOD_OAUTH,
+  pat: AUTH_METHOD_PAT,
+  token: AUTH_METHOD_TOKEN,
+};
+
+function normalizeAuthenticationMethod(value: string | undefined): string {
+  if (!value) return AUTH_METHOD_MAP.oauth;
+  const normalized = value.toLowerCase().trim();
+  return AUTH_METHOD_MAP[normalized] || AUTH_METHOD_MAP.oauth;
+}
+
 export class ConfigurationMappingService implements IConfigurationMappingService {
-  private readonly authMethodMap: Record<string, string> = {
-    oauth: AUTH_METHOD_OAUTH,
-    pat: AUTH_METHOD_PAT,
-    token: AUTH_METHOD_TOKEN,
-  };
-
-  private normalizeAuthenticationMethod(value: string | undefined): string {
-    if (!value) return this.authMethodMap.oauth;
-    const normalized = value.toLowerCase().trim();
-    return this.authMethodMap[normalized] || this.authMethodMap.oauth;
-  }
-
   mapConfigToSettings(config: HtmlSettingsData, isCliOnly: boolean): Record<string, unknown> {
     const configRecord = config as Record<string, unknown>;
     const result: Record<string, unknown> = {};
 
     // Data-driven: iterate the single LS_KEY_TO_VSCODE_KEY mapping
     for (const [lsKey, vscodeKey] of Object.entries(LS_KEY_TO_VSCODE_KEY)) {
-      if (SKIP_IN_LOOP.has(lsKey)) continue;
       if (isCliOnly && !CLI_ONLY_LS_KEYS.has(lsKey)) continue;
 
       const value = configRecord[lsKey];
-      if (value !== undefined) {
-        result[vscodeKey] = value;
+      if (value === undefined) continue;
+
+      const transform = VALUE_TRANSFORMATIONS[lsKey];
+      if (transform) {
+        const transformed = transform(value);
+        if (transformed.key) {
+          result[transformed.key] = transformed.value;
+        }
+        continue;
       }
+
+      result[vscodeKey] = value;
     }
 
-    // Fields with value transformations
-    if (config.proxy_insecure !== undefined) {
-      result[HTTP_PROXY_STRICT_SSL_SETTING] = !config.proxy_insecure;
-    }
-
-    if (!isCliOnly) {
-      result[DELTA_FINDINGS] = config.scan_net_new ? NEWISSUES : ALLISSUES;
-      result[SCANNING_MODE] = config.scan_automatic ? 'auto' : 'manual';
-      result[ADVANCED_AUTHENTICATION_METHOD] = this.normalizeAuthenticationMethod(config.authentication_method);
-
-      // Composite: two LS keys → one VS Code setting
-      if (config.issue_view_open_issues !== undefined || config.issue_view_ignored_issues !== undefined) {
-        result[ISSUE_VIEW_OPTIONS_SETTING] = {
-          openIssues: config.issue_view_open_issues,
-          ignoredIssues: config.issue_view_ignored_issues,
-        };
-      }
+    // Composite: two LS keys → one VS Code setting
+    if (!isCliOnly && (config.issue_view_open_issues !== undefined || config.issue_view_ignored_issues !== undefined)) {
+      result[ISSUE_VIEW_OPTIONS_SETTING] = {
+        openIssues: config.issue_view_open_issues,
+        ignoredIssues: config.issue_view_ignored_issues,
+      };
     }
 
     // IDE-only field (not in LS_KEY_TO_VSCODE_KEY)

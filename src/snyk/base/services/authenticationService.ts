@@ -45,7 +45,6 @@ export class AuthenticationService implements IAuthenticationService {
   async initiateLogout(): Promise<void> {
     await this.configuration.clearToken();
     await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
-    await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATING, false);
   }
 
   async setToken(): Promise<void> {

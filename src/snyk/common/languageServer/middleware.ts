@@ -3,7 +3,6 @@ import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
 import { productToLsProduct } from '../services/mappings';
 import { isEnumStringValueOf, isThenable } from '../tsUtil';
-import { User } from '../user';
 import { IVSCodeCommands } from '../vscode/commands';
 import type {
   CancellationToken,
@@ -20,7 +19,6 @@ import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
-import { serverSettingsToLspConfigurationParam } from './serverSettingsToLspConfigurationParam';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
@@ -40,7 +38,6 @@ export class LanguageClientMiddleware implements Middleware {
   constructor(
     private readonly logger: ILog,
     private configuration: IConfiguration,
-    private user: User,
     private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
@@ -72,14 +69,10 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(
+      const lspParam = await LanguageServerSettings.fromConfiguration(
         this.configuration,
-        this.user,
-        this.vscodeWorkspace,
-      );
-      const lspParam = serverSettingsToLspConfigurationParam(
-        serverSettings,
         lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+        this.vscodeWorkspace,
       );
 
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {

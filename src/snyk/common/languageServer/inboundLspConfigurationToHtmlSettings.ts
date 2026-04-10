@@ -1,82 +1,55 @@
-import type {
-  HtmlSettingsData,
-  FilterSeverity,
-} from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
+import type { HtmlSettingsData } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
 import { LS_KEY } from './serverSettingsToLspConfigurationParam';
 import type { LspConfigSetting } from './types';
 
-function getValue<T>(s: LspConfigSetting | undefined): T | undefined {
-  if (!s || s.value === undefined) {
-    return undefined;
-  }
-  return s.value as T;
-}
+/** LS keys that are mapped directly to HtmlSettingsData fields (field names match LS key values). */
+const HTML_MAPPED_LS_KEYS: ReadonlySet<string> = new Set([
+  LS_KEY.snykOssEnabled,
+  LS_KEY.snykCodeEnabled,
+  LS_KEY.snykIacEnabled,
+  LS_KEY.snykSecretsEnabled,
+  LS_KEY.scanNetNew,
+  LS_KEY.apiEndpoint,
+  LS_KEY.binaryBaseUrl,
+  LS_KEY.cliPath,
+  LS_KEY.authenticationMethod,
+  LS_KEY.organization,
+  LS_KEY.automaticDownload,
+  LS_KEY.proxyInsecure,
+  LS_KEY.scanAutomatic,
+  LS_KEY.enabledSeverities,
+  LS_KEY.issueViewOpenIssues,
+  LS_KEY.issueViewIgnoredIssues,
+  LS_KEY.riskScoreThreshold,
+  LS_KEY.trustedFolders,
+  LS_KEY.token,
+]);
+
+/** String-valued LS keys where empty strings should be filtered out. */
+const FILTER_EMPTY_STRING_KEYS: ReadonlySet<string> = new Set([
+  LS_KEY.apiEndpoint,
+  LS_KEY.binaryBaseUrl,
+  LS_KEY.cliPath,
+  LS_KEY.authenticationMethod,
+  LS_KEY.organization,
+  LS_KEY.token,
+]);
 
 /**
  * Maps global LS key entries from `$/snyk.configuration` into {@link HtmlSettingsData}.
- * Both read keys (globalSettings) and write keys (out.field) use LS key strings.
+ * HtmlSettingsData field names match LS key values, so the mapping is data-driven.
  */
 export function mapLspSettingsToHtmlSettings(
   globalSettings: Record<string, LspConfigSetting>,
 ): Partial<HtmlSettingsData> {
-  const out: Partial<HtmlSettingsData> = {};
+  const out: Record<string, unknown> = {};
 
-  const oss = getValue<boolean>(globalSettings[LS_KEY.snykOssEnabled]);
-  if (oss !== undefined) out.snyk_oss_enabled = oss;
+  for (const lsKey of HTML_MAPPED_LS_KEYS) {
+    const value = globalSettings[lsKey]?.value;
+    if (value === undefined) continue;
+    if (FILTER_EMPTY_STRING_KEYS.has(lsKey) && value === '') continue;
+    out[lsKey] = lsKey === LS_KEY.authenticationMethod && typeof value === 'string' ? value.toLowerCase() : value;
+  }
 
-  const code = getValue<boolean>(globalSettings[LS_KEY.snykCodeEnabled]);
-  if (code !== undefined) out.snyk_code_enabled = code;
-
-  const iac = getValue<boolean>(globalSettings[LS_KEY.snykIacEnabled]);
-  if (iac !== undefined) out.snyk_iac_enabled = iac;
-
-  const secrets = getValue<boolean>(globalSettings[LS_KEY.snykSecretsEnabled]);
-  if (secrets !== undefined) out.snyk_secrets_enabled = secrets;
-
-  const netNew = getValue<boolean>(globalSettings[LS_KEY.scanNetNew]);
-  if (netNew !== undefined) out.scan_net_new = netNew;
-
-  const endpoint = getValue<string>(globalSettings[LS_KEY.apiEndpoint]);
-  if (endpoint !== undefined && endpoint !== '') out.api_endpoint = endpoint;
-
-  const binaryBaseUrl = getValue<string>(globalSettings[LS_KEY.binaryBaseUrl]);
-  if (binaryBaseUrl !== undefined && binaryBaseUrl !== '') out.binary_base_url = binaryBaseUrl;
-
-  const cliPath = getValue<string>(globalSettings[LS_KEY.cliPath]);
-  if (cliPath !== undefined && cliPath !== '') out.cli_path = cliPath;
-
-  const authMethod = getValue<string>(globalSettings[LS_KEY.authenticationMethod]);
-  if (authMethod !== undefined && authMethod !== '') out.authentication_method = authMethod.toLowerCase();
-
-  const org = getValue<string>(globalSettings[LS_KEY.organization]);
-  if (org !== undefined && org !== '') out.organization = org;
-
-  const autoDl = getValue<boolean>(globalSettings[LS_KEY.automaticDownload]);
-  if (autoDl !== undefined) out.automatic_download = autoDl;
-
-  const cliInsecure = getValue<boolean>(globalSettings[LS_KEY.proxyInsecure]);
-  if (cliInsecure !== undefined) out.proxy_insecure = cliInsecure;
-
-  const scanAuto = getValue<boolean>(globalSettings[LS_KEY.scanAutomatic]);
-  if (scanAuto !== undefined) out.scan_automatic = scanAuto;
-
-  const sev = getValue<FilterSeverity>(globalSettings[LS_KEY.enabledSeverities]);
-  if (sev !== undefined) out.enabled_severities = sev;
-
-  const openIv = getValue<boolean>(globalSettings[LS_KEY.issueViewOpenIssues]);
-  if (openIv !== undefined) out.issue_view_open_issues = openIv;
-
-  const ignIv = getValue<boolean>(globalSettings[LS_KEY.issueViewIgnoredIssues]);
-  if (ignIv !== undefined) out.issue_view_ignored_issues = ignIv;
-
-  const risk = getValue<number>(globalSettings[LS_KEY.riskScoreThreshold]);
-  if (risk !== undefined) out.risk_score_threshold = risk;
-
-  const trusted = getValue<string[]>(globalSettings[LS_KEY.trustedFolders]);
-  if (trusted !== undefined) out.trusted_folders = trusted;
-
-  const token = getValue<string>(globalSettings[LS_KEY.token]);
-  if (token !== undefined && token !== '') out.token = token;
-
-  return out;
+  return out as Partial<HtmlSettingsData>;
 }

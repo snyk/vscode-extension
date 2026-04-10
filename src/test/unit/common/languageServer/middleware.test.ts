@@ -10,7 +10,6 @@ import {
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { User } from '../../../../snyk/common/user';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -33,10 +32,8 @@ import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
-  let user: User;
 
   setup(() => {
-    user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
       getAuthenticationMethod(): string {
         return 'oauth';
@@ -88,7 +85,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
-      user,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -133,7 +129,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
-      user,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -178,7 +173,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       {} as IConfiguration,
-      {} as User,
       showIssueDetailTopic$,
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -226,7 +220,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configWithNullOrg,
-      user,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,

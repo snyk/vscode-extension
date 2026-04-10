@@ -1,76 +1,21 @@
 import _ from 'lodash';
-import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import {
-  Configuration,
-  FolderConfig,
-  IConfiguration,
-  IssueViewOptions,
-  SeverityFilter,
-} from '../configuration/configuration';
-import { User } from '../user';
-import { PROTOCOL_VERSION } from '../constants/languageServer';
+import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
-export type ServerSettings = {
-  // Feature toggles
-  activateSnykCodeSecurity?: string;
-  activateSnykOpenSource?: string;
-  activateSnykIac?: string;
-  activateSnykSecrets?: string;
-
-  // Endpoint path, and organization
-  path?: string;
-  cliPath?: string;
-  cliBaseDownloadURL?: string;
-  endpoint?: string;
-  organization?: string;
-
-  // Authentication and parameters
-  token?: string;
-  automaticAuthentication?: string;
-  authenticationMethod?: string;
-  additionalParams?: string;
-  manageBinariesAutomatically?: string;
-
-  // Reporting and telemetry
-  sendErrorReports?: string;
-
-  // Security and scanning settings
-  filterSeverity?: SeverityFilter;
-  riskScoreThreshold?: number;
-  issueViewOptions?: IssueViewOptions;
-  scanningMode?: string;
-  insecure?: string;
-
-  // Trusted folders feature
-  enableTrustedFoldersFeature?: string;
-  trustedFolders?: string[];
-
-  // Snyk integration settings
-  integrationName?: string;
-  integrationVersion?: string;
-  deviceId?: string;
-  requiredProtocolVersion?: string;
-  enableDeltaFindings?: string;
-  folderConfigs: FolderConfig[];
-  enableSnykOSSQuickFixCodeActions: string;
-  hoverVerbosity: number;
-  // Environment/Editor Info
-  runtimeName?: string;
-  runtimeVersion?: string;
-  osArch?: string;
-  osPlatform?: string;
-  additionalEnv?: string;
-
-  // Secure At Inception settings
-  secureAtInceptionExecutionFrequency?: string;
-  autoConfigureSnykMcpServer?: string;
-};
+import type { LspConfigurationParam, LspConfigSetting } from './types';
+import {
+  ExplicitChangePredicate,
+  LS_KEY,
+  folderConfigToLspFolderConfiguration,
+  putBoolStr,
+  putSetting,
+  putStringOrReset,
+} from './serverSettingsToLspConfigurationParam';
 
 export class LanguageServerSettings {
-  static resolveFolderConfigsForServerSettings(
+  static resolveFolderConfigs(
     configuration: IConfiguration,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
-  ): FolderConfig[] {
+  ) {
     let folderConfigs = configuration.getFolderConfigs();
     const wsFolders = workspace?.getWorkspaceFolders?.();
     if (folderConfigs.length === 0 && wsFolders?.length) {
@@ -81,60 +26,99 @@ export class LanguageServerSettings {
 
   static async fromConfiguration(
     configuration: IConfiguration,
-    user: User,
+    isExplicitlyChanged: ExplicitChangePredicate,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
-  ): Promise<ServerSettings> {
+  ): Promise<LspConfigurationParam> {
     const featuresConfiguration = configuration.getFeaturesConfiguration();
+    const m: Record<string, LspConfigSetting> = {};
 
-    const ossEnabled = _.isUndefined(featuresConfiguration?.ossEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.ossEnabled}`;
+    // Feature toggles — default to 'true' when undefined
+    const featureToggles: [string, boolean | undefined][] = [
+      [LS_KEY.snykCodeEnabled, featuresConfiguration?.codeSecurityEnabled],
+      [LS_KEY.snykOssEnabled, featuresConfiguration?.ossEnabled],
+      [LS_KEY.snykIacEnabled, featuresConfiguration?.iacEnabled],
+      [LS_KEY.snykSecretsEnabled, featuresConfiguration?.secretsEnabled],
+    ];
+    for (const [key, value] of featureToggles) {
+      putBoolStr(m, key, _.isUndefined(value) ? 'true' : `${value}`, isExplicitlyChanged);
+    }
 
-    const iacEnabled = _.isUndefined(featuresConfiguration?.iacEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.iacEnabled}`;
+    putBoolStr(m, LS_KEY.scanNetNew, `${configuration.getDeltaFindingsEnabled()}`, isExplicitlyChanged);
+    putBoolStr(m, LS_KEY.sendErrorReports, `${configuration.shouldReportErrors}`, isExplicitlyChanged);
+    putBoolStr(m, LS_KEY.trustEnabled, 'true', isExplicitlyChanged);
+    putBoolStr(
+      m,
+      LS_KEY.automaticDownload,
+      `${configuration.isAutomaticDependencyManagementEnabled()}`,
+      isExplicitlyChanged,
+    );
+    putBoolStr(m, LS_KEY.proxyInsecure, `${configuration.getInsecure()}`, isExplicitlyChanged);
+    putBoolStr(
+      m,
+      LS_KEY.enableSnykOssQuickFixActions,
+      `${configuration.getOssQuickFixCodeActionsEnabled()}`,
+      isExplicitlyChanged,
+    );
+    putBoolStr(m, LS_KEY.autoConfigureMcpServer, `${configuration.getAutoConfigureMcpServer()}`, isExplicitlyChanged);
+    putBoolStr(m, LS_KEY.automaticAuthentication, 'false', isExplicitlyChanged);
 
-    const codeSecurityEnabled = _.isUndefined(featuresConfiguration?.codeSecurityEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.codeSecurityEnabled}`;
+    putStringOrReset(m, LS_KEY.apiEndpoint, configuration.snykApiEndpoint, isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.binaryBaseUrl, configuration.getCliBaseDownloadUrl(), isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.cliPath, await configuration.getCliPath(), isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.token, await configuration.getToken(), isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.organization, configuration.organization, isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.authenticationMethod, configuration.getAuthenticationMethod(), isExplicitlyChanged);
+    putStringOrReset(m, LS_KEY.additionalParameters, configuration.getAdditionalCliParameters(), isExplicitlyChanged);
 
-    const secretsEnabled = _.isUndefined(featuresConfiguration?.secretsEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.secretsEnabled}`;
+    const scanningMode = configuration.scanningMode;
+    if (scanningMode !== undefined && scanningMode !== '') {
+      putSetting(m, LS_KEY.scanAutomatic, scanningMode !== 'manual', isExplicitlyChanged);
+    }
 
-    const settings = {
-      activateSnykCodeSecurity: codeSecurityEnabled,
-      activateSnykOpenSource: ossEnabled,
-      activateSnykIac: iacEnabled,
-      activateSnykSecrets: secretsEnabled,
-      enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
-      sendErrorReports: `${configuration.shouldReportErrors}`,
-      cliPath: await configuration.getCliPath(),
-      cliBaseDownloadURL: configuration.getCliBaseDownloadUrl(),
-      endpoint: configuration.snykApiEndpoint,
-      organization: configuration.organization,
-      token: await configuration.getToken(),
-      automaticAuthentication: 'false',
-      authenticationMethod: configuration.getAuthenticationMethod(),
-      additionalParams: configuration.getAdditionalCliParameters(),
-      manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-      filterSeverity: configuration.severityFilter,
-      riskScoreThreshold: configuration.riskScoreThreshold,
-      issueViewOptions: configuration.issueViewOptions,
-      scanningMode: configuration.scanningMode,
-      insecure: `${configuration.getInsecure()}`,
-      enableTrustedFoldersFeature: 'true',
-      trustedFolders: configuration.getTrustedFolders(),
-      integrationName: CLI_INTEGRATION_NAME,
-      integrationVersion: await Configuration.getVersion(),
-      deviceId: user.anonymousId,
-      requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: LanguageServerSettings.resolveFolderConfigsForServerSettings(configuration, workspace),
-      enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
-      hoverVerbosity: 1,
-      secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
-      autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
-    };
-    return settings;
+    const filterSeverity = configuration.severityFilter;
+    if (filterSeverity !== undefined) {
+      putSetting(
+        m,
+        LS_KEY.enabledSeverities,
+        {
+          critical: filterSeverity.critical,
+          high: filterSeverity.high,
+          medium: filterSeverity.medium,
+          low: filterSeverity.low,
+        },
+        isExplicitlyChanged,
+      );
+    }
+
+    const issueViewOptions = configuration.issueViewOptions;
+    if (issueViewOptions !== undefined) {
+      putSetting(m, LS_KEY.issueViewOpenIssues, issueViewOptions.openIssues, isExplicitlyChanged);
+      putSetting(m, LS_KEY.issueViewIgnoredIssues, issueViewOptions.ignoredIssues, isExplicitlyChanged);
+    }
+
+    const riskScoreThreshold = configuration.riskScoreThreshold;
+    if (riskScoreThreshold != null) {
+      putSetting(m, LS_KEY.riskScoreThreshold, riskScoreThreshold, isExplicitlyChanged);
+    }
+
+    putSetting(m, LS_KEY.trustedFolders, configuration.getTrustedFolders(), isExplicitlyChanged);
+    putStringOrReset(
+      m,
+      LS_KEY.secureAtInceptionExecutionFreq,
+      configuration.getSecureAtInceptionExecutionFrequency(),
+      isExplicitlyChanged,
+    );
+
+    // Folder configs
+    const folderConfigs = LanguageServerSettings.resolveFolderConfigs(configuration, workspace);
+    const lspFolderConfigs = folderConfigs.length
+      ? folderConfigs.map(fc => folderConfigToLspFolderConfiguration(fc))
+      : undefined;
+
+    const result: LspConfigurationParam = { settings: m };
+    if (lspFolderConfigs !== undefined) {
+      result.folderConfigs = lspFolderConfigs;
+    }
+    return result;
   }
 }

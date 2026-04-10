@@ -54,18 +54,13 @@ export const LS_KEY_TO_VSCODE_KEY: Readonly<Record<string, string>> = {
 };
 
 /** Pre-computed reverse index: VS Code setting key → LS keys that map to it. */
-const VSCODE_KEY_TO_LS_KEYS: Readonly<Record<string, string[]>> = (() => {
+export const VSCODE_KEY_TO_LS_KEYS: Readonly<Record<string, string[]>> = (() => {
   const reverse: Record<string, string[]> = {};
   for (const [lsKey, vscodeKey] of Object.entries(LS_KEY_TO_VSCODE_KEY)) {
     (reverse[vscodeKey] ??= []).push(lsKey);
   }
   return reverse;
 })();
-
-/** Returns all LS keys affected by a VS Code configuration change. */
-export function vscodeKeyToLsKeys(vscodeKey: string): string[] {
-  return VSCODE_KEY_TO_LS_KEYS[vscodeKey] ?? [];
-}
 
 /** Returns the VS Code setting key for a given LS key, or undefined if unmapped. */
 export function lsKeyToVscodeKey(lsKey: string): string | undefined {
