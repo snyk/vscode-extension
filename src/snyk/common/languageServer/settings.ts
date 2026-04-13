@@ -1,15 +1,8 @@
-import _ from 'lodash';
 import { FolderConfig, IConfiguration } from '../configuration/configuration';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { LspConfigurationParam, LspConfigSetting } from './types';
-import {
-  ExplicitChangePredicate,
-  LS_KEY,
-  folderConfigToLspFolderConfiguration,
-  putBoolStr,
-  putSetting,
-  putStringOrReset,
-} from './serverSettingsToLspConfigurationParam';
+import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
+import { ExplicitChangePredicate, folderConfigToLspFolderConfiguration } from './serverSettingsToLspConfigurationParam';
 
 export class LanguageServerSettings {
   static resolveFolderConfigs(
@@ -29,86 +22,21 @@ export class LanguageServerSettings {
     isExplicitlyChanged: ExplicitChangePredicate,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
   ): Promise<LspConfigurationParam> {
-    const featuresConfiguration = configuration.getFeaturesConfiguration();
     const m: Record<string, LspConfigSetting> = {};
 
-    // Feature toggles — default to 'true' when undefined
-    const featureToggles: [string, boolean | undefined][] = [
-      [LS_KEY.snykCodeEnabled, featuresConfiguration?.codeSecurityEnabled],
-      [LS_KEY.snykOssEnabled, featuresConfiguration?.ossEnabled],
-      [LS_KEY.snykIacEnabled, featuresConfiguration?.iacEnabled],
-      [LS_KEY.snykSecretsEnabled, featuresConfiguration?.secretsEnabled],
-    ];
-    for (const [key, value] of featureToggles) {
-      putBoolStr(m, key, _.isUndefined(value) ? 'true' : `${value}`, isExplicitlyChanged);
+    for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
+      if (entry.alwaysChanged) {
+        m[lsKey] = { value: await Promise.resolve(entry.resolve(configuration)), changed: true };
+        continue;
+      }
+
+      const value = await Promise.resolve(entry.resolve(configuration));
+      if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
+        m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
+      } else if (isExplicitlyChanged(lsKey)) {
+        m[lsKey] = { value: null, changed: true };
+      }
     }
-
-    putBoolStr(m, LS_KEY.scanNetNew, `${configuration.getDeltaFindingsEnabled()}`, isExplicitlyChanged);
-    putBoolStr(m, LS_KEY.sendErrorReports, `${configuration.shouldReportErrors}`, isExplicitlyChanged);
-    putBoolStr(m, LS_KEY.trustEnabled, 'true', isExplicitlyChanged);
-    putBoolStr(
-      m,
-      LS_KEY.automaticDownload,
-      `${configuration.isAutomaticDependencyManagementEnabled()}`,
-      isExplicitlyChanged,
-    );
-    putBoolStr(m, LS_KEY.proxyInsecure, `${configuration.getInsecure()}`, isExplicitlyChanged);
-    putBoolStr(
-      m,
-      LS_KEY.enableSnykOssQuickFixActions,
-      `${configuration.getOssQuickFixCodeActionsEnabled()}`,
-      isExplicitlyChanged,
-    );
-    putBoolStr(m, LS_KEY.autoConfigureMcpServer, `${configuration.getAutoConfigureMcpServer()}`, isExplicitlyChanged);
-    putBoolStr(m, LS_KEY.automaticAuthentication, 'false', isExplicitlyChanged);
-
-    putStringOrReset(m, LS_KEY.apiEndpoint, configuration.snykApiEndpoint, isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.binaryBaseUrl, configuration.getCliBaseDownloadUrl(), isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.cliPath, await configuration.getCliPath(), isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.token, await configuration.getToken(), isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.organization, configuration.organization, isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.authenticationMethod, configuration.getAuthenticationMethod(), isExplicitlyChanged);
-    putStringOrReset(m, LS_KEY.additionalParameters, configuration.getAdditionalCliParameters(), isExplicitlyChanged);
-
-    const scanningMode = configuration.scanningMode;
-    if (scanningMode !== undefined && scanningMode !== '') {
-      putSetting(m, LS_KEY.scanAutomatic, scanningMode !== 'manual', isExplicitlyChanged);
-    }
-
-    const filterSeverity = configuration.severityFilter;
-    if (filterSeverity !== undefined) {
-      putSetting(
-        m,
-        LS_KEY.enabledSeverities,
-        {
-          critical: filterSeverity.critical,
-          high: filterSeverity.high,
-          medium: filterSeverity.medium,
-          low: filterSeverity.low,
-        },
-        isExplicitlyChanged,
-      );
-    }
-
-    const issueViewOptions = configuration.issueViewOptions;
-    if (issueViewOptions !== undefined) {
-      putSetting(m, LS_KEY.issueViewOpenIssues, issueViewOptions.openIssues, isExplicitlyChanged);
-      putSetting(m, LS_KEY.issueViewIgnoredIssues, issueViewOptions.ignoredIssues, isExplicitlyChanged);
-    }
-
-    const riskScoreThreshold = configuration.riskScoreThreshold;
-    if (riskScoreThreshold != null) {
-      putSetting(m, LS_KEY.riskScoreThreshold, riskScoreThreshold, isExplicitlyChanged);
-    }
-
-    putSetting(m, LS_KEY.hoverVerbosity, 1, isExplicitlyChanged);
-    putSetting(m, LS_KEY.trustedFolders, configuration.getTrustedFolders(), isExplicitlyChanged);
-    putStringOrReset(
-      m,
-      LS_KEY.secureAtInceptionExecutionFreq,
-      configuration.getSecureAtInceptionExecutionFrequency(),
-      isExplicitlyChanged,
-    );
 
     // Folder configs
     const folderConfigs = LanguageServerSettings.resolveFolderConfigs(configuration, workspace);

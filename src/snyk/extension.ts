@@ -104,7 +104,6 @@ import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
-import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/configurationMappingService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
@@ -375,13 +374,11 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Initialize workspace configuration services
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
-    const configMappingService = new ConfigurationMappingService();
     const htmlInjectionService = new HtmlInjectionService();
     const configPersistenceService = new ConfigurationPersistenceService(
       vsCodeWorkspace,
       configuration,
       scopeDetectionService,
-      configMappingService,
       languageClientAdapter,
       Logger,
     );
@@ -394,7 +391,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       configuration,
       htmlInjectionService,
-      configMappingService,
       scopeDetectionService,
       messageHandlerFactory,
     );

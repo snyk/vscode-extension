@@ -6,16 +6,10 @@ import { ConfigurationPersistenceService } from '../../../../../../snyk/common/v
 import { IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../../../../snyk/common/vscode/workspace';
 import { IScopeDetectionService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
-import { IConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
-import {
-  ADVANCED_ORGANIZATION,
-  CONFIGURATION_IDENTIFIER,
-  DELTA_FINDINGS,
-} from '../../../../../../snyk/common/constants/settings';
+import { CONFIGURATION_IDENTIFIER, DELTA_FINDINGS } from '../../../../../../snyk/common/constants/settings';
 import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
-import { ConfigurationMappingService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { LS_KEY } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
 
@@ -23,7 +17,6 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
-  let configMappingService: IConfigurationMappingService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let service: ConfigurationPersistenceService;
@@ -71,11 +64,6 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       shouldSkipSettingUpdate: sinon.stub().returns(false),
     } as unknown as IScopeDetectionService;
 
-    configMappingService = {
-      mapConfigToSettings: sinon.stub().returns({ [ADVANCED_ORGANIZATION]: 'test-org' }),
-      mapHtmlKeyToVSCodeSetting: sinon.stub().returns(undefined),
-    } as unknown as IConfigurationMappingService;
-
     clientAdapter = {
       getLanguageClient: sinon.stub().returns({
         sendNotification: sinon.stub().resolves(),
@@ -93,7 +81,6 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       workspace,
       configuration,
       scopeDetectionService,
-      configMappingService,
       clientAdapter,
       logger,
     );
@@ -107,12 +94,9 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
     test('writes org to user scope via scopeDetectionService', async () => {
       (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('user');
 
-      (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
-        [ADVANCED_ORGANIZATION]: 'test-org',
-      });
-
       const configJson = JSON.stringify({
         token: 'test-token',
+        organization: 'test-org',
         isFallbackForm: false,
       });
 
@@ -130,12 +114,9 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
     test('writes org to workspace scope via scopeDetectionService', async () => {
       (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('workspace');
 
-      (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
-        [ADVANCED_ORGANIZATION]: 'new-org',
-      });
-
       const configJson = JSON.stringify({
         token: 'test-token',
+        organization: 'new-org',
         isFallbackForm: false,
       });
 
@@ -154,12 +135,9 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('user');
       (scopeDetectionService.shouldSkipSettingUpdate as sinon.SinonStub).returns(true);
 
-      (configMappingService.mapConfigToSettings as sinon.SinonStub).returns({
-        [ADVANCED_ORGANIZATION]: 'test-org',
-      });
-
       const configJson = JSON.stringify({
         token: 'test-token',
+        organization: 'test-org',
         isFallbackForm: false,
       });
 
@@ -242,12 +220,10 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persists LS endpoint directly without filtering', async () => {
-    const realMapper = new ConfigurationMappingService();
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      realMapper,
       clientAdapter,
       logger,
     );
@@ -264,12 +240,10 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound writes delta setting from global settings', async () => {
-    const realMapper = new ConfigurationMappingService();
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      realMapper,
       clientAdapter,
       logger,
     );
@@ -292,12 +266,10 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound clears folder configs when LS sends empty array', async () => {
-    const realMapper = new ConfigurationMappingService();
     const svc = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      realMapper,
       clientAdapter,
       logger,
     );
@@ -316,12 +288,10 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound does not call setFolderConfigs when folderConfigs is absent', async () => {
-    const realMapper = new ConfigurationMappingService();
     const svc = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      realMapper,
       clientAdapter,
       logger,
     );

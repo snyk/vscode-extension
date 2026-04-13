@@ -7,18 +7,17 @@ import { ILog } from '../../../logger/interfaces';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import type { LspConfigurationParam } from '../../../languageServer/types';
-import { mapLspSettingsToHtmlSettings } from '../../../languageServer/inboundLspConfigurationToHtmlSettings';
 import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
+import { mapConfigToSettings, mapLspSettingsToVscodeSettings } from '../../../languageServer/lsKeyToVscodeKeyMap';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
-import { IConfigurationMappingService } from './configurationMappingService';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
 
   /**
-   * Writes LS global settings from `$/snyk.configuration` into VS Code `settings.json`
-   * (and token into secret storage). No-op when the global snapshot has no mappable keys.
+   * Writes LS global settings from `$/snyk.configuration` into VS Code `settings.json`.
+   * No-op when the global snapshot has no mappable keys.
    */
   persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void>;
 }
@@ -28,7 +27,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
     private readonly scopeDetectionService: IScopeDetectionService,
-    private readonly configMappingService: IConfigurationMappingService,
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
   ) {}
@@ -65,20 +63,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
   async persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void> {
     try {
-      // Persist global settings to VS Code settings.json
-      const globalSettings = param.settings ?? {};
-      const partial = mapLspSettingsToHtmlSettings(globalSettings);
-
-      // Token is excluded: snyk-ls marks it as writeOnly so it never appears in
-      // $/snyk.configuration; the token arrives only via $/snyk.hasAuthenticated.
-      const { token: _omit, ...rest } = partial;
-      const ideForSettings = rest as HtmlSettingsData;
-
-      const rawMap = this.configMappingService.mapConfigToSettings(ideForSettings, false);
-      const settingsMap = Object.fromEntries(Object.entries(rawMap).filter(([, v]) => v !== undefined)) as Record<
-        string,
-        unknown
-      >;
+      // Map LS settings directly to VS Code settings using the registry.
+      // Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped automatically.
+      const settingsMap = mapLspSettingsToVscodeSettings(param.settings ?? {});
 
       if (Object.keys(settingsMap).length > 0) {
         this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
@@ -103,12 +90,21 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
         const scope = this.scopeDetectionService.getSettingScope(settingKey);
 
-        if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
+        // For object values, merge with current VS Code value to preserve sibling keys
+        let effectiveValue = value;
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          const current = this.workspace.getConfiguration(configurationId, settingName);
+          if (current && typeof current === 'object') {
+            effectiveValue = { ...(current as Record<string, unknown>), ...(value as Record<string, unknown>) };
+          }
+        }
+
+        if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, effectiveValue, scope)) {
           this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
           continue;
         }
 
-        await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
+        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
@@ -132,8 +128,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
       // HtmlFolderSettingsData field names ARE LS key strings (snake_case),
       // so they pass directly to FolderConfig.setSetting().
-      const formRecord = formData as unknown as Record<string, unknown>;
-      for (const [key, value] of Object.entries(formRecord)) {
+      for (const [key, value] of Object.entries(formData)) {
         if (key === 'folderPath' || value === undefined) continue;
         currentFolderConfig.setSetting(key, value);
       }
@@ -147,7 +142,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   private async saveConfigToVSCodeSettings(config: HtmlSettingsData, isCliOnly: boolean): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
-    const settingsMap = this.configMappingService.mapConfigToSettings(config, isCliOnly);
+    const settingsMap = mapConfigToSettings(config, isCliOnly);
 
     if (!isCliOnly) await this.saveFolderConfigs(config.folderConfigs);
 
