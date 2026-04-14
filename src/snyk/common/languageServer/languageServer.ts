@@ -64,8 +64,8 @@ export class LanguageServer implements ILanguageServer {
 
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
   private configurationChangeDisposable?: Disposable;
-  /** When true, VS Code `settings.json` updates from inbound LS persistence must not mark keys as explicitly changed. */
-  private suppressExplicitKeyMarkingFromInboundPersistence = false;
+  /** When true, VS Code `settings.json` updates triggered by inbound LS persistence are suppressed from feeding back to the LS. */
+  private suppressConfigFeedbackFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private configPersistenceQueue: Promise<void> = Promise.resolve();
   private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
@@ -176,6 +176,7 @@ export class LanguageServer implements ILanguageServer {
         this.codeCommands,
         this.workspace,
         this.explicitLspConfigurationChangeTracker,
+        () => this.suppressConfigFeedbackFromInboundPersistence,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
@@ -289,7 +290,7 @@ export class LanguageServer implements ILanguageServer {
     this.configurationChangeDisposable?.dispose();
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      if (this.suppressExplicitKeyMarkingFromInboundPersistence) {
+      if (this.suppressConfigFeedbackFromInboundPersistence) {
         return;
       }
       markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
@@ -316,7 +317,7 @@ export class LanguageServer implements ILanguageServer {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
       .then(async () => {
-        this.suppressExplicitKeyMarkingFromInboundPersistence = true;
+        this.suppressConfigFeedbackFromInboundPersistence = true;
         try {
           await this.persistInboundConfiguration!(params);
         } catch (e) {
@@ -324,7 +325,7 @@ export class LanguageServer implements ILanguageServer {
             `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,
           );
         } finally {
-          this.suppressExplicitKeyMarkingFromInboundPersistence = false;
+          this.suppressConfigFeedbackFromInboundPersistence = false;
         }
       });
   }

@@ -43,6 +43,7 @@ export class LanguageClientMiddleware implements Middleware {
     private commands: IVSCodeCommands,
     private readonly vscodeWorkspace?: IVSCodeWorkspace,
     private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
+    private readonly isInboundPersistenceSuppressed: () => boolean = () => false,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -80,6 +81,12 @@ export class LanguageClientMiddleware implements Middleware {
       }
 
       return [{ settings: lspParam }];
+    },
+    didChangeConfiguration: async (sections, next) => {
+      if (this.isInboundPersistenceSuppressed()) {
+        return;
+      }
+      await next(sections);
     },
   };
   window: WindowMiddleware = {

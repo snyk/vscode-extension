@@ -203,6 +203,40 @@ suite('Language Server: Middleware', () => {
     });
   });
 
+  test('didChangeConfiguration calls next when not suppressed', async () => {
+    const nextStub = sinon.stub().resolves();
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      undefined,
+      () => false,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
+  });
+
+  test('didChangeConfiguration skips next when inbound persistence is active', async () => {
+    const nextStub = sinon.stub().resolves();
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      undefined,
+      () => true,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.notCalled(nextStub);
+  });
+
   test('unmarks explicitly changed keys after emitting a reset (value: null)', async () => {
     const unmarkStub = sinon.stub();
     const tracker: IExplicitLspConfigurationChangeTracker = {
