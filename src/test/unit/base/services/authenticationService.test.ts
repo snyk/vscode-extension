@@ -202,7 +202,7 @@ suite('AuthenticationService', () => {
       sinon.assert.notCalled(setTokenSpy);
     });
 
-    test('accepts oauth token with expired access when refresh token is present', async () => {
+    test('fails with error on setting expired token', async () => {
       const oauthToken: OAuthToken = {
         // eslint-disable-next-line camelcase
         access_token: 'access_token',
@@ -213,9 +213,7 @@ suite('AuthenticationService', () => {
       const oauthTokenString = JSON.stringify(oauthToken);
       const apiUrl = 'https://api.snyk.io';
 
-      await service.updateTokenAndEndpoint(oauthTokenString, apiUrl);
-      sinon.assert.calledWith(setTokenSpy, oauthTokenString);
-      sinon.assert.calledWith(setEndpointSpy, apiUrl);
+      await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
     });
   });
 
