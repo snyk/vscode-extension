@@ -339,7 +339,7 @@
         isFallbackForm: true,
         cli_path: get('cli_path').value,
         automatic_download: get('automatic_download').checked,
-        binary_base_url: get('binary_base_url').value,
+        binary_base_url: get('binary_base_url').value || get('binary_base_url').placeholder,
         cli_release_channel: get('cli_release_channel').value,
         proxy_insecure: get('proxy_insecure').checked
       };
