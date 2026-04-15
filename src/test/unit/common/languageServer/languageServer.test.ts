@@ -415,7 +415,7 @@ suite('Language Server', () => {
         strictEqual(initializationOptions.integrationName, 'VS_CODE');
         strictEqual(initializationOptions.requiredProtocolVersion, PROTOCOL_VERSION.toString());
         strictEqual(initializationOptions.hoverVerbosity, 1);
-        deepStrictEqual(initializationOptions.trustedFolders, ['/trusted/test/folder']);
+        deepStrictEqual(initializationOptions.settings[LS_KEY.trustedFolders]?.value, ['/trusted/test/folder']);
 
         // Settings
         strictEqual(initializationOptions.settings[LS_KEY.snykCodeEnabled]?.value, true);
