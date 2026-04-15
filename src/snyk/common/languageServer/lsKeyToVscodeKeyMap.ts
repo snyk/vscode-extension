@@ -189,6 +189,7 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
   [LS_GLOBAL_KEY.trustedFolders]: {
     vscodeKey: TRUSTED_FOLDERS,
     resolve: c => c.getTrustedFolders(),
+    alwaysChanged: true,
   },
 };
 

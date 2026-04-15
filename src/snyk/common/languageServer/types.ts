@@ -220,7 +220,6 @@ export type LspInitializationOptions = {
   hoverVerbosity?: number;
   outputFormat?: string;
   path?: string;
-  trustedFolders?: string[];
 };
 
 // Snyk Secrets

@@ -346,7 +346,6 @@ export class LanguageServer implements ILanguageServer {
       integrationName: CLI_INTEGRATION_NAME,
       integrationVersion: await Configuration.getVersion(),
       hoverVerbosity: 1,
-      trustedFolders: this.configuration.getTrustedFolders(),
     };
   }
 
