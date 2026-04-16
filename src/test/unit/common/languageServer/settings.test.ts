@@ -148,6 +148,12 @@ suite('LanguageServerSettings', () => {
         getSecureAtInceptionExecutionFrequency: () => 'Manual',
         getAutoConfigureMcpServer: () => false,
       } as unknown as IConfiguration;
+
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => false);
+      assert.strictEqual(result.settings?.[LS_KEY.severityFilterCritical]?.value, true);
+      assert.strictEqual(result.settings?.[LS_KEY.severityFilterHigh]?.value, false);
+      assert.strictEqual(result.settings?.[LS_KEY.severityFilterMedium]?.value, true);
+      assert.strictEqual(result.settings?.[LS_KEY.severityFilterLow]?.value, false);
     });
   });
 });
