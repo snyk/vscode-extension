@@ -164,12 +164,25 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
     },
     toVscodeValue: v => (v ? 'auto' : 'manual'),
   },
-  [LS_GLOBAL_KEY.enabledSeverities]: {
+  [LS_GLOBAL_KEY.severityFilterCritical]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
-    resolve: c => {
-      const f = c.severityFilter;
-      return f ? { critical: f.critical, high: f.high, medium: f.medium, low: f.low } : undefined;
-    },
+    resolve: c => c.severityFilter?.critical ?? true,
+    toVscodeValue: c => ({ critical: c }),
+  },
+  [LS_GLOBAL_KEY.severityFilterHigh]: {
+    vscodeKey: SEVERITY_FILTER_SETTING,
+    resolve: c => c.severityFilter?.high ?? true,
+    toVscodeValue: c => ({ high: c }),
+  },
+  [LS_GLOBAL_KEY.severityFilterMedium]: {
+    vscodeKey: SEVERITY_FILTER_SETTING,
+    resolve: c => c.severityFilter?.medium ?? true,
+    toVscodeValue: c => ({ medium: c }),
+  },
+  [LS_GLOBAL_KEY.severityFilterLow]: {
+    vscodeKey: SEVERITY_FILTER_SETTING,
+    resolve: c => c.severityFilter?.low ?? true,
+    toVscodeValue: c => ({ low: c }),
   },
   [LS_GLOBAL_KEY.issueViewOpenIssues]: {
     vscodeKey: ISSUE_VIEW_OPTIONS_SETTING,
@@ -282,13 +295,5 @@ export function mapLspSettingsToVscodeSettings(
  * Handles severity sub-keys and legacy camelCase.
  */
 export function mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined {
-  const severityPrefix = `${LS_KEY.enabledSeverities}_`;
-  if (htmlKey.startsWith(severityPrefix)) {
-    return `${SEVERITY_FILTER_SETTING}.${htmlKey.replace(severityPrefix, '')}`;
-  }
-  if (htmlKey.startsWith('filterSeverity_')) {
-    return `${SEVERITY_FILTER_SETTING}.${htmlKey.replace('filterSeverity_', '')}`;
-  }
-
   return lsKeyToVscodeKey(htmlKey);
 }
