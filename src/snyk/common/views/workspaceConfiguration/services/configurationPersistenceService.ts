@@ -3,7 +3,9 @@
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
+import { SNYK_CONTEXT } from '../../../constants/views';
 import { ILog } from '../../../logger/interfaces';
+import { IContextService } from '../../../services/contextService';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import type { LspConfigurationParam } from '../../../languageServer/types';
@@ -29,6 +31,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
+    private readonly contextService?: IContextService,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
@@ -39,15 +42,17 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
       await this.saveConfigToVSCodeSettings(config, isCliOnly);
 
-      // Only handle token when not in CLI-only mode
-      if (!isCliOnly) {
-        // Persist token to secret storage only if it has changed
+      // Only handle token when not in CLI-only mode and token is present in the payload
+      if (!isCliOnly && 'token' in config) {
         const existingToken = await this.configuration.getToken();
-        // Normalize empty/null/undefined to empty string for comparison
         const normalizedNewToken = config.token?.trim() || '';
         const normalizedExistingToken = existingToken?.trim() || '';
         if (normalizedNewToken !== normalizedExistingToken) {
           await this.configuration.setToken(config.token);
+          if (this.contextService) {
+            await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+            await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, false);
+          }
         }
       }
 

@@ -381,6 +381,7 @@ class SnykExtension extends SnykLib implements IExtension {
       scopeDetectionService,
       languageClientAdapter,
       Logger,
+      this.contextService,
     );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 

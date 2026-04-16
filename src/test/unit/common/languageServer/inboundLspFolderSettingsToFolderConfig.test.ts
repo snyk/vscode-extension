@@ -1,5 +1,6 @@
 import assert from 'assert';
 import { folderConfigsFromLspParam } from '../../../../snyk/common/languageServer/inboundLspFolderSettingsToFolderConfig';
+import { FolderConfig } from '../../../../snyk/common/configuration/configuration';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../snyk/common/languageServer/types';
 
@@ -57,5 +58,37 @@ suite('folderConfigsFromLspParam', () => {
     assert.strictEqual(out[0].referenceFolderPath(), '/ref');
     assert.strictEqual(out[1].folderPath, '/b');
     assert.strictEqual(out[1].orgSetByUser(), true);
+  });
+});
+
+suite('FolderConfig.setSetting', () => {
+  test('marks new setting as changed', () => {
+    const fc = new FolderConfig('/proj');
+    fc.setSetting('severity_filter_critical', true);
+    assert.deepStrictEqual(fc.settings['severity_filter_critical'], { value: true, changed: true });
+  });
+
+  test('marks changed when value is identical to current', () => {
+    const fc = new FolderConfig('/proj', {
+      severity_filter_critical: { value: true, changed: false, source: 'org' },
+    });
+    fc.setSetting('severity_filter_critical', true);
+    assert.strictEqual(fc.settings['severity_filter_critical'].changed, true);
+  });
+
+  test('updates and marks changed when value differs', () => {
+    const fc = new FolderConfig('/proj', {
+      severity_filter_critical: { value: true, changed: false, source: 'org' },
+    });
+    fc.setSetting('severity_filter_critical', false);
+    assert.deepStrictEqual(fc.settings['severity_filter_critical'], { value: false, changed: true });
+  });
+
+  test('preserves changed:true when value is identical and already changed', () => {
+    const fc = new FolderConfig('/proj', {
+      severity_filter_critical: { value: true, changed: true },
+    });
+    fc.setSetting('severity_filter_critical', true);
+    assert.strictEqual(fc.settings['severity_filter_critical'].changed, true);
   });
 });
