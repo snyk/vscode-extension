@@ -125,7 +125,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     const currentFolderConfigs = this.configuration.getFolderConfigs();
 
-    const folderConfigMap = new Map(folderConfigs.map(fc => [fc.folderPath, fc]));
+    const folderConfigMap = new Map(
+      folderConfigs.map(fc => [fc.folderPath ?? ((fc as Record<string, unknown>)['folder_path'] as string), fc]),
+    );
 
     const updatedFolderConfigs = currentFolderConfigs.map(currentFolderConfig => {
       const formData = folderConfigMap.get(currentFolderConfig.folderPath);
@@ -134,7 +136,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       // HtmlFolderSettingsData field names ARE LS key strings (snake_case),
       // so they pass directly to FolderConfig.setSetting().
       for (const [key, value] of Object.entries(formData)) {
-        if (key === 'folderPath' || value === undefined) continue;
+        if (key === 'folderPath' || key === 'folder_path' || value === undefined) continue;
         currentFolderConfig.setSetting(key, value);
       }
 
@@ -149,7 +151,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     const settingsMap = mapConfigToSettings(config, isCliOnly);
 
-    if (!isCliOnly) await this.saveFolderConfigs(config.folderConfigs);
+    if (!isCliOnly)
+      await this.saveFolderConfigs(
+        config.folderConfigs ?? (config['folder_configs'] as HtmlFolderSettingsData[] | undefined),
+      );
 
     await this.applySettingsMap(settingsMap);
 

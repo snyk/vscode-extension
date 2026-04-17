@@ -234,6 +234,11 @@ export function lsKeyToVscodeKey(lsKey: string): string | undefined {
 
 // ── Inbound: LS values → VS Code settings ────────────────────────────
 
+/** Converts a snake_case string to camelCase for LS HTML form key compatibility. */
+function snakeToCamel(s: string): string {
+  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
 /** Merges object values when multiple LS keys share one vscodeKey (e.g. issueViewOptions). */
 function setOrMerge(result: Record<string, unknown>, vscodeKey: string, transformed: unknown): void {
   const existing = result[vscodeKey];
@@ -255,15 +260,16 @@ export function mapConfigToSettings(config: Record<string, unknown>, isCliOnly: 
     if (!entry.vscodeKey) continue;
     if (isCliOnly && !entry.cliOnly) continue;
 
-    const value = config[lsKey];
+    const value = config[lsKey] ?? config[snakeToCamel(lsKey)];
     if (value === undefined) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }
 
   // IDE-only field (not an LS key, only present in webview form)
-  if (config.cli_release_channel !== undefined) {
-    result[ADVANCED_CLI_RELEASE_CHANNEL] = config.cli_release_channel;
+  const releaseChannel = config.cli_release_channel ?? config.cliReleaseChannel;
+  if (releaseChannel !== undefined) {
+    result[ADVANCED_CLI_RELEASE_CHANNEL] = releaseChannel;
   }
 
   return result;

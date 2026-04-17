@@ -148,6 +148,120 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   });
 });
 
+suite('ConfigurationPersistenceService — camelCase / snake_case key compat', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getWorkspaceFolders: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({}),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('test-token'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({
+        sendNotification: sinon.stub().resolves(),
+      }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
+
+  test('maps camelCase cliPath from old CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cliPath: '/usr/local/bin/snyk',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliPath', '/usr/local/bin/snyk', true);
+  });
+
+  test('maps snake_case cli_path from new CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cli_path: '/usr/local/bin/snyk',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliPath', '/usr/local/bin/snyk', true);
+  });
+
+  test('maps camelCase cliReleaseChannel from old CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cliReleaseChannel: 'preview',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliReleaseChannel', 'preview', true);
+  });
+
+  test('maps snake_case cli_release_channel from new CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cli_release_channel: 'preview',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliReleaseChannel', 'preview', true);
+  });
+
+  test('prefers snake_case key when both are present', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cli_path: '/snake/path',
+      cliPath: '/camel/path',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliPath', '/snake/path', true);
+  });
+});
+
 suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
