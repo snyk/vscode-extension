@@ -267,7 +267,8 @@ export function mapConfigToSettings(config: Record<string, unknown>, isCliOnly: 
   }
 
   // IDE-only field (not an LS key, only present in webview form)
-  const releaseChannel = config.cli_release_channel ?? config.cliReleaseChannel;
+  const releaseChannelKey = 'cli_release_channel';
+  const releaseChannel = config[releaseChannelKey] ?? config[snakeToCamel(releaseChannelKey)];
   if (releaseChannel !== undefined) {
     result[ADVANCED_CLI_RELEASE_CHANNEL] = releaseChannel;
   }
