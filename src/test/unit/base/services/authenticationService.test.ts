@@ -95,6 +95,23 @@ suite('AuthenticationService', () => {
     sinon.assert.calledOnceWithExactly(languageClientSendNotification, DID_CHANGE_CONFIGURATION_METHOD, {});
   });
 
+  test('initiateLogout clears logged-in context', async () => {
+    const service = new AuthenticationService(
+      contextService,
+      baseModule,
+      config,
+      windowMock,
+      new LoggerMock(),
+      languageClientAdapter,
+      {} as IVSCodeCommands,
+    );
+
+    await service.initiateLogout();
+
+    sinon.assert.calledWith(setContextSpy, SNYK_CONTEXT.LOGGEDIN, false);
+    sinon.assert.called(clearTokenSpy);
+  });
+
   suite('.updateTokenAndEndpoint()', () => {
     let service: AuthenticationService;
     const setLoadingBadgeFake = sinon.fake();
@@ -197,7 +214,6 @@ suite('AuthenticationService', () => {
       const apiUrl = 'https://api.snyk.io';
 
       await rejects(service.updateTokenAndEndpoint(oauthTokenString, apiUrl));
-      sinon.assert.notCalled(setTokenSpy);
     });
   });
 

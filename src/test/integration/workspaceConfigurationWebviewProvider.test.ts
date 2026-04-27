@@ -9,7 +9,6 @@ import { IVSCodeCommands } from '../../snyk/common/vscode/commands';
 import { IVSCodeWorkspace } from '../../snyk/common/vscode/workspace';
 import { IConfiguration } from '../../snyk/common/configuration/configuration';
 import { IHtmlInjectionService } from '../../snyk/common/views/workspaceConfiguration/services/htmlInjectionService';
-import { IConfigurationMappingService } from '../../snyk/common/views/workspaceConfiguration/services/configurationMappingService';
 import { IScopeDetectionService } from '../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { IMessageHandlerFactory } from '../../snyk/common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SNYK_WORKSPACE_CONFIGURATION_COMMAND } from '../../snyk/common/constants/commands';
@@ -21,7 +20,6 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
   let contextMock: ExtensionContext;
   let configurationMock: IConfiguration;
   let htmlInjectionServiceMock: IHtmlInjectionService;
-  let configMappingServiceMock: IConfigurationMappingService;
   let scopeDetectionServiceMock: IScopeDetectionService;
   let messageHandlerFactoryMock: IMessageHandlerFactory;
   let logger: LoggerMock;
@@ -68,11 +66,6 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
       injectIdeScripts: sinon.stub().returnsArg(0),
     } as unknown as IHtmlInjectionService;
 
-    configMappingServiceMock = {
-      mapConfigToSettings: sinon.stub().returns({}),
-      mapHtmlKeyToVSCodeSetting: sinon.stub().returns(undefined),
-    } as unknown as IConfigurationMappingService;
-
     scopeDetectionServiceMock = {
       getSettingScope: sinon.stub().returns('default'),
       populateScopeIndicators: sinon.stub().returnsArg(0),
@@ -89,7 +82,6 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
       workspaceMock,
       configurationMock,
       htmlInjectionServiceMock,
-      configMappingServiceMock,
       scopeDetectionServiceMock,
       messageHandlerFactoryMock,
     );

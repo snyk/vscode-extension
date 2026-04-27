@@ -46,6 +46,7 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -103,7 +104,6 @@ import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
-import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/configurationMappingService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
@@ -249,6 +249,8 @@ class SnykExtension extends SnykLib implements IExtension {
       }
     }
 
+    const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -270,6 +272,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
+      explicitLspConfigurationChangeTracker,
       this.treeViewProviderService,
     );
 
@@ -371,15 +374,14 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Initialize workspace configuration services
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
-    const configMappingService = new ConfigurationMappingService();
     const htmlInjectionService = new HtmlInjectionService();
     const configPersistenceService = new ConfigurationPersistenceService(
       vsCodeWorkspace,
       configuration,
       scopeDetectionService,
-      configMappingService,
       languageClientAdapter,
       Logger,
+      this.contextService,
     );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 
@@ -390,7 +392,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       configuration,
       htmlInjectionService,
-      configMappingService,
       scopeDetectionService,
       messageHandlerFactory,
     );
@@ -398,6 +399,9 @@ class SnykExtension extends SnykLib implements IExtension {
     // Connect the workspace configuration provider to the language server
     // so it can update the token in the webview when authentication completes
     this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
+    this.languageServer.setInboundConfigurationPersistenceHandler(view =>
+      configPersistenceService.persistInboundLspConfiguration(view),
+    );
 
     this.commandController = new CommandController(
       this.openerService,
@@ -686,12 +690,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
-        const useHTMLSettings = configuration.getPreviewFeature(HTML_SETTINGS);
-        if (useHTMLSettings) {
-          await this.workspaceConfigurationProvider?.showPanel();
-        } else {
-          this.commandController.openSettings();
-        }
+        await this.workspaceConfigurationProvider?.showPanel();
       }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),

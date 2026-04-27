@@ -46,7 +46,7 @@ suite('StaticCliApi - Integration Tests', function () {
   });
 
   test('getLatestCliVersion with preview channel returns a version', async () => {
-    const version = await api.getLatestCliVersion('preview');
+    const version = await api.getLatestCliVersion('preview', TEST_PROTOCOL_VERSION);
 
     ok(version, 'Preview version should not be empty');
     ok(/^v?\d+\.\d+\.\d+/.test(version), `Preview version "${version}" should match semantic version pattern`);
