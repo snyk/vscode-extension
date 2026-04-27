@@ -690,12 +690,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
-        const useHTMLSettings = configuration.getPreviewFeature(HTML_SETTINGS);
-        if (useHTMLSettings) {
-          await this.workspaceConfigurationProvider?.showPanel();
-        } else {
-          this.commandController.openSettings();
-        }
+        await this.workspaceConfigurationProvider?.showPanel();
       }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
