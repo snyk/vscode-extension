@@ -247,6 +247,47 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
     sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliReleaseChannel', 'preview', true);
   });
 
+  test('maps legacy form key enableDeltaFindings from old CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'test-token',
+      enableDeltaFindings: true,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''), NEWISSUES, true);
+  });
+
+  test('maps legacy form key endpoint from old CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'test-token',
+      endpoint: 'https://custom.snyk.io',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.customEndpoint', 'https://custom.snyk.io', true);
+  });
+
+  test('maps legacy form key manageBinariesAutomatically from old CLI to VS Code setting', async () => {
+    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      manageBinariesAutomatically: true,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.automaticDependencyManagement', true, true);
+  });
+
   test('prefers snake_case key when both are present', async () => {
     const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
 

@@ -42,6 +42,8 @@ export interface RegistryEntry {
   alwaysChanged?: true;
   /** Included in CLI-only fallback form subset. */
   cliOnly?: true;
+  /** Legacy HTML form key sent by older CLI versions whose name differs from snakeToCamel(lsKey). */
+  legacyFormKey?: string;
 }
 
 // ── Auth method normalisation ────────────────────────────────────────
@@ -62,24 +64,29 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
   [LS_GLOBAL_KEY.snykCodeEnabled]: {
     vscodeKey: CODE_SECURITY_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.codeSecurityEnabled ?? true,
+    legacyFormKey: 'activateSnykCode',
   },
   [LS_GLOBAL_KEY.snykOssEnabled]: {
     vscodeKey: OSS_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.ossEnabled ?? true,
+    legacyFormKey: 'activateSnykOpenSource',
   },
   [LS_GLOBAL_KEY.snykIacEnabled]: {
     vscodeKey: IAC_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.iacEnabled ?? true,
+    legacyFormKey: 'activateSnykIac',
   },
   [LS_GLOBAL_KEY.snykSecretsEnabled]: {
     vscodeKey: SECRETS_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.secretsEnabled ?? true,
+    legacyFormKey: 'activateSnykSecrets',
   },
 
   [LS_GLOBAL_KEY.scanNetNew]: {
     vscodeKey: DELTA_FINDINGS,
     resolve: c => c.getDeltaFindingsEnabled(),
     toVscodeValue: v => (v ? NEWISSUES : ALLISSUES),
+    legacyFormKey: 'enableDeltaFindings',
   },
   [LS_GLOBAL_KEY.sendErrorReports]: {
     resolve: c => c.shouldReportErrors,
@@ -88,12 +95,14 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
     vscodeKey: ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
     resolve: c => c.isAutomaticDependencyManagementEnabled(),
     cliOnly: true,
+    legacyFormKey: 'manageBinariesAutomatically',
   },
   [LS_GLOBAL_KEY.proxyInsecure]: {
     vscodeKey: HTTP_PROXY_STRICT_SSL_SETTING,
     resolve: c => c.getInsecure(),
     toVscodeValue: v => !v,
     cliOnly: true,
+    legacyFormKey: 'insecure',
   },
   [LS_GLOBAL_KEY.enableSnykOssQuickFixActions]: {
     resolve: c => c.getOssQuickFixCodeActionsEnabled(),
@@ -120,11 +129,13 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
   [LS_GLOBAL_KEY.apiEndpoint]: {
     vscodeKey: ADVANCED_CUSTOM_ENDPOINT,
     resolve: c => c.snykApiEndpoint,
+    legacyFormKey: 'endpoint',
   },
   [LS_GLOBAL_KEY.binaryBaseUrl]: {
     vscodeKey: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     resolve: c => c.getCliBaseDownloadUrl(),
     cliOnly: true,
+    legacyFormKey: 'cliBaseDownloadURL',
   },
   [LS_GLOBAL_KEY.cliPath]: {
     vscodeKey: ADVANCED_CLI_PATH,
@@ -163,26 +174,31 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
       return mode !== undefined && mode !== '' ? mode !== 'manual' : undefined;
     },
     toVscodeValue: v => (v ? 'auto' : 'manual'),
+    legacyFormKey: 'scanningMode',
   },
   [LS_GLOBAL_KEY.severityFilterCritical]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.critical ?? true,
     toVscodeValue: c => ({ critical: c }),
+    legacyFormKey: 'filterSeverityCritical',
   },
   [LS_GLOBAL_KEY.severityFilterHigh]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.high ?? true,
     toVscodeValue: c => ({ high: c }),
+    legacyFormKey: 'filterSeverityHigh',
   },
   [LS_GLOBAL_KEY.severityFilterMedium]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.medium ?? true,
     toVscodeValue: c => ({ medium: c }),
+    legacyFormKey: 'filterSeverityMedium',
   },
   [LS_GLOBAL_KEY.severityFilterLow]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.low ?? true,
     toVscodeValue: c => ({ low: c }),
+    legacyFormKey: 'filterSeverityLow',
   },
   [LS_GLOBAL_KEY.issueViewOpenIssues]: {
     vscodeKey: ISSUE_VIEW_OPTIONS_SETTING,
@@ -260,7 +276,7 @@ export function mapConfigToSettings(config: Record<string, unknown>, isCliOnly: 
     if (!entry.vscodeKey) continue;
     if (isCliOnly && !entry.cliOnly) continue;
 
-    const value = config[lsKey] ?? config[snakeToCamel(lsKey)];
+    const value = config[lsKey] ?? (entry.legacyFormKey ? config[entry.legacyFormKey] : undefined) ?? config[snakeToCamel(lsKey)];
     if (value === undefined) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
