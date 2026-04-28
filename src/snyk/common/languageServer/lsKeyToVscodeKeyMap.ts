@@ -276,7 +276,8 @@ export function mapConfigToSettings(config: Record<string, unknown>, isCliOnly: 
     if (!entry.vscodeKey) continue;
     if (isCliOnly && !entry.cliOnly) continue;
 
-    const value = config[lsKey] ?? (entry.legacyFormKey ? config[entry.legacyFormKey] : undefined) ?? config[snakeToCamel(lsKey)];
+    const value =
+      config[lsKey] ?? (entry.legacyFormKey ? config[entry.legacyFormKey] : undefined) ?? config[snakeToCamel(lsKey)];
     if (value === undefined) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);

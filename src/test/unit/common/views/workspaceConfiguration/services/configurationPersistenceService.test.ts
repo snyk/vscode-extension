@@ -196,7 +196,13 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
   });
 
   test('maps camelCase cliPath from old CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
@@ -205,11 +211,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliPath', '/usr/local/bin/snyk', true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliPath',
+      '/usr/local/bin/snyk',
+      true,
+    );
   });
 
   test('maps snake_case cli_path from new CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
@@ -218,11 +236,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliPath', '/usr/local/bin/snyk', true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliPath',
+      '/usr/local/bin/snyk',
+      true,
+    );
   });
 
   test('maps camelCase cliReleaseChannel from old CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
@@ -231,11 +261,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliReleaseChannel', 'preview', true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliReleaseChannel',
+      'preview',
+      true,
+    );
   });
 
   test('maps snake_case cli_release_channel from new CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
@@ -244,11 +286,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.cliReleaseChannel', 'preview', true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliReleaseChannel',
+      'preview',
+      true,
+    );
   });
 
   test('maps legacy form key enableDeltaFindings from old CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: false,
@@ -258,11 +312,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''), NEWISSUES, true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''),
+      NEWISSUES,
+      true,
+    );
   });
 
   test('maps legacy form key endpoint from old CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: false,
@@ -272,11 +338,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.customEndpoint', 'https://custom.snyk.io', true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.customEndpoint',
+      'https://custom.snyk.io',
+      true,
+    );
   });
 
   test('maps legacy form key manageBinariesAutomatically from old CLI to VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
@@ -285,11 +363,23 @@ suite('ConfigurationPersistenceService — camelCase / snake_case key compat', (
 
     await service.handleSaveConfig(configJson);
 
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.automaticDependencyManagement', true, true);
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.automaticDependencyManagement',
+      true,
+      true,
+    );
   });
 
   test('prefers snake_case key when both are present', async () => {
-    const service = new ConfigurationPersistenceService(workspace, configuration, scopeDetectionService, clientAdapter, logger);
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
 
     const configJson = JSON.stringify({
       isFallbackForm: true,
