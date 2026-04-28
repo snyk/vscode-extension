@@ -114,7 +114,7 @@ import { ProductTreeViewService } from './common/services/productTreeViewService
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
-import { HTML_SETTINGS, HTML_TREE_VIEW } from './common/constants/settings';
+import { HTML_TREE_VIEW } from './common/constants/settings';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 
@@ -686,12 +686,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
-        const useHTMLSettings = configuration.getPreviewFeature(HTML_SETTINGS);
-        if (useHTMLSettings) {
-          await this.workspaceConfigurationProvider?.showPanel();
-        } else {
-          this.commandController.openSettings();
-        }
+        await this.workspaceConfigurationProvider?.showPanel();
       }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),
