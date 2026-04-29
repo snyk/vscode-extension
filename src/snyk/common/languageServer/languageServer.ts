@@ -1,8 +1,10 @@
+import { execFile } from 'child_process';
 import _ from 'lodash';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
 import { IAuthenticationService } from '../../base/services/authenticationService';
 import { Configuration, IConfiguration } from '../configuration/configuration';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
+import { SNYK_SETTINGS_COMMAND } from '../constants/commands';
 import {
   PROTOCOL_VERSION,
   SNYK_ADD_TRUSTED_FOLDERS,
@@ -136,6 +138,10 @@ export class LanguageServer implements ILanguageServer {
     }
 
     const cliBinaryPath = await this.configuration.getCliPath();
+
+    if (!(await this.verifyCliProtocolVersion(cliBinaryPath))) {
+      return;
+    }
 
     // log level is set to info by default
     let logLevel = 'info';
@@ -328,6 +334,65 @@ export class LanguageServer implements ILanguageServer {
           this.suppressConfigFeedbackFromInboundPersistence = false;
         }
       });
+  }
+
+  /**
+   * Probes the CLI's reported protocol version and aborts startup with a user-visible
+   * error notification when it cannot be determined or doesn't match {@link PROTOCOL_VERSION}.
+   * Does not trigger any download/repair: recovery is the user's choice via the action button.
+   */
+  private async verifyCliProtocolVersion(cliBinaryPath: string | undefined): Promise<boolean> {
+    if (!cliBinaryPath) {
+      await this.notifyProtocolVersionFailure(
+        `Snyk CLI path is not configured. The Snyk Language Server will not start.`,
+      );
+      return false;
+    }
+
+    const cliProtocolVersion = await this.getCliProtocolVersion(cliBinaryPath);
+    if (cliProtocolVersion === PROTOCOL_VERSION) {
+      return true;
+    }
+
+    const message =
+      cliProtocolVersion === undefined
+        ? `Failed to verify the Snyk CLI protocol version. Expected ${PROTOCOL_VERSION}. The Snyk Language Server will not start.`
+        : `Snyk CLI protocol version mismatch (expected ${PROTOCOL_VERSION}, got ${cliProtocolVersion}). The Snyk Language Server will not start.`;
+    await this.notifyProtocolVersionFailure(message);
+    return false;
+  }
+
+  private async notifyProtocolVersionFailure(message: string): Promise<void> {
+    this.logger.error(message);
+    const openSettings = 'Open Settings';
+    const choice = await this.window.showErrorMessage(message, openSettings);
+    if (choice === openSettings) {
+      await this.codeCommands.executeCommand(SNYK_SETTINGS_COMMAND);
+    }
+  }
+
+  /**
+   * Runs `<cliBinaryPath> language-server --protocolVersion` and parses the trimmed integer output.
+   * Returns `undefined` when the binary cannot be executed or the output is not a parseable integer.
+   */
+  protected getCliProtocolVersion(cliBinaryPath: string): Promise<number | undefined> {
+    return new Promise(resolve => {
+      execFile(cliBinaryPath, ['language-server', '--protocolVersion'], (error, stdout) => {
+        if (error) {
+          this.logger.error(`Failed to invoke Snyk CLI for protocol version probe: ${error.message}`);
+          resolve(undefined);
+          return;
+        }
+        const trimmed = stdout.trim();
+        const parsed = parseInt(trimmed, 10);
+        if (!Number.isFinite(parsed) || `${parsed}` !== trimmed) {
+          this.logger.error(`Unable to parse Snyk CLI protocol version output: "${trimmed}"`);
+          resolve(undefined);
+          return;
+        }
+        resolve(parsed);
+      });
+    });
   }
 
   // Initialization options are not semantically equal to server settings, thus separated here
