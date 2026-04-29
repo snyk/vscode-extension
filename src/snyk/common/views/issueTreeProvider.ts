@@ -62,6 +62,12 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
     filteredIssues: Issue<T>[],
   ): Command;
 
+  /** Whether this product is enabled for the given folder (folder override wins, falls back to global). */
+  protected abstract isProductEnabledForFolder(folderPath: string): boolean;
+
+  /** User-facing message rendered in place of issue results when {@link isProductEnabledForFolder} is false. */
+  protected abstract getProductDisabledMessage(): string;
+
   getRootChildren(): TreeNode[] {
     const nodes: TreeNode[] = [];
 
@@ -226,6 +232,17 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
 
       let folderIcon: INodeIcon;
       let folderDescription: string | undefined;
+
+      if (!this.isProductEnabledForFolder(folderPath)) {
+        const disabledNode = new TreeNode({ text: this.getProductDisabledMessage() });
+        if (singleFolderWorkspace) {
+          addTo.push(disabledNode);
+        } else {
+          addTo.push(disabledNode);
+          outerNodes.push(this.createFolderNode(folderName, undefined, NODE_ICONS.error, addTo));
+        }
+        continue;
+      }
 
       if (!folderResult.isSuccess) {
         folderIcon = NODE_ICONS.error;

@@ -4,7 +4,6 @@ import { CodeIssueData } from '../../common/languageServer/types';
 import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
-import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IssueTreeProvider } from './issueTreeProvider';
 import { IFolderConfigs } from '../../common/configuration/folderConfigs';
@@ -23,16 +22,12 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     super(logger, contextService, codeService, configuration, languages, true, folderConfigs);
   }
 
-  getRootChildren(): TreeNode[] {
-    if (!this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
-      return [
-        new TreeNode({
-          text: SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED,
-        }),
-      ];
-    }
+  protected isProductEnabledForFolder(folderPath: string): boolean {
+    return !!this.configuration.getFeaturesConfiguration(folderPath)?.codeSecurityEnabled;
+  }
 
-    return super.getRootChildren();
+  protected getProductDisabledMessage(): string {
+    return SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED;
   }
 
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;

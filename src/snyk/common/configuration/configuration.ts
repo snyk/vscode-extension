@@ -120,6 +120,22 @@ export class FolderConfig {
     return this.settings[LS_KEY.featureFlags]?.value as Record<string, boolean> | undefined;
   }
 
+  snykCodeEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykCodeEnabled]?.value as boolean | undefined;
+  }
+
+  snykOssEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykOssEnabled]?.value as boolean | undefined;
+  }
+
+  snykIacEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykIacEnabled]?.value as boolean | undefined;
+  }
+
+  snykSecretsEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykSecretsEnabled]?.value as boolean | undefined;
+  }
+
   scanCommandConfig(): Record<string, ScanCommandConfig> | undefined {
     return this.settings[LS_KEY.scanCommandConfig]?.value as Record<string, ScanCommandConfig> | undefined;
   }
@@ -245,7 +261,17 @@ export interface IConfiguration {
 
   hideWelcomeNotification(): Promise<void>;
 
-  getFeaturesConfiguration(): FeaturesConfiguration;
+  /**
+   * Returns the effective feature toggles for a given folder, or workspace-wide when `folderPath` is omitted.
+   *
+   * Without `folderPath`, behaviour is preserved verbatim — VS Code global settings only, with the
+   * historical "all-undefined → all-true" default.
+   *
+   * With `folderPath`, each flag is `folderConfig.<key>() ?? globalValue`. The default-true fallback is
+   * intentionally NOT applied here — folder lookups should reflect what LS told us per folder, undefined
+   * meaning "use global as-is".
+   */
+  getFeaturesConfiguration(folderPath?: string): FeaturesConfiguration;
 
   setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void>;
 
@@ -569,20 +595,34 @@ export class Configuration implements IConfiguration {
     });
   }
 
-  getFeaturesConfiguration(): FeaturesConfiguration {
+  getFeaturesConfiguration(folderPath?: string): FeaturesConfiguration {
     const { configurationId: ossConfigId, section: ossSection } = Configuration.getConfigName(OSS_ENABLED_SETTING);
-    const ossEnabled = this.workspace.getConfiguration<boolean>(ossConfigId, ossSection);
+    const globalOssEnabled = this.workspace.getConfiguration<boolean>(ossConfigId, ossSection);
 
     const { configurationId: codeConfigId, section: codeSection } =
       Configuration.getConfigName(CODE_SECURITY_ENABLED_SETTING);
-    const codeSecurityEnabled = this.workspace.getConfiguration<boolean>(codeConfigId, codeSection);
+    const globalCodeSecurityEnabled = this.workspace.getConfiguration<boolean>(codeConfigId, codeSection);
 
     const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
-    const iacEnabled = this.workspace.getConfiguration<boolean>(iacConfigId, iacSection);
+    const globalIacEnabled = this.workspace.getConfiguration<boolean>(iacConfigId, iacSection);
 
     const { configurationId: secretsConfigId, section: secretsSection } =
       Configuration.getConfigName(SECRETS_ENABLED_SETTING);
-    const secretsEnabled = this.workspace.getConfiguration<boolean>(secretsConfigId, secretsSection);
+    const globalSecretsEnabled = this.workspace.getConfiguration<boolean>(secretsConfigId, secretsSection);
+
+    let ossEnabled = globalOssEnabled;
+    let codeSecurityEnabled = globalCodeSecurityEnabled;
+    let iacEnabled = globalIacEnabled;
+    let secretsEnabled = globalSecretsEnabled;
+
+    if (folderPath !== undefined) {
+      // Folder override wins, fall back to global.
+      const folderConfig = this.inMemoryFolderConfigs.find(fc => fc.folderPath === folderPath);
+      ossEnabled = folderConfig?.snykOssEnabled() ?? globalOssEnabled;
+      codeSecurityEnabled = folderConfig?.snykCodeEnabled() ?? globalCodeSecurityEnabled;
+      iacEnabled = folderConfig?.snykIacEnabled() ?? globalIacEnabled;
+      secretsEnabled = folderConfig?.snykSecretsEnabled() ?? globalSecretsEnabled;
+    }
 
     if (
       _.isUndefined(ossEnabled) &&

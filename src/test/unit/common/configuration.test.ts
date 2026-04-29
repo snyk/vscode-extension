@@ -1,6 +1,12 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
-import { ALLISSUES, Configuration, NEWISSUES, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import {
+  ALLISSUES,
+  Configuration,
+  FolderConfig,
+  NEWISSUES,
+  PreviewFeatures,
+} from '../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import {
   ADVANCED_CLI_PATH,
@@ -8,10 +14,15 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  CODE_SECURITY_ENABLED_SETTING,
   FEATURES_PREVIEW_SETTING,
+  IAC_ENABLED_SETTING,
+  OSS_ENABLED_SETTING,
   SCANNING_MODE,
+  SECRETS_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
 } from '../../../snyk/common/constants/settings';
+import { LS_KEY } from '../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { createWorkspaceMockWithInspection, stubWorkspaceConfiguration } from '../mocks/workspace.mock';
@@ -297,6 +308,168 @@ suite('Configuration', () => {
 
         strictEqual(configuration.organization, 'global-org');
       });
+    });
+  });
+
+  suite('FolderConfig product-enable getters', () => {
+    function makeFolderConfig(value: boolean | undefined, key: string): FolderConfig {
+      const settings = value === undefined ? {} : { [key]: { value } };
+      return new FolderConfig('/some/folder', settings);
+    }
+
+    [
+      { name: 'snykCodeEnabled', key: LS_KEY.snykCodeEnabled },
+      { name: 'snykOssEnabled', key: LS_KEY.snykOssEnabled },
+      { name: 'snykIacEnabled', key: LS_KEY.snykIacEnabled },
+      { name: 'snykSecretsEnabled', key: LS_KEY.snykSecretsEnabled },
+    ].forEach(({ name, key }) => {
+      test(`${name}() returns true when LS setting value is true`, () => {
+        const fc = makeFolderConfig(true, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), true);
+      });
+
+      test(`${name}() returns false when LS setting value is false`, () => {
+        const fc = makeFolderConfig(false, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), false);
+      });
+
+      test(`${name}() returns undefined when LS setting is absent`, () => {
+        const fc = makeFolderConfig(undefined, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), undefined);
+      });
+    });
+  });
+
+  suite('getFeaturesConfiguration(folderPath)', () => {
+    function buildWorkspaceWithGlobals(globals: {
+      oss?: boolean;
+      code?: boolean;
+      iac?: boolean;
+      secrets?: boolean;
+    }): IVSCodeWorkspace {
+      const map: Record<string, unknown> = {
+        [OSS_ENABLED_SETTING]: globals.oss,
+        [CODE_SECURITY_ENABLED_SETTING]: globals.code,
+        [IAC_ENABLED_SETTING]: globals.iac,
+        [SECRETS_ENABLED_SETTING]: globals.secrets,
+      };
+      return {
+        getConfiguration: <T>(configurationIdentifier: string, section: string) => {
+          return map[`${configurationIdentifier}.${section}`] as T;
+        },
+      } as unknown as IVSCodeWorkspace;
+    }
+
+    test('no-arg call preserves existing behaviour (reads globals only)', () => {
+      const workspace = buildWorkspaceWithGlobals({ oss: false, code: true, iac: false, secrets: undefined });
+      const configuration = new Configuration({}, workspace);
+
+      const result = configuration.getFeaturesConfiguration();
+
+      deepStrictEqual(result, {
+        ossEnabled: false,
+        codeSecurityEnabled: true,
+        iacEnabled: false,
+        secretsEnabled: undefined,
+      });
+    });
+
+    test('folder override wins over global when present', async () => {
+      const workspace = buildWorkspaceWithGlobals({ oss: false, code: false, iac: false, secrets: false });
+      const configuration = new Configuration({}, workspace);
+
+      const folderConfig = new FolderConfig('/folder/a', {
+        [LS_KEY.snykCodeEnabled]: { value: true },
+      });
+      await configuration.setFolderConfigs([folderConfig]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/a');
+
+      strictEqual(result.codeSecurityEnabled, true);
+      strictEqual(result.ossEnabled, false);
+      strictEqual(result.iacEnabled, false);
+      strictEqual(result.secretsEnabled, false);
+    });
+
+    test('folder override of false wins over global true', async () => {
+      const workspace = buildWorkspaceWithGlobals({ oss: true, code: true, iac: true, secrets: true });
+      const configuration = new Configuration({}, workspace);
+
+      const folderConfig = new FolderConfig('/folder/a', {
+        [LS_KEY.snykCodeEnabled]: { value: false },
+      });
+      await configuration.setFolderConfigs([folderConfig]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/a');
+
+      strictEqual(result.codeSecurityEnabled, false);
+      strictEqual(result.ossEnabled, true);
+    });
+
+    test('falls back to global when folder has no override for a flag', async () => {
+      const workspace = buildWorkspaceWithGlobals({ oss: true, code: false, iac: undefined, secrets: undefined });
+      const configuration = new Configuration({}, workspace);
+
+      const folderConfig = new FolderConfig('/folder/a', {
+        [LS_KEY.snykCodeEnabled]: { value: true },
+      });
+      await configuration.setFolderConfigs([folderConfig]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/a');
+
+      strictEqual(result.codeSecurityEnabled, true);
+      strictEqual(result.ossEnabled, true);
+      strictEqual(result.iacEnabled, undefined);
+      strictEqual(result.secretsEnabled, undefined);
+    });
+
+    test('falls back to global values when no folder config exists for the given folder', async () => {
+      const workspace = buildWorkspaceWithGlobals({ oss: true, code: false, iac: true, secrets: false });
+      const configuration = new Configuration({}, workspace);
+
+      await configuration.setFolderConfigs([]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/missing');
+
+      deepStrictEqual(result, {
+        ossEnabled: true,
+        codeSecurityEnabled: false,
+        iacEnabled: true,
+        secretsEnabled: false,
+      });
+    });
+
+    test('applies the all-undefined default-true fallback when both folder and global have no values for any flag', async () => {
+      const workspace = buildWorkspaceWithGlobals({});
+      const configuration = new Configuration({}, workspace);
+
+      await configuration.setFolderConfigs([]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/missing');
+
+      deepStrictEqual(result, {
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+    });
+
+    test('keeps explicit folder-level false even when the rest are undefined (no all-true fallback)', async () => {
+      const workspace = buildWorkspaceWithGlobals({});
+      const configuration = new Configuration({}, workspace);
+
+      const folderConfig = new FolderConfig('/folder/a', {
+        [LS_KEY.snykCodeEnabled]: { value: false },
+      });
+      await configuration.setFolderConfigs([folderConfig]);
+
+      const result = configuration.getFeaturesConfiguration('/folder/a');
+
+      strictEqual(result.codeSecurityEnabled, false);
+      strictEqual(result.ossEnabled, undefined);
+      strictEqual(result.iacEnabled, undefined);
+      strictEqual(result.secretsEnabled, undefined);
     });
   });
 });

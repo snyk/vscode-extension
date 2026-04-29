@@ -14,9 +14,15 @@ import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
 import CodeSecurityIssueTreeProvider from '../../snyk/snykCode/views/securityIssueTreeProvider';
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
-import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import {
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  FolderConfig,
+  IssueViewOptions,
+} from '../../snyk/common/configuration/configuration';
 import { NODE_ICONS, TreeNode } from '../../snyk/common/views/treeNode';
 import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../../snyk/common/constants/commands';
+import { SNYK_ANALYSIS_STATUS } from '../../snyk/common/constants/views';
+import { LS_KEY } from '../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('Code Security Issue Tree Provider', () => {
   let viewManagerService: IViewManagerService;
@@ -233,6 +239,78 @@ suite('Code Security Issue Tree Provider', () => {
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
+  });
+
+  suite('per-folder Snyk Code enable state', () => {
+    teardown(async () => {
+      await configuration.setFolderConfigs([]);
+    });
+
+    test('renders disabled message under a folder where Snyk Code is disabled (multi-folder)', async () => {
+      try {
+        await setCCIAndIVOs(false);
+        await configuration.setFolderConfigs([
+          new FolderConfig('disabled-dir', { [LS_KEY.snykCodeEnabled]: { value: false } }),
+        ]);
+
+        const issueTreeProvider = createIssueTreeProvider(
+          new Map([
+            ['disabled-dir', { isSuccess: true, issues: [makeMockCodeIssue()] }],
+            ['enabled-dir', { isSuccess: true, issues: [] }],
+          ]),
+        );
+
+        const rootChildren = issueTreeProvider.getRootChildren();
+
+        const disabledFolder = rootChildren.find(n => n.label === 'disabled-dir');
+        deepStrictEqual(disabledFolder !== undefined, true);
+        const disabledFolderChildren = disabledFolder!.getChildren();
+        deepStrictEqual(disabledFolderChildren.length, 1);
+        deepStrictEqual(disabledFolderChildren[0].label, SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED);
+      } finally {
+        await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
+      }
+    });
+
+    test('renders disabled message at root in single-folder workspace when Snyk Code is disabled for that folder', async () => {
+      try {
+        await setCCIAndIVOs(false);
+        await configuration.setFolderConfigs([
+          new FolderConfig('only-dir', { [LS_KEY.snykCodeEnabled]: { value: false } }),
+        ]);
+
+        const issueTreeProvider = createIssueTreeProvider(
+          new Map([['only-dir', { isSuccess: true, issues: [makeMockCodeIssue()] }]]),
+        );
+
+        const rootChildren = issueTreeProvider.getRootChildren();
+
+        const disabledNode = rootChildren.find(n => n.label === SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED);
+        deepStrictEqual(disabledNode !== undefined, true);
+      } finally {
+        await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
+      }
+    });
+
+    test('does NOT render disabled message when folder enables Snyk Code via folder override (global is false)', async () => {
+      try {
+        await setCCIAndIVOs(false);
+        await vscode.workspace.getConfiguration().update('snyk.features.codeSecurity', false);
+        await configuration.setFolderConfigs([
+          new FolderConfig('only-dir', { [LS_KEY.snykCodeEnabled]: { value: true } }),
+        ]);
+
+        const issueTreeProvider = createIssueTreeProvider(new Map([['only-dir', { isSuccess: true, issues: [] }]]));
+
+        const rootChildren = issueTreeProvider.getRootChildren();
+
+        const disabledNode = rootChildren.find(n => n.label === SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED);
+        deepStrictEqual(disabledNode, undefined);
+      } finally {
+        await vscode.workspace.getConfiguration().update('snyk.features.codeSecurity', undefined);
+        await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
+      }
+    });
   });
 
   test('getRootChildren returns correctly for multi folder workspace scan errors', async () => {

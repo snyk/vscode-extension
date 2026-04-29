@@ -1,7 +1,6 @@
 import { Command, Range } from 'vscode';
 import { OpenCommandIssueType, OpenIssueCommandArg } from '../../common/commands/types';
 import { IConfiguration } from '../../common/configuration/configuration';
-import { configuration } from '../../common/configuration/instance';
 import { SNYK_OPEN_ISSUE_COMMAND } from '../../common/constants/commands';
 import { SNYK_ANALYSIS_STATUS } from '../../common/constants/views';
 import { IacIssueData, Issue } from '../../common/languageServer/types';
@@ -9,7 +8,6 @@ import { IContextService } from '../../common/services/contextService';
 import { IProductService } from '../../common/services/productService';
 import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ProductIssueTreeProvider } from '../../common/views/issueTreeProvider';
-import { TreeNode } from '../../common/views/treeNode';
 import { IVSCodeLanguages } from '../../common/vscode/languages';
 import { IacIssue } from '../issue';
 import { messages } from '../messages/analysis';
@@ -30,16 +28,12 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     super(logger, contextService, iacService, configuration, languages, folderConfigs);
   }
 
-  getRootChildren(): TreeNode[] {
-    if (!configuration.getFeaturesConfiguration()?.iacEnabled) {
-      return [
-        new TreeNode({
-          text: SNYK_ANALYSIS_STATUS.IAC_DISABLED,
-        }),
-      ];
-    }
+  protected isProductEnabledForFolder(folderPath: string): boolean {
+    return !!this.configuration.getFeaturesConfiguration(folderPath)?.iacEnabled;
+  }
 
-    return super.getRootChildren();
+  protected getProductDisabledMessage(): string {
+    return SNYK_ANALYSIS_STATUS.IAC_DISABLED;
   }
 
   onDidChangeTreeData = this.viewManagerService.refreshIacViewEmitter.event;
