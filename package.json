@@ -309,7 +309,7 @@
               },
               "htmlTreeView": {
                 "type": "boolean",
-                "default": false,
+                "default": true,
                 "description": "Use server-driven HTML tree view instead of native tree views"
               }
             }
