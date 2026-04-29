@@ -124,6 +124,25 @@ export class FolderConfig {
     return this.settings[LS_KEY.scanCommandConfig]?.value as Record<string, ScanCommandConfig> | undefined;
   }
 
+  // Per-folder product enablement received from LS via $/snyk.configuration folderConfigs[].settings.
+  // `undefined` means the folder did not override this product's enable state — fall back to global.
+
+  snykCodeEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykCodeEnabled]?.value as boolean | undefined;
+  }
+
+  snykOssEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykOssEnabled]?.value as boolean | undefined;
+  }
+
+  snykIacEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykIacEnabled]?.value as boolean | undefined;
+  }
+
+  snykSecretsEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykSecretsEnabled]?.value as boolean | undefined;
+  }
+
   // --- setters (mark changed: true so LS picks them up) ----------------
 
   setSetting(key: string, value: unknown): void {

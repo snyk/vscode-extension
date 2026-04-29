@@ -236,7 +236,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const snykConfiguration = await this.getSnykConfiguration();
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
-    const htmlTreeViewEnabled = configuration.getPreviewFeature(HTML_TREE_VIEW);
+    const htmlTreeViewEnabled = true;
     await this.contextService.setContext(SNYK_CONTEXT.HTML_TREE_VIEW_ENABLED, htmlTreeViewEnabled);
 
     if (htmlTreeViewEnabled) {

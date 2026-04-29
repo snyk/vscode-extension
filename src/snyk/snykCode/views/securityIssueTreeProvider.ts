@@ -24,7 +24,7 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
   }
 
   getRootChildren(): TreeNode[] {
-    if (!this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled) {
+    if (!this.isCodeSecurityEnabledAnywhere()) {
       return [
         new TreeNode({
           text: SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED,
@@ -33,6 +33,17 @@ export default class CodeSecurityIssueTreeProvider extends IssueTreeProvider {
     }
 
     return super.getRootChildren();
+  }
+
+  // Snyk Code is enabled when at least one folder is effectively enabled. For each folder reported by
+  // LS via $/snyk.configuration.folderConfigs[].settings, the folder's `snyk_code_enabled` value is
+  // preferred; if the folder did not override it, we fall back to the global VS Code setting. With no
+  // folder configs at all, only the global setting is consulted.
+  private isCodeSecurityEnabledAnywhere(): boolean {
+    const global = !!this.configuration.getFeaturesConfiguration()?.codeSecurityEnabled;
+    const folderConfigs = this.configuration.getFolderConfigs();
+    if (folderConfigs.length === 0) return global;
+    return folderConfigs.some(fc => fc.snykCodeEnabled() ?? global);
   }
 
   onDidChangeTreeData = this.viewManagerService.refreshCodeSecurityViewEmitter.event;
