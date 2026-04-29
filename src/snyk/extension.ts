@@ -236,17 +236,17 @@ class SnykExtension extends SnykLib implements IExtension {
     const snykConfiguration = await this.getSnykConfiguration();
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
-    const htmlTreeViewEnabled = configuration.getPreviewFeature(HTML_TREE_VIEW);
+    const htmlTreeViewEnabled = true;
     await this.contextService.setContext(SNYK_CONTEXT.HTML_TREE_VIEW_ENABLED, htmlTreeViewEnabled);
 
     if (htmlTreeViewEnabled) {
-      const treeViewWebviewProvider = TreeViewWebviewProvider.getInstance(vscodeContext, vsCodeCommands);
-      if (treeViewWebviewProvider) {
-        this.treeViewProviderService = new TreeViewProviderService(Logger, treeViewWebviewProvider);
-        vscodeContext.subscriptions.push(
-          vscode.window.registerWebviewViewProvider(SNYK_VIEW_TREEVIEW, treeViewWebviewProvider),
-        );
-      }
+    const treeViewWebviewProvider = TreeViewWebviewProvider.getInstance(vscodeContext, vsCodeCommands);
+    if (treeViewWebviewProvider) {
+      this.treeViewProviderService = new TreeViewProviderService(Logger, treeViewWebviewProvider);
+      vscodeContext.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(SNYK_VIEW_TREEVIEW, treeViewWebviewProvider),
+      );
+    }
     }
 
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
