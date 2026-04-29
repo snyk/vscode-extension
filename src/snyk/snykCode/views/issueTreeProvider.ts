@@ -17,7 +17,7 @@ import { FEATURE_FLAGS } from '../../common/constants/featureFlags';
 import { SNYK_NAME_EXTENSION, SNYK_PUBLISHER } from '../../common/constants/general';
 import { TreeNode } from '../../common/views/treeNode';
 
-export abstract class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
+export class IssueTreeProvider extends ProductIssueTreeProvider<CodeIssueData> {
   constructor(
     protected readonly logger: ILog,
     protected contextService: IContextService,
