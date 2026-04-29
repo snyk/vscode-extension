@@ -40,6 +40,7 @@ suite('Language Server', () => {
   let configurationMock: IConfiguration;
   let languageServer: LanguageServer;
   let downloadServiceMock: DownloadService;
+  let protocolVersionStub: sinon.SinonStub;
 
   const logger = new LoggerMockFailOnErrors();
 
@@ -175,6 +176,11 @@ suite('Language Server', () => {
       downloadReady$: new ReplaySubject<void>(1),
       verifyAndRepairCli: sinon.fake.resolves(true),
     } as unknown as DownloadService;
+
+    // Stub the protocol-version probe to a matching version so existing tests can start the LS.
+    protocolVersionStub = sinon
+      .stub(LanguageServer.prototype, 'getCliProtocolVersion' as keyof LanguageServer)
+      .resolves(PROTOCOL_VERSION);
   });
 
   teardown(() => {
@@ -504,6 +510,132 @@ suite('Language Server', () => {
 
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
       debugSpy.restore();
+    });
+  });
+
+  suite('CLI protocol version guard', () => {
+    function createTrackingAdapter(): {
+      adapter: ILanguageClientAdapter;
+      createSpy: sinon.SinonSpy;
+      startStub: sinon.SinonStub;
+    } {
+      const startStub = sinon.stub().resolves();
+      const create = sinon.spy(
+        (): LanguageClient =>
+          ({
+            start: startStub,
+            onNotification: sinon.stub(),
+            onReady: sinon.stub().resolves(),
+            sendNotification: sinon.stub().resolves(),
+          } as unknown as LanguageClient),
+      );
+      const adapter = { create } as unknown as ILanguageClientAdapter;
+      return { adapter, createSpy: create, startStub };
+    }
+
+    test('does not start the LanguageClient when CLI protocol version mismatches', async () => {
+      protocolVersionStub.resolves(PROTOCOL_VERSION + 1);
+      const { adapter, createSpy, startStub } = createTrackingAdapter();
+      const window = new WindowMock();
+      window.showErrorMessage.resolves(undefined);
+
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        window,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        explicitLspConfigurationChangeTracker,
+      );
+      downloadServiceMock.downloadReady$.next();
+
+      await languageServer.start();
+
+      sinon.assert.notCalled(createSpy);
+      sinon.assert.notCalled(startStub);
+      sinon.assert.calledOnce(window.showErrorMessage);
+      assert.match(
+        window.showErrorMessage.firstCall.args[0] as string,
+        new RegExp(`expected ${PROTOCOL_VERSION}, got ${PROTOCOL_VERSION + 1}`),
+      );
+      assert.strictEqual(window.showErrorMessage.firstCall.args[1], 'Open Settings');
+    });
+
+    test('does not start the LanguageClient when CLI protocol version probe fails', async () => {
+      protocolVersionStub.resolves(undefined);
+      const { adapter, createSpy, startStub } = createTrackingAdapter();
+      const window = new WindowMock();
+      window.showErrorMessage.resolves(undefined);
+
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        window,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        explicitLspConfigurationChangeTracker,
+      );
+      downloadServiceMock.downloadReady$.next();
+
+      await languageServer.start();
+
+      sinon.assert.notCalled(createSpy);
+      sinon.assert.notCalled(startStub);
+      sinon.assert.calledOnce(window.showErrorMessage);
+      assert.match(window.showErrorMessage.firstCall.args[0] as string, /Failed to verify/);
+    });
+
+    test('opens Snyk HTML settings panel when user clicks Open Settings', async () => {
+      protocolVersionStub.resolves(PROTOCOL_VERSION + 1);
+      const { adapter } = createTrackingAdapter();
+      const window = new WindowMock();
+      window.showErrorMessage.resolves('Open Settings');
+      const commands = new CommandsMock();
+      commands.executeCommand.resolves(undefined);
+
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        window,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        commands,
+        {} as IDiagnosticsIssueProvider<unknown>,
+        explicitLspConfigurationChangeTracker,
+      );
+      downloadServiceMock.downloadReady$.next();
+
+      await languageServer.start();
+
+      sinon.assert.calledOnceWithExactly(commands.executeCommand, 'snyk.settings');
     });
   });
 });
