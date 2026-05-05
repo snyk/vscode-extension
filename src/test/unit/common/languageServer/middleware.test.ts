@@ -8,8 +8,8 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
-import { ServerSettings } from '../../../../snyk/common/languageServer/settings';
-import { User } from '../../../../snyk/common/user';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -21,16 +21,19 @@ import type {
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
-import { ShowIssueDetailTopicParams, LsScanProduct, SnykURIAction } from '../../../../snyk/common/languageServer/types';
+import {
+  LspConfigurationParam,
+  ShowIssueDetailTopicParams,
+  LsScanProduct,
+  SnykURIAction,
+} from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
 import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
-  let user: User;
 
   setup(() => {
-    user = { anonymousId: 'anonymous-id' } as User;
     configuration = {
       getAuthenticationMethod(): string {
         return 'oauth';
@@ -82,7 +85,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
-      user,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -108,29 +110,25 @@ suite('Language Server: Middleware', () => {
       assert.fail('Handler returned an error');
     }
 
-    const serverResult = res[0] as ServerSettings;
-    assert.strictEqual(serverResult.activateSnykCodeSecurity, 'true');
-    assert.strictEqual(serverResult.activateSnykOpenSource, 'false');
-    assert.strictEqual(serverResult.activateSnykIac, 'true');
-    assert.strictEqual(serverResult.activateSnykSecrets, 'false');
-    assert.strictEqual(serverResult.endpoint, configuration.snykApiEndpoint);
-    assert.strictEqual(serverResult.additionalParams, configuration.getAdditionalCliParameters());
-    assert.strictEqual(serverResult.sendErrorReports, `${configuration.shouldReportErrors}`);
-    assert.strictEqual(serverResult.organization, `${configuration.organization}`);
-    assert.strictEqual(
-      serverResult.manageBinariesAutomatically,
-      `${configuration.isAutomaticDependencyManagementEnabled()}`,
-    );
-    assert.strictEqual(serverResult.cliPath, await configuration.getCliPath());
-    assert.strictEqual(serverResult.enableTrustedFoldersFeature, 'true');
-    assert.deepStrictEqual(serverResult.trustedFolders, configuration.getTrustedFolders());
+    const pullResponse = res[0] as { settings: LspConfigurationParam };
+    assert(pullResponse.settings, 'Response should have settings');
+    const settings = pullResponse.settings.settings!;
+    assert.strictEqual(settings[LS_KEY.snykCodeEnabled]?.value, true);
+    assert.strictEqual(settings[LS_KEY.snykOssEnabled]?.value, false);
+    assert.strictEqual(settings[LS_KEY.snykIacEnabled]?.value, true);
+    assert.strictEqual(settings[LS_KEY.snykSecretsEnabled]?.value, false);
+    assert.strictEqual(settings[LS_KEY.apiEndpoint]?.value, configuration.snykApiEndpoint);
+    assert.strictEqual(settings[LS_KEY.organization]?.value, `${configuration.organization}`);
+    assert.strictEqual(settings[LS_KEY.sendErrorReports]?.value, false);
+    assert.strictEqual(settings[LS_KEY.automaticDownload]?.value, true);
+    assert.strictEqual(settings[LS_KEY.cliPath]?.value, await configuration.getCliPath());
+    assert.strictEqual(settings[LS_KEY.trustEnabled]?.value, true);
   });
 
   test('Configuration request should return an error', async () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
-      user,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -175,7 +173,6 @@ suite('Language Server: Middleware', () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       {} as IConfiguration,
-      {} as User,
       showIssueDetailTopic$,
       {} as IUriAdapter,
       {} as IVSCodeCommands,
@@ -204,5 +201,74 @@ suite('Language Server: Middleware', () => {
       product,
       issueId,
     });
+  });
+
+  test('didChangeConfiguration calls next when not suppressed', async () => {
+    const nextStub = sinon.stub().resolves();
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      undefined,
+      () => false,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
+  });
+
+  test('didChangeConfiguration skips next when inbound persistence is active', async () => {
+    const nextStub = sinon.stub().resolves();
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      undefined,
+      () => true,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.notCalled(nextStub);
+  });
+
+  test('unmarks explicitly changed keys after emitting a reset (value: null)', async () => {
+    const unmarkStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      unmarkExplicitlyChanged: unmarkStub,
+      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
+    };
+
+    // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
+    const configWithNullOrg = {
+      ...configuration,
+      organization: null as unknown as string,
+    } as IConfiguration;
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configWithNullOrg,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      tracker,
+    );
+
+    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
+    const token: CancellationToken = {
+      isCancellationRequested: false,
+      onCancellationRequested: sinon.fake(),
+    };
+
+    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+
+    assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
   });
 });

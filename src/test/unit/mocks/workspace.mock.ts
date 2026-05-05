@@ -3,18 +3,36 @@
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import { WorkspaceFolder } from '../../../snyk/common/vscode/types';
 import sinon from 'sinon';
+import type * as vscode from 'vscode';
 import { Uri } from 'vscode';
 
 export function stubWorkspaceConfiguration<T>(configSetting: string, returnValue: T | undefined): IVSCodeWorkspace {
   return {
-    getConfiguration: (identifier: string, key: string, _workspaceFolder?) => {
+    fs: {} as vscode.FileSystem,
+    getConfiguration: (identifier: string, key: string, _workspaceFolder?: WorkspaceFolder) => {
       if (`${identifier}.${key}` === configSetting) return returnValue;
       return undefined;
     },
-    updateConfiguration(_configurationIdentifier, _section, _value, _configurationTarget, _overrideInLanguage) {
+    inspectConfiguration: sinon.stub(),
+    updateConfiguration(
+      _configurationIdentifier: string,
+      _section: string,
+      _value: unknown,
+      _configurationTarget?: boolean | WorkspaceFolder,
+      _overrideInLanguage?: boolean,
+    ) {
       return Promise.resolve();
     },
-  } as IVSCodeWorkspace;
+    getWorkspaceFolders: () => [],
+    getWorkspaceFolderPaths: () => [],
+    getWorkspaceFolder: () => undefined,
+    createFileSystemWatcher: sinon.stub(),
+    onDidChangeTextDocument: sinon.stub().returns({ dispose: sinon.stub() }),
+    onDidChangeConfiguration: sinon.stub().returns({ dispose: sinon.stub() }),
+    openFileTextDocument: sinon.stub().resolves(),
+    openTextDocument: sinon.stub().resolves(),
+    openTextDocumentViaUri: sinon.stub().resolves(),
+  } as unknown as IVSCodeWorkspace;
 }
 
 export interface ConfigInspectionValues<T> {
@@ -50,6 +68,7 @@ export function createWorkspaceMockWithInspection<T>(
   }));
 
   return {
+    fs: {} as vscode.FileSystem,
     getConfiguration: (identifier: string, key: string, _workspaceFolder?: WorkspaceFolder) => {
       if (`${identifier}.${key}` !== configSetting) return undefined;
 
@@ -67,6 +86,14 @@ export function createWorkspaceMockWithInspection<T>(
       return inspectionValues;
     },
     getWorkspaceFolders: () => mockFolders,
+    getWorkspaceFolderPaths: () => mockFolders.map(f => f.uri.fsPath),
+    getWorkspaceFolder: (path: string) => mockFolders.find(f => f.uri.fsPath === path),
+    createFileSystemWatcher: sinon.stub(),
+    onDidChangeTextDocument: sinon.stub().returns({ dispose: sinon.stub() }),
+    onDidChangeConfiguration: sinon.stub().returns({ dispose: sinon.stub() }),
+    openFileTextDocument: sinon.stub().resolves(),
+    openTextDocument: sinon.stub().resolves(),
+    openTextDocumentViaUri: sinon.stub().resolves(),
     updateConfiguration: sinon.stub().returns(Promise.resolve()),
   } as unknown as IVSCodeWorkspace;
 }

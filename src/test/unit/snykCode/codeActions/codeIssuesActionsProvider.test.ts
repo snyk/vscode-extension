@@ -8,9 +8,10 @@ import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
 import { CodeActionContext, CodeActionKind, Range, TextDocument } from '../../../../snyk/common/vscode/types';
 import { SnykCodeActionsProvider } from '../../../../snyk/snykCode/codeActions/codeIssuesActionsProvider';
 import { IssueUtils } from '../../../../snyk/snykCode/utils/issueUtils';
-import { IConfiguration } from '../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
 import { IFolderConfigs } from '../../../../snyk/common/configuration/folderConfigs';
 import { FEATURE_FLAGS } from '../../../../snyk/common/constants/featureFlags';
+import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('Snyk Code actions provider', () => {
   let issuesActionsProvider: SnykCodeActionsProvider;
@@ -57,15 +58,10 @@ suite('Snyk Code actions provider', () => {
     } as IConfiguration;
 
     folderConfigs = {
-      getFolderConfig: (_config: IConfiguration, _folderPath: string) => ({
-        folderPath: 'folderName',
-        baseBranch: '',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        featureFlags: {
-          [FEATURE_FLAGS.snykCodeInlineIgnore]: true,
-        },
-      }),
+      getFolderConfig: (_config: IConfiguration, _folderPath: string) =>
+        new FolderConfig('folderName', {
+          [LS_KEY.featureFlags]: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: true }, changed: false },
+        }),
     } as IFolderConfigs;
 
     issuesActionsProvider = new SnykCodeActionsProvider(
@@ -91,15 +87,10 @@ suite('Snyk Code actions provider', () => {
     } as unknown as TextDocument;
 
     const folderConfigsDisabled = {
-      getFolderConfig: (_config: IConfiguration, _folderPath: string) => ({
-        folderPath: 'folderName',
-        baseBranch: '',
-        localBranches: undefined,
-        referenceFolderPath: undefined,
-        featureFlags: {
-          [FEATURE_FLAGS.snykCodeInlineIgnore]: false,
-        },
-      }),
+      getFolderConfig: (_config: IConfiguration, _folderPath: string) =>
+        new FolderConfig('folderName', {
+          [LS_KEY.featureFlags]: { value: { [FEATURE_FLAGS.snykCodeInlineIgnore]: false }, changed: false },
+        }),
     } as IFolderConfigs;
 
     issuesActionsProvider = new SnykCodeActionsProvider(

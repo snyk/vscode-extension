@@ -284,7 +284,7 @@
 
     <div class="form-group half-width">
       <label class="checkbox-label">
-        <input type="checkbox" name="insecure" id="insecure" {{INSECURE_CHECKED}}>
+        <input type="checkbox" name="proxy_insecure" id="proxy_insecure" {{INSECURE_CHECKED}}>
         <span data-toggle="tooltip">Insecure (Skip SSL Verification)<span class="tooltip-popup">If enabled, the plugin will ignore SSL certificate errors. Use this when connecting to self-signed or internal CA servers.</span></span>
       </label>
     </div>
@@ -294,20 +294,20 @@
     <h2>CLI Configuration</h2>
 
     <div class="form-group">
-      <label for="cliPath"><span data-toggle="tooltip">CLI Path<span class="tooltip-popup">Path to Snyk CLI executable</span></span></label>
-      <input type="text" id="cliPath" name="cliPath" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
+      <label for="cli_path"><span data-toggle="tooltip">CLI Path<span class="tooltip-popup">Path to Snyk CLI executable</span></span></label>
+      <input type="text" id="cli_path" name="cli_path" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
     </div>
 
     <div class="form-group half-width">
       <label class="checkbox-label">
-        <input type="checkbox" name="manageBinariesAutomatically" id="manageBinariesAutomatically" {{MANAGE_BINARIES_CHECKED}}>
+        <input type="checkbox" name="automatic_download" id="automatic_download" {{MANAGE_BINARIES_CHECKED}}>
         <span data-toggle="tooltip">Manage Binaries Automatically<span class="tooltip-popup">Automatically download and manage Snyk CLI binaries</span></span>
       </label>
     </div>
 
     <div class="form-group half-width">
-      <label for="cliReleaseChannel"><span data-toggle="tooltip">CLI Release Channel<span class="tooltip-popup">Release channel for Snyk CLI downloads (Stable, Release Candidate or Preview)</span></span></label>
-      <select id="cliReleaseChannel" name="cliReleaseChannel">
+      <label for="cli_release_channel"><span data-toggle="tooltip">CLI Release Channel<span class="tooltip-popup">Release channel for Snyk CLI downloads (Stable, Release Candidate or Preview)</span></span></label>
+      <select id="cli_release_channel" name="cli_release_channel">
         <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
         <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
         <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
@@ -315,8 +315,8 @@
     </div>
 
     <div class="form-group">
-      <label for="cliBaseDownloadURL"><span data-toggle="tooltip">CLI Download Base URL<span class="tooltip-popup"><p>Base URL for downloading Snyk CLI binaries.</p><p>Default: <strong>https://downloads.snyk.io</strong></p><p>For FIPS-enabled CLIs (Windows/Linux only), use <strong>https://downloads.snyk.io/fips</strong></p></span></span></label>
-      <input type="text" id="cliBaseDownloadURL" name="cliBaseDownloadURL" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
+      <label for="binary_base_url"><span data-toggle="tooltip">CLI Download Base URL<span class="tooltip-popup"><p>Base URL for downloading Snyk CLI binaries.</p><p>Default: <strong>https://downloads.snyk.io</strong></p><p>For FIPS-enabled CLIs (Windows/Linux only), use <strong>https://downloads.snyk.io/fips</strong></p></span></span></label>
+      <input type="text" id="binary_base_url" name="binary_base_url" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
     </div>
   </div>
 </form>
@@ -337,11 +337,11 @@
     function collectData() {
       return {
         isFallbackForm: true,
-        cliPath: get('cliPath').value,
-        manageBinariesAutomatically: get('manageBinariesAutomatically').checked,
-        cliBaseDownloadURL: get('cliBaseDownloadURL').value || get('cliBaseDownloadURL').placeholder,
-        cliReleaseChannel: get('cliReleaseChannel').value,
-        insecure: get('insecure').checked
+        cli_path: get('cli_path').value,
+        automatic_download: get('automatic_download').checked,
+        binary_base_url: get('binary_base_url').value || get('binary_base_url').placeholder,
+        cli_release_channel: get('cli_release_channel').value,
+        proxy_insecure: get('proxy_insecure').checked
       };
     }
 

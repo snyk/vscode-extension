@@ -46,9 +46,8 @@ export class HtmlInjectionService implements IHtmlInjectionService {
 
           ${ExecuteCommandBridge.buildClientScript()}
 
-          // Listen for setAuthToken messages from the extension
-          window.addEventListener('message', event => {
-            const message = event.data;
+          window.addEventListener('message', function (event) {
+            var message = event.data;
             if (message.type === 'setAuthToken' && message.token) {
               if (typeof window.setAuthToken === 'function') {
                 window.setAuthToken(message.token, message.apiUrl);

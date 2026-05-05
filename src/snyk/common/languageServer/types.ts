@@ -186,6 +186,42 @@ export type ShowIssueDetailTopicParams = {
   product: LsScanProduct;
 };
 
+/** Payload for `$/snyk.configuration` (LS protocol v25+) and structured `workspace/didChangeConfiguration`. */
+export type LspConfigSetting = {
+  value?: unknown;
+  changed?: boolean;
+  source?: string;
+  originScope?: string;
+  isLocked?: boolean;
+};
+
+export type LspFolderConfiguration = {
+  folderPath: string;
+  settings?: Record<string, LspConfigSetting>;
+};
+
+export type LspConfigurationParam = {
+  settings?: Record<string, LspConfigSetting>;
+  folderConfigs?: LspFolderConfiguration[];
+};
+
+/** Matches snyk-ls `InitializationOptions` (LSP `initialize` → `initializationOptions`, protocol v25+). */
+export type LspInitializationOptions = {
+  settings: Record<string, LspConfigSetting>;
+  folderConfigs?: LspFolderConfiguration[];
+  requiredProtocolVersion?: string;
+  deviceId?: string;
+  integrationName?: string;
+  integrationVersion?: string;
+  osPlatform?: string;
+  osArch?: string;
+  runtimeVersion?: string;
+  runtimeName?: string;
+  hoverVerbosity?: number;
+  outputFormat?: string;
+  path?: string;
+};
+
 // Snyk Secrets
 export type SecretsIssueData = {
   key: string;

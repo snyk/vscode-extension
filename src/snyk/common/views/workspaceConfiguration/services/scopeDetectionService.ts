@@ -2,12 +2,11 @@
 // ABOUTME: and populating scope indicators in HTML
 import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
-import { IConfigurationMappingService } from './configurationMappingService';
 import _ from 'lodash';
 
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
-  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string;
+  populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
   /**
    * Determines whether a setting update should be skipped.
    * Returns true if:
@@ -34,7 +33,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
     return 'default';
   }
 
-  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string {
+  populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string {
     const slotRegex =
       /(?<prefix><span[^>]*class="config-scope-slot"[^>]*data-setting-key=")(?<settingKey>[^"]*)(?<suffix>"[^>]*>)(?<content>.*?)(?<closing><\/span>)/g;
 
@@ -47,7 +46,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
         closing: string;
       };
 
-      const vscodeSetting = configMappingService.mapHtmlKeyToVSCodeSetting(groups.settingKey);
+      const vscodeSetting = mapHtmlKey(groups.settingKey);
       if (!vscodeSetting) return match;
       const scope = this.getSettingScope(vscodeSetting);
 
