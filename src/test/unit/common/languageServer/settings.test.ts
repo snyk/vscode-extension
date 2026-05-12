@@ -58,6 +58,7 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(result.settings?.[LS_KEY.sendErrorReports]?.value, false);
       assert.strictEqual(result.settings?.[LS_KEY.cliPath]?.value, '/path/to/cli');
       assert.strictEqual(result.settings?.[LS_KEY.token]?.value, 'snyk-token');
+      assert.deepStrictEqual(result.settings?.[LS_KEY.trustedFolders]?.value, ['/trusted/path']);
     });
 
     test('uses explicit predicate for changed flag', async () => {

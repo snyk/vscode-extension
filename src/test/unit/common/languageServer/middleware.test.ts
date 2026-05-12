@@ -123,6 +123,7 @@ suite('Language Server: Middleware', () => {
     assert.strictEqual(settings[LS_KEY.automaticDownload]?.value, true);
     assert.strictEqual(settings[LS_KEY.cliPath]?.value, await configuration.getCliPath());
     assert.strictEqual(settings[LS_KEY.trustEnabled]?.value, true);
+    assert.deepStrictEqual(settings[LS_KEY.trustedFolders]?.value, ['/trusted/test/folder']);
   });
 
   test('Configuration request should return an error', async () => {
