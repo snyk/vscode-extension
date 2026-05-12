@@ -68,15 +68,19 @@ export class ScopeDetectionService implements IScopeDetectionService {
     }
 
     let currentValue: unknown;
+    let hasExplicitValue: boolean;
     switch (scope) {
       case 'workspace':
         currentValue = inspection.workspaceValue;
+        hasExplicitValue = currentValue !== undefined;
         break;
       case 'user':
         currentValue = inspection.globalValue;
+        hasExplicitValue = currentValue !== undefined;
         break;
       default:
-        return false;
+        // 'default' scope: setting never explicitly set at any level — skip only when value equals schema default.
+        return _.isEqual(value, inspection.defaultValue);
     }
 
     // Return true if new value is same as current value at this scope (no actual change)
@@ -85,9 +89,6 @@ export class ScopeDetectionService implements IScopeDetectionService {
     }
 
     const isDefaultValue = _.isEqual(value, inspection.defaultValue);
-
-    // Only skip if value is at default and this specific scope doesn't have an explicit value
-    const hasExplicitValue = currentValue !== undefined;
 
     return isDefaultValue && !hasExplicitValue;
   }
