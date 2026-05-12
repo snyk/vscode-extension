@@ -294,14 +294,8 @@ export class LanguageServer implements ILanguageServer {
   }
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
-    try {
-      this.logger.debug('Received $/snyk.configuration notification');
-      void this.runInboundPersistence(params);
-    } catch (error) {
-      this.logger.error(
-        `Failed to handle $/snyk.configuration notification: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    this.logger.debug('Received $/snyk.configuration notification');
+    this.runInboundPersistence(params);
   }
 
   private runInboundPersistence(params: LspConfigurationParam): void {
