@@ -84,6 +84,7 @@ export class LanguageClientMiddleware implements Middleware {
     },
     didChangeConfiguration: async (sections, next) => {
       if (this.isInboundPersistenceSuppressed()) {
+        this.logger.debug('didChangeConfiguration suppressed during inbound LS persistence');
         return;
       }
       await next(sections);
