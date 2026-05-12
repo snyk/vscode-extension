@@ -313,11 +313,3 @@ export function mapLspSettingsToVscodeSettings(
 
   return result;
 }
-
-/**
- * Maps an HTML/webview setting key to its VS Code setting key.
- * Handles severity sub-keys and legacy camelCase.
- */
-export function mapHtmlKeyToVSCodeSetting(htmlKey: string): string | undefined {
-  return lsKeyToVscodeKey(htmlKey);
-}

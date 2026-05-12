@@ -15,7 +15,7 @@ import { IWorkspaceConfigurationWebviewProvider } from './types/workspaceConfigu
 import { IHtmlInjectionService } from './services/htmlInjectionService';
 import { IScopeDetectionService } from './services/scopeDetectionService';
 import { IMessageHandlerFactory } from './handlers/messageHandlerFactory';
-import { mapHtmlKeyToVSCodeSetting } from '../../languageServer/lsKeyToVscodeKeyMap';
+import { lsKeyToVscodeKey } from '../../languageServer/lsKeyToVscodeKeyMap';
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
 
@@ -74,7 +74,7 @@ export class WorkspaceConfigurationWebviewProvider
       const html = await this.fetchConfigurationHtml();
 
       if (html) {
-        const htmlWithScopes = this.scopeDetectionService.populateScopeIndicators(html, mapHtmlKeyToVSCodeSetting);
+        const htmlWithScopes = this.scopeDetectionService.populateScopeIndicators(html, lsKeyToVscodeKey);
         this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(htmlWithScopes);
       } else {
         const fallbackHtml = await this.getFallbackHtml();
