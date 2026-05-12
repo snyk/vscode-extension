@@ -27,11 +27,12 @@ import {
   SEVERITY_FILTER_SETTING,
   TRUSTED_FOLDERS,
 } from '../constants/settings';
-import { type GlobalLsKeyValue, LS_GLOBAL_KEY, LS_KEY } from './serverSettingsToLspConfigurationParam';
+import { type GlobalLsKeyValue, LS_GLOBAL_KEY } from './serverSettingsToLspConfigurationParam';
+import { HtmlSettingsData } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
 
 // ── Registry entry type ──────────────────────────────────────────────
 
-export interface RegistryEntry {
+export interface SettingsEntry {
   /** VS Code setting key. undefined for LS-only settings (token, sendErrorReports, etc). */
   vscodeKey?: string;
   /** Extracts the outbound LS value from IConfiguration. May be async. */
@@ -40,10 +41,8 @@ export interface RegistryEntry {
   toVscodeValue?: (lsValue: unknown) => unknown;
   /** Hardcoded constant — always emitted with `changed: true`. */
   alwaysChanged?: true;
-  /** Included in CLI-only fallback form subset. */
-  cliOnly?: true;
-  /** Legacy HTML form key sent by older CLI versions whose name differs from snakeToCamel(lsKey). */
-  legacyFormKey?: string;
+  /** Included in fallback  */
+  useInFallbackForm?: true;
 }
 
 // ── Auth method normalisation ────────────────────────────────────────
@@ -59,34 +58,29 @@ const AUTH_METHOD_MAP: Record<string, string> = {
 // Typed as Record<GlobalLsKeyValue, …> so a new LS_GLOBAL_KEY without a
 // registry entry causes a compile error.
 
-export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
+export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
   // Feature toggles — default to true when undefined
   [LS_GLOBAL_KEY.snykCodeEnabled]: {
     vscodeKey: CODE_SECURITY_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.codeSecurityEnabled ?? true,
-    legacyFormKey: 'activateSnykCode',
   },
   [LS_GLOBAL_KEY.snykOssEnabled]: {
     vscodeKey: OSS_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.ossEnabled ?? true,
-    legacyFormKey: 'activateSnykOpenSource',
   },
   [LS_GLOBAL_KEY.snykIacEnabled]: {
     vscodeKey: IAC_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.iacEnabled ?? true,
-    legacyFormKey: 'activateSnykIac',
   },
   [LS_GLOBAL_KEY.snykSecretsEnabled]: {
     vscodeKey: SECRETS_ENABLED_SETTING,
     resolve: c => c.getFeaturesConfiguration()?.secretsEnabled ?? true,
-    legacyFormKey: 'activateSnykSecrets',
   },
 
   [LS_GLOBAL_KEY.scanNetNew]: {
     vscodeKey: DELTA_FINDINGS,
     resolve: c => c.getDeltaFindingsEnabled(),
     toVscodeValue: v => (v ? NEWISSUES : ALLISSUES),
-    legacyFormKey: 'enableDeltaFindings',
   },
   [LS_GLOBAL_KEY.sendErrorReports]: {
     resolve: c => c.shouldReportErrors,
@@ -94,15 +88,13 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
   [LS_GLOBAL_KEY.automaticDownload]: {
     vscodeKey: ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
     resolve: c => c.isAutomaticDependencyManagementEnabled(),
-    cliOnly: true,
-    legacyFormKey: 'manageBinariesAutomatically',
+    useInFallbackForm: true,
   },
   [LS_GLOBAL_KEY.proxyInsecure]: {
     vscodeKey: HTTP_PROXY_STRICT_SSL_SETTING,
     resolve: c => c.getInsecure(),
     toVscodeValue: v => !v,
-    cliOnly: true,
-    legacyFormKey: 'insecure',
+    useInFallbackForm: true,
   },
   [LS_GLOBAL_KEY.enableSnykOssQuickFixActions]: {
     resolve: c => c.getOssQuickFixCodeActionsEnabled(),
@@ -129,18 +121,16 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
   [LS_GLOBAL_KEY.apiEndpoint]: {
     vscodeKey: ADVANCED_CUSTOM_ENDPOINT,
     resolve: c => c.snykApiEndpoint,
-    legacyFormKey: 'endpoint',
   },
   [LS_GLOBAL_KEY.binaryBaseUrl]: {
     vscodeKey: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     resolve: c => c.getCliBaseDownloadUrl(),
-    cliOnly: true,
-    legacyFormKey: 'cliBaseDownloadURL',
+    useInFallbackForm: true,
   },
   [LS_GLOBAL_KEY.cliPath]: {
     vscodeKey: ADVANCED_CLI_PATH,
     resolve: c => c.getCliPath(),
-    cliOnly: true,
+    useInFallbackForm: true,
   },
   [LS_GLOBAL_KEY.token]: {
     resolve: c => c.getToken(),
@@ -174,31 +164,26 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, RegistryEntry> = {
       return mode !== undefined && mode !== '' ? mode !== 'manual' : undefined;
     },
     toVscodeValue: v => (v ? 'auto' : 'manual'),
-    legacyFormKey: 'scanningMode',
   },
   [LS_GLOBAL_KEY.severityFilterCritical]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.critical ?? true,
     toVscodeValue: c => ({ critical: c }),
-    legacyFormKey: 'filterSeverityCritical',
   },
   [LS_GLOBAL_KEY.severityFilterHigh]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.high ?? true,
     toVscodeValue: c => ({ high: c }),
-    legacyFormKey: 'filterSeverityHigh',
   },
   [LS_GLOBAL_KEY.severityFilterMedium]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.medium ?? true,
     toVscodeValue: c => ({ medium: c }),
-    legacyFormKey: 'filterSeverityMedium',
   },
   [LS_GLOBAL_KEY.severityFilterLow]: {
     vscodeKey: SEVERITY_FILTER_SETTING,
     resolve: c => c.severityFilter?.low ?? true,
     toVscodeValue: c => ({ low: c }),
-    legacyFormKey: 'filterSeverityLow',
   },
   [LS_GLOBAL_KEY.issueViewOpenIssues]: {
     vscodeKey: ISSUE_VIEW_OPTIONS_SETTING,
@@ -250,16 +235,14 @@ export function lsKeyToVscodeKey(lsKey: string): string | undefined {
 
 // ── Inbound: LS values → VS Code settings ────────────────────────────
 
-/** Converts a snake_case string to camelCase for LS HTML form key compatibility. */
-function snakeToCamel(s: string): string {
-  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-}
-
 /** Merges object values when multiple LS keys share one vscodeKey (e.g. issueViewOptions). */
 function setOrMerge(result: Record<string, unknown>, vscodeKey: string, transformed: unknown): void {
   const existing = result[vscodeKey];
   if (existing !== undefined && typeof existing === 'object' && typeof transformed === 'object') {
-    result[vscodeKey] = { ...(existing as Record<string, unknown>), ...(transformed as Record<string, unknown>) };
+    result[vscodeKey] = {
+      ...(existing as Record<string, unknown>),
+      ...(transformed as Record<string, unknown>),
+    };
   } else {
     result[vscodeKey] = transformed;
   }
@@ -269,23 +252,21 @@ function setOrMerge(result: Record<string, unknown>, vscodeKey: string, transfor
  * Maps webview form data (LS-format keys and values) → VS Code settings.
  * Used when user saves the workspace configuration form.
  */
-export function mapConfigToSettings(config: Record<string, unknown>, isCliOnly: boolean): Record<string, unknown> {
+export function mapConfigToSettings(config: HtmlSettingsData): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
     if (!entry.vscodeKey) continue;
-    if (isCliOnly && !entry.cliOnly) continue;
+    if (config.isFallbackForm && !entry.useInFallbackForm) continue;
 
-    const value =
-      config[lsKey] ?? (entry.legacyFormKey ? config[entry.legacyFormKey] : undefined) ?? config[snakeToCamel(lsKey)];
+    const value = config[lsKey];
     if (value === undefined) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }
 
   // IDE-only field (not an LS key, only present in webview form)
-  const releaseChannelKey = 'cli_release_channel';
-  const releaseChannel = config[releaseChannelKey] ?? config[snakeToCamel(releaseChannelKey)];
+  const releaseChannel = config['cli_release_channel'];
   if (releaseChannel !== undefined) {
     result[ADVANCED_CLI_RELEASE_CHANNEL] = releaseChannel;
   }

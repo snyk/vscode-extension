@@ -37,13 +37,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   async handleSaveConfig(configJson: string): Promise<void> {
     try {
       const config = JSON.parse(configJson) as HtmlSettingsData;
-      const isCliOnly = config.isFallbackForm ?? false;
-      this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
+      config.isFallbackForm ??= false;
+      this.logger.info(`Saving workspace configuration (isFallbackForm: ${config.isFallbackForm})`);
 
-      await this.saveConfigToVSCodeSettings(config, isCliOnly);
+      await this.saveConfigToVSCodeSettings(config);
 
       // Only handle token when not in CLI-only mode and token is present in the payload
-      if (!isCliOnly && 'token' in config) {
+      if (!config.isFallbackForm && 'token' in config) {
         const existingToken = await this.configuration.getToken();
         const normalizedNewToken = config.token?.trim() || '';
         const normalizedExistingToken = existingToken?.trim() || '';
@@ -100,7 +100,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
           const current = this.workspace.getConfiguration(configurationId, settingName);
           if (current && typeof current === 'object') {
-            effectiveValue = { ...(current as Record<string, unknown>), ...(value as Record<string, unknown>) };
+            effectiveValue = {
+              ...(current as Record<string, unknown>),
+              ...(value as Record<string, unknown>),
+            };
           }
         }
 
@@ -146,12 +149,12 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     await this.configuration.setFolderConfigs(updatedFolderConfigs, false);
   }
 
-  private async saveConfigToVSCodeSettings(config: HtmlSettingsData, isCliOnly: boolean): Promise<void> {
+  private async saveConfigToVSCodeSettings(config: HtmlSettingsData): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
-    const settingsMap = mapConfigToSettings(config, isCliOnly);
+    const settingsMap = mapConfigToSettings(config);
 
-    if (!isCliOnly)
+    if (!config.isFallbackForm)
       await this.saveFolderConfigs(
         config.folderConfigs ?? (config['folder_configs'] as HtmlFolderSettingsData[] | undefined),
       );
