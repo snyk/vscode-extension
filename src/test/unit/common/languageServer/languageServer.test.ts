@@ -72,6 +72,7 @@ suite('Language Server', () => {
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
       explicitLspConfigurationChangeTracker,
+      sinon.stub().resolves(),
       treeViewProvider,
     );
   };
@@ -316,6 +317,7 @@ suite('Language Server', () => {
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
       tracker,
+      sinon.stub().resolves(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -370,6 +372,7 @@ suite('Language Server', () => {
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
       tracker,
+      sinon.stub().resolves(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -556,6 +559,7 @@ suite('Language Server', () => {
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
+        sinon.stub().resolves(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -594,6 +598,7 @@ suite('Language Server', () => {
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
+        sinon.stub().resolves(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -630,6 +635,7 @@ suite('Language Server', () => {
         commands,
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
+        sinon.stub().resolves(),
       );
       downloadServiceMock.downloadReady$.next();
 

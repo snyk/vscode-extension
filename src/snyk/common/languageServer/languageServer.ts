@@ -50,8 +50,6 @@ export interface ILanguageServer {
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void;
 
-  setInboundConfigurationPersistenceHandler(handler: (view: LspConfigurationParam) => Promise<void>): void;
-
   cliReady$: ReplaySubject<string>;
   scan$: Subject<Scan>;
   showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>;
@@ -70,18 +68,9 @@ export class LanguageServer implements ILanguageServer {
   private suppressConfigFeedbackFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private configPersistenceQueue: Promise<void> = Promise.resolve();
-  private persistInboundConfiguration?: (view: LspConfigurationParam) => Promise<void>;
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
-  }
-
-  /**
-   * Persists each inbound `$/snyk.configuration` global snapshot into VS Code settings
-   * (see {@link ConfigurationPersistenceService.persistInboundLspConfiguration}).
-   */
-  setInboundConfigurationPersistenceHandler(handler: (view: LspConfigurationParam) => Promise<void>): void {
-    this.persistInboundConfiguration = handler;
   }
 
   constructor(
@@ -101,6 +90,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
+    private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider?: ITreeViewProviderService,
   ) {
     this.downloadService = downloadService;
@@ -315,9 +305,6 @@ export class LanguageServer implements ILanguageServer {
   }
 
   private runInboundPersistence(params: LspConfigurationParam): void {
-    if (!this.persistInboundConfiguration) {
-      return;
-    }
     this.configPersistenceQueue = this.configPersistenceQueue
       .catch(() => {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
@@ -325,7 +312,7 @@ export class LanguageServer implements ILanguageServer {
       .then(async () => {
         this.suppressConfigFeedbackFromInboundPersistence = true;
         try {
-          await this.persistInboundConfiguration!(params);
+          await this.persistInboundConfiguration(params);
         } catch (e) {
           this.logger.error(
             `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,

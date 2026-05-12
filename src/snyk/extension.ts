@@ -251,6 +251,16 @@ class SnykExtension extends SnykLib implements IExtension {
 
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
 
+    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
+    const configPersistenceService = new ConfigurationPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      languageClientAdapter,
+      Logger,
+      this.contextService,
+    );
+
     this.languageServer = new LanguageServer(
       this.user,
       configuration,
@@ -273,6 +283,7 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
       explicitLspConfigurationChangeTracker,
+      view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
     );
 
@@ -373,16 +384,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     // Initialize workspace configuration services
-    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const htmlInjectionService = new HtmlInjectionService();
-    const configPersistenceService = new ConfigurationPersistenceService(
-      vsCodeWorkspace,
-      configuration,
-      scopeDetectionService,
-      languageClientAdapter,
-      Logger,
-      this.contextService,
-    );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 
     this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
@@ -399,9 +401,6 @@ class SnykExtension extends SnykLib implements IExtension {
     // Connect the workspace configuration provider to the language server
     // so it can update the token in the webview when authentication completes
     this.languageServer.setWorkspaceConfigurationProvider(this.workspaceConfigurationProvider);
-    this.languageServer.setInboundConfigurationPersistenceHandler(view =>
-      configPersistenceService.persistInboundLspConfiguration(view),
-    );
 
     this.commandController = new CommandController(
       this.openerService,
