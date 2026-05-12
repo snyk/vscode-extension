@@ -30,8 +30,6 @@ import {
 import { type GlobalLsKeyValue, LS_GLOBAL_KEY } from './serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
 
-// ── Registry entry type ──────────────────────────────────────────────
-
 export interface SettingsEntry {
   /** VS Code setting key. undefined for LS-only settings (token, sendErrorReports, etc). */
   vscodeKey?: string;
@@ -44,8 +42,6 @@ export interface SettingsEntry {
   /** Included in fallback  */
   useInFallbackForm?: true;
 }
-
-// ── Auth method normalisation ────────────────────────────────────────
 
 const AUTH_METHOD_MAP: Record<string, string> = {
   oauth: AUTH_METHOD_OAUTH,
