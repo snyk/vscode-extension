@@ -15,6 +15,8 @@ export interface IExplicitLspConfigurationChangeTracker {
  */
 export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly keys = new Set<string>();
+  /** Serializes Memento writes so rapid mark/unmark calls don't race at disk level. */
+  private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly globalState: vscode.Memento) {
     const stored = globalState.get<string[]>(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS) ?? [];
@@ -28,7 +30,7 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
       return;
     }
     this.keys.add(lsKey);
-    void this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, [...this.keys]);
+    this.persistKeys();
   }
 
   unmarkExplicitlyChanged(lsKey: string): void {
@@ -36,7 +38,7 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
       return;
     }
     this.keys.delete(lsKey);
-    void this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, [...this.keys]);
+    this.persistKeys();
   }
 
   isExplicitlyChanged(lsKey: string): boolean {
@@ -46,6 +48,15 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
   /** @internal Tests only */
   clearForTests(): void {
     this.keys.clear();
-    void this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, []);
+    this.persistKeys();
+  }
+
+  private persistKeys(): void {
+    const snapshot = [...this.keys];
+    this.writeQueue = this.writeQueue
+      .catch(() => {
+        /* keep queue alive on prior failure */
+      })
+      .then(() => this.globalState.update(MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS, snapshot));
   }
 }
