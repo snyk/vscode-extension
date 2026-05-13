@@ -30,7 +30,6 @@ export type PresentableError = {
   treeNodeSuffix: string;
 };
 
-
 export type Scan = {
   folderPath: string;
   product: ScanProduct;
@@ -155,14 +154,10 @@ export type AutofixUnifiedDiffSuggestion = {
   unifiedDiffsPerFile: { [key: string]: string };
 };
 
-export type Summary = {
-  toggleDelta: boolean;
-};
-
 export type SummaryMessage = {
   type: string;
   args: {
-    summary: Summary;
+    summary: { toggleDelta: boolean };
   };
 };
 

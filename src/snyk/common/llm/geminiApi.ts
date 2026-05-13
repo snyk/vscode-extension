@@ -45,7 +45,7 @@ export interface GeminiCodeAssist extends Disposable {
  * Upon subsequent activations Gemini Code Assist will attempt to execute the
  * command that was specified in the tool's registration if any was specified.
  */
-interface GeminiTool extends Disposable {
+export interface GeminiTool extends Disposable {
   /**
    * Registers a handler for chat.  This allows the tool to handle incoming
    * chat requests.
@@ -117,7 +117,7 @@ export interface SuggestedPromptProvider {
  * requests, add context for Gemini chat requests, and/or rewrite the prompt
  * before it is sent to the LLM service.
  */
-interface ChatHandler {
+export interface ChatHandler {
   /**
    * @param request The chat request, can be used to manipulate the prompt and
    * reference parts.
@@ -131,7 +131,7 @@ interface ChatHandler {
  * interface allows the tool to provide a static list of variables as well as
  * a dynamic list.
  */
-interface VariableProvider {
+export interface VariableProvider {
   /**
    * Allows the tool to return a static list of variables that it supports.
    * This list is not expected to change as the user is typing.
@@ -157,7 +157,7 @@ interface VariableProvider {
  * the variable to the user.  The variable instance will be passed as is to the
  * tool, so it can carry any additional context necessary.
  */
-interface Variable {
+export interface Variable {
   /**
    * The name of the variable, this would be what the variable looks like to the
    * user.

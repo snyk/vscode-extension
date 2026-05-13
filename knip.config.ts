@@ -16,6 +16,8 @@ const config: KnipConfig = {
     'src/snyk/snykCode/views/suggestion/ideFuncs/ideSubmitIgnoreRequest.ts',
     // Imported as namespace (`import * as dcIgnoreConstant`) — individual members appear unused to knip.
     'src/snyk/snykCode/constants/dcignore.ts',
+    // Public API contract for Gemini Code Assist extension — consumed at runtime via extension API, not TS imports.
+    'src/snyk/common/llm/geminiApi.ts',
     // DiagnosticSeverity mirrors vscode's numeric enum; members not referenced by name but part of public API.
     'src/snyk/common/vscode/types.ts',
     // Webview message types used across the JS/TS boundary — knip cannot trace webview-side usage.
@@ -26,8 +28,6 @@ const config: KnipConfig = {
     'src/snyk/common/git.ts',
     // WorkspaceFolderResultSuccess/Failure used in union type on same line — knip false positive.
     'src/snyk/common/services/productService.ts',
-    // LS scan result types — Summary used structurally.
-    'src/snyk/common/languageServer/types.ts',
   ],
   ignoreDependencies: ['@types/*', 'yalc'],
   ignoreBinaries: ['ovsx'],
