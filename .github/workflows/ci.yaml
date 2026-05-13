@@ -28,6 +28,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Dead code (knip)
+        run: npm run knip
+
       - name: Build
         run: npm run build
 
