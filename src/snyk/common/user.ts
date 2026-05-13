@@ -6,7 +6,7 @@ import { IVSCodeCommands } from './vscode/commands';
 import { ExtensionContext } from './vscode/extensionContext';
 import { ILog } from './logger/interfaces';
 
-export type UserDto = {
+type UserDto = {
   id: string;
   username: string;
 };

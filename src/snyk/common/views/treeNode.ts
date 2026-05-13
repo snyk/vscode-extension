@@ -40,7 +40,7 @@ export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
   },
 };
 
-export type InternalType = {
+type InternalType = {
   nIssues?: number;
   severity?: number;
   isError?: boolean;

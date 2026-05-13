@@ -22,21 +22,12 @@ const config: KnipConfig = {
     'src/snyk/snykCode/views/suggestion/types.ts',
     // Webview config message types — used via webview JS message protocol.
     'src/snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types.ts',
-    // Structural types used indirectly (structural typing, union members, test fixtures).
+    // Structural types used via structural typing — RepositoryState/Branch referenced via repo.state.HEAD.
     'src/snyk/common/git.ts',
+    // WorkspaceFolderResultSuccess/Failure used in union type on same line — knip false positive.
     'src/snyk/common/services/productService.ts',
-    'src/snyk/common/views/issueTreeProvider.ts',
-    'src/snyk/common/views/treeNode.ts',
-    'src/snyk/common/tsUtil.ts',
-    'src/snyk/common/user.ts',
-    // vscode type alias re-exports — used in tests and DI.
-    'src/snyk/common/vscode/extension.ts',
-    // LLM API types — exported for potential external use / future integration.
-    'src/snyk/common/llm/geminiApi.ts',
-    // LS scan result types used structurally.
+    // LS scan result types — Summary used structurally.
     'src/snyk/common/languageServer/types.ts',
-    // OSS vulnerability count types.
-    'src/snyk/snykOss/services/vulnerabilityCount/importedModule.ts',
   ],
   ignoreDependencies: ['@types/*', 'yalc'],
   ignoreBinaries: ['ovsx'],
