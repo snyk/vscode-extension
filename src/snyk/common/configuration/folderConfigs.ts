@@ -41,8 +41,8 @@ export class FolderConfigs implements IFolderConfigs {
       return;
     }
 
-    folderConfig.referenceFolderPath = selectedDir[0].fsPath;
-    folderConfig.baseBranch = '';
+    folderConfig.setReferenceFolderPath(selectedDir[0].fsPath);
+    folderConfig.setBaseBranch('');
     await this.setFolderConfig(config, folderConfig);
   }
 
@@ -56,7 +56,7 @@ export class FolderConfigs implements IFolderConfigs {
     const branchName = await window.showInputBox({
       placeHolder: '',
       validateInput: input => {
-        const valid = this.validateBranchName(input, folderConfig.localBranches ?? []);
+        const valid = this.validateBranchName(input, folderConfig.localBranches() ?? []);
         if (!valid) {
           return "The chosen branch name doesn't exist.";
         }
@@ -66,8 +66,8 @@ export class FolderConfigs implements IFolderConfigs {
       return;
     }
 
-    folderConfig.baseBranch = branchName;
-    folderConfig.referenceFolderPath = '';
+    folderConfig.setBaseBranch(branchName);
+    folderConfig.setReferenceFolderPath('');
     await this.setFolderConfig(config, folderConfig);
   }
 

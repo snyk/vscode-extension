@@ -46,6 +46,7 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
+import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -103,7 +104,6 @@ import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
 import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
-import { ConfigurationMappingService } from './common/views/workspaceConfiguration/services/configurationMappingService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
@@ -114,7 +114,7 @@ import { ProductTreeViewService } from './common/services/productTreeViewService
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
-import { HTML_SETTINGS, HTML_TREE_VIEW } from './common/constants/settings';
+import { HTML_TREE_VIEW } from './common/constants/settings';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 
@@ -236,7 +236,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const snykConfiguration = await this.getSnykConfiguration();
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
-    const htmlTreeViewEnabled = configuration.getPreviewFeature(HTML_TREE_VIEW);
+    const htmlTreeViewEnabled = true;
     await this.contextService.setContext(SNYK_CONTEXT.HTML_TREE_VIEW_ENABLED, htmlTreeViewEnabled);
 
     if (htmlTreeViewEnabled) {
@@ -248,6 +248,18 @@ class SnykExtension extends SnykLib implements IExtension {
         );
       }
     }
+
+    const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
+
+    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
+    const configPersistenceService = new ConfigurationPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      languageClientAdapter,
+      Logger,
+      this.contextService,
+    );
 
     this.languageServer = new LanguageServer(
       this.user,
@@ -270,6 +282,8 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
+      explicitLspConfigurationChangeTracker,
+      view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
     );
 
@@ -370,17 +384,7 @@ class SnykExtension extends SnykLib implements IExtension {
     );
 
     // Initialize workspace configuration services
-    const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
-    const configMappingService = new ConfigurationMappingService();
     const htmlInjectionService = new HtmlInjectionService();
-    const configPersistenceService = new ConfigurationPersistenceService(
-      vsCodeWorkspace,
-      configuration,
-      scopeDetectionService,
-      configMappingService,
-      languageClientAdapter,
-      Logger,
-    );
     const messageHandlerFactory = new MessageHandlerFactory(vsCodeCommands, configPersistenceService, Logger);
 
     this.workspaceConfigurationProvider = new WorkspaceConfigurationWebviewProvider(
@@ -390,7 +394,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeWorkspace,
       configuration,
       htmlInjectionService,
-      configMappingService,
       scopeDetectionService,
       messageHandlerFactory,
     );
@@ -686,12 +689,7 @@ class SnykExtension extends SnykLib implements IExtension {
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
-        const useHTMLSettings = configuration.getPreviewFeature(HTML_SETTINGS);
-        if (useHTMLSettings) {
-          await this.workspaceConfigurationProvider?.showPanel();
-        } else {
-          this.commandController.openSettings();
-        }
+        await this.workspaceConfigurationProvider?.showPanel();
       }),
       vscode.commands.registerCommand(SNYK_DCIGNORE_COMMAND, (custom: boolean, path?: string) =>
         this.commandController.createDCIgnore(custom, new UriAdapter(), path),

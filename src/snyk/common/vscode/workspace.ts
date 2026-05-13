@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
-import { TextDocumentChangeEvent } from 'vscode';
-import { TextDocument, Uri, WorkspaceFolder } from './types';
+import {
+  ConfigurationChangeEvent,
+  Disposable,
+  TextDocument,
+  TextDocumentChangeEvent,
+  Uri,
+  WorkspaceFolder,
+} from './types';
 
 export interface IVSCodeWorkspace {
   fs: vscode.FileSystem;
@@ -40,7 +46,9 @@ export interface IVSCodeWorkspace {
 
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
 
-  onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): vscode.Disposable;
+  onDidChangeTextDocument(listener: (e: TextDocumentChangeEvent) => unknown): Disposable;
+
+  onDidChangeConfiguration(listener: (e: ConfigurationChangeEvent) => unknown): Disposable;
 
   openFileTextDocument(fileName: string): Promise<TextDocument>;
 
@@ -119,6 +127,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
 
   onDidChangeTextDocument(listener: (e: vscode.TextDocumentChangeEvent) => unknown): vscode.Disposable {
     return vscode.workspace.onDidChangeTextDocument(listener);
+  }
+
+  onDidChangeConfiguration(listener: (e: vscode.ConfigurationChangeEvent) => unknown): Disposable {
+    return vscode.workspace.onDidChangeConfiguration(listener);
   }
 
   openFileTextDocument(fileName: string): Promise<TextDocument> {

@@ -3,16 +3,25 @@
 import { IConfiguration } from '../../../configuration/configuration';
 import { Configuration } from '../../../configuration/configuration';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../../../constants/languageServer';
-import { ADVANCED_ORGANIZATION } from '../../../constants/settings';
+import { SNYK_CONTEXT } from '../../../constants/views';
 import { ILog } from '../../../logger/interfaces';
+import { IContextService } from '../../../services/contextService';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
-import { IdeConfigData, FolderConfigData } from '../types/workspaceConfiguration.types';
-import { IConfigurationMappingService } from './configurationMappingService';
+import type { LspConfigurationParam } from '../../../languageServer/types';
+import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
+import { mapConfigToSettings, mapLspSettingsToVscodeSettings } from '../../../languageServer/lsKeyToVscodeKeyMap';
+import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
   handleSaveConfig(configJson: string): Promise<void>;
+
+  /**
+   * Writes LS global settings from `$/snyk.configuration` into VS Code `settings.json`.
+   * No-op when the global snapshot has no mappable keys.
+   */
+  persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void>;
 }
 
 export class ConfigurationPersistenceService implements IConfigurationPersistenceService {
@@ -20,31 +29,35 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
     private readonly scopeDetectionService: IScopeDetectionService,
-    private readonly configMappingService: IConfigurationMappingService,
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
+    private readonly contextService?: IContextService,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
     try {
-      const config = JSON.parse(configJson) as IdeConfigData;
-      const isCliOnly = config.isFallbackForm ?? false;
-      this.logger.info(`Saving workspace configuration (CLI only: ${isCliOnly})`);
+      const config = JSON.parse(configJson) as HtmlSettingsData;
+      config.isFallbackForm ??= false;
+      this.logger.info(`Saving workspace configuration (isFallbackForm: ${config.isFallbackForm})`);
 
-      await this.saveConfigToVSCodeSettings(config, isCliOnly);
+      await this.saveConfigToVSCodeSettings(config);
 
-      // Only handle token when not in CLI-only mode
-      if (!isCliOnly) {
-        // Persist token to secret storage only if it has changed
+      // Only handle token when not in CLI-only mode and token is present in the payload
+      if (!config.isFallbackForm && 'token' in config) {
         const existingToken = await this.configuration.getToken();
-        // Normalize empty/null/undefined to empty string for comparison
         const normalizedNewToken = config.token?.trim() || '';
         const normalizedExistingToken = existingToken?.trim() || '';
         if (normalizedNewToken !== normalizedExistingToken) {
           await this.configuration.setToken(config.token);
-          await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+          if (this.contextService) {
+            await this.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, true);
+            await this.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, false);
+          }
         }
       }
+
+      // Notify the LS once after all settings (including token) have been written
+      await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
 
       this.logger.info('Workspace configuration saved successfully');
     } catch (e) {
@@ -53,68 +66,100 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  /**
-   * Special handling for folder configs, write in-memory and send to language-server
-   * and then folder notification handler will persist it (standard flow for folder configs)
-   */
-  private async saveFolderConfigs(folderConfigs?: Array<FolderConfigData>): Promise<void> {
+  async persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void> {
+    try {
+      // Map LS settings directly to VS Code settings using the registry.
+      // Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped automatically.
+      const settingsMap = mapLspSettingsToVscodeSettings(param.settings ?? {});
+
+      if (Object.keys(settingsMap).length > 0) {
+        this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
+        await this.applySettingsMap(settingsMap);
+      }
+
+      // Apply folder configs to in-memory storage — LS is the source of truth.
+      // An empty array means "clear all folder overrides".
+      if (param.folderConfigs !== undefined) {
+        await this.configuration.setFolderConfigs(folderConfigsFromLspParam(param));
+      }
+    } catch (e) {
+      this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
+      throw e;
+    }
+  }
+
+  private async applySettingsMap(settingsMap: Record<string, unknown>): Promise<void> {
+    for (const [settingKey, value] of Object.entries(settingsMap)) {
+      try {
+        const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
+
+        const scope = this.scopeDetectionService.getSettingScope(settingKey);
+
+        // For object values, merge with current VS Code value to preserve sibling keys
+        let effectiveValue = value;
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          const current = this.workspace.getConfiguration(configurationId, settingName);
+          if (current && typeof current === 'object') {
+            effectiveValue = {
+              ...(current as Record<string, unknown>),
+              ...(value as Record<string, unknown>),
+            };
+          }
+        }
+
+        if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, effectiveValue, scope)) {
+          this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
+          continue;
+        }
+
+        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
+
+        this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
+      } catch (e) {
+        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
+      }
+    }
+
+    this.logger.info('Successfully applied settings map to VS Code configuration');
+  }
+
+  private async saveFolderConfigs(folderConfigs?: Array<HtmlFolderSettingsData>): Promise<void> {
     if (!folderConfigs) return;
 
     const currentFolderConfigs = this.configuration.getFolderConfigs();
 
-    const folderConfigMap = new Map(folderConfigs.map(fc => [fc.folderPath, fc]));
+    const folderConfigMap = new Map(
+      folderConfigs.map(fc => [fc.folderPath ?? ((fc as Record<string, unknown>)['folder_path'] as string), fc]),
+    );
 
     const updatedFolderConfigs = currentFolderConfigs.map(currentFolderConfig => {
-      const folderConfig = folderConfigMap.get(currentFolderConfig.folderPath);
-      if (!folderConfig) return currentFolderConfig;
+      const formData = folderConfigMap.get(currentFolderConfig.folderPath);
+      if (!formData) return currentFolderConfig;
 
-      return {
-        ...currentFolderConfig,
-        ...folderConfig,
-      };
+      // HtmlFolderSettingsData field names ARE LS key strings (snake_case),
+      // so they pass directly to FolderConfig.setSetting().
+      for (const [key, value] of Object.entries(formData)) {
+        if (key === 'folderPath' || key === 'folder_path' || value === undefined) continue;
+        currentFolderConfig.setSetting(key, value);
+      }
+
+      return currentFolderConfig;
     });
 
-    await this.configuration.setFolderConfigs(updatedFolderConfigs, true);
+    await this.configuration.setFolderConfigs(updatedFolderConfigs, false);
   }
 
-  private async saveConfigToVSCodeSettings(config: IdeConfigData, isCliOnly: boolean): Promise<void> {
+  private async saveConfigToVSCodeSettings(config: HtmlSettingsData): Promise<void> {
     this.logger.info('Writing configuration to VS Code settings');
 
-    const settingsMap = this.configMappingService.mapConfigToSettings(config, isCliOnly);
+    const settingsMap = mapConfigToSettings(config);
 
-    if (!isCliOnly) await this.saveFolderConfigs(config.folderConfigs);
+    if (!config.isFallbackForm)
+      await this.saveFolderConfigs(
+        config.folderConfigs ?? (config['folder_configs'] as HtmlFolderSettingsData[] | undefined),
+      );
 
-    const updates = Object.entries(settingsMap).map(async ([settingKey, value]) => {
-      try {
-        const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
-
-        if (settingKey === ADVANCED_ORGANIZATION) {
-          // Special handling for global org
-          const workspaceFolders = this.workspace.getWorkspaceFolders();
-          const isSingleFolderWorkspace = workspaceFolders.length === 1;
-          const inspection = this.workspace.inspectConfiguration<string>(configurationId, settingName);
-          const hasBeenModifiedOnWorkspaceLevel = inspection?.workspaceValue !== undefined;
-          const writeToUserScope = isSingleFolderWorkspace || !hasBeenModifiedOnWorkspaceLevel;
-          await this.workspace.updateConfiguration(configurationId, settingName, value, writeToUserScope);
-          this.logger.debug(`Updated setting: ${settingKey} at ${writeToUserScope ? 'user' : 'workspace'} level`);
-        } else {
-          const scope = this.scopeDetectionService.getSettingScope(settingKey);
-
-          if (this.scopeDetectionService.shouldSkipSettingUpdate(configurationId, settingName, value, scope)) {
-            this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
-            return;
-          }
-
-          await this.workspace.updateConfiguration(configurationId, settingName, value, scope !== 'workspace');
-
-          this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
-        }
-      } catch (e) {
-        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
-      }
-    });
-
-    await Promise.all(updates);
+    await this.applySettingsMap(settingsMap);
 
     this.logger.info('Successfully wrote all settings to VS Code configuration');
   }

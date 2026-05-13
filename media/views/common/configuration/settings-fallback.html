@@ -10,6 +10,9 @@
     {{CHANNEL_STABLE_SELECTED}} - "selected" or ""
     {{CHANNEL_RC_SELECTED}} - "selected" or ""
     {{CHANNEL_PREVIEW_SELECTED}} - "selected" or ""
+    {{CHANNEL_CUSTOM_SELECTED}} - "selected" or ""
+    {{CLI_RELEASE_CHANNEL_CUSTOM_VALUE}} - custom version string or ""
+    {{CLI_RELEASE_CHANNEL_CUSTOM_HIDDEN}} - "hidden" or ""
     {{INSECURE_CHECKED}} - "checked" or ""
 -->
 <!DOCTYPE html>
@@ -185,6 +188,31 @@
       outline-offset: -1px;
     }
 
+    .cli-release-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .cli-release-group select {
+      flex: 0 0 50%;
+    }
+
+    .cli-release-group input {
+      flex: 1 1 auto;
+      margin-left: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .error-message {
+      color: var(--error-foreground);
+      font-size: 12px;
+      margin-top: 5px;
+      display: block;
+    }
+
     /* Info Message */
     .info-message {
       padding: var(--section-padding);
@@ -284,7 +312,7 @@
 
     <div class="form-group half-width">
       <label class="checkbox-label">
-        <input type="checkbox" name="insecure" id="insecure" {{INSECURE_CHECKED}}>
+        <input type="checkbox" name="proxy_insecure" id="proxy_insecure" {{INSECURE_CHECKED}}>
         <span data-toggle="tooltip">Insecure (Skip SSL Verification)<span class="tooltip-popup">If enabled, the plugin will ignore SSL certificate errors. Use this when connecting to self-signed or internal CA servers.</span></span>
       </label>
     </div>
@@ -294,29 +322,34 @@
     <h2>CLI Configuration</h2>
 
     <div class="form-group">
-      <label for="cliPath"><span data-toggle="tooltip">CLI Path<span class="tooltip-popup">Path to Snyk CLI executable</span></span></label>
-      <input type="text" id="cliPath" name="cliPath" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
+      <label for="cli_path"><span data-toggle="tooltip">CLI Path<span class="tooltip-popup">Path to Snyk CLI executable</span></span></label>
+      <input type="text" id="cli_path" name="cli_path" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
     </div>
 
     <div class="form-group half-width">
       <label class="checkbox-label">
-        <input type="checkbox" name="manageBinariesAutomatically" id="manageBinariesAutomatically" {{MANAGE_BINARIES_CHECKED}}>
+        <input type="checkbox" name="automatic_download" id="automatic_download" {{MANAGE_BINARIES_CHECKED}}>
         <span data-toggle="tooltip">Manage Binaries Automatically<span class="tooltip-popup">Automatically download and manage Snyk CLI binaries</span></span>
       </label>
     </div>
 
-    <div class="form-group half-width">
-      <label for="cliReleaseChannel"><span data-toggle="tooltip">CLI Release Channel<span class="tooltip-popup">Release channel for Snyk CLI downloads (Stable, Release Candidate or Preview)</span></span></label>
-      <select id="cliReleaseChannel" name="cliReleaseChannel">
-        <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
-        <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
-        <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
-      </select>
+    <div class="form-group">
+      <label for="cli_release_channel"><span data-toggle="tooltip">CLI Release<span class="tooltip-popup">Release channel or specific version for Snyk CLI downloads</span></span></label>
+      <div class="cli-release-group">
+        <select id="cli_release_channel" name="cli_release_channel">
+          <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
+          <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
+          <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
+          <option value="custom" {{CHANNEL_CUSTOM_SELECTED}}>Specify version…</option>
+        </select>
+        <input type="text" id="cli_release_channel_custom" name="cli_release_channel_custom" class="{{CLI_RELEASE_CHANNEL_CUSTOM_HIDDEN}}" placeholder="e.g. v1.1292.0" value="{{CLI_RELEASE_CHANNEL_CUSTOM_VALUE}}" maxlength="20" pattern="^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$">
+      </div>
+      <span id="cli-version-error" class="error-message hidden">Invalid version format. Expected: v1.1234.0</span>
     </div>
 
     <div class="form-group">
-      <label for="cliBaseDownloadURL"><span data-toggle="tooltip">CLI Download Base URL<span class="tooltip-popup"><p>Base URL for downloading Snyk CLI binaries.</p><p>Default: <strong>https://downloads.snyk.io</strong></p><p>For FIPS-enabled CLIs (Windows/Linux only), use <strong>https://downloads.snyk.io/fips</strong></p></span></span></label>
-      <input type="text" id="cliBaseDownloadURL" name="cliBaseDownloadURL" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
+      <label for="binary_base_url"><span data-toggle="tooltip">CLI Download Base URL<span class="tooltip-popup"><p>Base URL for downloading Snyk CLI binaries.</p><p>Default: <strong>https://downloads.snyk.io</strong></p><p>For FIPS-enabled CLIs (Windows/Linux only), use <strong>https://downloads.snyk.io/fips</strong></p></span></span></label>
+      <input type="text" id="binary_base_url" name="binary_base_url" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
     </div>
   </div>
 </form>
@@ -337,11 +370,11 @@
     function collectData() {
       return {
         isFallbackForm: true,
-        cliPath: get('cliPath').value,
-        manageBinariesAutomatically: get('manageBinariesAutomatically').checked,
-        cliBaseDownloadURL: get('cliBaseDownloadURL').value || get('cliBaseDownloadURL').placeholder,
-        cliReleaseChannel: get('cliReleaseChannel').value,
-        insecure: get('insecure').checked
+        cli_path: get('cli_path').value,
+        automatic_download: get('automatic_download').checked,
+        binary_base_url: get('binary_base_url').value || get('binary_base_url').placeholder,
+        cli_release_channel: get('cli_release_channel').value === 'custom' ? (function() { var v = (get('cli_release_channel_custom').value || '').trim(); if (v && v.charAt(0) !== 'v') { v = 'v' + v; } return v || 'stable'; })() : get('cli_release_channel').value,
+        proxy_insecure: get('proxy_insecure').checked
       };
     }
 
@@ -413,6 +446,33 @@
       }
     }
 
+    function toggleCustomVersionInput() {
+      var sel = get('cli_release_channel');
+      var customInput = get('cli_release_channel_custom');
+      if (sel && customInput) {
+        if (sel.value === 'custom') {
+          customInput.className = customInput.className.replace(/\bhidden\b/, '').trim();
+        } else if (customInput.className.indexOf('hidden') === -1) {
+          customInput.className += ' hidden';
+        }
+      }
+    }
+
+    function validateCliVersion() {
+      var input = get('cli_release_channel_custom');
+      var error = get('cli-version-error');
+      if (!input || !error) return;
+      var value = input.value.trim();
+      var isValid = !value || /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(value);
+      if (isValid) {
+        if (error.className.indexOf('hidden') === -1) {
+          error.className += ' hidden';
+        }
+      } else {
+        error.className = error.className.replace(/\bhidden\b/, '').trim();
+      }
+    }
+
     window.addEventListener('load', function() {
       var form = get('configForm');
       if (!form) return;
@@ -435,6 +495,10 @@
         // Selects: use change event
         selects[j].addEventListener('change', markDirtyAndSave);
       }
+
+      get('cli_release_channel').addEventListener('change', toggleCustomVersionInput);
+
+      get('cli_release_channel_custom').addEventListener('input', validateCliVersion);
 
       // Attach tooltip repositioning on hover
       var tooltipTriggers = document.querySelectorAll('[data-toggle="tooltip"]');

@@ -1,125 +1,53 @@
-import _ from 'lodash';
-import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
-import {
-  Configuration,
-  FolderConfig,
-  IConfiguration,
-  IssueViewOptions,
-  SeverityFilter,
-} from '../configuration/configuration';
-import { User } from '../user';
-import { PROTOCOL_VERSION } from '../constants/languageServer';
-import { LanguageServer } from './languageServer';
-
-export type ServerSettings = {
-  // Feature toggles
-  activateSnykCodeSecurity?: string;
-  activateSnykOpenSource?: string;
-  activateSnykIac?: string;
-  activateSnykSecrets?: string;
-
-  // Endpoint path, and organization
-  path?: string;
-  cliPath?: string;
-  cliBaseDownloadURL?: string;
-  endpoint?: string;
-  organization?: string;
-
-  // Authentication and parameters
-  token?: string;
-  automaticAuthentication?: string;
-  authenticationMethod?: string;
-  additionalParams?: string;
-  manageBinariesAutomatically?: string;
-
-  // Reporting and telemetry
-  sendErrorReports?: string;
-
-  // Security and scanning settings
-  filterSeverity?: SeverityFilter;
-  riskScoreThreshold?: number;
-  issueViewOptions?: IssueViewOptions;
-  scanningMode?: string;
-  insecure?: string;
-
-  // Trusted folders feature
-  enableTrustedFoldersFeature?: string;
-  trustedFolders?: string[];
-
-  // Snyk integration settings
-  integrationName?: string;
-  integrationVersion?: string;
-  deviceId?: string;
-  requiredProtocolVersion?: string;
-  enableDeltaFindings?: string;
-  folderConfigs: FolderConfig[];
-  enableSnykOSSQuickFixCodeActions: string;
-  hoverVerbosity: number;
-  // Environment/Editor Info
-  runtimeName?: string;
-  runtimeVersion?: string;
-  osArch?: string;
-  osPlatform?: string;
-  additionalEnv?: string;
-
-  // Secure At Inception settings
-  secureAtInceptionExecutionFrequency?: string;
-  autoConfigureSnykMcpServer?: string;
-};
+import { FolderConfig, IConfiguration } from '../configuration/configuration';
+import type { IVSCodeWorkspace } from '../vscode/workspace';
+import type { LspConfigurationParam, LspConfigSetting } from './types';
+import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
+import { ExplicitChangePredicate, folderConfigToLspFolderConfiguration } from './serverSettingsToLspConfigurationParam';
 
 export class LanguageServerSettings {
-  static async fromConfiguration(configuration: IConfiguration, user: User): Promise<ServerSettings> {
-    const featuresConfiguration = configuration.getFeaturesConfiguration();
+  static resolveFolderConfigs(
+    configuration: IConfiguration,
+    workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
+  ) {
+    let folderConfigs = configuration.getFolderConfigs();
+    const wsFolders = workspace?.getWorkspaceFolders?.();
+    if (folderConfigs.length === 0 && wsFolders?.length) {
+      folderConfigs = wsFolders.map(wf => new FolderConfig(wf.uri.fsPath));
+    }
+    return folderConfigs;
+  }
 
-    const ossEnabled = _.isUndefined(featuresConfiguration?.ossEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.ossEnabled}`;
+  static async fromConfiguration(
+    configuration: IConfiguration,
+    isExplicitlyChanged: ExplicitChangePredicate,
+    workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
+  ): Promise<LspConfigurationParam> {
+    const m: Record<string, LspConfigSetting> = {};
 
-    const iacEnabled = _.isUndefined(featuresConfiguration?.iacEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.iacEnabled}`;
+    for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
+      if (entry.alwaysChanged) {
+        m[lsKey] = { value: await entry.resolve(configuration), changed: true };
+        continue;
+      }
 
-    const codeSecurityEnabled = _.isUndefined(featuresConfiguration?.codeSecurityEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.codeSecurityEnabled}`;
+      const value = await entry.resolve(configuration);
+      if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
+        m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
+      } else if (isExplicitlyChanged(lsKey)) {
+        m[lsKey] = { value: null, changed: true };
+      }
+    }
 
-    const secretsEnabled = _.isUndefined(featuresConfiguration?.secretsEnabled)
-      ? 'true'
-      : `${featuresConfiguration?.secretsEnabled}`;
+    // Folder configs
+    const folderConfigs = LanguageServerSettings.resolveFolderConfigs(configuration, workspace);
+    const lspFolderConfigs = folderConfigs.length
+      ? folderConfigs.map(fc => folderConfigToLspFolderConfiguration(fc))
+      : undefined;
 
-    const settings = {
-      activateSnykCodeSecurity: codeSecurityEnabled,
-      activateSnykOpenSource: ossEnabled,
-      activateSnykIac: iacEnabled,
-      activateSnykSecrets: secretsEnabled,
-      enableDeltaFindings: `${configuration.getDeltaFindingsEnabled()}`,
-      sendErrorReports: `${configuration.shouldReportErrors}`,
-      cliPath: await configuration.getCliPath(),
-      cliBaseDownloadURL: configuration.getCliBaseDownloadUrl(),
-      endpoint: configuration.snykApiEndpoint,
-      organization: configuration.organization,
-      token: await configuration.getToken(),
-      automaticAuthentication: 'false',
-      authenticationMethod: configuration.getAuthenticationMethod(),
-      additionalParams: configuration.getAdditionalCliParameters(),
-      manageBinariesAutomatically: `${configuration.isAutomaticDependencyManagementEnabled()}`,
-      filterSeverity: configuration.severityFilter,
-      riskScoreThreshold: configuration.riskScoreThreshold,
-      issueViewOptions: configuration.issueViewOptions,
-      scanningMode: configuration.scanningMode,
-      insecure: `${configuration.getInsecure()}`,
-      enableTrustedFoldersFeature: 'true',
-      trustedFolders: configuration.getTrustedFolders(),
-      integrationName: CLI_INTEGRATION_NAME,
-      integrationVersion: await Configuration.getVersion(),
-      deviceId: user.anonymousId,
-      requiredProtocolVersion: `${PROTOCOL_VERSION}`,
-      folderConfigs: LanguageServer.ReceivedFolderConfigsFromLs ? configuration.getFolderConfigs() : [],
-      enableSnykOSSQuickFixCodeActions: `${configuration.getOssQuickFixCodeActionsEnabled()}`,
-      hoverVerbosity: 1,
-      secureAtInceptionExecutionFrequency: configuration.getSecureAtInceptionExecutionFrequency(),
-      autoConfigureSnykMcpServer: `${configuration.getAutoConfigureMcpServer()}`,
-    };
-    return settings;
+    const result: LspConfigurationParam = { settings: m };
+    if (lspFolderConfigs !== undefined) {
+      result.folderConfigs = lspFolderConfigs;
+    }
+    return result;
   }
 }

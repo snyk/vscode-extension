@@ -3,7 +3,6 @@ import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
 import { productToLsProduct } from '../services/mappings';
 import { isEnumStringValueOf, isThenable } from '../tsUtil';
-import { User } from '../user';
 import { IVSCodeCommands } from '../vscode/commands';
 import type {
   CancellationToken,
@@ -17,26 +16,34 @@ import type {
   WorkspaceMiddleware,
 } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
-import { LanguageServerSettings, ServerSettings } from './settings';
-import { LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
+import type { IVSCodeWorkspace } from '../vscode/workspace';
+import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import { unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
+import { LanguageServerSettings } from './settings';
+import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
+
+/** snyk-ls unmarshals the pull response as `[]DidChangeConfigurationParams` where each element is `{ settings: LspConfigurationParam }`. */
+type LspPullResponseItem = { settings: LspConfigurationParam };
 
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
     params: ConfigurationParams,
     token: CancellationToken,
     next: ConfigurationRequestHandlerSignature,
-  ) => Promise<ResponseError<void> | ServerSettings[]>;
+  ) => Promise<ResponseError<void> | LspPullResponseItem[]>;
 };
 
 export class LanguageClientMiddleware implements Middleware {
   constructor(
     private readonly logger: ILog,
     private configuration: IConfiguration,
-    private user: User,
     private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
+    private readonly vscodeWorkspace?: IVSCodeWorkspace,
+    private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
+    private readonly isInboundPersistenceSuppressed: () => boolean = () => false,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -63,8 +70,24 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const serverSettings = await LanguageServerSettings.fromConfiguration(this.configuration, this.user);
-      return [serverSettings];
+      const lspParam = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+        this.vscodeWorkspace,
+      );
+
+      if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
+        unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
+      }
+
+      return [{ settings: lspParam }];
+    },
+    didChangeConfiguration: async (sections, next) => {
+      if (this.isInboundPersistenceSuppressed()) {
+        this.logger.debug('didChangeConfiguration suppressed during inbound LS persistence');
+        return;
+      }
+      await next(sections);
     },
   };
   window: WindowMiddleware = {

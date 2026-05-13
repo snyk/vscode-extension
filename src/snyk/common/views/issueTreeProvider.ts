@@ -178,9 +178,9 @@ export abstract class ProductIssueTreeProvider<T> extends AnalysisTreeNodeProvid
   getReference(folderPath: string): TreeNode | undefined {
     const deltaFindingsEnabled = this.configuration.getDeltaFindingsEnabled();
     const config = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
-    let reference = config?.referenceFolderPath ?? '';
+    let reference = config?.referenceFolderPath() ?? '';
     if (reference === undefined || reference === '') {
-      reference = config?.baseBranch ?? '';
+      reference = config?.baseBranch() ?? '';
     } else {
       reference = path.basename(reference);
     }

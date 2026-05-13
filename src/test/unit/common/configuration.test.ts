@@ -1,6 +1,13 @@
 import { deepStrictEqual, strictEqual } from 'assert';
 import sinon from 'sinon';
-import { ALLISSUES, Configuration, NEWISSUES, PreviewFeatures } from '../../../snyk/common/configuration/configuration';
+import {
+  ALLISSUES,
+  Configuration,
+  FolderConfig,
+  NEWISSUES,
+  PreviewFeatures,
+} from '../../../snyk/common/configuration/configuration';
+import { LS_KEY } from '../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import {
   ADVANCED_CLI_PATH,
@@ -296,6 +303,35 @@ suite('Configuration', () => {
         const configuration = new Configuration({}, workspace);
 
         strictEqual(configuration.organization, 'global-org');
+      });
+    });
+  });
+
+  suite('FolderConfig product-enable getters', () => {
+    function makeFolderConfig(value: boolean | undefined, key: string): FolderConfig {
+      const settings = value === undefined ? {} : { [key]: { value } };
+      return new FolderConfig('/some/folder', settings);
+    }
+
+    [
+      { name: 'snykCodeEnabled', key: LS_KEY.snykCodeEnabled },
+      { name: 'snykOssEnabled', key: LS_KEY.snykOssEnabled },
+      { name: 'snykIacEnabled', key: LS_KEY.snykIacEnabled },
+      { name: 'snykSecretsEnabled', key: LS_KEY.snykSecretsEnabled },
+    ].forEach(({ name, key }) => {
+      test(`${name}() returns true when LS setting value is true`, () => {
+        const fc = makeFolderConfig(true, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), true);
+      });
+
+      test(`${name}() returns false when LS setting value is false`, () => {
+        const fc = makeFolderConfig(false, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), false);
+      });
+
+      test(`${name}() returns undefined when LS setting is absent`, () => {
+        const fc = makeFolderConfig(undefined, key);
+        strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), undefined);
       });
     });
   });

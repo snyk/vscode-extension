@@ -2,12 +2,11 @@
 // ABOUTME: and populating scope indicators in HTML
 import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
-import { IConfigurationMappingService } from './configurationMappingService';
 import _ from 'lodash';
 
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
-  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string;
+  populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
   /**
    * Determines whether a setting update should be skipped.
    * Returns true if:
@@ -34,7 +33,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
     return 'default';
   }
 
-  populateScopeIndicators(html: string, configMappingService: IConfigurationMappingService): string {
+  populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string {
     const slotRegex =
       /(?<prefix><span[^>]*class="config-scope-slot"[^>]*data-setting-key=")(?<settingKey>[^"]*)(?<suffix>"[^>]*>)(?<content>.*?)(?<closing><\/span>)/g;
 
@@ -47,7 +46,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
         closing: string;
       };
 
-      const vscodeSetting = configMappingService.mapHtmlKeyToVSCodeSetting(groups.settingKey);
+      const vscodeSetting = mapHtmlKey(groups.settingKey);
       if (!vscodeSetting) return match;
       const scope = this.getSettingScope(vscodeSetting);
 
@@ -69,15 +68,19 @@ export class ScopeDetectionService implements IScopeDetectionService {
     }
 
     let currentValue: unknown;
+    let hasExplicitValue: boolean;
     switch (scope) {
       case 'workspace':
         currentValue = inspection.workspaceValue;
+        hasExplicitValue = currentValue !== undefined;
         break;
       case 'user':
         currentValue = inspection.globalValue;
+        hasExplicitValue = currentValue !== undefined;
         break;
       default:
-        return false;
+        // 'default' scope: setting never explicitly set at any level — skip only when value equals schema default.
+        return _.isEqual(value, inspection.defaultValue);
     }
 
     // Return true if new value is same as current value at this scope (no actual change)
@@ -86,9 +89,6 @@ export class ScopeDetectionService implements IScopeDetectionService {
     }
 
     const isDefaultValue = _.isEqual(value, inspection.defaultValue);
-
-    // Only skip if value is at default and this specific scope doesn't have an explicit value
-    const hasExplicitValue = currentValue !== undefined;
 
     return isDefaultValue && !hasExplicitValue;
   }

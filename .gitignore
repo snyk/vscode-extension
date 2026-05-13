@@ -48,3 +48,10 @@ snyk-linux
 # Configuration                 #
 #################################
 snyk.config.local.json
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.cursor/rules/snyk_rules.mdc
+
+# Local implementation plans (do not commit)
+*_implementation_plan/
+CLAUDE.md

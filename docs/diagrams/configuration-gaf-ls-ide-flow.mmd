@@ -1,0 +1,42 @@
+%% Configuration flow: GAF → snyk-ls → IDE (see docs/configuration-gaf-ls-ide-flow.md)
+%% snyk-ls notifies the IDE with $/snyk.configuration only; per-folder data is param.folderConfigs (no separate $/snyk.folderConfigs RPC).
+flowchart TB
+  subgraph external["External & inputs"]
+    LDX["LDX-Sync API<br/>(remote org / machine / folder)"]
+    IDE_IN["IDE → LS<br/>workspace/didChangeConfiguration"]
+    ENRICH["LS enrichment<br/>(git, org detection)"]
+  end
+
+  subgraph gaf["GAF — single configuration store"]
+    STORE[("Configuration<br/>(Viper / prefix keys)")]
+    PFX["Prefixes: user:global:, user:folder:path:,<br/>remote:orgId:, remote:machine:, folder:…"]
+  end
+
+  subgraph resolve["snyk-ls — resolution (merge #1)"]
+    CR["ConfigResolver<br/>effective value per flag + scope"]
+  end
+
+  subgraph outbound["snyk-ls — outbound to IDE"]
+    LCP["Assemble LspConfigurationParam<br/>global settings + folderConfigs[]<br/>(per-folder ConfigSetting maps)"]
+    NCFG["JSON-RPC notify:<br/>$/snyk.configuration only<br/>(folder rows inside payload)"]
+  end
+
+  subgraph ide["IDE"]
+    HNDL["LanguageClient<br/>onNotification"]
+    MERGE_UI["mergeInboundLspConfiguration<br/>(merge #2 — non-authoritative:<br/>global+folder overlay for UI & persistence)"]
+    VIEW["Webview / settings UI<br/>locks, source, values"]
+    DCC["workspace/didChangeConfiguration<br/>(partial deltas)"]
+  end
+
+  LDX --> STORE
+  IDE_IN --> STORE
+  ENRICH --> STORE
+  STORE --> PFX
+  PFX --> CR
+  CR --> LCP
+  LCP --> NCFG
+  NCFG --> HNDL
+  HNDL --> MERGE_UI
+  MERGE_UI --> VIEW
+  VIEW --> DCC
+  DCC --> IDE_IN

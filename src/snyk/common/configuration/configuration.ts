@@ -4,13 +4,14 @@ import { URL } from 'url';
 import { CliExecutable } from '../../cli/cliExecutable';
 import { SNYK_TOKEN_KEY } from '../constants/general';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
+import type { LspConfigSetting, LspFolderConfiguration } from '../languageServer/types';
+import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { IViewManagerService } from '../services/viewManagerService';
 import {
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
-  ADVANCED_AUTO_SELECT_ORGANIZATION,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_AUTOSCAN_OSS_SETTING,
   ADVANCED_CLI_BASE_DOWNLOAD_URL,
@@ -60,34 +61,93 @@ type ScanCommandConfig = {
   postScanOnlyReferenceFolder: boolean;
 };
 
-type LocalCodeEngine = {
-  allowCloudUpload: boolean;
-  url: string;
-  enabled: boolean;
-};
+/**
+ * Wraps an LSP `settings` map (`Record<string, LspConfigSetting>`) with typed
+ * accessor methods for the fields VS Code actually uses.  Unknown LS keys are
+ * preserved automatically — no explicit mapping required for pass-through.
+ */
+export class FolderConfig {
+  readonly folderPath: string;
+  settings: Record<string, LspConfigSetting>;
 
-type SastSettings = {
-  sastEnabled: boolean;
-  localCodeEngine: LocalCodeEngine;
-  org: string;
-  supportedLanguages: string[];
-  reportFalsePositivesEnabled: boolean;
-  autofixEnabled: boolean;
-};
+  constructor(folderPath: string, settings: Record<string, LspConfigSetting> = {}) {
+    this.folderPath = folderPath;
+    this.settings = settings;
+  }
 
-export type FolderConfig = {
-  folderPath: string;
-  baseBranch: string;
-  localBranches: string[] | undefined;
-  referenceFolderPath: string | undefined;
-  scanCommandConfig?: Record<string, ScanCommandConfig>;
-  featureFlags?: Record<string, boolean>;
-  orgSetByUser: boolean;
-  preferredOrg: string;
-  autoDeterminedOrg: string;
-  orgMigratedFromGlobalConfig: boolean;
-  sastSettings?: SastSettings;
-};
+  // --- typed getters ---------------------------------------------------
+
+  baseBranch(): string {
+    return (this.settings[LS_KEY.baseBranch]?.value as string) ?? '';
+  }
+
+  localBranches(): string[] | undefined {
+    return this.settings[LS_KEY.localBranches]?.value as string[] | undefined;
+  }
+
+  referenceFolderPath(): string | undefined {
+    return this.settings[LS_KEY.referenceFolder]?.value as string | undefined;
+  }
+
+  preferredOrg(): string {
+    return (this.settings[LS_KEY.preferredOrg]?.value as string) ?? '';
+  }
+
+  autoDeterminedOrg(): string {
+    return (this.settings[LS_KEY.autoDeterminedOrg]?.value as string) ?? '';
+  }
+
+  orgSetByUser(): boolean {
+    return (this.settings[LS_KEY.orgSetByUser]?.value as boolean) ?? false;
+  }
+
+  featureFlags(): Record<string, boolean> | undefined {
+    return this.settings[LS_KEY.featureFlags]?.value as Record<string, boolean> | undefined;
+  }
+
+  scanCommandConfig(): Record<string, ScanCommandConfig> | undefined {
+    return this.settings[LS_KEY.scanCommandConfig]?.value as Record<string, ScanCommandConfig> | undefined;
+  }
+
+  // Per-folder product enablement received from LS via $/snyk.configuration folderConfigs[].settings.
+  // `undefined` means the folder did not override this product's enable state — fall back to global.
+
+  snykCodeEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykCodeEnabled]?.value as boolean | undefined;
+  }
+
+  snykOssEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykOssEnabled]?.value as boolean | undefined;
+  }
+
+  snykIacEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykIacEnabled]?.value as boolean | undefined;
+  }
+
+  snykSecretsEnabled(): boolean | undefined {
+    return this.settings[LS_KEY.snykSecretsEnabled]?.value as boolean | undefined;
+  }
+
+  // --- setters (mark changed: true so LS picks them up) ----------------
+
+  setSetting(key: string, value: unknown): void {
+    this.settings[key] = { value, changed: true };
+  }
+
+  setBaseBranch(v: string): void {
+    this.setSetting(LS_KEY.baseBranch, v);
+  }
+
+  setReferenceFolderPath(v: string | undefined): void {
+    this.setSetting(LS_KEY.referenceFolder, v);
+  }
+
+  // --- LSP conversion --------------------------------------------------
+
+  toLspFolderConfiguration(): LspFolderConfiguration {
+    return { folderPath: this.folderPath, settings: this.settings };
+  }
+}
 
 export interface IssueViewOptions {
   ignoredIssues: boolean;
@@ -103,7 +163,7 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
 
 export const DEFAULT_RISK_SCORE_THRESHOLD = 0; // Should match value in package.json.
 
-export interface SeverityFilter {
+interface SeverityFilter {
   critical: boolean;
   high: boolean;
   medium: boolean;
@@ -118,8 +178,6 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   medium: true,
   low: true,
 };
-
-const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
 
 export type PreviewFeatures = Record<string, never>;
 
@@ -139,6 +197,11 @@ export interface IConfiguration {
 
   getPreviewFeature(featureName: string): boolean;
 
+  /**
+   * Reads the credential from VS Code secret storage.
+   * - Resolves `undefined` when the key has never been stored (user not logged in via this workspace).
+   * - Resolves `''` when the read failed; the implementation clears any existing token on failure.
+   */
   getToken(): Promise<string | undefined>;
 
   setToken(token: string | undefined): Promise<void>;
@@ -160,42 +223,6 @@ export interface IConfiguration {
    * Returns empty string if not set.
    */
   organization: string;
-
-  /**
-   * Gets the auto organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns true if auto organization is enabled, false otherwise
-   */
-  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean;
-
-  /**
-   * Sets the auto organization setting at the workspace folder level.
-   * @param workspaceFolder - The workspace folder to set the setting for
-   * @param autoSelectOrganization - Whether auto organization should be enabled
-   */
-  setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void>;
-
-  /**
-   * Gets the organization setting for a workspace folder, considering all levels (folder, workspace, global, default).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns The organization ID/name, or undefined if not set
-   */
-  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined;
-
-  /**
-   * Gets the organization setting ONLY at the workspace folder level (no fallback to workspace/global).
-   * @param workspaceFolder - The workspace folder to check the setting for
-   * @returns The organization ID/name set specifically at folder level, or undefined if not set at folder level
-   */
-  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined;
-
-  /**
-   * Sets the organization at the workspace folder level.
-   * If the empty string or undefined is provided, the organization will be cleared.
-   * @param workspaceFolder - The workspace folder to set the organization for
-   * @param organization - The organization ID/name to set, or undefined to clear
-   */
-  setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void>;
 
   getAdditionalCliParameters(): string | undefined;
 
@@ -379,9 +406,8 @@ export class Configuration implements IConfiguration {
   }
 
   getInsecure(): boolean {
-    const strictSSL =
-      this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL) ?? true;
-    return !strictSSL;
+    const strictSSL = this.workspace.getConfiguration<boolean>(HTTP_CONFIGURATION_IDENTIFIER, HTTP_PROXY_STRICT_SSL);
+    return !(strictSSL ?? true);
   }
 
   static async getVersion(): Promise<string> {
@@ -492,8 +518,8 @@ export class Configuration implements IConfiguration {
       SecretStorageAdapter.instance
         .get(SNYK_TOKEN_KEY)
         .then(token => resolve(token))
-        .catch(async _ => {
-          // clear the token and return empty string
+        .catch(async (err: unknown) => {
+          console.warn('Failed to read Snyk token from secret storage', err);
           await this.clearToken();
           resolve('');
         });
@@ -626,18 +652,6 @@ export class Configuration implements IConfiguration {
     return config ?? DEFAULT_SEVERITY_FILTER;
   }
 
-  isAutoSelectOrganizationEnabled(workspaceFolder: WorkspaceFolder): boolean {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
-    return (
-      this.workspace.getConfiguration<boolean>(configurationId, section, workspaceFolder) ?? DEFAULT_AUTO_ORGANIZATION
-    );
-  }
-
-  async setAutoSelectOrganization(workspaceFolder: WorkspaceFolder, autoSelectOrganization: boolean): Promise<void> {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_AUTO_SELECT_ORGANIZATION);
-    await this.workspace.updateConfiguration(configurationId, section, autoSelectOrganization, workspaceFolder);
-  }
-
   get organization(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
     const workspaceFolders = this.workspace.getWorkspaceFolders();
@@ -650,26 +664,6 @@ export class Configuration implements IConfiguration {
 
     // If multiple folders, return workspace scope, falling back to user (global) scope
     return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
-  }
-
-  getOrganization(workspaceFolder: WorkspaceFolder): string | undefined {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    return this.workspace.getConfiguration<string>(configurationId, section, workspaceFolder);
-  }
-
-  getOrganizationAtWorkspaceFolderLevel(workspaceFolder: WorkspaceFolder): string | undefined {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    return this.workspace.inspectConfiguration<string>(configurationId, section, workspaceFolder)?.workspaceFolderValue;
-  }
-
-  async setOrganization(workspaceFolder: WorkspaceFolder, organization?: string): Promise<void> {
-    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    await this.workspace.updateConfiguration(
-      configurationId,
-      section,
-      organization === '' ? undefined : organization,
-      workspaceFolder,
-    );
   }
 
   getPreviewFeatures(): PreviewFeatures {

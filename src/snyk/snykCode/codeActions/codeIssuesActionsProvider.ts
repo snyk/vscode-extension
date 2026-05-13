@@ -34,7 +34,7 @@ export class SnykCodeActionsProvider extends CodeActionsProvider<CodeIssueData> 
     const actions = [openIssueAction];
 
     const folderConfig = this.folderConfigs.getFolderConfig(this.configuration, folderPath);
-    if (folderConfig?.featureFlags?.[FEATURE_FLAGS.snykCodeInlineIgnore]) {
+    if (folderConfig?.featureFlags()?.[FEATURE_FLAGS.snykCodeInlineIgnore]) {
       actions.push(fileIgnoreIssueAction);
       actions.push(ignoreIssueAction);
     }

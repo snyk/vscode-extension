@@ -31,7 +31,7 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
   }
 
   getRootChildren(): TreeNode[] {
-    if (!configuration.getFeaturesConfiguration()?.iacEnabled) {
+    if (!this.isIacEnabledAnywhere()) {
       return [
         new TreeNode({
           text: SNYK_ANALYSIS_STATUS.IAC_DISABLED,
@@ -40,6 +40,17 @@ export default class IacIssueTreeProvider extends ProductIssueTreeProvider<IacIs
     }
 
     return super.getRootChildren();
+  }
+
+  // Snyk IaC is enabled when at least one folder is effectively enabled. For each folder reported by
+  // LS via $/snyk.configuration.folderConfigs[].settings, the folder's `snyk_iac_enabled` value is
+  // preferred; if the folder did not override it, we fall back to the global VS Code setting. With no
+  // folder configs at all, only the global setting is consulted.
+  private isIacEnabledAnywhere(): boolean {
+    const global = !!configuration.getFeaturesConfiguration()?.iacEnabled;
+    const folderConfigs = configuration.getFolderConfigs();
+    if (folderConfigs.length === 0) return global;
+    return folderConfigs.some(fc => fc.snykIacEnabled() ?? global);
   }
 
   onDidChangeTreeData = this.viewManagerService.refreshIacViewEmitter.event;

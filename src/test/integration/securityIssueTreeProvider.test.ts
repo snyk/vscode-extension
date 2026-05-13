@@ -14,9 +14,15 @@ import { LoggerMockFailOnErrors } from '../unit/mocks/logger.mock';
 import CodeSecurityIssueTreeProvider from '../../snyk/snykCode/views/securityIssueTreeProvider';
 import { IViewManagerService } from '../../snyk/common/services/viewManagerService';
 import { makeMockCodeIssue } from '../unit/mocks/issue.mock';
-import { DEFAULT_ISSUE_VIEW_OPTIONS, IssueViewOptions } from '../../snyk/common/configuration/configuration';
+import {
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  FolderConfig,
+  IssueViewOptions,
+} from '../../snyk/common/configuration/configuration';
 import { NODE_ICONS, TreeNode } from '../../snyk/common/views/treeNode';
 import { SNYK_SHOW_LS_OUTPUT_COMMAND } from '../../snyk/common/constants/commands';
+import { SNYK_ANALYSIS_STATUS } from '../../snyk/common/constants/views';
+import { LS_KEY } from '../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 suite('Code Security Issue Tree Provider', () => {
   let viewManagerService: IViewManagerService;
@@ -268,5 +274,108 @@ suite('Code Security Issue Tree Provider', () => {
     } finally {
       await setCCIAndIVOs(true, DEFAULT_ISSUE_VIEW_OPTIONS);
     }
+  });
+
+  suite('folder-level enablement (early-exit)', () => {
+    const codeFolder = new FolderConfig('/folder/with-code-enabled', {
+      [LS_KEY.snykCodeEnabled]: { value: true },
+    });
+
+    teardown(async () => {
+      await configuration.setFolderConfigs([]);
+      await configuration.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+    });
+
+    test('returns disabled message when global is off and no folder config enables Code', async () => {
+      await configuration.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: false,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+      await configuration.setFolderConfigs([]);
+
+      const issueTreeProvider = createIssueTreeProvider(new Map());
+
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      deepStrictEqual(
+        rootChildren.map(node => node.label),
+        [SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED],
+      );
+    });
+
+    test('does NOT return disabled message when global is off but a folder config has snyk_code_enabled=true', async () => {
+      await configuration.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: false,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+      await configuration.setFolderConfigs([codeFolder]);
+
+      const issueTreeProvider = createIssueTreeProvider(new Map());
+      sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
+
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      const labels = rootChildren.map(node => node.label);
+      deepStrictEqual(
+        labels.includes(SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED),
+        false,
+        `expected no disabled-message in ${JSON.stringify(labels)}`,
+      );
+    });
+
+    test('returns disabled message when global is off and folder config explicitly sets snyk_code_enabled=false', async () => {
+      await configuration.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: false,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+      await configuration.setFolderConfigs([
+        new FolderConfig('/folder/disabled', { [LS_KEY.snykCodeEnabled]: { value: false } }),
+      ]);
+
+      const issueTreeProvider = createIssueTreeProvider(new Map());
+
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      deepStrictEqual(
+        rootChildren.map(node => node.label),
+        [SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED],
+      );
+    });
+
+    test('falls back to global when a folder config does not override snyk_code_enabled', async () => {
+      await configuration.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      });
+      // Folder config exists but has no `snyk_code_enabled` override (e.g. only baseBranch was sent
+      // by LS). Per-folder lookup should fall back to the global value (`true`) instead of treating
+      // the missing folder flag as "disabled".
+      await configuration.setFolderConfigs([new FolderConfig('/folder/no-override', {})]);
+
+      const issueTreeProvider = createIssueTreeProvider(new Map());
+      sinon.stub(issueTreeProvider, 'getResultNodes').returns([]);
+
+      const rootChildren = issueTreeProvider.getRootChildren();
+
+      const labels = rootChildren.map(node => node.label);
+      deepStrictEqual(
+        labels.includes(SNYK_ANALYSIS_STATUS.CODE_SECURITY_DISABLED),
+        false,
+        `expected no disabled-message in ${JSON.stringify(labels)}`,
+      );
+    });
   });
 });
