@@ -45,7 +45,7 @@ export interface GeminiCodeAssist extends Disposable {
  * Upon subsequent activations Gemini Code Assist will attempt to execute the
  * command that was specified in the tool's registration if any was specified.
  */
-export interface GeminiTool extends Disposable {
+interface GeminiTool extends Disposable {
   /**
    * Registers a handler for chat.  This allows the tool to handle incoming
    * chat requests.
@@ -117,7 +117,7 @@ export interface SuggestedPromptProvider {
  * requests, add context for Gemini chat requests, and/or rewrite the prompt
  * before it is sent to the LLM service.
  */
-export interface ChatHandler {
+interface ChatHandler {
   /**
    * @param request The chat request, can be used to manipulate the prompt and
    * reference parts.
@@ -131,7 +131,7 @@ export interface ChatHandler {
  * interface allows the tool to provide a static list of variables as well as
  * a dynamic list.
  */
-export interface VariableProvider {
+interface VariableProvider {
   /**
    * Allows the tool to return a static list of variables that it supports.
    * This list is not expected to change as the user is typing.
@@ -157,7 +157,7 @@ export interface VariableProvider {
  * the variable to the user.  The variable instance will be passed as is to the
  * tool, so it can carry any additional context necessary.
  */
-export interface Variable {
+interface Variable {
   /**
    * The name of the variable, this would be what the variable looks like to the
    * user.
@@ -204,18 +204,6 @@ export interface CommandDetail {
 }
 
 /**
- * CommandPromptPart is the part of the prompt that is associated with a slash
- * command.
- */
-export interface CommandPromptPart extends PromptPart {
-  /**
-   * The CommandDetail provided by the CommandProvider's listCommands()
-   * function.
-   */
-  command: CommandDetail;
-}
-
-/**
  * Provides the context for the chat request.  The context can be used to
  * provide additional information to the LLM service.
  */
@@ -246,7 +234,7 @@ export interface ChatContext {
 /**
  * Represents a context for a variable in the prompt.
  */
-export interface VariableChatContext extends ChatContext {
+interface VariableChatContext extends ChatContext {
   /**
    * The variable that this context represents.
    */
@@ -272,7 +260,7 @@ export interface ChatRequest {
 /**
  * Represents the current chat prompt.
  */
-export interface ChatPrompt {
+interface ChatPrompt {
   /**
    * Used to retrieve all parts of the prompt, including the tool prompts.
    * @return An array of all parts of the prompt in order that they appear.
@@ -316,33 +304,11 @@ export interface ChatPrompt {
 /**
  * Represents a prompt part that is provided by a tool.
  */
-export interface PromptPart {
+interface PromptPart {
   /**
    * Gets the prompt of the prompt part.
    */
   getPrompt(): string;
-}
-
-/**
- * Represents a prompt part that is provided by a tool.
- */
-export interface ToolPromptPart extends PromptPart {
-  /**
-   * The id of the tool that provided the prompt part.
-   */
-  toolId: string;
-
-  /**
-   * The command of the prompt part.
-   */
-  command: string;
-}
-
-/**
- * Represents a prompt part that refers to a variable.
- */
-export interface VariablePromptPart extends PromptPart {
-  variable: Variable;
 }
 
 /**
@@ -385,7 +351,7 @@ export interface ChatResponseStream {
  * Method for handling code responses from the LLM attached to the response via
  * ChatResponseStream.addCodeHandlerButton.
  */
-export interface CodeHandler {
+interface CodeHandler {
   /**
    * @param args The code block and language specifiers from the LLM response to
    * handle.  Called when the user clicks on a CodeHandlerButton.
@@ -397,7 +363,7 @@ export interface CodeHandler {
  * The arguments that are sent when calling the command associated with the
  * addCodeHandlerButton method.
  */
-export interface CodeHandlerCommandArgs {
+interface CodeHandlerCommandArgs {
   /**
    * The code block that was attached to the code handler button.
    */
@@ -414,7 +380,7 @@ export interface CodeHandlerCommandArgs {
  * specialize the way GCA handles specific code blocks when the agent is
  * involved.
  */
-export interface HandlerButtonOptions {
+interface HandlerButtonOptions {
   /**
    * Optional parameter, if this is specified the language specified on the
    * block will be checked for a match against this and the button will be
@@ -434,7 +400,7 @@ export interface HandlerButtonOptions {
 /**
  * Specifies how code blocks should be handled in chat.
  */
-export enum BlockDisplayType {
+enum BlockDisplayType {
   /**
    * The code block will be expanded by default.
    */
@@ -449,7 +415,7 @@ export enum BlockDisplayType {
 /**
  * Represents the type of citation.
  */
-export enum CitationType {
+enum CitationType {
   /**
    * General citation where the link is from a unspecific source.
    */
@@ -470,7 +436,7 @@ export enum CitationType {
 /**
  * Represents a citation.
  */
-export interface Citation {
+interface Citation {
   /**
    * The URI of the citation.
    */

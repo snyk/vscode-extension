@@ -2,19 +2,19 @@
 // ABOUTME: Defines interfaces for config data, issue view options, severity filters, and folder configs
 
 // Configuration data types matching the structure from Language Server HTML
-export interface IssueViewOptions {
+interface IssueViewOptions {
   openIssues?: boolean;
   ignoredIssues?: boolean;
 }
 
-export interface FilterSeverity {
+interface FilterSeverity {
   critical?: boolean;
   high?: boolean;
   medium?: boolean;
   low?: boolean;
 }
 
-export type ScanCommandConfig = {
+type ScanCommandConfig = {
   preScanCommand: string;
   preScanOnlyReferenceFolder: boolean;
   postScanCommand: string;
@@ -77,12 +77,12 @@ export interface IWorkspaceConfigurationWebviewProvider {
   setAuthToken(token: string, apiUrl?: string): void;
 }
 
-export interface SaveConfigMessage {
+interface SaveConfigMessage {
   type: 'saveConfig';
   config?: string;
 }
 
-export interface ExecuteCommandMessage {
+interface ExecuteCommandMessage {
   type: 'executeCommand';
   command?: string;
   arguments?: unknown[];

@@ -16,12 +16,12 @@ import { IDiagnosticsIssueProvider } from './diagnosticsService';
 
 export type WorkspaceFolderResult<T> = WorkspaceFolderResultSuccess<T> | WorkspaceFolderResultFailure;
 
-export interface WorkspaceFolderResultSuccess<T> {
+interface WorkspaceFolderResultSuccess<T> {
   isSuccess: true;
   issues: Issue<T>[];
 }
 
-export interface WorkspaceFolderResultFailure {
+interface WorkspaceFolderResultFailure {
   isSuccess: false;
   error: PresentableError;
 }
