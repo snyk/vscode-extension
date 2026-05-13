@@ -26,11 +26,11 @@ export class LanguageServerSettings {
 
     for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
       if (entry.alwaysChanged) {
-        m[lsKey] = { value: await Promise.resolve(entry.resolve(configuration)), changed: true };
+        m[lsKey] = { value: await entry.resolve(configuration), changed: true };
         continue;
       }
 
-      const value = await Promise.resolve(entry.resolve(configuration));
+      const value = await entry.resolve(configuration);
       if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
         m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
       } else if (isExplicitlyChanged(lsKey)) {

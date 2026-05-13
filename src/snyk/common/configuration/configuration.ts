@@ -61,21 +61,6 @@ export type ScanCommandConfig = {
   postScanOnlyReferenceFolder: boolean;
 };
 
-export type LocalCodeEngine = {
-  allowCloudUpload: boolean;
-  url: string;
-  enabled: boolean;
-};
-
-export type SastSettings = {
-  sastEnabled: boolean;
-  localCodeEngine: LocalCodeEngine;
-  org: string;
-  supportedLanguages: string[];
-  reportFalsePositivesEnabled: boolean;
-  autofixEnabled: boolean;
-};
-
 /**
  * Wraps an LSP `settings` map (`Record<string, LspConfigSetting>`) with typed
  * accessor methods for the fields VS Code actually uses.  Unknown LS keys are
@@ -157,18 +142,6 @@ export class FolderConfig {
     this.setSetting(LS_KEY.referenceFolder, v);
   }
 
-  setOrgSetByUser(v: boolean): void {
-    this.setSetting(LS_KEY.orgSetByUser, v);
-  }
-
-  setPreferredOrg(v: string): void {
-    this.setSetting(LS_KEY.preferredOrg, v);
-  }
-
-  setAutoDeterminedOrg(v: string): void {
-    this.setSetting(LS_KEY.autoDeterminedOrg, v);
-  }
-
   // --- LSP conversion --------------------------------------------------
 
   toLspFolderConfiguration(): LspFolderConfiguration {
@@ -205,8 +178,6 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
   medium: true,
   low: true,
 };
-
-export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
 export type PreviewFeatures = Record<string, never>;
 
