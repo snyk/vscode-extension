@@ -1,4 +1,4 @@
-type PrimitiveTypes = {
+export type PrimitiveTypes = {
   string: string;
   number: number;
   boolean: boolean;

@@ -16,7 +16,7 @@ import { ILog } from '../logger/interfaces';
 import { ErrorHandler } from '../error/errorHandler';
 import { FEATURE_FLAGS } from '../constants/featureFlags';
 
-interface ISeverityCounts {
+export interface ISeverityCounts {
   [severity: string]: number;
 }
 

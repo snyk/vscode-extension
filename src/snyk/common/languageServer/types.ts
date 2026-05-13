@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver-types';
+import { hasOptionalPropertyOfType, hasPropertyOfType } from '../tsUtil';
 
 export enum ScanProduct {
   Code = 'code',
@@ -29,6 +30,17 @@ export type PresentableError = {
   showNotification: boolean;
   treeNodeSuffix: string;
 };
+
+export function isPresentableError(result: unknown): result is PresentableError {
+  return (
+    hasOptionalPropertyOfType(result, 'code', 'number') &&
+    hasOptionalPropertyOfType(result, 'error', 'string') &&
+    hasOptionalPropertyOfType(result, 'path', 'string') &&
+    hasOptionalPropertyOfType(result, 'command', 'string') &&
+    hasPropertyOfType(result, 'showNotification', 'boolean') &&
+    hasPropertyOfType(result, 'treeNodeSuffix', 'string')
+  );
+}
 
 export type Scan = {
   folderPath: string;
@@ -154,7 +166,7 @@ export type AutofixUnifiedDiffSuggestion = {
   unifiedDiffsPerFile: { [key: string]: string };
 };
 
-type Summary = {
+export type Summary = {
   toggleDelta: boolean;
 };
 

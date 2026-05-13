@@ -13,11 +13,11 @@ export interface Repository {
   state: RepositoryState;
 }
 
-interface RepositoryState {
+export interface RepositoryState {
   HEAD: Branch | undefined;
   onDidChange: vscode.Event<void>;
 }
 
-interface Branch {
+export interface Branch {
   name?: string;
 }

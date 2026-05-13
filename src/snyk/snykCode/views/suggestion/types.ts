@@ -20,7 +20,7 @@ export type Suggestion = {
   filePath: string;
 };
 
-type OpenLocalMessage = {
+export type OpenLocalMessage = {
   type: 'openLocal';
   args: {
     uri: string;
@@ -30,7 +30,7 @@ type OpenLocalMessage = {
   };
 };
 
-type IgnoreIssueMessage = {
+export type IgnoreIssueMessage = {
   type: 'ignoreIssue';
   args: {
     id: string;
@@ -44,46 +44,46 @@ type IgnoreIssueMessage = {
   };
 };
 
-type OpenBrowserMessage = {
+export type OpenBrowserMessage = {
   type: 'openBrowser';
   args: {
     url: string;
   };
 };
 
-type GetAutofixDiffsMesssage = {
+export type GetAutofixDiffsMesssage = {
   type: 'getAutofixDiffs';
   args: {
     suggestion: Suggestion;
   };
 };
 
-type FixApplyEditMessage = {
+export type FixApplyEditMessage = {
   type: 'fixApplyEdit';
   args: {
     fixId: string;
   };
 };
 
-type SetSuggestionMessage = {
+export type SetSuggestionMessage = {
   type: 'set';
   args: Suggestion;
 };
 
-type GetSuggestionMessage = {
+export type GetSuggestionMessage = {
   type: 'get';
 };
 
-type SetLessonMessage = {
+export type SetLessonMessage = {
   type: 'setLesson';
   args: Lesson | null;
 };
 
-type GetLessonMessage = {
+export type GetLessonMessage = {
   type: 'getLesson';
 };
 
-type SetAutofixDiffsMessage = {
+export type SetAutofixDiffsMessage = {
   type: 'setAutofixDiffs';
   args: {
     suggestion: Suggestion;
@@ -91,7 +91,7 @@ type SetAutofixDiffsMessage = {
   };
 };
 
-type SetAutofixErrorMessage = {
+export type SetAutofixErrorMessage = {
   type: 'setAutofixError';
   args: {
     suggestion: Suggestion;

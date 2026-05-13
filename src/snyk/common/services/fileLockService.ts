@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-interface LockOptions {
+export interface LockOptions {
   /** Max retry attempts (default: 10) */
   retries?: number;
   /** Base delay between retries in ms (default: 50) */
@@ -10,7 +10,7 @@ interface LockOptions {
   staleThreshold?: number;
 }
 
-interface IFileLockService {
+export interface IFileLockService {
   withLock<T>(lockName: string, fn: () => Promise<T>, options?: LockOptions): Promise<T>;
 }
 

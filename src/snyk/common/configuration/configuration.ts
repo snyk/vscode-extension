@@ -53,20 +53,20 @@ export type FeaturesConfiguration = {
   secretsEnabled: boolean | undefined;
 };
 
-type ScanCommandConfig = {
+export type ScanCommandConfig = {
   preScanCommand: string;
   preScanOnlyReferenceFolder: boolean;
   postScanCommand: string;
   postScanOnlyReferenceFolder: boolean;
 };
 
-type LocalCodeEngine = {
+export type LocalCodeEngine = {
   allowCloudUpload: boolean;
   url: string;
   enabled: boolean;
 };
 
-type SastSettings = {
+export type SastSettings = {
   sastEnabled: boolean;
   localCodeEngine: LocalCodeEngine;
   org: string;
@@ -120,6 +120,8 @@ export const DEFAULT_SEVERITY_FILTER: SeverityFilter = {
 };
 
 const DEFAULT_AUTO_ORGANIZATION = true; // Should match value in package.json.
+
+export const DEFAULT_SECURE_AT_INCEPTION_EXECUTION_FREQUENCY = 'Manual';
 
 export type PreviewFeatures = Record<string, never>;
 
