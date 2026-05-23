@@ -34,7 +34,8 @@ export class LanguageServerSettings {
       if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
         m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
       } else if (isExplicitlyChanged(lsKey)) {
-        m[lsKey] = { value: null, changed: true };
+        // LS settingStr rejects null for string-typed settings; send '' when a string was cleared.
+        m[lsKey] = { value: typeof value === 'string' ? '' : null, changed: true };
       }
     }
 

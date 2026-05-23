@@ -124,6 +124,38 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(result.settings?.[LS_KEY.scanAutomatic]?.value, false);
     });
 
+    test('sends empty string (not null) when an explicitly changed string setting is cleared', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: '',
+        organization: '',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => 'tok',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'auto',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
+
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+
+      assert.strictEqual(result.settings?.[LS_KEY.organization]?.value, '');
+      assert.strictEqual(result.settings?.[LS_KEY.organization]?.changed, true);
+    });
+
     test('maps filterSeverity to enabled_severities object', async () => {
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
