@@ -654,15 +654,7 @@ export class Configuration implements IConfiguration {
 
   get organization(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    const workspaceFolders = this.workspace.getWorkspaceFolders();
     const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
-
-    // If only 1 folder in workspace, return user (global) scope only
-    if (workspaceFolders.length === 1) {
-      return inspection?.globalValue ?? '';
-    }
-
-    // If multiple folders, return workspace scope, falling back to user (global) scope
     return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
   }
 
