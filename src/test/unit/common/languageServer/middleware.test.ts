@@ -272,39 +272,4 @@ suite('Language Server: Middleware', () => {
 
     assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
   });
-
-  test('unmarks explicitly changed string keys after emitting a cleared-string reset (value: "")', async () => {
-    const unmarkStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: unmarkStub,
-      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
-    };
-
-    // organization is explicitly changed and blanked to '' → triggers reset (value: '', changed: true)
-    const configWithBlankOrg = {
-      ...configuration,
-      organization: '',
-    } as IConfiguration;
-
-    const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
-      configWithBlankOrg,
-      new Subject<ShowIssueDetailTopicParams>(),
-      {} as IUriAdapter,
-      {} as IVSCodeCommands,
-      undefined,
-      tracker,
-    );
-
-    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
-    const token: CancellationToken = {
-      isCancellationRequested: false,
-      onCancellationRequested: sinon.fake(),
-    };
-
-    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
-
-    assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after blank reset');
-  });
 });

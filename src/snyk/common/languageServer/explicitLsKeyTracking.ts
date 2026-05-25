@@ -23,16 +23,15 @@ export function markExplicitLsKeysFromConfigurationChangeEvent(
 }
 
 /**
- * After a pull response sends a reset (`{ value: null | '', changed: true }`), unmark
- * the key so future pulls don't permanently re-send `changed: true`. Cleared string
- * settings emit `''` (LS rejects `null` for string-typed settings).
+ * After a pull response sends a reset (`{ value: null, changed: true }`), unmark the
+ * key so future pulls don't permanently re-send `changed: true`.
  */
 export function unmarkResetLsKeysAfterPull(
   settings: Record<string, LspConfigSetting>,
   tracker: IExplicitLspConfigurationChangeTracker,
 ): void {
   for (const [key, entry] of Object.entries(settings)) {
-    if (entry.changed === true && (entry.value === null || entry.value === '')) {
+    if (entry.value === null && entry.changed === true) {
       tracker.unmarkExplicitlyChanged(key);
     }
   }

@@ -22,22 +22,13 @@ export class LanguageServerSettings {
     isExplicitlyChanged: ExplicitChangePredicate,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
   ): Promise<LspConfigurationParam> {
-    const m: Record<string, LspConfigSetting> = {};
-
-    for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
-      if (entry.alwaysChanged) {
-        m[lsKey] = { value: await entry.resolve(configuration), changed: true };
-        continue;
-      }
-
-      const value = await entry.resolve(configuration);
-      if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
-        m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
-      } else if (isExplicitlyChanged(lsKey)) {
-        // LS settingStr rejects null for string-typed settings; send '' when a string was cleared.
-        m[lsKey] = { value: typeof value === 'string' ? '' : null, changed: true };
-      }
-    }
+    const entries = await Promise.all(
+      Object.entries(SETTINGS_REGISTRY).map(async ([lsKey, entry]) => {
+        const value = await entry.resolve(configuration);
+        return [lsKey, { value, changed: entry.alwaysChanged || isExplicitlyChanged(lsKey) }] as const;
+      }),
+    );
+    const m: Record<string, LspConfigSetting> = Object.fromEntries(entries);
 
     // Folder configs
     const folderConfigs = LanguageServerSettings.resolveFolderConfigs(configuration, workspace);

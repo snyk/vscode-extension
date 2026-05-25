@@ -124,7 +124,7 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(result.settings?.[LS_KEY.scanAutomatic]?.value, false);
     });
 
-    test('sends empty string (not null) when an explicitly changed string setting is cleared', async () => {
+    test('forwards blank string values (e.g. cleared organization) regardless of changed flag', async () => {
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
         snykApiEndpoint: '',
@@ -150,10 +150,14 @@ suite('LanguageServerSettings', () => {
         getAutoConfigureMcpServer: () => false,
       } as unknown as IConfiguration;
 
-      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      const unchanged = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => false);
+      assert.ok(LS_KEY.organization in (unchanged.settings ?? {}));
+      assert.strictEqual(unchanged.settings?.[LS_KEY.organization]?.value, '');
+      assert.strictEqual(unchanged.settings?.[LS_KEY.organization]?.changed, false);
 
-      assert.strictEqual(result.settings?.[LS_KEY.organization]?.value, '');
-      assert.strictEqual(result.settings?.[LS_KEY.organization]?.changed, true);
+      const changed = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      assert.strictEqual(changed.settings?.[LS_KEY.organization]?.value, '');
+      assert.strictEqual(changed.settings?.[LS_KEY.organization]?.changed, true);
     });
 
     test('maps filterSeverity to enabled_severities object', async () => {
