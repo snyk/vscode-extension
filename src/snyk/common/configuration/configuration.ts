@@ -653,16 +653,12 @@ export class Configuration implements IConfiguration {
   }
 
   get organization(): string {
+    // VS Code window-scope precedence: workspaceValue beats globalValue. Honour the
+    // workspace-scope override even in single-folder workspaces — a workspace-scope
+    // clear (`''`) must reach LS, and the writer no longer special-cases single-folder
+    // either (IDE-1638 removed the matching branch from applySettingsMap).
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    const workspaceFolders = this.workspace.getWorkspaceFolders();
     const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
-
-    // If only 1 folder in workspace, return user (global) scope only
-    if (workspaceFolders.length === 1) {
-      return inspection?.globalValue ?? '';
-    }
-
-    // If multiple folders, return workspace scope, falling back to user (global) scope
     return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
   }
 
