@@ -453,7 +453,7 @@
       }
     }
 
-    function markDirtyAndSave() {
+    function markDirty() {
       notifyDirty(isDirty());
       if (window.__IS_IDE_AUTOSAVE_ENABLED__) {
         window.getAndSaveIdeConfig();
@@ -482,7 +482,7 @@
     window.__isFormDirty__ = function() { return isDirty(); };
     window.collectData = collectData;
     window.collectChangedData = collectChangedData;
-    window.markDirtyAndSave = markDirtyAndSave;
+    window.markDirty = markDirty;
 
     function repositionTooltip(trigger) {
       var popup = trigger.querySelector('.tooltip-popup');
@@ -495,17 +495,20 @@
 
       var rect = popup.getBoundingClientRect();
 
+      // Flip below if clipped at top
       if (rect.top < 0) {
         popup.style.bottom = '';
         popup.style.top = 'calc(100% + 8px)';
         rect = popup.getBoundingClientRect();
       }
 
+      // Nudge horizontally if clipped on the right
       if (rect.right > window.innerWidth) {
         var overflowRight = rect.right - window.innerWidth + 8;
         popup.style.left = 'calc(50% - ' + overflowRight + 'px)';
       }
 
+      // Nudge horizontally if clipped on the left
       if (rect.left < 0) {
         var overflowLeft = -rect.left + 8;
         popup.style.left = 'calc(50% + ' + overflowLeft + 'px)';
@@ -522,14 +525,14 @@
       for (var i = 0; i < inputs.length; i++) {
         var input = inputs[i];
         if (input.type === 'checkbox') {
-          input.addEventListener('change', markDirtyAndSave);
+          input.addEventListener('change', markDirty);
         } else {
-          input.addEventListener('blur', markDirtyAndSave);
+          input.addEventListener('blur', markDirty);
         }
       }
 
       for (var j = 0; j < selects.length; j++) {
-        selects[j].addEventListener('change', markDirtyAndSave);
+        selects[j].addEventListener('change', markDirty);
       }
 
       get('cli_release_channel').addEventListener('change', function() {
