@@ -132,12 +132,17 @@ export class WorkspaceConfigurationWebviewProvider
       const cliReleaseChannel = await this.configuration.getCliReleaseChannel();
       const insecure = this.configuration.getInsecure();
 
+      const isCustomChannel = !!cliReleaseChannel && !['stable', 'rc', 'preview'].includes(cliReleaseChannel);
+
       html = html.replace(/\{\{MANAGE_BINARIES_CHECKED\}\}/g, manageBinaries ? 'checked' : '');
       html = html.replace(/\{\{CLI_BASE_DOWNLOAD_URL\}\}/g, cliBaseDownloadUrl);
       html = html.replace(/\{\{CLI_PATH\}\}/g, cliPath);
       html = html.replace(/\{\{CHANNEL_STABLE_SELECTED\}\}/g, cliReleaseChannel === 'stable' ? 'selected' : '');
       html = html.replace(/\{\{CHANNEL_RC_SELECTED\}\}/g, cliReleaseChannel === 'rc' ? 'selected' : '');
       html = html.replace(/\{\{CHANNEL_PREVIEW_SELECTED\}\}/g, cliReleaseChannel === 'preview' ? 'selected' : '');
+      html = html.replace(/\{\{CHANNEL_CUSTOM_SELECTED\}\}/g, isCustomChannel ? 'selected' : '');
+      html = html.replace(/\{\{CLI_RELEASE_CHANNEL_CUSTOM_VALUE\}\}/g, isCustomChannel ? cliReleaseChannel : '');
+      html = html.replace(/\{\{CLI_RELEASE_CHANNEL_CUSTOM_HIDDEN\}\}/g, isCustomChannel ? '' : 'hidden');
       html = html.replace(/\{\{INSECURE_CHECKED\}\}/g, insecure ? 'checked' : '');
 
       return html;

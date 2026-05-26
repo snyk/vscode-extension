@@ -356,94 +356,89 @@
 
 <script>
   (function() {
-    window.__modified__ = false;
-
-    // Check if auto-save is enabled (default false)
-    if (typeof window.__IS_IDE_AUTOSAVE_ENABLED__ === "undefined") {
+    if (typeof window.__IS_IDE_AUTOSAVE_ENABLED__ === 'undefined') {
       window.__IS_IDE_AUTOSAVE_ENABLED__ = false;
     }
+
+    var FIELDS = ['cli_path', 'automatic_download', 'binary_base_url', 'cli_release_channel', 'proxy_insecure'];
+    var initialState = null;
 
     function get(id) {
       return document.getElementById(id);
     }
 
     function collectData() {
+      var sel = get('cli_release_channel');
+      var channel = sel ? sel.value : '';
+      if (channel === 'custom') {
+        var v = (get('cli_release_channel_custom').value || '').trim();
+        if (v && v.charAt(0) !== 'v') { v = 'v' + v; }
+        channel = v || 'stable';
+      }
       return {
         isFallbackForm: true,
         cli_path: get('cli_path').value,
         automatic_download: get('automatic_download').checked,
         binary_base_url: get('binary_base_url').value || get('binary_base_url').placeholder,
-        cli_release_channel: get('cli_release_channel').value === 'custom' ? (function() { var v = (get('cli_release_channel_custom').value || '').trim(); if (v && v.charAt(0) !== 'v') { v = 'v' + v; } return v || 'stable'; })() : get('cli_release_channel').value,
+        cli_release_channel: channel,
         proxy_insecure: get('proxy_insecure').checked
       };
     }
 
-    function markDirtyAndSave() {
-      window.__modified__ = true;
-      if (typeof window.__onFormDirtyChange__ === 'function') {
-        window.__onFormDirtyChange__(true);
-      }
+    function captureInitialState() {
+      initialState = collectData();
+    }
 
-      // Auto-save if enabled
-      if (window.__IS_IDE_AUTOSAVE_ENABLED__) {
-        window.getAndSaveIdeConfig();
+    function diffAgainstInitial(current) {
+      var changed = {};
+      for (var i = 0; i < FIELDS.length; i++) {
+        var k = FIELDS[i];
+        if (!initialState || current[k] !== initialState[k]) {
+          changed[k] = current[k];
+        }
+      }
+      return changed;
+    }
+
+    function isDirty() {
+      if (!initialState) { return false; }
+      var cur = collectData();
+      for (var i = 0; i < FIELDS.length; i++) {
+        if (cur[FIELDS[i]] !== initialState[FIELDS[i]]) { return true; }
+      }
+      return false;
+    }
+
+    function collectChangedData() {
+      var cur = collectData();
+      var changed = diffAgainstInitial(cur);
+      changed.isFallbackForm = true;
+      return changed;
+    }
+
+    function notifyDirty(dirty) {
+      if (typeof window.__onFormDirtyChange__ === 'function') {
+        window.__onFormDirtyChange__(dirty);
       }
     }
 
-    window.getAndSaveIdeConfig = function() {
-      var data = collectData();
-      var jsonString = JSON.stringify(data);
-      try {
-        if (typeof window.__saveIdeConfig__ === 'function') {
-          window.__saveIdeConfig__(jsonString);
-          window.__modified__ = false;
-
-          // Notify dirty state change
-          if (typeof window.__onFormDirtyChange__ === 'function') {
-            window.__onFormDirtyChange__(false);
-          }
-        }
-      } catch (e) {
-        console.error('Error saving configuration:', e);
+    function validateCliVersion() {
+      var input = get('cli_release_channel_custom');
+      var error = get('cli-version-error');
+      if (!input || !error) { return true; }
+      var sel = get('cli_release_channel');
+      if (sel && sel.value !== 'custom') {
+        if (error.className.indexOf('hidden') === -1) { error.className += ' hidden'; }
+        return true;
       }
-    };
-
-    // Expose dirty state query function
-    window.__isFormDirty__ = function() {
-      return window.__modified__;
-    };
-
-    // Reposition tooltip popups to stay within the viewport
-    function repositionTooltip(trigger) {
-      var popup = trigger.querySelector('.tooltip-popup');
-      if (!popup) return;
-
-      // Reset to default positioning before measuring
-      popup.style.left = '50%';
-      popup.style.transform = 'translateX(-50%)';
-      popup.style.bottom = 'calc(100% + 8px)';
-      popup.style.top = '';
-
-      var rect = popup.getBoundingClientRect();
-
-      // Flip below if clipped at top
-      if (rect.top < 0) {
-        popup.style.bottom = '';
-        popup.style.top = 'calc(100% + 8px)';
-        rect = popup.getBoundingClientRect();
+      var value = input.value.trim();
+      var isValid = !value || /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(value);
+      if (isValid) {
+        if (error.className.indexOf('hidden') === -1) { error.className += ' hidden'; }
+      } else {
+        error.className = error.className.replace(/\bhidden\b/, '').trim();
       }
-
-      // Nudge horizontally if clipped on the right
-      if (rect.right > window.innerWidth) {
-        var overflowRight = rect.right - window.innerWidth + 8;
-        popup.style.left = 'calc(50% - ' + overflowRight + 'px)';
-      }
-
-      // Nudge horizontally if clipped on the left
-      if (rect.left < 0) {
-        var overflowLeft = -rect.left + 8;
-        popup.style.left = 'calc(50% + ' + overflowLeft + 'px)';
-      }
+      return isValid;
     }
 
     function toggleCustomVersionInput() {
@@ -452,24 +447,68 @@
       if (sel && customInput) {
         if (sel.value === 'custom') {
           customInput.className = customInput.className.replace(/\bhidden\b/, '').trim();
-        } else if (customInput.className.indexOf('hidden') === -1) {
-          customInput.className += ' hidden';
+        } else {
+          if (customInput.className.indexOf('hidden') === -1) { customInput.className += ' hidden'; }
         }
       }
     }
 
-    function validateCliVersion() {
-      var input = get('cli_release_channel_custom');
-      var error = get('cli-version-error');
-      if (!input || !error) return;
-      var value = input.value.trim();
-      var isValid = !value || /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(value);
-      if (isValid) {
-        if (error.className.indexOf('hidden') === -1) {
-          error.className += ' hidden';
+    function markDirtyAndSave() {
+      notifyDirty(isDirty());
+      if (window.__IS_IDE_AUTOSAVE_ENABLED__) {
+        window.getAndSaveIdeConfig();
+      }
+    }
+
+    window.getAndSaveIdeConfig = function() {
+      if (!validateCliVersion()) {
+        if (typeof window.__ideSaveAttemptFinished__ === 'function') {
+          window.__ideSaveAttemptFinished__('validation_error');
         }
-      } else {
-        error.className = error.className.replace(/\bhidden\b/, '').trim();
+        return;
+      }
+      var data = collectChangedData();
+      try {
+        if (typeof window.__saveIdeConfig__ === 'function') {
+          window.__saveIdeConfig__(JSON.stringify(data));
+          captureInitialState();
+          notifyDirty(false);
+        }
+      } catch (e) {
+        console.error('Error saving configuration:', e);
+      }
+    };
+
+    window.__isFormDirty__ = function() { return isDirty(); };
+    window.collectData = collectData;
+    window.collectChangedData = collectChangedData;
+    window.markDirtyAndSave = markDirtyAndSave;
+
+    function repositionTooltip(trigger) {
+      var popup = trigger.querySelector('.tooltip-popup');
+      if (!popup) return;
+
+      popup.style.left = '50%';
+      popup.style.transform = 'translateX(-50%)';
+      popup.style.bottom = 'calc(100% + 8px)';
+      popup.style.top = '';
+
+      var rect = popup.getBoundingClientRect();
+
+      if (rect.top < 0) {
+        popup.style.bottom = '';
+        popup.style.top = 'calc(100% + 8px)';
+        rect = popup.getBoundingClientRect();
+      }
+
+      if (rect.right > window.innerWidth) {
+        var overflowRight = rect.right - window.innerWidth + 8;
+        popup.style.left = 'calc(50% - ' + overflowRight + 'px)';
+      }
+
+      if (rect.left < 0) {
+        var overflowLeft = -rect.left + 8;
+        popup.style.left = 'calc(50% + ' + overflowLeft + 'px)';
       }
     }
 
@@ -483,30 +522,33 @@
       for (var i = 0; i < inputs.length; i++) {
         var input = inputs[i];
         if (input.type === 'checkbox') {
-          // Checkboxes: use change event (blur is unreliable)
           input.addEventListener('change', markDirtyAndSave);
         } else {
-          // Text inputs: use blur event
           input.addEventListener('blur', markDirtyAndSave);
         }
       }
 
       for (var j = 0; j < selects.length; j++) {
-        // Selects: use change event
         selects[j].addEventListener('change', markDirtyAndSave);
       }
 
-      get('cli_release_channel').addEventListener('change', toggleCustomVersionInput);
+      get('cli_release_channel').addEventListener('change', function() {
+        toggleCustomVersionInput();
+        validateCliVersion();
+      });
 
       get('cli_release_channel_custom').addEventListener('input', validateCliVersion);
 
-      // Attach tooltip repositioning on hover
       var tooltipTriggers = document.querySelectorAll('[data-toggle="tooltip"]');
       for (var k = 0; k < tooltipTriggers.length; k++) {
         tooltipTriggers[k].addEventListener('mouseenter', function() {
           repositionTooltip(this);
         });
       }
+
+      toggleCustomVersionInput();
+      validateCliVersion();
+      captureInitialState();
     });
   })();
 </script>
