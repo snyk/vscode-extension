@@ -202,15 +202,15 @@
       margin-left: 10px;
     }
 
-    .hidden {
-      display: none;
-    }
-
     .error-message {
       color: var(--error-foreground);
       font-size: 12px;
       margin-top: 5px;
       display: block;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     /* Info Message */
@@ -538,6 +538,7 @@
       });
 
       get('cli_release_channel_custom').addEventListener('input', validateCliVersion);
+      get('cli_release_channel_custom').addEventListener('blur', validateCliVersion);
 
       var tooltipTriggers = document.querySelectorAll('[data-toggle="tooltip"]');
       for (var k = 0; k < tooltipTriggers.length; k++) {
