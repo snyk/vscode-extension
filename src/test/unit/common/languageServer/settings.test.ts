@@ -124,6 +124,42 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(result.settings?.[LS_KEY.scanAutomatic]?.value, false);
     });
 
+    test('forwards blank string values (e.g. cleared organization) regardless of changed flag', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: '',
+        organization: '',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => 'tok',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'auto',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
+
+      const unchanged = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => false);
+      assert.ok(LS_KEY.organization in (unchanged.settings ?? {}));
+      assert.strictEqual(unchanged.settings?.[LS_KEY.organization]?.value, '');
+      assert.strictEqual(unchanged.settings?.[LS_KEY.organization]?.changed, false);
+
+      const changed = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => true);
+      assert.strictEqual(changed.settings?.[LS_KEY.organization]?.value, '');
+      assert.strictEqual(changed.settings?.[LS_KEY.organization]?.changed, true);
+    });
+
     test('maps filterSeverity to enabled_severities object', async () => {
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
