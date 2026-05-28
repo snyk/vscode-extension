@@ -193,6 +193,21 @@ export class CommandController {
     return this.logger.showOutput();
   }
 
+  // Native fallback for the snyk-ls in-webview scan-error overlay. Dispatched
+  // by the LS (snyk-ls tree.js:403) whenever a `.tree-node-error` row is
+  // clicked. Guarantees the error is reachable even when the overlay is
+  // clipped or hidden — see IDE-1808.
+  async showScanErrorDetails(product: string, errorMessage: string): Promise<void> {
+    if (!errorMessage) return;
+    const title = product ? `${product} — Scan Error` : 'Snyk Scan Error';
+    const displayMessage = this.truncateForDisplay(errorMessage);
+    const copyButton = 'Copy';
+    const result = await this.window.showInformationMessage(title, { modal: true, detail: displayMessage }, copyButton);
+    if (result === copyButton) {
+      await this.env.getClipboard().writeText(errorMessage);
+    }
+  }
+
   async showLsOutputChannel(presentableError?: PresentableError): Promise<void> {
     // To get an instance of an OutputChannel use createOutputChannel.
     this.languageServer.showOutputChannel();
