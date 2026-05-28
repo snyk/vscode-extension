@@ -10,9 +10,10 @@
  * overlay is appended to `document.body` and rewrite its `top` style.
  *
  * This DOM-poking shim is a fallback — the canonical error path is the
- * native `snyk.showScanErrorDetails` command that the LS dispatches in
- * parallel (snyk-ls tree.js:403). Track removal of this shim once snyk-ls
- * fixes its own flip-above logic (snyk-ls tree.js:127-129).
+ * LS-registered `snyk.showScanErrorDetails` command that the LS dispatches
+ * from tree.js:403, which opens a detail panel via `window/showDocument`.
+ * Track removal of this shim once snyk-ls fixes its own flip-above logic
+ * (snyk-ls tree.js:127-129).
  *
  * @internal Everything in this module is a snyk-ls-bridge helper, not a
  *           general layout utility. Do not import from outside `treeView/`.

@@ -27,7 +27,6 @@ import {
   SNYK_SETTINGS_COMMAND,
   SNYK_SHOW_ERROR_FROM_CONTEXT_COMMAND,
   SNYK_SHOW_LS_OUTPUT_COMMAND,
-  SNYK_SHOW_SCAN_ERROR_DETAILS_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
   SNYK_TOGGLE_DELTA,
@@ -701,9 +700,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_SHOW_OUTPUT_COMMAND, () => this.commandController.showOutputChannel()),
       vscode.commands.registerCommand(SNYK_SHOW_LS_OUTPUT_COMMAND, (presentableError?: PresentableError) =>
         this.commandController.showLsOutputChannel(presentableError),
-      ),
-      vscode.commands.registerCommand(SNYK_SHOW_SCAN_ERROR_DETAILS_COMMAND, (product: string, errorMessage: string) =>
-        this.commandController.showScanErrorDetails(product, errorMessage),
       ),
       vscode.commands.registerCommand(SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND, () =>
         this.commandController.connectivityCheck(),
