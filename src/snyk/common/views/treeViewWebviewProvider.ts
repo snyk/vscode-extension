@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { readFileSync } from 'fs';
 import { getNonce } from './nonce';
 import { Logger } from '../logger/logger';
+import { composeTreeViewHtml } from './treeViewHtmlComposer';
 import { TreeViewOverlayPositioner } from './treeViewOverlayPositioner';
 import { IVSCodeCommands } from '../vscode/commands';
 
@@ -118,11 +119,7 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
     );
     const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
 
-    html = html.replace('${ideStyle}', `<style nonce="${nonce}"></style>`);
     const overlayPositionerScript = TreeViewOverlayPositioner.buildClientScript();
-    html = html.replace('${ideScript}', `<script nonce="${nonce}">${ideScript}${overlayPositionerScript}</script>`);
-    html = html.replace(/\${nonce}/g, nonce);
-
-    this.webviewView.webview.html = html;
+    this.webviewView.webview.html = composeTreeViewHtml(html, nonce, ideScript, overlayPositionerScript);
   }
 }
