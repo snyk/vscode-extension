@@ -459,6 +459,56 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     );
   });
 
+  test('persistInbound skips settings the LS reports with source "default" (no echo revert)', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
+
+    // LS boots from a local binary and pushes a full snapshot. It never received the
+    // user's explicit `automaticDependencyManagement=false`, so it falls back to its
+    // built-in default (true) and reports it as source "default". This must NOT be
+    // persisted back over the user's choice.
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.automaticDownload]: { value: true, source: 'default', changed: false },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.notCalled(updateConfigurationStub);
+  });
+
+  test('persistInbound persists settings with a non-default source', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.automaticDownload]: { value: false, source: 'user-override' },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.automaticDependencyManagement',
+      false,
+      true,
+    );
+  });
+
   test('persistInbound clears folder configs when LS sends empty array', async () => {
     const svc = new ConfigurationPersistenceService(
       workspace,
