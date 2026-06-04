@@ -355,6 +355,8 @@
 </form>
 
 <script>
+  // Mirrors the save-on-close logic in infrastructure/configuration/template/js/features/auto-save.js.
+  // Keep both in sync when changing the visibilitychange handler or re-entrance guard.
   (function() {
     if (typeof window.__IS_IDE_AUTOSAVE_ENABLED__ === 'undefined') {
       window.__IS_IDE_AUTOSAVE_ENABLED__ = false;
@@ -362,6 +364,8 @@
 
     var FIELDS = ['cli_path', 'automatic_download', 'binary_base_url', 'cli_release_channel', 'proxy_insecure'];
     var initialState = null;
+    // Guard against re-entrance when blur() triggers getAndSaveIdeConfig
+    var _isSaving = false;
 
     function get(id) {
       return document.getElementById(id);
@@ -461,21 +465,40 @@
     }
 
     window.getAndSaveIdeConfig = function() {
-      if (!validateCliVersion()) {
-        if (typeof window.__ideSaveAttemptFinished__ === 'function') {
-          window.__ideSaveAttemptFinished__('validation_error');
-        }
-        return;
-      }
-      var data = collectChangedData();
+      if (_isSaving) return;
+      _isSaving = true;
+
       try {
-        if (typeof window.__saveIdeConfig__ === 'function') {
-          window.__saveIdeConfig__(JSON.stringify(data));
-          captureInitialState();
-          notifyDirty(false);
+        // Commit any focused text input or select value before collecting.
+        // Closing the panel without blurring silently discards uncommitted changes
+        // because blur never fires. The _isSaving guard prevents recursion.
+        var active = document.activeElement;
+        if (active && typeof active.blur === 'function' &&
+            (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT') &&
+            active.type !== 'checkbox' && active.type !== 'radio' && active.type !== 'button' && active.type !== 'hidden' &&
+            !active.readOnly && !active.disabled) {
+          active.blur();
         }
-      } catch (e) {
-        console.error('Error saving configuration:', e);
+
+        if (!validateCliVersion()) {
+          if (typeof window.__ideSaveAttemptFinished__ === 'function') {
+            window.__ideSaveAttemptFinished__('validation_error');
+          }
+          return;
+        }
+
+        var data = collectChangedData();
+        try {
+          if (typeof window.__saveIdeConfig__ === 'function') {
+            window.__saveIdeConfig__(JSON.stringify(data));
+            captureInitialState();
+            notifyDirty(false);
+          }
+        } catch (e) {
+          console.error('Error saving configuration:', e);
+        }
+      } finally {
+        _isSaving = false;
       }
     };
 
@@ -553,6 +576,16 @@
       toggleCustomVersionInput();
       validateCliVersion();
       captureInitialState();
+
+      // Save when the panel becomes hidden (e.g. closed in VS Code) without a prior blur.
+      // Closing a webview does not fire blur on the focused element, so text field changes
+      // typed but not yet blurred would otherwise be silently discarded.
+      // Only fires for auto-save IDEs; non-auto-save IDEs use an explicit OK/Cancel flow.
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && window.__IS_IDE_AUTOSAVE_ENABLED__) {
+          window.getAndSaveIdeConfig();
+        }
+      });
     });
   })();
 </script>
