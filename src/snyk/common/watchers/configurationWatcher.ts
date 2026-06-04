@@ -13,6 +13,7 @@ import {
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
   ADVANCED_AUTHENTICATION_METHOD,
+  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   CODE_SECURITY_ENABLED_SETTING,
@@ -59,6 +60,19 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
       return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+    } else if (key === ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT) {
+      // Re-evaluate binary management and restart so the toggle takes effect without an IDE reload:
+      // enabling downloads the managed binary, disabling falls back to the configured cliPath.
+      // The debounced call detaches from this method's promise, so log failures explicitly.
+      return _.debounce(
+        () =>
+          extension
+            .restartLanguageServerWithDependencyDownload()
+            .catch(err =>
+              ErrorHandler.handle(err, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${key}`),
+            ),
+        DEFAULT_LS_DEBOUNCE_INTERVAL,
+      )();
     } else if (key === ADVANCED_CLI_RELEASE_CHANNEL) {
       if (configuration.isAutomaticDependencyManagementEnabled()) {
         await extension.stopLanguageServer();
@@ -96,6 +110,7 @@ class ConfigurationWatcher implements IWatcher {
         CODE_SECURITY_ENABLED_SETTING,
         IAC_ENABLED_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
+        ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
         ADVANCED_CLI_PATH,
         ADVANCED_CLI_RELEASE_CHANNEL,
         ADVANCED_AUTHENTICATION_METHOD,

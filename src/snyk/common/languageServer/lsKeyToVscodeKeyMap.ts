@@ -274,18 +274,10 @@ export function mapConfigToSettings(config: HtmlSettingsData): Record<string, un
  * Maps inbound LS global settings directly to VS Code settings.
  * Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped.
  *
- * Settings the LS reports with `source: 'default'` are skipped: a default is the
- * LS's fallback value (not an authoritative one), and persisting it would clobber
- * the IDE-owned setting. The LS does not set `changed` in the LS→IDE direction, so
- * `source` is the discriminator here. This prevents the LS's default-derived snapshot
- * (e.g. `automatic_download: { value: true, source: 'default' }`) from reverting a
- * user's explicit choice.
- *
- * Follow-up: when the LS reports `source: 'default'` AND the IDE currently has a
- * stored value, that signals a reset of a previously-authoritative value (e.g. a
- * remote/LDX-sync override was cleared server-side). Correct handling is to *clear*
- * the IDE setting key, not write the default value. That needs an unset path in
- * applySettingsMap and is out of scope here.
+ * The LS is the source of truth: every reported value is persisted. The IDE keeps the
+ * LS's view authoritative by sending user overrides as `changed: true` (tracked from
+ * activation onward, even while the LS is down), so the LS resolves and echoes the
+ * user's value rather than its own default.
  */
 export function mapLspSettingsToVscodeSettings(
   globalSettings: Record<string, LspConfigSetting>,
@@ -295,9 +287,7 @@ export function mapLspSettingsToVscodeSettings(
   for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
     if (!entry.vscodeKey) continue;
 
-    const setting = globalSettings[lsKey];
-    if (setting?.source === 'default') continue;
-    const value = setting?.value;
+    const value = globalSettings[lsKey]?.value;
     if (value === undefined) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);

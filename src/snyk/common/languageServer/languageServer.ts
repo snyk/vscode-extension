@@ -6,6 +6,7 @@ import { Configuration, IConfiguration } from '../configuration/configuration';
 import { CLI_INTEGRATION_NAME } from '../../cli/contants/integration';
 import { SNYK_SETTINGS_COMMAND } from '../constants/commands';
 import {
+  DEVELOPMENT_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
   SNYK_ADD_TRUSTED_FOLDERS,
   SNYK_CONFIGURATION,
@@ -45,6 +46,15 @@ export interface ILanguageServer {
   start(): Promise<void>;
 
   stop(): Promise<void>;
+
+  /**
+   * Registers the (idempotent, session-long) listener that records user-driven `snyk.*`
+   * settings changes for outbound `changed: true`. Call at activation so changes made
+   * while the LS is down are still tracked. Returns the listener's {@link Disposable} on first
+   * registration (so the caller can tie it to the extension lifetime), or `undefined` if already
+   * registered.
+   */
+  registerExplicitKeyMarkingListener(): Disposable | undefined;
 
   showOutputChannel(): void;
 
@@ -279,11 +289,21 @@ export class LanguageServer implements ILanguageServer {
   }
 
   /**
-   * Marks which LS keys the user explicitly changed via native VS Code settings,
-   * so the middleware can set `changed: true` on the next `workspace/configuration` pull response.
+   * Marks which LS keys the user explicitly changed via native VS Code settings, so the
+   * middleware sets `changed: true` on the next `workspace/configuration` pull and on
+   * `initializationOptions` at the next LS start.
+   *
+   * Registered once at extension activation — independently of the LS lifecycle — and kept
+   * alive across restarts and while the LS is down. This is essential when the CLI hasn't
+   * downloaded yet and the fallback settings page is shown: changes made then (e.g. unchecking
+   * "manage binaries automatically") must still be recorded, otherwise the LS never learns the
+   * override and echoes back its own default. Idempotent: subsequent calls are no-ops and return
+   * `undefined`; the first call returns the listener's Disposable for the caller to own.
    */
-  private registerExplicitKeyMarkingListener(): void {
-    this.configurationChangeDisposable?.dispose();
+  registerExplicitKeyMarkingListener(): Disposable | undefined {
+    if (this.configurationChangeDisposable) {
+      return undefined;
+    }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
       if (this.suppressConfigFeedbackFromInboundPersistence) {
@@ -291,6 +311,7 @@ export class LanguageServer implements ILanguageServer {
       }
       markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
     });
+    return this.configurationChangeDisposable;
   }
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
@@ -331,6 +352,17 @@ export class LanguageServer implements ILanguageServer {
     }
 
     const cliProtocolVersion = await this.getCliProtocolVersion(cliBinaryPath);
+
+    // Locally-built (non-release) snyk-ls binaries report the "development" sentinel and are
+    // always compatible — mirror snyk-ls' own handleProtocolVersion behaviour so local
+    // development binaries can start.
+    if (cliProtocolVersion === DEVELOPMENT_PROTOCOL_VERSION) {
+      this.logger.warn(
+        `Snyk CLI reports a "${DEVELOPMENT_PROTOCOL_VERSION}" protocol version (local build); skipping the protocol version check.`,
+      );
+      return true;
+    }
+
     if (cliProtocolVersion === PROTOCOL_VERSION) {
       return true;
     }
@@ -353,25 +385,62 @@ export class LanguageServer implements ILanguageServer {
   }
 
   /**
-   * Runs `<cliBinaryPath> language-server --protocolVersion` and parses the trimmed integer output.
-   * Returns `undefined` when the binary cannot be executed or the output is not a parseable integer.
+   * Parses the trimmed `--protocolVersion` output into the {@link DEVELOPMENT_PROTOCOL_VERSION}
+   * sentinel (local builds), a release integer, or `undefined` when it's neither.
    */
-  protected getCliProtocolVersion(cliBinaryPath: string): Promise<number | undefined> {
+  protected parseProtocolVersionOutput(stdout: string): number | typeof DEVELOPMENT_PROTOCOL_VERSION | undefined {
+    const trimmed = stdout.trim();
+    if (trimmed === DEVELOPMENT_PROTOCOL_VERSION) {
+      return DEVELOPMENT_PROTOCOL_VERSION;
+    }
+    const parsed = parseInt(trimmed, 10);
+    if (!Number.isFinite(parsed) || `${parsed}` !== trimmed) {
+      return undefined;
+    }
+    return parsed;
+  }
+
+  /**
+   * Runs `<cliBinaryPath> language-server --protocolVersion` and parses the output.
+   * Returns the {@link DEVELOPMENT_PROTOCOL_VERSION} sentinel for local builds that report it,
+   * the parsed integer for release binaries, or `undefined` when the binary cannot be executed
+   * or the output is neither the sentinel nor a parseable integer.
+   *
+   * Debug builds (`make build-debug`) pause ~10s and exit non-zero after printing the version, so we
+   * parse stdout even when execFile reports an error and only treat it as a failure when no valid
+   * version was printed.
+   */
+  protected getCliProtocolVersion(
+    cliBinaryPath: string,
+  ): Promise<number | typeof DEVELOPMENT_PROTOCOL_VERSION | undefined> {
     return new Promise(resolve => {
-      execFile(cliBinaryPath, ['language-server', '--protocolVersion'], (error, stdout) => {
+      execFile(cliBinaryPath, ['language-server', '--protocolVersion'], (error, stdout, stderr) => {
+        const version = this.parseProtocolVersionOutput(stdout ?? '');
+
+        if (version !== undefined) {
+          if (error) {
+            this.logger.warn(
+              `Snyk CLI protocol version probe exited with an error but reported a version ("${version}"); using it. ` +
+                `Error: ${error.message}`,
+            );
+          }
+          resolve(version);
+          return;
+        }
+
         if (error) {
-          this.logger.error(`Failed to invoke Snyk CLI for protocol version probe: ${error.message}`);
+          const { code, signal } = error as NodeJS.ErrnoException & { signal?: NodeJS.Signals };
+          this.logger.error(
+            `Failed to invoke Snyk CLI for protocol version probe (exit code: ${code ?? 'n/a'}, signal: ${
+              signal ?? 'n/a'
+            }): ${error.message}. stdout: "${(stdout ?? '').trim()}", stderr: "${(stderr ?? '').trim()}"`,
+          );
           resolve(undefined);
           return;
         }
-        const trimmed = stdout.trim();
-        const parsed = parseInt(trimmed, 10);
-        if (!Number.isFinite(parsed) || `${parsed}` !== trimmed) {
-          this.logger.error(`Unable to parse Snyk CLI protocol version output: "${trimmed}"`);
-          resolve(undefined);
-          return;
-        }
-        resolve(parsed);
+
+        this.logger.error(`Unable to parse Snyk CLI protocol version output: "${(stdout ?? '').trim()}"`);
+        resolve(undefined);
       });
     });
   }
@@ -406,8 +475,9 @@ export class LanguageServer implements ILanguageServer {
   async stop(): Promise<void> {
     this.logger.info('Stopping Snyk Language Server...');
 
-    this.configurationChangeDisposable?.dispose();
-    this.configurationChangeDisposable = undefined;
+    // Intentionally keep `configurationChangeDisposable` alive across stop/restart and while the LS
+    // is down — see registerExplicitKeyMarkingListener. Its lifetime is owned by the extension
+    // context (registered into subscriptions at activation), so it's disposed on deactivation.
 
     if (!this.client) {
       return Promise.resolve();

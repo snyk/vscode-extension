@@ -220,6 +220,37 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
     );
   });
 
+  test('does not throw when saving while the Language Server is not running', async () => {
+    // getLanguageClient() returns undefined until the LS has started (e.g. fallback settings
+    // page while the CLI is still downloading). The save must still persist settings.
+    const noClientAdapter = {
+      getLanguageClient: sinon.stub().returns(undefined),
+    } as unknown as ILanguageClientAdapter;
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      noClientAdapter,
+      logger,
+    );
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cli_path: '/usr/local/bin/snyk',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliPath',
+      '/usr/local/bin/snyk',
+      true,
+    );
+  });
+
   test('maps cli_release_channel LS key to VS Code setting', async () => {
     const service = new ConfigurationPersistenceService(
       workspace,
@@ -455,56 +486,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       CONFIGURATION_IDENTIFIER,
       DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''),
       NEWISSUES,
-      true,
-    );
-  });
-
-  test('persistInbound skips settings the LS reports with source "default" (no echo revert)', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-    );
-
-    // LS boots from a local binary and pushes a full snapshot. It never received the
-    // user's explicit `automaticDependencyManagement=false`, so it falls back to its
-    // built-in default (true) and reports it as source "default". This must NOT be
-    // persisted back over the user's choice.
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.automaticDownload]: { value: true, source: 'default', changed: false },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.notCalled(updateConfigurationStub);
-  });
-
-  test('persistInbound persists settings with a non-default source', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.automaticDownload]: { value: false, source: 'user-override' },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.automaticDependencyManagement',
-      false,
       true,
     );
   });
