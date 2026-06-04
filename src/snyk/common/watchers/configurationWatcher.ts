@@ -36,6 +36,28 @@ class ConfigurationWatcher implements IWatcher {
     private readonly vscodeContext: vscode.ExtensionContext,
   ) {}
 
+  // Persistent debounced restarts so rapid config changes collapse into a single LS restart cycle
+  // (a fresh `_.debounce(...)()` per event would never share a timer and so never debounce).
+  private readonly debouncedRestartLanguageServer = _.debounce((extension: IExtension) => {
+    extension
+      .restartLanguageServer()
+      .catch(err =>
+        ErrorHandler.handle(err, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${ADVANCED_CLI_PATH}`),
+      );
+  }, DEFAULT_LS_DEBOUNCE_INTERVAL);
+
+  private readonly debouncedRestartWithDependencyDownload = _.debounce((extension: IExtension) => {
+    extension
+      .restartLanguageServerWithDependencyDownload()
+      .catch(err =>
+        ErrorHandler.handle(
+          err,
+          this.logger,
+          `${errorsLogs.configWatcher}. Configuration key: ${ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT}`,
+        ),
+      );
+  }, DEFAULT_LS_DEBOUNCE_INTERVAL);
+
   private async onChangeConfiguration(
     extension: IExtension,
     key: string,
@@ -59,20 +81,13 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
-      return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+      this.debouncedRestartLanguageServer(extension);
+      return;
     } else if (key === ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT) {
       // Re-evaluate binary management and restart so the toggle takes effect without an IDE reload:
       // enabling downloads the managed binary, disabling falls back to the configured cliPath.
-      // The debounced call detaches from this method's promise, so log failures explicitly.
-      return _.debounce(
-        () =>
-          extension
-            .restartLanguageServerWithDependencyDownload()
-            .catch(err =>
-              ErrorHandler.handle(err, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${key}`),
-            ),
-        DEFAULT_LS_DEBOUNCE_INTERVAL,
-      )();
+      this.debouncedRestartWithDependencyDownload(extension);
+      return;
     } else if (key === ADVANCED_CLI_RELEASE_CHANNEL) {
       if (configuration.isAutomaticDependencyManagementEnabled()) {
         await extension.stopLanguageServer();
