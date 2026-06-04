@@ -220,6 +220,37 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
     );
   });
 
+  test('does not throw when saving while the Language Server is not running', async () => {
+    // getLanguageClient() returns undefined until the LS has started (e.g. fallback settings
+    // page while the CLI is still downloading). The save must still persist settings.
+    const noClientAdapter = {
+      getLanguageClient: sinon.stub().returns(undefined),
+    } as unknown as ILanguageClientAdapter;
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      noClientAdapter,
+      logger,
+    );
+
+    const configJson = JSON.stringify({
+      isFallbackForm: true,
+      cli_path: '/usr/local/bin/snyk',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.cliPath',
+      '/usr/local/bin/snyk',
+      true,
+    );
+  });
+
   test('maps cli_release_channel LS key to VS Code setting', async () => {
     const service = new ConfigurationPersistenceService(
       workspace,

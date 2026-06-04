@@ -56,8 +56,17 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         }
       }
 
-      // Notify the LS once after all settings (including token) have been written
-      await this.clientAdapter.getLanguageClient().sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+      // Notify the LS once after all settings (including token) have been written.
+      // The client is undefined until the LS has started — e.g. when saving from the fallback
+      // settings page while the CLI is still downloading. Settings are already persisted above,
+      // and the LS reads them from initializationOptions at its next start, so skipping the
+      // notification here is safe.
+      const languageClient = this.clientAdapter.getLanguageClient();
+      if (languageClient) {
+        await languageClient.sendNotification(DID_CHANGE_CONFIGURATION_METHOD, {});
+      } else {
+        this.logger.debug('Language Server is not running; skipping didChangeConfiguration notification.');
+      }
 
       this.logger.info('Workspace configuration saved successfully');
     } catch (e) {

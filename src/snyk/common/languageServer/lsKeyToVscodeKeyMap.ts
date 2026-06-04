@@ -273,6 +273,11 @@ export function mapConfigToSettings(config: HtmlSettingsData): Record<string, un
 /**
  * Maps inbound LS global settings directly to VS Code settings.
  * Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped.
+ *
+ * The LS is the source of truth: every reported value is persisted. The IDE keeps the
+ * LS's view authoritative by sending user overrides as `changed: true` (tracked from
+ * activation onward, even while the LS is down), so the LS resolves and echoes the
+ * user's value rather than its own default.
  */
 export function mapLspSettingsToVscodeSettings(
   globalSettings: Record<string, LspConfigSetting>,

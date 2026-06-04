@@ -539,6 +539,15 @@ class SnykExtension extends SnykLib implements IExtension {
     // Skip LS initialization during integration tests to prevent LS interferening with tests
     if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
 
+    // Track user-driven `snyk.*` settings changes from now on — even before the LS starts — so
+    // overrides made while the CLI is still downloading (fallback settings page) are sent as
+    // `changed: true` at the next LS start instead of being lost and echoed back as defaults.
+    // Owned by the extension context so it's disposed on deactivation.
+    const explicitKeyMarkingDisposable = this.languageServer.registerExplicitKeyMarkingListener();
+    if (explicitKeyMarkingDisposable) {
+      vscodeContext.subscriptions.push(explicitKeyMarkingDisposable);
+    }
+
     this.initDependencyDownload();
 
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
@@ -654,16 +663,36 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.start();
   }
 
+  /**
+   * Re-evaluates dependency management and restarts the LS so a change to
+   * `automaticDependencyManagement` takes effect without an IDE reload: enabling downloads the
+   * managed binary, disabling falls back to the configured `cliPath`.
+   *
+   * The download is awaited *before* starting so the LS does not probe the binary while a download
+   * is still in flight (`start()` resolves immediately on the replayed `downloadReady$`).
+   */
+  public async restartLanguageServerWithDependencyDownload(): Promise<void> {
+    await this.languageServer.stop();
+    await this.downloadDependencies();
+    await this.languageServer.start();
+  }
+
   public initDependencyDownload(): DownloadService {
-    this.downloadService.downloadOrUpdate().catch(err => {
+    void this.downloadDependencies();
+    return this.downloadService;
+  }
+
+  private async downloadDependencies(): Promise<void> {
+    try {
+      await this.downloadService.downloadOrUpdate();
+    } catch (err) {
       if (err instanceof TransientNetworkError || isNetworkConnectivityError(err)) {
         Logger.info(`CLI download skipped due to no network connectivity. Will retry on next startup.`);
         return;
       }
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotification((err as Error).message);
-    });
-    return this.downloadService;
+    }
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {

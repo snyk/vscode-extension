@@ -6,6 +6,7 @@ import { ShowIssueDetailTopicParams, Scan } from '../../../snyk/common/languageS
 export class LanguageServerMock implements ILanguageServer {
   start = sinon.fake();
   stop = sinon.fake();
+  registerExplicitKeyMarkingListener = sinon.fake();
   showOutputChannel = sinon.fake();
   setWorkspaceConfigurationProvider = sinon.fake();
   setInboundConfigurationPersistenceHandler = sinon.fake();

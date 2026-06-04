@@ -380,6 +380,100 @@ suite('Language Server', () => {
     sinon.assert.notCalled(markStub);
   });
 
+  test('tracks explicit LS keys while the LS is down (listener registered without start)', () => {
+    const markStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: markStub,
+      unmarkExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: () => true,
+    };
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const onDidChangeConfigurationStub = sinon.stub().callsFake((fn: typeof configListener) => {
+      configListener = fn;
+      return { dispose: sinon.stub() };
+    });
+    const createStub = sinon.stub();
+    const adapter = { create: createStub } as unknown as ILanguageClientAdapter;
+
+    const workspace = {
+      ...stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      onDidChangeConfiguration: onDidChangeConfigurationStub,
+    } as IVSCodeWorkspace;
+
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+      sinon.stub().resolves(),
+    );
+
+    // No start() — the CLI hasn't downloaded yet, but the listener must already be active.
+    languageServer.registerExplicitKeyMarkingListener();
+    // Idempotent: a second call must not subscribe again.
+    languageServer.registerExplicitKeyMarkingListener();
+
+    configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+
+    sinon.assert.calledOnce(onDidChangeConfigurationStub);
+    sinon.assert.called(markStub);
+    sinon.assert.notCalled(createStub);
+  });
+
+  suite('parseProtocolVersionOutput', () => {
+    let parse: (stdout: string) => number | 'development' | undefined;
+
+    setup(() => {
+      const ls = createFakeLanguageServer(
+        { create: sinon.stub() } as unknown as ILanguageClientAdapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      );
+      parse = (stdout: string) =>
+        (
+          ls as unknown as {
+            parseProtocolVersionOutput(s: string): number | 'development' | undefined;
+          }
+        ).parseProtocolVersionOutput(stdout);
+    });
+
+    test('parses a plain integer version', () => {
+      strictEqual(parse('25'), 25);
+    });
+
+    test('trims surrounding whitespace and newlines', () => {
+      strictEqual(parse('  25\n'), 25);
+    });
+
+    test('returns the development sentinel for local builds', () => {
+      strictEqual(parse('development'), 'development');
+    });
+
+    test('returns undefined for empty output', () => {
+      strictEqual(parse(''), undefined);
+    });
+
+    test('returns undefined for non-numeric output (e.g. CLI help text)', () => {
+      strictEqual(parse('CLI help\n  snyk auth\n  snyk test'), undefined);
+    });
+
+    test('returns undefined for partially-numeric output', () => {
+      strictEqual(parse('25abc'), undefined);
+      strictEqual(parse('v25'), undefined);
+    });
+  });
+
   suite('LanguageServer is initialized', () => {
     setup(() => {
       const mockLanguageClient = {
@@ -608,6 +702,39 @@ suite('Language Server', () => {
       sinon.assert.notCalled(startStub);
       sinon.assert.calledOnce(window.showErrorMessage);
       assert.match(window.showErrorMessage.firstCall.args[0] as string, /Failed to verify/);
+    });
+
+    test('starts the LanguageClient when the CLI reports the "development" protocol version', async () => {
+      protocolVersionStub.resolves('development');
+      const { adapter, createSpy, startStub } = createTrackingAdapter();
+      const window = new WindowMock();
+
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        window,
+        authServiceMock,
+        new LoggerMock(),
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        explicitLspConfigurationChangeTracker,
+        sinon.stub().resolves(),
+      );
+      downloadServiceMock.downloadReady$.next();
+
+      await languageServer.start();
+
+      sinon.assert.calledOnce(createSpy);
+      sinon.assert.calledOnce(startStub);
+      sinon.assert.notCalled(window.showErrorMessage);
     });
 
     test('opens Snyk HTML settings panel when user clicks Open Settings', async () => {
