@@ -16,6 +16,9 @@ export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
   setAuthToken(token: string, apiUrl?: string): void;
+  // Pushes per-folder filter values to an open settings webview so it reflects
+  // changes made elsewhere (e.g. the tree-view toolbar). No-op if not open.
+  applyFilterUpdate(folderConfigs: unknown): void;
 }
 
 export interface SaveConfigMessage {

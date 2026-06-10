@@ -76,4 +76,17 @@ suite('HtmlInjectionService', () => {
       'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
     );
   });
+
+  test('injectIdeScripts routes applyFilterSettings messages to window.applyFilterSettings', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("message.type === 'applyFilterSettings'"),
+      'Should handle applyFilterSettings messages so tree-view filter changes refresh the open settings form',
+    );
+    ok(
+      processed.includes("typeof window.applyFilterSettings === 'function'"),
+      'Should guard applyFilterSettings call with typeof check',
+    );
+  });
 });

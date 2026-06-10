@@ -317,6 +317,11 @@ export class LanguageServer implements ILanguageServer {
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.logger.debug('Received $/snyk.configuration notification');
     this.runInboundPersistence(params);
+    // Reflect inbound per-folder filter changes (e.g. from the tree-view toolbar)
+    // in an open settings window. The provider posts a message the webview applies
+    // to its filter controls only — silently, so it doesn't echo a change back
+    // (no loop) and preserves any other in-progress edits.
+    this.workspaceConfigurationProvider?.applyFilterUpdate(params.folderConfigs);
   }
 
   private runInboundPersistence(params: LspConfigurationParam): void {

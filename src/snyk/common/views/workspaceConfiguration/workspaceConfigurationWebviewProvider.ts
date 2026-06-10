@@ -174,6 +174,21 @@ export class WorkspaceConfigurationWebviewProvider
     );
   }
 
+  // applyFilterUpdate pushes per-folder filter values (severity / issue view) to an
+  // open settings webview so it reflects changes made elsewhere (e.g. the tree-view
+  // toolbar) without being reopened. The webview applies them to its filter controls
+  // only, silently (no autosave / feedback loop) and preserves other in-progress
+  // edits. No-op when the panel isn't open. (IDE-1866)
+  public applyFilterUpdate(folderConfigs: unknown): void {
+    if (!this.panel) {
+      return;
+    }
+    void this.panel.webview.postMessage({
+      type: 'applyFilterSettings',
+      folderConfigs,
+    });
+  }
+
   public setAuthToken(token: string, apiUrl?: string): void {
     if (!this.panel) {
       this.logger.debug('Cannot set auth token: webview panel not initialized');
