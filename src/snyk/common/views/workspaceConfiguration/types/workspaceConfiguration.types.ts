@@ -1,4 +1,5 @@
 // ABOUTME: Type definitions for workspace configuration data structures
+import type { LspFolderConfiguration } from '../../../languageServer/types';
 
 /** Minimal shape for the JSON blob the HTML settings form posts via `saveConfig`. */
 export interface HtmlSettingsData extends Record<string, unknown> {
@@ -19,7 +20,7 @@ export interface IWorkspaceConfigurationWebviewProvider {
   // Pushes inbound per-folder config to an open settings webview so it reflects folder-scoped
   // changes made elsewhere (e.g. tree-view toolbar filter/delta toggles). Field-agnostic: forwards
   // the whole folderConfigs payload; the LS-served page decides what to apply. No-op if not open.
-  applyInboundFolderConfig(folderConfigs: unknown): void;
+  applyInboundFolderConfig(folderConfigs: LspFolderConfiguration[] | undefined): void;
 }
 
 export interface SaveConfigMessage {
