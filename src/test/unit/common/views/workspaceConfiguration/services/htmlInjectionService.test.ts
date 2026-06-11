@@ -77,16 +77,16 @@ suite('HtmlInjectionService', () => {
     );
   });
 
-  test('injectIdeScripts routes applyFilterSettings messages to window.applyFilterSettings', () => {
+  test('injectIdeScripts routes applyInboundFolderConfig messages to window.applyFilterSettings', () => {
     const processed = service.injectIdeScripts(sampleHtml);
 
     ok(
-      processed.includes("message.type === 'applyFilterSettings'"),
-      'Should handle applyFilterSettings messages so tree-view filter changes refresh the open settings form',
+      processed.includes("message.type === 'applyInboundFolderConfig'"),
+      'Should handle applyInboundFolderConfig messages so inbound per-folder config refreshes the open settings form',
     );
     ok(
       processed.includes("typeof window.applyFilterSettings === 'function'"),
-      'Should guard applyFilterSettings call with typeof check',
+      'Should guard the LS-served window.applyFilterSettings call with a typeof check',
     );
   });
 });

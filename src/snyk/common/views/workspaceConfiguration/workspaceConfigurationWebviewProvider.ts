@@ -174,17 +174,17 @@ export class WorkspaceConfigurationWebviewProvider
     );
   }
 
-  // applyFilterUpdate pushes per-folder filter values (severity / issue view) to an
-  // open settings webview so it reflects changes made elsewhere (e.g. the tree-view
-  // toolbar) without being reopened. The webview applies them to its filter controls
-  // only, silently (no autosave / feedback loop) and preserves other in-progress
-  // edits. No-op when the panel isn't open. (IDE-1866)
-  public applyFilterUpdate(folderConfigs: unknown): void {
+  // applyInboundFolderConfig pushes inbound per-folder config (e.g. severity / issue-view / delta
+  // filters changed via the tree-view toolbar) to an open settings webview so it reflects them
+  // without being reopened. Field-agnostic: it forwards the whole folderConfigs payload and the
+  // LS-served page applies the relevant controls silently (no autosave / feedback loop), preserving
+  // other in-progress edits. No-op when the panel isn't open. (IDE-1866)
+  public applyInboundFolderConfig(folderConfigs: unknown): void {
     if (!this.panel) {
       return;
     }
     void this.panel.webview.postMessage({
-      type: 'applyFilterSettings',
+      type: 'applyInboundFolderConfig',
       folderConfigs,
     });
   }

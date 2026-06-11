@@ -52,10 +52,11 @@ export class HtmlInjectionService implements IHtmlInjectionService {
               if (typeof window.setAuthToken === 'function') {
                 window.setAuthToken(message.token, message.apiUrl);
               }
-            } else if (message.type === 'applyFilterSettings' && message.folderConfigs) {
-              // Filter values changed elsewhere (e.g. the tree-view toolbar). Apply
-              // them to the open form's per-folder controls without firing change
-              // events (no autosave, no feedback loop). See snyk-ls filter-sync.js.
+            } else if (message.type === 'applyInboundFolderConfig' && message.folderConfigs) {
+              // Per-folder config changed elsewhere (e.g. tree-view toolbar filter/delta toggles).
+              // Apply it to the open form's per-folder controls without firing change events (no
+              // autosave, no feedback loop). 'applyFilterSettings' is the LS-served apply function
+              // (snyk-ls template/js/features/filter-sync.js) — its name is owned by snyk-ls.
               if (typeof window.applyFilterSettings === 'function') {
                 window.applyFilterSettings(message.folderConfigs);
               }

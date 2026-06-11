@@ -16,9 +16,10 @@ export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
   setAuthToken(token: string, apiUrl?: string): void;
-  // Pushes per-folder filter values to an open settings webview so it reflects
-  // changes made elsewhere (e.g. the tree-view toolbar). No-op if not open.
-  applyFilterUpdate(folderConfigs: unknown): void;
+  // Pushes inbound per-folder config to an open settings webview so it reflects folder-scoped
+  // changes made elsewhere (e.g. tree-view toolbar filter/delta toggles). Field-agnostic: forwards
+  // the whole folderConfigs payload; the LS-served page decides what to apply. No-op if not open.
+  applyInboundFolderConfig(folderConfigs: unknown): void;
 }
 
 export interface SaveConfigMessage {
