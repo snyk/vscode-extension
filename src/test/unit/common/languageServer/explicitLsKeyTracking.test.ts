@@ -238,8 +238,8 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow), 'severityFilterLow seeded');
   });
 
-  // T_F2: defaultValue undefined → NOT seeded (no baseline to compare against)
-  test('T_F2: does not seed when defaultValue is undefined', () => {
+  // T_F2: defaultValue undefined but globalValue defined → IS seeded (defined globalValue is itself a deviation)
+  test('T_F2: seeds when defaultValue is undefined but the user set a global value', () => {
     const tracker = new FakeTracker();
     const ws = fakeWorkspace({
       snyk: {
@@ -250,8 +250,8 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     seedExplicitChangesFromExistingSettings(tracker, ws);
 
     assert.ok(
-      !tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      'organization LS key should NOT be seeded when defaultValue is undefined',
+      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
+      'organization LS key should be seeded when defaultValue is undefined but globalValue is defined',
     );
   });
 
@@ -303,6 +303,36 @@ suite('seedExplicitChangesFromExistingSettings', () => {
         lsParams.settings?.[LS_GLOBAL_KEY.apiEndpoint]?.changed,
         false,
         'apiEndpoint should be changed:false when not seeded',
+      );
+    });
+
+    // T10: no-default setting (defaultValue undefined) with user global value → changed:true via fromConfiguration
+    test('T10: no-default setting with user global value produces changed:true via fromConfiguration', async () => {
+      const tracker = new FakeTracker();
+
+      // organization has no package.json default (defaultValue: undefined); user set a global value.
+      const config: IConfiguration = {
+        ...minimalConfig,
+        organization: 'no-default-org',
+        snykApiEndpoint: 'https://api.snyk.io/api',
+      } as unknown as IConfiguration;
+
+      const ws = fakeWorkspace({
+        snyk: {
+          'advanced.organization': { globalValue: 'no-default-org', defaultValue: undefined },
+        },
+      });
+
+      seedExplicitChangesFromExistingSettings(tracker, ws);
+
+      const lsParams = await LanguageServerSettings.fromConfiguration(config, lsKey =>
+        tracker.isExplicitlyChanged(lsKey),
+      );
+
+      assert.strictEqual(
+        lsParams.settings?.[LS_GLOBAL_KEY.organization]?.changed,
+        true,
+        'organization should be changed:true when defaultValue is undefined but user set a global value',
       );
     });
   });

@@ -36,8 +36,10 @@ export function markExplicitLsKeysFromConfigurationChangeEvent(
  * - Skips `alwaysChanged` entries — they are always emitted with `changed: true`.
  * - Skips entries without a `vscodeKey` (LS-only keys such as `token`).
  * - Skips keys already present in the tracker (idempotent across activations).
- * - Skips when `inspectConfiguration` returns `undefined`, `globalValue` is `undefined`,
- *   or `defaultValue` is `undefined` (no baseline to compare against).
+ * - Skips when `inspectConfiguration` returns `undefined` or `globalValue` is `undefined`.
+ * - When `defaultValue` is `undefined` (the setting has no package.json `default:` —
+ *   e.g. organization, customEndpoint, cliPath, additionalParameters), a defined
+ *   `globalValue` is treated as an explicit change and seeded.
  * - Uses lodash `isEqual` for deep equality to compare `globalValue` with `defaultValue`.
  */
 export function seedExplicitChangesFromExistingSettings(
@@ -55,8 +57,8 @@ export function seedExplicitChangesFromExistingSettings(
     const { configurationId, section } = Configuration.getConfigName(entry.vscodeKey);
     const inspect = workspace.inspectConfiguration(configurationId, section);
 
-    // R4: only seed when both globalValue and defaultValue are defined and differ
-    if (inspect === undefined || inspect.globalValue === undefined || inspect.defaultValue === undefined) continue;
+    // R4: only seed when globalValue is defined and differs from the default (which may be undefined)
+    if (inspect === undefined || inspect.globalValue === undefined) continue;
     if (!isEqual(inspect.globalValue, inspect.defaultValue)) {
       tracker.markExplicitlyChanged(lsKey);
     }
