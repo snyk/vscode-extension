@@ -47,6 +47,7 @@ import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
+import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -250,6 +251,7 @@ class SnykExtension extends SnykLib implements IExtension {
     }
 
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
+    seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
 
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configPersistenceService = new ConfigurationPersistenceService(
