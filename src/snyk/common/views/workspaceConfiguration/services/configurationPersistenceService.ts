@@ -8,10 +8,15 @@ import { ILog } from '../../../logger/interfaces';
 import { IContextService } from '../../../services/contextService';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
-import type { LspConfigurationParam } from '../../../languageServer/types';
+import type { LspConfigSetting, LspConfigurationParam } from '../../../languageServer/types';
 import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
-import { mapConfigToSettings, mapLspSettingsToVscodeSettings } from '../../../languageServer/lsKeyToVscodeKeyMap';
+import {
+  lsKeyToVscodeKey,
+  mapConfigToSettings,
+  mapLspSettingsToVscodeSettings,
+} from '../../../languageServer/lsKeyToVscodeKeyMap';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
+import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
 import { IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
@@ -32,6 +37,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
     private readonly contextService?: IContextService,
+    private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
@@ -77,9 +83,19 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
   async persistInboundLspConfiguration(param: LspConfigurationParam): Promise<void> {
     try {
-      // Map LS settings directly to VS Code settings using the registry.
-      // Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped automatically.
-      const settingsMap = mapLspSettingsToVscodeSettings(param.settings ?? {});
+      const settings = param.settings ?? {};
+
+      // Handle global resets first: the LS Unsets the user:global override and echoes
+      // `{ value: null, changed: true }` so the effective value reverts to the
+      // LDX-Sync/org/flagset default. We must clear the persisted VS Code global value
+      // AND drop explicit-changed tracking, otherwise the stale override is re-pushed on
+      // the next pull/reconnect (would otherwise need a manual IDE restart).
+      await this.applyGlobalResets(settings);
+
+      // Map the remaining (non-reset) LS settings directly to VS Code settings using the
+      // registry. Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped
+      // automatically. Reset entries are excluded so they don't write `null` as a value.
+      const settingsMap = mapLspSettingsToVscodeSettings(this.withoutGlobalResets(settings));
 
       if (Object.keys(settingsMap).length > 0) {
         this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
@@ -94,6 +110,49 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     } catch (e) {
       this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
       throw e;
+    }
+  }
+
+  /** A reset is an inbound global setting of `{ value: null, changed: true }`. */
+  private isGlobalReset(setting: LspConfigSetting): boolean {
+    return setting.value === null && setting.changed === true;
+  }
+
+  /** Returns the settings map with reset entries removed, so they are not written as values. */
+  private withoutGlobalResets(settings: Record<string, LspConfigSetting>): Record<string, LspConfigSetting> {
+    const result: Record<string, LspConfigSetting> = {};
+    for (const [lsKey, setting] of Object.entries(settings)) {
+      if (!this.isGlobalReset(setting)) {
+        result[lsKey] = setting;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * For each inbound global reset, clear the persisted VS Code global value
+   * (`update(section, undefined, ConfigurationTarget.Global)`) and unmark explicit-changed
+   * tracking so the now-reverted value is not re-pushed on the next sync/reconnect.
+   */
+  private async applyGlobalResets(settings: Record<string, LspConfigSetting>): Promise<void> {
+    for (const [lsKey, setting] of Object.entries(settings)) {
+      if (!this.isGlobalReset(setting)) continue;
+
+      // Drop explicit-changed tracking regardless of whether a vscodeKey exists,
+      // so the LS-only / mapped reset is never re-pushed as `changed: true`.
+      this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
+
+      const vscodeKey = lsKeyToVscodeKey(lsKey);
+      if (!vscodeKey) continue;
+
+      try {
+        const { configurationId, section } = Configuration.getConfigName(vscodeKey);
+        // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
+        await this.workspace.updateConfiguration(configurationId, section, undefined, true);
+        this.logger.debug(`Reset global setting: ${lsKey} (${vscodeKey})`);
+      } catch (e) {
+        this.logger.error(`Failed to reset setting ${lsKey}: ${e}`);
+      }
     }
   }
 

@@ -261,6 +261,7 @@ class SnykExtension extends SnykLib implements IExtension {
       languageClientAdapter,
       Logger,
       this.contextService,
+      explicitLspConfigurationChangeTracker,
     );
 
     this.languageServer = new LanguageServer(
