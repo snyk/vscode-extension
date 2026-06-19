@@ -65,6 +65,7 @@ const minimalConfig: IConfiguration = {
   getCliPath: () => '/path/to/cli',
   getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
   getAdditionalCliParameters: () => '',
+  getAdditionalCliEnvironment: () => '',
   getTrustedFolders: () => [],
   getInsecure: () => false,
   getDeltaFindingsEnabled: () => false,
