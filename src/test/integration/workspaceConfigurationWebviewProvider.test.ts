@@ -2,6 +2,7 @@
 // ABOUTME: Tests HTML fetching and webview panel creation
 import { strictEqual, ok } from 'assert';
 import sinon from 'sinon';
+import * as vscode from 'vscode';
 import { WorkspaceConfigurationWebviewProvider } from '../../snyk/common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ExtensionContext } from '../../snyk/common/vscode/extensionContext';
 import { LoggerMock } from '../unit/mocks/logger.mock';
@@ -114,5 +115,47 @@ suite('WorkspaceConfigurationWebviewProvider', () => {
     const html = await provider['fetchConfigurationHtml']();
 
     strictEqual(html, undefined);
+  });
+
+  test('reloadIfOpen re-fetches and re-renders HTML when panel is open', async () => {
+    const newHtml = '<html>fresh</html>';
+    const injectedHtml = '<html>fresh-injected</html>';
+    executeCommandStub.resolves(newHtml);
+    // Override injectIdeScripts for this test to return a sentinel so the output assertion
+    // actually verifies the pipeline ran, not just that webview.html was set to the raw fetch result.
+    // resetBehavior() is required in sinon 11 to override a stub initialised with returnsArg().
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const injectStub = htmlInjectionServiceMock.injectIdeScripts as sinon.SinonStub;
+    injectStub.resetBehavior();
+    injectStub.returns(injectedHtml);
+    const webview = { html: 'old-html' };
+    provider['panel'] = { webview } as unknown as vscode.WebviewPanel;
+
+    await provider.reloadIfOpen();
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const populateScopeIndicatorsStub = scopeDetectionServiceMock.populateScopeIndicators as sinon.SinonStub;
+    sinon.assert.calledOnce(executeCommandStub);
+    sinon.assert.calledOnce(populateScopeIndicatorsStub);
+    sinon.assert.calledOnce(injectStub);
+    strictEqual(webview.html, injectedHtml); // sentinel value — verifies pipeline ran
+  });
+
+  test('reloadIfOpen is a no-op when panel is not open', async () => {
+    await provider.reloadIfOpen();
+
+    sinon.assert.notCalled(executeCommandStub);
+  });
+
+  test('reloadIfOpen handles fetch failure without throwing', async () => {
+    executeCommandStub.rejects(new Error('LS fetch failed'));
+    const stubFallback = sinon.stub(provider as any, 'getFallbackHtml').rejects(new Error('no fallback'));
+    const webview = { html: 'old-html' };
+    provider['panel'] = { webview } as unknown as vscode.WebviewPanel;
+
+    await provider.reloadIfOpen(); // must not throw
+
+    strictEqual(webview.html, 'old-html'); // html unchanged
+    stubFallback.restore();
   });
 });

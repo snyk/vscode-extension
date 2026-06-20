@@ -71,17 +71,37 @@ export class WorkspaceConfigurationWebviewProvider
         'snyk_extension_icon_new.svg',
       );
 
-      const html = await this.fetchConfigurationHtml();
-
-      if (html) {
-        const htmlWithScopes = this.scopeDetectionService.populateScopeIndicators(html, lsKeyToVscodeKey);
-        this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(htmlWithScopes);
-      } else {
-        const fallbackHtml = await this.getFallbackHtml();
-        this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(fallbackHtml);
-      }
+      await this.renderConfigurationHtml();
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Failed to show workspace configuration panel');
+    }
+  }
+
+  async reloadIfOpen(): Promise<void> {
+    try {
+      if (!this.panel) {
+        return;
+      }
+      await this.renderConfigurationHtml();
+    } catch (e) {
+      ErrorHandler.handle(e, this.logger, 'Failed to reload workspace configuration panel');
+    }
+  }
+
+  private async renderConfigurationHtml(): Promise<void> {
+    const html = await this.fetchConfigurationHtml();
+    if (!this.panel) {
+      return;
+    }
+    if (html) {
+      const htmlWithScopes = this.scopeDetectionService.populateScopeIndicators(html, lsKeyToVscodeKey);
+      this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(htmlWithScopes);
+    } else {
+      const fallbackHtml = await this.getFallbackHtml();
+      if (!this.panel) {
+        return;
+      }
+      this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(fallbackHtml);
     }
   }
 
