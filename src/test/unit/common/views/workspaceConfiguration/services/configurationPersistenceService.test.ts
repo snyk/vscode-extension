@@ -541,6 +541,7 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let folderConfig: FolderConfig;
+  let sendNotificationStub: sinon.SinonStub;
 
   setup(() => {
     // A real FolderConfig so saveFolderConfigs() matches by path and mutates it via setSetting().
@@ -568,8 +569,9 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       shouldSkipSettingUpdate: sinon.stub().returns(false),
     } as unknown as IScopeDetectionService;
 
+    sendNotificationStub = sinon.stub().resolves();
     clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+      getLanguageClient: sinon.stub().returns({ sendNotification: sendNotificationStub }),
     } as unknown as ILanguageClientAdapter;
 
     logger = {
@@ -611,7 +613,13 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
     await service.handleSaveConfig(configJson);
 
     sinon.assert.called(setFolderConfigsStub);
-    assert.strictEqual(setFolderConfigsStub.lastCall.args[1], false, 'must not re-trigger LS config notification');
+    assert.strictEqual(
+      setFolderConfigsStub.lastCall.args[1],
+      false,
+      'suppresses the redundant config-change notification from setFolderConfigs',
+    );
+    // handleSaveConfig still notifies the LS exactly once after all settings are written.
+    sinon.assert.calledOnce(sendNotificationStub);
     const saved = setFolderConfigsStub.lastCall.args[0] as FolderConfig[];
     const savedFolder = saved.find(fc => fc.folderPath === FOLDER_PATH);
     assert.ok(savedFolder, 'folder config persisted');
@@ -641,7 +649,13 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
     await service.handleSaveConfig(configJson);
 
     sinon.assert.called(setFolderConfigsStub);
-    assert.strictEqual(setFolderConfigsStub.lastCall.args[1], false, 'must not re-trigger LS config notification');
+    assert.strictEqual(
+      setFolderConfigsStub.lastCall.args[1],
+      false,
+      'suppresses the redundant config-change notification from setFolderConfigs',
+    );
+    // handleSaveConfig still notifies the LS exactly once after all settings are written.
+    sinon.assert.calledOnce(sendNotificationStub);
     const saved = setFolderConfigsStub.lastCall.args[0] as FolderConfig[];
     const savedFolder = saved.find(fc => fc.folderPath === FOLDER_PATH);
     assert.ok(savedFolder, 'folder config persisted');
