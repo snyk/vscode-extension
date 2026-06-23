@@ -55,3 +55,23 @@ snyk.config.local.json
 # Local implementation plans (do not commit)
 *_implementation_plan/
 CLAUDE.md
+.commit-progress
+.verify-range
+.commit-reviewed
+.pr-review-*.md
+.verify-complete
+.verify-precommit-hash
+.verify-agents
+.verify-counts
+.verify-staged-hash
+*_????????_??????_*.log
+.verify-metrics-pending
+.verify-staged-diff
+.snyk-sca-output.json
+.snyk-sca-output.err
+.snyk-code-output.json
+.snyk-code-output.err
+.verification-result.*
+.verify-triage.json
+.verify-source-map.json
+.verify-agent-progress
