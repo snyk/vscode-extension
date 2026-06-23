@@ -584,7 +584,7 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
     sinon.restore();
   });
 
-  test('a folder field with value null round-trips to {value:null, changed:true}', async () => {
+  test('null-reset folder fields are persisted as {value:null, changed:true}', async () => {
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
@@ -592,8 +592,10 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       clientAdapter,
       logger,
     );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
 
-    // The HTML dialog emits flat snake_case null for a reset folder field.
+    // The HTML dialog emits flat snake_case null for each reset folder field.
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'test-token',
@@ -608,36 +610,12 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
 
     await service.handleSaveConfig(configJson);
 
-    // setSetting stored {value:null, changed:true}, and toLspFolderConfiguration emits it verbatim.
-    const settings = folderConfig.toLspFolderConfiguration().settings ?? {};
-    assert.deepStrictEqual(settings[LS_KEY.snykCodeEnabled], { value: null, changed: true });
-    assert.deepStrictEqual(settings[LS_KEY.preferredOrg], { value: null, changed: true });
-  });
-
-  test('persisted folder configs include the null-reset settings', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-    );
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'test-token',
-      folderConfigs: [{ folderPath: FOLDER_PATH, [LS_KEY.snykCodeEnabled]: null }],
-    });
-
-    await service.handleSaveConfig(configJson);
-
     sinon.assert.called(setFolderConfigsStub);
     const saved = setFolderConfigsStub.lastCall.args[0] as FolderConfig[];
     const savedFolder = saved.find(fc => fc.folderPath === FOLDER_PATH);
     assert.ok(savedFolder, 'folder config persisted');
-    const savedSettings = savedFolder.toLspFolderConfiguration().settings ?? {};
-    assert.deepStrictEqual(savedSettings[LS_KEY.snykCodeEnabled], { value: null, changed: true });
+    const settings = savedFolder.toLspFolderConfiguration().settings ?? {};
+    assert.deepStrictEqual(settings[LS_KEY.snykCodeEnabled], { value: null, changed: true });
+    assert.deepStrictEqual(settings[LS_KEY.preferredOrg], { value: null, changed: true });
   });
 });
