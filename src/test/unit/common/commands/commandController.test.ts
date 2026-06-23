@@ -178,6 +178,39 @@ suite('CommandController', () => {
     sinon.assert.calledWith(envMock.getClipboard().writeText, mockOutput);
   });
 
+  suite('showConfirmationDialog', () => {
+    test('returns true when user confirms', async () => {
+      windowMock.showInformationMessage.resolves('Yes');
+
+      const result = await controller.showConfirmationDialog('Reset all settings?');
+
+      assert.strictEqual(result, true);
+      sinon.assert.calledOnceWithExactly(
+        windowMock.showInformationMessage,
+        'Reset all settings?',
+        { modal: true },
+        'Yes',
+      );
+    });
+
+    test('returns false when user dismisses', async () => {
+      windowMock.showInformationMessage.resolves(undefined);
+
+      const result = await controller.showConfirmationDialog('Reset all settings?');
+
+      assert.strictEqual(result, false);
+    });
+
+    test('passes message through unchanged', async () => {
+      windowMock.showInformationMessage.resolves(undefined);
+      const msg = 'Reset all overrides for this folder?';
+
+      await controller.showConfirmationDialog(msg);
+
+      assert.strictEqual(windowMock.showInformationMessage.getCall(0).args[0], msg);
+    });
+  });
+
   suite('truncateForDisplay', () => {
     const tcs: {
       name: string;

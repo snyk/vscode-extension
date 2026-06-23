@@ -31,6 +31,7 @@ import {
   SNYK_START_COMMAND,
   SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
+  SNYK_SHOW_CONFIRMATION_DIALOG_COMMAND,
 } from './common/constants/commands';
 import {
   SNYK_CONTEXT,
@@ -737,6 +738,9 @@ class SnykExtension extends SnykLib implements IExtension {
       ),
       vscode.commands.registerCommand(SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND, () =>
         this.commandController.directoryDiagnostics(),
+      ),
+      vscode.commands.registerCommand(SNYK_SHOW_CONFIRMATION_DIALOG_COMMAND, (message: string) =>
+        this.commandController.showConfirmationDialog(message),
       ),
       vscode.commands.registerCommand(SNYK_IGNORE_ISSUE_COMMAND, IgnoreCommand.ignoreIssues),
       vscode.commands.registerCommand(SNYK_SET_DELTA_REFERENCE_COMMAND, async (folderPath: string) => {
