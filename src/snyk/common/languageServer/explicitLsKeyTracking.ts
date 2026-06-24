@@ -68,6 +68,28 @@ export function seedExplicitChangesFromExistingSettings(
 /**
  * After a pull response sends a reset (`{ value: null, changed: true }`), unmark the
  * key so future pulls don't permanently re-send `changed: true`.
+ *
+ * CLAIM 2 analysis (IDE-2149): This function unmarks ANY key with `{value:null, changed:true}`,
+ * not just keys that are members of GLOBAL_RESET_FIELDS.  A concern was raised that a non-reset
+ * key whose resolver returns `null` could be wrongly unmarked here.
+ *
+ * Investigation result — NOT REACHABLE: No `SETTINGS_REGISTRY` entry's `resolve()` ever
+ * returns `null` for an explicitly-changeable key.  Confirmed by inspecting every resolver
+ * in `lsKeyToVscodeKeyMap.ts`:
+ *   - Boolean resolvers use `?? true` fallbacks (never null).
+ *   - `riskScoreThreshold` uses `?? undefined`, so `null ?? undefined === undefined`.
+ *   - String resolvers return typed strings or undefined (e.g. `getToken()` returns
+ *     `Promise<string | undefined>`, `organization` getter returns `string`).
+ *   - `scanAutomatic` returns boolean or `undefined`, never null.
+ *   - `issueViewOptions?.openIssues` / `ignoredIssues` are accessed via optional chain on a
+ *     getter that falls back to `DEFAULT_ISSUE_VIEW_OPTIONS`, returning boolean or undefined.
+ *   - The only `null` values in outbound settings are pending-reset entries emitted by
+ *     `LanguageServerSettings.fromConfiguration` when `isPendingReset(lsKey)` is true.
+ *
+ * Therefore the only `{value:null, changed:true}` entries in the pull response are genuine
+ * pending-reset keys.  This function correctly unmarks only those keys and the "too broad"
+ * concern is not reachable in the current codebase.  If a resolver is ever changed to return
+ * `null` for a non-reset key, this function would need to be scoped to `GLOBAL_RESET_FIELDS`.
  */
 export function unmarkResetLsKeysAfterPull(
   settings: Record<string, LspConfigSetting>,

@@ -7,6 +7,18 @@ export interface IExplicitLspConfigurationChangeTracker {
   unmarkExplicitlyChanged(lsKey: string): void;
 
   isExplicitlyChanged(lsKey: string): boolean;
+
+  /**
+   * Records that a global-reset was triggered from the dialog so the next outbound
+   * pull to the LS emits `{ value: null, changed: true }` for this key.
+   */
+  markPendingReset(lsKey: string): void;
+
+  /**
+   * Returns the current set of pending-reset LS keys and clears it, so the reset
+   * is emitted exactly once on the next pull.
+   */
+  consumePendingResets(): Set<string>;
 }
 
 /**
@@ -15,6 +27,15 @@ export interface IExplicitLspConfigurationChangeTracker {
  */
 export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly keys = new Set<string>();
+  /**
+   * Transient (in-memory only) pending resets — not persisted to Memento.
+   * If fromConfiguration throws AFTER consumePendingResets() has drained the set, the
+   * transient signal is lost, but this is benign: markPendingReset is only called after
+   * the VS Code override clear succeeds (fail-safe ordering in applyOutboundGlobalResets),
+   * so the override is already cleared. The next successful pull will emit the resulting
+   * default value with changed:false, and the reset is still reflected — no re-enqueue needed.
+   */
+  private readonly pendingResets = new Set<string>();
   /** Serializes Memento writes so rapid mark/unmark calls don't race at disk level. */
   private writeQueue: Promise<void> = Promise.resolve();
 
@@ -26,6 +47,12 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
   }
 
   markExplicitlyChanged(lsKey: string): void {
+    // Cancel any pending reset for this key: the user has set a concrete value, so
+    // emitting { value: null, changed: true } on the next pull would discard it.
+    // This closes the re-edit-after-reset race: reset queues a pending, user re-edits
+    // before the pull — the pending is removed so fromConfiguration uses the concrete value.
+    this.pendingResets.delete(lsKey);
+
     if (this.keys.has(lsKey)) {
       return;
     }
@@ -45,9 +72,20 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
     return this.keys.has(lsKey);
   }
 
+  markPendingReset(lsKey: string): void {
+    this.pendingResets.add(lsKey);
+  }
+
+  consumePendingResets(): Set<string> {
+    const snap = new Set(this.pendingResets);
+    this.pendingResets.clear();
+    return snap;
+  }
+
   /** @internal Tests only */
   clearForTests(): void {
     this.keys.clear();
+    this.pendingResets.clear();
     this.persistKeys();
   }
 

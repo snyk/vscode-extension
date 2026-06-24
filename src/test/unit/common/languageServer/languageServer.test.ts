@@ -11,7 +11,7 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
-import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
+import { LS_GLOBAL_KEY, LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
@@ -32,6 +32,8 @@ import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
 import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { ConfigFeedbackSuppressor } from '../../../../snyk/common/languageServer/configFeedbackSuppressor';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -48,6 +50,8 @@ suite('Language Server', () => {
     markExplicitlyChanged: sinon.stub(),
     unmarkExplicitlyChanged: sinon.stub(),
     isExplicitlyChanged: () => true,
+    markPendingReset: sinon.stub(),
+    consumePendingResets: sinon.stub().returns(new Set<string>()),
   };
 
   const createFakeLanguageServer = (
@@ -74,6 +78,7 @@ suite('Language Server', () => {
       explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       treeViewProvider,
+      new ConfigFeedbackSuppressor(),
     );
   };
 
@@ -276,6 +281,8 @@ suite('Language Server', () => {
       markExplicitlyChanged: markStub,
       unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: () => true,
+      markPendingReset: sinon.stub(),
+      consumePendingResets: sinon.stub().returns(new Set<string>()),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -318,6 +325,8 @@ suite('Language Server', () => {
       {} as IDiagnosticsIssueProvider<unknown>,
       tracker,
       sinon.stub().resolves(),
+      undefined,
+      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -331,6 +340,8 @@ suite('Language Server', () => {
       markExplicitlyChanged: markStub,
       unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: () => true,
+      markPendingReset: sinon.stub(),
+      consumePendingResets: sinon.stub().returns(new Set<string>()),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -373,6 +384,8 @@ suite('Language Server', () => {
       {} as IDiagnosticsIssueProvider<unknown>,
       tracker,
       sinon.stub().resolves(),
+      undefined,
+      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -386,6 +399,8 @@ suite('Language Server', () => {
       markExplicitlyChanged: markStub,
       unmarkExplicitlyChanged: sinon.stub(),
       isExplicitlyChanged: () => true,
+      markPendingReset: sinon.stub(),
+      consumePendingResets: sinon.stub().returns(new Set<string>()),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const onDidChangeConfigurationStub = sinon.stub().callsFake((fn: typeof configListener) => {
@@ -418,6 +433,8 @@ suite('Language Server', () => {
       {} as IDiagnosticsIssueProvider<unknown>,
       tracker,
       sinon.stub().resolves(),
+      undefined,
+      new ConfigFeedbackSuppressor(),
     );
 
     // No start() — the CLI hasn't downloaded yet, but the listener must already be active.
@@ -552,6 +569,56 @@ suite('Language Server', () => {
         assert.strictEqual(options.settings[LS_KEY.scanAutomatic]?.value, expectedScanningMode !== 'manual');
       });
     });
+
+    // Fix 2: pending resets queued before LS (re)start are emitted as {value:null, changed:true}
+    // in initializationOptions, so a reset is not lost when the LS restarts.
+    test('getInitializationOptions emits {value:null,changed:true} for a pending-reset key', async () => {
+      // Build a tracker that has one pending reset (organization).
+      const consumePendingResetsStub = sinon.stub().returns(new Set<string>([LS_GLOBAL_KEY.organization]));
+      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
+        markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: () => false,
+        markPendingReset: sinon.stub(),
+        consumePendingResets: consumePendingResetsStub,
+      };
+
+      const mockLanguageClientAdapter = {
+        create: sinon.stub().returns({ start: sinon.stub().resolves() }),
+        getLanguageClient: sinon.stub().returns({ start: sinon.stub().resolves() }),
+      };
+
+      const ls = new LanguageServer(
+        user,
+        configurationMock,
+        mockLanguageClientAdapter,
+        {} as IVSCodeWorkspace,
+        new WindowMock(),
+        authServiceMock,
+        logger,
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        pendingResetTracker,
+        sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
+      );
+
+      const options = await ls.getInitializationOptions();
+
+      // The pending-reset key must emit {value:null, changed:true}.
+      strictEqual(options.settings[LS_GLOBAL_KEY.organization]?.value, null);
+      strictEqual(options.settings[LS_GLOBAL_KEY.organization]?.changed, true);
+
+      // consumePendingResets must have been called exactly once (so the reset is delivered).
+      sinon.assert.calledOnce(consumePendingResetsStub);
+    });
   });
 
   suite('treeView notification', () => {
@@ -610,6 +677,200 @@ suite('Language Server', () => {
     });
   });
 
+  // ── CLAIM 1: outbound reset self-cancel timing fix (IDE-2149) ───────────────
+  //
+  // The round-5 fix made markExplicitlyChanged call pendingResets.delete so that a
+  // user re-edit after a reset cancels the stale pending signal.  But the
+  // onDidChangeConfiguration listener (registered in registerExplicitKeyMarkingListener)
+  // also calls markExplicitlyChanged for ANY snyk.* setting change — including the change
+  // triggered by the reset's own updateConfiguration write.
+  //
+  // Adversarial ordering:
+  //   1. applyOutboundGlobalResets calls updateConfiguration (clears VS Code override)
+  //   2. markPendingReset(key) — key is now in pendingResets
+  //   3. VS Code fires onDidChangeConfiguration (asynchronously, after step 2)
+  //   4. listener calls markExplicitlyChanged(key) → pendingResets.delete(key) → LOST
+  //
+  // The fix: suppress the listener while the outbound reset write is in flight by
+  // checking outboundResetSuppressor.isActive in the listener.
+  suite('outbound reset self-cancel guard (Claim 1 — adversarial onDidChangeConfiguration ordering)', () => {
+    /** Minimal in-memory Memento for ExplicitLspConfigurationChangeTracker. */
+    function makeMemento(): import('vscode').Memento {
+      const store = new Map<string, unknown>();
+      return {
+        get<T>(key: string, defaultValue?: T): T {
+          return (store.has(key) ? store.get(key) : defaultValue) as T;
+        },
+        update(key: string, value: unknown): Thenable<void> {
+          store.set(key, value);
+          return Promise.resolve();
+        },
+        keys(): readonly string[] {
+          return [...store.keys()];
+        },
+      };
+    }
+
+    function makeLanguageServerWithListener(
+      tracker: ExplicitLspConfigurationChangeTracker,
+      suppressor: ConfigFeedbackSuppressor,
+      onListener: (fn: (e: { affectsConfiguration: (s: string) => boolean }) => void) => void,
+    ): LanguageServer {
+      const adapter = {
+        create(): LanguageClient {
+          return {
+            start: sinon.stub().resolves(),
+            onNotification(): void {
+              return;
+            },
+            onReady: sinon.stub().resolves(),
+            sendNotification: sinon.stub().resolves(),
+          } as unknown as LanguageClient;
+        },
+      } as unknown as ILanguageClientAdapter;
+
+      const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
+      const workspace = {
+        ...baseWorkspace,
+        onDidChangeConfiguration: (fn: (e: { affectsConfiguration: (s: string) => boolean }) => void) => {
+          onListener(fn);
+          return { dispose: sinon.stub() };
+        },
+      } as IVSCodeWorkspace;
+
+      return new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        workspace,
+        new WindowMock(),
+        authServiceMock,
+        logger,
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        tracker,
+        sinon.stub().resolves(),
+        undefined,
+        suppressor,
+      );
+    }
+
+    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES when suppressor is active', () => {
+      // This test proves the fix. Without the suppressor check in the listener,
+      // the listener would call markExplicitlyChanged which deletes the pending
+      // reset, causing the LS to never receive { value: null, changed: true }.
+      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      const suppressor = new ConfigFeedbackSuppressor();
+
+      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+      const ls = makeLanguageServerWithListener(tracker, suppressor, fn => {
+        configListener = fn;
+      });
+
+      ls.registerExplicitKeyMarkingListener();
+
+      // Step 1: Simulate the outbound reset suppression window begins.
+      suppressor.begin();
+
+      // Step 2: markPendingReset is called (as applyOutboundGlobalResets does after updateConfiguration).
+      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
+
+      // Step 3: VS Code fires onDidChangeConfiguration for the reset key (adversarial ordering:
+      // fires AFTER markPendingReset). The listener MUST be suppressed and not call markExplicitlyChanged.
+      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+
+      // Step 4: suppression window ends.
+      suppressor.end();
+
+      // The pending reset MUST still be present — the listener must not have deleted it.
+      const pending = tracker.consumePendingResets();
+      assert.ok(
+        pending.has(LS_GLOBAL_KEY.organization),
+        'Pending reset must survive when the listener fires after markPendingReset — ' +
+          'the suppressor must prevent markExplicitlyChanged from deleting the pending reset.',
+      );
+    });
+
+    test('adversarial ordering — WITHOUT suppressor, pending reset IS lost (demonstrates the bug)', () => {
+      // This test documents the pre-fix behavior: without suppression, the listener
+      // cancels the pending reset. The fix is the suppressor; this test proves the
+      // underlying timing sensitivity is real with the real tracker.
+      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      // No suppressor — listener fires unsuppressed.
+      const noSuppressor = new ConfigFeedbackSuppressor();
+      // We do NOT call noSuppressor.begin(), so isActive is false.
+
+      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+      const ls = makeLanguageServerWithListener(tracker, noSuppressor, fn => {
+        configListener = fn;
+      });
+
+      ls.registerExplicitKeyMarkingListener();
+
+      // markPendingReset FIRST (as applyOutboundGlobalResets does).
+      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
+
+      // Listener fires AFTER (adversarial) — no suppression active, so it calls
+      // markExplicitlyChanged which deletes from pendingResets.
+      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+
+      const pending = tracker.consumePendingResets();
+      // Without suppression the pending reset IS deleted — this is the pre-fix bug.
+      assert.ok(
+        !pending.has(LS_GLOBAL_KEY.organization),
+        'Without suppression, adversarial listener ordering deletes the pending reset — ' +
+          'this is the exact timing bug that the outboundResetSuppressor fix addresses.',
+      );
+    });
+
+    test('suppressor.isActive gates correctly: begin/end pairs are reference-counted', () => {
+      const suppressor = new ConfigFeedbackSuppressor();
+      assert.strictEqual(suppressor.isActive, false, 'initially inactive');
+
+      suppressor.begin();
+      assert.strictEqual(suppressor.isActive, true, 'active after begin');
+
+      suppressor.begin();
+      assert.strictEqual(suppressor.isActive, true, 'still active after second begin');
+
+      suppressor.end();
+      assert.strictEqual(suppressor.isActive, true, 'still active after first end (depth=1)');
+
+      suppressor.end();
+      assert.strictEqual(suppressor.isActive, false, 'inactive after second end (depth=0)');
+    });
+
+    test('listener still fires normally when suppressor is NOT active (no regression)', () => {
+      // Normal user edit: suppressor is inactive, listener SHOULD call markExplicitlyChanged.
+      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      const suppressor = new ConfigFeedbackSuppressor(); // never begin()-ed
+
+      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+      const ls = makeLanguageServerWithListener(tracker, suppressor, fn => {
+        configListener = fn;
+      });
+
+      ls.registerExplicitKeyMarkingListener();
+
+      // Fire listener without suppressor active — must mark the key.
+      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+
+      // At least one snyk.* LS key must be marked explicitly.
+      // (VSCODE_KEY_TO_LS_KEYS maps snyk.* vscode keys to LS keys; affectsConfiguration returns
+      //  true for all of them, so all snyk.* LS keys that have a vscodeKey get marked.)
+      assert.ok(
+        tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
+        'organization LS key must be marked explicitly when listener fires without suppression',
+      );
+    });
+  });
+
   suite('CLI protocol version guard', () => {
     function createTrackingAdapter(): {
       adapter: ILanguageClientAdapter;
@@ -654,6 +915,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -693,6 +956,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -727,6 +992,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -763,6 +1030,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 

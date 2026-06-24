@@ -17,6 +17,7 @@ import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 /** Minimal in-memory tracker that fulfils the interface. */
 class FakeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly keys = new Set<string>();
+  private readonly pending = new Set<string>();
 
   markExplicitlyChanged(lsKey: string): void {
     this.keys.add(lsKey);
@@ -28,6 +29,16 @@ class FakeTracker implements IExplicitLspConfigurationChangeTracker {
 
   isExplicitlyChanged(lsKey: string): boolean {
     return this.keys.has(lsKey);
+  }
+
+  markPendingReset(lsKey: string): void {
+    this.pending.add(lsKey);
+  }
+
+  consumePendingResets(): Set<string> {
+    const snap = new Set(this.pending);
+    this.pending.clear();
+    return snap;
   }
 
   allKeys(): Set<string> {

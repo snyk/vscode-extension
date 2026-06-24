@@ -70,13 +70,21 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
+      // Consume any pending outbound resets before building the param so they are
+      // emitted as { value: null, changed: true } exactly once on this pull.
+      const pendingResets = this.explicitLspConfigurationChangeTracker?.consumePendingResets() ?? new Set<string>();
+
       const lspParam = await LanguageServerSettings.fromConfiguration(
         this.configuration,
         lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
         this.vscodeWorkspace,
+        lsKey => pendingResets.has(lsKey),
       );
 
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
+        // Pending-reset keys emitted as {value:null, changed:true} were already unmarked at
+        // save time by applyOutboundGlobalResets, so this unmark pass is safely idempotent
+        // (Set.delete of an absent key is a no-op).
         unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
       }
 

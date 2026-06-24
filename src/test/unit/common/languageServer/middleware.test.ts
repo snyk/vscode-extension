@@ -244,6 +244,8 @@ suite('Language Server: Middleware', () => {
       markExplicitlyChanged: sinon.stub(),
       unmarkExplicitlyChanged: unmarkStub,
       isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
+      markPendingReset: sinon.stub(),
+      consumePendingResets: sinon.stub().returns(new Set<string>()),
     };
 
     // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
