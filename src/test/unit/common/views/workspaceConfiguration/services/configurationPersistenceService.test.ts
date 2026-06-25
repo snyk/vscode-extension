@@ -5,11 +5,20 @@ import sinon from 'sinon';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../../../../snyk/common/vscode/workspace';
-import { IScopeDetectionService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
+import {
+  IScopeDetectionService,
+  ScopeDetectionService,
+} from '../../../../../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
-import { CONFIGURATION_IDENTIFIER, DELTA_FINDINGS } from '../../../../../../snyk/common/constants/settings';
-import { NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
+import {
+  CODE_SECURITY_ENABLED_SETTING,
+  CONFIGURATION_IDENTIFIER,
+  DELTA_FINDINGS,
+  ISSUE_VIEW_OPTIONS_SETTING,
+  SEVERITY_FILTER_SETTING,
+} from '../../../../../../snyk/common/constants/settings';
+import { ALLISSUES, NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
 import {
   LS_GLOBAL_KEY,
   LS_KEY,
@@ -399,7 +408,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
 suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
+  // CP-2.3: real ScopeDetectionService — replaces the old faked stub that returned false
+  // unconditionally, which masked the schema-default skip defect (IDE-2149).
+  let realScopeService: ScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
@@ -410,10 +421,31 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       updateConfiguration: updateConfigurationStub,
       getWorkspaceFolders: sinon.stub().returns([]),
       getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({
-        globalValue: undefined,
-        workspaceValue: undefined,
-        workspaceFolderValue: undefined,
+      // CP-2.3: return real schema defaults per key so the real guard never
+      // skips an inbound write due to schema-default equality.
+      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.customEndpoint') {
+          return {
+            defaultValue: '',
+            globalValue: undefined,
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'allIssuesVsNetNewIssues') {
+          return {
+            defaultValue: ALLISSUES,
+            globalValue: undefined,
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        return {
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
       }),
     } as unknown as IVSCodeWorkspace;
 
@@ -443,11 +475,10 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       getCliBaseDownloadUrl: sinon.stub().returns(''),
     } as unknown as IConfiguration;
 
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
+    // CP-2.3: wire real ScopeDetectionService so the guard exercises the real predicate.
+    // Under the old faked stub (shouldSkipSettingUpdate: stub().returns(false)) these tests
+    // would pass even if the guard were broken. The real service uses the ADR-1 predicate.
+    realScopeService = new ScopeDetectionService(workspace);
 
     clientAdapter = {
       getLanguageClient: sinon.stub().returns({
@@ -471,7 +502,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
-      scopeDetectionService,
+      realScopeService,
       clientAdapter,
       logger,
       new ConfigFeedbackSuppressor(),
@@ -492,7 +523,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
-      scopeDetectionService,
+      realScopeService,
       clientAdapter,
       logger,
       new ConfigFeedbackSuppressor(),
@@ -519,7 +550,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     const svc = new ConfigurationPersistenceService(
       workspace,
       configuration,
-      scopeDetectionService,
+      realScopeService,
       clientAdapter,
       logger,
       new ConfigFeedbackSuppressor(),
@@ -542,7 +573,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     const svc = new ConfigurationPersistenceService(
       workspace,
       configuration,
-      scopeDetectionService,
+      realScopeService,
       clientAdapter,
       logger,
       new ConfigFeedbackSuppressor(),
@@ -2348,6 +2379,650 @@ suite('ConfigurationPersistenceService — FIX 2: single begin/end spans entire 
 
     // Suppressor must be balanced (inactive) after completion.
     assert.strictEqual(realSuppressor.isActive, false, 'suppressor must be inactive after completion');
+  });
+});
+
+// ── CP-2.1/2.2/2.3: Regression guard for IDE-2149 ───────────────────────────
+//
+// These tests encode the customer-visible outcome for the Project Defaults reset bug
+// (IDE-2149). They use the REAL ScopeDetectionService (not a stub) so that the skip
+// predicate runs the actual ADR-1 production logic.
+//
+// Root cause: after a Project Defaults reset clears the VS Code global override
+// (globalValue = undefined), the resolved scope is 'default'. The old guard returned
+// _.isEqual(value, inspection.defaultValue). For snyk_code_enabled the schema default
+// is true. So saving true → isEqual(true, true) = true → write skipped. The LS never
+// received the re-enabled value.
+//
+// Fix (CP-2.2): EFFECTIVE_VALUE_UNKNOWN sentinel + 5th parameter to shouldSkipSettingUpdate;
+// effectiveByVscodeKey snapshot captured in persistInboundLspConfiguration; effective value
+// threaded into the guard from applySettingsMap.
+//
+// These tests are now GREEN and serve as regression guards. Removing either assertion
+// in ACC-001 would make the test pass trivially — both are required.
+// The guard IS the real ScopeDetectionService; workspace and clientAdapter are sibling fakes.
+
+// ── Shared helpers for the CP-2.1 suite ──────────────────────────────────────
+
+/** VS Code key for Snyk Code enablement: snyk.features.codeSecurity */
+const CODE_SECURITY_VSCODE_KEY = CODE_SECURITY_ENABLED_SETTING;
+/** configurationId = 'snyk', section = 'features.codeSecurity' */
+const CODE_SECURITY_SECTION = CODE_SECURITY_VSCODE_KEY.replace('snyk.', '');
+
+/**
+ * Build a workspace stub whose inspectConfiguration returns:
+ *   { defaultValue: true, globalValue: undefined }
+ * for the Snyk Code key — real schema default, no user override (post-reset state).
+ * updateConfiguration is the provided stub so tests can assert it.
+ */
+function makeWorkspaceWithSchemaDefault(updateConfigStub: sinon.SinonStub): IVSCodeWorkspace {
+  return {
+    updateConfiguration: updateConfigStub,
+    getConfiguration: sinon.stub().returns(undefined),
+    getWorkspaceFolders: sinon.stub().returns([]),
+    getWorkspaceFolderPaths: sinon.stub().returns([]),
+    inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+      if (configId === 'snyk' && section === CODE_SECURITY_SECTION) {
+        // Real schema default (from package.json): true.
+        // No user/workspace/workspaceFolder override (post-reset state).
+        return {
+          defaultValue: true,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
+      }
+      // All other keys: no override, defaultValue undefined (irrelevant).
+      return {
+        defaultValue: undefined,
+        globalValue: undefined,
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      };
+    }),
+  } as unknown as IVSCodeWorkspace;
+}
+
+/** Minimal configuration stub satisfying handleSaveConfig's non-fallback path. */
+function makeConfigStub(): IConfiguration {
+  return {
+    getToken: sinon.stub().resolves('tok'),
+    setToken: sinon.stub().resolves(),
+    getFolderConfigs: sinon.stub().returns([]),
+    setFolderConfigs: sinon.stub().resolves(),
+    getFeaturesConfiguration: sinon.stub().returns({
+      ossEnabled: true,
+      codeSecurityEnabled: false, // matches the inbound effective value from LS
+      iacEnabled: true,
+      secretsEnabled: true,
+    }),
+    scanningMode: 'auto',
+    organization: '',
+    snykApiEndpoint: 'https://api.snyk.io',
+    getInsecure: sinon.stub().returns(false),
+    getAuthenticationMethod: sinon.stub().returns('oauth'),
+    getDeltaFindingsEnabled: sinon.stub().returns(false),
+    getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
+    getAdditionalCliParameters: sinon.stub().returns(''),
+    getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
+    getAutoConfigureMcpServer: sinon.stub().returns(false),
+    severityFilter: {},
+    issueViewOptions: {},
+    riskScoreThreshold: 0,
+    getTrustedFolders: sinon.stub().returns([]),
+    getCliPath: sinon.stub().resolves(''),
+    isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+    getCliBaseDownloadUrl: sinon.stub().returns(''),
+  } as unknown as IConfiguration;
+}
+
+/** Minimal logger stub. */
+function makeLogger(): ILog {
+  return {
+    info: sinon.stub(),
+    debug: sinon.stub(),
+    error: sinon.stub(),
+    warn: sinon.stub(),
+  } as unknown as ILog;
+}
+
+/** Minimal clientAdapter stub (LS not needed for save-path tests). */
+function makeClientAdapter(): ILanguageClientAdapter {
+  return {
+    getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+  } as unknown as ILanguageClientAdapter;
+}
+
+/**
+ * The inbound LspConfigurationParam that carries the LS-resolved effective value:
+ *   snyk_code_enabled → { value: false, changed: true }
+ *
+ * This represents: the org/GAF/LDX-Sync resolved effective value for Snyk Code is false.
+ * persistInboundLspConfiguration captures this as effectiveByVscodeKey.set('snyk.features.codeSecurity', false).
+ */
+const INBOUND_PARAM_CODE_FALSE: LspConfigurationParam = {
+  settings: {
+    [LS_GLOBAL_KEY.snykCodeEnabled]: { value: false, changed: true },
+  },
+};
+
+// ── ACC-001: Acceptance test — the customer-visible outcome ───────────────────
+//
+// Given: LS-resolved effective value for Snyk Code is false (snapshot held by service);
+//        a Project Defaults reset has cleared the VS Code global override (no globalValue);
+//        inspect() returns the real schema default: { defaultValue: true, globalValue: undefined }.
+// When:  The user re-enables Snyk Code (true) through the real save path (handleSaveConfig
+//        → real ScopeDetectionService).
+// Then:  updateConfiguration IS called with the Snyk Code VS Code key, value true, global scope.
+//        (The write is NOT skipped — the effective value false ≠ new value true.)
+suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-baseline skip)', () => {
+  let updateConfigStub: sinon.SinonStub;
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let realScopeDetectionService: ScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+
+  setup(() => {
+    updateConfigStub = sinon.stub().resolves();
+    workspace = makeWorkspaceWithSchemaDefault(updateConfigStub);
+    configuration = makeConfigStub();
+    realScopeDetectionService = new ScopeDetectionService(workspace);
+    clientAdapter = makeClientAdapter();
+    logger = makeLogger();
+  });
+
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      realScopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+    );
+  }
+
+  // ACC-001
+  test('TestSaveAfterReset_ReEnableEqualsSchemaDefault_PersistsAndMarksChanged', async () => {
+    const service = newService();
+
+    // Step 1: LS delivers effective value false via $/snyk.configuration.
+    // After CP-2.2 this populates effectiveByVscodeKey so the guard knows the
+    // effective baseline is false (not the schema default true).
+    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+
+    // Reset the stub so we only observe calls from the save path below.
+    updateConfigStub.reset();
+
+    // Step 2: User re-enables Snyk Code (true) after a Project Defaults reset.
+    // isFallbackForm:false triggers the non-fallback save path.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    // The VS Code write MUST have been called with the correct key (snyk, features.codeSecurity),
+    // value true, at global scope (writeToUserScope=true). Removing this assertion → test passes
+    // trivially if the stub was not called (ghost-test guard).
+    sinon.assert.calledWith(
+      updateConfigStub,
+      CONFIGURATION_IDENTIFIER, // configurationId = 'snyk'
+      CODE_SECURITY_SECTION, // section = 'features.codeSecurity'
+      true, // value = true (user's re-enable)
+      true, // writeToUserScope = true (global scope)
+    );
+  });
+
+  // INT-001: value equals schema default but differs from effective value → write happens
+  test('TestApplySettingsMap_RealGuard_SchemaDefaultButDiffersFromEffective_Writes', async () => {
+    const service = newService();
+
+    // Deliver effective value false (LS resolved: org policy disables Snyk Code).
+    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+    updateConfigStub.reset();
+
+    // Save true — equals schema default (true) but NOT the effective value (false).
+    // Guard reads effective false, sees true ≠ false → does NOT skip → writes.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const codeSecurityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION && c.args[2] === true);
+
+    assert.ok(
+      codeSecurityWrites.length > 0,
+      'INT-001: updateConfiguration must be called for features.codeSecurity with value true ' +
+        'when value equals schema default but differs from LS effective value.',
+    );
+  });
+
+  // INT-002: value equals the effective value → write is correctly skipped
+  test('TestApplySettingsMap_RealGuard_EqualsEffective_Skips', async () => {
+    // Effective value from LS: true (org policy enables Snyk Code — already enabled).
+    const inboundTrue: LspConfigurationParam = {
+      settings: {
+        [LS_GLOBAL_KEY.snykCodeEnabled]: { value: true, changed: false },
+      },
+    };
+
+    const service = newService();
+
+    // Deliver effective value true.
+    await service.persistInboundLspConfiguration(inboundTrue);
+    updateConfigStub.reset();
+
+    // Save true — equals effective value true → skipped (redundant write).
+    // Guard reads effective true, sees true === true → skips.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const codeSecurityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION);
+
+    assert.strictEqual(
+      codeSecurityWrites.length,
+      0,
+      'INT-002: updateConfiguration must NOT be called when saving a value that equals the effective value — ' +
+        'write would be redundant (effective already true, saving true).',
+    );
+  });
+
+  // INT-003: no inbound snapshot yet; value equals schema default; no override → must NOT skip
+  test('TestApplySettingsMap_RealGuard_NoSnapshot_DoesNotSkipOnSchemaDefault', async () => {
+    // No persistInboundLspConfiguration call → effectiveByVscodeKey is empty.
+    const service = newService();
+
+    // Save true — schema default = true, no globalValue, effective unknown.
+    // effectiveValue is UNKNOWN → fallback: 'default' scope returns false → writes.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const codeSecurityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION && c.args[2] === true);
+
+    assert.ok(
+      codeSecurityWrites.length > 0,
+      'INT-003: updateConfiguration must be called when effective value is unknown — ' +
+        'the fallback must never skip on schema-default equality alone.',
+    );
+  });
+
+  // INT-004: persistInboundLspConfiguration captures the effective snapshot for later saves
+  test('TestPersistInbound_CapturesEffectiveSnapshotForLaterSaves', async () => {
+    const service = newService();
+
+    // Step 1: LS sends effective false.
+    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+    updateConfigStub.reset();
+
+    // Step 2: Save true — consults the captured effective value (false) and does NOT skip.
+    // effectiveByVscodeKey has {codeSecurity → false}, guard sees true ≠ false → writes.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const codeSecurityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION && c.args[2] === true);
+
+    assert.ok(
+      codeSecurityWrites.length > 0,
+      'INT-004: persistInboundLspConfiguration must capture the effective snapshot so a subsequent ' +
+        'save consults it and does not skip on schema-default equality.',
+    );
+  });
+});
+
+// ── Defect 1: captureEffectiveSnapshot must merge partial objects for shared vscodeKey ──
+//
+// Multiple LS keys map to one vscodeKey: all four severity_filter_* keys → snyk.severity,
+// and issue_view_open_issues / issue_view_ignored_issues → snyk.issueViewOptions.
+// The old captureEffectiveSnapshot called effectiveByVscodeKey.set(vscodeKey, partial) once
+// per LS key — last-writer-wins — so the stored value was partial (e.g. {low:true}).
+// applySettingsMap compares against the FULLY-MERGED value ({critical,high,medium,low}):
+//   _.isEqual({critical:true,high:true,medium:true,low:true}, {low:true}) = false
+//   → shouldSkipSettingUpdate never skips → spurious write on every save.
+//
+// Fix: accumulate/merge partial objects in captureEffectiveSnapshot using the same
+// setOrMerge logic as mapLspSettingsToVscodeSettings, so the stored effective value
+// has the same shape the guard compares against.
+
+suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey partials (Defect 1)', () => {
+  let updateConfigStub: sinon.SinonStub;
+  let workspace: IVSCodeWorkspace;
+  let realScopeService: ScopeDetectionService;
+  let logger: ILog;
+
+  setup(() => {
+    updateConfigStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigStub,
+      // getConfiguration returns the merged severity object (as VS Code would after a prior write).
+      getConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'severity') {
+          return { critical: true, high: true, medium: true, low: true };
+        }
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'issueViewOptions') {
+          return { openIssues: true, ignoredIssues: true };
+        }
+        return undefined;
+      }),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      // User has an explicit global override for severity (so scope = 'user' → guard checks globalValue).
+      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'severity') {
+          return {
+            defaultValue: { critical: true, high: true, medium: true, low: true },
+            globalValue: { critical: true, high: true, medium: true, low: true },
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'issueViewOptions') {
+          return {
+            defaultValue: { openIssues: true, ignoredIssues: true },
+            globalValue: { openIssues: true, ignoredIssues: true },
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        return {
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
+      }),
+    } as unknown as IVSCodeWorkspace;
+
+    realScopeService = new ScopeDetectionService(workspace);
+  });
+
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
+      workspace,
+      {
+        getToken: sinon.stub().resolves('tok'),
+        setToken: sinon.stub().resolves(),
+        getFolderConfigs: sinon.stub().returns([]),
+        setFolderConfigs: sinon.stub().resolves(),
+        getFeaturesConfiguration: sinon.stub().returns({
+          ossEnabled: true,
+          codeSecurityEnabled: true,
+          iacEnabled: true,
+          secretsEnabled: true,
+        }),
+        scanningMode: 'auto',
+        organization: '',
+        snykApiEndpoint: 'https://api.snyk.io',
+        getInsecure: sinon.stub().returns(false),
+        getAuthenticationMethod: sinon.stub().returns('oauth'),
+        getDeltaFindingsEnabled: sinon.stub().returns(false),
+        getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
+        getAdditionalCliParameters: sinon.stub().returns(''),
+        getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
+        getAutoConfigureMcpServer: sinon.stub().returns(false),
+        severityFilter: { critical: true, high: true, medium: true, low: true },
+        issueViewOptions: { openIssues: true, ignoredIssues: true },
+        riskScoreThreshold: 0,
+        getTrustedFolders: sinon.stub().returns([]),
+        getCliPath: sinon.stub().resolves(''),
+        isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+        getCliBaseDownloadUrl: sinon.stub().returns(''),
+      } as unknown as IConfiguration,
+      realScopeService,
+      {
+        getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+      } as unknown as ILanguageClientAdapter,
+      { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
+      new ConfigFeedbackSuppressor(),
+    );
+  }
+
+  // Defect 1a: after a full severity batch inbound, saving the identical merged value must be SKIPPED.
+  // RED reason (before fix): snapshot holds only the last-written partial {low:true};
+  //   _.isEqual({critical,high,medium,low}, {low:true}) = false → guard always writes → spurious update.
+  test('Defect1a: saving merged severity equal to effective snapshot is skipped (no spurious write)', async () => {
+    const service = newService();
+
+    // Inbound: LS sends all four severity keys (effective = all enabled).
+    const inboundAllSeverity: LspConfigurationParam = {
+      settings: {
+        [LS_GLOBAL_KEY.severityFilterCritical]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterHigh]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterMedium]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterLow]: { value: true, changed: false },
+      },
+    };
+    await service.persistInboundLspConfiguration(inboundAllSeverity);
+    updateConfigStub.reset();
+
+    // Outbound: user saves with the identical merged value → must be skipped (no-op).
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.severityFilterCritical]: true,
+      [LS_GLOBAL_KEY.severityFilterHigh]: true,
+      [LS_GLOBAL_KEY.severityFilterMedium]: true,
+      [LS_GLOBAL_KEY.severityFilterLow]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const severityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === 'severity');
+
+    assert.strictEqual(
+      severityWrites.length,
+      0,
+      `Defect1a regression: severity write must be skipped when the saved value equals the effective snapshot. ` +
+        `Got ${severityWrites.length} write(s). ` +
+        `A write here means captureEffectiveSnapshot stored a partial object instead of merging the shared ` +
+        `vscodeKey partials (last-writer-wins reintroduced), so the merged value no longer equals the snapshot and the guard never skips.`,
+    );
+  });
+
+  // Defect 1b: same for issueViewOptions (two LS keys → one vscodeKey).
+  test('Defect1b: saving merged issueViewOptions equal to effective snapshot is skipped', async () => {
+    const service = newService();
+
+    // Inbound: LS sends both issueView keys (effective = both visible).
+    const inboundIssueView: LspConfigurationParam = {
+      settings: {
+        [LS_GLOBAL_KEY.issueViewOpenIssues]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.issueViewIgnoredIssues]: { value: true, changed: false },
+      },
+    };
+    await service.persistInboundLspConfiguration(inboundIssueView);
+    updateConfigStub.reset();
+
+    // Outbound: user saves with identical values → must be skipped.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.issueViewOpenIssues]: true,
+      [LS_GLOBAL_KEY.issueViewIgnoredIssues]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const issueViewWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === 'issueViewOptions');
+
+    assert.strictEqual(
+      issueViewWrites.length,
+      0,
+      `Defect1b regression: issueViewOptions write must be skipped when the saved value equals the effective snapshot. ` +
+        `Got ${issueViewWrites.length} write(s). ` +
+        `A write here means captureEffectiveSnapshot left a partial {ignoredIssues:true} instead of merging both ` +
+        `issueView partials, so isEqual({openIssues,ignoredIssues}, {ignoredIssues}) is false and the guard never skips.`,
+    );
+  });
+});
+
+// ── Defect 2: snapshot must be invalidated on global reset ───────────────────
+//
+// After a global reset echo ({value:null, changed:true}), applyGlobalResets clears the
+// VS Code override but effectiveByVscodeKey still holds the stale pre-reset value.
+// If the user then saves a value equal to the stale effective before the next
+// $/snyk.configuration arrives, shouldSkipSettingUpdate skips the write — silently
+// dropping it (the IDE-2149 class of bug for that window).
+//
+// Fix: applyVscodeKeyResets must delete from effectiveByVscodeKey on successful reset,
+// so the next outbound save falls back to EFFECTIVE_VALUE_UNKNOWN (override-aware → not skipped).
+
+suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect 2)', () => {
+  let updateConfigStub: sinon.SinonStub;
+  let workspace: IVSCodeWorkspace;
+  let realScopeService: ScopeDetectionService;
+
+  setup(() => {
+    updateConfigStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      // Post-reset state: no globalValue, schema default = 'All issues'.
+      // Scope resolves to 'default' → fallback (UNKNOWN → not skipped).
+      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'allIssuesVsNetNewIssues') {
+          return {
+            defaultValue: ALLISSUES,
+            globalValue: undefined,
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        return {
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
+      }),
+    } as unknown as IVSCodeWorkspace;
+
+    realScopeService = new ScopeDetectionService(workspace);
+  });
+
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
+      workspace,
+      {
+        getToken: sinon.stub().resolves('tok'),
+        setToken: sinon.stub().resolves(),
+        getFolderConfigs: sinon.stub().returns([]),
+        setFolderConfigs: sinon.stub().resolves(),
+        getFeaturesConfiguration: sinon.stub().returns({
+          ossEnabled: true,
+          codeSecurityEnabled: true,
+          iacEnabled: true,
+          secretsEnabled: true,
+        }),
+        scanningMode: 'auto',
+        organization: '',
+        snykApiEndpoint: 'https://api.snyk.io',
+        getInsecure: sinon.stub().returns(false),
+        getAuthenticationMethod: sinon.stub().returns('oauth'),
+        getDeltaFindingsEnabled: sinon.stub().returns(false),
+        getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
+        getAdditionalCliParameters: sinon.stub().returns(''),
+        getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
+        getAutoConfigureMcpServer: sinon.stub().returns(false),
+        severityFilter: {},
+        issueViewOptions: {},
+        riskScoreThreshold: 0,
+        getTrustedFolders: sinon.stub().returns([]),
+        getCliPath: sinon.stub().resolves(''),
+        isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+        getCliBaseDownloadUrl: sinon.stub().returns(''),
+      } as unknown as IConfiguration,
+      realScopeService,
+      {
+        getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+      } as unknown as ILanguageClientAdapter,
+      { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
+      new ConfigFeedbackSuppressor(),
+    );
+  }
+
+  // Defect 2: stale effective snapshot must be cleared on reset so save is not dropped.
+  //
+  // Scenario: LS sends scanNetNew=ALLISSUES (effective = 'All issues'), then resets it
+  // (value:null, changed:true). User saves ALLISSUES. Must NOT be skipped (the reset
+  // cleared the override; the user is explicitly setting the value again).
+  test('Defect2: post-reset save of value matching stale effective is NOT skipped', async () => {
+    const service = newService();
+
+    // Step 1: LS delivers effective value ALLISSUES.
+    await service.persistInboundLspConfiguration({
+      settings: {
+        [LS_GLOBAL_KEY.scanNetNew]: { value: false, changed: true }, // false → ALLISSUES in VS Code
+      },
+    });
+    updateConfigStub.reset();
+
+    // Step 2: LS sends reset for scanNetNew ({value:null, changed:true}).
+    // This clears the VS Code override. The stale effective should also be purged.
+    await service.persistInboundLspConfiguration({
+      settings: {
+        [LS_GLOBAL_KEY.scanNetNew]: { value: null, changed: true },
+      },
+    });
+    updateConfigStub.reset();
+
+    // Step 3: User explicitly saves ALLISSUES.
+    // The post-reset state has no globalValue (override cleared). Scope = 'default'.
+    // Because stale effective was purged → falls back to UNKNOWN → not skipped → writes.
+    // A skip here would mean the stale effective (ALLISSUES) was left in the snapshot.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.scanNetNew]: false, // false → ALLISSUES
+    });
+    await service.handleSaveConfig(configJson);
+
+    const deltaWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === 'allIssuesVsNetNewIssues');
+
+    assert.ok(
+      deltaWrites.length > 0,
+      `Defect2: updateConfiguration for allIssuesVsNetNewIssues must be called after a reset ` +
+        `when user saves the same value as the pre-reset effective. ` +
+        `Got ${deltaWrites.length} write(s). ` +
+        `A skip here means applyVscodeKeyResets did not invalidate the stale effectiveByVscodeKey entry on reset.`,
+    );
   });
 });
 
