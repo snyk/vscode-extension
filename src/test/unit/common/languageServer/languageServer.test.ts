@@ -174,6 +174,9 @@ suite('Language Server', () => {
       getAdditionalCliParameters() {
         return '--all-projects -d';
       },
+      getAdditionalCliEnvironment() {
+        return '';
+      },
       isAutomaticDependencyManagementEnabled() {
         return true;
       },

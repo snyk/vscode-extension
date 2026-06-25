@@ -42,6 +42,7 @@ suite('Language Server: Middleware', () => {
       shouldReportErrors: false,
       snykApiEndpoint: 'https://dev.snyk.io/api',
       getAdditionalCliParameters: () => '',
+      getAdditionalCliEnvironment: () => '',
       organization: 'org',
       getToken: () => Promise.resolve('token'),
       isAutomaticDependencyManagementEnabled: () => true,
