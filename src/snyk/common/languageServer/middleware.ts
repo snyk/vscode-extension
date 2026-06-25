@@ -74,12 +74,24 @@ export class LanguageClientMiddleware implements Middleware {
       // emitted as { value: null, changed: true } exactly once on this pull.
       const pendingResets = this.explicitLspConfigurationChangeTracker?.consumePendingResets() ?? new Set<string>();
 
-      const lspParam = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
-        this.vscodeWorkspace,
-        lsKey => pendingResets.has(lsKey),
-      );
+      let lspParam: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
+      try {
+        lspParam = await LanguageServerSettings.fromConfiguration(
+          this.configuration,
+          lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+          this.vscodeWorkspace,
+          lsKey => pendingResets.has(lsKey),
+        );
+      } catch (err) {
+        // fromConfiguration failed after consumePendingResets() already drained the set.
+        // The tracker notes this loss is benign (the VS Code override is already cleared, so the
+        // next sync emits the default), but we re-enqueue the drained keys anyway for prompt,
+        // deterministic delivery on the next pull rather than relying on a later natural sync.
+        for (const key of pendingResets) {
+          this.explicitLspConfigurationChangeTracker?.markPendingReset(key);
+        }
+        throw err;
+      }
 
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
         // Pending-reset keys emitted as {value:null, changed:true} were already unmarked at

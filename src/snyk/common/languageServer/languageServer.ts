@@ -529,12 +529,24 @@ export class LanguageServer implements ILanguageServer {
     // Calling `unmarkResetLsKeysAfterPull` here would be a no-op (the key is already absent from
     // `keys`), so no code change is required.  This comment documents the reasoning.
     const pendingResets = this.explicitLspConfigurationChangeTracker.consumePendingResets();
-    const config = await LanguageServerSettings.fromConfiguration(
-      this.configuration,
-      lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
-      this.workspace,
-      lsKey => pendingResets.has(lsKey),
-    );
+    let config: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
+    try {
+      config = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
+        this.workspace,
+        lsKey => pendingResets.has(lsKey),
+      );
+    } catch (err) {
+      // fromConfiguration failed after consumePendingResets() already drained the set.
+      // The tracker notes this loss is benign (the VS Code override is already cleared, so the
+      // next sync emits the default), but we re-enqueue the drained keys anyway for prompt,
+      // deterministic delivery on the next getInitializationOptions call.
+      for (const key of pendingResets) {
+        this.explicitLspConfigurationChangeTracker.markPendingReset(key);
+      }
+      throw err;
+    }
     return {
       settings: config.settings ?? {},
       folderConfigs: config.folderConfigs,

@@ -109,8 +109,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
       // Map the remaining (non-reset) LS settings directly to VS Code settings using the
       // registry. Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped
-      // automatically. Reset entries are excluded so they don't write `null` as a value.
-      const settingsMap = mapLspSettingsToVscodeSettings(this.withoutGlobalResets(settings));
+      // automatically. Global-reset entries ({ value: null, changed: true }) are excluded by
+      // mapLspSettingsToVscodeSettings's own null-skip (its `value === null` guard), so no
+      // pre-filter is needed.
+      const settingsMap = mapLspSettingsToVscodeSettings(settings);
 
       if (Object.keys(settingsMap).length > 0) {
         this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
@@ -131,26 +133,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   /** A reset is an inbound global setting of `{ value: null, changed: true }`. */
   private isGlobalReset(setting: LspConfigSetting): boolean {
     return setting.value === null && setting.changed === true;
-  }
-
-  /**
-   * Returns the settings map with genuine global-reset entries removed, so they are not
-   * written as values. An entry is a genuine reset only when BOTH conditions hold:
-   *   1. The setting is a global reset (`{ value: null, changed: true }`), AND
-   *   2. The lsKey is a member of GLOBAL_RESET_FIELDS.
-   *
-   * Non-resettable keys that happen to arrive as `{ value: null, changed: true }` are kept
-   * in the result map so they reach the write path rather than being silently discarded.
-   */
-  private withoutGlobalResets(settings: Record<string, LspConfigSetting>): Record<string, LspConfigSetting> {
-    const result: Record<string, LspConfigSetting> = {};
-    for (const [lsKey, setting] of Object.entries(settings)) {
-      if (this.isGlobalReset(setting) && GLOBAL_RESET_FIELDS.has(lsKey as GlobalLsKeyValue)) {
-        continue;
-      }
-      result[lsKey] = setting;
-    }
-    return result;
   }
 
   /**
@@ -192,19 +174,36 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
 
     // For each distinct vscodeKey: write first, mutate tracker only on success.
+    await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
+      this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
+      this.logger.debug(`Reset global setting: ${lsKey}`);
+    });
+  }
+
+  /**
+   * Shared write+error-handling loop for both inbound and outbound global resets.
+   *
+   * For each (vscodeKey → lsKeys) entry: clears the VS Code global override
+   * (updateConfiguration → undefined, global scope) then, on success only, calls
+   * `onWriteSuccess` for each lsKey in the group. One failure does NOT abort the batch
+   * (per-group try/catch). The caller is responsible for any suppressor window.
+   */
+  private async applyVscodeKeyResets(
+    vscodeKeyToLsKeys: Map<string, string[]>,
+    onWriteSuccess: (lsKey: string) => void,
+  ): Promise<void> {
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
       try {
         const { configurationId, section } = Configuration.getConfigName(vscodeKey);
         // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
         await this.workspace.updateConfiguration(configurationId, section, undefined, true);
-        // Mutate tracker state only after the write has succeeded.
+        // Mutate caller-supplied state only after the write has succeeded.
         for (const lsKey of lsKeys) {
-          this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
-          this.logger.debug(`Reset global setting: ${lsKey} (${vscodeKey})`);
+          onWriteSuccess(lsKey);
         }
       } catch (e) {
         this.logger.error(`Failed to reset setting ${vscodeKey}: ${e}`);
-        // Do NOT mutate tracker state — leave it consistent with the failed write.
+        // Do NOT call onWriteSuccess — leave caller state consistent with the failed write.
       }
     }
   }
@@ -348,22 +347,11 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     // model rather than a scoped boolean around the write).
     this.outboundResetSuppressor.begin();
     try {
-      for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
-        try {
-          const { configurationId, section } = Configuration.getConfigName(vscodeKey);
-          await this.workspace.updateConfiguration(configurationId, section, undefined, true);
-          // Mutate tracker state only after the write has succeeded, still inside the
-          // suppression window so any synchronous onDidChangeConfiguration is still gated.
-          for (const lsKey of lsKeys) {
-            this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
-            this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
-            this.logger.debug(`Outbound reset: cleared global override for ${lsKey} (${vscodeKey})`);
-          }
-        } catch (e) {
-          this.logger.error(`Failed to clear global override for ${vscodeKey}: ${e}`);
-          // Do NOT mutate tracker state — leave it consistent with the failed write.
-        }
-      }
+      await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
+        this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
+        this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
+        this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
+      });
     } finally {
       this.outboundResetSuppressor.end();
     }

@@ -20,6 +20,7 @@ import type {
 } from '../../../../snyk/common/vscode/types';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
+import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import {
   LspConfigurationParam,
@@ -273,5 +274,46 @@ suite('Language Server: Middleware', () => {
     await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
 
     assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
+  });
+
+  test('re-enqueues pending resets when fromConfiguration rejects', async () => {
+    // Arrange: tracker with one pending reset key.
+    const markPendingResetStub = sinon.stub();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.stub(),
+      unmarkExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: () => false,
+      markPendingReset: markPendingResetStub,
+      consumePendingResets: sinon.stub().returns(new Set<string>([LS_KEY.organization])),
+    };
+
+    // Stub fromConfiguration to reject after consumePendingResets has drained the set.
+    const fromConfigError = new Error('fromConfiguration failed');
+    sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      tracker,
+    );
+
+    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
+    const token: CancellationToken = {
+      isCancellationRequested: false,
+      onCancellationRequested: sinon.fake(),
+    };
+
+    // Act + Assert: must throw (the error propagates), AND the key must be re-enqueued.
+    await assert.rejects(
+      async () => middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler),
+      fromConfigError,
+    );
+
+    // The drained key must have been re-enqueued via markPendingReset so the next pull retries.
+    sinon.assert.calledWith(markPendingResetStub, LS_KEY.organization);
   });
 });

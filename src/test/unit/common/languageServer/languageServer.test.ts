@@ -1,5 +1,5 @@
 import assert, { deepStrictEqual, strictEqual } from 'assert';
-import { ReplaySubject } from 'rxjs';
+import { ReplaySubject, Subject } from 'rxjs';
 import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
@@ -27,6 +27,7 @@ import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryPr
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
 import { IMarkdownStringAdapter } from '../../../../snyk/common/vscode/markdownString';
 import { CommandsMock } from '../../mocks/commands.mock';
+import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diagnosticsService';
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
@@ -34,6 +35,14 @@ import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ConfigFeedbackSuppressor } from '../../../../snyk/common/languageServer/configFeedbackSuppressor';
+import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
+import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
+import { ShowIssueDetailTopicParams } from '../../../../snyk/common/languageServer/types';
+import type {
+  CancellationToken,
+  ConfigurationParams,
+  ConfigurationRequestHandlerSignature,
+} from '../../../../snyk/common/vscode/types';
 
 suite('Language Server', () => {
   const authServiceMock = {} as IAuthenticationService;
@@ -104,6 +113,23 @@ suite('Language Server', () => {
       },
     } as unknown as ILanguageClientAdapter;
     return { notificationHandlers, sendNotification, adapter };
+  }
+
+  /** Minimal in-memory Memento for ExplicitLspConfigurationChangeTracker. */
+  function makeMemento(): import('vscode').Memento {
+    const store = new Map<string, unknown>();
+    return {
+      get<T>(key: string, defaultValue?: T): T {
+        return (store.has(key) ? store.get(key) : defaultValue) as T;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        store.set(key, value);
+        return Promise.resolve();
+      },
+      keys(): readonly string[] {
+        return [...store.keys()];
+      },
+    };
   }
 
   async function startLanguageServerWithRecordingClient(options?: {
@@ -619,6 +645,137 @@ suite('Language Server', () => {
       // consumePendingResets must have been called exactly once (so the reset is delivered).
       sinon.assert.calledOnce(consumePendingResetsStub);
     });
+
+    test('getInitializationOptions re-enqueues pending resets when fromConfiguration rejects', async () => {
+      // Arrange: tracker with one pending reset key.
+      const markPendingResetStub = sinon.stub();
+      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
+        markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: () => false,
+        markPendingReset: markPendingResetStub,
+        consumePendingResets: sinon.stub().returns(new Set<string>([LS_GLOBAL_KEY.organization])),
+      };
+
+      // Stub fromConfiguration to reject after consumePendingResets has drained the set.
+      const fromConfigError = new Error('fromConfiguration failed in getInitializationOptions');
+      sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
+
+      const mockLanguageClientAdapter = {
+        create: sinon.stub().returns({ start: sinon.stub().resolves() }),
+        getLanguageClient: sinon.stub().returns({ start: sinon.stub().resolves() }),
+      };
+
+      const ls = new LanguageServer(
+        user,
+        configurationMock,
+        mockLanguageClientAdapter,
+        {} as IVSCodeWorkspace,
+        new WindowMock(),
+        authServiceMock,
+        logger,
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        pendingResetTracker,
+        sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
+      );
+
+      // Act + Assert: must throw, AND the key must be re-enqueued.
+      await assert.rejects(() => ls.getInitializationOptions(), fromConfigError);
+
+      // The drained key must have been re-enqueued via markPendingReset so the next init retries.
+      sinon.assert.calledWith(markPendingResetStub, LS_GLOBAL_KEY.organization);
+    });
+
+    test('pending reset is delivered exactly once: middleware pull drains; getInitializationOptions does not re-deliver', async () => {
+      // Arrange: one real tracker shared by both consumers.
+      const sharedTracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      sharedTracker.markPendingReset(LS_GLOBAL_KEY.organization);
+
+      // Wire tracker into middleware.
+      const middleware = new LanguageClientMiddleware(
+        new LoggerMockFailOnErrors(),
+        configurationMock,
+        new Subject<ShowIssueDetailTopicParams>(),
+        {} as IUriAdapter,
+        {} as IVSCodeCommands,
+        undefined,
+        sharedTracker,
+      );
+
+      const handler: ConfigurationRequestHandlerSignature = (
+        _params: ConfigurationParams,
+        _token: CancellationToken,
+      ) => [{}];
+      const token: CancellationToken = {
+        isCancellationRequested: false,
+        onCancellationRequested: sinon.fake(),
+      };
+
+      // Consumer A: middleware pull — drains pendingResets and emits {value:null, changed:true}.
+      const pullResult = await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+      if (pullResult instanceof Error) {
+        assert.fail('Middleware pull returned an error');
+      }
+      // middleware returns [{ settings: LspConfigurationParam }]; LspConfigurationParam.settings is the key→value map.
+      const pullItem = (
+        pullResult as Array<{ settings: { settings?: Record<string, { value: unknown; changed: boolean }> } }>
+      )[0];
+      const pullSettings = pullItem.settings.settings!;
+      strictEqual(pullSettings[LS_GLOBAL_KEY.organization]?.value, null, 'middleware pull: value must be null');
+      strictEqual(pullSettings[LS_GLOBAL_KEY.organization]?.changed, true, 'middleware pull: changed must be true');
+
+      // Consumer B: getInitializationOptions — pendingResets is now empty (drained by A).
+      const mockLca = {
+        create: sinon.stub().returns({ start: sinon.stub().resolves() }),
+        getLanguageClient: sinon.stub().returns({ start: sinon.stub().resolves() }),
+      };
+      const ls = new LanguageServer(
+        user,
+        configurationMock,
+        mockLca,
+        {} as IVSCodeWorkspace,
+        new WindowMock(),
+        authServiceMock,
+        new LoggerMockFailOnErrors(),
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        sharedTracker,
+        sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
+      );
+
+      const initOptions = await ls.getInitializationOptions();
+
+      // The reset was already delivered by the middleware pull, so getInitializationOptions
+      // must NOT re-deliver it as {value:null, changed:true}.
+      const initSetting = initOptions.settings[LS_GLOBAL_KEY.organization];
+      strictEqual(
+        initSetting?.changed,
+        false,
+        'getInitializationOptions must not re-deliver the reset after middleware already consumed it',
+      );
+      assert.notStrictEqual(
+        initSetting?.value,
+        null,
+        'getInitializationOptions must not emit null again for an already-delivered reset',
+      );
+    });
   });
 
   suite('treeView notification', () => {
@@ -694,23 +851,6 @@ suite('Language Server', () => {
   // The fix: suppress the listener while the outbound reset write is in flight by
   // checking outboundResetSuppressor.isActive in the listener.
   suite('outbound reset self-cancel guard (Claim 1 — adversarial onDidChangeConfiguration ordering)', () => {
-    /** Minimal in-memory Memento for ExplicitLspConfigurationChangeTracker. */
-    function makeMemento(): import('vscode').Memento {
-      const store = new Map<string, unknown>();
-      return {
-        get<T>(key: string, defaultValue?: T): T {
-          return (store.has(key) ? store.get(key) : defaultValue) as T;
-        },
-        update(key: string, value: unknown): Thenable<void> {
-          store.set(key, value);
-          return Promise.resolve();
-        },
-        keys(): readonly string[] {
-          return [...store.keys()];
-        },
-      };
-    }
-
     function makeLanguageServerWithListener(
       tracker: ExplicitLspConfigurationChangeTracker,
       suppressor: ConfigFeedbackSuppressor,
@@ -797,35 +937,35 @@ suite('Language Server', () => {
       );
     });
 
-    test('adversarial ordering — WITHOUT suppressor, pending reset IS lost (demonstrates the bug)', () => {
-      // This test documents the pre-fix behavior: without suppression, the listener
-      // cancels the pending reset. The fix is the suppressor; this test proves the
-      // underlying timing sensitivity is real with the real tracker.
+    test('markExplicitlyChanged deletes pending reset when suppressor is inactive (adversarial timing root cause)', () => {
+      // This test documents the root cause of the adversarial timing bug: when the
+      // suppressor is inactive (isActive === false), the onDidChangeConfiguration listener
+      // calls markExplicitlyChanged, which deletes the key from pendingResets.
+      // The fix (the suppressor guard in the listener) is proven by the sibling test above.
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      // No suppressor — listener fires unsuppressed.
-      const noSuppressor = new ConfigFeedbackSuppressor();
-      // We do NOT call noSuppressor.begin(), so isActive is false.
+      // Suppressor is never begin()-ed, so isActive remains false throughout.
+      const inactiveSuppressor = new ConfigFeedbackSuppressor();
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, noSuppressor, fn => {
+      const ls = makeLanguageServerWithListener(tracker, inactiveSuppressor, fn => {
         configListener = fn;
       });
 
       ls.registerExplicitKeyMarkingListener();
 
-      // markPendingReset FIRST (as applyOutboundGlobalResets does).
+      // Queue a pending reset (simulates what applyOutboundGlobalResets does after updateConfiguration).
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
-      // Listener fires AFTER (adversarial) — no suppression active, so it calls
-      // markExplicitlyChanged which deletes from pendingResets.
+      // Listener fires while suppressor is inactive — markExplicitlyChanged is called,
+      // which calls pendingResets.delete(key), removing the pending reset signal.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
 
       const pending = tracker.consumePendingResets();
-      // Without suppression the pending reset IS deleted — this is the pre-fix bug.
+      // With suppressor inactive, markExplicitlyChanged deletes the pending reset.
       assert.ok(
         !pending.has(LS_GLOBAL_KEY.organization),
-        'Without suppression, adversarial listener ordering deletes the pending reset — ' +
-          'this is the exact timing bug that the outboundResetSuppressor fix addresses.',
+        'markExplicitlyChanged deletes from pendingResets when the suppressor is inactive — ' +
+          'this is the timing sensitivity that the outboundResetSuppressor guard in the listener addresses.',
       );
     });
 
