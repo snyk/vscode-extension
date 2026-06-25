@@ -39,7 +39,6 @@ export const SNYK_REPORT_ANALYTICS = 'snyk.reportAnalytics';
 export const SNYK_SUBMIT_IGNORE_COMMAND = 'snyk.submitIgnoreRequest';
 export const SNYK_COLLECT_CONNECTIVITY_DIAGNOSTICS_COMMAND = 'snyk.collectConnectivityDiagnostics';
 export const SNYK_COLLECT_DIRECTORY_DIAGNOSTICS_COMMAND = 'snyk.collectDirectoryDiagnostics';
-export const SNYK_SHOW_CONFIRMATION_DIALOG_COMMAND = 'snyk.showConfirmationDialog';
 
 // custom Snyk constants used in commands
 export const SNYK_CONTEXT_PREFIX = 'snyk:';

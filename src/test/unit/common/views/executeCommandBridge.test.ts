@@ -1,4 +1,5 @@
 import { ok, strictEqual } from 'assert';
+import * as vm from 'vm';
 import sinon from 'sinon';
 import { ExecuteCommandBridge } from '../../../../snyk/common/views/executeCommandBridge';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
@@ -45,15 +46,104 @@ suite('ExecuteCommandBridge', () => {
       ok(script.includes('vscode.postMessage'), 'Should use vscode.postMessage');
     });
 
-    test('includes commandResult message listener', () => {
+    test('includes messageResult message listener', () => {
       const script = ExecuteCommandBridge.buildClientScript();
-      ok(script.includes('commandResult'), 'Should handle commandResult messages');
+      ok(script.includes('messageResult'), 'Should handle messageResult messages');
       ok(script.includes("addEventListener('message'"), 'Should add message event listener');
     });
 
     test('includes callbackId in posted message', () => {
       const script = ExecuteCommandBridge.buildClientScript();
       ok(script.includes('callbackId'), 'Should include callbackId in posted message');
+    });
+  });
+
+  // Executes the injected client JS in a sandbox so a string-JS typo (which substring checks
+  // would not catch) actually fails a test, and the callback round-trip is proven end-to-end.
+  suite('buildClientScript (executed in sandbox)', () => {
+    interface PostedMessage {
+      type: string;
+      command?: string;
+      arguments?: unknown[];
+      callbackId: string | null;
+    }
+    interface FakeWindow {
+      addEventListener(type: string, fn: (e: { data: unknown }) => void): void;
+      __ideRegisterCallback__(callback: unknown): string | null;
+      __ideResolveCallback__(callbackId: string, result: unknown): void;
+      __ideExecuteCommand__(cmd: string, args: unknown[], callback?: (result: unknown) => void): void;
+    }
+
+    function runClientScript(): {
+      window: FakeWindow;
+      posted: PostedMessage[];
+      dispatchMessage: (data: unknown) => void;
+    } {
+      const posted: PostedMessage[] = [];
+      const listeners: ((e: { data: unknown }) => void)[] = [];
+      const window = {
+        addEventListener: (type: string, fn: (e: { data: unknown }) => void) => {
+          if (type === 'message') listeners.push(fn);
+        },
+      } as unknown as FakeWindow;
+      const vscode = { postMessage: (m: PostedMessage) => posted.push(m) };
+
+      vm.runInNewContext(ExecuteCommandBridge.buildClientScript(), { window, vscode });
+
+      return { window, posted, dispatchMessage: data => listeners.forEach(fn => fn({ data })) };
+    }
+
+    test('__ideRegisterCallback__ returns sequential ids for functions, null otherwise', () => {
+      const { window } = runClientScript();
+      strictEqual(
+        window.__ideRegisterCallback__(() => {
+          /* noop */
+        }),
+        '__cb_1',
+      );
+      strictEqual(
+        window.__ideRegisterCallback__(() => {
+          /* noop */
+        }),
+        '__cb_2',
+      );
+      strictEqual(window.__ideRegisterCallback__(undefined), null);
+      strictEqual(window.__ideRegisterCallback__('not-a-function'), null);
+    });
+
+    test('__ideExecuteCommand__ posts callbackId and a messageResult reply resolves the callback', () => {
+      const { window, posted, dispatchMessage } = runClientScript();
+      let received: unknown = 'unset';
+      window.__ideExecuteCommand__('snyk.x', [1, 2], r => {
+        received = r;
+      });
+
+      strictEqual(posted.length, 1);
+      strictEqual(posted[0].type, 'executeCommand');
+      strictEqual(posted[0].command, 'snyk.x');
+      const cbId = posted[0].callbackId as string;
+      ok(/^__cb_\d+$/.test(cbId), 'posts a well-formed callbackId');
+
+      dispatchMessage({ type: 'messageResult', callbackId: cbId, result: 'done' });
+      strictEqual(received, 'done');
+    });
+
+    test('__ideExecuteCommand__ posts callbackId null when no callback is given', () => {
+      const { window, posted } = runClientScript();
+      window.__ideExecuteCommand__('snyk.x', []);
+      strictEqual(posted[0].callbackId, null);
+    });
+
+    test('a callback is invoked at most once (one-shot resolve)', () => {
+      const { window, posted, dispatchMessage } = runClientScript();
+      let count = 0;
+      window.__ideExecuteCommand__('snyk.x', [], () => {
+        count++;
+      });
+      const cbId = posted[0].callbackId as string;
+      dispatchMessage({ type: 'messageResult', callbackId: cbId, result: true });
+      dispatchMessage({ type: 'messageResult', callbackId: cbId, result: true });
+      strictEqual(count, 1);
     });
   });
 

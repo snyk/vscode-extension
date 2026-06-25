@@ -30,4 +30,10 @@ export interface ExecuteCommandMessage {
   callbackId?: string;
 }
 
-export type WebviewMessage = SaveConfigMessage | ExecuteCommandMessage;
+export interface ConfirmationDialogMessage {
+  type: 'confirmationDialog';
+  message?: string;
+  callbackId?: string;
+}
+
+export type WebviewMessage = SaveConfigMessage | ExecuteCommandMessage | ConfirmationDialogMessage;

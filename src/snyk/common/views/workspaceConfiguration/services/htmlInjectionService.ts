@@ -46,6 +46,17 @@ export class HtmlInjectionService implements IHtmlInjectionService {
 
           ${ExecuteCommandBridge.buildClientScript()}
 
+          // Native confirmation dialog bridge. The snyk-ls config dialog calls
+          // ideBridge.confirm(), which routes here because VSCode sandboxed webviews
+          // block window.confirm(). Uses the shared __ideRegisterCallback__ helper
+          // (from buildClientScript) so the boolean result resolves via the same
+          // messageResult reply path as __ideExecuteCommand__. snyk-ls fails closed:
+          // only a literal true confirms.
+          window.__ideConfirmationDialog__ = function(message, callback) {
+            const callbackId = window.__ideRegisterCallback__(callback);
+            vscode.postMessage({ type: 'confirmationDialog', message: message, callbackId: callbackId });
+          };
+
           window.addEventListener('message', function (event) {
             var message = event.data;
             if (message.type === 'setAuthToken' && message.token) {

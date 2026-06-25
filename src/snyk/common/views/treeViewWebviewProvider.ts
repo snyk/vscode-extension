@@ -93,8 +93,10 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
 
   private postResult(requestId: string, result: unknown, error?: string) {
     if (!this.webviewView) return;
+    // 'messageResult' is a shared envelope-name convention; this channel is independent from the
+    // workspace-config one (keyed on requestId, not callbackId). See treeViewWebviewScript.ts.
     void this.webviewView.webview.postMessage({
-      type: 'commandResult',
+      type: 'messageResult',
       requestId,
       result,
       error,

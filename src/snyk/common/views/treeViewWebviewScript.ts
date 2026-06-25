@@ -7,9 +7,13 @@
   const pendingCallbacks: Record<string, (result: unknown) => void> = {};
   let nextRequestId = 0;
 
+  // 'messageResult' is the generic async-reply envelope name. This tree-view channel is
+  // INDEPENDENT from the workspace-config channel that shares the name: it keys on requestId
+  // with its own pendingCallbacks registry, not callbackId / __ideCallbacks__. The shared name
+  // is a naming convention, not a shared resolver — the two do not interoperate.
   window.addEventListener('message', (event: MessageEvent) => {
     const message = event.data;
-    if (message.type === 'commandResult' && message.requestId) {
+    if (message.type === 'messageResult' && message.requestId) {
       const callback = pendingCallbacks[message.requestId as string] as ((result: unknown) => void) | undefined;
       if (callback) {
         delete pendingCallbacks[message.requestId as string];

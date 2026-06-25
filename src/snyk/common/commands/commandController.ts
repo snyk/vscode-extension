@@ -250,11 +250,6 @@ export class CommandController {
     }
   }
 
-  async showConfirmationDialog(message: string): Promise<boolean> {
-    const result = await this.window.showInformationMessage(message, { modal: true }, 'Yes');
-    return result === 'Yes';
-  }
-
   async directoryDiagnostics(): Promise<void> {
     try {
       // Build additional directories to check based on VS Code configuration

@@ -162,8 +162,12 @@ export class WorkspaceConfigurationWebviewProvider
       async (msg: unknown) => {
         const callbackResult = await this.messageHandlerFactory.handleMessage(msg);
         if (callbackResult?.callbackId) {
+          // 'messageResult' is the generic reply envelope for this config webview's callback
+          // protocol (keyed on callbackId / __ideCallbacks__). The tree-view webview reuses the
+          // same name on its own independent channel (keyed on requestId) — convention, not a
+          // shared resolver.
           void this.panel?.webview.postMessage({
-            type: 'commandResult',
+            type: 'messageResult',
             callbackId: callbackResult.callbackId,
             result: callbackResult.result,
           });

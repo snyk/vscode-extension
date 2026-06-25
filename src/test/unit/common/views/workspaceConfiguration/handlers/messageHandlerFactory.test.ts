@@ -1,13 +1,16 @@
 import sinon from 'sinon';
+import assert from 'assert';
 import { MessageHandlerFactory } from '../../../../../../snyk/common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { IVSCodeCommands } from '../../../../../../snyk/common/vscode/commands';
 import { IConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
+import { IVSCodeWindow } from '../../../../../../snyk/common/vscode/window';
 
 suite('MessageHandlerFactory', () => {
   let commandExecutorStub: sinon.SinonStubbedInstance<IVSCodeCommands>;
   let configPersistenceStub: sinon.SinonStubbedInstance<IConfigurationPersistenceService>;
   let loggerStub: sinon.SinonStubbedInstance<ILog>;
+  let windowStub: sinon.SinonStubbedInstance<IVSCodeWindow>;
   let factory: MessageHandlerFactory;
 
   setup(() => {
@@ -26,10 +29,15 @@ suite('MessageHandlerFactory', () => {
       error: sinon.stub(),
     } as unknown as sinon.SinonStubbedInstance<ILog>;
 
+    windowStub = {
+      showInformationMessage: sinon.stub().resolves(undefined),
+    } as unknown as sinon.SinonStubbedInstance<IVSCodeWindow>;
+
     factory = new MessageHandlerFactory(
       commandExecutorStub as unknown as IVSCodeCommands,
       configPersistenceStub,
       loggerStub,
+      windowStub as unknown as IVSCodeWindow,
     );
   });
 
@@ -116,6 +124,102 @@ suite('MessageHandlerFactory', () => {
 
       sinon.assert.notCalled(configPersistenceStub.handleSaveConfig);
       sinon.assert.called(loggerStub.warn);
+    });
+  });
+
+  suite('confirmationDialog message type', () => {
+    test('shows a modal and returns true tagged with callbackId when confirmed', async () => {
+      (windowStub.showInformationMessage as sinon.SinonStub).resolves('Yes');
+
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 'Reset all overrides for this folder?',
+        callbackId: '__cb_1',
+      });
+
+      sinon.assert.calledOnceWithExactly(
+        windowStub.showInformationMessage as sinon.SinonStub,
+        'Reset all overrides for this folder?',
+        { modal: true },
+        'Yes',
+      );
+      assert.deepStrictEqual(result, { callbackId: '__cb_1', result: true });
+    });
+
+    test('returns false (fail-closed) when the modal is dismissed', async () => {
+      (windowStub.showInformationMessage as sinon.SinonStub).resolves(undefined);
+
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 'Reset?',
+        callbackId: '__cb_2',
+      });
+
+      assert.deepStrictEqual(result, { callbackId: '__cb_2', result: false });
+    });
+
+    test('resolves callback with false (fail-closed) when message field is missing', async () => {
+      const result = await factory.handleMessage({ type: 'confirmationDialog', callbackId: '__cb_1' });
+
+      sinon.assert.notCalled(windowStub.showInformationMessage as sinon.SinonStub);
+      sinon.assert.called(loggerStub.warn);
+      assert.deepStrictEqual(result, { callbackId: '__cb_1', result: false });
+    });
+
+    test('resolves callback with false (fail-closed) when message is a non-string', async () => {
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 123,
+        callbackId: '__cb_7',
+      });
+
+      sinon.assert.notCalled(windowStub.showInformationMessage as sinon.SinonStub);
+      sinon.assert.called(loggerStub.warn);
+      assert.deepStrictEqual(result, { callbackId: '__cb_7', result: false });
+    });
+
+    test('resolves callback with false (fail-closed) when the modal throws', async () => {
+      (windowStub.showInformationMessage as sinon.SinonStub).rejects(new Error('modal failed'));
+
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 'Reset?',
+        callbackId: '__cb_3',
+      });
+
+      assert.deepStrictEqual(result, { callbackId: '__cb_3', result: false });
+    });
+
+    test('drops message (no reply possible) when callbackId is missing', async () => {
+      const result = await factory.handleMessage({ type: 'confirmationDialog', message: 'Reset?' });
+
+      sinon.assert.notCalled(windowStub.showInformationMessage as sinon.SinonStub);
+      sinon.assert.called(loggerStub.warn);
+      assert.strictEqual(result, undefined);
+    });
+
+    test('drops message (no reply possible) when callbackId is a non-string', async () => {
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 'Reset?',
+        callbackId: 42,
+      });
+
+      sinon.assert.notCalled(windowStub.showInformationMessage as sinon.SinonStub);
+      sinon.assert.called(loggerStub.warn);
+      assert.strictEqual(result, undefined);
+    });
+
+    test('warns and skips when callbackId is malformed', async () => {
+      const result = await factory.handleMessage({
+        type: 'confirmationDialog',
+        message: 'Reset?',
+        callbackId: 'evil-id',
+      });
+
+      sinon.assert.notCalled(windowStub.showInformationMessage as sinon.SinonStub);
+      sinon.assert.called(loggerStub.warn);
+      assert.strictEqual(result, undefined);
     });
   });
 
