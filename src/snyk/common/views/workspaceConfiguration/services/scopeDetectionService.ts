@@ -14,10 +14,6 @@ import _ from 'lodash';
  */
 export const EFFECTIVE_VALUE_UNKNOWN: unique symbol = Symbol('effective-value-unknown');
 
-/** The type of the effective-value parameter: either a known LS-resolved value or the sentinel. */
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-export type EffectiveValue = typeof EFFECTIVE_VALUE_UNKNOWN | unknown;
-
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
   populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
@@ -38,7 +34,7 @@ export interface IScopeDetectionService {
     settingName: string,
     value: unknown,
     scope: string,
-    effectiveValue: EffectiveValue,
+    effectiveValue: unknown,
   ): boolean;
 }
 
@@ -91,7 +87,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
     settingName: string,
     value: unknown,
     scope: string,
-    effectiveValue: EffectiveValue,
+    effectiveValue: unknown,
   ): boolean {
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
 

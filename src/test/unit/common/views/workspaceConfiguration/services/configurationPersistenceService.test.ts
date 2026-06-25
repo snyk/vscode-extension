@@ -15,8 +15,6 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
-  ISSUE_VIEW_OPTIONS_SETTING,
-  SEVERITY_FILTER_SETTING,
 } from '../../../../../../snyk/common/constants/settings';
 import { ALLISSUES, NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
 import {
