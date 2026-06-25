@@ -17,6 +17,7 @@ import {
   mapLspSettingsToVscodeSettings,
   SETTINGS_REGISTRY,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
+import { isThenable } from '../../../tsUtil';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
@@ -451,6 +452,32 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
         this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
         this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
+        // D1 fix: seed the last-known value for the reset key so the subsequent
+        // applySettingsMap write (for non-reset siblings sharing the same VS Code
+        // setting) does NOT cold-cache-mark committedSinceReset for this key.
+        //
+        // After the VS Code global override is cleared, the registry resolver returns
+        // the post-reset value (workspace/default resolution).  Seeding it here means
+        // the fan-out guard sees a warm cache and only marks committedSinceReset if
+        // the resolver value actually changed — preventing shouldSkipReenqueue from
+        // suppressing a legitimate re-enqueue of this key on fromConfiguration failure.
+        //
+        // Only sync resolvers are seeded (Promise results are skipped — those keys
+        // do not appear in multi-key fan-out groups and fall back to cold-cache marking,
+        // which is the conservative pre-fix behaviour and is safe for single-key groups).
+        //
+        // Timing assumption: this.configuration resolves live VS Code state immediately
+        // after updateConfiguration resolves (not a memoized cache). If a resolver ever
+        // adds memoization this must be restructured to read VS Code directly instead.
+        if (this.explicitLspConfigurationChangeTracker) {
+          const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+          if (entry) {
+            const resolved = entry.resolve(this.configuration);
+            if (!isThenable(resolved)) {
+              this.explicitLspConfigurationChangeTracker.setLastKnownValue(lsKey, resolved);
+            }
+          }
+        }
         this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
       });
     } finally {

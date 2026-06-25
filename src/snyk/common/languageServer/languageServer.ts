@@ -26,8 +26,10 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { LanguageClientMiddleware } from './middleware';
+import { LanguageClientMiddleware, shouldSkipReenqueue } from './middleware';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
+import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
+import { isThenable } from '../tsUtil';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
@@ -340,7 +342,29 @@ export class LanguageServer implements ILanguageServer {
       if (this.suppressConfigFeedbackFromInboundPersistence || this.outboundResetSuppressor.isActive) {
         return;
       }
-      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
+      // ADR-2: pass a sync value resolver so the fan-out path can value-compare each
+      // sibling sub-key and only mark committedSinceReset for the sub-keys that actually
+      // changed (not blindly for all siblings sharing the same VS Code setting).
+      // If a resolver returns a Promise (e.g. token, cliPath), the result is treated as
+      // undefined — the fan-out cache misses and marks conservatively (correct: those keys
+      // do not appear in multi-key fan-out groups).
+      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker, lsKey => {
+        const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+        if (!entry) return undefined;
+        let result: unknown;
+        try {
+          result = entry.resolve(this.configuration);
+        } catch {
+          // A resolver that throws during partial init is treated as "value unknown" —
+          // the same conservative undefined already handled downstream.
+          this.logger.debug(`currentValueOf: resolver for lsKey "${lsKey}" threw; treating as value-unknown`);
+          return undefined;
+        }
+        // Only use sync results for value-comparison; async (Thenable) results resolve
+        // after the event handler returns, so treat them as undefined (conservative).
+        if (isThenable(result)) return undefined;
+        return result;
+      });
     });
     return this.configurationChangeDisposable;
   }
@@ -539,11 +563,16 @@ export class LanguageServer implements ILanguageServer {
       );
     } catch (err) {
       // fromConfiguration failed after consumePendingResets() already drained the set.
-      // The tracker notes this loss is benign (the VS Code override is already cleared, so the
-      // next sync emits the default), but we re-enqueue the drained keys anyway for prompt,
-      // deterministic delivery on the next getInitializationOptions call.
+      // Re-enqueue keys for prompt, deterministic delivery on the next getInitializationOptions
+      // call — but only if the user has NOT committed a concrete value for this key since the drain.
+      //
+      // ADR-2: use the shared `shouldSkipReenqueue` predicate (reads `committedSinceReset`,
+      // not `isExplicitlyChanged`) so both call sites stay in sync and the guard answers the
+      // correct transient, windowed, per-LS-key question.
       for (const key of pendingResets) {
-        this.explicitLspConfigurationChangeTracker.markPendingReset(key);
+        if (!shouldSkipReenqueue(key, this.explicitLspConfigurationChangeTracker)) {
+          this.explicitLspConfigurationChangeTracker.markPendingReset(key);
+        }
       }
       throw err;
     }

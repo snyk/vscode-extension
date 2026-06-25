@@ -34,6 +34,7 @@ import {
   type IConfigFeedbackSuppressor,
 } from '../../../../../../snyk/common/languageServer/configFeedbackSuppressor';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { markExplicitLsKeysFromConfigurationChangeEvent } from '../../../../../../snyk/common/languageServer/explicitLsKeyTracking';
 
 suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let workspace: IVSCodeWorkspace;
@@ -602,6 +603,8 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
   class FakeTracker implements IExplicitLspConfigurationChangeTracker {
     private readonly keys = new Set<string>();
     private readonly pending = new Set<string>();
+    private readonly committed = new Set<string>();
+    private readonly lastKnown = new Map<string, unknown>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -613,11 +616,27 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     }
     markPendingReset(lsKey: string): void {
       this.pending.add(lsKey);
+      this.committed.delete(lsKey);
     }
     consumePendingResets(): Set<string> {
       const snap = new Set(this.pending);
       this.pending.clear();
       return snap;
+    }
+    markCommittedSinceReset(lsKey: string): void {
+      this.committed.add(lsKey);
+    }
+    committedSinceReset(lsKey: string): boolean {
+      return this.committed.has(lsKey);
+    }
+    hasLastKnownValue(lsKey: string): boolean {
+      return this.lastKnown.has(lsKey);
+    }
+    getLastKnownValue(lsKey: string): unknown {
+      return this.lastKnown.get(lsKey);
+    }
+    setLastKnownValue(lsKey: string, value: unknown): void {
+      this.lastKnown.set(lsKey, value);
     }
   }
 
@@ -862,6 +881,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
   class FakeTracker2 implements IExplicitLspConfigurationChangeTracker {
     private readonly explicitKeys = new Set<string>();
     private readonly pendingResets = new Set<string>();
+    private readonly committed = new Set<string>();
+    private readonly lastKnown = new Map<string, unknown>();
 
     markExplicitlyChanged(lsKey: string): void {
       this.explicitKeys.add(lsKey);
@@ -874,11 +895,27 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     }
     markPendingReset(lsKey: string): void {
       this.pendingResets.add(lsKey);
+      this.committed.delete(lsKey);
     }
     consumePendingResets(): Set<string> {
       const snap = new Set(this.pendingResets);
       this.pendingResets.clear();
       return snap;
+    }
+    markCommittedSinceReset(lsKey: string): void {
+      this.committed.add(lsKey);
+    }
+    committedSinceReset(lsKey: string): boolean {
+      return this.committed.has(lsKey);
+    }
+    hasLastKnownValue(lsKey: string): boolean {
+      return this.lastKnown.has(lsKey);
+    }
+    getLastKnownValue(lsKey: string): unknown {
+      return this.lastKnown.get(lsKey);
+    }
+    setLastKnownValue(lsKey: string, value: unknown): void {
+      this.lastKnown.set(lsKey, value);
     }
   }
 
@@ -1188,6 +1225,285 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
   });
 });
 
+// ── D1 regression guard: setLastKnownValue seeded in applyOutboundGlobalResets ─
+//
+// The D1 fix seeds the last-known value for each reset key immediately after the
+// VS Code override is cleared (in the applyVscodeKeyResets onWriteSuccess callback).
+// This prevents the subsequent applySettingsMap fan-out from cold-cache-marking
+// committedSinceReset for that key.
+//
+// This integration-style test drives the real outbound reset path (handleSaveConfig
+// with a null-valued field) and asserts that setLastKnownValue was called for each
+// reset key with the post-reset resolved value. It goes RED when the seeding call is
+// removed from the onWriteSuccess lambda in applyOutboundGlobalResets.
+suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after outbound reset', () => {
+  /** Tracker that records setLastKnownValue calls. */
+  class SpyTracker implements IExplicitLspConfigurationChangeTracker {
+    private readonly keys = new Set<string>();
+    private readonly pending = new Set<string>();
+    private readonly committed = new Set<string>();
+    private readonly lastKnown = new Map<string, unknown>();
+    readonly setLastKnownValueCalls: Array<{ lsKey: string; value: unknown }> = [];
+
+    markExplicitlyChanged(lsKey: string): void {
+      this.keys.add(lsKey);
+    }
+    unmarkExplicitlyChanged(lsKey: string): void {
+      this.keys.delete(lsKey);
+    }
+    isExplicitlyChanged(lsKey: string): boolean {
+      return this.keys.has(lsKey);
+    }
+    markPendingReset(lsKey: string): void {
+      this.pending.add(lsKey);
+      this.committed.delete(lsKey);
+    }
+    consumePendingResets(): Set<string> {
+      const snap = new Set(this.pending);
+      this.pending.clear();
+      return snap;
+    }
+    markCommittedSinceReset(lsKey: string): void {
+      this.committed.add(lsKey);
+    }
+    committedSinceReset(lsKey: string): boolean {
+      return this.committed.has(lsKey);
+    }
+    hasLastKnownValue(lsKey: string): boolean {
+      return this.lastKnown.has(lsKey);
+    }
+    getLastKnownValue(lsKey: string): unknown {
+      return this.lastKnown.get(lsKey);
+    }
+    setLastKnownValue(lsKey: string, value: unknown): void {
+      this.lastKnown.set(lsKey, value);
+      this.setLastKnownValueCalls.push({ lsKey, value });
+    }
+  }
+
+  let updateConfigurationStub: sinon.SinonStub;
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let tracker: SpyTracker;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+      getFeaturesConfiguration: sinon.stub().returns({
+        ossEnabled: true,
+        codeSecurityEnabled: true,
+        iacEnabled: true,
+        secretsEnabled: true,
+      }),
+      scanningMode: 'auto',
+      organization: 'pre-reset-org',
+      snykApiEndpoint: 'https://api.snyk.io',
+      getInsecure: sinon.stub().returns(false),
+      getAuthenticationMethod: sinon.stub().returns('oauth'),
+      getDeltaFindingsEnabled: sinon.stub().returns(false),
+      getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
+      getAdditionalCliParameters: sinon.stub().returns(''),
+      getAdditionalCliEnvironment: sinon.stub().returns(undefined),
+      getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
+      getAutoConfigureMcpServer: sinon.stub().returns(false),
+      severityFilter: {},
+      issueViewOptions: {},
+      riskScoreThreshold: 0,
+      getTrustedFolders: sinon.stub().returns([]),
+      getCliPath: sinon.stub().resolves(''),
+      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+      getCliBaseDownloadUrl: sinon.stub().returns(''),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+
+    tracker = new SpyTracker();
+  });
+
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+      undefined,
+      tracker,
+    );
+  }
+
+  // D1 integration guard: setLastKnownValue must be called for the reset key with the
+  // post-reset resolved value. The organization resolver returns configuration.organization
+  // (a sync string). Removing the seeding call in applyOutboundGlobalResets makes this fail.
+  test('D1-integration: handleSaveConfig calls setLastKnownValue for the reset key with post-reset resolved value', async () => {
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.organization]: null,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    // setLastKnownValue must have been called for the reset key.
+    const seedCall = tracker.setLastKnownValueCalls.find(c => c.lsKey === LS_GLOBAL_KEY.organization);
+    assert.ok(
+      seedCall !== undefined,
+      'D1-integration: setLastKnownValue must be called for the organization reset key in the ' +
+        'onWriteSuccess callback of applyOutboundGlobalResets. ' +
+        'FAIL here means the D1 seeding call was removed — the subsequent applySettingsMap fan-out ' +
+        'will cold-cache-mark committedSinceReset for this key, suppressing re-enqueue of pending resets.',
+    );
+
+    // The seeded value must be the post-reset resolved value from SETTINGS_REGISTRY[org].resolve(config).
+    // For organization: resolve = c => c.organization = 'pre-reset-org' (the live config value).
+    assert.strictEqual(
+      seedCall.value,
+      'pre-reset-org',
+      'D1-integration: the seeded lastKnownValue must equal the post-reset resolved value ' +
+        '(SETTINGS_REGISTRY.organization.resolve(configuration) = configuration.organization). ' +
+        'FAIL here means the wrong value was seeded — the fan-out guard will still cold-cache-mark ' +
+        'committedSinceReset if the seeded value does not match the resolver output.',
+    );
+  });
+
+  // D1 fan-out guard (severity fan-out): the REAL defect class is fan-out keys.
+  //
+  // Scenario: all four severity_filter_* keys are reset via handleSaveConfig (null values).
+  // The D1 fix seeds lastKnownValue for each key immediately after the VS Code override clear.
+  // A subsequent snyk.severity onDidChangeConfiguration fan-out fires; the resolver returns
+  // the post-reset values (same as seeded). Because the cache is warm and the value is unchanged,
+  // committedSinceReset must NOT be marked for any of the four reset keys.
+  //
+  // This test goes RED when the seeding block in applyOutboundGlobalResets is removed for fan-out
+  // keys: without the seed, the cache is cold → the cold-cache guard fires → committedSinceReset
+  // IS marked → shouldSkipReenqueue returns true → the pending reset is permanently dropped.
+  //
+  // Uses the REAL ExplicitLspConfigurationChangeTracker (not a fake) so the production guard
+  // logic (hasLastKnownValue + lodash isEqual) is exercised directly.
+  test('D1-fanout-severity: after outbound severity reset, post-reset fan-out does NOT mark committedSinceReset for reset keys', async () => {
+    // Make a real in-memory Memento for the real tracker.
+    const store = new Map<string, unknown>();
+    const memento: import('vscode').Memento = {
+      get<T>(key: string, defaultValue?: T): T {
+        return (store.has(key) ? store.get(key) : defaultValue) as T;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        store.set(key, value);
+        return Promise.resolve();
+      },
+      keys(): readonly string[] {
+        return [...store.keys()];
+      },
+    };
+    const realTracker = new ExplicitLspConfigurationChangeTracker(memento);
+
+    // Build a service with the real tracker. Configuration has severityFilter: {} so
+    // resolve() falls back to `?? true` for all severity sub-keys.
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+      undefined,
+      realTracker,
+    );
+
+    // Reset all four severity_filter_* keys — this triggers the D1 seeding path for fan-out keys.
+    // Each key's onWriteSuccess seeds lastKnownValue with the resolved value (true for all,
+    // via `configuration.severityFilter?.critical ?? true` etc. with severityFilter:{}).
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.severityFilterCritical]: null,
+      [LS_GLOBAL_KEY.severityFilterHigh]: null,
+      [LS_GLOBAL_KEY.severityFilterMedium]: null,
+      [LS_GLOBAL_KEY.severityFilterLow]: null,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    // Post-reset precondition: markPendingReset clears committedSinceReset for each key.
+    assert.ok(
+      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
+      'D1-fanout-severity precondition: committedSinceReset must be false after reset (markPendingReset cleared it)',
+    );
+
+    // Fire the production fan-out: snyk.severity onDidChangeConfiguration.
+    // Resolver returns the post-reset resolved values (same as seeded: true for all keys,
+    // from configuration.severityFilter?.* ?? true with severityFilter:{}).
+    const postResetValues: Record<string, unknown> = {
+      [LS_GLOBAL_KEY.severityFilterCritical]: true,
+      [LS_GLOBAL_KEY.severityFilterHigh]: true,
+      [LS_GLOBAL_KEY.severityFilterMedium]: true,
+      [LS_GLOBAL_KEY.severityFilterLow]: true,
+    };
+    const fakeEvent = {
+      affectsConfiguration(key: string): boolean {
+        return key === 'snyk.severity';
+      },
+    };
+    markExplicitLsKeysFromConfigurationChangeEvent(fakeEvent, realTracker, lsKey => postResetValues[lsKey]);
+
+    // With the D1 seed: cache is warm (seeded to true), resolver returns true (unchanged).
+    // Production guard: cacheWasCold=false, isEqual(true, true)=true → does NOT mark committedSinceReset.
+    // Without the D1 seed: cache is cold → cacheWasCold=true → marks committedSinceReset → pending reset dropped.
+    assert.ok(
+      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
+      'D1-fanout-severity: severity_filter_critical must NOT be marked committedSinceReset after warm-cache fan-out. ' +
+        'FAIL here means the D1 seeding was skipped for fan-out keys — the cold-cache guard fired and the pending reset will be dropped.',
+    );
+    assert.ok(
+      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh),
+      'D1-fanout-severity: severity_filter_high must NOT be marked committedSinceReset after warm-cache fan-out.',
+    );
+    assert.ok(
+      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium),
+      'D1-fanout-severity: severity_filter_medium must NOT be marked committedSinceReset after warm-cache fan-out.',
+    );
+    assert.ok(
+      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow),
+      'D1-fanout-severity: severity_filter_low must NOT be marked committedSinceReset after warm-cache fan-out.',
+    );
+  });
+});
+
 // ── FIX 1: applyGlobalResets (INBOUND) must be scoped to GLOBAL_RESET_FIELDS ─
 // A key NOT in GLOBAL_RESET_FIELDS that arrives as { value: null, changed: true }
 // must NOT trigger updateConfiguration(..., undefined, ...) and must NOT be
@@ -1216,6 +1532,21 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
     }
     consumePendingResets(): Set<string> {
       return new Set();
+    }
+    markCommittedSinceReset(_lsKey: string): void {
+      /* no-op */
+    }
+    committedSinceReset(_lsKey: string): boolean {
+      return false;
+    }
+    hasLastKnownValue(_lsKey: string): boolean {
+      return false;
+    }
+    getLastKnownValue(_lsKey: string): unknown {
+      return undefined;
+    }
+    setLastKnownValue(_lsKey: string, _value: unknown): void {
+      /* no-op */
     }
   }
 
@@ -1516,6 +1847,8 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
   class FakeTrackerFix1 implements IExplicitLspConfigurationChangeTracker {
     private readonly keys = new Set<string>();
     private readonly pending = new Set<string>();
+    private readonly committed = new Set<string>();
+    private readonly lastKnown = new Map<string, unknown>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -1527,11 +1860,27 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
     }
     markPendingReset(lsKey: string): void {
       this.pending.add(lsKey);
+      this.committed.delete(lsKey);
     }
     consumePendingResets(): Set<string> {
       const snap = new Set(this.pending);
       this.pending.clear();
       return snap;
+    }
+    markCommittedSinceReset(lsKey: string): void {
+      this.committed.add(lsKey);
+    }
+    committedSinceReset(lsKey: string): boolean {
+      return this.committed.has(lsKey);
+    }
+    hasLastKnownValue(lsKey: string): boolean {
+      return this.lastKnown.has(lsKey);
+    }
+    getLastKnownValue(lsKey: string): unknown {
+      return this.lastKnown.get(lsKey);
+    }
+    setLastKnownValue(lsKey: string, value: unknown): void {
+      this.lastKnown.set(lsKey, value);
     }
   }
 

@@ -11,6 +11,7 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageServer } from '../../../../snyk/common/languageServer/languageServer';
+import { SETTINGS_REGISTRY } from '../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
 import { LS_GLOBAL_KEY, LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { DownloadService } from '../../../../snyk/common/services/downloadService';
 import { User } from '../../../../snyk/common/user';
@@ -61,6 +62,11 @@ suite('Language Server', () => {
     isExplicitlyChanged: () => true,
     markPendingReset: sinon.stub(),
     consumePendingResets: sinon.stub().returns(new Set<string>()),
+    committedSinceReset: () => false,
+    markCommittedSinceReset: sinon.stub(),
+    hasLastKnownValue: () => false,
+    getLastKnownValue: () => undefined,
+    setLastKnownValue: sinon.stub(),
   };
 
   const createFakeLanguageServer = (
@@ -312,6 +318,11 @@ suite('Language Server', () => {
       isExplicitlyChanged: () => true,
       markPendingReset: sinon.stub(),
       consumePendingResets: sinon.stub().returns(new Set<string>()),
+      committedSinceReset: () => false,
+      markCommittedSinceReset: sinon.stub(),
+      hasLastKnownValue: () => false,
+      getLastKnownValue: () => undefined,
+      setLastKnownValue: sinon.stub(),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -371,6 +382,11 @@ suite('Language Server', () => {
       isExplicitlyChanged: () => true,
       markPendingReset: sinon.stub(),
       consumePendingResets: sinon.stub().returns(new Set<string>()),
+      committedSinceReset: () => false,
+      markCommittedSinceReset: sinon.stub(),
+      hasLastKnownValue: () => false,
+      getLastKnownValue: () => undefined,
+      setLastKnownValue: sinon.stub(),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -430,6 +446,11 @@ suite('Language Server', () => {
       isExplicitlyChanged: () => true,
       markPendingReset: sinon.stub(),
       consumePendingResets: sinon.stub().returns(new Set<string>()),
+      committedSinceReset: () => false,
+      markCommittedSinceReset: sinon.stub(),
+      hasLastKnownValue: () => false,
+      getLastKnownValue: () => undefined,
+      setLastKnownValue: sinon.stub(),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const onDidChangeConfigurationStub = sinon.stub().callsFake((fn: typeof configListener) => {
@@ -476,6 +497,125 @@ suite('Language Server', () => {
     sinon.assert.calledOnce(onDidChangeConfigurationStub);
     sinon.assert.called(markStub);
     sinon.assert.notCalled(createStub);
+  });
+
+  test('resolver throw in currentValueOf does not prevent sibling LS keys from being marked', async () => {
+    // This test covers the loop-continuity guarantee: the lambda passed to
+    // markExplicitLsKeysFromConfigurationChangeEvent as currentValueOf must not let a
+    // synchronous throw from entry.resolve() escape and abort processing of the remaining
+    // LS keys in the same event.
+    //
+    // We use the severity fan-out group (four LS keys share snyk.severity) so we can:
+    //   - make severityFilterCritical.resolve throw
+    //   - pre-warm the cache for severityFilterHigh with its current value (true) so that
+    //     its "newValue === oldValue" comparison suppresses markCommittedSinceReset — proving
+    //     the selectivity of the fan-out path (the assertion is not vacuously true)
+    //   - assert severityFilterMedium IS still marked committedSinceReset (loop continuity)
+    //   - assert severityFilterHigh is NOT marked committedSinceReset (value unchanged, warm cache)
+    //
+    // The mock configurationMock has severityFilter: DEFAULT_SEVERITY_FILTER = {critical:true,
+    // high:true, medium:true, low:true}, so severityFilterHigh.resolve returns true.
+    // By returning hasLastKnownValue=true and getLastKnownValue=true for severityFilterHigh,
+    // the fan-out path sees cacheWasCold=false and isEqual(true,true)=true → does NOT call
+    // markCommittedSinceReset for that key.  If the try/catch were removed and the throw from
+    // severityFilterCritical escaped, the loop would abort before reaching severityFilterMedium,
+    // and the sinon.assert.calledWith(markCommittedSinceResetStub, severityFilterMedium) would fail.
+    const markCommittedSinceResetStub = sinon.stub();
+    const markExplicitlyChangedStub = sinon.stub();
+
+    // severityFilterHigh gets a warm cache returning the same value as its resolver (true).
+    // All other keys get a cold cache (hasLastKnownValue returns false) so they ARE marked.
+    const warmKey = LS_GLOBAL_KEY.severityFilterHigh;
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: markExplicitlyChangedStub,
+      unmarkExplicitlyChanged: sinon.stub(),
+      isExplicitlyChanged: () => true,
+      markPendingReset: sinon.stub(),
+      consumePendingResets: sinon.stub().returns(new Set<string>()),
+      committedSinceReset: () => false,
+      markCommittedSinceReset: markCommittedSinceResetStub,
+      hasLastKnownValue: (lsKey: string) => lsKey === warmKey,
+      getLastKnownValue: (lsKey: string) => (lsKey === warmKey ? true : undefined),
+      setLastKnownValue: sinon.stub(),
+    };
+
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const adapter = {
+      create(): LanguageClient {
+        return {
+          start: sinon.stub().resolves(),
+          onNotification(): void {
+            return;
+          },
+          onReady: sinon.stub().resolves(),
+          sendNotification: sinon.stub().resolves(),
+        } as unknown as LanguageClient;
+      },
+    } as unknown as ILanguageClientAdapter;
+
+    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
+    const workspace = {
+      ...baseWorkspace,
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+    } as IVSCodeWorkspace;
+
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+      sinon.stub().resolves(),
+      undefined,
+      new ConfigFeedbackSuppressor(),
+    );
+    downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
+
+    // Patch the resolver AFTER start() so getInitializationOptions (called during start)
+    // is unaffected. We only want the throw to occur in the onDidChangeConfiguration path.
+    const originalCriticalResolve = SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve;
+    SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = () => {
+      throw new Error('resolver boom');
+    };
+
+    try {
+      // Trigger a snyk.severity change — all four severity LS keys share that VS Code key.
+      configListener({ affectsConfiguration: (s: string) => s === 'snyk.severity' });
+
+      // PRIMARY ASSERTION (loop continuity): despite severityFilterCritical.resolve throwing,
+      // severityFilterMedium must still be marked in both cumulative and windowed signals.
+      // If the try/catch is removed the throw escapes and aborts the loop — this fails RED.
+      sinon.assert.calledWith(markExplicitlyChangedStub, LS_GLOBAL_KEY.severityFilterMedium);
+      sinon.assert.calledWith(markCommittedSinceResetStub, LS_GLOBAL_KEY.severityFilterMedium);
+
+      // SELECTIVITY ASSERTION (non-vacuous committedSinceReset): severityFilterHigh has a
+      // warm cache whose value matches its current resolver output (true === true), so the
+      // fan-out path must NOT mark it committedSinceReset.  Without the warm-cache setup,
+      // cacheWasCold would always be true and this assertion would pass vacuously.
+      sinon.assert.neverCalledWith(markCommittedSinceResetStub, LS_GLOBAL_KEY.severityFilterHigh);
+
+      // Cumulative signal IS still marked for severityFilterHigh (markExplicitlyChanged is
+      // unconditional in the fan-out path — it drives changed:true regardless of value).
+      sinon.assert.calledWith(markExplicitlyChangedStub, LS_GLOBAL_KEY.severityFilterHigh);
+    } finally {
+      // Restore the original resolver regardless of test outcome.
+      SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalCriticalResolve;
+    }
   });
 
   suite('parseProtocolVersionOutput', () => {
@@ -610,6 +750,11 @@ suite('Language Server', () => {
         isExplicitlyChanged: () => false,
         markPendingReset: sinon.stub(),
         consumePendingResets: consumePendingResetsStub,
+        committedSinceReset: () => false,
+        markCommittedSinceReset: sinon.stub(),
+        hasLastKnownValue: () => false,
+        getLastKnownValue: () => undefined,
+        setLastKnownValue: sinon.stub(),
       };
 
       const mockLanguageClientAdapter = {
@@ -658,6 +803,11 @@ suite('Language Server', () => {
         isExplicitlyChanged: () => false,
         markPendingReset: markPendingResetStub,
         consumePendingResets: sinon.stub().returns(new Set<string>([LS_GLOBAL_KEY.organization])),
+        committedSinceReset: () => false,
+        markCommittedSinceReset: sinon.stub(),
+        hasLastKnownValue: () => false,
+        getLastKnownValue: () => undefined,
+        setLastKnownValue: sinon.stub(),
       };
 
       // Stub fromConfiguration to reject after consumePendingResets has drained the set.
@@ -696,6 +846,68 @@ suite('Language Server', () => {
 
       // The drained key must have been re-enqueued via markPendingReset so the next init retries.
       sinon.assert.calledWith(markPendingResetStub, LS_GLOBAL_KEY.organization);
+    });
+
+    test('getInitializationOptions does not re-enqueue a pending reset key that was explicitly changed during the await gap', async () => {
+      // Arrange: two keys pending reset — 'organization' and 'cliPath'.
+      // Simulate the race: consumePendingResets drained the live set, then during the
+      // await gap the user re-edited 'organization' (committedSinceReset returns true for it).
+      // 'cliPath' was NOT re-edited (committedSinceReset returns false).
+      // ADR-2: the guard reads committedSinceReset, not isExplicitlyChanged.
+      const markPendingResetStub = sinon.stub();
+      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
+        markExplicitlyChanged: sinon.stub(),
+        unmarkExplicitlyChanged: sinon.stub(),
+        isExplicitlyChanged: sinon.stub().returns(false),
+        markPendingReset: markPendingResetStub,
+        consumePendingResets: sinon
+          .stub()
+          .returns(new Set<string>([LS_GLOBAL_KEY.organization, LS_GLOBAL_KEY.cliPath])),
+        committedSinceReset: (key: string) => key === LS_GLOBAL_KEY.organization,
+        markCommittedSinceReset: sinon.stub(),
+        hasLastKnownValue: () => false,
+        getLastKnownValue: () => undefined,
+        setLastKnownValue: sinon.stub(),
+      };
+
+      const fromConfigError = new Error('fromConfiguration failed during race (getInitializationOptions)');
+      sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
+
+      const mockLanguageClientAdapter = {
+        create: sinon.stub().returns({ start: sinon.stub().resolves() }),
+        getLanguageClient: sinon.stub().returns({ start: sinon.stub().resolves() }),
+      };
+
+      const ls = new LanguageServer(
+        user,
+        configurationMock,
+        mockLanguageClientAdapter,
+        {} as IVSCodeWorkspace,
+        new WindowMock(),
+        authServiceMock,
+        logger,
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        pendingResetTracker,
+        sinon.stub().resolves(),
+        undefined,
+        new ConfigFeedbackSuppressor(),
+      );
+
+      // Act + Assert: must throw, AND only the key that was NOT re-edited gets re-enqueued.
+      await assert.rejects(() => ls.getInitializationOptions(), fromConfigError);
+
+      // 'cliPath' was NOT re-edited → must be re-enqueued so the next init retries.
+      sinon.assert.calledWith(markPendingResetStub, LS_GLOBAL_KEY.cliPath);
+      // 'organization' WAS re-edited with a concrete value → must NOT be re-enqueued,
+      // or the pending reset would clobber the user's new concrete value on the next init.
+      sinon.assert.neverCalledWith(markPendingResetStub, LS_GLOBAL_KEY.organization);
     });
 
     test('pending reset is delivered exactly once: middleware pull drains; getInitializationOptions does not re-deliver', async () => {

@@ -7,7 +7,10 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { seedExplicitChangesFromExistingSettings } from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
+import {
+  markExplicitLsKeysFromConfigurationChangeEvent,
+  seedExplicitChangesFromExistingSettings,
+} from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { LS_GLOBAL_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
@@ -18,6 +21,8 @@ import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 class FakeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly keys = new Set<string>();
   private readonly pending = new Set<string>();
+  private readonly committed = new Set<string>();
+  private readonly lastKnown = new Map<string, unknown>();
 
   markExplicitlyChanged(lsKey: string): void {
     this.keys.add(lsKey);
@@ -33,12 +38,29 @@ class FakeTracker implements IExplicitLspConfigurationChangeTracker {
 
   markPendingReset(lsKey: string): void {
     this.pending.add(lsKey);
+    this.committed.delete(lsKey);
   }
 
   consumePendingResets(): Set<string> {
     const snap = new Set(this.pending);
     this.pending.clear();
     return snap;
+  }
+
+  markCommittedSinceReset(lsKey: string): void {
+    this.committed.add(lsKey);
+  }
+  committedSinceReset(lsKey: string): boolean {
+    return this.committed.has(lsKey);
+  }
+  hasLastKnownValue(lsKey: string): boolean {
+    return this.lastKnown.has(lsKey);
+  }
+  getLastKnownValue(lsKey: string): unknown {
+    return this.lastKnown.get(lsKey);
+  }
+  setLastKnownValue(lsKey: string, value: unknown): void {
+    this.lastKnown.set(lsKey, value);
   }
 
   allKeys(): Set<string> {
@@ -280,6 +302,122 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // ── Integration-style suite (CP2) ─────────────────────────────────────────
 
+  suite('markExplicitLsKeysFromConfigurationChangeEvent (ADR-2 windowed signal)', () => {
+    /** Fake ConfigurationChangeEvent that reports all keys as affected. */
+    function fakeEvent(affectedVscodeKeys: string[]): { affectsConfiguration(key: string): boolean } {
+      return {
+        affectsConfiguration(key: string): boolean {
+          return affectedVscodeKeys.includes(key);
+        },
+      };
+    }
+
+    // Import the severity vscodeKey from the registry so the test does not hard-code the string.
+    // The severity fan-out group shares one VS Code key: 'snyk.severity'.
+    const SEVERITY_VSCODE_KEY = 'snyk.severity';
+
+    test('fan-out: only the sibling whose value changed is marked in committedSinceReset', () => {
+      const tracker = new FakeTracker();
+
+      // Pre-populate lastKnownValues: high=true, low=true (cached from previous call).
+      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterHigh, true);
+      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterLow, true);
+      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterMedium, true);
+      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterCritical, true);
+
+      // User edited: medium becomes false; the others stay the same.
+      const currentValues: Record<string, unknown> = {
+        [LS_GLOBAL_KEY.severityFilterCritical]: true,
+        [LS_GLOBAL_KEY.severityFilterHigh]: true,
+        [LS_GLOBAL_KEY.severityFilterMedium]: false, // changed!
+        [LS_GLOBAL_KEY.severityFilterLow]: true,
+      };
+
+      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
+      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, lsKey => currentValues[lsKey]);
+
+      // All siblings get the cumulative mark (isExplicitlyChanged).
+      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical), 'critical: cumulative marked');
+      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh), 'high: cumulative marked');
+      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium), 'medium: cumulative marked');
+      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow), 'low: cumulative marked');
+
+      // Only the sibling that CHANGED gets the windowed signal.
+      assert.ok(
+        !tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
+        'critical: NOT committed (unchanged)',
+      );
+      assert.ok(!tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: NOT committed (unchanged)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: committed (value changed)');
+      assert.ok(!tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: NOT committed (unchanged)');
+    });
+
+    test('fan-out: cold cache (no prior lastKnownValue) conservatively marks committedSinceReset', () => {
+      const tracker = new FakeTracker();
+      // No pre-seeded lastKnownValues — all return undefined.
+
+      const currentValues: Record<string, unknown> = {
+        [LS_GLOBAL_KEY.severityFilterCritical]: true,
+        [LS_GLOBAL_KEY.severityFilterHigh]: true,
+        [LS_GLOBAL_KEY.severityFilterMedium]: true,
+        [LS_GLOBAL_KEY.severityFilterLow]: true,
+      };
+
+      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
+      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, lsKey => currentValues[lsKey]);
+
+      // Cold cache (oldValue undefined) → all siblings conservatively marked.
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical), 'critical: marked (cold cache)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: marked (cold cache)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: marked (cold cache)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: marked (cold cache)');
+    });
+
+    test('single-LS-key setting: always marks both signals regardless of value change', () => {
+      const tracker = new FakeTracker();
+
+      // organization maps to a single LS key.  Pre-seed lastKnownValue with the same value.
+      tracker.setLastKnownValue(LS_GLOBAL_KEY.organization, 'my-org');
+
+      const e = fakeEvent(['snyk.advanced.organization']);
+      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, _lsKey => 'my-org');
+
+      // VS Code only fires the event when value changed, so we always mark both signals.
+      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization), 'org: cumulative marked');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.organization), 'org: windowed signal marked');
+    });
+
+    test('without currentValueOf: all matching LS keys marked in both signals', () => {
+      const tracker = new FakeTracker();
+
+      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
+      // No currentValueOf → falls back to pre-ADR-2 behaviour (marks all).
+      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker);
+
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical), 'critical: marked (no resolver)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: marked (no resolver)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: marked (no resolver)');
+      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: marked (no resolver)');
+    });
+
+    test('lastKnownValues cache updated after call', () => {
+      const tracker = new FakeTracker();
+
+      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
+      const resolver = (lsKey: string): unknown => (lsKey === LS_GLOBAL_KEY.severityFilterMedium ? false : true);
+
+      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, resolver);
+
+      // The cache should now hold the new values from the resolver.
+      assert.strictEqual(
+        tracker.getLastKnownValue(LS_GLOBAL_KEY.severityFilterMedium),
+        false,
+        'medium cached as false',
+      );
+      assert.strictEqual(tracker.getLastKnownValue(LS_GLOBAL_KEY.severityFilterHigh), true, 'high cached as true');
+    });
+  });
+
   suite('integration: seeded org produces changed:true via LanguageServerSettings.fromConfiguration', () => {
     // T9: seeded org/endpoint → changed:true; untouched setting → changed:false
     test('T9: seeded org produces changed:true; untouched api endpoint produces changed:false', async () => {
@@ -349,3 +487,13 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     });
   });
 });
+
+// D1a and D1b were removed: their coverage is subsumed by stronger tests elsewhere.
+// D1a was vacuous (only asserted typeof hasLastKnownValue === 'function').
+// D1b (warm-cache fan-out guard with FakeTracker) is now subsumed by two stronger tests:
+//   - 'ConfigurationPersistenceService — D1: setLastKnownValue seeded after outbound reset'
+//     in configurationPersistenceService.test.ts (goes RED when the seeding call is deleted)
+//   - 'D1-fanout-severity' in the same file (real tracker, real handleSaveConfig + real fan-out,
+//     goes RED if D1 seeding is skipped for fan-out keys)
+//   - 'D2' in explicitLspConfigurationChangeTracker.test.ts (real tracker, warm-cache-undefined
+//     → not marked, uses the production guard directly)
