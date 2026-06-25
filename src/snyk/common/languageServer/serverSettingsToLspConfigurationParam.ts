@@ -16,6 +16,7 @@ export const LS_GLOBAL_KEY = {
   authenticationMethod: 'authentication_method',
   automaticAuthentication: 'automatic_authentication',
   additionalParameters: 'additional_parameters',
+  additionalEnvironment: 'additional_environment',
   snykCodeEnabled: 'snyk_code_enabled',
   snykOssEnabled: 'snyk_oss_enabled',
   snykIacEnabled: 'snyk_iac_enabled',
