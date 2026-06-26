@@ -16,6 +16,7 @@ import { IHtmlInjectionService } from './services/htmlInjectionService';
 import { IScopeDetectionService } from './services/scopeDetectionService';
 import { IMessageHandlerFactory } from './handlers/messageHandlerFactory';
 import { lsKeyToVscodeKey } from '../../languageServer/lsKeyToVscodeKeyMap';
+import type { LspFolderConfiguration } from '../../languageServer/types';
 const SNYK_VIEW_WORKSPACE_CONFIGURATION = 'snyk.views.workspaceConfiguration';
 const WORKSPACE_CONFIGURATION_PANEL_TITLE = 'Snyk Workspace Configuration';
 
@@ -172,6 +173,21 @@ export class WorkspaceConfigurationWebviewProvider
       undefined,
       this.disposables,
     );
+  }
+
+  // applyInboundFolderConfig pushes inbound per-folder config (e.g. severity / issue-view / delta
+  // filters changed via the tree-view toolbar) to an open settings webview so it reflects them
+  // without being reopened. Field-agnostic: it forwards the whole folderConfigs payload and the
+  // LS-served page applies the relevant controls silently (no autosave / feedback loop), preserving
+  // other in-progress edits. No-op when the panel isn't open. (IDE-1866)
+  public applyInboundFolderConfig(folderConfigs: LspFolderConfiguration[] | undefined): void {
+    if (!this.panel) {
+      return;
+    }
+    void this.panel.webview.postMessage({
+      type: 'applyInboundFolderConfig',
+      folderConfigs,
+    });
   }
 
   public setAuthToken(token: string, apiUrl?: string): void {

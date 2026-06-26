@@ -76,4 +76,17 @@ suite('HtmlInjectionService', () => {
       'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
     );
   });
+
+  test('injectIdeScripts routes applyInboundFolderConfig messages to window.applyFilterSettings', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("message.type === 'applyInboundFolderConfig'"),
+      'Should handle applyInboundFolderConfig messages so inbound per-folder config refreshes the open settings form',
+    );
+    ok(
+      processed.includes("typeof window.applyFilterSettings === 'function'"),
+      'Should guard the LS-served window.applyFilterSettings call with a typeof check',
+    );
+  });
 });
