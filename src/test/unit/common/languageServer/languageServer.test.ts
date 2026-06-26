@@ -1087,6 +1087,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         explicitLspConfigurationChangeTracker,
         persistStub,
+        undefined,
+        new ConfigFeedbackSuppressor(),
       );
       languageServer.setWorkspaceConfigurationProvider(providerMock);
       downloadServiceMock.downloadReady$.next();
