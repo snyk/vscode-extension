@@ -101,7 +101,14 @@ suite('HtmlInjectionService', () => {
   test('injectIdeScripts injects tab state tracking for nav-link tabs', () => {
     const processed = service.injectIdeScripts(sampleHtml);
 
-    ok(processed.includes('data-tab-target'), 'Should inject tab state tracking for nav-link tabs');
+    ok(
+      processed.includes("classList.contains('nav-link') && target.hasAttribute('data-tab-target')"),
+      'Should inject nav-link guard that combines nav-link class check with data-tab-target attribute check',
+    );
+    ok(
+      processed.includes("_saveUiState({ activeTabId: target.id, activeFolderIndex: null })"),
+      'Should wire nav-link click to _saveUiState with activeTabId and null activeFolderIndex',
+    );
   });
 
   test('injectIdeScripts injects folder dropdown state tracking', () => {

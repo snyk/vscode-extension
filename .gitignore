@@ -55,6 +55,7 @@ snyk.config.local.json
 # Local implementation plans (do not commit)
 *_implementation_plan/
 *_implementation_plan.md
+docs/plans/
 /tests.json
 /docs/diagrams/
 CLAUDE.md
