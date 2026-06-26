@@ -23,6 +23,7 @@ suite('LanguageServerSettings', () => {
         getCliPath: () => '/path/to/cli',
         getCliBaseDownloadUrl: () => 'https://downloads.snyk.io',
         getAdditionalCliParameters: () => '--all-projects -d',
+        getAdditionalCliEnvironment: () => '',
         getTrustedFolders: () => ['/trusted/path'],
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,
@@ -72,6 +73,7 @@ suite('LanguageServerSettings', () => {
         getCliPath: () => '/cli',
         getCliBaseDownloadUrl: () => '',
         getAdditionalCliParameters: () => '',
+        getAdditionalCliEnvironment: () => '',
         getTrustedFolders: () => [],
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,
@@ -105,6 +107,7 @@ suite('LanguageServerSettings', () => {
         getCliPath: () => '',
         getCliBaseDownloadUrl: () => '',
         getAdditionalCliParameters: () => '',
+        getAdditionalCliEnvironment: () => '',
         getTrustedFolders: () => [],
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,
@@ -135,6 +138,7 @@ suite('LanguageServerSettings', () => {
         getCliPath: () => '',
         getCliBaseDownloadUrl: () => '',
         getAdditionalCliParameters: () => '',
+        getAdditionalCliEnvironment: () => '',
         getTrustedFolders: () => [],
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,
@@ -160,6 +164,40 @@ suite('LanguageServerSettings', () => {
       assert.strictEqual(changed.settings?.[LS_KEY.organization]?.changed, true);
     });
 
+    test('emits global additional_environment as top-level settings entry', async () => {
+      const mockConfiguration: IConfiguration = {
+        shouldReportErrors: false,
+        snykApiEndpoint: '',
+        organization: '',
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getToken: async () => '',
+        getFeaturesConfiguration: () => ({}),
+        getCliPath: () => '',
+        getCliBaseDownloadUrl: () => '',
+        getAdditionalCliParameters: () => '',
+        getAdditionalCliEnvironment: () => 'VAR1=value1;VAR2=value2',
+        getTrustedFolders: () => [],
+        getInsecure: () => false,
+        getDeltaFindingsEnabled: () => false,
+        isAutomaticDependencyManagementEnabled: () => true,
+        getFolderConfigs: () => [],
+        getOssQuickFixCodeActionsEnabled: () => true,
+        getAuthenticationMethod: () => 'oauth',
+        severityFilter: DEFAULT_SEVERITY_FILTER,
+        riskScoreThreshold: DEFAULT_RISK_SCORE_THRESHOLD,
+        issueViewOptions: DEFAULT_ISSUE_VIEW_OPTIONS,
+        scanningMode: 'auto',
+        getSecureAtInceptionExecutionFrequency: () => 'Manual',
+        getAutoConfigureMcpServer: () => false,
+      } as unknown as IConfiguration;
+
+      const result = await LanguageServerSettings.fromConfiguration(mockConfiguration, () => false);
+
+      assert.strictEqual(result.settings?.[LS_KEY.additionalEnvironment]?.value, 'VAR1=value1;VAR2=value2');
+      // Must appear in the top-level settings map, not only inside folderConfigs
+      assert.ok(result.settings && LS_KEY.additionalEnvironment in result.settings);
+    });
+
     test('maps filterSeverity to enabled_severities object', async () => {
       const mockConfiguration: IConfiguration = {
         shouldReportErrors: false,
@@ -171,6 +209,7 @@ suite('LanguageServerSettings', () => {
         getCliPath: () => '',
         getCliBaseDownloadUrl: () => '',
         getAdditionalCliParameters: () => '',
+        getAdditionalCliEnvironment: () => '',
         getTrustedFolders: () => [],
         getInsecure: () => false,
         getDeltaFindingsEnabled: () => false,

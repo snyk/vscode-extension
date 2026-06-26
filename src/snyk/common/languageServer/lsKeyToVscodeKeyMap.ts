@@ -2,6 +2,7 @@ import type { IConfiguration } from '../configuration/configuration';
 import { ALLISSUES, NEWISSUES } from '../configuration/configuration';
 import type { LspConfigSetting } from './types';
 import {
+  ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
@@ -148,6 +149,10 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
     vscodeKey: ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
     resolve: c => c.getAdditionalCliParameters(),
   },
+  [LS_GLOBAL_KEY.additionalEnvironment]: {
+    vscodeKey: ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
+    resolve: c => c.getAdditionalCliEnvironment(),
+  },
   [LS_GLOBAL_KEY.secureAtInceptionExecutionFreq]: {
     vscodeKey: SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
     resolve: c => c.getSecureAtInceptionExecutionFrequency(),
@@ -203,6 +208,28 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
   },
 };
 
+// ── Global-resettable fields ─────────────────────────────────────────
+// LS keys for which a null value in the dialog payload represents a "Project Defaults"
+// reset (clear the user:global VS Code override and send {value:null, changed:true} to the LS).
+// Only keys with a vscodeKey (i.e. user-visible, persistable fields) are resettable.
+// Typed as ReadonlySet<GlobalLsKeyValue> so any key not in the union is a compile error.
+export const GLOBAL_RESET_FIELDS: ReadonlySet<GlobalLsKeyValue> = new Set<GlobalLsKeyValue>([
+  'snyk_oss_enabled',
+  'snyk_code_enabled',
+  'snyk_iac_enabled',
+  'snyk_secrets_enabled',
+  'scan_automatic',
+  'scan_net_new',
+  'severity_filter_critical',
+  'severity_filter_high',
+  'severity_filter_medium',
+  'severity_filter_low',
+  'issue_view_open_issues',
+  'issue_view_ignored_issues',
+  'risk_score_threshold',
+  'organization',
+]);
+
 // ── Derived maps ─────────────────────────────────────────────────────
 
 /** LS key → VS Code setting key (only entries with vscodeKey). */
@@ -247,6 +274,10 @@ function setOrMerge(result: Record<string, unknown>, vscodeKey: string, transfor
 /**
  * Maps webview form data (LS-format keys and values) → VS Code settings.
  * Used when user saves the workspace configuration form.
+ *
+ * Keys that are present AND explicitly `null` AND in `GLOBAL_RESET_FIELDS` are excluded:
+ * they represent a "Project Defaults" reset and are handled by the reset path in
+ * ConfigurationPersistenceService (clears VS Code global override + marks pending reset).
  */
 export function mapConfigToSettings(config: HtmlSettingsData): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -257,6 +288,13 @@ export function mapConfigToSettings(config: HtmlSettingsData): Record<string, un
 
     const value = config[lsKey];
     if (value === undefined) continue;
+    // Skip ALL null values — matches the inbound mapLspSettingsToVscodeSettings null-skip.
+    // Null + global-resettable keys are handled by the outbound reset path (applyOutbound-
+    // GlobalResets), so they must not be written here.  Null for a non-resettable key has
+    // no defined semantics (the webview does not currently send null for non-reset fields),
+    // and passing null through toVscodeValue produces wrong results — e.g. proxy_insecure
+    // has toVscodeValue: v => !v, so null → !null = true → writes http.proxyStrictSSL=true.
+    if (value === null) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }
@@ -288,7 +326,7 @@ export function mapLspSettingsToVscodeSettings(
     if (!entry.vscodeKey) continue;
 
     const value = globalSettings[lsKey]?.value;
-    if (value === undefined) continue;
+    if (value === undefined || value === null) continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }

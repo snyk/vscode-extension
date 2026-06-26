@@ -9,6 +9,7 @@ import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam'
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { IViewManagerService } from '../services/viewManagerService';
 import {
+  ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
@@ -225,6 +226,8 @@ export interface IConfiguration {
   organization: string;
 
   getAdditionalCliParameters(): string | undefined;
+
+  getAdditionalCliEnvironment(): string | undefined;
 
   snykApiEndpoint: string;
 
@@ -676,6 +679,11 @@ export class Configuration implements IConfiguration {
 
   getAdditionalCliParameters(): string | undefined {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING);
+    return this.workspace.getConfiguration<string>(configurationId, section);
+  }
+
+  getAdditionalCliEnvironment(): string | undefined {
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING);
     return this.workspace.getConfiguration<string>(configurationId, section);
   }
 
