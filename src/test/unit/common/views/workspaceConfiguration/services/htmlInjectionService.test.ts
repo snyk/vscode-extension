@@ -106,7 +106,7 @@ suite('HtmlInjectionService', () => {
       'Should inject nav-link guard that combines nav-link class check with data-tab-target attribute check',
     );
     ok(
-      processed.includes("_saveUiState({ activeTabId: target.id, activeFolderIndex: null })"),
+      processed.includes('_saveUiState({ activeTabId: target.id, activeFolderIndex: null })'),
       'Should wire nav-link click to _saveUiState with activeTabId and null activeFolderIndex',
     );
   });
