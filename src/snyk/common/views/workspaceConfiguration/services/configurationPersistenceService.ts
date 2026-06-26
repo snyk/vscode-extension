@@ -207,9 +207,17 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  /** A reset is an inbound global setting of `{ value: null, changed: true }`. */
+  /**
+   * A reset is an inbound global setting of `{ value: null, changed: true }`.
+   * The LS may also encode a reset as `{ changed: true }` with the `value` field
+   * omitted entirely, producing `value === undefined`.  Loose equality (`== null`)
+   * captures both null and undefined so either encoding is treated as a reset.
+   * The GLOBAL_RESET_FIELDS allowlist gate in the callers ensures this broadening
+   * only applies to resettable keys.
+   */
   private isGlobalReset(setting: LspConfigSetting): boolean {
-    return setting.value === null && setting.changed === true;
+    // eslint-disable-next-line eqeqeq
+    return setting.value == null && setting.changed === true;
   }
 
   /**
@@ -240,7 +248,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       if (!GLOBAL_RESET_FIELDS.has(lsKey as GlobalLsKeyValue)) continue;
 
       const vscodeKey = lsKeyToVscodeKey(lsKey);
-      if (!vscodeKey) continue; // GLOBAL_RESET_FIELDS invariant: all members have a vscodeKey.
+      // GLOBAL_RESET_FIELDS invariant: every member has a vscodeKey.
+      // Enforced at test-time by the drift guard in lsKeyToVscodeKeyMap.test.ts.
+      // If the invariant is ever violated (drift without test coverage), throw rather than
+      // silently skipping — a missing vscodeKey is a programming error, not a recoverable
+      // runtime condition.
+      if (!vscodeKey)
+        throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
 
       const group = vscodeKeyToLsKeys.get(vscodeKey);
       if (group) {
@@ -286,8 +300,15 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         // than skipping on equality with the now-stale effective.
         this.effectiveByVscodeKey.delete(vscodeKey);
         // Mutate caller-supplied state only after the write has succeeded.
+        // Each key's callback is wrapped independently: a callback failure (e.g. a resolver
+        // throw during the D1 cache seed) must not prevent the remaining siblings in the
+        // same fan-out group from receiving their onWriteSuccess notification.
         for (const lsKey of lsKeys) {
-          onWriteSuccess(lsKey);
+          try {
+            onWriteSuccess(lsKey);
+          } catch (cbErr) {
+            this.logger.error(`onWriteSuccess failed for ${lsKey}: ${cbErr}`);
+          }
         }
       } catch (e) {
         this.logger.error(`Failed to reset setting ${vscodeKey}: ${e}`);
@@ -402,9 +423,15 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       // Only treat the field as a reset when it is present AND explicitly null.
       if (!(lsKey in config) || config[lsKey] !== null) continue;
 
-      // GLOBAL_RESET_FIELDS invariant: every member has a vscodeKey (see FIX 3 test).
+      // GLOBAL_RESET_FIELDS invariant: every member has a vscodeKey.
+      // Enforced at test-time by the drift guard in lsKeyToVscodeKeyMap.test.ts
+      // ('every GLOBAL_RESET_FIELDS member maps to a defined vscodeKey via lsKeyToVscodeKey').
+      // If the invariant is ever violated (drift without test coverage), throw rather than
+      // silently skipping — a missing vscodeKey is a programming error, not a recoverable
+      // runtime condition, and silence would hide the bug until the LS misses the reset signal.
       const vscodeKey = lsKeyToVscodeKey(lsKey);
-      if (!vscodeKey) continue;
+      if (!vscodeKey)
+        throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
 
       const group = vscodeKeyToLsKeys.get(vscodeKey);
       if (group) {

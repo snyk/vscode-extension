@@ -75,17 +75,3 @@ CLAUDE.md
 .verify-triage.json
 .verify-source-map.json
 .verify-agent-progress
-.verify-branch-diff
-.verify-pr-context
-.verify-oracle.json
-.verify-oracle.log
-.verify-oracle-scope.txt
-.verify-oracle.pid
-.verify-lang-skill
-.verify-chunk-diff
-.verify-dedup-findings.json
-.verify-reranked.json
-.vscode-test/
-no-issue_*.log
-.claude/
-*_integration*.log

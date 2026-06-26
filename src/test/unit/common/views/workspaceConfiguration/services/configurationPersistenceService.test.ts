@@ -3423,3 +3423,239 @@ suite('mapConfigToSettings — broadened null guard (STEP 3)', () => {
     );
   });
 });
+
+// ── Fix 2: undefined value must be treated as reset for GLOBAL_RESET_FIELDS keys ─
+//
+// The LS may encode a reset as { changed: true } with the `value` field OMITTED,
+// producing { value: undefined, changed: true } when the field is missing.  The old
+// isGlobalReset guard used `value === null` (strict), which missed this case.
+//
+// The fix broadens the guard to `value == null` (loose — matches null OR undefined)
+// while preserving the GLOBAL_RESET_FIELDS allowlist gate.
+//
+// Non-resettable keys with { value: undefined, changed: true } must NOT trigger
+// a reset (the GLOBAL_RESET_FIELDS guard is unchanged).
+suite('ConfigurationPersistenceService — Fix 2: undefined value treated as reset for GLOBAL_RESET_FIELDS', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+  });
+
+  teardown(() => sinon.restore());
+
+  // LS sends { changed: true } with value field absent → JS produces { value: undefined }.
+  // For a GLOBAL_RESET_FIELDS key this must trigger the reset path (clear VS Code override).
+  test('inbound {value:undefined, changed:true} for a GLOBAL_RESET_FIELDS key (organization) triggers reset', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        // Simulate a missing value field: { changed: true } with no value key.
+        [LS_GLOBAL_KEY.organization]: { value: undefined as unknown as null, changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    // The reset path must have been triggered: updateConfiguration called with undefined value.
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.organization',
+      undefined,
+      true,
+    );
+  });
+
+  // A non-resettable key with { value: undefined, changed: true } must NOT trigger a reset.
+  // The GLOBAL_RESET_FIELDS allowlist gate must remain intact regardless of the null broadening.
+  test('inbound {value:undefined, changed:true} for a non-GLOBAL_RESET_FIELDS key (api_endpoint) does NOT trigger reset', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.apiEndpoint]: { value: undefined as unknown as null, changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    // Must NOT have cleared api_endpoint — not a resettable key.
+    const clearedEndpoint = updateConfigurationStub
+      .getCalls()
+      .some(c => c.args[1] === 'advanced.customEndpoint' && c.args[2] === undefined);
+    assert.strictEqual(
+      clearedEndpoint,
+      false,
+      'api_endpoint is not in GLOBAL_RESET_FIELDS; {value:undefined, changed:true} must not clear it',
+    );
+  });
+});
+
+// ── Fix: onWriteSuccess callback exception must not skip remaining fan-out siblings ─
+//
+// applyVscodeKeyResets iterates lsKeys for a shared vscodeKey and calls onWriteSuccess(lsKey)
+// for each one.  If the callback throws for lsKey[0] (e.g. the D1 resolver throws), the
+// catch block for the outer try/catch (which wraps the VS Code write) absorbs the throw,
+// causing lsKey[1..N] to never receive their onWriteSuccess call → markPendingReset is never
+// called for those siblings → the LS misses the reset signal for those keys.
+//
+// The fix wraps each onWriteSuccess(lsKey) invocation in its own per-key try/catch so
+// that a callback failure for one key never prevents the remaining keys from being notified.
+suite('ConfigurationPersistenceService — onWriteSuccess callback exception resilience', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+  let originalCriticalResolve: typeof SETTINGS_REGISTRY[typeof LS_GLOBAL_KEY.severityFilterCritical]['resolve'];
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+
+    originalCriticalResolve = SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve;
+  });
+
+  teardown(() => {
+    SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalCriticalResolve;
+    sinon.restore();
+  });
+
+  // All four severity_filter_* keys share the same vscodeKey (a fan-out group).
+  // If the D1 resolver throws for severity_filter_critical (the first key processed),
+  // the remaining three siblings must still receive markPendingReset via onWriteSuccess.
+  test('resolver throw for first fan-out sibling does not skip markPendingReset for remaining siblings', async () => {
+    // Force the severity_filter_critical resolver to throw to simulate the failure.
+    SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = () => {
+      throw new Error('simulated resolver boom');
+    };
+
+    const markPendingResetSpy = sinon.spy();
+    const tracker: IExplicitLspConfigurationChangeTracker = {
+      markExplicitlyChanged: sinon.spy(),
+      unmarkExplicitlyChanged: sinon.spy(),
+      isExplicitlyChanged: sinon.stub().returns(false),
+      consumePendingResets: sinon.stub().returns(new Set()),
+      markPendingReset: markPendingResetSpy,
+      committedSinceReset: sinon.stub().returns(false),
+      markCommittedSinceReset: sinon.spy(),
+      setLastKnownValue: sinon.spy(),
+      hasLastKnownValue: sinon.stub().returns(false),
+      getLastKnownValue: sinon.stub().returns(undefined),
+    };
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+      undefined, // contextService — not needed for this test
+      tracker,
+    );
+
+    // Send all four severity keys as null → outbound reset for the fan-out group.
+    const config = JSON.stringify({
+      isFallbackForm: false,
+      [LS_GLOBAL_KEY.severityFilterCritical]: null,
+      [LS_GLOBAL_KEY.severityFilterHigh]: null,
+      [LS_GLOBAL_KEY.severityFilterMedium]: null,
+      [LS_GLOBAL_KEY.severityFilterLow]: null,
+    });
+
+    await service.handleSaveConfig(config);
+
+    // All four siblings must have their pending reset marked — the resolver throw for
+    // severity_filter_critical must not prevent the other three from being marked.
+    assert.strictEqual(
+      markPendingResetSpy.callCount,
+      4,
+      `Expected markPendingReset to be called 4 times (once per severity sibling) but got ${markPendingResetSpy.callCount}. ` +
+        'A resolver throw for severity_filter_critical must not skip the remaining siblings.',
+    );
+  });
+});
