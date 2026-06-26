@@ -23,6 +23,12 @@ export class WorkspaceConfigurationWebviewProvider
   extends WebviewProvider<void>
   implements IWorkspaceConfigurationWebviewProvider
 {
+  // Serialized reload queue: each reloadIfOpen call is chained onto this promise so that
+  // concurrent LS configuration notifications render strictly in order and a slow earlier
+  // fetch can never overwrite the result of a faster later fetch. Mirrors the
+  // configPersistenceQueue pattern in languageServer.ts.
+  private reloadQueue: Promise<void> = Promise.resolve();
+
   constructor(
     protected readonly context: ExtensionContext,
     protected readonly logger: ILog,
@@ -71,37 +77,65 @@ export class WorkspaceConfigurationWebviewProvider
         'snyk_extension_icon_new.svg',
       );
 
-      await this.renderConfigurationHtml();
+      // Route the initial render through the shared reloadQueue so it is serialized
+      // with any concurrent reloadIfOpen calls triggered by LS notifications.
+      await this.reloadIfOpen('Failed to show workspace configuration panel');
     } catch (e) {
       ErrorHandler.handle(e, this.logger, 'Failed to show workspace configuration panel');
     }
   }
 
-  async reloadIfOpen(): Promise<void> {
-    try {
-      if (!this.panel) {
-        return;
-      }
-      await this.renderConfigurationHtml();
-    } catch (e) {
-      ErrorHandler.handle(e, this.logger, 'Failed to reload workspace configuration panel');
+  reloadIfOpen(errorMessage = 'Failed to reload workspace configuration panel'): Promise<void> {
+    // Fast path: if no panel is open at enqueue time there is nothing to render.
+    if (!this.panel) {
+      return Promise.resolve();
     }
+    // Capture the panel at enqueue time (synchronously, before any await). A stale step
+    // enqueued against the old panel will see this.panel !== panelAtEnqueue when it runs
+    // (because the fresh panel is a different object) and abort — never writing to the
+    // wrong panel. This is the key guard: renderConfigurationHtml receives this reference
+    // so it never re-reads this.panel after an await.
+    const panelAtEnqueue = this.panel;
+    this.reloadQueue = this.reloadQueue
+      .catch(() => {
+        /* keep serialized queue alive if a prior step rejected unexpectedly */
+      })
+      .then(async () => {
+        if (!this.panel || this.panel !== panelAtEnqueue) {
+          return;
+        }
+        try {
+          await this.renderConfigurationHtml(panelAtEnqueue);
+        } catch (e) {
+          ErrorHandler.handle(e, this.logger, errorMessage);
+        }
+      });
+    return this.reloadQueue;
   }
 
-  private async renderConfigurationHtml(): Promise<void> {
+  protected onPanelDispose(): void {
+    // Reset the queue on dispose as good hygiene to bound chain growth across panel
+    // lifetimes. The enqueue-time panel capture in reloadIfOpen is the primary guard
+    // that prevents stale in-flight steps from writing to a replacement panel.
+    this.reloadQueue = Promise.resolve();
+    super.onPanelDispose();
+  }
+
+  private async renderConfigurationHtml(panel: vscode.WebviewPanel): Promise<void> {
     const html = await this.fetchConfigurationHtml();
-    if (!this.panel) {
+    // Guard: abort if the panel has been disposed or replaced since enqueue time.
+    if (!this.panel || this.panel !== panel) {
       return;
     }
     if (html) {
       const htmlWithScopes = this.scopeDetectionService.populateScopeIndicators(html, lsKeyToVscodeKey);
-      this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(htmlWithScopes);
+      panel.webview.html = this.htmlInjectionService.injectIdeScripts(htmlWithScopes);
     } else {
       const fallbackHtml = await this.getFallbackHtml();
-      if (!this.panel) {
+      if (!this.panel || this.panel !== panel) {
         return;
       }
-      this.panel.webview.html = this.htmlInjectionService.injectIdeScripts(fallbackHtml);
+      panel.webview.html = this.htmlInjectionService.injectIdeScripts(fallbackHtml);
     }
   }
 
