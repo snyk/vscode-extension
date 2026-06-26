@@ -4,16 +4,38 @@ import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import _ from 'lodash';
 
+/**
+ * Sentinel that indicates the LS-resolved effective value is not known for a given key.
+ * Used as the `effectiveValue` parameter of `shouldSkipSettingUpdate` when no inbound
+ * `$/snyk.configuration` snapshot has been received yet for that key.
+ *
+ * A plain `undefined` cannot serve as the sentinel because an LS-resolved effective value
+ * can legitimately be `undefined`/falsey for some keys. This unique symbol is unambiguous.
+ */
+export const EFFECTIVE_VALUE_UNKNOWN: unique symbol = Symbol('effective-value-unknown');
+
 export interface IScopeDetectionService {
   getSettingScope(settingKey: string): string;
   populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
   /**
    * Determines whether a setting update should be skipped.
-   * Returns true if:
-   * 1. The new value is the same as the current effective value (no actual change), OR
-   * 2. The new value is the default value and hasn't been explicitly set by the user at any level
+   *
+   * Predicate (ADR-1):
+   * 1. If `effectiveValue` is known (not `EFFECTIVE_VALUE_UNKNOWN`):
+   *    skip iff `_.isEqual(value, effectiveValue)` — redundant vs the LS-resolved effective state.
+   * 2. If `effectiveValue` is unknown — fallback (override-aware, NEVER schema-default skip):
+   *    - 'workspace':       skip iff value === workspaceValue       && workspaceValue       !== undefined
+   *    - 'user':            skip iff value === globalValue          && globalValue          !== undefined
+   *    - 'workspaceFolder': skip iff value === workspaceFolderValue && workspaceFolderValue !== undefined
+   *    - 'default' (or any other): return false — never skip on schema-default equality alone
    */
-  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean;
+  shouldSkipSettingUpdate(
+    configurationId: string,
+    settingName: string,
+    value: unknown,
+    scope: string,
+    effectiveValue: unknown,
+  ): boolean;
 }
 
 export class ScopeDetectionService implements IScopeDetectionService {
@@ -60,36 +82,42 @@ export class ScopeDetectionService implements IScopeDetectionService {
     });
   }
 
-  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean {
+  shouldSkipSettingUpdate(
+    configurationId: string,
+    settingName: string,
+    value: unknown,
+    scope: string,
+    effectiveValue: unknown,
+  ): boolean {
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
 
     if (!inspection) {
       return false;
     }
 
-    let currentValue: unknown;
-    let hasExplicitValue: boolean;
+    // Step 1 (ADR-1): if the LS-resolved effective value is known, use it as the sole baseline.
+    // Skip only when the proposed value is redundant versus the effective resolution.
+    // The package.json schema default is NEVER the skip baseline for LS-resolved keys.
+    if (effectiveValue !== EFFECTIVE_VALUE_UNKNOWN) {
+      return _.isEqual(value, effectiveValue);
+    }
+
+    // Step 2 (ADR-1 fallback): effective value is unknown — use override-aware comparison.
+    // NEVER skip solely because value equals the schema default.
     switch (scope) {
       case 'workspace':
-        currentValue = inspection.workspaceValue;
-        hasExplicitValue = currentValue !== undefined;
-        break;
+        // Skip iff the value is identical to the existing workspace override (and one exists).
+        return _.isEqual(value, inspection.workspaceValue) && inspection.workspaceValue !== undefined;
       case 'user':
-        currentValue = inspection.globalValue;
-        hasExplicitValue = currentValue !== undefined;
-        break;
+        // Skip iff the value is identical to the existing user-global override (and one exists).
+        return _.isEqual(value, inspection.globalValue) && inspection.globalValue !== undefined;
+      case 'workspaceFolder':
+        // Defense-in-depth: mirror the workspace/user override-aware pattern for folder scope.
+        return _.isEqual(value, inspection.workspaceFolderValue) && inspection.workspaceFolderValue !== undefined;
       default:
-        // 'default' scope: setting never explicitly set at any level — skip only when value equals schema default.
-        return _.isEqual(value, inspection.defaultValue);
+        // 'default' scope (no override at any level) or any unrecognised scope:
+        // a write at this point is a genuine change — never skip on schema-default equality.
+        return false;
     }
-
-    // Return true if new value is same as current value at this scope (no actual change)
-    if (_.isEqual(value, currentValue)) {
-      return true;
-    }
-
-    const isDefaultValue = _.isEqual(value, inspection.defaultValue);
-
-    return isDefaultValue && !hasExplicitValue;
   }
 }
