@@ -26,8 +26,10 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { LanguageClientMiddleware } from './middleware';
+import { LanguageClientMiddleware, shouldSkipReenqueue } from './middleware';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
+import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
+import { isThenable } from '../tsUtil';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
@@ -41,6 +43,7 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 import { IMcpProvider } from '../vscode/mcpProvider';
 import { IWorkspaceConfigurationWebviewProvider } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
+import { type IConfigFeedbackSuppressor } from './configFeedbackSuppressor';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -78,6 +81,18 @@ export class LanguageServer implements ILanguageServer {
   private suppressConfigFeedbackFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private configPersistenceQueue: Promise<void> = Promise.resolve();
+  /**
+   * Shared suppressor for VS Code `onDidChangeConfiguration` feedback triggered by outbound
+   * reset writes (`applyOutboundGlobalResets`).  When active, the explicit-key-marking
+   * listener must not call `markExplicitlyChanged` — otherwise the reset's own
+   * `updateConfiguration` write would fire the listener and cause `markExplicitlyChanged` to
+   * delete the pending reset that was just queued by `markPendingReset`.
+   *
+   * The SAME shared instance must be passed to both `ConfigurationPersistenceService` and
+   * `LanguageServer`, wired in extension.ts.  If each class constructed its own instance,
+   * suppression would be silently broken.
+   */
+  private readonly outboundResetSuppressor: IConfigFeedbackSuppressor;
 
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
@@ -101,8 +116,10 @@ export class LanguageServer implements ILanguageServer {
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
-    private readonly treeViewProvider?: ITreeViewProviderService,
+    private readonly treeViewProvider: ITreeViewProviderService | undefined,
+    outboundResetSuppressor: IConfigFeedbackSuppressor,
   ) {
+    this.outboundResetSuppressor = outboundResetSuppressor;
     this.downloadService = downloadService;
 
     this.geminiIntegrationService = new GeminiIntegrationService(
@@ -306,10 +323,48 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      if (this.suppressConfigFeedbackFromInboundPersistence) {
+      // Suppress feedback when inbound LS persistence is writing to VS Code settings, OR
+      // when an outbound global reset's own updateConfiguration write is in flight.
+      // Without the outbound suppression, the reset's write fires this listener, which calls
+      // markExplicitlyChanged, which (since the round-5 race fix) deletes the just-queued
+      // pending reset — silently losing the reset signal sent to the LS.
+      //
+      // TIMING CONTRACT: this suppression relies on VS Code dispatching
+      // onDidChangeConfiguration *synchronously* within workspace.getConfiguration().update()
+      // — the event fires before the awaiting caller resumes past `await updateConfiguration`.
+      // Evidence: the integration test in configurationEventTiming.test.ts confirms this
+      // against a real VS Code instance; and the inbound flag (suppressConfigFeedbackFrom-
+      // InboundPersistence) works in production with a purely synchronous try/finally
+      // pattern — which would be broken if the event were a macrotask.  See also the
+      // comment in applyOutboundGlobalResets (configurationPersistenceService.ts).
+      // If VS Code ever changes to async (macrotask) dispatch, both suppression paths need
+      // to be rearchitected.
+      if (this.suppressConfigFeedbackFromInboundPersistence || this.outboundResetSuppressor.isActive) {
         return;
       }
-      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker);
+      // ADR-2: pass a sync value resolver so the fan-out path can value-compare each
+      // sibling sub-key and only mark committedSinceReset for the sub-keys that actually
+      // changed (not blindly for all siblings sharing the same VS Code setting).
+      // If a resolver returns a Promise (e.g. token, cliPath), the result is treated as
+      // undefined — the fan-out cache misses and marks conservatively (correct: those keys
+      // do not appear in multi-key fan-out groups).
+      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker, lsKey => {
+        const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+        if (!entry) return undefined;
+        let result: unknown;
+        try {
+          result = entry.resolve(this.configuration);
+        } catch {
+          // A resolver that throws during partial init is treated as "value unknown" —
+          // the same conservative undefined already handled downstream.
+          this.logger.debug(`currentValueOf: resolver for lsKey "${lsKey}" threw; treating as value-unknown`);
+          return undefined;
+        }
+        // Only use sync results for value-comparison; async (Thenable) results resolve
+        // after the event handler returns, so treat them as undefined (conservative).
+        if (isThenable(result)) return undefined;
+        return result;
+      });
     });
     return this.configurationChangeDisposable;
   }
@@ -325,6 +380,18 @@ export class LanguageServer implements ILanguageServer {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
       .then(async () => {
+        // TIMING CONTRACT: this boolean flag suppresses the onDidChangeConfiguration listener
+        // (registered in registerExplicitKeyMarkingListener) while inbound LS settings are
+        // being written to VS Code.  The suppression relies on VS Code dispatching
+        // onDidChangeConfiguration *synchronously* within workspace.getConfiguration().update()
+        // — the event fires before the awaiting code resumes past the `await` — so the flag,
+        // set here before any write and cleared in `finally` after all writes, is always true
+        // when the event arrives.  If VS Code ever changed to dispatch the event as a macrotask
+        // (after the microtask queue drains), the flag would be false by the time the event
+        // fired and inbound suppression would be silently broken.  The integration test in
+        // configurationEventTiming.test.ts empirically verifies the synchronous dispatch
+        // contract against a real VS Code instance.  See also applyOutboundGlobalResets
+        // (configurationPersistenceService.ts) and the listener comment above.
         this.suppressConfigFeedbackFromInboundPersistence = true;
         try {
           await this.persistInboundConfiguration(params);
@@ -448,11 +515,67 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<LspInitializationOptions> {
-    const config = await LanguageServerSettings.fromConfiguration(
-      this.configuration,
-      lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
-      this.workspace,
-    );
+    // Consume any pending resets so that a reset queued before an LS (re)start is still
+    // emitted as { value: null, changed: true } in initializationOptions. Under normal
+    // flow this set is empty; it is only non-empty when the user triggered a global reset
+    // and the LS restarted before the next workspace/configuration pull.
+    //
+    // CLAIM 3 analysis (IDE-2149): A concern was raised that `getInitializationOptions` does not
+    // call `unmarkResetLsKeysAfterPull` after consuming the pending resets, and that a reset
+    // key could be re-pushed as `changed:true` after a mid-session LS restart/reload.
+    //
+    // Investigation result — NOT REACHABLE:
+    //
+    // (a) The tracker (`ExplicitLspConfigurationChangeTracker`) is constructed ONCE at extension
+    //     activation (extension.ts) and shared across LS restarts.  It is NOT reconstructed on a
+    //     mid-session LS restart — only on a full extension deactivation/reactivation.
+    //
+    // (b) At reset-save time, `applyOutboundGlobalResets` calls BOTH:
+    //       - `updateConfiguration(section, undefined, true)` → clears the VS Code global override
+    //       - `unmarkExplicitlyChanged(lsKey)` → removes the key from the persisted `keys` Set
+    //     So after a successful reset, the VS Code global override is gone AND the key is not in
+    //     the `keys` Set.
+    //
+    // (c) `seedExplicitChangesFromExistingSettings` runs once at activation (before any LS start).
+    //     It skips keys whose VS Code `globalValue` is `undefined`.  Because the reset cleared the
+    //     global override (step b), a subsequent seed would NOT re-add the key.
+    //
+    // (d) On LS restart (not extension restart), `getInitializationOptions` calls
+    //     `consumePendingResets()`.  If the pending reset was already consumed by the middleware
+    //     before the restart, `pendingResets` is empty and nothing is emitted.  If the LS restarted
+    //     BEFORE the middleware pull, `pendingResets` still holds the key (same in-memory tracker)
+    //     and it is emitted as `{value:null, changed:true}` — exactly the intended behaviour.
+    //
+    // (e) After `consumePendingResets()` drains the set, `isExplicitlyChanged(key)` returns false
+    //     (the key was already removed from `keys` at step b).  Therefore the key will NOT appear
+    //     as `changed:true` on any subsequent pull — `unmarkResetLsKeysAfterPull` is not needed here.
+    //
+    // Calling `unmarkResetLsKeysAfterPull` here would be a no-op (the key is already absent from
+    // `keys`), so no code change is required.  This comment documents the reasoning.
+    const pendingResets = this.explicitLspConfigurationChangeTracker.consumePendingResets();
+    let config: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
+    try {
+      config = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
+        this.workspace,
+        lsKey => pendingResets.has(lsKey),
+      );
+    } catch (err) {
+      // fromConfiguration failed after consumePendingResets() already drained the set.
+      // Re-enqueue keys for prompt, deterministic delivery on the next getInitializationOptions
+      // call — but only if the user has NOT committed a concrete value for this key since the drain.
+      //
+      // ADR-2: use the shared `shouldSkipReenqueue` predicate (reads `committedSinceReset`,
+      // not `isExplicitlyChanged`) so both call sites stay in sync and the guard answers the
+      // correct transient, windowed, per-LS-key question.
+      for (const key of pendingResets) {
+        if (!shouldSkipReenqueue(key, this.explicitLspConfigurationChangeTracker)) {
+          this.explicitLspConfigurationChangeTracker.markPendingReset(key);
+        }
+      }
+      throw err;
+    }
     return {
       settings: config.settings ?? {},
       folderConfigs: config.folderConfigs,

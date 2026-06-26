@@ -11,15 +11,74 @@ import isEqual from 'lodash/isEqual';
  * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for user edits.
  *
  * Uses the pre-computed {@link VSCODE_KEY_TO_LS_KEYS} reverse index directly.
+ *
+ * ADR-2: For the windowed `committedSinceReset` signal, fan-out groups (multiple LS
+ * keys sharing one VS Code setting, e.g. four `severity_filter_*` sharing `snyk.severity`)
+ * must only mark the sibling LS keys whose concrete sub-key value actually changed.
+ * Pass `currentValueOf` to enable this value-comparison; if omitted, all matching LS
+ * keys are marked in both signals (safe for single-LS-key settings and for callers that
+ * do not need the windowed signal).
+ *
+ * @param e - VS Code configuration change event.
+ * @param tracker - Tracker that owns both the cumulative and windowed signals.
+ * @param currentValueOf - Optional resolver: given an LS key, returns its current resolved
+ *   value (must be sync).  Used to compare against the cached last-known value to determine
+ *   which sibling sub-keys actually changed in a fan-out group.  When absent, all siblings
+ *   are marked in the windowed signal (same as pre-ADR-2 behaviour for the cumulative set).
  */
 export function markExplicitLsKeysFromConfigurationChangeEvent(
   e: ConfigurationChangeEvent,
   tracker: IExplicitLspConfigurationChangeTracker,
+  currentValueOf?: (lsKey: string) => unknown,
 ): void {
   for (const [vscodeKey, lsKeys] of Object.entries(VSCODE_KEY_TO_LS_KEYS)) {
-    if (e.affectsConfiguration(vscodeKey)) {
+    if (!e.affectsConfiguration(vscodeKey)) {
+      continue;
+    }
+
+    if (lsKeys.length === 1 || !currentValueOf) {
+      // Single LS key, or no resolver provided: mark both signals for all keys.
+      // For a single-key mapping, VS Code only fires the event when the value
+      // actually changed, so marking the windowed signal unconditionally is correct.
       for (const lsKey of lsKeys) {
         tracker.markExplicitlyChanged(lsKey);
+        tracker.markCommittedSinceReset(lsKey);
+        // Only update the cache when the value is defined — storing undefined would
+        // incorrectly warm the cache and suppress future cold-cache conservative marks.
+        if (currentValueOf) {
+          const v = currentValueOf(lsKey);
+          if (v !== undefined) {
+            tracker.setLastKnownValue(lsKey, v);
+          }
+        }
+      }
+    } else {
+      // Fan-out: multiple LS keys share one VS Code setting (e.g. severity, issueViewOptions).
+      // Always mark the cumulative set for all siblings (unchanged — drives changed:true).
+      // Mark the windowed signal only for siblings whose concrete sub-key value changed.
+      for (const lsKey of lsKeys) {
+        tracker.markExplicitlyChanged(lsKey);
+
+        const newValue = currentValueOf(lsKey);
+        // Snapshot hasLastKnownValue and oldValue BEFORE updating the cache, so the
+        // cold-cache check reflects the pre-event state (not the freshly-set value).
+        const cacheWasCold = !tracker.hasLastKnownValue(lsKey);
+        const oldValue = tracker.getLastKnownValue(lsKey);
+        // Always update the cache (including undefined — warm cache after a reset seed).
+        tracker.setLastKnownValue(lsKey, newValue);
+
+        // Mark the windowed signal only when the value genuinely changed.
+        // Use cacheWasCold (Map.has snapshot before set) to distinguish cold cache (never seen)
+        // from warm cache with stored undefined (e.g. after a reset seed or a legitimately-
+        // undefined value).  Without this distinction, a second event for a key whose
+        // value is legitimately undefined would incorrectly stay in cold-cache mode and
+        // mark committedSinceReset every time — suppressing re-enqueue of valid resets.
+        if (cacheWasCold || !isEqual(newValue, oldValue)) {
+          tracker.markCommittedSinceReset(lsKey);
+        }
+        // If !cacheWasCold && isEqual(newValue, oldValue): a sibling edit fired the
+        // event for this shared VS Code key, but this particular sub-key did NOT change
+        // → do NOT mark the windowed signal.  This is the fan-out false-positive the ADR eliminates.
       }
     }
   }
@@ -68,6 +127,28 @@ export function seedExplicitChangesFromExistingSettings(
 /**
  * After a pull response sends a reset (`{ value: null, changed: true }`), unmark the
  * key so future pulls don't permanently re-send `changed: true`.
+ *
+ * CLAIM 2 analysis (IDE-2149): This function unmarks ANY key with `{value:null, changed:true}`,
+ * not just keys that are members of GLOBAL_RESET_FIELDS.  A concern was raised that a non-reset
+ * key whose resolver returns `null` could be wrongly unmarked here.
+ *
+ * Investigation result — NOT REACHABLE: No `SETTINGS_REGISTRY` entry's `resolve()` ever
+ * returns `null` for an explicitly-changeable key.  Confirmed by inspecting every resolver
+ * in `lsKeyToVscodeKeyMap.ts`:
+ *   - Boolean resolvers use `?? true` fallbacks (never null).
+ *   - `riskScoreThreshold` uses `?? undefined`, so `null ?? undefined === undefined`.
+ *   - String resolvers return typed strings or undefined (e.g. `getToken()` returns
+ *     `Promise<string | undefined>`, `organization` getter returns `string`).
+ *   - `scanAutomatic` returns boolean or `undefined`, never null.
+ *   - `issueViewOptions?.openIssues` / `ignoredIssues` are accessed via optional chain on a
+ *     getter that falls back to `DEFAULT_ISSUE_VIEW_OPTIONS`, returning boolean or undefined.
+ *   - The only `null` values in outbound settings are pending-reset entries emitted by
+ *     `LanguageServerSettings.fromConfiguration` when `isPendingReset(lsKey)` is true.
+ *
+ * Therefore the only `{value:null, changed:true}` entries in the pull response are genuine
+ * pending-reset keys.  This function correctly unmarks only those keys and the "too broad"
+ * concern is not reachable in the current codebase.  If a resolver is ever changed to return
+ * `null` for a non-reset key, this function would need to be scoped to `GLOBAL_RESET_FIELDS`.
  */
 export function unmarkResetLsKeysAfterPull(
   settings: Record<string, LspConfigSetting>,
