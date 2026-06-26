@@ -2,6 +2,7 @@ import type { IConfiguration } from '../configuration/configuration';
 import { ALLISSUES, NEWISSUES } from '../configuration/configuration';
 import type { LspConfigSetting } from './types';
 import {
+  ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
   ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
@@ -147,6 +148,10 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
   [LS_GLOBAL_KEY.additionalParameters]: {
     vscodeKey: ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
     resolve: c => c.getAdditionalCliParameters(),
+  },
+  [LS_GLOBAL_KEY.additionalEnvironment]: {
+    vscodeKey: ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
+    resolve: c => c.getAdditionalCliEnvironment(),
   },
   [LS_GLOBAL_KEY.secureAtInceptionExecutionFreq]: {
     vscodeKey: SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
