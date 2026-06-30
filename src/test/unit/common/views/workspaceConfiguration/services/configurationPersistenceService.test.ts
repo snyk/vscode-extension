@@ -3,7 +3,7 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
-import { IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
+import { FolderConfig, IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../../../../snyk/common/vscode/workspace';
 import {
   IScopeDetectionService,
@@ -587,6 +587,141 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     await svc.persistInboundLspConfiguration(param);
 
     sinon.assert.notCalled(setFolderConfigsStub);
+  });
+});
+
+suite('ConfigurationPersistenceService — folder override reset (flat null)', () => {
+  const FOLDER_PATH = '/work/project-a';
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let folderConfig: FolderConfig;
+  let sendNotificationStub: sinon.SinonStub;
+
+  setup(() => {
+    // A real FolderConfig so saveFolderConfigs() matches by path and mutates it via setSetting().
+    folderConfig = new FolderConfig(FOLDER_PATH, {
+      [LS_KEY.snykCodeEnabled]: { value: true, changed: true },
+      [LS_KEY.preferredOrg]: { value: 'my-org', changed: true },
+    });
+
+    workspace = {
+      updateConfiguration: sinon.stub().resolves(),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({}),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('test-token'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([folderConfig]),
+      setFolderConfigs: sinon.stub().resolves(),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    sendNotificationStub = sinon.stub().resolves();
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({ sendNotification: sendNotificationStub }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
+
+  test('null-reset folder fields are persisted as {value:null, changed:true}', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
+
+    // The HTML dialog emits flat snake_case null for each reset folder field.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'test-token',
+      folderConfigs: [
+        {
+          folderPath: FOLDER_PATH,
+          [LS_KEY.snykCodeEnabled]: null,
+          [LS_KEY.preferredOrg]: null,
+        },
+      ],
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.called(setFolderConfigsStub);
+    assert.strictEqual(
+      setFolderConfigsStub.lastCall.args[1],
+      false,
+      'suppresses the redundant config-change notification from setFolderConfigs',
+    );
+    // handleSaveConfig still notifies the LS exactly once after all settings are written.
+    sinon.assert.calledOnce(sendNotificationStub);
+    const saved = setFolderConfigsStub.lastCall.args[0] as FolderConfig[];
+    const savedFolder = saved.find(fc => fc.folderPath === FOLDER_PATH);
+    assert.ok(savedFolder, 'folder config persisted');
+    const settings = savedFolder.toLspFolderConfiguration().settings ?? {};
+    assert.deepStrictEqual(settings[LS_KEY.snykCodeEnabled], { value: null, changed: true });
+    assert.deepStrictEqual(settings[LS_KEY.preferredOrg], { value: null, changed: true });
+  });
+
+  test('omitted folder fields keep prior value; null fields are reset', async () => {
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
+
+    // Only snykCodeEnabled is reset; preferredOrg is omitted entirely.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'test-token',
+      folderConfigs: [{ folderPath: FOLDER_PATH, [LS_KEY.snykCodeEnabled]: null }],
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.called(setFolderConfigsStub);
+    assert.strictEqual(
+      setFolderConfigsStub.lastCall.args[1],
+      false,
+      'suppresses the redundant config-change notification from setFolderConfigs',
+    );
+    // handleSaveConfig still notifies the LS exactly once after all settings are written.
+    sinon.assert.calledOnce(sendNotificationStub);
+    const saved = setFolderConfigsStub.lastCall.args[0] as FolderConfig[];
+    const savedFolder = saved.find(fc => fc.folderPath === FOLDER_PATH);
+    assert.ok(savedFolder, 'folder config persisted');
+    const settings = savedFolder.toLspFolderConfiguration().settings ?? {};
+    assert.deepStrictEqual(settings[LS_KEY.snykCodeEnabled], { value: null, changed: true });
+    // Omitted field retains its seeded prior value unchanged.
+    assert.deepStrictEqual(settings[LS_KEY.preferredOrg], { value: 'my-org', changed: true });
   });
 });
 
