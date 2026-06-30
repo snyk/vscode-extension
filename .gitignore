@@ -54,6 +54,10 @@ snyk.config.local.json
 
 # Local implementation plans (do not commit)
 *_implementation_plan/
+*_implementation_plan.md
+docs/plans/
+/tests.json
+/docs/diagrams/
 CLAUDE.md
 .commit-progress
 .verify-range
@@ -75,3 +79,13 @@ CLAUDE.md
 .verify-triage.json
 .verify-source-map.json
 .verify-agent-progress
+.verify-branch-diff
+.verify-pr-context
+.verify-oracle.json
+.verify-oracle.log
+.verify-oracle-scope.txt
+.verify-oracle.pid
+.verify-lang-skill
+.verify-chunk-diff
+.verify-dedup-findings.json
+.verify-reranked.json

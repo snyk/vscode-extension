@@ -76,4 +76,44 @@ suite('HtmlInjectionService', () => {
       'Should guard setAuthToken call with typeof check to handle pages that have not yet defined it',
     );
   });
+
+  test('injectIdeScripts injects vscode.getState() for UI state restoration', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('vscode.getState()'), 'Should inject vscode.getState() for UI state restoration');
+  });
+
+  test('injectIdeScripts injects vscode.setState() for UI state persistence', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('vscode.setState('), 'Should inject vscode.setState() for UI state persistence');
+  });
+
+  test('injectIdeScripts injects window load handler for tab and focus restoration', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("window.addEventListener('load'"),
+      'Should inject window load handler for tab and focus restoration',
+    );
+  });
+
+  test('injectIdeScripts injects tab state tracking for nav-link tabs', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(
+      processed.includes("classList.contains('nav-link') && target.hasAttribute('data-tab-target')"),
+      'Should inject nav-link guard that combines nav-link class check with data-tab-target attribute check',
+    );
+    ok(
+      processed.includes('_saveUiState({ activeTabId: target.id, activeFolderIndex: null })'),
+      'Should wire nav-link click to _saveUiState with activeTabId and null activeFolderIndex',
+    );
+  });
+
+  test('injectIdeScripts injects folder dropdown state tracking', () => {
+    const processed = service.injectIdeScripts(sampleHtml);
+
+    ok(processed.includes('folder-dropdown-item'), 'Should inject folder dropdown state tracking');
+  });
 });

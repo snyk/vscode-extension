@@ -371,10 +371,14 @@ export class LanguageServer implements ILanguageServer {
 
   private handleSnykConfigurationNotification(params: LspConfigurationParam): void {
     this.logger.debug('Received $/snyk.configuration notification');
-    this.runInboundPersistence(params);
+    void this.runInboundPersistence(params)
+      .then(() => this.workspaceConfigurationProvider?.reloadIfOpen())
+      .catch(() => {
+        /* reload errors are handled inside reloadIfOpen */
+      });
   }
 
-  private runInboundPersistence(params: LspConfigurationParam): void {
+  private runInboundPersistence(params: LspConfigurationParam): Promise<void> {
     this.configPersistenceQueue = this.configPersistenceQueue
       .catch(() => {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
@@ -403,6 +407,7 @@ export class LanguageServer implements ILanguageServer {
           this.suppressConfigFeedbackFromInboundPersistence = false;
         }
       });
+    return this.configPersistenceQueue;
   }
 
   /**

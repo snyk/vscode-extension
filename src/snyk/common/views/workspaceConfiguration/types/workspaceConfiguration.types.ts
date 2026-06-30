@@ -16,6 +16,7 @@ export interface IWorkspaceConfigurationWebviewProvider {
   showPanel(): Promise<void>;
   disposePanel(): void;
   setAuthToken(token: string, apiUrl?: string): void;
+  reloadIfOpen(): Promise<void>;
 }
 
 export interface SaveConfigMessage {

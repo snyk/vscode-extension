@@ -35,6 +35,13 @@ export class HtmlInjectionService implements IHtmlInjectionService {
         (function() {
           const vscode = acquireVsCodeApi();
 
+          var _uiState = vscode.getState() || {};
+
+          function _saveUiState(patch) {
+            _uiState = Object.assign({}, vscode.getState() || {}, patch);
+            vscode.setState(_uiState);
+          }
+
           window.__saveIdeConfig__ = function(jsonString) {
             vscode.postMessage({
               type: 'saveConfig',
@@ -53,6 +60,52 @@ export class HtmlInjectionService implements IHtmlInjectionService {
                 window.setAuthToken(message.token, message.apiUrl);
               }
             }
+          });
+
+          window.addEventListener('load', function () {
+            var activeTabId = _uiState.activeTabId;
+            var activeFolderIndex = _uiState.activeFolderIndex;
+            var focusedFieldId = _uiState.focusedFieldId;
+
+            if (activeTabId === 'folder-dropdown-btn' && activeFolderIndex != null) {
+              var folderItem = document.querySelector('.folder-dropdown-item[data-folder-index="' + activeFolderIndex + '"]');
+              if (folderItem) {
+                folderItem.click();
+              }
+            } else if (activeTabId) {
+              var tabEl = document.getElementById(activeTabId);
+              if (tabEl && !tabEl.classList.contains('active')) {
+                tabEl.click();
+              }
+            }
+
+            if (focusedFieldId) {
+              var fieldEl = document.getElementById(focusedFieldId);
+              if (fieldEl) {
+                fieldEl.focus();
+              }
+            }
+
+            document.addEventListener('click', function (e) {
+              var target = e.target;
+              while (target && target !== document) {
+                if (target.classList && target.classList.contains('folder-dropdown-item') && target.hasAttribute('data-folder-index')) {
+                  _saveUiState({ activeTabId: 'folder-dropdown-btn', activeFolderIndex: target.getAttribute('data-folder-index') });
+                  return;
+                }
+                if (target.classList && target.classList.contains('nav-link') && target.hasAttribute('data-tab-target')) {
+                  _saveUiState({ activeTabId: target.id, activeFolderIndex: null });
+                  return;
+                }
+                target = target.parentElement;
+              }
+            });
+
+            document.addEventListener('focusin', function (e) {
+              if (e.target && e.target.id) {
+                _saveUiState({ focusedFieldId: e.target.id });
+              }
+            });
           });
         })();
       </script>
