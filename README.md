@@ -54,7 +54,7 @@ Continue by following the instructions in the other Visual Studio Code extension
 
 When the VS Code extension is installed for the first time, a modal will pop up asking users if they want to enable Secure at Inception capabilities via Snyk Studio. With Secure at Inception enabled, a file such as snyk\_rules.mdc may be written to the directory.
 
-For more information, see the Snyk Studio quickstart guides for [Cursor](../../../integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/cursor-guide.md), [Windsurf](../../../integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/windsurf-guide.md), and [Copilot](../../../integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/github-copilot-guide.md).
+For more information, see the Snyk Studio quickstart guides for [Cursor](https://docs.snyk.io/integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/cursor-guide), [Windsurf](https://docs.snyk.io/integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/windsurf-guide), and [Copilot](https://docs.snyk.io/integrations/snyk-studio-agentic-integrations/quickstart-guides-for-snyk-studio/github-copilot-guide).
 
 ## Support
 

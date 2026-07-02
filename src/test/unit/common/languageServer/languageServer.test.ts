@@ -1047,6 +1047,72 @@ suite('Language Server', () => {
       sinon.assert.calledOnceWithExactly(debugSpy, 'Received $/snyk.configuration notification');
       debugSpy.restore();
     });
+
+    test('snyk.configuration notification calls reloadIfOpen after inbound persistence', async () => {
+      const callOrder: string[] = [];
+      const persistStub = sinon.stub().callsFake(() => {
+        callOrder.push('persist');
+      });
+      let resolveReload!: () => void;
+      const reloadDone = new Promise<void>(r => {
+        resolveReload = r;
+      });
+      const reloadStub = sinon.stub().callsFake(() => {
+        callOrder.push('reload');
+        resolveReload();
+      });
+      const providerMock: IWorkspaceConfigurationWebviewProvider = {
+        showPanel: sinon.stub(),
+        disposePanel: sinon.stub(),
+        setAuthToken: sinon.stub(),
+        reloadIfOpen: reloadStub,
+      };
+
+      const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
+      languageServer = new LanguageServer(
+        user,
+        configurationMock,
+        adapter,
+        stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+        new WindowMock(),
+        authServiceMock,
+        logger,
+        downloadServiceMock,
+        {} as IMcpProvider,
+        {} as IExtensionRetriever,
+        {} as ISummaryProviderService,
+        {} as IUriAdapter,
+        {} as IMarkdownStringAdapter,
+        new CommandsMock(),
+        {} as IDiagnosticsIssueProvider<unknown>,
+        explicitLspConfigurationChangeTracker,
+        persistStub,
+        undefined,
+        new ConfigFeedbackSuppressor(),
+      );
+      languageServer.setWorkspaceConfigurationProvider(providerMock);
+      downloadServiceMock.downloadReady$.next();
+      await languageServer.start();
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      handler({ settings: {} });
+
+      // Wait deterministically until reloadIfOpen is actually called
+      await reloadDone;
+
+      sinon.assert.calledOnce(reloadStub);
+      deepStrictEqual(callOrder, ['persist', 'reload']);
+    });
+
+    test('snyk.configuration notification does not throw when no provider is set', async () => {
+      const { notificationHandlers } = await startLanguageServerWithRecordingClient();
+
+      const handler = notificationHandlers['$/snyk.configuration'];
+      handler({ settings: {} });
+
+      // Flush microtask queue to ensure the void chain completes
+      await Promise.resolve();
+    });
   });
 
   // ── CLAIM 1: outbound reset self-cancel timing fix (IDE-2149) ───────────────
