@@ -462,7 +462,7 @@
     "viewsWelcome": [
       {
         "view": "snyk.views.welcome",
-        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc).\n\n You can check the logs to see the exact error in [Snyk Security](command:snyk.showOutputChannel) and [Snyk Language Server](command:snyk.showLsOutputChannel) output channels.\n[Display Error](command:snyk.showErrorFromContext)\n",
+        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.restart 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc).\n\n You can check the logs to see the exact error in [Snyk Security](command:snyk.showOutputChannel) and [Snyk Language Server](command:snyk.showLsOutputChannel) output channels.\n[Display Error](command:snyk.showErrorFromContext)\n",
         "when": "snyk:error"
       },
       {
@@ -529,6 +529,11 @@
         "title": "Rescan",
         "category": "Snyk",
         "icon": "$(run)"
+      },
+      {
+        "command": "snyk.restart",
+        "title": "Restart Snyk Language Server",
+        "category": "Snyk"
       },
       {
         "command": "snyk.settings",

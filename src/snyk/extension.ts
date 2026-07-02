@@ -29,6 +29,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_RESTART_COMMAND,
   SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
@@ -727,6 +728,9 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
+      }),
+      vscode.commands.registerCommand(SNYK_RESTART_COMMAND, async () => {
+        await this.restartLanguageServer();
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
         await this.workspaceConfigurationProvider?.showPanel();

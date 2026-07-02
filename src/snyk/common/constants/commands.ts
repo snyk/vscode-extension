@@ -5,6 +5,7 @@ export const VSCODE_ADD_COMMENT_COMMAND = 'editor.action.addCommentLine';
 
 // custom Snyk commands
 export const SNYK_START_COMMAND = 'snyk.start';
+export const SNYK_RESTART_COMMAND = 'snyk.restart';
 export const SNYK_INITIATE_LOGIN_COMMAND = 'snyk.initiateLogin';
 export const SNYK_INITIATE_LOGOUT_COMMAND = 'snyk.initiateLogout';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
