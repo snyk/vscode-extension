@@ -36,9 +36,6 @@ import {
 import {
   SNYK_CONTEXT,
   SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT,
-  SNYK_VIEW_ANALYSIS_CODE_SECURITY,
-  SNYK_VIEW_ANALYSIS_IAC,
-  SNYK_VIEW_ANALYSIS_OSS,
   SNYK_VIEW_SUMMARY,
   SNYK_VIEW_SUPPORT,
   SNYK_VIEW_TREEVIEW,
@@ -73,26 +70,17 @@ import ConfigurationWatcher from './common/watchers/configurationWatcher';
 import { IgnoreCommand } from './snykCode/codeActions/ignoreCommand';
 import { SnykCodeService } from './snykCode/codeService';
 import { CodeSettings } from './snykCode/codeSettings';
-import CodeSecurityIssueTreeProvider from './snykCode/views/securityIssueTreeProvider';
 import { CodeSuggestionWebviewProvider } from './snykCode/views/suggestion/codeSuggestionWebviewProvider';
 import { IacService } from './snykIac/iacService';
-import IacIssueTreeProvider from './snykIac/views/iacIssueTreeProvider';
 import { IacSuggestionWebviewProvider } from './snykIac/views/suggestion/iacSuggestionWebviewProvider';
 import { EditorDecorator } from './snykOss/editor/editorDecorator';
 import { OssService } from './snykOss/ossService';
 import { OssDetailPanelProvider } from './snykOss/providers/ossDetailPanelProvider';
 import { OssVulnerabilityCountProvider } from './snykOss/providers/ossVulnerabilityCountProvider';
-import OssIssueTreeProvider from './snykOss/providers/ossVulnerabilityTreeProvider';
 import { OssVulnerabilityCountService } from './snykOss/services/vulnerabilityCount/ossVulnerabilityCountService';
 import { FeatureFlagService } from './common/services/featureFlagService';
 import { DiagnosticsIssueProvider } from './common/services/diagnosticsService';
-import {
-  CodeIssueData,
-  IacIssueData,
-  LsScanProduct,
-  OssIssueData,
-  SecretsIssueData,
-} from './common/languageServer/types';
+import { CodeIssueData, IacIssueData, OssIssueData, SecretsIssueData } from './common/languageServer/types';
 import { ClearCacheService } from './common/services/CacheService';
 import { FileLockService } from './common/services/fileLockService';
 import { InMemory, Persisted } from './common/constants/general';
@@ -112,11 +100,9 @@ import { MessageHandlerFactory } from './common/views/workspaceConfiguration/han
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { TreeViewProviderService } from './base/treeView/treeViewProviderService';
 import { TreeViewWebviewProvider } from './common/views/treeViewWebviewProvider';
-import { ProductTreeViewService } from './common/services/productTreeViewService';
 import { Extension } from './common/vscode/extension';
 import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
-import { HTML_TREE_VIEW } from './common/constants/settings';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
 import { ConfigFeedbackSuppressor } from './common/languageServer/configFeedbackSuppressor';
@@ -208,7 +194,6 @@ class SnykExtension extends SnykLib implements IExtension {
     const languageClientAdapter = new LanguageClientAdapter();
     const mcpProvider = new McpProvider();
 
-    configuration.setViewManagerService(this.viewManagerService);
     configuration.setLanguageClientAdapter(languageClientAdapter);
 
     this.authService = new AuthenticationService(
@@ -315,7 +300,6 @@ class SnykExtension extends SnykLib implements IExtension {
       codeSuggestionProvider,
       new CodeActionAdapter(),
       this.codeActionKindAdapter,
-      this.viewManagerService,
       vsCodeWorkspace,
       this.workspaceTrust,
       this.languageServer,
@@ -340,7 +324,6 @@ class SnykExtension extends SnykLib implements IExtension {
       ossSuggestionProvider,
       new CodeActionAdapter(),
       this.codeActionKindAdapter,
-      this.viewManagerService,
       vsCodeWorkspace,
       this.workspaceTrust,
       this.languageServer,
@@ -364,7 +347,6 @@ class SnykExtension extends SnykLib implements IExtension {
       iacSuggestionProvider,
       new CodeActionAdapter(),
       this.codeActionKindAdapter,
-      this.viewManagerService,
       vsCodeWorkspace,
       this.workspaceTrust,
       this.languageServer,
@@ -386,7 +368,6 @@ class SnykExtension extends SnykLib implements IExtension {
       extensionContext,
       configuration,
       secretsSuggestionProvider,
-      this.viewManagerService,
       vsCodeWorkspace,
       this.workspaceTrust,
       this.languageServer,
@@ -431,101 +412,16 @@ class SnykExtension extends SnykLib implements IExtension {
     );
     this.registerCommands(vscodeContext);
 
-    const codeSecurityIssueProvider = new CodeSecurityIssueTreeProvider(
-      Logger,
-      this.viewManagerService,
-      this.contextService,
-      this.snykCode,
-      configuration,
-      vsCodeLanguages,
-      this.folderConfigs,
-    );
-
-    const securityCodeView = SNYK_VIEW_ANALYSIS_CODE_SECURITY;
-    const codeSecurityTree = vscode.window.createTreeView(securityCodeView, {
-      treeDataProvider: codeSecurityIssueProvider,
-    });
-
-    const codeSecurityTreeViewService = new ProductTreeViewService(
-      codeSecurityTree,
-      codeSecurityIssueProvider,
-      this.languageServer,
-      LsScanProduct.Code,
-    );
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(securityCodeView, codeSecurityIssueProvider),
-      codeSecurityTree,
-      codeSecurityTreeViewService,
-    );
-
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
-    const welcomeTree = vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
-      treeDataProvider: new EmptyTreeDataProvider(),
-    });
-    const codeEnablementTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT, {
-      treeDataProvider: new EmptyTreeDataProvider(),
-    });
-
-    vscodeContext.subscriptions.push(codeEnablementTree);
-
-    const ossIssueProvider = new OssIssueTreeProvider(
-      Logger,
-      this.viewManagerService,
-      this.contextService,
-      this.ossService,
-      configuration,
-      vsCodeLanguages,
-      this.folderConfigs,
-    );
-
-    const ossSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_OSS, {
-      treeDataProvider: ossIssueProvider,
-    });
-
-    const ossSecurityTreeViewService = new ProductTreeViewService(
-      ossSecurityTree,
-      ossIssueProvider,
-      this.languageServer,
-      LsScanProduct.OpenSource,
-    );
-
     vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_OSS, ossIssueProvider),
-      ossSecurityTree,
-      ossSecurityTreeViewService,
+      vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
+        treeDataProvider: new EmptyTreeDataProvider(),
+      }),
+      vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT, {
+        treeDataProvider: new EmptyTreeDataProvider(),
+      }),
     );
-
-    const iacIssueProvider = new IacIssueTreeProvider(
-      Logger,
-      this.viewManagerService,
-      this.contextService,
-      this.iacService,
-      configuration,
-      vsCodeLanguages,
-      this.folderConfigs,
-    );
-
-    const iacSecurityTree = vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_IAC, {
-      treeDataProvider: iacIssueProvider,
-    });
-
-    const iacSecurityTreeViewService = new ProductTreeViewService(
-      iacSecurityTree,
-      iacIssueProvider,
-      this.languageServer,
-      LsScanProduct.InfrastructureAsCode,
-    );
-
-    vscodeContext.subscriptions.push(
-      vscode.window.registerTreeDataProvider(SNYK_VIEW_ANALYSIS_IAC, iacIssueProvider),
-      iacSecurityTree,
-      iacSecurityTreeViewService,
-    );
-
-    // Fill the view container to expose views for tests
-    const viewContainer = this.viewManagerService.viewContainer;
-    viewContainer.set(SNYK_VIEW_WELCOME, welcomeTree);
 
     vscode.workspace.onDidChangeWorkspaceFolders(e => {
       this.workspaceTrust.resetTrustedFoldersCache();

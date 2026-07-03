@@ -18,6 +18,7 @@ const ALLOWED_COMMANDS = new Set([
   'snyk.setNodeExpanded',
   'snyk.showScanErrorDetails',
   'snyk.updateFolderConfig',
+  'snyk.trustWorkspaceFolders',
 ]);
 
 export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
@@ -52,7 +53,11 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
     };
     this.webviewView.webview.onDidReceiveMessage((msg: TreeViewCommandMessage) => this.handleMessage(msg));
-    this.showInitializingContent();
+    if (this.lastHtml) {
+      this.applyHtml(this.lastHtml);
+    } else {
+      this.showInitializingContent();
+    }
   }
 
   private showInitializingContent() {
@@ -102,10 +107,15 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
   }
 
   public updateWebviewContent(html: string) {
-    if (!this.webviewView) return;
     if (this.lastHtml === html) return;
     this.lastHtml = html;
+    if (this.webviewView) {
+      this.applyHtml(html);
+    }
+  }
 
+  private applyHtml(html: string) {
+    if (!this.webviewView) return;
     const nonce = getNonce();
     const ideScriptPath = vscode.Uri.joinPath(
       vscode.Uri.file(this.context.extensionPath),

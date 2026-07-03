@@ -12,7 +12,6 @@ import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IProductService } from '../../common/services/productService';
-import { IViewManagerService, ViewManagerService } from '../../common/services/viewManagerService';
 import { User } from '../../common/user';
 import { CodeActionKindAdapter, ICodeActionKindAdapter } from '../../common/vscode/codeAction';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
@@ -42,7 +41,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly contextService: IContextService;
   cacheService: IClearCacheService;
   readonly openerService: IOpenerService;
-  readonly viewManagerService: IViewManagerService;
   protected authService: IAuthenticationService;
   protected downloadService: DownloadService;
   protected ossService?: OssService;
@@ -75,7 +73,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   constructor() {
     this.statusBarItem = new SnykStatusBarItem();
     this.editorsWatcher = new SnykEditorsWatcher();
-    this.viewManagerService = new ViewManagerService();
     this.contextService = new ContextService();
     this.openerService = new OpenerService();
     this.loadingBadge = new LoadingBadge();

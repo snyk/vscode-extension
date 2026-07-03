@@ -428,24 +428,9 @@
           "content": "${scanSummaryHtml}"
         },
         {
-          "id": "snyk.views.analysis.oss",
-          "name": "Open Source Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
-        },
-        {
-          "id": "snyk.views.analysis.code.security",
-          "name": "Code Security",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
-        },
-        {
-          "id": "snyk.views.analysis.configuration",
-          "name": "Configuration Issues",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
-        },
-        {
           "id": "snyk.views.analysis.code.enablement",
           "name": "Code Security & Quality",
-          "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error && !snyk:htmlTreeViewEnabled"
+          "when": "snyk:initialized && snyk:loggedIn && !snyk:codeEnabled && snyk:workspaceFound && !snyk:error"
         },
         {
           "type": "webview",
@@ -499,12 +484,12 @@
       "view/title": [
         {
           "command": "snyk.start",
-          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary'",
           "group": "navigation"
         },
         {
           "command": "snyk.settings",
-          "when": "view == 'snyk.views.summary' || view == 'snyk.views.analysis.code.security' || view == 'snyk.views.analysis.code.security.delta' || view == 'snyk.views.analysis.code.quality' || view == 'snyk.views.analysis.code.quality.delta' || view == 'snyk.views.analysis.oss' || view == 'snyk.views.welcome' || view == 'snyk.views.analysis.configuration'",
+          "when": "view == 'snyk.views.summary' || view == 'snyk.views.welcome'",
           "group": "navigation"
         }
       ],

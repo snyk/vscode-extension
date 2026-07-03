@@ -7,7 +7,6 @@ import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
 import type { LspConfigSetting, LspFolderConfiguration } from '../languageServer/types';
 import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
-import { IViewManagerService } from '../services/viewManagerService';
 import {
   ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
@@ -292,8 +291,6 @@ export interface IConfiguration {
 
   setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void>;
 
-  setViewManagerService(viewManagerService: IViewManagerService): void;
-
   setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void;
 }
 
@@ -310,7 +307,6 @@ export class Configuration implements IConfiguration {
   constructor(
     private processEnv: NodeJS.ProcessEnv = process.env,
     private workspace: IVSCodeWorkspace,
-    private viewManagerService?: IViewManagerService,
     private languageClientAdapter?: ILanguageClientAdapter,
   ) {}
 
@@ -363,10 +359,6 @@ export class Configuration implements IConfiguration {
     const { configurationId, section } = Configuration.getConfigName(AUTO_CONFIGURE_MCP_SERVER);
     const value = this.workspace.getConfiguration<boolean>(configurationId, section);
     return value ?? false;
-  }
-
-  setViewManagerService(viewManagerService: IViewManagerService): void {
-    this.viewManagerService = viewManagerService;
   }
 
   setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void {
@@ -733,11 +725,6 @@ export class Configuration implements IConfiguration {
 
   async setFolderConfigs(folderConfigs: FolderConfig[], triggerConfigChangeEvent: boolean = false): Promise<void> {
     this.inMemoryFolderConfigs = folderConfigs;
-
-    // Always refresh views when folder configs change
-    if (this.viewManagerService) {
-      this.viewManagerService.refreshAllViews();
-    }
 
     // Optionally trigger configuration change event for language server
     if (triggerConfigChangeEvent && this.languageClientAdapter) {

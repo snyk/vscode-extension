@@ -6,7 +6,6 @@ import { WorkspaceTrust } from '../../../../snyk/common/configuration/trustedFol
 import { ILanguageServer } from '../../../../snyk/common/languageServer/languageServer';
 import { Issue, LsScanProduct, Scan, ScanProduct, ScanStatus } from '../../../../snyk/common/languageServer/types';
 import { ProductService } from '../../../../snyk/common/services/productService';
-import { IViewManagerService } from '../../../../snyk/common/services/viewManagerService';
 import { IProductWebviewProvider } from '../../../../snyk/common/views/webviewProvider';
 import { ExtensionContext } from '../../../../snyk/common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../../../../snyk/common/vscode/languages';
@@ -28,30 +27,19 @@ class MockProductService extends ProductService<MockProductData> {
       super.handleLsScanMessage(scan);
     });
   }
-
-  refreshTreeView(): void {
-    this.viewManagerService.refreshAllViews();
-  }
 }
 
 suite('Product Service', () => {
   let ls: ILanguageServer;
   let service: MockProductService;
-  let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
     ls = new LanguageServerMock();
-    refreshViewFake = sinon.fake();
-
-    const viewManagerService = {
-      refreshAllViews: refreshViewFake,
-    } as unknown as IViewManagerService;
 
     service = new MockProductService(
       {} as ExtensionContext,
       {} as IConfiguration,
       {} as unknown as IProductWebviewProvider<Issue<MockProductData>>,
-      viewManagerService,
       {
         getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
@@ -79,7 +67,6 @@ suite('Product Service', () => {
     });
 
     strictEqual(service.isAnalysisRunning, true);
-    sinon.assert.calledOnce(refreshViewFake);
   });
 
   test('Scan successfully finished', () => {
@@ -96,7 +83,6 @@ suite('Product Service', () => {
     });
 
     strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
   });
 
   test('Scan failed', () => {
@@ -113,7 +99,6 @@ suite('Product Service', () => {
     });
 
     strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
   });
 
   test('Scan finished when all scans in progress completed', () => {
@@ -144,7 +129,6 @@ suite('Product Service', () => {
     });
 
     strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.calledTwice(refreshViewFake);
   });
 
   test('Show issue detail topic message shows issue detail pane', () => {

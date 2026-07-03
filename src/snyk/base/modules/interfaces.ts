@@ -2,7 +2,6 @@ import { IWorkspaceTrust } from '../../common/configuration/trustedFolders';
 import { IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
 import { IOpenerService } from '../../common/services/openerService';
-import { IViewManagerService } from '../../common/services/viewManagerService';
 import { ExtensionContext } from '../../common/vscode/extensionContext';
 import { ExtensionContext as VSCodeExtensionContext } from '../../common/vscode/types';
 import { IStatusBarItem } from '../statusBarItem/statusBarItem';
@@ -13,7 +12,6 @@ export interface IBaseSnykModule {
   statusBarItem: IStatusBarItem;
   contextService: IContextService;
   openerService: IOpenerService;
-  viewManagerService: IViewManagerService;
   readonly workspaceTrust: IWorkspaceTrust;
 
   // Abstract methods

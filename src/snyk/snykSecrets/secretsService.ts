@@ -5,7 +5,6 @@ import { ILanguageServer } from '../common/languageServer/languageServer';
 import { LsScanProduct, Scan, ScanProduct, SecretsIssueData } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
 import { ProductService } from '../common/services/productService';
-import { IViewManagerService } from '../common/services/viewManagerService';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
 import { IVSCodeWorkspace } from '../common/vscode/workspace';
@@ -20,7 +19,6 @@ export class SecretsService extends ProductService<SecretsIssueData> {
     extensionContext: ExtensionContext,
     config: IConfiguration,
     suggestionProvider: IProductWebviewProvider<Issue<SecretsIssueData>>,
-    viewManagerService: IViewManagerService,
     workspace: IVSCodeWorkspace,
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
@@ -32,7 +30,6 @@ export class SecretsService extends ProductService<SecretsIssueData> {
       extensionContext,
       config,
       suggestionProvider,
-      viewManagerService,
       workspace,
       workspaceTrust,
       languageServer,
@@ -51,9 +48,5 @@ export class SecretsService extends ProductService<SecretsIssueData> {
 
       super.handleLsScanMessage(scan);
     });
-  }
-
-  refreshTreeView() {
-    // Secrets tree is managed by the HTML tree view
   }
 }

@@ -5,7 +5,6 @@ import { ILanguageServer } from '../common/languageServer/languageServer';
 import { LsScanProduct, OssIssueData, Scan, ScanProduct } from '../common/languageServer/types';
 import { ILog } from '../common/logger/interfaces';
 import { ProductService } from '../common/services/productService';
-import { IViewManagerService } from '../common/services/viewManagerService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../common/vscode/codeAction';
 import { ExtensionContext } from '../common/vscode/extensionContext';
 import { IVSCodeLanguages } from '../common/vscode/languages';
@@ -23,7 +22,6 @@ export class OssService extends ProductService<OssIssueData> {
     suggestionProvider: IOssSuggestionWebviewProvider,
     codeActionAdapter: ICodeActionAdapter,
     codeActionKindAdapter: ICodeActionKindAdapter,
-    viewManagerService: IViewManagerService,
     workspace: IVSCodeWorkspace,
     workspaceTrust: IWorkspaceTrust,
     languageServer: ILanguageServer,
@@ -35,7 +33,6 @@ export class OssService extends ProductService<OssIssueData> {
       extensionContext,
       config,
       suggestionProvider,
-      viewManagerService,
       workspace,
       workspaceTrust,
       languageServer,
@@ -58,9 +55,5 @@ export class OssService extends ProductService<OssIssueData> {
 
       super.handleLsScanMessage(scan);
     });
-  }
-
-  refreshTreeView() {
-    this.viewManagerService.refreshOssView();
   }
 }

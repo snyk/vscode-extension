@@ -6,7 +6,6 @@ import { WorkspaceTrust } from '../../../snyk/common/configuration/trustedFolder
 import { ILanguageServer } from '../../../snyk/common/languageServer/languageServer';
 import { CodeIssueData, ScanProduct, ScanStatus } from '../../../snyk/common/languageServer/types';
 import { IProductService } from '../../../snyk/common/services/productService';
-import { IViewManagerService } from '../../../snyk/common/services/viewManagerService';
 import { ICodeActionAdapter, ICodeActionKindAdapter } from '../../../snyk/common/vscode/codeAction';
 import { ExtensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
@@ -20,15 +19,9 @@ import { IDiagnosticsIssueProvider } from '../../../snyk/common/services/diagnos
 suite('Code Service', () => {
   let ls: ILanguageServer;
   let service: IProductService<CodeIssueData>;
-  let refreshViewFake: sinon.SinonSpy;
 
   setup(() => {
     ls = new LanguageServerMock();
-    refreshViewFake = sinon.fake();
-
-    const viewManagerService = {
-      refreshAllCodeAnalysisViews: refreshViewFake,
-    } as unknown as IViewManagerService;
 
     service = new SnykCodeService(
       {} as ExtensionContext,
@@ -38,7 +31,6 @@ suite('Code Service', () => {
       {
         getQuickFix: sinon.fake(),
       } as ICodeActionKindAdapter,
-      viewManagerService,
       {
         getWorkspaceFolderPaths: () => [''],
       } as IVSCodeWorkspace,
@@ -63,6 +55,5 @@ suite('Code Service', () => {
     });
 
     strictEqual(service.isAnalysisRunning, false);
-    sinon.assert.notCalled(refreshViewFake);
   });
 });

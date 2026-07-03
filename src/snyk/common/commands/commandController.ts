@@ -13,7 +13,6 @@ import {
   SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
-  SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND,
 } from '../constants/commands';
 import { COMMAND_DEBOUNCE_INTERVAL } from '../constants/general';
@@ -68,7 +67,6 @@ export class CommandController {
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
-    await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
     await this.commands.executeCommand(
       SNYK_LOGIN_COMMAND,
       this.configuration.getAuthenticationMethod(),

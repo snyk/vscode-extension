@@ -68,17 +68,16 @@ class ConfigurationWatcher implements IWatcher {
     } else if (key === ADVANCED_ADVANCED_MODE_SETTING) {
       return extension.checkAdvancedMode();
     } else if (key === OSS_ENABLED_SETTING) {
-      extension.viewManagerService.refreshOssView();
+      // HTML tree refreshes via LS on config change
     } else if (key === CODE_SECURITY_ENABLED_SETTING) {
-      return extension.viewManagerService.refreshAllCodeAnalysisViews();
+      // HTML tree refreshes via LS on config change
     } else if (key === IAC_ENABLED_SETTING) {
-      return extension.viewManagerService.refreshIacView();
+      // HTML tree refreshes via LS on config change
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
       await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
       await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
-      return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
       this.debouncedRestartLanguageServer(extension);
@@ -95,10 +94,9 @@ class ConfigurationWatcher implements IWatcher {
       }
       return;
     } else if (key == DELTA_FINDINGS) {
-      return extension.viewManagerService.refreshAllViews();
+      // HTML tree refreshes via LS on config change
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
-      extension.viewManagerService.refreshAllViews();
     } else if (key === AUTO_CONFIGURE_MCP_SERVER || key === SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY) {
       return;
     }

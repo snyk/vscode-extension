@@ -6,7 +6,6 @@ import { CodeActionsProvider } from '../editor/codeActionsProvider';
 import { ILanguageServer } from '../languageServer/languageServer';
 import { Issue, LsScanProduct, PresentableError, Scan, ScanProduct, ScanStatus } from '../languageServer/types';
 import { ILog } from '../logger/interfaces';
-import { IViewManagerService } from './viewManagerService';
 import { IProductWebviewProvider } from '../views/webviewProvider';
 import { ExtensionContext } from '../vscode/extensionContext';
 import { IVSCodeLanguages } from '../vscode/languages';
@@ -60,7 +59,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
     readonly extensionContext: ExtensionContext,
     private readonly config: IConfiguration,
     private readonly suggestionProvider: IProductWebviewProvider<Issue<T>>,
-    protected readonly viewManagerService: IViewManagerService,
     readonly workspace: IVSCodeWorkspace,
     private readonly workspaceTrust: IWorkspaceTrust,
     readonly languageServer: ILanguageServer,
@@ -76,8 +74,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
   }
 
   abstract subscribeToLsScanMessages(): Subscription;
-
-  abstract refreshTreeView(): void;
 
   public getSnykProductType(): ScanProduct {
     return this.productType;
@@ -123,7 +119,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   resetResult(folderPath: string): void {
     this._result.delete(folderPath);
-    this.refreshTreeView();
   }
 
   public isAnyResultAvailable(): boolean {
@@ -164,7 +159,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
 
   override handleLsDownloadFailure(): void {
     super.handleLsDownloadFailure();
-    this.refreshTreeView();
   }
 
   dispose(): void {
@@ -178,7 +172,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       if (!this.isAnalysisRunning) {
         this.analysisStarted();
         this._result.set(scanMsg.folderPath, { isSuccess: true, issues: [] });
-        this.refreshTreeView();
       }
 
       this.runningScanCount++;
@@ -224,7 +217,6 @@ export abstract class ProductService<T> extends AnalysisStatusProvider implement
       this.runningScanCount = 0;
 
       this.newResultAvailable$.next();
-      this.refreshTreeView();
     }
   }
 }
