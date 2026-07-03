@@ -1,44 +1,10 @@
-import * as path from 'path';
 import { Command, Range, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 import { SNYK_OPEN_BROWSER_COMMAND, SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 
-export interface INodeIcon {
+interface INodeIcon {
   ['light']: string;
   ['dark']: string;
 }
-
-type NODE_ICON_TYPE = 'critical' | 'high' | 'medium' | 'low' | 'error' | 'branch' | 'pencil';
-
-export const NODE_ICONS: { [key in NODE_ICON_TYPE]: INodeIcon } = {
-  critical: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-critical-severity.svg'),
-  },
-  high: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-high-severity.svg'),
-  },
-  medium: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-medium-severity.svg'),
-  },
-  low: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'dark-low-severity.svg'),
-  },
-  error: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'warning.svg'),
-  },
-  branch: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch-light.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'branch-dark.svg'),
-  },
-  pencil: {
-    light: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'pencil-light.svg'),
-    dark: path.join(__filename, '..', '..', '..', '..', '..', 'media', 'images', 'pencil-dark.svg'),
-  },
-};
 
 type InternalType = {
   nIssues?: number;
@@ -53,7 +19,7 @@ type TreeNodeIssueType = {
   range?: Range;
 };
 
-export interface INodeOptions {
+interface INodeOptions {
   text: string;
   description?: string;
   descriptionTail?: string;

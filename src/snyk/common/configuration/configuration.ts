@@ -149,7 +149,7 @@ export class FolderConfig {
   }
 }
 
-export interface IssueViewOptions {
+interface IssueViewOptions {
   ignoredIssues: boolean;
   openIssues: boolean;
 
