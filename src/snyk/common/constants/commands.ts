@@ -8,6 +8,7 @@ export const SNYK_START_COMMAND = 'snyk.start';
 export const SNYK_RESTART_COMMAND = 'snyk.restart';
 export const SNYK_INITIATE_LOGIN_COMMAND = 'snyk.initiateLogin';
 export const SNYK_INITIATE_LOGOUT_COMMAND = 'snyk.initiateLogout';
+export const SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND = 'snyk.trustWorkspaceFolders';
 export const SNYK_SET_TOKEN_COMMAND = 'snyk.setToken';
 export const SNYK_ENABLE_CODE_COMMAND = 'snyk.enableCode';
 export const SNYK_SETTINGS_COMMAND = 'snyk.settings';

@@ -318,22 +318,6 @@
             "markdownDescription": "Choose when Snyk should scan and initiate fixes for your AI-generated code",
             "scope": "window",
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
-          },
-          "snyk.features.preview": {
-            "order": 4,
-            "type": "object",
-            "default": {},
-            "title": "Preview feature toggles",
-            "description": "Preview features that are currently in development. Setting keys will be removed when features become stable.",
-            "propertyNames": true,
-            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk.",
-            "properties": {
-              "htmlTreeView": {
-                "type": "boolean",
-                "default": true,
-                "description": "Use server-driven HTML tree view instead of native tree views"
-              }
-            }
           }
         }
       },
@@ -436,7 +420,7 @@
           "type": "webview",
           "id": "snyk.views.treeView",
           "name": "Snyk Results",
-          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error && snyk:htmlTreeViewEnabled"
+          "when": "snyk:initialized && snyk:loggedIn && snyk:workspaceFound && !snyk:error"
         },
         {
           "id": "snyk.views.support",

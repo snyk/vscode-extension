@@ -10,6 +10,7 @@ import {
   SNYK_INITIATE_LOGIN_COMMAND,
   SNYK_INITIATE_LOGOUT_COMMAND,
   SNYK_LOGIN_COMMAND,
+  SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND,
   SNYK_LOGOUT_COMMAND,
   SNYK_OPEN_BROWSER_COMMAND,
   SNYK_SET_TOKEN_COMMAND,
@@ -67,6 +68,7 @@ export class CommandController {
   async initiateLogin(): Promise<void> {
     this.logger.info('Initiating login');
     await this.executeCommand(SNYK_INITIATE_LOGIN_COMMAND, this.authService.initiateLogin.bind(this.authService));
+    await this.commands.executeCommand(SNYK_TRUST_WORKSPACE_FOLDERS_COMMAND);
     await this.commands.executeCommand(
       SNYK_LOGIN_COMMAND,
       this.configuration.getAuthenticationMethod(),

@@ -24,5 +24,4 @@ export const SNYK_CONTEXT = {
   ADVANCED: 'advanced',
   DELTA_FINDINGS_ENABLED: 'deltaFindingsEnabled',
   SCANSUMMARY: 'scanSummaryHtml',
-  HTML_TREE_VIEW_ENABLED: 'htmlTreeViewEnabled',
 };
