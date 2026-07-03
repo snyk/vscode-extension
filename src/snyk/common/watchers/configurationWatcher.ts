@@ -71,13 +71,16 @@ class ConfigurationWatcher implements IWatcher {
       // HTML tree refreshes via LS on config change
     } else if (key === CODE_SECURITY_ENABLED_SETTING) {
       // HTML tree refreshes via LS on config change
+      return;
     } else if (key === IAC_ENABLED_SETTING) {
       // HTML tree refreshes via LS on config change
+      return;
     } else if (key === ADVANCED_CUSTOM_ENDPOINT) {
       return configuration.clearToken();
     } else if (key === ADVANCED_AUTHENTICATION_METHOD) {
       await extension.contextService.setContext(SNYK_CONTEXT.LOGGEDIN, false);
       await extension.contextService.setContext(SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED, true);
+      return;
     } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
       this.debouncedRestartLanguageServer(extension);
@@ -95,6 +98,7 @@ class ConfigurationWatcher implements IWatcher {
       return;
     } else if (key == DELTA_FINDINGS) {
       // HTML tree refreshes via LS on config change
+      return;
     } else if (key === TRUSTED_FOLDERS) {
       extension.workspaceTrust.resetTrustedFoldersCache();
     } else if (key === AUTO_CONFIGURE_MCP_SERVER || key === SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY) {
