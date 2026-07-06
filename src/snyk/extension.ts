@@ -224,7 +224,7 @@ class SnykExtension extends SnykLib implements IExtension {
     const snykConfiguration = await this.getSnykConfiguration();
     this.experimentService = new ExperimentService(this.user, Logger, configuration, snykConfiguration);
 
-    const treeViewWebviewProvider = TreeViewWebviewProvider.getInstance(vscodeContext, vsCodeCommands);
+    const treeViewWebviewProvider = TreeViewWebviewProvider.getInstance(vscodeContext, vsCodeCommands, Logger);
     if (treeViewWebviewProvider) {
       this.treeViewProviderService = new TreeViewProviderService(Logger, treeViewWebviewProvider);
       vscodeContext.subscriptions.push(

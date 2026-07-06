@@ -1,7 +1,8 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 import { readFileSync } from 'fs';
+import { join } from 'path';
 import { getNonce } from './nonce';
-import { Logger } from '../logger/logger';
+import { ILog } from '../logger/interfaces';
 import { IVSCodeCommands } from '../vscode/commands';
 
 type TreeViewCommandMessage = {
@@ -26,23 +27,33 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
   private webviewView: vscode.WebviewView | undefined;
   private context: vscode.ExtensionContext;
   private commands: IVSCodeCommands;
+  private logger: ILog;
+  private fileReader: (path: string) => string;
   private lastHtml: string | undefined;
 
-  private constructor(context: vscode.ExtensionContext, commands: IVSCodeCommands) {
+  private constructor(
+    context: vscode.ExtensionContext,
+    commands: IVSCodeCommands,
+    logger: ILog,
+    fileReader: (path: string) => string,
+  ) {
     this.context = context;
     this.commands = commands;
+    this.logger = logger;
+    this.fileReader = fileReader;
   }
 
   public static getInstance(
     extensionContext?: vscode.ExtensionContext,
     commands?: IVSCodeCommands,
+    logger?: ILog,
+    fileReader: (path: string) => string = path => readFileSync(path, 'utf8'),
   ): TreeViewWebviewProvider | undefined {
     if (!TreeViewWebviewProvider.instance) {
-      if (!extensionContext || !commands) {
-        Logger.error('ExtensionContext and commands are required for TreeViewWebviewProvider initialization');
+      if (!extensionContext || !commands || !logger) {
         return undefined;
       }
-      TreeViewWebviewProvider.instance = new TreeViewWebviewProvider(extensionContext, commands);
+      TreeViewWebviewProvider.instance = new TreeViewWebviewProvider(extensionContext, commands, logger, fileReader);
     }
     return TreeViewWebviewProvider.instance;
   }
@@ -63,14 +74,8 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
   private showInitializingContent() {
     if (!this.webviewView) return;
     const nonce = getNonce();
-    const initHtmlPath = vscode.Uri.joinPath(
-      vscode.Uri.file(this.context.extensionPath),
-      'media',
-      'views',
-      'treeView',
-      'TreeViewInit.html',
-    );
-    let html = readFileSync(initHtmlPath.fsPath, 'utf8');
+    const initHtmlPath = join(this.context.extensionPath, 'media', 'views', 'treeView', 'TreeViewInit.html');
+    let html = this.fileReader(initHtmlPath);
     html = html.replace(/\${nonce}/g, nonce);
     this.webviewView.webview.html = html;
   }
@@ -81,7 +86,7 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
     const { requestId, command, args } = message;
 
     if (!ALLOWED_COMMANDS.has(command)) {
-      Logger.warn(`Tree view command not in allowlist: ${command}`);
+      this.logger.warn(`Tree view command not in allowlist: ${command}`);
       this.postResult(requestId, null, `Command not allowed: ${command}`);
       return;
     }
@@ -91,7 +96,7 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
       this.postResult(requestId, result ?? null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      Logger.error(`Tree view command execution failed: ${errorMessage}`);
+      this.logger.error(`Tree view command execution failed: ${errorMessage}`);
       this.postResult(requestId, null, errorMessage);
     }
   }
@@ -116,21 +121,26 @@ export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {
 
   private applyHtml(html: string) {
     if (!this.webviewView) return;
-    const nonce = getNonce();
-    const ideScriptPath = vscode.Uri.joinPath(
-      vscode.Uri.file(this.context.extensionPath),
-      'out',
-      'snyk',
-      'common',
-      'views',
-      'treeViewWebviewScript.js',
-    );
-    const ideScript = readFileSync(ideScriptPath.fsPath, 'utf8');
+    try {
+      const nonce = getNonce();
+      const ideScriptPath = join(
+        this.context.extensionPath,
+        'out',
+        'snyk',
+        'common',
+        'views',
+        'treeViewWebviewScript.js',
+      );
+      const ideScript = this.fileReader(ideScriptPath);
 
-    html = html.replace('${ideStyle}', `<style nonce="${nonce}"></style>`);
-    html = html.replace('${ideScript}', `<script nonce="${nonce}">${ideScript}</script>`);
-    html = html.replace(/\${nonce}/g, nonce);
+      html = html.replace('${ideStyle}', `<style nonce="${nonce}"></style>`);
+      html = html.replace('${ideScript}', `<script nonce="${nonce}">${ideScript}</script>`);
+      html = html.replace(/\${nonce}/g, nonce);
 
-    this.webviewView.webview.html = html;
+      this.webviewView.webview.html = html;
+    } catch (error) {
+      this.logger.error('Failed to render TreeView webview content');
+      this.showInitializingContent();
+    }
   }
 }
