@@ -4,6 +4,9 @@ import type { LspConfigurationParam, LspConfigSetting } from './types';
 import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
 import { ExplicitChangePredicate, folderConfigToLspFolderConfiguration } from './serverSettingsToLspConfigurationParam';
 
+/** Returns true when the LS key has a pending outbound reset (emit `{value:null, changed:true}`). */
+type PendingResetPredicate = (lsKey: string) => boolean;
+
 export class LanguageServerSettings {
   static resolveFolderConfigs(
     configuration: IConfiguration,
@@ -21,22 +24,20 @@ export class LanguageServerSettings {
     configuration: IConfiguration,
     isExplicitlyChanged: ExplicitChangePredicate,
     workspace?: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>,
+    isPendingReset?: PendingResetPredicate,
   ): Promise<LspConfigurationParam> {
-    const m: Record<string, LspConfigSetting> = {};
-
-    for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
-      if (entry.alwaysChanged) {
-        m[lsKey] = { value: await entry.resolve(configuration), changed: true };
-        continue;
-      }
-
-      const value = await entry.resolve(configuration);
-      if (value != null && (typeof value !== 'string' || value.trim() !== '')) {
-        m[lsKey] = { value, changed: isExplicitlyChanged(lsKey) };
-      } else if (isExplicitlyChanged(lsKey)) {
-        m[lsKey] = { value: null, changed: true };
-      }
-    }
+    const entries = await Promise.all(
+      Object.entries(SETTINGS_REGISTRY).map(async ([lsKey, entry]) => {
+        // Outbound reset: the dialog saved null for a global-resettable field.
+        // Emit { value: null, changed: true } so the LS clears the user:global override.
+        if (isPendingReset?.(lsKey)) {
+          return [lsKey, { value: null, changed: true }] as const;
+        }
+        const value = await entry.resolve(configuration);
+        return [lsKey, { value, changed: entry.alwaysChanged || isExplicitlyChanged(lsKey) }] as const;
+      }),
+    );
+    const m: Record<string, LspConfigSetting> = Object.fromEntries(entries);
 
     // Folder configs
     const folderConfigs = LanguageServerSettings.resolveFolderConfigs(configuration, workspace);

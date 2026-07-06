@@ -13,6 +13,7 @@ import {
   TRUSTED_FOLDERS,
   DELTA_FINDINGS,
   ADVANCED_AUTHENTICATION_METHOD,
+  ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   CODE_SECURITY_ENABLED_SETTING,
@@ -34,6 +35,28 @@ class ConfigurationWatcher implements IWatcher {
     private readonly user: User,
     private readonly vscodeContext: vscode.ExtensionContext,
   ) {}
+
+  // Persistent debounced restarts so rapid config changes collapse into a single LS restart cycle
+  // (a fresh `_.debounce(...)()` per event would never share a timer and so never debounce).
+  private readonly debouncedRestartLanguageServer = _.debounce((extension: IExtension) => {
+    extension
+      .restartLanguageServer()
+      .catch(err =>
+        ErrorHandler.handle(err, this.logger, `${errorsLogs.configWatcher}. Configuration key: ${ADVANCED_CLI_PATH}`),
+      );
+  }, DEFAULT_LS_DEBOUNCE_INTERVAL);
+
+  private readonly debouncedRestartWithDependencyDownload = _.debounce((extension: IExtension) => {
+    extension
+      .restartLanguageServerWithDependencyDownload()
+      .catch(err =>
+        ErrorHandler.handle(
+          err,
+          this.logger,
+          `${errorsLogs.configWatcher}. Configuration key: ${ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT}`,
+        ),
+      );
+  }, DEFAULT_LS_DEBOUNCE_INTERVAL);
 
   private async onChangeConfiguration(
     extension: IExtension,
@@ -58,7 +81,13 @@ class ConfigurationWatcher implements IWatcher {
       return extension.viewManagerService.refreshAllViews();
     } else if (key === ADVANCED_CLI_PATH) {
       // Language Server client must sync config changes before we can restart
-      return _.debounce(() => extension.restartLanguageServer(), DEFAULT_LS_DEBOUNCE_INTERVAL)();
+      this.debouncedRestartLanguageServer(extension);
+      return;
+    } else if (key === ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT) {
+      // Re-evaluate binary management and restart so the toggle takes effect without an IDE reload:
+      // enabling downloads the managed binary, disabling falls back to the configured cliPath.
+      this.debouncedRestartWithDependencyDownload(extension);
+      return;
     } else if (key === ADVANCED_CLI_RELEASE_CHANNEL) {
       if (configuration.isAutomaticDependencyManagementEnabled()) {
         await extension.stopLanguageServer();
@@ -96,6 +125,7 @@ class ConfigurationWatcher implements IWatcher {
         CODE_SECURITY_ENABLED_SETTING,
         IAC_ENABLED_SETTING,
         ADVANCED_CUSTOM_ENDPOINT,
+        ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT,
         ADVANCED_CLI_PATH,
         ADVANCED_CLI_RELEASE_CHANNEL,
         ADVANCED_AUTHENTICATION_METHOD,

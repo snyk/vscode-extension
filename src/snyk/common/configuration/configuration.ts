@@ -9,6 +9,7 @@ import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam'
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { IViewManagerService } from '../services/viewManagerService';
 import {
+  ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
   ADVANCED_ADDITIONAL_PARAMETERS_SETTING,
   ADVANCED_ADVANCED_MODE_SETTING,
   ADVANCED_AUTHENTICATION_METHOD,
@@ -225,6 +226,8 @@ export interface IConfiguration {
   organization: string;
 
   getAdditionalCliParameters(): string | undefined;
+
+  getAdditionalCliEnvironment(): string | undefined;
 
   snykApiEndpoint: string;
 
@@ -653,16 +656,12 @@ export class Configuration implements IConfiguration {
   }
 
   get organization(): string {
+    // VS Code window-scope precedence: workspaceValue beats globalValue. Honour the
+    // workspace-scope override even in single-folder workspaces — a workspace-scope
+    // clear (`''`) must reach LS, and the writer no longer special-cases single-folder
+    // either (IDE-1638 removed the matching branch from applySettingsMap).
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
-    const workspaceFolders = this.workspace.getWorkspaceFolders();
     const inspection = this.workspace.inspectConfiguration<string>(configurationId, section);
-
-    // If only 1 folder in workspace, return user (global) scope only
-    if (workspaceFolders.length === 1) {
-      return inspection?.globalValue ?? '';
-    }
-
-    // If multiple folders, return workspace scope, falling back to user (global) scope
     return inspection?.workspaceValue ?? inspection?.globalValue ?? '';
   }
 
@@ -680,6 +679,11 @@ export class Configuration implements IConfiguration {
 
   getAdditionalCliParameters(): string | undefined {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADDITIONAL_PARAMETERS_SETTING);
+    return this.workspace.getConfiguration<string>(configurationId, section);
+  }
+
+  getAdditionalCliEnvironment(): string | undefined {
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING);
     return this.workspace.getConfiguration<string>(configurationId, section);
   }
 

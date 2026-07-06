@@ -23,6 +23,25 @@ import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
 
+/**
+ * ADR-2: Re-enqueue guard predicate.
+ *
+ * Returns true when the re-enqueue for `lsKey` should be SKIPPED (i.e. the user
+ * committed a concrete value for this key in the current window, so restoring
+ * the reset would clobber it).
+ *
+ * Reads `committedSinceReset` — a transient, windowed, per-LS-key signal — NOT
+ * `isExplicitlyChanged` (cumulative, persisted, cross-session, fanned-out across
+ * shared VS Code settings).  The shared predicate is extracted here so both call
+ * sites (middleware.ts and languageServer.ts) stay in sync.
+ */
+export function shouldSkipReenqueue(
+  lsKey: string,
+  tracker: IExplicitLspConfigurationChangeTracker | undefined,
+): boolean {
+  return tracker?.committedSinceReset(lsKey) ?? false;
+}
+
 /** snyk-ls unmarshals the pull response as `[]DidChangeConfigurationParams` where each element is `{ settings: LspConfigurationParam }`. */
 type LspPullResponseItem = { settings: LspConfigurationParam };
 
@@ -70,13 +89,42 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      const lspParam = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
-        this.vscodeWorkspace,
-      );
+      // Consume any pending outbound resets before building the param so they are
+      // emitted as { value: null, changed: true } exactly once on this pull.
+      const pendingResets = this.explicitLspConfigurationChangeTracker?.consumePendingResets() ?? new Set<string>();
+
+      let lspParam: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
+      try {
+        lspParam = await LanguageServerSettings.fromConfiguration(
+          this.configuration,
+          lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+          this.vscodeWorkspace,
+          lsKey => pendingResets.has(lsKey),
+        );
+      } catch (err) {
+        // fromConfiguration failed after consumePendingResets() already drained the set.
+        // Re-enqueue keys for prompt, deterministic delivery on the next pull — but only if the
+        // user has NOT committed a concrete value for this key since the drain.
+        //
+        // ADR-2: The guard reads `committedSinceReset` (transient, windowed, per-LS-key) instead
+        // of `isExplicitlyChanged` (cumulative, persisted, cross-session, fanned-out).
+        // `isExplicitlyChanged` answered the wrong question: it was true if the key was ever
+        // customised (prior session), if a sibling sharing the same VS Code setting was edited
+        // (fan-out), or if an inbound write slipped past the suppressor — all of which would
+        // incorrectly drop a legitimate re-enqueue.  `committedSinceReset` is set only when the
+        // user genuinely commits a concrete value for exactly this LS key in this window.
+        for (const key of pendingResets) {
+          if (!shouldSkipReenqueue(key, this.explicitLspConfigurationChangeTracker)) {
+            this.explicitLspConfigurationChangeTracker?.markPendingReset(key);
+          }
+        }
+        throw err;
+      }
 
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
+        // Pending-reset keys emitted as {value:null, changed:true} were already unmarked at
+        // save time by applyOutboundGlobalResets, so this unmark pass is safely idempotent
+        // (Set.delete of an absent key is a no-op).
         unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
       }
 

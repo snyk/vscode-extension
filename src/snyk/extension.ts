@@ -29,6 +29,7 @@ import {
   SNYK_SHOW_LS_OUTPUT_COMMAND,
   SNYK_SHOW_OUTPUT_COMMAND,
   SNYK_START_COMMAND,
+  SNYK_RESTART_COMMAND,
   SNYK_TOGGLE_DELTA,
   SNYK_WORKSPACE_SCAN_COMMAND,
 } from './common/constants/commands';
@@ -47,6 +48,7 @@ import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
+import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -117,6 +119,7 @@ import { McpProvider } from './common/vscode/mcpProvider';
 import { HTML_TREE_VIEW } from './common/constants/settings';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
+import { ConfigFeedbackSuppressor } from './common/languageServer/configFeedbackSuppressor';
 
 class SnykExtension extends SnykLib implements IExtension {
   private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
@@ -250,6 +253,12 @@ class SnykExtension extends SnykLib implements IExtension {
     }
 
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
+    seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
+
+    // Shared suppressor: prevents the onDidChangeConfiguration listener in LanguageServer from
+    // calling markExplicitlyChanged (and thus deleting a just-queued pendingReset) while
+    // applyOutboundGlobalResets' own updateConfiguration write is in flight (IDE-2149).
+    const outboundResetSuppressor = new ConfigFeedbackSuppressor();
 
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configPersistenceService = new ConfigurationPersistenceService(
@@ -258,7 +267,9 @@ class SnykExtension extends SnykLib implements IExtension {
       scopeDetectionService,
       languageClientAdapter,
       Logger,
+      outboundResetSuppressor,
       this.contextService,
+      explicitLspConfigurationChangeTracker,
     );
 
     this.languageServer = new LanguageServer(
@@ -285,6 +296,7 @@ class SnykExtension extends SnykLib implements IExtension {
       explicitLspConfigurationChangeTracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
+      outboundResetSuppressor,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -539,6 +551,15 @@ class SnykExtension extends SnykLib implements IExtension {
     // Skip LS initialization during integration tests to prevent LS interferening with tests
     if (process.env.SNYK_INTEGRATION_TEST_MODE === 'true') return;
 
+    // Track user-driven `snyk.*` settings changes from now on — even before the LS starts — so
+    // overrides made while the CLI is still downloading (fallback settings page) are sent as
+    // `changed: true` at the next LS start instead of being lost and echoed back as defaults.
+    // Owned by the extension context so it's disposed on deactivation.
+    const explicitKeyMarkingDisposable = this.languageServer.registerExplicitKeyMarkingListener();
+    if (explicitKeyMarkingDisposable) {
+      vscodeContext.subscriptions.push(explicitKeyMarkingDisposable);
+    }
+
     this.initDependencyDownload();
 
     this.ossVulnerabilityCountService = new OssVulnerabilityCountService(
@@ -654,16 +675,36 @@ class SnykExtension extends SnykLib implements IExtension {
     await this.languageServer.start();
   }
 
+  /**
+   * Re-evaluates dependency management and restarts the LS so a change to
+   * `automaticDependencyManagement` takes effect without an IDE reload: enabling downloads the
+   * managed binary, disabling falls back to the configured `cliPath`.
+   *
+   * The download is awaited *before* starting so the LS does not probe the binary while a download
+   * is still in flight (`start()` resolves immediately on the replayed `downloadReady$`).
+   */
+  public async restartLanguageServerWithDependencyDownload(): Promise<void> {
+    await this.languageServer.stop();
+    await this.downloadDependencies();
+    await this.languageServer.start();
+  }
+
   public initDependencyDownload(): DownloadService {
-    this.downloadService.downloadOrUpdate().catch(err => {
+    void this.downloadDependencies();
+    return this.downloadService;
+  }
+
+  private async downloadDependencies(): Promise<void> {
+    try {
+      await this.downloadService.downloadOrUpdate();
+    } catch (err) {
       if (err instanceof TransientNetworkError || isNetworkConnectivityError(err)) {
         Logger.info(`CLI download skipped due to no network connectivity. Will retry on next startup.`);
         return;
       }
       void ErrorHandler.handleGlobal(err, Logger, this.contextService, this.loadingBadge);
       void this.notificationService.showErrorNotification((err as Error).message);
-    });
-    return this.downloadService;
+    }
   }
 
   private registerCommands(context: vscode.ExtensionContext): void {
@@ -687,6 +728,9 @@ class SnykExtension extends SnykLib implements IExtension {
       vscode.commands.registerCommand(SNYK_START_COMMAND, async () => {
         await vscode.commands.executeCommand(SNYK_WORKSPACE_SCAN_COMMAND);
         await vscode.commands.executeCommand('setContext', 'scanSummaryHtml', 'scanSummary');
+      }),
+      vscode.commands.registerCommand(SNYK_RESTART_COMMAND, async () => {
+        await this.restartLanguageServer();
       }),
       vscode.commands.registerCommand(SNYK_SETTINGS_COMMAND, async () => {
         await this.workspaceConfigurationProvider?.showPanel();

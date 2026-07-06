@@ -245,6 +245,13 @@
             "scope": "window",
             "order": 9,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
+          },
+          "snyk.advanced.additionalEnvironment": {
+            "type": "string",
+            "description": "Environment variables for Snyk CLI (semicolon-separated KEY=VALUE pairs, e.g. VAR1=value1;VAR2=value2).",
+            "scope": "window",
+            "order": 10,
+            "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
         }
       },
@@ -455,7 +462,7 @@
     "viewsWelcome": [
       {
         "view": "snyk.views.welcome",
-        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.start 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc).\n\n You can check the logs to see the exact error in [Snyk Security](command:snyk.showOutputChannel) and [Snyk Language Server](command:snyk.showLsOutputChannel) output channels.\n[Display Error](command:snyk.showErrorFromContext)\n",
+        "contents": "Snyk has encountered a problem. Please restart the extension: \n[Restart](command:snyk.restart 'Restart Snyk')\nIf the error persists, please check your [settings](command:snyk.settings) and [contact us](https://snyk.io/contact-us/?utm_source=vsc).\n\n You can check the logs to see the exact error in [Snyk Security](command:snyk.showOutputChannel) and [Snyk Language Server](command:snyk.showLsOutputChannel) output channels.\n[Display Error](command:snyk.showErrorFromContext)\n",
         "when": "snyk:error"
       },
       {
@@ -522,6 +529,11 @@
         "title": "Rescan",
         "category": "Snyk",
         "icon": "$(run)"
+      },
+      {
+        "command": "snyk.restart",
+        "title": "Restart Snyk Language Server",
+        "category": "Snyk"
       },
       {
         "command": "snyk.settings",
@@ -650,7 +662,9 @@
   },
   "overrides": {
     "vscode-languageclient": {
-      "minimatch": "==5.1.9"
-    }
+      "minimatch": "==5.1.9",
+      "brace-expansion": "2.0.3"
+    },
+    "brace-expansion@>=5.0.0 <5.0.6": "5.0.6"
   }
 }

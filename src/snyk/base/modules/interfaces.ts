@@ -31,5 +31,6 @@ export interface IExtension extends IBaseSnykModule, ISnykLib {
   activate(context: VSCodeExtensionContext): void;
   stopLanguageServer(): Promise<void>;
   restartLanguageServer(): Promise<void>;
+  restartLanguageServerWithDependencyDownload(): Promise<void>;
   initDependencyDownload(): DownloadService;
 }
