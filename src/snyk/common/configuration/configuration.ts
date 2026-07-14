@@ -388,7 +388,10 @@ export class Configuration implements IConfiguration {
 
   getCliBaseDownloadUrl(): string {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL);
-    return this.workspace.getConfiguration<string>(configurationId, section) ?? this.defaultCliBaseDownloadUrl;
+    // If the configured CLI Base Download URL is null, empty, or not a string, use the default.
+    const raw = this.workspace.getConfiguration<string>(configurationId, section);
+    const value = typeof raw === 'string' ? raw.trim() : undefined;
+    return value ? value : this.defaultCliBaseDownloadUrl;
   }
 
   getOssQuickFixCodeActionsEnabled(): boolean {

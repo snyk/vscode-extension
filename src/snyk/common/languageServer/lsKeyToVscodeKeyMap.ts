@@ -42,6 +42,8 @@ interface SettingsEntry {
   alwaysChanged?: true;
   /** Included in fallback  */
   useInFallbackForm?: true;
+  /** Skip empty or whitespace-only values for string fields where blank has no valid meaning. */
+  skipBlankInbound?: true;
 }
 
 const AUTH_METHOD_MAP: Record<string, string> = {
@@ -123,6 +125,7 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
     vscodeKey: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     resolve: c => c.getCliBaseDownloadUrl(),
     useInFallbackForm: true,
+    skipBlankInbound: true,
   },
   [LS_GLOBAL_KEY.cliPath]: {
     vscodeKey: ADVANCED_CLI_PATH,
@@ -327,6 +330,8 @@ export function mapLspSettingsToVscodeSettings(
 
     const value = globalSettings[lsKey]?.value;
     if (value === undefined || value === null) continue;
+    // Skip empty or whitespace-only values for string fields where blank has no valid meaning.
+    if (entry.skipBlankInbound && typeof value === 'string' && value.trim() === '') continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }

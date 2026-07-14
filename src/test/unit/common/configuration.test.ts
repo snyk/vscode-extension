@@ -10,6 +10,7 @@ import {
 import { LS_KEY } from '../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../../../snyk/common/vscode/workspace';
 import {
+  ADVANCED_CLI_BASE_DOWNLOAD_URL,
   ADVANCED_CLI_PATH,
   ADVANCED_CLI_RELEASE_CHANNEL,
   ADVANCED_CUSTOM_ENDPOINT,
@@ -72,6 +73,51 @@ suite('Configuration', () => {
     const configuration = new Configuration({}, workspace);
 
     strictEqual(configuration.snykApiEndpoint, customEndpoint);
+  });
+
+  test('CLI base download URL: returns default when unset', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_BASE_DOWNLOAD_URL, undefined);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.getCliBaseDownloadUrl(), 'https://downloads.snyk.io');
+  });
+
+  test('CLI base download URL: returns custom URL when set', () => {
+    const customUrl = 'https://custom.downloads.example.com';
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_BASE_DOWNLOAD_URL, customUrl);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.getCliBaseDownloadUrl(), customUrl);
+  });
+
+  test('CLI base download URL: falls back to default when persisted blank', () => {
+    // A blank value (e.g. written by an inbound LS config echo) would otherwise produce
+    // hostless URLs like `/cli/stable/...` and break the CLI download. `??` does not rescue it.
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_BASE_DOWNLOAD_URL, '');
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.getCliBaseDownloadUrl(), 'https://downloads.snyk.io');
+  });
+
+  test('CLI base download URL: falls back to default when persisted whitespace', () => {
+    const workspace = stubWorkspaceConfiguration(ADVANCED_CLI_BASE_DOWNLOAD_URL, '   ');
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.getCliBaseDownloadUrl(), 'https://downloads.snyk.io');
+  });
+
+  test('CLI base download URL: falls back to default when persisted value is not a string', () => {
+    // Guards a hand-edited/malformed settings.json — trimming a non-string must not throw on the
+    // CLI-download path.
+    const workspace = stubWorkspaceConfiguration<unknown>(ADVANCED_CLI_BASE_DOWNLOAD_URL, 42);
+
+    const configuration = new Configuration({}, workspace);
+
+    strictEqual(configuration.getCliBaseDownloadUrl(), 'https://downloads.snyk.io');
   });
 
   test('Preview features: not enabled', () => {
