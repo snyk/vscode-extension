@@ -38,8 +38,9 @@ suite('GLOBAL_RESET_FIELDS — drift guard (lsKeyToVscodeKeyMap)', () => {
 // snyk.advanced.cliBaseDownloadUrl corrupts the setting: downstream URL assembly
 // (staticCliApi) concatenates it into hostless paths like `/cli/stable/...`, the
 // CLI download fails, and the Language Server never starts. mapLspSettingsToVscodeSettings
-// must skip blank values for keys marked skipBlankInbound, mirroring the outbound
-// guard in Configuration.setCliBaseDownloadUrl.
+// must skip blank values for keys marked skipBlankInbound. This complements the outbound
+// guard in Configuration.setCliBaseDownloadUrl (which rejects empty strings); the inbound
+// guard is stricter — it also treats whitespace-only as blank.
 suite('mapLspSettingsToVscodeSettings — blank binary_base_url guard', () => {
   test('skips a blank binary_base_url (does not persist it)', () => {
     const result = mapLspSettingsToVscodeSettings({ [LS_GLOBAL_KEY.binaryBaseUrl]: { value: '' } });
