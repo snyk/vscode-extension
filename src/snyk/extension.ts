@@ -46,6 +46,7 @@ import { TransientNetworkError, isNetworkConnectivityError } from './common/cons
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
+import { migrateFolderOrgSettingsIfNeeded } from './common/configuration/folderOrgMigration';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -234,6 +235,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
     seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
+
+    // Migrate per-folder org settings from v2.31.0 to new LS-based model (IDE-2259)
+    await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext);
 
     // Shared suppressor: prevents the onDidChangeConfiguration listener in LanguageServer from
     // calling markExplicitlyChanged (and thus deleting a just-queued pendingReset) while
