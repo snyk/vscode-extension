@@ -46,6 +46,7 @@ import { TransientNetworkError, isNetworkConnectivityError } from './common/cons
 import { ExperimentService } from './common/experiment/services/experimentService';
 import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
+import { migrateFolderOrgSettingsIfNeeded } from './common/configuration/folderOrgMigration';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -251,6 +252,11 @@ class SnykExtension extends SnykLib implements IExtension {
       this.contextService,
       explicitLspConfigurationChangeTracker,
     );
+
+    // Must run before LanguageServer is constructed/started: it seeds in-memory folderConfigs
+    // so the very first initializationOptions sent to snyk-ls already carries the migrated
+    // per-folder org (IDE-2259).
+    await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext);
 
     this.languageServer = new LanguageServer(
       this.user,

@@ -1,0 +1,70 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { ExtensionContext } from 'vscode';
+import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
+import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
+import { IVSCodeWorkspace } from '../vscode/workspace';
+import { IConfiguration, FolderConfig } from './configuration';
+
+/**
+ * v2.31.0 had `snyk.advanced.organization`/`snyk.advanced.autoSelectOrganization` as
+ * `resource`-scoped VS Code settings, so each folder's `.vscode/settings.json` could carry
+ * its own org. Both are now window-scoped/removed, so those folder-level values are inert —
+ * only this on-disk read can still recover them (IDE-2259).
+ */
+interface LegacyOrgSettings {
+  organization?: string;
+  autoSelectOrganization?: boolean;
+}
+
+function readLegacyOrgSettings(folderPath: string): LegacyOrgSettings {
+  try {
+    const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
+    const content = fs.readFileSync(settingsPath, 'utf-8');
+    const settings = JSON.parse(content) as Record<string, unknown>;
+    return {
+      organization: settings['snyk.advanced.organization'] as string | undefined,
+      autoSelectOrganization: settings['snyk.advanced.autoSelectOrganization'] as boolean | undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+export async function migrateFolderOrgSettingsIfNeeded(
+  workspace: IVSCodeWorkspace,
+  configuration: IConfiguration,
+  context: ExtensionContext,
+): Promise<void> {
+  if (context.globalState.get(MEMENTO_FOLDER_ORG_MIGRATION_V1) === true) {
+    return;
+  }
+
+  const existingConfigs = configuration.getFolderConfigs();
+  const configsByPath = new Map(existingConfigs.map(c => [c.folderPath, c]));
+  let migrated = false;
+
+  for (const folder of workspace.getWorkspaceFolders()) {
+    const folderPath = folder.uri.fsPath;
+    const legacy = readLegacyOrgSettings(folderPath);
+    // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
+    if (!legacy.organization || legacy.autoSelectOrganization === true) {
+      continue;
+    }
+
+    const folderConfig = configsByPath.get(folderPath) ?? new FolderConfig(folderPath);
+    folderConfig.setSetting(LS_KEY.orgSetByUser, true);
+    folderConfig.setSetting(LS_KEY.preferredOrg, legacy.organization);
+    configsByPath.set(folderPath, folderConfig);
+    migrated = true;
+  }
+
+  if (migrated) {
+    // triggerConfigChangeEvent=false: this runs before LanguageServer/LanguageClient exist,
+    // so there's nothing to notify — the migrated configs are picked up directly by the
+    // initial resolveFolderConfigs() call when building initializationOptions.
+    await configuration.setFolderConfigs(Array.from(configsByPath.values()), false);
+  }
+
+  await context.globalState.update(MEMENTO_FOLDER_ORG_MIGRATION_V1, true);
+}
