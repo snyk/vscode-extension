@@ -49,6 +49,7 @@ import { LastKnownValueCache } from './common/languageServer/lastKnownValueCache
 import { VSCODE_KEY_TO_LS_KEYS } from './common/languageServer/lsKeyToVscodeKeyMap';
 import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
 import { migrateFolderOrgSettingsIfNeeded } from './common/configuration/folderOrgMigration';
+import { migrateCodeEnablementForExistingInstall } from './common/languageServer/codeEnablementMigration';
 import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
@@ -236,6 +237,9 @@ class SnykExtension extends SnykLib implements IExtension {
     }
 
     const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState, Logger);
+    // Recover the pre-existing Snyk Code enabled state for upgrading installs before seeding, so a
+    // preference that equalled the old plugin default is carried forward as explicit user intent.
+    await migrateCodeEnablementForExistingInstall(this.context, vsCodeWorkspace, Logger);
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, vsCodeWorkspace);
 
     const lastKnownValueCache = new LastKnownValueCache(vsCodeWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
@@ -527,6 +531,9 @@ class SnykExtension extends SnykLib implements IExtension {
 
         const category = ['install'];
         const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
+        // Note: codeEnablementMigration treats this memento as evidence of a prior install. This
+        // write must stay after that migration runs (initializeExtension, before the LS starts) so
+        // a fresh install's first launch is not misclassified as existing — do not reorder earlier.
         await extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
         analyticsSender.logEvent(pluginInstalledEvent, () => {});
 
