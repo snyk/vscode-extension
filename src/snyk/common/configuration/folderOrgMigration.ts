@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExtensionContext } from 'vscode';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
+import { ADVANCED_ORGANIZATION, ADVANCED_AUTO_SELECT_ORGANIZATION } from '../constants/settings';
 import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { IConfiguration, FolderConfig } from './configuration';
@@ -23,8 +24,8 @@ function readLegacyOrgSettings(folderPath: string): LegacyOrgSettings {
     const content = fs.readFileSync(settingsPath, 'utf-8');
     const settings = JSON.parse(content) as Record<string, unknown>;
     return {
-      organization: settings['snyk.advanced.organization'] as string | undefined,
-      autoSelectOrganization: settings['snyk.advanced.autoSelectOrganization'] as boolean | undefined,
+      organization: settings[ADVANCED_ORGANIZATION] as string | undefined,
+      autoSelectOrganization: settings[ADVANCED_AUTO_SELECT_ORGANIZATION] as boolean | undefined,
     };
   } catch {
     return {};
