@@ -161,6 +161,23 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
   });
 
+  it('FIX: tolerates JSONC comments in settings.json (VS Code settings files allow them)', async () => {
+    const folderPath = path.join(tmpDir, 'folder1');
+    fs.mkdirSync(path.join(folderPath, '.vscode'), { recursive: true });
+    fs.writeFileSync(
+      path.join(folderPath, '.vscode', 'settings.json'),
+      `{
+        // per-folder org override
+        "snyk.advanced.organization": "my-org",
+      }`,
+    );
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
+  });
+
   it('only runs once, gated by the globalState memento', async () => {
     context.globalState.get.returns(true);
     const folderPath = path.join(tmpDir, 'folder1');

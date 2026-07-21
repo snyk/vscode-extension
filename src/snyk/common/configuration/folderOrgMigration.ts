@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { parse } from 'jsonc-parser';
 import * as path from 'path';
 import { ExtensionContext } from 'vscode';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
@@ -22,7 +23,10 @@ function readLegacyOrgSettings(folderPath: string): LegacyOrgSettings {
   try {
     const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
     const content = fs.readFileSync(settingsPath, 'utf-8');
-    const settings = JSON.parse(content) as Record<string, unknown>;
+    const settings = parse(content) as Record<string, unknown> | undefined;
+    if (!settings) {
+      return {};
+    }
     return {
       organization: settings[ADVANCED_ORGANIZATION] as string | undefined,
       autoSelectOrganization: settings[ADVANCED_AUTO_SELECT_ORGANIZATION] as boolean | undefined,
