@@ -53,15 +53,12 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
     /**
-     * Held active (begin/end) across the ENTIRE reset batch in `applyOutboundGlobalResets`
-     * — the VS Code write AND the subsequent tracker mutations (unmarkExplicitlyChanged +
-     * markPendingReset).  This mirrors the inbound persistence path, which holds
-     * `suppressConfigFeedbackFromInboundPersistence = true` across its whole operation.
-     *
-     * The SAME shared instance must be passed to both `ConfigurationPersistenceService` and
-     * `LanguageServer`, wired in extension.ts.  If each class constructed its own instance,
-     * ConfigurationPersistenceService.begin()/end() would toggle one object while LanguageServer's
-     * listener checked a different object (isActive always false there) — suppression silently broken.
+     * ponytail: no longer load-bearing [IDE-2264] — the marking-listener guard it used to
+     * gate (`outboundResetSuppressor.isActive` in languageServer.ts) was replaced by a
+     * write-time tag (`markPendingInboundWrite`/`consumePendingInboundWrite`, see
+     * `applyVscodeKeyResets` below), which is correct regardless of when the resulting
+     * change event arrives. begin()/end() are still called here but have no reader left;
+     * kept to avoid an ~90-callsite constructor-signature refactor.
      */
     private readonly outboundResetSuppressor: IConfigFeedbackSuppressor,
     private readonly contextService?: IContextService,
@@ -292,6 +289,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
       try {
         const { configurationId, section } = Configuration.getConfigName(vscodeKey);
+        // Mark BEFORE the write so the pending marker exists no matter how quickly (or slowly)
+        // VS Code delivers the resulting onDidChangeConfiguration event — same write-time-tag
+        // fix as applySettingsMap below, applied here for the reset path [IDE-2264].
+        this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(vscodeKey);
         // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
         await this.workspace.updateConfiguration(configurationId, section, undefined, true);
         // Invalidate the effective snapshot for this vscodeKey: the reset cleared the
@@ -444,32 +445,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       }
     }
 
-    // Suppress the onDidChangeConfiguration listener across the ENTIRE reset batch —
-    // mirroring the inbound persistence path which holds
-    // suppressConfigFeedbackFromInboundPersistence = true across its whole
-    // persistInboundConfiguration call (languageServer.ts runInboundPersistence).
-    //
-    // A SINGLE begin()/end() wraps the whole loop so the suppressor spans all groups.
-    // Per-group try/catch inside the loop preserves the fail-safe ordering: one key's
-    // write failure does NOT abort the batch, and tracker state is only mutated after a
-    // successful write.
-    //
-    // TIMING CONTRACT THIS DESIGN DEPENDS ON: VS Code dispatches onDidChangeConfiguration
-    // *synchronously* during workspace.getConfiguration().update() — the event fires before
-    // the awaiting code resumes. src/test/integration/configurationEventTiming.test.ts
-    // verifies this against a real VS Code instance.
-    //
-    // NOTE: "it must be synchronous, or the equivalent inbound suppression wouldn't have
-    // worked in production" is NOT valid evidence — that inbound path turned out to have
-    // exactly this gap (delayed dispatch bypassing a scoped-boolean flag), fixed by a
-    // write-time tag instead (markPendingInboundWrite/consumePendingInboundWrite, in
-    // explicitLsKeyTracking.ts). This outbound suppressor still relies on the boolean-window
-    // assumption above and has not been converted — same fix applies here if it has the same gap.
-    //
-    // A suppressor active across the write is sufficient only if the event really is
-    // synchronous: the listener always sees isActive=true when VS Code fires the event during
-    // the write. The window intentionally spans past markPendingReset so the pending-reset
-    // signal is set before any listener could fire from a subsequent write.
+    // ponytail: begin()/end() below are dead weight [IDE-2264] — the marking listener no
+    // longer reads outboundResetSuppressor.isActive. Correctness now comes from the
+    // write-time tag applyVscodeKeyResets sets per vscodeKey (markPendingInboundWrite),
+    // consumed by markExplicitLsKeysFromConfigurationChangeEvent regardless of when the
+    // change event actually arrives — no timing assumption left. Kept only because removing
+    // the constructor param would mean an ~90-callsite refactor across extension.ts and both
+    // test files; see the ctor doc comment above.
     this.outboundResetSuppressor.begin();
     try {
       await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {

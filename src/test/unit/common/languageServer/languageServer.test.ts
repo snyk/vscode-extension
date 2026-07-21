@@ -23,6 +23,7 @@ import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { WindowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
+import { ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
@@ -1228,7 +1229,7 @@ suite('Language Server', () => {
     });
   });
 
-  // ── CLAIM 1: outbound reset self-cancel timing fix (IDE-2149) ───────────────
+  // ── CLAIM 1: outbound reset self-cancel timing fix (IDE-2149, superseded by IDE-2264) ──
   //
   // The round-5 fix made markExplicitlyChanged call pendingResets.delete so that a
   // user re-edit after a reset cancels the stale pending signal.  But the
@@ -1242,8 +1243,21 @@ suite('Language Server', () => {
   //   3. VS Code fires onDidChangeConfiguration (asynchronously, after step 2)
   //   4. listener calls markExplicitlyChanged(key) → pendingResets.delete(key) → LOST
   //
-  // The fix: suppress the listener while the outbound reset write is in flight by
-  // checking outboundResetSuppressor.isActive in the listener.
+  // Original (IDE-2149) fix: suppress the listener while the outbound reset write is in
+  // flight, via outboundResetSuppressor.isActive in the listener. That guard assumed VS
+  // Code dispatches onDidChangeConfiguration *synchronously* inside updateConfiguration() —
+  // the same assumption that turned out to be false for the analogous inbound-persistence
+  // path (IDE-2264). A genuinely delayed dispatch arrives after the suppression window (and
+  // outboundResetSuppressor.isActive) has already closed, so the old guard did not help.
+  //
+  // Current (IDE-2264) fix: applyVscodeKeyResets tags each vscodeKey with
+  // markPendingInboundWrite before its write, mirroring the inbound-persistence fix. The
+  // listener consumes that tag (consumePendingInboundWrite) instead of reading
+  // outboundResetSuppressor.isActive — correct no matter when the change event arrives.
+  // outboundResetSuppressor itself is now dead (see the ponytail comments in languageServer.ts
+  // and configurationPersistenceService.ts); the tests below that exercise it directly still
+  // pass because ConfigFeedbackSuppressor's own begin/end/isActive semantics are unchanged,
+  // they just no longer gate anything in production.
   suite('outbound reset self-cancel guard (Claim 1 — adversarial onDidChangeConfiguration ordering)', () => {
     function makeLanguageServerWithListener(
       tracker: ExplicitLspConfigurationChangeTracker,
@@ -1295,12 +1309,12 @@ suite('Language Server', () => {
       );
     }
 
-    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES when suppressor is active', () => {
-      // This test proves the fix. Without the suppressor check in the listener,
-      // the listener would call markExplicitlyChanged which deletes the pending
-      // reset, causing the LS to never receive { value: null, changed: true }.
+    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES via the write-time tag, suppressor never active', () => {
+      // Proves the IDE-2264 fix: the listener no longer needs outboundResetSuppressor to be
+      // active at all. markPendingInboundWrite(vscodeKey) — set by applyVscodeKeyResets right
+      // before its write, exactly as it would be in production — is enough on its own.
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      const suppressor = new ConfigFeedbackSuppressor();
+      const suppressor = new ConfigFeedbackSuppressor(); // never begin()-ed: proves it's not needed
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
       const ls = makeLanguageServerWithListener(tracker, suppressor, fn => {
@@ -1309,25 +1323,25 @@ suite('Language Server', () => {
 
       ls.registerExplicitKeyMarkingListener();
 
-      // Step 1: Simulate the outbound reset suppression window begins.
-      suppressor.begin();
+      // Step 1: tag the vscodeKey, as applyVscodeKeyResets does right before its write.
+      tracker.markPendingInboundWrite(ADVANCED_ORGANIZATION);
 
       // Step 2: markPendingReset is called (as applyOutboundGlobalResets does after updateConfiguration).
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
       // Step 3: VS Code fires onDidChangeConfiguration for the reset key (adversarial ordering:
-      // fires AFTER markPendingReset). The listener MUST be suppressed and not call markExplicitlyChanged.
+      // fires AFTER markPendingReset). The listener must consume the tag and skip marking,
+      // regardless of the (never-activated) suppressor.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
 
-      // Step 4: suppression window ends.
-      suppressor.end();
+      assert.strictEqual(suppressor.isActive, false, 'suppressor was never engaged — the tag alone must be sufficient');
 
       // The pending reset MUST still be present — the listener must not have deleted it.
       const pending = tracker.consumePendingResets();
       assert.ok(
         pending.has(LS_GLOBAL_KEY.organization),
         'Pending reset must survive when the listener fires after markPendingReset — ' +
-          'the suppressor must prevent markExplicitlyChanged from deleting the pending reset.',
+          'the write-time tag must prevent markExplicitlyChanged from deleting the pending reset.',
       );
     });
 
@@ -1404,10 +1418,11 @@ suite('Language Server', () => {
       );
     });
 
-    // Proves (or disproves) the open risk noted next to outboundResetSuppressor in
-    // configurationPersistenceService.ts: does the reset path survive a genuinely delayed
-    // onDidChangeConfiguration dispatch, the same way inbound persistence used to fail?
-    test('a change event delayed past begin/end deletes the pending reset (reset path shares the inbound timing gap)', async () => {
+    // IDE-2264: the outbound reset path now survives a genuinely delayed
+    // onDidChangeConfiguration dispatch, the same fix (write-time tag) as inbound persistence.
+    // Uses the real ConfigurationPersistenceService.handleSaveConfig (production wiring), not
+    // a hand-rolled tracker call, so it exercises applyVscodeKeyResets' actual tag placement.
+    test('a change event delayed past begin/end no longer deletes the pending reset (reset path fixed)', async () => {
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
       const outboundResetSuppressor = new ConfigFeedbackSuppressor();
 
@@ -1462,20 +1477,22 @@ suite('Language Server', () => {
         JSON.stringify({ isFallbackForm: false, [LS_GLOBAL_KEY.organization]: null }),
       );
 
-      // begin/end already ran; the write's change event has NOT fired yet.
+      // begin/end already ran (suppressor is now dead weight); the write's change event has
+      // NOT fired yet.
       assert.strictEqual(outboundResetSuppressor.isActive, false, 'suppressor window already closed');
       assert.ok(tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization), 'reset queued before the event fires');
       // consumePendingResets() drained it above — requeue to observe what the deferred event does to it.
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
-      // The change event finally arrives, after the suppression window already closed.
+      // The change event finally arrives, long after the (now-irrelevant) suppression window
+      // closed. The write-time tag (set by applyVscodeKeyResets before its updateConfiguration
+      // call, inside handleSaveConfig above) is what protects the pending reset now.
       deferredDispatches.forEach(dispatch => dispatch());
 
       assert.ok(
-        !tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization),
-        'documents the risk: a genuinely delayed dispatch deletes the pending reset here too, ' +
-          'same class of bug as the inbound path — this suppressor has not been converted to the ' +
-          'write-time-tag approach',
+        tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization),
+        'fix verified: the write-time tag survives a genuinely delayed dispatch, ' +
+          'same mechanism as the inbound path',
       );
     });
   });

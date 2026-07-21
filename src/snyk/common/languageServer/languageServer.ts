@@ -81,19 +81,6 @@ export class LanguageServer implements ILanguageServer {
   private suppressConfigFeedbackFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private configPersistenceQueue: Promise<void> = Promise.resolve();
-  /**
-   * Shared suppressor for VS Code `onDidChangeConfiguration` feedback triggered by outbound
-   * reset writes (`applyOutboundGlobalResets`).  When active, the explicit-key-marking
-   * listener must not call `markExplicitlyChanged` — otherwise the reset's own
-   * `updateConfiguration` write would fire the listener and cause `markExplicitlyChanged` to
-   * delete the pending reset that was just queued by `markPendingReset`.
-   *
-   * The SAME shared instance must be passed to both `ConfigurationPersistenceService` and
-   * `LanguageServer`, wired in extension.ts.  If each class constructed its own instance,
-   * suppression would be silently broken.
-   */
-  private readonly outboundResetSuppressor: IConfigFeedbackSuppressor;
-
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
     this.workspaceConfigurationProvider = provider;
   }
@@ -117,9 +104,12 @@ export class LanguageServer implements ILanguageServer {
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider: ITreeViewProviderService | undefined,
-    outboundResetSuppressor: IConfigFeedbackSuppressor,
+    // ponytail: unused since the marking-listener guard now relies on the write-time tag
+    // (markPendingInboundWrite/consumePendingInboundWrite) instead of this timing-dependent
+    // suppressor [IDE-2264]. Kept as a constructor param to avoid an ~90-callsite refactor
+    // across extension.ts wiring and both test files; remove if that cleanup happens.
+    _outboundResetSuppressor: IConfigFeedbackSuppressor,
   ) {
-    this.outboundResetSuppressor = outboundResetSuppressor;
     this.downloadService = downloadService;
 
     this.geminiIntegrationService = new GeminiIntegrationService(
@@ -323,18 +313,10 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      // Suppress while an outbound global reset's own updateConfiguration write is in flight —
-      // otherwise the reset's write fires this listener, which deletes the just-queued pending
-      // reset, losing the reset signal sent to the LS. Relies on VS Code dispatching
-      // onDidChangeConfiguration synchronously within update() (verified against a real
-      // instance in configurationEventTiming.test.ts) — unconverted, see the note in
-      // configurationPersistenceService.ts for the risk.
-      if (this.outboundResetSuppressor.isActive) {
-        return;
-      }
-      // Inbound-persistence suppression does NOT rely on that timing contract:
-      // consumePendingInboundWrite attributes each vscodeKey by a write-time tag, correct
-      // regardless of when the event actually arrives.
+      // Both inbound-persistence writes and outbound reset writes are attributed by a
+      // write-time tag (markPendingInboundWrite/consumePendingInboundWrite, keyed per
+      // vscodeKey), consumed inside markExplicitLsKeysFromConfigurationChangeEvent — correct
+      // regardless of when the resulting change event actually arrives [IDE-2264].
       // ADR-2: pass a sync value resolver so the fan-out path can value-compare each
       // sibling sub-key and only mark committedSinceReset for the sub-keys that actually
       // changed (not blindly for all siblings sharing the same VS Code setting).
