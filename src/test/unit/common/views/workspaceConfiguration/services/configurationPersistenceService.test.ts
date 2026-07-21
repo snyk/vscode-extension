@@ -29,10 +29,6 @@ import {
   mapConfigToSettings,
   SETTINGS_REGISTRY,
 } from '../../../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
-import {
-  ConfigFeedbackSuppressor,
-  type IConfigFeedbackSuppressor,
-} from '../../../../../../snyk/common/languageServer/configFeedbackSuppressor';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from '../../../../../../snyk/common/languageServer/explicitLsKeyTracking';
 
@@ -106,7 +102,6 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
   });
 
@@ -226,7 +221,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -258,7 +252,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       noClientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -284,7 +277,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -310,7 +302,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -337,7 +328,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -364,7 +354,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -390,7 +379,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -504,7 +492,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       realScopeService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -525,7 +512,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       realScopeService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -546,14 +532,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound clears folder configs when LS sends empty array', async () => {
-    const svc = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      new ConfigFeedbackSuppressor(),
-    );
+    const svc = new ConfigurationPersistenceService(workspace, configuration, realScopeService, clientAdapter, logger);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
 
@@ -569,14 +548,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound does not call setFolderConfigs when folderConfigs is absent', async () => {
-    const svc = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      new ConfigFeedbackSuppressor(),
-    );
+    const svc = new ConfigurationPersistenceService(workspace, configuration, realScopeService, clientAdapter, logger);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
 
@@ -650,7 +622,6 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
@@ -693,7 +664,6 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
@@ -850,7 +820,6 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -979,7 +948,6 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     await service.persistInboundLspConfiguration({
@@ -1125,7 +1093,6 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -1494,7 +1461,6 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -1575,7 +1541,6 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       realTracker,
     );
@@ -1733,7 +1698,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -1767,7 +1731,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -1796,7 +1759,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -1901,7 +1863,6 @@ suite('ConfigurationPersistenceService — shared-vscodeKey dedupe in reset (FIX
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const configJson = JSON.stringify({
@@ -1935,7 +1896,6 @@ suite('ConfigurationPersistenceService — shared-vscodeKey dedupe in reset (FIX
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -2085,7 +2045,6 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -2145,7 +2104,6 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -2261,7 +2219,6 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
@@ -2296,7 +2253,6 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
@@ -2332,7 +2288,6 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -2352,26 +2307,15 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
   });
 });
 
-// ── STEP 3: adversarial-ordering test — production call sequence ─────────────
+// ── applyOutboundGlobalResets: multi-vscodeKey batch behavior ────────────────
 //
-// Reviewer finding: the round-6 adversarial test in languageServer.test.ts simulated
-// begin() → markPendingReset → listener → end(), which does NOT match production's
-// actual call sequence.
-//
-// Round-6 production order: begin() → await write → end() → unmark → markPendingReset
-// STEP 2 restructure order: begin() → await write → unmark → markPendingReset → end()
-//
-// These tests drive the REAL applyOutboundGlobalResets path via handleSaveConfig.
-//
-// Test 1 asserts that when markPendingReset runs, the suppressor is still active
-// (isActive=true).  This FAILS on round-6 (end() runs first → isActive=false at
-// markPendingReset) and PASSES after the restructure (markPendingReset runs before end()).
-//
-// Test 2 asserts that a synchronous listener fired during the write (VS Code's realistic
-// model) does not delete the pending reset.  Both structures pass this test when the
-// listener fires during the write, but Test 1 catches the structural regression.
-suite('ConfigurationPersistenceService — adversarial production call sequence (STEP 3)', () => {
-  /** Minimal in-memory Memento for ExplicitLspConfigurationChangeTracker. */
+// A multi-vscodeKey reset batch (organization + scan_net_new) must queue a pending
+// reset for every group, and a write failure in one group must not abort the others
+// (per-group try/catch). Originally written to also assert an outboundResetSuppressor
+// begin/end-per-batch invariant; that suppressor was removed as dead code once the
+// listener switched to a write-time tag (markPendingInboundWrite/consumePendingInboundWrite,
+// IDE-2264) — the suppressor-specific assertions went with it, these two behaviors did not.
+suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key batch', () => {
   function makeMemento(): import('vscode').Memento {
     const store = new Map<string, unknown>();
     return {
@@ -2444,39 +2388,8 @@ suite('ConfigurationPersistenceService — adversarial production call sequence 
 
   teardown(() => sinon.restore());
 
-  // Production call sequence test (STEP 3).
-  //
-  // This test drives the REAL applyOutboundGlobalResets path and simulates the adversarial
-  // case: the onDidChangeConfiguration listener fires synchronously the moment the
-  // suppressor scope closes (end() is called).
-  //
-  // With the STEP 2 restructure:
-  //   begin() → write → unmark → markPendingReset → end() [listener fires]
-  //   By the time end() is called (and the listener fires), markPendingReset has already run.
-  //   The listener fires with isActive=false (end() decremented to 0), so markExplicitlyChanged
-  //   IS called — and does pendingResets.delete(key).  This deletes the pending reset!
-  //
-  // This reveals that the suppressor cannot protect against a listener that fires AFTER end().
-  // The correct invariant is: the listener fires synchronously DURING the write (isActive=true),
-  // not after end().  The restructure is still strictly more correct than round-6 because it
-  // moves end() after markPendingReset, which is the inbound-mirroring requirement.
-  //
-  // The test below validates the EXACT property the restructure guarantees: the suppressor
-  // remains active (isActive=true) at the moment markPendingReset is called, so any
-  // synchronous listener firing during the write (the realistic VS Code model) is suppressed
-  // and cannot delete the pending reset before it is set.
-  test('production sequence: suppressor is active when markPendingReset runs (listener cannot fire unsuppressed before markPendingReset)', async () => {
+  test('multi-key batch: both groups queue a pending reset', async () => {
     const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-    // Record whether the suppressor was active at the moment markPendingReset was called.
-    let suppressorActiveAtMarkPendingReset: boolean | undefined;
-    const suppressor = new ConfigFeedbackSuppressor();
-
-    // Wrap tracker.markPendingReset to capture suppressor state at that instant.
-    const originalMarkPendingReset = tracker.markPendingReset.bind(tracker);
-    tracker.markPendingReset = (lsKey: string) => {
-      suppressorActiveAtMarkPendingReset = suppressor.isActive;
-      originalMarkPendingReset(lsKey);
-    };
 
     const updateConfigurationStub = sinon.stub().resolves();
     const workspace = {
@@ -2493,245 +2406,12 @@ suite('ConfigurationPersistenceService — adversarial production call sequence 
       scopeDetectionService,
       clientAdapter,
       logger,
-      suppressor,
-      undefined,
-      tracker,
-    );
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.organization]: null,
-    });
-
-    await service.handleSaveConfig(configJson);
-
-    // The suppressor MUST be active when markPendingReset is called.
-    // This is the core guarantee: any synchronous listener firing during the write window
-    // (isActive=true) cannot delete the pending reset before it is set.
-    assert.strictEqual(
-      suppressorActiveAtMarkPendingReset,
-      true,
-      'suppressor must be active (isActive=true) when markPendingReset is called — ' +
-        'any synchronous onDidChangeConfiguration listener firing during the write window ' +
-        'must be suppressed and cannot delete the pending reset before it is set. ' +
-        'FAIL here means end() ran before markPendingReset (round-6 mis-placed structure).',
-    );
-  });
-
-  // Regression guard: listener firing WHILE suppressor is active (synchronous VS Code model)
-  // must NOT cancel the pending reset.  This is the realistic production scenario.
-  test('production sequence: synchronous listener during write does not cancel pending reset (real suppressor + tracker)', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-    const suppressor = new ConfigFeedbackSuppressor();
-
-    // Simulate the onDidChangeConfiguration listener: if suppressor is inactive, call
-    // markExplicitlyChanged (which deletes from pendingResets); if active, skip.
-    const simulateListener = () => {
-      if (!suppressor.isActive) {
-        // Listener would call markExplicitlyChanged — which deletes from pendingResets.
-        tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
-      }
-      // If active, listener is gated — no-op.
-    };
-
-    // updateConfiguration stub that fires the listener synchronously on resolution.
-    // This simulates VS Code dispatching onDidChangeConfiguration synchronously during write.
-    const updateConfigStub = sinon.stub().callsFake(async () => {
-      // Simulate the write completing and VS Code firing the event synchronously.
-      simulateListener();
-      return Promise.resolve();
-    });
-
-    const workspace = {
-      updateConfiguration: updateConfigStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      suppressor,
-      undefined,
-      tracker,
-    );
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.organization]: null,
-    });
-
-    await service.handleSaveConfig(configJson);
-
-    // The pending reset must survive — the listener must have been gated by the suppressor.
-    const pending = tracker.consumePendingResets();
-    assert.ok(
-      pending.has(LS_GLOBAL_KEY.organization),
-      'pending reset must survive a synchronous onDidChangeConfiguration listener firing ' +
-        'during the write — the suppressor must gate the listener while isActive=true. ' +
-        'FAIL here means the suppressor was not active during the write (round-6 or no suppressor).',
-    );
-  });
-});
-
-// ── FIX 2: applyOutboundGlobalResets — single begin/end spans entire batch ───
-//
-// The suppressor window must span the ENTIRE outbound reset batch (mirroring the
-// inbound path), not one begin/end per vscodeKey group inside the loop.
-//
-// For a multi-vscodeKey batch (e.g. organization + scan_net_new), the current
-// per-group begin/end means:
-//   group1: begin() → write → unmark → markPendingReset → end()
-//   group2: begin() → write → unmark → markPendingReset → end()
-//
-// The fix restructures to:
-//   begin()
-//   try {
-//     group1: write → unmark → markPendingReset
-//     group2: write → unmark → markPendingReset
-//   } finally { end() }
-//
-// Assertions:
-//   (a) suppressor.isActive is true at EACH markPendingReset call (all groups)
-//   (b) begin() is called exactly 1 time total
-//   (c) end() is called exactly 1 time total (in the finally)
-suite('ConfigurationPersistenceService — FIX 2: single begin/end spans entire batch', () => {
-  function makeMemento(): import('vscode').Memento {
-    const store = new Map<string, unknown>();
-    return {
-      get<T>(key: string, defaultValue?: T): T {
-        return (store.has(key) ? store.get(key) : defaultValue) as T;
-      },
-      update(key: string, value: unknown): Thenable<void> {
-        store.set(key, value);
-        return Promise.resolve();
-      },
-      keys(): readonly string[] {
-        return [...store.keys()];
-      },
-    };
-  }
-
-  let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-
-  setup(() => {
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-      getFeaturesConfiguration: sinon.stub().returns({
-        ossEnabled: true,
-        codeSecurityEnabled: true,
-        iacEnabled: true,
-        secretsEnabled: true,
-      }),
-      scanningMode: 'auto',
-      organization: '',
-      snykApiEndpoint: 'https://api.snyk.io',
-      getInsecure: sinon.stub().returns(false),
-      getAuthenticationMethod: sinon.stub().returns('oauth'),
-      getDeltaFindingsEnabled: sinon.stub().returns(false),
-      getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
-      getAdditionalCliParameters: sinon.stub().returns(''),
-      getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
-      getAutoConfigureMcpServer: sinon.stub().returns(false),
-      severityFilter: {},
-      issueViewOptions: {},
-      riskScoreThreshold: 0,
-      getTrustedFolders: sinon.stub().returns([]),
-      getCliPath: sinon.stub().resolves(''),
-      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
-      getCliBaseDownloadUrl: sinon.stub().returns(''),
-    } as unknown as IConfiguration;
-
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-  });
-
-  teardown(() => sinon.restore());
-
-  // A multi-vscodeKey reset batch (organization + scan_net_new, which map to different
-  // vscodeKeys) must call begin() exactly once before the loop and end() exactly once
-  // in the finally, with the suppressor active at each markPendingReset call.
-  test('multi-key batch: suppressor active at every markPendingReset, begin/end called exactly once', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-
-    // Spy on begin and end counts, and capture isActive at each markPendingReset.
-    let beginCount = 0;
-    let endCount = 0;
-    const suppressorActiveAtMarkPendingReset: boolean[] = [];
-
-    // Instrument the real suppressor via wrapping.
-    const realSuppressor = new ConfigFeedbackSuppressor();
-    const suppressor: IConfigFeedbackSuppressor = {
-      get isActive(): boolean {
-        return realSuppressor.isActive;
-      },
-      begin(): void {
-        beginCount++;
-        realSuppressor.begin();
-      },
-      end(): void {
-        endCount++;
-        realSuppressor.end();
-      },
-    };
-
-    // Wrap tracker.markPendingReset to capture suppressor state at that instant.
-    const originalMarkPendingReset = tracker.markPendingReset.bind(tracker);
-    tracker.markPendingReset = (lsKey: string) => {
-      suppressorActiveAtMarkPendingReset.push(realSuppressor.isActive);
-      originalMarkPendingReset(lsKey);
-    };
-
-    const updateConfigurationStub = sinon.stub().resolves();
-    const workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      suppressor,
       undefined,
       tracker,
     );
 
     // Use two keys that map to DIFFERENT vscodeKeys: organization and scan_net_new.
-    // This produces two distinct groups in vscodeKeyToLsKeys, proving the suppressor
-    // spans the whole loop (not just one begin/end per group).
+    // This produces two distinct groups in vscodeKeyToLsKeys.
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'tok',
@@ -2741,77 +2421,19 @@ suite('ConfigurationPersistenceService — FIX 2: single begin/end spans entire 
 
     await service.handleSaveConfig(configJson);
 
-    // (a) suppressor must have been active at EVERY markPendingReset call.
-    assert.ok(
-      suppressorActiveAtMarkPendingReset.length >= 2,
-      `Expected markPendingReset to be called at least twice (once per group), got ${suppressorActiveAtMarkPendingReset.length}`,
-    );
-    for (let i = 0; i < suppressorActiveAtMarkPendingReset.length; i++) {
-      assert.strictEqual(
-        suppressorActiveAtMarkPendingReset[i],
-        true,
-        `suppressor must be active (isActive=true) at markPendingReset call ${i + 1} of ${
-          suppressorActiveAtMarkPendingReset.length
-        }. FAIL here means the per-group begin/end structure (round-6) was not replaced by a single outer begin/end.`,
-      );
-    }
-
-    // (b) begin() must be called exactly once (single outer begin before the loop).
-    assert.strictEqual(
-      beginCount,
-      1,
-      `suppressor.begin() must be called exactly once for the whole batch, got ${beginCount}. ` +
-        'FAIL here means begin/end is still inside the loop (one per group).',
-    );
-
-    // (c) end() must be called exactly once (single outer finally after the loop).
-    assert.strictEqual(
-      endCount,
-      1,
-      `suppressor.end() must be called exactly once for the whole batch (in finally), got ${endCount}. ` +
-        'FAIL here means begin/end is still inside the loop (one per group).',
-    );
-
-    // (d) suppressor must be inactive after the operation completes (begin/end balanced).
-    assert.strictEqual(
-      realSuppressor.isActive,
-      false,
-      'suppressor must be inactive after handleSaveConfig completes (begin/end balanced)',
-    );
-
-    // (e) both keys must have been recorded as pending resets.
     const pending = tracker.consumePendingResets();
     assert.ok(pending.has(LS_GLOBAL_KEY.organization), 'organization must be in pending resets');
     assert.ok(pending.has(LS_GLOBAL_KEY.scanNetNew), 'scan_net_new must be in pending resets');
   });
 
   // Write failure in one group must NOT abort the batch (per-group try/catch preserved).
-  // The second group's markPendingReset must still run, and suppressor still active at it.
-  test('write failure in first group does not abort batch — second group still resets, suppressor active throughout', async () => {
+  test('write failure in first group does not abort batch — second group still resets', async () => {
     const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-    const suppressorActiveAtMarkPendingReset: boolean[] = [];
-
-    const realSuppressor = new ConfigFeedbackSuppressor();
-    const suppressor: IConfigFeedbackSuppressor = {
-      get isActive(): boolean {
-        return realSuppressor.isActive;
-      },
-      begin(): void {
-        realSuppressor.begin();
-      },
-      end(): void {
-        realSuppressor.end();
-      },
-    };
-
-    const originalMarkPendingReset = tracker.markPendingReset.bind(tracker);
-    tracker.markPendingReset = (lsKey: string) => {
-      suppressorActiveAtMarkPendingReset.push(realSuppressor.isActive);
-      originalMarkPendingReset(lsKey);
-    };
 
     let callCount = 0;
-    // First vscodeKey write fails; second succeeds.
+    // First vscodeKey write fails; second succeeds. Iteration order follows
+    // GLOBAL_RESET_FIELDS, where scan_net_new precedes organization — so scan_net_new's
+    // group is processed (and fails) first.
     const updateConfigurationStub = sinon.stub().callsFake(() => {
       callCount++;
       if (callCount === 1) throw new Error('first write failed');
@@ -2832,7 +2454,6 @@ suite('ConfigurationPersistenceService — FIX 2: single begin/end spans entire 
       scopeDetectionService,
       clientAdapter,
       logger,
-      suppressor,
       undefined,
       tracker,
     );
@@ -2847,22 +2468,13 @@ suite('ConfigurationPersistenceService — FIX 2: single begin/end spans entire 
 
     await service.handleSaveConfig(configJson);
 
-    // One markPendingReset must have run (for the successful group).
+    // The second (successful) group's reset must still be queued despite the first failing.
+    const pending = tracker.consumePendingResets();
     assert.ok(
-      suppressorActiveAtMarkPendingReset.length >= 1,
-      'at least one markPendingReset must have run (for the successful group)',
+      pending.has(LS_GLOBAL_KEY.organization),
+      'organization must still be queued as a pending reset after the first group (scan_net_new) failed',
     );
-    // All captured calls must have seen the suppressor active.
-    for (let i = 0; i < suppressorActiveAtMarkPendingReset.length; i++) {
-      assert.strictEqual(
-        suppressorActiveAtMarkPendingReset[i],
-        true,
-        `suppressor must be active at markPendingReset call ${i + 1}`,
-      );
-    }
-
-    // Suppressor must be balanced (inactive) after completion.
-    assert.strictEqual(realSuppressor.isActive, false, 'suppressor must be inactive after completion');
+    assert.ok(!pending.has(LS_GLOBAL_KEY.scanNetNew), 'scan_net_new must NOT be queued — its write failed');
   });
 });
 
@@ -3025,7 +2637,6 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
       realScopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
   }
 
@@ -3286,7 +2897,6 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
         getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
-      new ConfigFeedbackSuppressor(),
     );
   }
 
@@ -3456,7 +3066,6 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
         getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
-      new ConfigFeedbackSuppressor(),
     );
   }
 
@@ -3624,7 +3233,6 @@ suite('ConfigurationPersistenceService — Fix 2: undefined value treated as res
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -3655,7 +3263,6 @@ suite('ConfigurationPersistenceService — Fix 2: undefined value treated as res
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
     );
 
     const param: LspConfigurationParam = {
@@ -3768,7 +3375,6 @@ suite('ConfigurationPersistenceService — onWriteSuccess callback exception res
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined, // contextService — not needed for this test
       tracker,
     );

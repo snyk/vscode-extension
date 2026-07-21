@@ -36,7 +36,6 @@ import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeVie
 import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { ConfigFeedbackSuppressor } from '../../../../snyk/common/languageServer/configFeedbackSuppressor';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import {
   IScopeDetectionService,
@@ -99,7 +98,6 @@ suite('Language Server', () => {
       explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       treeViewProvider,
-      new ConfigFeedbackSuppressor(),
     );
   };
 
@@ -358,7 +356,6 @@ suite('Language Server', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
-      new ConfigFeedbackSuppressor(),
       undefined,
       tracker,
     );
@@ -383,7 +380,6 @@ suite('Language Server', () => {
       tracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       undefined,
-      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -480,7 +476,6 @@ suite('Language Server', () => {
       tracker,
       sinon.stub().resolves(),
       undefined,
-      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -544,7 +539,6 @@ suite('Language Server', () => {
       tracker,
       sinon.stub().resolves(),
       undefined,
-      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -598,7 +592,6 @@ suite('Language Server', () => {
       tracker,
       sinon.stub().resolves(),
       undefined,
-      new ConfigFeedbackSuppressor(),
     );
 
     // No start() — the CLI hasn't downloaded yet, but the listener must already be active.
@@ -695,7 +688,6 @@ suite('Language Server', () => {
       tracker,
       sinon.stub().resolves(),
       undefined,
-      new ConfigFeedbackSuppressor(),
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -895,7 +887,6 @@ suite('Language Server', () => {
         pendingResetTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
 
       const options = await ls.getInitializationOptions();
@@ -952,7 +943,6 @@ suite('Language Server', () => {
         pendingResetTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
 
       // Act + Assert: must throw, AND the key must be re-enqueued.
@@ -1011,7 +1001,6 @@ suite('Language Server', () => {
         pendingResetTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
 
       // Act + Assert: must throw, AND only the key that was NOT re-edited gets re-enqueued.
@@ -1086,7 +1075,6 @@ suite('Language Server', () => {
         sharedTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
 
       const initOptions = await ls.getInitializationOptions();
@@ -1202,7 +1190,6 @@ suite('Language Server', () => {
         explicitLspConfigurationChangeTracker,
         persistStub,
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
       languageServer.setWorkspaceConfigurationProvider(providerMock);
       downloadServiceMock.downloadReady$.next();
@@ -1229,13 +1216,13 @@ suite('Language Server', () => {
     });
   });
 
-  // ── CLAIM 1: outbound reset self-cancel timing fix (IDE-2149, superseded by IDE-2264) ──
+  // ── Outbound reset self-cancel guard (IDE-2149, fixed via write-time tag in IDE-2264) ──
   //
-  // The round-5 fix made markExplicitlyChanged call pendingResets.delete so that a
-  // user re-edit after a reset cancels the stale pending signal.  But the
-  // onDidChangeConfiguration listener (registered in registerExplicitKeyMarkingListener)
-  // also calls markExplicitlyChanged for ANY snyk.* setting change — including the change
-  // triggered by the reset's own updateConfiguration write.
+  // markExplicitlyChanged calls pendingResets.delete so that a user re-edit after a reset
+  // cancels the stale pending signal. But the onDidChangeConfiguration listener (registered
+  // in registerExplicitKeyMarkingListener) also calls markExplicitlyChanged for ANY snyk.*
+  // setting change — including the change triggered by the reset's own updateConfiguration
+  // write.
   //
   // Adversarial ordering:
   //   1. applyOutboundGlobalResets calls updateConfiguration (clears VS Code override)
@@ -1243,25 +1230,15 @@ suite('Language Server', () => {
   //   3. VS Code fires onDidChangeConfiguration (asynchronously, after step 2)
   //   4. listener calls markExplicitlyChanged(key) → pendingResets.delete(key) → LOST
   //
-  // Original (IDE-2149) fix: suppress the listener while the outbound reset write is in
-  // flight, via outboundResetSuppressor.isActive in the listener. That guard assumed VS
-  // Code dispatches onDidChangeConfiguration *synchronously* inside updateConfiguration() —
-  // the same assumption that turned out to be false for the analogous inbound-persistence
-  // path (IDE-2264). A genuinely delayed dispatch arrives after the suppression window (and
-  // outboundResetSuppressor.isActive) has already closed, so the old guard did not help.
-  //
-  // Current (IDE-2264) fix: applyVscodeKeyResets tags each vscodeKey with
-  // markPendingInboundWrite before its write, mirroring the inbound-persistence fix. The
-  // listener consumes that tag (consumePendingInboundWrite) instead of reading
-  // outboundResetSuppressor.isActive — correct no matter when the change event arrives.
-  // outboundResetSuppressor itself is now dead (see the ponytail comments in languageServer.ts
-  // and configurationPersistenceService.ts); the tests below that exercise it directly still
-  // pass because ConfigFeedbackSuppressor's own begin/end/isActive semantics are unchanged,
-  // they just no longer gate anything in production.
-  suite('outbound reset self-cancel guard (Claim 1 — adversarial onDidChangeConfiguration ordering)', () => {
+  // Fix (IDE-2264): applyVscodeKeyResets tags each vscodeKey with markPendingInboundWrite
+  // before its write, mirroring the inbound-persistence fix. The listener consumes that tag
+  // (consumePendingInboundWrite) instead of relying on a suppression window scoped to the
+  // synchronous duration of the write — correct no matter when the change event arrives.
+  // (An earlier suppressor-based guard, outboundResetSuppressor, made exactly that timing
+  // assumption and was removed as dead code once the tag-based fix landed.)
+  suite('outbound reset self-cancel guard (adversarial onDidChangeConfiguration ordering)', () => {
     function makeLanguageServerWithListener(
       tracker: ExplicitLspConfigurationChangeTracker,
-      suppressor: ConfigFeedbackSuppressor,
       onListener: (fn: (e: { affectsConfiguration: (s: string) => boolean }) => void) => void,
     ): LanguageServer {
       const adapter = {
@@ -1305,19 +1282,17 @@ suite('Language Server', () => {
         tracker,
         sinon.stub().resolves(),
         undefined,
-        suppressor,
       );
     }
 
-    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES via the write-time tag, suppressor never active', () => {
-      // Proves the IDE-2264 fix: the listener no longer needs outboundResetSuppressor to be
-      // active at all. markPendingInboundWrite(vscodeKey) — set by applyVscodeKeyResets right
-      // before its write, exactly as it would be in production — is enough on its own.
+    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES via the write-time tag', () => {
+      // Proves the IDE-2264 fix: markPendingInboundWrite(vscodeKey) — set by
+      // applyVscodeKeyResets right before its write, exactly as it would be in production —
+      // is enough on its own, independent of the change event's timing.
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      const suppressor = new ConfigFeedbackSuppressor(); // never begin()-ed: proves it's not needed
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, suppressor, fn => {
+      const ls = makeLanguageServerWithListener(tracker, fn => {
         configListener = fn;
       });
 
@@ -1330,11 +1305,8 @@ suite('Language Server', () => {
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
       // Step 3: VS Code fires onDidChangeConfiguration for the reset key (adversarial ordering:
-      // fires AFTER markPendingReset). The listener must consume the tag and skip marking,
-      // regardless of the (never-activated) suppressor.
+      // fires AFTER markPendingReset). The listener must consume the tag and skip marking.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
-
-      assert.strictEqual(suppressor.isActive, false, 'suppressor was never engaged — the tag alone must be sufficient');
 
       // The pending reset MUST still be present — the listener must not have deleted it.
       const pending = tracker.consumePendingResets();
@@ -1345,17 +1317,14 @@ suite('Language Server', () => {
       );
     });
 
-    test('markExplicitlyChanged deletes pending reset when suppressor is inactive (adversarial timing root cause)', () => {
-      // This test documents the root cause of the adversarial timing bug: when the
-      // suppressor is inactive (isActive === false), the onDidChangeConfiguration listener
-      // calls markExplicitlyChanged, which deletes the key from pendingResets.
-      // The fix (the suppressor guard in the listener) is proven by the sibling test above.
+    test('markExplicitlyChanged deletes pending reset when the write is untagged (adversarial timing root cause)', () => {
+      // Documents the root cause: without the write-time tag, the onDidChangeConfiguration
+      // listener calls markExplicitlyChanged for any snyk.* change, which deletes the key
+      // from pendingResets. The fix (tagging the write) is proven by the sibling test above.
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      // Suppressor is never begin()-ed, so isActive remains false throughout.
-      const inactiveSuppressor = new ConfigFeedbackSuppressor();
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, inactiveSuppressor, fn => {
+      const ls = makeLanguageServerWithListener(tracker, fn => {
         configListener = fn;
       });
 
@@ -1364,49 +1333,30 @@ suite('Language Server', () => {
       // Queue a pending reset (simulates what applyOutboundGlobalResets does after updateConfiguration).
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
-      // Listener fires while suppressor is inactive — markExplicitlyChanged is called,
+      // Listener fires without a pending-write tag — markExplicitlyChanged is called,
       // which calls pendingResets.delete(key), removing the pending reset signal.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
 
       const pending = tracker.consumePendingResets();
-      // With suppressor inactive, markExplicitlyChanged deletes the pending reset.
       assert.ok(
         !pending.has(LS_GLOBAL_KEY.organization),
-        'markExplicitlyChanged deletes from pendingResets when the suppressor is inactive — ' +
-          'this is the timing sensitivity that the outboundResetSuppressor guard in the listener addresses.',
+        'markExplicitlyChanged deletes from pendingResets when the write was not tagged — ' +
+          'this is the timing sensitivity the write-time tag in the listener addresses.',
       );
     });
 
-    test('suppressor.isActive gates correctly: begin/end pairs are reference-counted', () => {
-      const suppressor = new ConfigFeedbackSuppressor();
-      assert.strictEqual(suppressor.isActive, false, 'initially inactive');
-
-      suppressor.begin();
-      assert.strictEqual(suppressor.isActive, true, 'active after begin');
-
-      suppressor.begin();
-      assert.strictEqual(suppressor.isActive, true, 'still active after second begin');
-
-      suppressor.end();
-      assert.strictEqual(suppressor.isActive, true, 'still active after first end (depth=1)');
-
-      suppressor.end();
-      assert.strictEqual(suppressor.isActive, false, 'inactive after second end (depth=0)');
-    });
-
-    test('listener still fires normally when suppressor is NOT active (no regression)', () => {
-      // Normal user edit: suppressor is inactive, listener SHOULD call markExplicitlyChanged.
+    test('listener still fires normally for an untagged user edit (no regression)', () => {
+      // Normal user edit: no pending-write tag, listener SHOULD call markExplicitlyChanged.
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      const suppressor = new ConfigFeedbackSuppressor(); // never begin()-ed
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, suppressor, fn => {
+      const ls = makeLanguageServerWithListener(tracker, fn => {
         configListener = fn;
       });
 
       ls.registerExplicitKeyMarkingListener();
 
-      // Fire listener without suppressor active — must mark the key.
+      // Fire listener for an untagged change — must mark the key.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
 
       // At least one snyk.* LS key must be marked explicitly.
@@ -1414,17 +1364,16 @@ suite('Language Server', () => {
       //  true for all of them, so all snyk.* LS keys that have a vscodeKey get marked.)
       assert.ok(
         tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-        'organization LS key must be marked explicitly when listener fires without suppression',
+        'organization LS key must be marked explicitly when listener fires for an untagged change',
       );
     });
 
-    // IDE-2264: the outbound reset path now survives a genuinely delayed
-    // onDidChangeConfiguration dispatch, the same fix (write-time tag) as inbound persistence.
-    // Uses the real ConfigurationPersistenceService.handleSaveConfig (production wiring), not
-    // a hand-rolled tracker call, so it exercises applyVscodeKeyResets' actual tag placement.
-    test('a change event delayed past begin/end no longer deletes the pending reset (reset path fixed)', async () => {
+    // IDE-2264: the outbound reset path survives a genuinely delayed onDidChangeConfiguration
+    // dispatch, via the same fix (write-time tag) as inbound persistence. Uses the real
+    // ConfigurationPersistenceService.handleSaveConfig (production wiring), not a hand-rolled
+    // tracker call, so it exercises applyVscodeKeyResets' actual tag placement.
+    test('a change event delayed past the write no longer deletes the pending reset', async () => {
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      const outboundResetSuppressor = new ConfigFeedbackSuppressor();
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
       const deferredDispatches: Array<() => void> = [];
@@ -1463,12 +1412,11 @@ suite('Language Server', () => {
         scopeDetectionService,
         clientAdapter,
         logger,
-        outboundResetSuppressor,
         undefined,
         tracker,
       );
 
-      const ls = makeLanguageServerWithListener(tracker, outboundResetSuppressor, fn => {
+      const ls = makeLanguageServerWithListener(tracker, fn => {
         configListener = fn;
       });
       ls.registerExplicitKeyMarkingListener();
@@ -1477,16 +1425,14 @@ suite('Language Server', () => {
         JSON.stringify({ isFallbackForm: false, [LS_GLOBAL_KEY.organization]: null }),
       );
 
-      // begin/end already ran (suppressor is now dead weight); the write's change event has
-      // NOT fired yet.
-      assert.strictEqual(outboundResetSuppressor.isActive, false, 'suppressor window already closed');
+      // The write's change event has NOT fired yet.
       assert.ok(tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization), 'reset queued before the event fires');
       // consumePendingResets() drained it above — requeue to observe what the deferred event does to it.
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
-      // The change event finally arrives, long after the (now-irrelevant) suppression window
-      // closed. The write-time tag (set by applyVscodeKeyResets before its updateConfiguration
-      // call, inside handleSaveConfig above) is what protects the pending reset now.
+      // The change event finally arrives, long after the write returned. The write-time tag
+      // (set by applyVscodeKeyResets before its updateConfiguration call, inside
+      // handleSaveConfig above) is what protects the pending reset.
       deferredDispatches.forEach(dispatch => dispatch());
 
       assert.ok(
@@ -1542,7 +1488,6 @@ suite('Language Server', () => {
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1583,7 +1528,6 @@ suite('Language Server', () => {
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1619,7 +1563,6 @@ suite('Language Server', () => {
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1657,7 +1600,6 @@ suite('Language Server', () => {
         explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
-        new ConfigFeedbackSuppressor(),
       );
       downloadServiceMock.downloadReady$.next();
 

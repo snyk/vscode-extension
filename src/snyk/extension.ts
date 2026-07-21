@@ -105,7 +105,6 @@ import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
-import { ConfigFeedbackSuppressor } from './common/languageServer/configFeedbackSuppressor';
 
 class SnykExtension extends SnykLib implements IExtension {
   private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
@@ -235,11 +234,6 @@ class SnykExtension extends SnykLib implements IExtension {
     const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
     seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
 
-    // Shared suppressor: prevents the onDidChangeConfiguration listener in LanguageServer from
-    // calling markExplicitlyChanged (and thus deleting a just-queued pendingReset) while
-    // applyOutboundGlobalResets' own updateConfiguration write is in flight (IDE-2149).
-    const outboundResetSuppressor = new ConfigFeedbackSuppressor();
-
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configPersistenceService = new ConfigurationPersistenceService(
       vsCodeWorkspace,
@@ -247,7 +241,6 @@ class SnykExtension extends SnykLib implements IExtension {
       scopeDetectionService,
       languageClientAdapter,
       Logger,
-      outboundResetSuppressor,
       this.contextService,
       explicitLspConfigurationChangeTracker,
     );
@@ -276,7 +269,6 @@ class SnykExtension extends SnykLib implements IExtension {
       explicitLspConfigurationChangeTracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
-      outboundResetSuppressor,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(

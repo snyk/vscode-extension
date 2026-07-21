@@ -43,7 +43,6 @@ import { IVSCodeCommands } from '../vscode/commands';
 import { IDiagnosticsIssueProvider } from '../services/diagnosticsService';
 import { IMcpProvider } from '../vscode/mcpProvider';
 import { IWorkspaceConfigurationWebviewProvider } from '../views/workspaceConfiguration/types/workspaceConfiguration.types';
-import { type IConfigFeedbackSuppressor } from './configFeedbackSuppressor';
 
 export interface ILanguageServer {
   start(): Promise<void>;
@@ -104,11 +103,6 @@ export class LanguageServer implements ILanguageServer {
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider: ITreeViewProviderService | undefined,
-    // ponytail: unused since the marking-listener guard now relies on the write-time tag
-    // (markPendingInboundWrite/consumePendingInboundWrite) instead of this timing-dependent
-    // suppressor [IDE-2264]. Kept as a constructor param to avoid an ~90-callsite refactor
-    // across extension.ts wiring and both test files; remove if that cleanup happens.
-    _outboundResetSuppressor: IConfigFeedbackSuppressor,
   ) {
     this.downloadService = downloadService;
 

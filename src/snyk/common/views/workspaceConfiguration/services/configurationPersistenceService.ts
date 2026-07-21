@@ -21,7 +21,6 @@ import { isThenable } from '../../../tsUtil';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
-import { type IConfigFeedbackSuppressor } from '../../../languageServer/configFeedbackSuppressor';
 import { EFFECTIVE_VALUE_UNKNOWN, IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
@@ -52,15 +51,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
-    /**
-     * ponytail: no longer load-bearing [IDE-2264] — the marking-listener guard it used to
-     * gate (`outboundResetSuppressor.isActive` in languageServer.ts) was replaced by a
-     * write-time tag (`markPendingInboundWrite`/`consumePendingInboundWrite`, see
-     * `applyVscodeKeyResets` below), which is correct regardless of when the resulting
-     * change event arrives. begin()/end() are still called here but have no reader left;
-     * kept to avoid an ~90-callsite constructor-signature refactor.
-     */
-    private readonly outboundResetSuppressor: IConfigFeedbackSuppressor,
     private readonly contextService?: IContextService,
     private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
   ) {}
@@ -445,49 +435,37 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       }
     }
 
-    // ponytail: begin()/end() below are dead weight [IDE-2264] — the marking listener no
-    // longer reads outboundResetSuppressor.isActive. Correctness now comes from the
-    // write-time tag applyVscodeKeyResets sets per vscodeKey (markPendingInboundWrite),
-    // consumed by markExplicitLsKeysFromConfigurationChangeEvent regardless of when the
-    // change event actually arrives — no timing assumption left. Kept only because removing
-    // the constructor param would mean an ~90-callsite refactor across extension.ts and both
-    // test files; see the ctor doc comment above.
-    this.outboundResetSuppressor.begin();
-    try {
-      await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
-        this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
-        this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
-        // D1 fix: seed the last-known value for the reset key so the subsequent
-        // applySettingsMap write (for non-reset siblings sharing the same VS Code
-        // setting) does NOT cold-cache-mark committedSinceReset for this key.
-        //
-        // After the VS Code global override is cleared, the registry resolver returns
-        // the post-reset value (workspace/default resolution).  Seeding it here means
-        // the fan-out guard sees a warm cache and only marks committedSinceReset if
-        // the resolver value actually changed — preventing shouldSkipReenqueue from
-        // suppressing a legitimate re-enqueue of this key on fromConfiguration failure.
-        //
-        // Only sync resolvers are seeded (Promise results are skipped — those keys
-        // do not appear in multi-key fan-out groups and fall back to cold-cache marking,
-        // which is the conservative pre-fix behaviour and is safe for single-key groups).
-        //
-        // Timing assumption: this.configuration resolves live VS Code state immediately
-        // after updateConfiguration resolves (not a memoized cache). If a resolver ever
-        // adds memoization this must be restructured to read VS Code directly instead.
-        if (this.explicitLspConfigurationChangeTracker) {
-          const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
-          if (entry) {
-            const resolved = entry.resolve(this.configuration);
-            if (!isThenable(resolved)) {
-              this.explicitLspConfigurationChangeTracker.setLastKnownValue(lsKey, resolved);
-            }
+    await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
+      this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
+      this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
+      // D1 fix: seed the last-known value for the reset key so the subsequent
+      // applySettingsMap write (for non-reset siblings sharing the same VS Code
+      // setting) does NOT cold-cache-mark committedSinceReset for this key.
+      //
+      // After the VS Code global override is cleared, the registry resolver returns
+      // the post-reset value (workspace/default resolution).  Seeding it here means
+      // the fan-out guard sees a warm cache and only marks committedSinceReset if
+      // the resolver value actually changed — preventing shouldSkipReenqueue from
+      // suppressing a legitimate re-enqueue of this key on fromConfiguration failure.
+      //
+      // Only sync resolvers are seeded (Promise results are skipped — those keys
+      // do not appear in multi-key fan-out groups and fall back to cold-cache marking,
+      // which is the conservative pre-fix behaviour and is safe for single-key groups).
+      //
+      // Timing assumption: this.configuration resolves live VS Code state immediately
+      // after updateConfiguration resolves (not a memoized cache). If a resolver ever
+      // adds memoization this must be restructured to read VS Code directly instead.
+      if (this.explicitLspConfigurationChangeTracker) {
+        const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+        if (entry) {
+          const resolved = entry.resolve(this.configuration);
+          if (!isThenable(resolved)) {
+            this.explicitLspConfigurationChangeTracker.setLastKnownValue(lsKey, resolved);
           }
         }
-        this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
-      });
-    } finally {
-      this.outboundResetSuppressor.end();
-    }
+      }
+      this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
+    });
   }
 
   private async saveConfigToVSCodeSettings(config: HtmlSettingsData): Promise<void> {
