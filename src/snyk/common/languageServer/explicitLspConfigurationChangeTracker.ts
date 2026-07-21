@@ -82,6 +82,16 @@ export interface IExplicitLspConfigurationChangeTracker {
    * NOT persisted to Memento — cache starts empty on construction.
    */
   setLastKnownValue(lsKey: string, value: unknown): void;
+
+  // ── Timing-independent inbound-persistence suppression ──────────────────────
+
+  /** Marks `vscodeKey` as just written by inbound LS persistence, regardless of when its
+   * onDidChangeConfiguration event actually arrives. Transient, in-memory only. */
+  markPendingInboundWrite?(vscodeKey: string): void;
+
+  /** Consumes a pending inbound write for `vscodeKey` if present (caller should suppress
+   * marking); false means a genuine user-initiated change. */
+  consumePendingInboundWrite?(vscodeKey: string): boolean;
 }
 
 /**
@@ -124,6 +134,10 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
    * A sibling whose value did not change is not marked in the windowed signal.
    */
   private readonly lastKnownValues = new Map<string, unknown>();
+
+  /** vscodeKeys written by inbound LS persistence, awaiting their onDidChangeConfiguration
+   * delivery. Transient, in-memory only. */
+  private readonly pendingInboundWrites = new Set<string>();
 
   /** Serializes Memento writes so rapid mark/unmark calls don't race at disk level. */
   private writeQueue: Promise<void> = Promise.resolve();
@@ -198,12 +212,21 @@ export class ExplicitLspConfigurationChangeTracker implements IExplicitLspConfig
     this.lastKnownValues.set(lsKey, value);
   }
 
+  markPendingInboundWrite(vscodeKey: string): void {
+    this.pendingInboundWrites.add(vscodeKey);
+  }
+
+  consumePendingInboundWrite(vscodeKey: string): boolean {
+    return this.pendingInboundWrites.delete(vscodeKey);
+  }
+
   /** @internal Tests only */
   clearForTests(): void {
     this.keys.clear();
     this.pendingResets.clear();
     this.committedSinceResetSet.clear();
     this.lastKnownValues.clear();
+    this.pendingInboundWrites.clear();
     this.persistKeys();
   }
 

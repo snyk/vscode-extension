@@ -36,6 +36,12 @@ export function markExplicitLsKeysFromConfigurationChangeEvent(
       continue;
     }
 
+    // This event may arrive well after the write that caused it. Consuming the pending
+    // marker (set by the writer) attributes it correctly regardless of arrival timing.
+    if (tracker.consumePendingInboundWrite?.(vscodeKey)) {
+      continue;
+    }
+
     if (lsKeys.length === 1 || !currentValueOf) {
       // Single LS key, or no resolver provided: mark both signals for all keys.
       // For a single-key mapping, VS Code only fires the event when the value

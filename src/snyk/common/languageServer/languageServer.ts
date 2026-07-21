@@ -323,25 +323,18 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      // Suppress feedback when inbound LS persistence is writing to VS Code settings, OR
-      // when an outbound global reset's own updateConfiguration write is in flight.
-      // Without the outbound suppression, the reset's write fires this listener, which calls
-      // markExplicitlyChanged, which (since the round-5 race fix) deletes the just-queued
-      // pending reset — silently losing the reset signal sent to the LS.
-      //
-      // TIMING CONTRACT: this suppression relies on VS Code dispatching
-      // onDidChangeConfiguration *synchronously* within workspace.getConfiguration().update()
-      // — the event fires before the awaiting caller resumes past `await updateConfiguration`.
-      // Evidence: the integration test in configurationEventTiming.test.ts confirms this
-      // against a real VS Code instance; and the inbound flag (suppressConfigFeedbackFrom-
-      // InboundPersistence) works in production with a purely synchronous try/finally
-      // pattern — which would be broken if the event were a macrotask.  See also the
-      // comment in applyOutboundGlobalResets (configurationPersistenceService.ts).
-      // If VS Code ever changes to async (macrotask) dispatch, both suppression paths need
-      // to be rearchitected.
-      if (this.suppressConfigFeedbackFromInboundPersistence || this.outboundResetSuppressor.isActive) {
+      // Suppress while an outbound global reset's own updateConfiguration write is in flight —
+      // otherwise the reset's write fires this listener, which deletes the just-queued pending
+      // reset, losing the reset signal sent to the LS. Relies on VS Code dispatching
+      // onDidChangeConfiguration synchronously within update() (verified against a real
+      // instance in configurationEventTiming.test.ts) — unconverted, see the note in
+      // configurationPersistenceService.ts for the risk.
+      if (this.outboundResetSuppressor.isActive) {
         return;
       }
+      // Inbound-persistence suppression does NOT rely on that timing contract:
+      // consumePendingInboundWrite attributes each vscodeKey by a write-time tag, correct
+      // regardless of when the event actually arrives.
       // ADR-2: pass a sync value resolver so the fan-out path can value-compare each
       // sibling sub-key and only mark committedSinceReset for the sub-keys that actually
       // changed (not blindly for all siblings sharing the same VS Code setting).
@@ -384,18 +377,10 @@ export class LanguageServer implements ILanguageServer {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
       .then(async () => {
-        // TIMING CONTRACT: this boolean flag suppresses the onDidChangeConfiguration listener
-        // (registered in registerExplicitKeyMarkingListener) while inbound LS settings are
-        // being written to VS Code.  The suppression relies on VS Code dispatching
-        // onDidChangeConfiguration *synchronously* within workspace.getConfiguration().update()
-        // — the event fires before the awaiting code resumes past the `await` — so the flag,
-        // set here before any write and cleared in `finally` after all writes, is always true
-        // when the event arrives.  If VS Code ever changed to dispatch the event as a macrotask
-        // (after the microtask queue drains), the flag would be false by the time the event
-        // fired and inbound suppression would be silently broken.  The integration test in
-        // configurationEventTiming.test.ts empirically verifies the synchronous dispatch
-        // contract against a real VS Code instance.  See also applyOutboundGlobalResets
-        // (configurationPersistenceService.ts) and the listener comment above.
+        // Gates LanguageClientMiddleware's outbound didChangeConfiguration forwarding (see
+        // middleware.ts) so an inbound-persistence write doesn't echo straight back to the LS
+        // as a fresh user edit. Not used for explicit-key marking any more — that's
+        // markPendingInboundWrite/consumePendingInboundWrite, immune to this flag's timing gap.
         this.suppressConfigFeedbackFromInboundPersistence = true;
         try {
           await this.persistInboundConfiguration(params);

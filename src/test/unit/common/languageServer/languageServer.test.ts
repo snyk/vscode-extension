@@ -36,6 +36,11 @@ import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ConfigFeedbackSuppressor } from '../../../../snyk/common/languageServer/configFeedbackSuppressor';
+import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
+import {
+  IScopeDetectionService,
+  ScopeDetectionService,
+} from '../../../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { ShowIssueDetailTopicParams } from '../../../../snyk/common/languageServer/types';
@@ -308,6 +313,114 @@ suite('Language Server', () => {
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     sinon.assert.called(lca.create);
+  });
+
+  // Real ConfigurationPersistenceService (same wiring as extension.ts) with a fan-out
+  // settings payload, and a workspace whose onDidChangeConfiguration dispatch is a genuinely
+  // separate async round-trip from the write — modeling real VS Code (settings.json write,
+  // then a later file-watcher-driven config refresh), not one synchronous call.
+  test('inbound LS persistence never marks settings explicit, even on a delayed change event', async () => {
+    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const store = new Map<string, unknown>();
+
+    const workspace = {
+      getWorkspaceFolders: () => [],
+      getWorkspaceFolderPaths: () => [],
+      getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
+      inspectConfiguration: () => ({
+        defaultValue: undefined,
+        globalValue: undefined,
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      }),
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+      updateConfiguration: (configId: string, section: string, value: unknown) => {
+        store.set(`${configId}.${section}`, value);
+        // Real VS Code write-then-notify is two separate round-trips (settings.json write,
+        // then a file-watcher-driven config refresh) — not one synchronous call. Model that
+        // gap with a real macrotask, not a test-triggered flush.
+        setTimeout(() => configListener({ affectsConfiguration: (s: string) => s === `${configId}.${section}` }), 0);
+        return Promise.resolve();
+      },
+    } as unknown as IVSCodeWorkspace;
+
+    const scopeDetectionService = new ScopeDetectionService(workspace);
+    const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
+    const configPersistenceService = new ConfigurationPersistenceService(
+      workspace,
+      configurationMock,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      new ConfigFeedbackSuppressor(),
+      undefined,
+      tracker,
+    );
+
+    const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+      view => configPersistenceService.persistInboundLspConfiguration(view),
+      undefined,
+      new ConfigFeedbackSuppressor(),
+    );
+    downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
+
+    // Realistic fully-default-upgrade payload: a fan-out group (severity -> 1 vscode write,
+    // 4 LS keys) plus two single-key writes -- mirrors the ticket's multi-vscode-key-write shape.
+    const handler = notificationHandlers['$/snyk.configuration'];
+    handler({
+      settings: {
+        [LS_GLOBAL_KEY.severityFilterCritical]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterHigh]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterMedium]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.severityFilterLow]: { value: true, changed: false },
+        [LS_GLOBAL_KEY.trustedFolders]: { value: ['/trusted'], changed: false },
+        [LS_GLOBAL_KEY.organization]: { value: 'my-org', changed: false },
+      },
+    });
+
+    // Let the real write chain (and its finally-block flag reset) finish...
+    await new Promise(resolve => setTimeout(resolve, 0));
+    // ...then let the deferred change-event dispatches (also scheduled via setTimeout) run.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    for (const lsKey of [
+      LS_GLOBAL_KEY.severityFilterCritical,
+      LS_GLOBAL_KEY.severityFilterHigh,
+      LS_GLOBAL_KEY.severityFilterMedium,
+      LS_GLOBAL_KEY.severityFilterLow,
+      LS_GLOBAL_KEY.trustedFolders,
+      LS_GLOBAL_KEY.organization,
+    ]) {
+      assert.strictEqual(
+        tracker.isExplicitlyChanged(lsKey),
+        false,
+        `${lsKey}: inbound-persisted setting must not be marked explicit just because VS Code ` +
+          'delivered the change event on a later tick than the write',
+      );
+    }
   });
 
   test('marks explicit LS keys when snyk settings change', async () => {
@@ -1288,6 +1401,81 @@ suite('Language Server', () => {
       assert.ok(
         tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
         'organization LS key must be marked explicitly when listener fires without suppression',
+      );
+    });
+
+    // Proves (or disproves) the open risk noted next to outboundResetSuppressor in
+    // configurationPersistenceService.ts: does the reset path survive a genuinely delayed
+    // onDidChangeConfiguration dispatch, the same way inbound persistence used to fail?
+    test('a change event delayed past begin/end deletes the pending reset (reset path shares the inbound timing gap)', async () => {
+      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      const outboundResetSuppressor = new ConfigFeedbackSuppressor();
+
+      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+      const deferredDispatches: Array<() => void> = [];
+
+      // Only used by ConfigurationPersistenceService (writes) — the listener under test comes
+      // from makeLanguageServerWithListener's own workspace, captured via onListener below.
+      const workspace = {
+        getWorkspaceFolders: () => [],
+        getWorkspaceFolderPaths: () => [],
+        getConfiguration: () => undefined,
+        inspectConfiguration: () => ({
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        }),
+        updateConfiguration: () => {
+          // Same real-world gap as the inbound case: settings.json write and the change-event
+          // broadcast are two separate round-trips, not one synchronous call.
+          deferredDispatches.push(() => configListener({ affectsConfiguration: (s: string) => s.startsWith('snyk.') }));
+          return Promise.resolve();
+        },
+      } as unknown as IVSCodeWorkspace;
+
+      const scopeDetectionService = {
+        getSettingScope: () => 'user',
+        populateScopeIndicators: () => '',
+        shouldSkipSettingUpdate: () => false,
+      } as unknown as IScopeDetectionService;
+      const clientAdapter = {
+        getLanguageClient: () => ({ sendNotification: sinon.stub().resolves() }),
+      } as unknown as ILanguageClientAdapter;
+      const configPersistenceService = new ConfigurationPersistenceService(
+        workspace,
+        configurationMock,
+        scopeDetectionService,
+        clientAdapter,
+        logger,
+        outboundResetSuppressor,
+        undefined,
+        tracker,
+      );
+
+      const ls = makeLanguageServerWithListener(tracker, outboundResetSuppressor, fn => {
+        configListener = fn;
+      });
+      ls.registerExplicitKeyMarkingListener();
+
+      await configPersistenceService.handleSaveConfig(
+        JSON.stringify({ isFallbackForm: false, [LS_GLOBAL_KEY.organization]: null }),
+      );
+
+      // begin/end already ran; the write's change event has NOT fired yet.
+      assert.strictEqual(outboundResetSuppressor.isActive, false, 'suppressor window already closed');
+      assert.ok(tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization), 'reset queued before the event fires');
+      // consumePendingResets() drained it above — requeue to observe what the deferred event does to it.
+      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
+
+      // The change event finally arrives, after the suppression window already closed.
+      deferredDispatches.forEach(dispatch => dispatch());
+
+      assert.ok(
+        !tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization),
+        'documents the risk: a genuinely delayed dispatch deletes the pending reset here too, ' +
+          'same class of bug as the inbound path — this suppressor has not been converted to the ' +
+          'write-time-tag approach',
       );
     });
   });

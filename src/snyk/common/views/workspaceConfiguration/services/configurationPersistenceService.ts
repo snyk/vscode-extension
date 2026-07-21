@@ -355,6 +355,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           continue;
         }
 
+        // Mark BEFORE the write so the pending marker exists no matter how quickly VS Code
+        // delivers the resulting onDidChangeConfiguration event.
+        this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(settingKey);
         await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
@@ -451,29 +454,22 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     // write failure does NOT abort the batch, and tracker state is only mutated after a
     // successful write.
     //
-    // TIMING CONTRACT THIS DESIGN DEPENDS ON:
-    // VS Code dispatches onDidChangeConfiguration *synchronously* during the
-    // workspace.getConfiguration().update() call — i.e. the event fires while the
-    // awaiting code has not yet resumed past the `await updateConfiguration(...)` line.
-    // Evidence: (1) the integration test in
-    //   src/test/integration/configurationEventTiming.test.ts verifies this empirically
-    //   against a real VS Code instance; (2) the inbound suppression path in
-    //   runInboundPersistence (languageServer.ts) sets the flag synchronously, does all
-    //   writes, and clears it synchronously in `finally` with no tick/yield between.
-    //   If onDidChangeConfiguration were a macrotask the flag would already be false
-    //   when the event arrived — inbound suppression would be broken, yet the feature
-    //   works in production.  By contradiction, the event fires synchronously.
+    // TIMING CONTRACT THIS DESIGN DEPENDS ON: VS Code dispatches onDidChangeConfiguration
+    // *synchronously* during workspace.getConfiguration().update() — the event fires before
+    // the awaiting code resumes. src/test/integration/configurationEventTiming.test.ts
+    // verifies this against a real VS Code instance.
     //
-    // Because the event is synchronous, a suppressor that is active across the write
-    // is sufficient: the listener always sees isActive=true when VS Code fires the event
-    // during the write.  The suppressor window intentionally spans past markPendingReset
-    // so that the pending-reset signal is already set before any listener could fire
-    // from a subsequent write (defensive belt-and-suspenders).
+    // NOTE: "it must be synchronous, or the equivalent inbound suppression wouldn't have
+    // worked in production" is NOT valid evidence — that inbound path turned out to have
+    // exactly this gap (delayed dispatch bypassing a scoped-boolean flag), fixed by a
+    // write-time tag instead (markPendingInboundWrite/consumePendingInboundWrite, in
+    // explicitLsKeyTracking.ts). This outbound suppressor still relies on the boolean-window
+    // assumption above and has not been converted — same fix applies here if it has the same gap.
     //
-    // If VS Code ever changed to dispatch onDidChangeConfiguration as a macrotask, both
-    // this outbound suppressor AND the inbound suppressConfigFeedbackFromInboundPersistence
-    // flag would need to be restructured (e.g. to a persistent suppress-until-consumed
-    // model rather than a scoped boolean around the write).
+    // A suppressor active across the write is sufficient only if the event really is
+    // synchronous: the listener always sees isActive=true when VS Code fires the event during
+    // the write. The window intentionally spans past markPendingReset so the pending-reset
+    // signal is set before any listener could fire from a subsequent write.
     this.outboundResetSuppressor.begin();
     try {
       await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
