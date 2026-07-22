@@ -144,7 +144,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     await migrate();
 
     assert.strictEqual(inMemoryFolderConfigs.length, 0);
-    sinon.assert.calledWith(context.globalState.update, MEMENTO_FOLDER_ORG_MIGRATION_V1, true);
+    sinon.assert.calledWith(context.globalState.update, MEMENTO_FOLDER_ORG_MIGRATION_V1, [folderPath]);
   });
 
   it('preserves other pre-existing folder settings when merging in the migrated org keys', async () => {
@@ -178,9 +178,9 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
   });
 
-  it('only runs once, gated by the globalState memento', async () => {
-    context.globalState.get.returns(true);
+  it('does not re-check a folder whose path is already recorded as migrated', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
+    context.globalState.get.returns([folderPath]);
     writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'my-org' });
     setWorkspaceFolders(folderPath);
     const setFolderConfigsSpy = sinon.spy(configuration, 'setFolderConfigs');
@@ -188,5 +188,20 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     await migrate();
 
     sinon.assert.notCalled(setFolderConfigsSpy);
+    sinon.assert.notCalled(context.globalState.update);
+  });
+
+  it('still migrates a distinct, never-before-seen folder even though a different folder is already recorded as migrated', async () => {
+    const migratedFolder = path.join(tmpDir, 'already-migrated-folder');
+    const newFolder = path.join(tmpDir, 'new-folder');
+    context.globalState.get.returns([migratedFolder]);
+    writeLegacySettings(newFolder, { 'snyk.advanced.organization': 'my-org' });
+    setWorkspaceFolders(migratedFolder, newFolder);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs.find(c => c.folderPath === newFolder)?.preferredOrg(), 'my-org');
+    const [, updatedPaths] = context.globalState.update.getCall(0).args as [string, string[]];
+    assert.deepStrictEqual(new Set(updatedPaths), new Set([migratedFolder, newFolder]));
   });
 });

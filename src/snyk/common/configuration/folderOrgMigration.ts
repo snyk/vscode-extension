@@ -41,7 +41,13 @@ export async function migrateFolderOrgSettingsIfNeeded(
   configuration: IConfiguration,
   context: ExtensionContext,
 ): Promise<void> {
-  if (context.globalState.get(MEMENTO_FOLDER_ORG_MIGRATION_V1) === true) {
+  // Tracked per-folder-path (not a single install-wide boolean): globalState is shared across
+  // every window of this extension install, but the legacy org lives per workspace folder. A
+  // per-install flag would let the first window post-upgrade permanently skip every other
+  // folder/window that hasn't been seen yet (IDE-2259 review fix).
+  const migratedFolderPaths = new Set(context.globalState.get<string[]>(MEMENTO_FOLDER_ORG_MIGRATION_V1) ?? []);
+  const foldersToCheck = workspace.getWorkspaceFolders().filter(folder => !migratedFolderPaths.has(folder.uri.fsPath));
+  if (foldersToCheck.length === 0) {
     return;
   }
 
@@ -49,8 +55,12 @@ export async function migrateFolderOrgSettingsIfNeeded(
   const configsByPath = new Map(existingConfigs.map(c => [c.folderPath, c]));
   let migrated = false;
 
-  for (const folder of workspace.getWorkspaceFolders()) {
+  for (const folder of foldersToCheck) {
     const folderPath = folder.uri.fsPath;
+    // Record the folder as checked regardless of outcome, so a folder with no legacy org
+    // isn't re-read on every activation.
+    migratedFolderPaths.add(folderPath);
+
     const legacy = readLegacyOrgSettings(folderPath);
     // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
     if (!legacy.organization || legacy.autoSelectOrganization === true) {
@@ -71,5 +81,5 @@ export async function migrateFolderOrgSettingsIfNeeded(
     await configuration.setFolderConfigs(Array.from(configsByPath.values()), false);
   }
 
-  await context.globalState.update(MEMENTO_FOLDER_ORG_MIGRATION_V1, true);
+  await context.globalState.update(MEMENTO_FOLDER_ORG_MIGRATION_V1, Array.from(migratedFolderPaths));
 }
