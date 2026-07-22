@@ -14,7 +14,7 @@ import { ILog } from '../../../../snyk/common/logger/interfaces';
 
 describe('per-folder org lost on upgrade (IDE-2259)', () => {
   let tmpDir: string;
-  let workspace: Pick<IVSCodeWorkspace, 'getWorkspaceFolders'>;
+  let workspace: Pick<IVSCodeWorkspace, 'getWorkspaceFolders' | 'getWorkspaceFile'>;
   // In-memory stand-in for Configuration's folderConfig store, matching the real
   // getFolderConfigs()/setFolderConfigs() contract that LanguageServerSettings relies on.
   let inMemoryFolderConfigs: FolderConfig[];
@@ -32,9 +32,14 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     (workspace.getWorkspaceFolders as sinon.SinonStub).returns(folderPaths.map(p => ({ uri: { fsPath: p } })));
   }
 
+  function writeWorkspaceFile(workspaceFilePath: string, topLevelSettings: Record<string, unknown>) {
+    fs.writeFileSync(workspaceFilePath, JSON.stringify({ folders: [], settings: topLevelSettings }));
+    (workspace.getWorkspaceFile as sinon.SinonStub).returns({ scheme: 'file', fsPath: workspaceFilePath });
+  }
+
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snyk-folder-org-migration-'));
-    workspace = { getWorkspaceFolders: sinon.stub().returns([]) };
+    workspace = { getWorkspaceFolders: sinon.stub().returns([]), getWorkspaceFile: sinon.stub().returns(undefined) };
     inMemoryFolderConfigs = [];
     configuration = {
       getFolderConfigs: () => inMemoryFolderConfigs,
@@ -262,5 +267,28 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs.find(c => c.folderPath === newFolder)?.preferredOrg(), 'my-org');
     const [, updatedPaths] = context.globalState.update.getCall(0).args as [string, string[]];
     assert.deepStrictEqual(new Set(updatedPaths), new Set([migratedFolder, newFolder]));
+  });
+
+  it('FIX: a folder with no per-folder org falls back to the .code-workspace top-level settings org', async () => {
+    const folderPath = path.join(tmpDir, 'folder1');
+    writeLegacySettings(folderPath, {}); // no per-folder org
+    writeWorkspaceFile(path.join(tmpDir, 'project.code-workspace'), { 'snyk.advanced.organization': 'workspace-org' });
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs[0]?.orgSetByUser(), true);
+    assert.strictEqual(inMemoryFolderConfigs[0]?.preferredOrg(), 'workspace-org');
+  });
+
+  it("FIX: a folder's own per-folder org is kept, ignoring the .code-workspace top-level org", async () => {
+    const folderPath = path.join(tmpDir, 'folder1');
+    writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'folder-org' });
+    writeWorkspaceFile(path.join(tmpDir, 'project.code-workspace'), { 'snyk.advanced.organization': 'workspace-org' });
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs[0]?.preferredOrg(), 'folder-org');
   });
 });

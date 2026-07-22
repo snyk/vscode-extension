@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { parse, ParseError } from 'jsonc-parser';
 import * as path from 'path';
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, Uri } from 'vscode';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
 import { ADVANCED_ORGANIZATION, ADVANCED_AUTO_SELECT_ORGANIZATION } from '../constants/settings';
 import { ILog } from '../logger/interfaces';
@@ -72,6 +72,32 @@ async function readLegacyOrgSettings(folderPath: string, logger: ILog): Promise<
   }
 }
 
+// A saved multi-root `.code-workspace` file has its own top-level `settings` block (same JSONC
+// shape as .vscode/settings.json) that resource-scoped settings could also come from — a third
+// tier alongside folder settings and defaults. Read once per activation, not once per folder.
+async function readWorkspaceFileOrgSettings(workspaceFileUri: Uri, logger: ILog): Promise<LegacyOrgSettings> {
+  if (workspaceFileUri.scheme !== 'file') {
+    // ponytail: remote/virtual workspaces aren't handled here — IVSCodeWorkspace doesn't expose
+    // vscode.workspace.fs, so there's no non-Node way to read this yet. Add if reported.
+    return {};
+  }
+  try {
+    const content = await fs.promises.readFile(workspaceFileUri.fsPath, 'utf-8');
+    const parsed = parseOrgSettingsSource(content, workspaceFileUri.fsPath, logger);
+    if ('parseFailed' in parsed) {
+      return {};
+    }
+    return extractOrgSettings((parsed.raw?.settings as Record<string, unknown>) ?? {});
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      logger.debug(
+        `folderOrgMigration: failed to read workspace-file org settings for ${workspaceFileUri.fsPath}: ${e}`,
+      );
+    }
+    return {};
+  }
+}
+
 export async function migrateFolderOrgSettingsIfNeeded(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
@@ -87,6 +113,9 @@ export async function migrateFolderOrgSettingsIfNeeded(
   if (foldersToCheck.length === 0) {
     return;
   }
+
+  const workspaceFileUri = workspace.getWorkspaceFile();
+  const workspaceOrg = workspaceFileUri ? await readWorkspaceFileOrgSettings(workspaceFileUri, logger) : {};
 
   const existingConfigs = configuration.getFolderConfigs();
   const configsByPath = new Map(existingConfigs.map(c => [c.folderPath, c]));
@@ -104,14 +133,17 @@ export async function migrateFolderOrgSettingsIfNeeded(
     // isn't re-read on every activation.
     migratedFolderPaths.add(folderPath);
 
+    // Folder-level org wins; the workspace-file-level org is only a fallback for folders with
+    // none of their own — matches VS Code's real settings precedence (folder overrides workspace).
+    const effective = legacy.organization ? legacy : workspaceOrg;
     // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
-    if (!legacy.organization || legacy.autoSelectOrganization === true) {
+    if (!effective.organization || effective.autoSelectOrganization === true) {
       continue;
     }
 
     const folderConfig = configsByPath.get(folderPath) ?? new FolderConfig(folderPath);
     folderConfig.setSetting(LS_KEY.orgSetByUser, true);
-    folderConfig.setSetting(LS_KEY.preferredOrg, legacy.organization);
+    folderConfig.setSetting(LS_KEY.preferredOrg, effective.organization);
     configsByPath.set(folderPath, folderConfig);
     migrated = true;
   }
