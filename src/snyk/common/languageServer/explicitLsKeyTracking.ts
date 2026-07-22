@@ -38,6 +38,14 @@ export function markExplicitLsKeysFromConfigurationChangeEvent(
 
     // This event may arrive well after the write that caused it. Consuming the pending
     // marker (set by the writer) attributes it correctly regardless of arrival timing.
+    //
+    // Known narrow-window limitation [IDE-2264]: if a user edits this same vscodeKey while
+    // an inbound write to it is still in flight, VS Code coalesces both writes into a single
+    // onDidChangeConfiguration event. This one `consumePendingInboundWrite` call can't tell
+    // the two apart, so it attributes the coalesced event to the inbound write and the user's
+    // concurrent edit is not marked explicit. Not fixed here — narrow (requires a genuine
+    // race between an LS push and a user edit of the identical key) and would need per-write
+    // value comparison (not just presence) to close.
     if (tracker.consumePendingInboundWrite?.(vscodeKey)) {
       continue;
     }

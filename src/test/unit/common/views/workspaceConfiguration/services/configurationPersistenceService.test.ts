@@ -541,6 +541,72 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     sinon.assert.calledWith(consumePendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
   });
 
+  // Regression/proof coverage for a "should fix" raised on PR #782 (cold effective-cache,
+  // value-unchanged write leaks a marker because no onDidChangeConfiguration event follows a
+  // VS Code no-op write). On the very first inbound batch for a key, effectiveByVscodeKey is
+  // cold (EFFECTIVE_VALUE_UNKNOWN), so shouldSkipSettingUpdate falls back to the override-aware
+  // switch — which already skips (never even calls updateConfiguration, so no marker is ever
+  // set) when the incoming value equals the pre-existing override at that scope. This proves
+  // the cold-cache path cannot leak for the "existing override, unchanged value" case: the
+  // write is never attempted, so writeTaggedAsInboundOrigin never marks pending in the first
+  // place. (The only case the switch always proceeds on — no override at any scope — always
+  // creates a new settings.json entry, a real change that VS Code always fires an event for,
+  // so that path cannot be a no-op either.)
+  test('cold effective cache: a value-unchanged write against an existing override never marks pending (no leak possible)', async () => {
+    const coldCacheWorkspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') {
+          return {
+            defaultValue: '',
+            globalValue: 'existing-org',
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        return {
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
+      }),
+    } as unknown as IVSCodeWorkspace;
+    const coldCacheScopeService = new ScopeDetectionService(coldCacheWorkspace);
+
+    const markPendingInboundWriteStub = sinon.stub();
+    const tracker = {
+      markPendingInboundWrite: markPendingInboundWriteStub,
+    } as unknown as IExplicitLspConfigurationChangeTracker;
+
+    // Freshly-constructed service: effectiveByVscodeKey starts empty (cold cache), same as
+    // the very first $/snyk.configuration push after extension activation.
+    const service = new ConfigurationPersistenceService(
+      coldCacheWorkspace,
+      configuration,
+      coldCacheScopeService,
+      clientAdapter,
+      logger,
+      undefined,
+      tracker,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        // Same value as the pre-existing global override — a genuine VS Code no-op if written.
+        [LS_GLOBAL_KEY.organization]: { value: 'existing-org', changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.notCalled(updateConfigurationStub);
+    sinon.assert.notCalled(markPendingInboundWriteStub);
+  });
+
   test('persistInbound writes delta setting from global settings', async () => {
     const service = new ConfigurationPersistenceService(
       workspace,
