@@ -20,10 +20,10 @@ interface LegacyOrgSettings {
   autoSelectOrganization?: boolean;
 }
 
-function readLegacyOrgSettings(folderPath: string, logger: ILog): LegacyOrgSettings {
+async function readLegacyOrgSettings(folderPath: string, logger: ILog): Promise<LegacyOrgSettings> {
   try {
     const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
-    const content = fs.readFileSync(settingsPath, 'utf-8');
+    const content = await fs.promises.readFile(settingsPath, 'utf-8');
     const settings = parse(content) as Record<string, unknown> | undefined;
     if (!settings) {
       return {};
@@ -68,7 +68,7 @@ export async function migrateFolderOrgSettingsIfNeeded(
     // isn't re-read on every activation.
     migratedFolderPaths.add(folderPath);
 
-    const legacy = readLegacyOrgSettings(folderPath, logger);
+    const legacy = await readLegacyOrgSettings(folderPath, logger);
     // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
     if (!legacy.organization || legacy.autoSelectOrganization === true) {
       continue;
