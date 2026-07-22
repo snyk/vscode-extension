@@ -12,6 +12,7 @@ import {
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import {
+  ADVANCED_CUSTOM_ENDPOINT,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
@@ -503,6 +504,41 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     await service.persistInboundLspConfiguration(param);
 
     sinon.assert.called(updateConfigurationStub);
+  });
+
+  // Mirrors the reset-path failure test ('does not mark pending reset or unmark
+  // explicit-changed when updateConfiguration throws') for the regular settings-sync path:
+  // a write-time pending marker must not leak past a failed write, or it silently suppresses
+  // the explicit-change marking of the next genuine user edit of that key [IDE-2264].
+  test('clears the pending inbound-write marker when updateConfiguration throws during a settings-sync write', async () => {
+    updateConfigurationStub.rejects(new Error('VS Code write failed'));
+    const markPendingInboundWriteStub = sinon.stub();
+    const consumePendingInboundWriteStub = sinon.stub();
+    const tracker = {
+      markPendingInboundWrite: markPendingInboundWriteStub,
+      consumePendingInboundWrite: consumePendingInboundWriteStub,
+    } as unknown as IExplicitLspConfigurationChangeTracker;
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      realScopeService,
+      clientAdapter,
+      logger,
+      undefined,
+      tracker,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.calledWith(markPendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
+    sinon.assert.calledWith(consumePendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
   });
 
   test('persistInbound writes delta setting from global settings', async () => {
@@ -2999,25 +3035,42 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
 
   setup(() => {
     updateConfigStub = sinon.stub().resolves();
+    // Real VS Code reflects a write back through inspectConfiguration's globalValue: a
+    // reset (value === undefined) clears it, any other write sets it. applyVscodeKeyResets
+    // now gates its reset write on "does an override exist to clear" [IDE-2264], so this
+    // fixture must be stateful (not a static "always undefined" stub) for the reset in step 2
+    // to actually happen and invalidate the stale effective snapshot.
+    const globalOverrides = new Map<string, unknown>();
     workspace = {
-      updateConfiguration: updateConfigStub,
+      // Records calls for the test's own assertions via updateConfigStub, but the store
+      // mutation lives in this wrapper so it survives the test's updateConfigStub.reset()
+      // calls (reset() also clears configured behaviour, not just call history).
+      updateConfiguration: (configId: string, section: string, value: unknown) => {
+        updateConfigStub(configId, section, value);
+        const key = `${configId}.${section}`;
+        if (value === undefined) {
+          globalOverrides.delete(key);
+        } else {
+          globalOverrides.set(key, value);
+        }
+        return Promise.resolve();
+      },
       getConfiguration: sinon.stub().returns(undefined),
       getWorkspaceFolders: sinon.stub().returns([]),
       getWorkspaceFolderPaths: sinon.stub().returns([]),
-      // Post-reset state: no globalValue, schema default = 'All issues'.
-      // Scope resolves to 'default' → fallback (UNKNOWN → not skipped).
       inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        const key = `${configId}.${section}`;
         if (configId === CONFIGURATION_IDENTIFIER && section === 'allIssuesVsNetNewIssues') {
           return {
             defaultValue: ALLISSUES,
-            globalValue: undefined,
+            globalValue: globalOverrides.get(key),
             workspaceValue: undefined,
             workspaceFolderValue: undefined,
           };
         }
         return {
           defaultValue: undefined,
-          globalValue: undefined,
+          globalValue: globalOverrides.get(key),
           workspaceValue: undefined,
           workspaceFolderValue: undefined,
         };

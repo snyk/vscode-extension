@@ -192,6 +192,36 @@ suite('ScopeDetectionService - shouldSkipSettingUpdate', () => {
     });
   });
 
+  // IDE-2264 follow-up: a clearing write (value === undefined, e.g. a "reset to project
+  // defaults") is redundant iff there is no override at any scope to clear. VS Code fires no
+  // onDidChangeConfiguration event for a no-op write, so proceeding would leak a write-time
+  // pending marker that no event ever consumes.
+  suite('clearing write (value === undefined) — IDE-2264', () => {
+    test('skips when neither globalValue nor workspaceValue is set (nothing to clear)', () => {
+      inspectStub.returns({ globalValue: undefined, workspaceValue: undefined, defaultValue: 'default-org' });
+      assert.strictEqual(
+        service.shouldSkipSettingUpdate('snyk', 'org', undefined, 'user', EFFECTIVE_VALUE_UNKNOWN),
+        true,
+      );
+    });
+
+    test('does not skip when a globalValue exists to clear', () => {
+      inspectStub.returns({ globalValue: 'existing-org', workspaceValue: undefined, defaultValue: 'default-org' });
+      assert.strictEqual(
+        service.shouldSkipSettingUpdate('snyk', 'org', undefined, 'user', EFFECTIVE_VALUE_UNKNOWN),
+        false,
+      );
+    });
+
+    test('does not skip when a workspaceValue exists to clear', () => {
+      inspectStub.returns({ globalValue: undefined, workspaceValue: 'workspace-org', defaultValue: 'default-org' });
+      assert.strictEqual(
+        service.shouldSkipSettingUpdate('snyk', 'org', undefined, 'user', EFFECTIVE_VALUE_UNKNOWN),
+        false,
+      );
+    });
+  });
+
   suite('workspaceFolder scope — defense-in-depth (UNIT-005, UNIT-006)', () => {
     // UNIT-005: scope 'workspaceFolder', effective UNKNOWN, value equals workspaceFolderValue → skip
     test('skips when value equals explicit workspaceFolder override', () => {

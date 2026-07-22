@@ -8,6 +8,7 @@ import { ILog } from '../../../logger/interfaces';
 import { IContextService } from '../../../services/contextService';
 import { ILanguageClientAdapter } from '../../../vscode/languageClient';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
+import type { WorkspaceFolder } from '../../../vscode/types';
 import type { LspConfigSetting, LspConfigurationParam } from '../../../languageServer/types';
 import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
 import {
@@ -259,6 +260,31 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   /**
+   * Marks `vscodeKey` pending BEFORE writing, so the pending marker exists no matter how
+   * quickly (or slowly) VS Code delivers the resulting `onDidChangeConfiguration` event. If
+   * the write throws, no such event will ever arrive to consume the marker, so it is consumed
+   * here instead, before rethrowing — otherwise it would leak forward and silently suppress
+   * the explicit-change marking of the next genuine user edit of this key [IDE-2264]. Shared by
+   * both `applyVscodeKeyResets` and `applySettingsMap` so neither call site can forget to pair
+   * the mark with a failure-path consume.
+   */
+  private async writeTaggedAsInboundOrigin(
+    vscodeKey: string,
+    configurationId: string,
+    section: string,
+    value: unknown,
+    configurationTarget?: boolean | WorkspaceFolder,
+  ): Promise<void> {
+    this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(vscodeKey);
+    try {
+      await this.workspace.updateConfiguration(configurationId, section, value, configurationTarget);
+    } catch (e) {
+      this.explicitLspConfigurationChangeTracker?.consumePendingInboundWrite?.(vscodeKey);
+      throw e;
+    }
+  }
+
+  /**
    * Shared write+error-handling loop for both inbound and outbound global resets.
    *
    * For each (vscodeKey → lsKeys) entry: clears the VS Code global override
@@ -279,18 +305,32 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
       try {
         const { configurationId, section } = Configuration.getConfigName(vscodeKey);
-        // Mark BEFORE the write so the pending marker exists no matter how quickly (or slowly)
-        // VS Code delivers the resulting onDidChangeConfiguration event — same write-time-tag
-        // fix as applySettingsMap below, applied here for the reset path [IDE-2264].
-        this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(vscodeKey);
-        // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
-        await this.workspace.updateConfiguration(configurationId, section, undefined, true);
-        // Invalidate the effective snapshot for this vscodeKey: the reset cleared the
-        // VS Code override, so the stored effective value is now stale. The next outbound
-        // save must fall back to EFFECTIVE_VALUE_UNKNOWN (override-aware fallback) rather
-        // than skipping on equality with the now-stale effective.
-        this.effectiveByVscodeKey.delete(vscodeKey);
-        // Mutate caller-supplied state only after the write has succeeded.
+
+        // Only write when a global or workspace override actually exists to clear: VS Code
+        // fires no onDidChangeConfiguration event for a no-op write, so writing here would
+        // leak a pending marker that's never consumed — silently suppressing the next genuine
+        // user edit of this key [IDE-2264]. Routes through the same predicate applySettingsMap
+        // uses, rather than a bespoke inspectConfiguration peek, so both write paths share one
+        // "should this write happen" decision. onWriteSuccess below still runs either way —
+        // callers (e.g. the outbound reset path) rely on it to queue their own state regardless
+        // of whether a VS Code override previously existed.
+        const shouldSkip = this.scopeDetectionService.shouldSkipSettingUpdate(
+          configurationId,
+          section,
+          undefined,
+          'user',
+          EFFECTIVE_VALUE_UNKNOWN,
+        );
+        if (!shouldSkip) {
+          // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
+          await this.writeTaggedAsInboundOrigin(vscodeKey, configurationId, section, undefined, true);
+          // Invalidate the effective snapshot for this vscodeKey: the reset cleared the
+          // VS Code override, so the stored effective value is now stale. The next outbound
+          // save must fall back to EFFECTIVE_VALUE_UNKNOWN (override-aware fallback) rather
+          // than skipping on equality with the now-stale effective.
+          this.effectiveByVscodeKey.delete(vscodeKey);
+        }
+        // Mutate caller-supplied state whether or not there was anything to write.
         // Each key's callback is wrapped independently: a callback failure (e.g. a resolver
         // throw during the D1 cache seed) must not prevent the remaining siblings in the
         // same fan-out group from receiving their onWriteSuccess notification.
@@ -346,10 +386,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           continue;
         }
 
-        // Mark BEFORE the write so the pending marker exists no matter how quickly VS Code
-        // delivers the resulting onDidChangeConfiguration event.
-        this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(settingKey);
-        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
+        await this.writeTaggedAsInboundOrigin(
+          settingKey,
+          configurationId,
+          settingName,
+          effectiveValue,
+          scope !== 'workspace',
+        );
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {

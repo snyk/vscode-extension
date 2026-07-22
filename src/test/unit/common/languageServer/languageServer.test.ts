@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import { v4 } from 'uuid';
 import { IAuthenticationService } from '../../../../snyk/base/services/authenticationService';
 import {
+  Configuration,
   DEFAULT_ISSUE_VIEW_OPTIONS,
   DEFAULT_RISK_SCORE_THRESHOLD,
   DEFAULT_SEVERITY_FILTER,
@@ -418,6 +419,106 @@ suite('Language Server', () => {
           'delivered the change event on a later tick than the write',
       );
     }
+  });
+
+  // Real VS Code fires no onDidChangeConfiguration event for a no-op write (clearing an
+  // override that was never set). markPendingInboundWrite is called before every reset
+  // write regardless, so a never-overridden GLOBAL_RESET_FIELDS key leaks a marker that
+  // is never consumed by this write's own (nonexistent) event — it survives to wrongly
+  // suppress the marking of the user's next genuine edit of that same key [IDE-2264].
+  test('global reset of a never-overridden key does not leak a pending marker into the next genuine user edit', async () => {
+    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+
+    let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+    const store = new Map<string, unknown>();
+
+    const workspace = {
+      getWorkspaceFolders: () => [],
+      getWorkspaceFolderPaths: () => [],
+      getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
+      inspectConfiguration: (configId: string, section: string) => ({
+        defaultValue: undefined,
+        globalValue: store.get(`${configId}.${section}`),
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      }),
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+      updateConfiguration: (configId: string, section: string, value: unknown) => {
+        const key = `${configId}.${section}`;
+        const valueActuallyChanges = store.get(key) !== value;
+        store.set(key, value);
+        // Only a write that actually changes the persisted value gets a follow-up event —
+        // same real-VS-Code timing gap modeled in the sibling test above (delayed, not
+        // synchronous), but no event at all when the write is a no-op.
+        if (valueActuallyChanges) {
+          setTimeout(() => configListener({ affectsConfiguration: (s: string) => s === key }), 0);
+        }
+        return Promise.resolve();
+      },
+    } as unknown as IVSCodeWorkspace;
+
+    const scopeDetectionService = new ScopeDetectionService(workspace);
+    const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
+    const configPersistenceService = new ConfigurationPersistenceService(
+      workspace,
+      configurationMock,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      undefined,
+      tracker,
+    );
+
+    const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
+    languageServer = new LanguageServer(
+      user,
+      configurationMock,
+      adapter,
+      workspace,
+      new WindowMock(),
+      authServiceMock,
+      logger,
+      downloadServiceMock,
+      {} as IMcpProvider,
+      {} as IExtensionRetriever,
+      {} as ISummaryProviderService,
+      {} as IUriAdapter,
+      {} as IMarkdownStringAdapter,
+      new CommandsMock(),
+      {} as IDiagnosticsIssueProvider<unknown>,
+      tracker,
+      view => configPersistenceService.persistInboundLspConfiguration(view),
+      undefined,
+    );
+    downloadServiceMock.downloadReady$.next();
+    await languageServer.start();
+
+    // organization was never overridden (globalValue undefined in the fake store above).
+    // A "reset to project defaults" nulls it anyway — the clear-to-undefined write is a
+    // no-op, so no config-change event follows to consume the pending marker.
+    const handler = notificationHandlers['$/snyk.configuration'];
+    handler({
+      settings: {
+        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
+      },
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // The user now genuinely edits the same setting by hand (e.g. an external settings.json
+    // edit) — a real config-change event that our code never caused.
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    configListener({ affectsConfiguration: (s: string) => s === `${configurationId}.${section}` });
+
+    assert.strictEqual(
+      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
+      true,
+      'a genuine user edit must be marked explicit even though an earlier no-op reset write left a pending marker',
+    );
   });
 
   test('marks explicit LS keys when snyk settings change', async () => {
@@ -1384,9 +1485,12 @@ suite('Language Server', () => {
         getWorkspaceFolders: () => [],
         getWorkspaceFolderPaths: () => [],
         getConfiguration: () => undefined,
+        // A pre-existing global override so applyVscodeKeyResets takes its mark+write branch
+        // — this test exercises the delayed-dispatch survival of that write, so there must
+        // be an override for the write to actually happen [IDE-2264].
         inspectConfiguration: () => ({
           defaultValue: undefined,
-          globalValue: undefined,
+          globalValue: 'existing-org',
           workspaceValue: undefined,
           workspaceFolderValue: undefined,
         }),
