@@ -21,7 +21,7 @@ const EXISTING_INSTALL_MEMENTOS = [
 /**
  * One-shot recovery migration for the Snyk Code enabled state.
  *
- * The default value for Cdde enablement changed from True to False (to match the language server)
+ * The default value for Code enablement changed from True to False (to match the language server)
  * in extension version 2.32.0.
  *
  * On the first run after upgrade, we set `codeSecurity = true` into global settings for users
@@ -30,11 +30,11 @@ const EXISTING_INSTALL_MEMENTOS = [
  * enabled will have a user preference for Code enablement after upgrade, which might override
  * LDX-Sync values. This is a deliberate trade-off to preserve functionality.
  *
- * {@link EXISTING_INSTALL_MEMENTOS} is used to track state over upgrade. Since they arw written
+ * {@link EXISTING_INSTALL_MEMENTOS} is used to track state over upgrade. Since they are written
  * on first launch (after this migration runs), the migration only runs once.
  *
  * There is a deliberate asymmetry with OSS/IaC/Secrets: those defaults already match the LS,
- * wehereas the Code value was the opposite of the LS default.
+ * whereas the Code value was the opposite of the LS default.
  *
  * Best-effort: never throws. A failure is logged and the migration retries on the next activation
  * (the guard is recorded only after a successful pass), so it can never abort extension activation.
