@@ -255,8 +255,12 @@ class SnykExtension extends SnykLib implements IExtension {
 
     // Must run before LanguageServer is constructed/started: it seeds in-memory folderConfigs
     // so the very first initializationOptions sent to snyk-ls already carries the migrated
-    // per-folder org (IDE-2259).
-    await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext);
+    // per-folder org (IDE-2259). Best-effort: must never block LS creation/activation below.
+    try {
+      await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext);
+    } catch (e) {
+      Logger.error(`Failed to migrate per-folder org settings: ${e}`);
+    }
 
     this.languageServer = new LanguageServer(
       this.user,
