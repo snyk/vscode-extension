@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { parse } from 'jsonc-parser';
+import { parse, ParseError } from 'jsonc-parser';
 import * as path from 'path';
 import { ExtensionContext } from 'vscode';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
@@ -18,23 +18,51 @@ import { IConfiguration, FolderConfig } from './configuration';
 interface LegacyOrgSettings {
   organization?: string;
   autoSelectOrganization?: boolean;
+  // Genuine JSONC syntax error, as opposed to "checked, nothing there" (ENOENT or a valid
+  // file with no org key) — the caller must NOT mark the folder migrated in this case, so a
+  // transiently-broken settings.json gets retried next activation instead of losing the org
+  // for good.
+  parseFailed?: boolean;
+}
+
+function extractOrgSettings(settings: Record<string, unknown>): LegacyOrgSettings {
+  const organization = settings[ADVANCED_ORGANIZATION];
+  return {
+    organization: typeof organization === 'string' ? organization : undefined,
+    autoSelectOrganization: settings[ADVANCED_AUTO_SELECT_ORGANIZATION] as boolean | undefined,
+  };
+}
+
+// Shared JSONC parse step for both settings.json and a .code-workspace file's top-level
+// `settings` block. Collects errors instead of letting parse() silently return undefined on a
+// hard syntax error, so callers can tell "malformed" apart from "empty/absent".
+function parseOrgSettingsSource(
+  content: string,
+  sourcePath: string,
+  logger: ILog,
+): { raw: Record<string, unknown> | undefined } | { parseFailed: true } {
+  const errors: ParseError[] = [];
+  // VS Code's own settings.json tolerates trailing commas, so a trailing comma alone must not
+  // be treated as the "genuine syntax error" case below.
+  const raw = parse(content, errors, { allowTrailingComma: true }) as Record<string, unknown> | undefined;
+  if (errors.length > 0) {
+    logger.debug(`folderOrgMigration: malformed JSON in ${sourcePath}, will retry next activation`);
+    return { parseFailed: true };
+  }
+  return { raw };
 }
 
 async function readLegacyOrgSettings(folderPath: string, logger: ILog): Promise<LegacyOrgSettings> {
+  // Deliberate coupling to VS Code's on-disk settings file layout — the only way left to
+  // read a deregistered resource-scoped setting, since getConfiguration() can't return it.
+  const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
   try {
-    // Deliberate coupling to VS Code's on-disk settings file layout — the only way left to
-    // read a deregistered resource-scoped setting, since getConfiguration() can't return it.
-    const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
     const content = await fs.promises.readFile(settingsPath, 'utf-8');
-    const settings = parse(content) as Record<string, unknown> | undefined;
-    if (!settings) {
-      return {};
+    const parsed = parseOrgSettingsSource(content, settingsPath, logger);
+    if ('parseFailed' in parsed) {
+      return { parseFailed: true };
     }
-    const organization = settings[ADVANCED_ORGANIZATION];
-    return {
-      organization: typeof organization === 'string' ? organization : undefined,
-      autoSelectOrganization: settings[ADVANCED_AUTO_SELECT_ORGANIZATION] as boolean | undefined,
-    };
+    return extractOrgSettings(parsed.raw ?? {});
   } catch (e) {
     // ENOENT (no .vscode/settings.json) is the expected common case — only log real failures.
     if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') {
@@ -66,11 +94,16 @@ export async function migrateFolderOrgSettingsIfNeeded(
 
   for (const folder of foldersToCheck) {
     const folderPath = folder.uri.fsPath;
-    // Record the folder as checked regardless of outcome, so a folder with no legacy org
+    const legacy = await readLegacyOrgSettings(folderPath, logger);
+    if (legacy.parseFailed) {
+      // Don't record as migrated — retry this folder next activation instead of permanently
+      // losing the org to a transiently-broken settings.json.
+      continue;
+    }
+    // Record the folder as checked for every other outcome, so a folder with no legacy org
     // isn't re-read on every activation.
     migratedFolderPaths.add(folderPath);
 
-    const legacy = await readLegacyOrgSettings(folderPath, logger);
     // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
     if (!legacy.organization || legacy.autoSelectOrganization === true) {
       continue;

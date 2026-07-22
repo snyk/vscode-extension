@@ -203,6 +203,40 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     sinon.assert.calledOnce(loggerDebugStub);
   });
 
+  it('FIX: malformed JSON in settings.json is NOT marked migrated, so it is retried next activation', async () => {
+    const folderPath = path.join(tmpDir, 'folder1');
+    fs.mkdirSync(path.join(folderPath, '.vscode'), { recursive: true });
+    fs.writeFileSync(path.join(folderPath, '.vscode', 'settings.json'), '{ "snyk.advanced.organization": ');
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs.length, 0, 'no org can be trusted from a malformed file');
+    const [, updatedPaths] = context.globalState.update.getCall(0).args as [string, string[]];
+    assert.ok(!updatedPaths.includes(folderPath), 'malformed folder must not be recorded as migrated');
+    sinon.assert.calledOnce(loggerDebugStub);
+
+    // Confirm it is actually retried: fixing the file on a second activation now recovers the org.
+    fs.writeFileSync(
+      path.join(folderPath, '.vscode', 'settings.json'),
+      JSON.stringify({ 'snyk.advanced.organization': 'recovered-org' }),
+    );
+    context.globalState.get.returns(updatedPaths);
+    await migrate();
+    assert.strictEqual(inMemoryFolderConfigs[0]?.preferredOrg(), 'recovered-org');
+  });
+
+  it('FIX: a missing settings.json (ENOENT) is still marked migrated (unchanged behavior)', async () => {
+    const folderPath = path.join(tmpDir, 'folder-with-no-vscode-dir');
+    fs.mkdirSync(folderPath, { recursive: true });
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs.length, 0);
+    sinon.assert.calledWith(context.globalState.update, MEMENTO_FOLDER_ORG_MIGRATION_V1, [folderPath]);
+  });
+
   it('does not re-check a folder whose path is already recorded as migrated', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     context.globalState.get.returns([folderPath]);
