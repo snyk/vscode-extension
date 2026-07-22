@@ -42,6 +42,9 @@ export interface IVSCodeWorkspace {
 
   getWorkspaceFolderPaths(): string[];
 
+  /** The `.code-workspace` file this window was opened from, or undefined for a single-folder/ad-hoc workspace. */
+  getWorkspaceFile(): Uri | undefined;
+
   getWorkspaceFolder(folderPath: string): WorkspaceFolder | undefined;
 
   createFileSystemWatcher(globPattern: string): vscode.FileSystemWatcher;
@@ -115,6 +118,10 @@ export class VSCodeWorkspace implements IVSCodeWorkspace {
 
   getWorkspaceFolderPaths(): string[] {
     return this.getWorkspaceFolders().map(f => f.uri.fsPath);
+  }
+
+  getWorkspaceFile(): Uri | undefined {
+    return vscode.workspace.workspaceFile;
   }
 
   getWorkspaceFolder(folderPath: string): WorkspaceFolder | undefined {
