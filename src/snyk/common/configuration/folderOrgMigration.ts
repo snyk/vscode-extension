@@ -22,6 +22,8 @@ interface LegacyOrgSettings {
 
 async function readLegacyOrgSettings(folderPath: string, logger: ILog): Promise<LegacyOrgSettings> {
   try {
+    // Deliberate coupling to VS Code's on-disk settings file layout — the only way left to
+    // read a deregistered resource-scoped setting, since getConfiguration() can't return it.
     const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
     const content = await fs.promises.readFile(settingsPath, 'utf-8');
     const settings = parse(content) as Record<string, unknown> | undefined;
