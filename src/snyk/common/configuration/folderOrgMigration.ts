@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ExtensionContext } from 'vscode';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../constants/globalState';
 import { ADVANCED_ORGANIZATION, ADVANCED_AUTO_SELECT_ORGANIZATION } from '../constants/settings';
+import { ILog } from '../logger/interfaces';
 import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { IConfiguration, FolderConfig } from './configuration';
@@ -19,7 +20,7 @@ interface LegacyOrgSettings {
   autoSelectOrganization?: boolean;
 }
 
-function readLegacyOrgSettings(folderPath: string): LegacyOrgSettings {
+function readLegacyOrgSettings(folderPath: string, logger: ILog): LegacyOrgSettings {
   try {
     const settingsPath = path.join(folderPath, '.vscode', 'settings.json');
     const content = fs.readFileSync(settingsPath, 'utf-8');
@@ -27,11 +28,16 @@ function readLegacyOrgSettings(folderPath: string): LegacyOrgSettings {
     if (!settings) {
       return {};
     }
+    const organization = settings[ADVANCED_ORGANIZATION];
     return {
-      organization: settings[ADVANCED_ORGANIZATION] as string | undefined,
+      organization: typeof organization === 'string' ? organization : undefined,
       autoSelectOrganization: settings[ADVANCED_AUTO_SELECT_ORGANIZATION] as boolean | undefined,
     };
-  } catch {
+  } catch (e) {
+    // ENOENT (no .vscode/settings.json) is the expected common case — only log real failures.
+    if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      logger.debug(`folderOrgMigration: failed to read legacy org settings for ${folderPath}: ${e}`);
+    }
     return {};
   }
 }
@@ -40,6 +46,7 @@ export async function migrateFolderOrgSettingsIfNeeded(
   workspace: IVSCodeWorkspace,
   configuration: IConfiguration,
   context: ExtensionContext,
+  logger: ILog,
 ): Promise<void> {
   // Tracked per-folder-path (not a single install-wide boolean): globalState is shared across
   // every window of this extension install, but the legacy org lives per workspace folder. A
@@ -61,7 +68,7 @@ export async function migrateFolderOrgSettingsIfNeeded(
     // isn't re-read on every activation.
     migratedFolderPaths.add(folderPath);
 
-    const legacy = readLegacyOrgSettings(folderPath);
+    const legacy = readLegacyOrgSettings(folderPath, logger);
     // autoSelectOrganization:true is an explicit opt-out of the per-folder org — leave default.
     if (!legacy.organization || legacy.autoSelectOrganization === true) {
       continue;

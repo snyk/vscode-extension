@@ -257,7 +257,7 @@ class SnykExtension extends SnykLib implements IExtension {
     // so the very first initializationOptions sent to snyk-ls already carries the migrated
     // per-folder org (IDE-2259). Best-effort: must never block LS creation/activation below.
     try {
-      await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext);
+      await migrateFolderOrgSettingsIfNeeded(vsCodeWorkspace, configuration, vscodeContext, Logger);
     } catch (e) {
       Logger.error(`Failed to migrate per-folder org settings: ${e}`);
     }

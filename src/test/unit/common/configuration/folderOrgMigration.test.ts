@@ -10,6 +10,7 @@ import { LanguageServerSettings } from '../../../../snyk/common/languageServer/s
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../../../../snyk/common/constants/globalState';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+import { ILog } from '../../../../snyk/common/logger/interfaces';
 
 describe('per-folder org lost on upgrade (IDE-2259)', () => {
   let tmpDir: string;
@@ -19,6 +20,8 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
   let inMemoryFolderConfigs: FolderConfig[];
   let configuration: Pick<IConfiguration, 'getFolderConfigs' | 'setFolderConfigs'>;
   let context: { globalState: { get: sinon.SinonStub; update: sinon.SinonStub } };
+  let logger: ILog;
+  let loggerDebugStub: sinon.SinonStub;
 
   function writeLegacySettings(folderPath: string, settings: Record<string, unknown>) {
     fs.mkdirSync(path.join(folderPath, '.vscode'), { recursive: true });
@@ -46,6 +49,15 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
         update: sinon.stub().resolves(),
       },
     };
+    loggerDebugStub = sinon.stub();
+    logger = {
+      info: sinon.stub(),
+      warn: sinon.stub(),
+      error: sinon.stub(),
+      debug: loggerDebugStub,
+      log: sinon.stub(),
+      showOutput: sinon.stub(),
+    };
   });
 
   afterEach(() => {
@@ -57,6 +69,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
       workspace as IVSCodeWorkspace,
       configuration as IConfiguration,
       context as unknown as import('vscode').ExtensionContext,
+      logger,
     );
   }
 
@@ -176,6 +189,18 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     await migrate();
 
     assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
+  });
+
+  it('logs (but does not throw) when settings.json cannot be read for a reason other than ENOENT', async () => {
+    const folderPath = path.join(tmpDir, 'folder1');
+    // Making settings.json a directory forces a non-ENOENT (EISDIR) read failure.
+    fs.mkdirSync(path.join(folderPath, '.vscode', 'settings.json'), { recursive: true });
+    setWorkspaceFolders(folderPath);
+
+    await migrate();
+
+    assert.strictEqual(inMemoryFolderConfigs.length, 0);
+    sinon.assert.calledOnce(loggerDebugStub);
   });
 
   it('does not re-check a folder whose path is already recorded as migrated', async () => {
