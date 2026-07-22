@@ -10,12 +10,8 @@ import type { ExtensionContext } from '../vscode/extensionContext';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { ILog } from '../logger/interfaces';
 
-// Mementos a prior activation persists that evidence a pre-existing install. All are written
-// after this migration runs in a given activation (download at extension.ts and the plugin-
-// installed event both run later), so on a fresh install's first launch they are all undefined.
-// Using several — rather than the download-gated protocol version alone — means a custom-cliPath
-// or air-gapped install (which never triggers a managed download, so never writes the protocol or
-// CLI version) is still recognised via the download-independent plugin-installed memento.
+// This migration writes these mememtos after it runs. They will be null if the migration has 
+// never run.
 const EXISTING_INSTALL_MEMENTOS = [
   MEMENTO_LS_PROTOCOL_VERSION,
   MEMENTO_CLI_VERSION,
