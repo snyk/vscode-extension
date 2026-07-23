@@ -213,11 +213,11 @@ suite('ScopeDetectionService - shouldSkipSettingUpdate', () => {
       );
     });
 
-    test('does not skip when a workspaceValue exists to clear', () => {
+    test('skips when only a workspaceValue exists to clear (write is global-target only)', () => {
       inspectStub.returns({ globalValue: undefined, workspaceValue: 'workspace-org', defaultValue: 'default-org' });
       assert.strictEqual(
         service.shouldSkipSettingUpdate('snyk', 'org', undefined, 'user', EFFECTIVE_VALUE_UNKNOWN),
-        false,
+        true,
       );
     });
   });

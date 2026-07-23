@@ -24,8 +24,8 @@ export interface IScopeDetectionService {
    * 1. If `effectiveValue` is known (not `EFFECTIVE_VALUE_UNKNOWN`):
    *    skip iff `_.isEqual(value, effectiveValue)` — redundant vs the LS-resolved effective state.
    * 2. If `effectiveValue` is unknown — fallback (override-aware, NEVER schema-default skip):
-   *    - `value === undefined` (a clearing write): skip iff neither `globalValue` nor
-   *      `workspaceValue` is set — there is nothing to clear.
+   *    - `value === undefined` (a clearing write): skip iff `globalValue` is unset — the write
+   *      is always global-target, so only the global slot's presence determines redundancy.
    *    - 'workspace':       skip iff value === workspaceValue       && workspaceValue       !== undefined
    *    - 'user':            skip iff value === globalValue          && globalValue          !== undefined
    *    - 'workspaceFolder': skip iff value === workspaceFolderValue && workspaceFolderValue !== undefined
@@ -107,14 +107,16 @@ export class ScopeDetectionService implements IScopeDetectionService {
     // Step 2 (ADR-1 fallback): effective value is unknown — use override-aware comparison.
     // NEVER skip solely because value equals the schema default.
 
-    // A clearing write (value === undefined, e.g. a "reset to project defaults") is redundant
-    // iff there is no override at any scope to clear. VS Code fires no onDidChangeConfiguration
-    // event for a no-op write, so proceeding here would leak a write-time pending marker that
-    // is never consumed by a subsequent event [IDE-2264]. Deliberately ignores `scope` (unlike
-    // the switch below): resets only ever clear the global override (applyVscodeKeyResets always
-    // calls this with scope 'user'), so global+workspace is the full "anything to clear" check.
+    // A clearing write (value === undefined, e.g. a "reset to project defaults") always targets
+    // the global scope (applyVscodeKeyResets always calls this with scope 'user' and writes to
+    // ConfigurationTarget.Global), so it can only ever clear a globalValue override — a
+    // workspaceValue is untouched by it either way. It is redundant iff no globalValue is set.
+    // VS Code fires no onDidChangeConfiguration event for a no-op write, so proceeding when
+    // globalValue is already unset would leak a write-time pending marker that is never
+    // consumed by a subsequent event [IDE-2264]. Deliberately ignores `scope` (unlike the switch
+    // below) since this branch only ever runs for the global-target reset write.
     if (value === undefined) {
-      return inspection.globalValue === undefined && inspection.workspaceValue === undefined;
+      return inspection.globalValue === undefined;
     }
 
     switch (scope) {
