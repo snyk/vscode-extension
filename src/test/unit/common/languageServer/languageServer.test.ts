@@ -38,6 +38,7 @@ import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
+import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import {
   IScopeDetectionService,
@@ -324,6 +325,10 @@ suite('Language Server', () => {
   // then a later file-watcher-driven config refresh), not one synchronous call.
   test('inbound LS persistence never marks settings explicit, even on a delayed change event', async () => {
     const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+    // [IDE-2264 ticket 03]: wired the same way as extension.ts, to prove by construction that
+    // an inbound push never writes to the explicit-overrides map — even for a migration-shaped
+    // payload whose resulting change events are delayed past this operation's completion.
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const store = new Map<string, unknown>();
@@ -354,6 +359,7 @@ suite('Language Server', () => {
 
     const scopeDetectionService = new ScopeDetectionService(workspace);
     const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
+    const lastKnownValueCache = new LastKnownValueCache(workspace, []);
     const configPersistenceService = new ConfigurationPersistenceService(
       workspace,
       configurationMock,
@@ -362,6 +368,8 @@ suite('Language Server', () => {
       logger,
       undefined,
       tracker,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
 
     const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
@@ -420,6 +428,12 @@ suite('Language Server', () => {
         false,
         `${lsKey}: inbound-persisted setting must not be marked explicit just because VS Code ` +
           'delivered the change event on a later tick than the write',
+      );
+      assert.strictEqual(
+        explicitOverridesMap.getEntry(lsKey),
+        undefined,
+        `${lsKey}: an inbound push must never write to the explicit-overrides map, even for a ` +
+          "migration-shaped payload whose change events are delayed past this operation's completion",
       );
     }
   });

@@ -16,9 +16,9 @@ import {
   lsKeyToVscodeKey,
   mapConfigToSettings,
   mapLspSettingsToVscodeSettings,
-  SETTINGS_REGISTRY,
   VSCODE_KEY_TO_LS_KEYS,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
+import _ from 'lodash';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
@@ -37,17 +37,6 @@ export interface IConfigurationPersistenceService {
 }
 
 export class ConfigurationPersistenceService implements IConfigurationPersistenceService {
-  /**
-   * Snapshot of LS-resolved effective values keyed by VS Code setting key.
-   * Populated on every inbound `$/snyk.configuration` (`persistInboundLspConfiguration`).
-   * Read by `applySettingsMap` so the skip guard compares against the effective resolution
-   * rather than the package.json schema default.
-   *
-   * Keys absent from the map (no snapshot yet for that key) use the EFFECTIVE_VALUE_UNKNOWN
-   * sentinel, which triggers the override-aware fallback in shouldSkipSettingUpdate.
-   */
-  private effectiveByVscodeKey = new Map<string, unknown>();
-
   constructor(
     private readonly workspace: IVSCodeWorkspace,
     private readonly configuration: IConfiguration,
@@ -124,21 +113,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         await this.applySettingsMap(settingsMap, true);
       }
 
-      // Capture the LS-resolved effective values AFTER writing, so that subsequent
-      // outbound saves (handleSaveConfig → applySettingsMap) compare against the
-      // LS-effective baseline rather than the package.json schema default.
-      //
-      // Ordering note: capturing after applySettingsMap means this inbound batch is
-      // written unconditionally (the guard sees the previous snapshot or UNKNOWN),
-      // which is correct — inbound LS values are always authoritative. The snapshot
-      // is for use by the NEXT outbound save, not for skipping this inbound write.
-      //
-      // Null values (reset echoes: { value: null, changed: true }) are excluded from the
-      // snapshot — null means "reverted to org default", not a concrete effective value,
-      // and is handled by the reset path above. Keys absent from a partial inbound batch
-      // retain their last known effective value (map.set overwrites, does not clear).
-      this.captureEffectiveSnapshot(settings);
-
       // Apply folder configs to in-memory storage — LS is the source of truth.
       // An empty array means "clear all folder overrides".
       if (param.folderConfigs !== undefined) {
@@ -147,55 +121,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     } catch (e) {
       this.logger.error(`Failed to persist inbound LS configuration: ${e}`);
       throw e;
-    }
-  }
-
-  /**
-   * Updates `effectiveByVscodeKey` from an inbound settings batch.
-   *
-   * For each LS key that has a vscodeKey mapping and a non-null value, accumulates the
-   * LS-reported effective value keyed by vscodeKey. Null values (reset echoes) are
-   * skipped — they represent "reverted to org default", not a concrete effective value.
-   *
-   * Uses the registry's `toVscodeValue` transform so the stored value is in the same
-   * shape that the save path will compare against (VS Code value, not raw LS value).
-   *
-   * Multiple LS keys may share one vscodeKey (e.g. the four severity_filter_* keys all
-   * map to snyk.severity, and issue_view_open_issues / issue_view_ignored_issues both map
-   * to snyk.issueViewOptions). Object values are merged rather than overwritten so the
-   * stored effective value has the same fully-merged shape that applySettingsMap compares
-   * against. A naive set() would leave only the last-writer's partial object (e.g.
-   * {low:true}), making isEqual(merged, partial) always false and producing spurious writes.
-   *
-   * Keys absent from a partial inbound batch retain their last known effective value.
-   */
-  private captureEffectiveSnapshot(settings: Record<string, LspConfigSetting>): void {
-    for (const [lsKey, setting] of Object.entries(settings)) {
-      if (setting.value === null || setting.value === undefined) continue;
-      const vscodeKey = lsKeyToVscodeKey(lsKey);
-      if (!vscodeKey) continue;
-      // Apply the same toVscodeValue transform used by mapLspSettingsToVscodeSettings so
-      // the stored effective value is in VS Code shape, matching what the save path writes.
-      const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
-      const transformed = entry?.toVscodeValue ? entry.toVscodeValue(setting.value) : setting.value;
-      // Merge object values rather than overwriting: multiple LS keys can share one
-      // vscodeKey (severity_filter_* → snyk.severity; issue_view_* → snyk.issueViewOptions).
-      // setOrMerge mirrors the logic in mapLspSettingsToVscodeSettings.
-      const existing = this.effectiveByVscodeKey.get(vscodeKey);
-      if (
-        existing !== undefined &&
-        typeof existing === 'object' &&
-        existing !== null &&
-        typeof transformed === 'object' &&
-        transformed !== null
-      ) {
-        this.effectiveByVscodeKey.set(vscodeKey, {
-          ...(existing as Record<string, unknown>),
-          ...(transformed as Record<string, unknown>),
-        });
-      } else {
-        this.effectiveByVscodeKey.set(vscodeKey, transformed);
-      }
     }
   }
 
@@ -312,11 +237,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * `onWriteSuccess` for each lsKey in the group. One failure does NOT abort the batch
    * (per-group try/catch). The caller is responsible for any suppressor window.
    *
-   * On success, also removes the vscodeKey from `effectiveByVscodeKey` so the next
-   * outbound save falls back to EFFECTIVE_VALUE_UNKNOWN rather than a stale pre-reset
-   * value. Without this invalidation, a save of a value equal to the stale effective
-   * would be silently skipped — reproducing the IDE-2149 class of bug in the reset window
-   * between the inbound reset echo and the next $/snyk.configuration snapshot.
+   * On success, also updates the last-known-value cache to `undefined` for the vscodeKey
+   * (mirroring `applyOutboundGlobalResets`), so a subsequent inbound push's redundancy
+   * check compares against the post-reset state rather than a stale pre-reset value.
    */
   private async applyVscodeKeyResets(
     vscodeKeyToLsKeys: Map<string, string[]>,
@@ -344,11 +267,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         if (!shouldSkip) {
           // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
           await this.writeTaggedAsInboundOrigin(vscodeKey, configurationId, section, undefined, true, true);
-          // Invalidate the effective snapshot for this vscodeKey: the reset cleared the
-          // VS Code override, so the stored effective value is now stale. The next outbound
-          // save must fall back to EFFECTIVE_VALUE_UNKNOWN (override-aware fallback) rather
-          // than skipping on equality with the now-stale effective.
-          this.effectiveByVscodeKey.delete(vscodeKey);
+          // The reset cleared the VS Code override, so the next inbound push for this key
+          // must not be skipped as redundant against the now-stale pre-reset value.
+          this.lastKnownValueCache?.set(vscodeKey, undefined);
         }
         // Mutate caller-supplied state whether or not there was anything to write.
         // Each key's callback is wrapped independently: a callback failure (e.g. a resolver
@@ -387,22 +308,15 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           }
         }
 
-        // Resolve the LS-effective value for this VS Code key so the guard compares
-        // against the actual LS resolution, not the package.json schema default.
-        const lsEffective = this.effectiveByVscodeKey.has(settingKey)
-          ? this.effectiveByVscodeKey.get(settingKey)
-          : EFFECTIVE_VALUE_UNKNOWN;
-
-        if (
-          this.scopeDetectionService.shouldSkipSettingUpdate(
-            configurationId,
-            settingName,
-            effectiveValue,
-            scope,
-            lsEffective,
-          )
-        ) {
-          this.logger.debug(`Skipping ${settingKey}: no change or value is at default and not explicitly set`);
+        // Redundancy check: every LS pull re-sends its full resolved state, so a value
+        // unchanged since the last write to this VS Code key would otherwise be rewritten
+        // on every sync. Compare only against the last-known-value cache — a cache miss
+        // (nothing written yet this session for this key) never causes a skip, which is
+        // what prevents a resolved value that happens to equal the schema default from
+        // getting written as a permanent-looking override on the very first sync.
+        const lastKnown = this.lastKnownValueCache?.get(settingKey);
+        if (lastKnown !== undefined && _.isEqual(effectiveValue, lastKnown)) {
+          this.logger.debug(`Skipping ${settingKey}: unchanged since last write`);
           continue;
         }
 
@@ -414,6 +328,8 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           scope !== 'workspace',
           tagAsInboundOrigin,
         );
+
+        this.lastKnownValueCache?.set(settingKey, effectiveValue);
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
@@ -468,7 +384,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * and has been removed. All reset keys are grouped by their (always-present) vscodeKey.
    *
    * This is the OUTBOUND counterpart of `applyGlobalResets` (which handles the inbound echo
-   * and still uses the old tracker + effective-value snapshot — migrated separately).
+   * and updates the last-known-value cache but never the explicit-overrides map).
    */
   private async applyOutboundGlobalResets(config: HtmlSettingsData): Promise<void> {
     // Deduplicate VS Code writes: group lsKeys by their shared vscodeKey.

@@ -557,21 +557,22 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     sinon.assert.calledWith(consumePendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
   });
 
-  // Regression/proof coverage for a "should fix" raised on PR #782 (cold effective-cache,
-  // value-unchanged write leaks a marker because no onDidChangeConfiguration event follows a
-  // VS Code no-op write). On the very first inbound batch for a key, effectiveByVscodeKey is
-  // cold (EFFECTIVE_VALUE_UNKNOWN), so shouldSkipSettingUpdate falls back to the override-aware
-  // switch — which already skips (never even calls updateConfiguration, so no marker is ever
-  // set) when the incoming value equals the pre-existing override at that scope. This proves
-  // the cold-cache path cannot leak for the "existing override, unchanged value" case: the
-  // write is never attempted, so writeTaggedAsInboundOrigin never marks pending in the first
-  // place. (The only case the switch always proceeds on — no override at any scope — always
-  // creates a new settings.json entry, a real change that VS Code always fires an event for,
-  // so that path cannot be a no-op either.)
-  test('cold effective cache: a value-unchanged write against an existing override never marks pending (no leak possible)', async () => {
-    const coldCacheWorkspace = {
+  // Regression/proof coverage for a "should fix" raised on PR #782 (a value-unchanged write
+  // leaks a marker because no onDidChangeConfiguration event follows a VS Code no-op write).
+  // [IDE-2264 ticket 03]: the inbound redundancy check now compares purely against the
+  // last-known-value cache — warm from activation-time seeding in production (see
+  // extension.ts's `new LastKnownValueCache(workspace, ...)`) — rather than falling back to
+  // an override-aware inspectConfiguration peek. A cache hit that matches the incoming value
+  // must skip the write entirely, so writeTaggedAsInboundOrigin never marks pending in the
+  // first place.
+  test('an inbound value equal to what the last-known-value cache holds for that key is skipped (no write, no marker)', async () => {
+    const warmCacheWorkspace = {
       updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
+      // Seeds the cache with the pre-existing value, same as activation-time seeding.
+      getConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') return 'existing-org';
+        return undefined;
+      }),
       getWorkspaceFolders: sinon.stub().returns([]),
       getWorkspaceFolderPaths: sinon.stub().returns([]),
       inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
@@ -591,28 +592,30 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
         };
       }),
     } as unknown as IVSCodeWorkspace;
-    const coldCacheScopeService = new ScopeDetectionService(coldCacheWorkspace);
+    const warmCacheScopeService = new ScopeDetectionService(warmCacheWorkspace);
 
     const markPendingInboundWriteStub = sinon.stub();
     const tracker = {
       markPendingInboundWrite: markPendingInboundWriteStub,
     } as unknown as IExplicitLspConfigurationChangeTracker;
 
-    // Freshly-constructed service: effectiveByVscodeKey starts empty (cold cache), same as
-    // the very first $/snyk.configuration push after extension activation.
+    const lastKnownValueCache = new LastKnownValueCache(warmCacheWorkspace, [ADVANCED_ORGANIZATION]);
+
     const service = new ConfigurationPersistenceService(
-      coldCacheWorkspace,
+      warmCacheWorkspace,
       configuration,
-      coldCacheScopeService,
+      warmCacheScopeService,
       clientAdapter,
       logger,
       undefined,
       tracker,
+      undefined,
+      lastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
       settings: {
-        // Same value as the pre-existing global override — a genuine VS Code no-op if written.
+        // Same value the cache already holds — a genuine VS Code no-op if written.
         [LS_GLOBAL_KEY.organization]: { value: 'existing-org', changed: true },
       },
     };
@@ -621,6 +624,68 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
 
     sinon.assert.notCalled(updateConfigurationStub);
     sinon.assert.notCalled(markPendingInboundWriteStub);
+  });
+
+  // [IDE-2264 ticket 03]: a cache miss (nothing written yet this session for this key) must
+  // never cause a skip, even when the incoming value happens to equal the schema default —
+  // this is the regression the old "effective value" snapshot existed to prevent (a
+  // resolved-value-equals-default write silently turning into a permanent override on sync).
+  test('the very first inbound push for a key not yet in the cache is never skipped, even if its value equals the schema default', async () => {
+    const noOverrideWorkspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
+        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') {
+          // The incoming value equals the schema default; no override exists at any scope.
+          return {
+            defaultValue: 'existing-org',
+            globalValue: undefined,
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          };
+        }
+        return {
+          defaultValue: undefined,
+          globalValue: undefined,
+          workspaceValue: undefined,
+          workspaceFolderValue: undefined,
+        };
+      }),
+    } as unknown as IVSCodeWorkspace;
+    const noOverrideScopeService = new ScopeDetectionService(noOverrideWorkspace);
+
+    // Seeded with no tracked keys: the cache has no entry for organization.
+    const emptyCache = new LastKnownValueCache(noOverrideWorkspace, []);
+
+    const service = new ConfigurationPersistenceService(
+      noOverrideWorkspace,
+      configuration,
+      noOverrideScopeService,
+      clientAdapter,
+      logger,
+      undefined,
+      undefined,
+      undefined,
+      emptyCache,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_GLOBAL_KEY.organization]: { value: 'existing-org', changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.organization',
+      'existing-org',
+      true,
+    );
   });
 
   test('persistInbound writes delta setting from global settings', async () => {
@@ -2768,12 +2833,12 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 // never received the re-enabled value.
 //
 // The outbound save path no longer has ANY such gate: `saveConfigToVSCodeSettings` never
-// consults `effectiveByVscodeKey` or `shouldSkipSettingUpdate` at all (see
+// consults the last-known-value cache or `shouldSkipSettingUpdate` at all (see
 // `applyOutboundSettingsMap`), so this bug class is now structurally impossible for a
 // webview save, regardless of what the schema default or any previously-observed inbound
-// effective value happens to be — every key present in the save payload is written
-// directly, full stop. `effectiveByVscodeKey` still exists for the (separately migrated)
-// INBOUND leg (`persistInboundLspConfiguration`), so these tests keep using the real
+// value happens to be — every key present in the save payload is written directly, full
+// stop. The last-known-value cache is still updated by the (separately migrated) INBOUND
+// leg (`persistInboundLspConfiguration`), so these tests keep using the real
 // `ScopeDetectionService` and drive inbound pushes to prove the outbound save is
 // unaffected by whatever state inbound left behind.
 
@@ -2873,7 +2938,8 @@ function makeClientAdapter(): ILanguageClientAdapter {
  *   snyk_code_enabled → { value: false, changed: true }
  *
  * This represents: the org/GAF/LDX-Sync resolved effective value for Snyk Code is false.
- * persistInboundLspConfiguration captures this as effectiveByVscodeKey.set('snyk.features.codeSecurity', false).
+ * persistInboundLspConfiguration records this in the last-known-value cache under
+ * 'snyk.features.codeSecurity'.
  */
 const INBOUND_PARAM_CODE_FALSE: LspConfigurationParam = {
   settings: {
@@ -2923,8 +2989,8 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     const service = newService();
 
     // Step 1: LS delivers effective value false via $/snyk.configuration.
-    // After CP-2.2 this populates effectiveByVscodeKey so the guard knows the
-    // effective baseline is false (not the schema default true).
+    // This records false in the last-known-value cache (the inbound leg's own
+    // redundancy check, irrelevant to the outbound save below).
     await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
 
     // Reset the stub so we only observe calls from the save path below.
@@ -3068,28 +3134,23 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
   });
 });
 
-// ── Defect 1: captureEffectiveSnapshot must merge partial objects for shared vscodeKey ──
+// ── Defect 1: the inbound redundancy check must compare against the FULLY-MERGED value ──
 //
 // Multiple LS keys map to one vscodeKey: all four severity_filter_* keys → snyk.severity,
-// and issue_view_open_issues / issue_view_ignored_issues → snyk.issueViewOptions.
-// The old captureEffectiveSnapshot called effectiveByVscodeKey.set(vscodeKey, partial) once
-// per LS key — last-writer-wins — so the stored value was partial (e.g. {low:true}).
-// applySettingsMap compares against the FULLY-MERGED value ({critical,high,medium,low}):
-//   _.isEqual({critical:true,high:true,medium:true,low:true}, {low:true}) = false
-//   → shouldSkipSettingUpdate never skips → spurious write on every save.
+// and issue_view_open_issues / issue_view_ignored_issues → snyk.issueViewOptions. Each
+// inbound push writes the value merged with the current VS Code state (applySettingsMap's
+// own object-merge step) and stores that same merged value in the last-known-value cache.
+// If a future change ever stored a partial object instead (e.g. last-writer-wins across the
+// fan-out group), a second identical push would compare the merged incoming value against a
+// stale partial cache entry and spuriously rewrite on every sync.
 //
-// Fix: accumulate/merge partial objects in captureEffectiveSnapshot using the same
-// setOrMerge logic as mapLspSettingsToVscodeSettings, so the stored effective value
-// has the same shape the guard compares against.
-//
-// `effectiveByVscodeKey` and its guard are now INBOUND-only (the outbound save no longer
-// consults them at all — see the IDE-2149 suite above), so this merge-correctness fix is
-// probed via a second inbound push rather than an outbound save.
+// These tests probe that the cache holds the fully-merged shape via a second inbound push.
 
 suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey partials (Defect 1)', () => {
   let updateConfigStub: sinon.SinonStub;
   let workspace: IVSCodeWorkspace;
   let realScopeService: ScopeDetectionService;
+  let lastKnownValueCache: LastKnownValueCache;
 
   setup(() => {
     updateConfigStub = sinon.stub().resolves();
@@ -3135,6 +3196,8 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     } as unknown as IVSCodeWorkspace;
 
     realScopeService = new ScopeDetectionService(workspace);
+    // Empty seed: each test's first inbound push populates it, mirroring a fresh session.
+    lastKnownValueCache = new LastKnownValueCache(workspace, []);
   });
 
   teardown(() => sinon.restore());
@@ -3176,6 +3239,10 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
         getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
+      undefined,
+      undefined,
+      undefined,
+      lastKnownValueCache,
     );
   }
 
@@ -3207,10 +3274,10 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     assert.strictEqual(
       severityWrites.length,
       0,
-      `Defect1a regression: a second identical inbound push must be skipped against the merged effective ` +
-        `snapshot. Got ${severityWrites.length} write(s). A write here means captureEffectiveSnapshot stored a ` +
-        `partial object instead of merging the shared vscodeKey partials (last-writer-wins reintroduced), so the ` +
-        `merged value no longer equals the snapshot and the guard never skips.`,
+      `Defect1a regression: a second identical inbound push must be skipped against the last-known-value ` +
+        `cache. Got ${severityWrites.length} write(s). A write here means the cache held a partial object ` +
+        `instead of the fully-merged value (last-writer-wins reintroduced), so the merged incoming value no ` +
+        `longer equals the cached value and the guard never skips.`,
     );
   });
 
@@ -3237,24 +3304,25 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     assert.strictEqual(
       issueViewWrites.length,
       0,
-      `Defect1b regression: a second identical inbound push must be skipped against the merged effective ` +
-        `snapshot. Got ${issueViewWrites.length} write(s). A write here means captureEffectiveSnapshot left a ` +
-        `partial {ignoredIssues:true} instead of merging both issueView partials, so ` +
+      `Defect1b regression: a second identical inbound push must be skipped against the last-known-value ` +
+        `cache. Got ${issueViewWrites.length} write(s). A write here means the cache held a partial ` +
+        `{ignoredIssues:true} instead of the fully-merged issueView value, so ` +
         `isEqual({openIssues,ignoredIssues}, {ignoredIssues}) is false and the guard never skips.`,
     );
   });
 });
 
-// ── Defect 2: snapshot must be invalidated on global reset ───────────────────
+// ── Defect 2: the last-known-value cache must be invalidated on global reset ──
 //
 // After a global reset echo ({value:null, changed:true}), applyGlobalResets clears the
-// VS Code override but effectiveByVscodeKey still holds the stale pre-reset value.
-// If the user then saves a value equal to the stale effective before the next
-// $/snyk.configuration arrives, shouldSkipSettingUpdate skips the write — silently
-// dropping it (the IDE-2149 class of bug for that window).
+// VS Code override, but the last-known-value cache still holds the stale pre-reset value
+// unless applyVscodeKeyResets also updates it. The outbound save path never consults this
+// cache at all (client-side dirty-tracking already guarantees every payload key is a
+// genuine change), so this test proves the outbound save is unaffected either way — it's
+// the inbound leg's own cache-invalidation that this test guards.
 //
-// Fix: applyVscodeKeyResets must delete from effectiveByVscodeKey on successful reset,
-// so the next outbound save falls back to EFFECTIVE_VALUE_UNKNOWN (override-aware → not skipped).
+// Fix: applyVscodeKeyResets must set the last-known-value cache to undefined for the
+// vscodeKey on a successful reset write.
 
 suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect 2)', () => {
   let updateConfigStub: sinon.SinonStub;
@@ -3395,7 +3463,8 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
       `Defect2: updateConfiguration for allIssuesVsNetNewIssues must be called after a reset ` +
         `when user saves the same value as the pre-reset effective. ` +
         `Got ${deltaWrites.length} write(s). ` +
-        `A skip here means applyVscodeKeyResets did not invalidate the stale effectiveByVscodeKey entry on reset.`,
+        `The outbound save path never consults the last-known-value cache, so a skip here would mean ` +
+        `a regression elsewhere in applyOutboundSettingsMap re-introduced a redundancy gate.`,
     );
   });
 });
