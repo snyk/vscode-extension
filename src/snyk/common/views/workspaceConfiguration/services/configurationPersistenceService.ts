@@ -275,11 +275,11 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     value: unknown,
     configurationTarget?: boolean | WorkspaceFolder,
   ): Promise<void> {
-    this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite?.(vscodeKey);
+    this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite(vscodeKey);
     try {
       await this.workspace.updateConfiguration(configurationId, section, value, configurationTarget);
     } catch (e) {
-      this.explicitLspConfigurationChangeTracker?.consumePendingInboundWrite?.(vscodeKey);
+      this.explicitLspConfigurationChangeTracker?.consumePendingInboundWrite(vscodeKey);
       throw e;
     }
   }

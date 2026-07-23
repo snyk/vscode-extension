@@ -253,6 +253,8 @@ suite('Language Server: Middleware', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
@@ -296,6 +298,8 @@ suite('Language Server: Middleware', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     // Stub fromConfiguration to reject after consumePendingResets has drained the set.
@@ -347,6 +351,8 @@ suite('Language Server: Middleware', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     const fromConfigError = new Error('fromConfiguration failed during race');
@@ -403,6 +409,8 @@ suite('Language Server: Middleware', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     const fromConfigError = new Error('fromConfiguration failed — sibling fan-out test');
@@ -452,6 +460,8 @@ suite('Language Server: Middleware', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     const fromConfigError = new Error('fromConfiguration failed — inbound write test');

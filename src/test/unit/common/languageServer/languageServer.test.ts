@@ -73,6 +73,8 @@ suite('Language Server', () => {
     hasLastKnownValue: () => false,
     getLastKnownValue: () => undefined,
     setLastKnownValue: sinon.stub(),
+    markPendingInboundWrite: sinon.stub(),
+    consumePendingInboundWrite: sinon.stub().returns(false),
   };
 
   const createFakeLanguageServer = (
@@ -534,6 +536,8 @@ suite('Language Server', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -597,6 +601,8 @@ suite('Language Server', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -660,6 +666,8 @@ suite('Language Server', () => {
       hasLastKnownValue: () => false,
       getLastKnownValue: () => undefined,
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const onDidChangeConfigurationStub = sinon.stub().callsFake((fn: typeof configListener) => {
@@ -745,6 +753,8 @@ suite('Language Server', () => {
       hasLastKnownValue: (lsKey: string) => lsKey === warmKey,
       getLastKnownValue: (lsKey: string) => (lsKey === warmKey ? true : undefined),
       setLastKnownValue: sinon.stub(),
+      markPendingInboundWrite: sinon.stub(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
@@ -962,6 +972,8 @@ suite('Language Server', () => {
         hasLastKnownValue: () => false,
         getLastKnownValue: () => undefined,
         setLastKnownValue: sinon.stub(),
+        markPendingInboundWrite: sinon.stub(),
+        consumePendingInboundWrite: sinon.stub().returns(false),
       };
 
       const mockLanguageClientAdapter = {
@@ -1014,6 +1026,8 @@ suite('Language Server', () => {
         hasLastKnownValue: () => false,
         getLastKnownValue: () => undefined,
         setLastKnownValue: sinon.stub(),
+        markPendingInboundWrite: sinon.stub(),
+        consumePendingInboundWrite: sinon.stub().returns(false),
       };
 
       // Stub fromConfiguration to reject after consumePendingResets has drained the set.
@@ -1073,6 +1087,8 @@ suite('Language Server', () => {
         hasLastKnownValue: () => false,
         getLastKnownValue: () => undefined,
         setLastKnownValue: sinon.stub(),
+        markPendingInboundWrite: sinon.stub(),
+        consumePendingInboundWrite: sinon.stub().returns(false),
       };
 
       const fromConfigError = new Error('fromConfiguration failed during race (getInitializationOptions)');

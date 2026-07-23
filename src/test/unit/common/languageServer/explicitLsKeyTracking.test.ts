@@ -23,6 +23,7 @@ class FakeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly pending = new Set<string>();
   private readonly committed = new Set<string>();
   private readonly lastKnown = new Map<string, unknown>();
+  private readonly pendingInboundWrites = new Set<string>();
 
   markExplicitlyChanged(lsKey: string): void {
     this.keys.add(lsKey);
@@ -61,6 +62,14 @@ class FakeTracker implements IExplicitLspConfigurationChangeTracker {
   }
   setLastKnownValue(lsKey: string, value: unknown): void {
     this.lastKnown.set(lsKey, value);
+  }
+
+  markPendingInboundWrite(vscodeKey: string): void {
+    this.pendingInboundWrites.add(vscodeKey);
+  }
+
+  consumePendingInboundWrite(vscodeKey: string): boolean {
+    return this.pendingInboundWrites.delete(vscodeKey);
   }
 
   allKeys(): Set<string> {

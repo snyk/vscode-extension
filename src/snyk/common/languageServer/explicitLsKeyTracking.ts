@@ -46,7 +46,7 @@ export function markExplicitLsKeysFromConfigurationChangeEvent(
     // concurrent edit is not marked explicit. Not fixed here — narrow (requires a genuine
     // race between an LS push and a user edit of the identical key) and would need per-write
     // value comparison (not just presence) to close.
-    if (tracker.consumePendingInboundWrite?.(vscodeKey)) {
+    if (tracker.consumePendingInboundWrite(vscodeKey)) {
       continue;
     }
 

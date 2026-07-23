@@ -812,6 +812,7 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     private readonly pending = new Set<string>();
     private readonly committed = new Set<string>();
     private readonly lastKnown = new Map<string, unknown>();
+    private readonly pendingInboundWrites = new Set<string>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -844,6 +845,12 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     }
     setLastKnownValue(lsKey: string, value: unknown): void {
       this.lastKnown.set(lsKey, value);
+    }
+    markPendingInboundWrite(vscodeKey: string): void {
+      this.pendingInboundWrites.add(vscodeKey);
+    }
+    consumePendingInboundWrite(vscodeKey: string): boolean {
+      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
@@ -1088,6 +1095,7 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     private readonly pendingResets = new Set<string>();
     private readonly committed = new Set<string>();
     private readonly lastKnown = new Map<string, unknown>();
+    private readonly pendingInboundWrites = new Set<string>();
 
     markExplicitlyChanged(lsKey: string): void {
       this.explicitKeys.add(lsKey);
@@ -1121,6 +1129,12 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     }
     setLastKnownValue(lsKey: string, value: unknown): void {
       this.lastKnown.set(lsKey, value);
+    }
+    markPendingInboundWrite(vscodeKey: string): void {
+      this.pendingInboundWrites.add(vscodeKey);
+    }
+    consumePendingInboundWrite(vscodeKey: string): boolean {
+      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
@@ -1447,6 +1461,7 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
     private readonly pending = new Set<string>();
     private readonly committed = new Set<string>();
     private readonly lastKnown = new Map<string, unknown>();
+    private readonly pendingInboundWrites = new Set<string>();
     readonly setLastKnownValueCalls: Array<{ lsKey: string; value: unknown }> = [];
 
     markExplicitlyChanged(lsKey: string): void {
@@ -1482,6 +1497,12 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
     setLastKnownValue(lsKey: string, value: unknown): void {
       this.lastKnown.set(lsKey, value);
       this.setLastKnownValueCalls.push({ lsKey, value });
+    }
+    markPendingInboundWrite(vscodeKey: string): void {
+      this.pendingInboundWrites.add(vscodeKey);
+    }
+    consumePendingInboundWrite(vscodeKey: string): boolean {
+      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
@@ -1749,6 +1770,12 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
     }
     setLastKnownValue(_lsKey: string, _value: unknown): void {
       /* no-op */
+    }
+    markPendingInboundWrite(_vscodeKey: string): void {
+      /* no-op */
+    }
+    consumePendingInboundWrite(_vscodeKey: string): boolean {
+      return false;
     }
   }
 
@@ -2046,6 +2073,7 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
     private readonly pending = new Set<string>();
     private readonly committed = new Set<string>();
     private readonly lastKnown = new Map<string, unknown>();
+    private readonly pendingInboundWrites = new Set<string>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -2078,6 +2106,12 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
     }
     setLastKnownValue(lsKey: string, value: unknown): void {
       this.lastKnown.set(lsKey, value);
+    }
+    markPendingInboundWrite(vscodeKey: string): void {
+      this.pendingInboundWrites.add(vscodeKey);
+    }
+    consumePendingInboundWrite(vscodeKey: string): boolean {
+      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
@@ -3486,6 +3520,8 @@ suite('ConfigurationPersistenceService — onWriteSuccess callback exception res
       setLastKnownValue: sinon.spy(),
       hasLastKnownValue: sinon.stub().returns(false),
       getLastKnownValue: sinon.stub().returns(undefined),
+      markPendingInboundWrite: sinon.spy(),
+      consumePendingInboundWrite: sinon.stub().returns(false),
     };
 
     const service = new ConfigurationPersistenceService(

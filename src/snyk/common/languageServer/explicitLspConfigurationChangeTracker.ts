@@ -87,11 +87,11 @@ export interface IExplicitLspConfigurationChangeTracker {
 
   /** Marks `vscodeKey` as just written by inbound LS persistence, regardless of when its
    * onDidChangeConfiguration event actually arrives. Transient, in-memory only. */
-  markPendingInboundWrite?(vscodeKey: string): void;
+  markPendingInboundWrite(vscodeKey: string): void;
 
   /** Consumes a pending inbound write for `vscodeKey` if present (caller should suppress
    * marking); false means a genuine user-initiated change. */
-  consumePendingInboundWrite?(vscodeKey: string): boolean;
+  consumePendingInboundWrite(vscodeKey: string): boolean;
 }
 
 /**
