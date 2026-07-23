@@ -17,11 +17,13 @@ import {
   mapConfigToSettings,
   mapLspSettingsToVscodeSettings,
   SETTINGS_REGISTRY,
+  VSCODE_KEY_TO_LS_KEYS,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
-import { isThenable } from '../../../tsUtil';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
+import type { IExplicitOverridesMap } from '../../../languageServer/explicitOverridesMap';
+import type { ILastKnownValueCache } from '../../../languageServer/lastKnownValueCache';
 import { EFFECTIVE_VALUE_UNKNOWN, IScopeDetectionService } from './scopeDetectionService';
 
 export interface IConfigurationPersistenceService {
@@ -54,6 +56,8 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly logger: ILog,
     private readonly contextService?: IContextService,
     private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
+    private readonly explicitOverridesMap?: IExplicitOverridesMap,
+    private readonly lastKnownValueCache?: ILastKnownValueCache,
   ) {}
 
   async handleSaveConfig(configJson: string): Promise<void> {
@@ -268,12 +272,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * consumed on a thrown write so it can't leak into the next genuine edit of the same key.
    *
    * Pass `tagAsInboundOrigin: true` only when the write itself is not a user override to honor:
-   * an LS-authoritative echo (`applySettingsMap` from `persistInboundLspConfiguration`), or a
-   * reset clearing an override (`applyVscodeKeyResets`, both the inbound echo and the outbound
-   * "reset to project defaults" write — the caller already unmarks the key via `onWriteSuccess`).
-   * Pass `false` for a genuine user-initiated save (`applySettingsMap` from
-   * `saveConfigToVSCodeSettings`): tagging it would suppress explicit-change marking and the LS
-   * would never receive `changed:true` for the user's own edit.
+   * an LS-authoritative echo (`applySettingsMap` from `persistInboundLspConfiguration`), or the
+   * inbound reset clearing an override (`applyVscodeKeyResets`, via `applyGlobalResets` — the
+   * caller already unmarks the key via `onWriteSuccess`).
+   *
+   * The outbound save path (`saveConfigToVSCodeSettings`) no longer routes through this method —
+   * it writes directly (see `applyOutboundSettingsMap`/`applyOutboundGlobalResets`), recording
+   * attribution in the explicit-overrides map and last-known-value cache instead of tagging.
    */
   private async writeTaggedAsInboundOrigin(
     vscodeKey: string,
@@ -297,7 +302,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   /**
-   * Shared write+error-handling loop for both inbound and outbound global resets.
+   * Write+error-handling loop for INBOUND global resets (`applyGlobalResets`). The outbound
+   * save path has its own dedicated resets (`applyOutboundGlobalResets`) that write
+   * unconditionally, since the webview's dirty-tracking already guarantees a null field is a
+   * genuine reset.
    *
    * For each (vscodeKey → lsKeys) entry: clears the VS Code global override
    * (updateConfiguration → undefined, global scope) then, on success only, calls
@@ -323,9 +331,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         // leak a pending marker that's never consumed — silently suppressing the next genuine
         // user edit of this key [IDE-2264]. Routes through the same predicate applySettingsMap
         // uses, rather than a bespoke inspectConfiguration peek, so both write paths share one
-        // "should this write happen" decision. onWriteSuccess below still runs either way —
-        // callers (e.g. the outbound reset path) rely on it to queue their own state regardless
-        // of whether a VS Code override previously existed.
+        // "should this write happen" decision. onWriteSuccess below still runs either way, so
+        // the caller's tracker state is queued regardless of whether a VS Code override
+        // previously existed.
         const shouldSkip = this.scopeDetectionService.shouldSkipSettingUpdate(
           configurationId,
           section,
@@ -445,22 +453,22 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   /**
    * For each global-resettable LS key whose dialog value is explicitly `null`:
    * - clear the VS Code global override (updateConfiguration → undefined, global scope)
-   * - unmark explicit-changed tracking so the reset is not re-pushed after acknowledgement
-   * - mark a pending reset so the next outbound pull emits `{ value: null, changed: true }`
+   * - record a reset entry in the explicit-overrides map
+   * - update the last-known-value cache to `undefined` (the override was cleared)
    *
-   * Tracker mutations happen AFTER the VS Code write succeeds, so state is only updated
-   * when the write actually completed. On write failure, state is left unchanged.
+   * The webview only sends a field when its value genuinely changed since the form was
+   * last presented (client-side dirty-tracking), so every reset field here is acted on
+   * directly — no "does an override already exist" gate, no old tag-based tracker.
+   *
+   * New-structure mutations happen AFTER the VS Code write succeeds, so state is only
+   * updated when the write actually completed. On write failure, state is left unchanged.
    *
    * The GLOBAL_RESET_FIELDS invariant guarantees every member has a vscodeKey
    * (enforced by the FIX 3 unit test), so the no-vscodeKey branch is unreachable
    * and has been removed. All reset keys are grouped by their (always-present) vscodeKey.
    *
-   * pendingResets is intentionally in-memory only. The VS Code global override is cleared
-   * at save time, so if the host crashes before the pending signal is consumed, the next
-   * pull/start still emits the (now default) value with changed:false and the reset is
-   * still reflected — no durable state needed.
-   *
-   * This is the OUTBOUND counterpart of `applyGlobalResets` (which handles the inbound echo).
+   * This is the OUTBOUND counterpart of `applyGlobalResets` (which handles the inbound echo
+   * and still uses the old tracker + effective-value snapshot — migrated separately).
    */
   private async applyOutboundGlobalResets(config: HtmlSettingsData): Promise<void> {
     // Deduplicate VS Code writes: group lsKeys by their shared vscodeKey.
@@ -491,37 +499,86 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       }
     }
 
-    await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
-      this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
-      this.explicitLspConfigurationChangeTracker?.markPendingReset(lsKey);
-      // D1 fix: seed the last-known value for the reset key so the subsequent
-      // applySettingsMap write (for non-reset siblings sharing the same VS Code
-      // setting) does NOT cold-cache-mark committedSinceReset for this key.
-      //
-      // After the VS Code global override is cleared, the registry resolver returns
-      // the post-reset value (workspace/default resolution).  Seeding it here means
-      // the fan-out guard sees a warm cache and only marks committedSinceReset if
-      // the resolver value actually changed — preventing shouldSkipReenqueue from
-      // suppressing a legitimate re-enqueue of this key on fromConfiguration failure.
-      //
-      // Only sync resolvers are seeded (Promise results are skipped — those keys
-      // do not appear in multi-key fan-out groups and fall back to cold-cache marking,
-      // which is the conservative pre-fix behaviour and is safe for single-key groups).
-      //
-      // Timing assumption: this.configuration resolves live VS Code state immediately
-      // after updateConfiguration resolves (not a memoized cache). If a resolver ever
-      // adds memoization this must be restructured to read VS Code directly instead.
-      if (this.explicitLspConfigurationChangeTracker) {
-        const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
-        if (entry) {
-          const resolved = entry.resolve(this.configuration);
-          if (!isThenable(resolved)) {
-            this.explicitLspConfigurationChangeTracker.setLastKnownValue(lsKey, resolved);
+    for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
+      try {
+        const { configurationId, section } = Configuration.getConfigName(vscodeKey);
+        // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
+        await this.workspace.updateConfiguration(configurationId, section, undefined, true);
+
+        this.lastKnownValueCache?.set(vscodeKey, undefined);
+        for (const lsKey of lsKeys) {
+          try {
+            this.explicitOverridesMap?.setReset(lsKey);
+            this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
+          } catch (cbErr) {
+            this.logger.error(`Failed to record explicit-overrides reset for ${lsKey}: ${cbErr}`);
           }
         }
+      } catch (e) {
+        this.logger.error(`Failed to reset setting ${vscodeKey}: ${e}`);
+        // Do NOT record a reset or update the cache — leave state consistent with the failed write.
       }
-      this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
-    });
+    }
+  }
+
+  /**
+   * Writes every (non-reset) key in `settingsMap` directly to VS Code configuration for an
+   * outbound webview save. Both settings webviews (the LS-served main form and the
+   * extension's own fallback form) already send only fields whose value genuinely changed
+   * since the form was last presented, so no "is this redundant" gate is applied here —
+   * every key present is acted on directly, replacing the old effective-value comparison and
+   * the old tag-based tracker.
+   *
+   * On a successful write: the last-known-value cache is updated for the VS Code key, and the
+   * explicit-overrides map records each LS key that maps to it (only those actually present
+   * with a non-null value in `config` — a shared vscodeKey like snyk.severity may have only
+   * one of its sibling LS keys present in the payload). A write that throws updates neither.
+   */
+  private async applyOutboundSettingsMap(
+    settingsMap: Record<string, unknown>,
+    config: HtmlSettingsData,
+  ): Promise<void> {
+    for (const [settingKey, value] of Object.entries(settingsMap)) {
+      try {
+        const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
+
+        // For object values, merge with current VS Code value to preserve sibling keys
+        let effectiveValue = value;
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          const current = this.workspace.getConfiguration(configurationId, settingName);
+          if (current && typeof current === 'object') {
+            effectiveValue = {
+              ...(current as Record<string, unknown>),
+              ...(value as Record<string, unknown>),
+            };
+          }
+        }
+
+        const scope = this.scopeDetectionService.getSettingScope(settingKey);
+
+        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
+
+        this.lastKnownValueCache?.set(settingKey, effectiveValue);
+        // Each sibling is recorded independently: a shared vscodeKey (e.g. snyk.severity) can
+        // have several LS keys, and one throwing must not skip recording the others — the VS
+        // Code write above already succeeded for all of them.
+        for (const lsKey of VSCODE_KEY_TO_LS_KEYS[settingKey] ?? []) {
+          const lsValue = config[lsKey];
+          if (lsValue === undefined || lsValue === null) continue;
+          try {
+            this.explicitOverridesMap?.setExplicitValue(lsKey, lsValue);
+          } catch (cbErr) {
+            this.logger.error(`Failed to record explicit-overrides value for ${lsKey}: ${cbErr}`);
+          }
+        }
+
+        this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
+      } catch (e) {
+        this.logger.error(`Failed to update setting ${settingKey}: ${e}`);
+      }
+    }
+
+    this.logger.info('Successfully applied settings map to VS Code configuration');
   }
 
   private async saveConfigToVSCodeSettings(config: HtmlSettingsData): Promise<void> {
@@ -529,7 +586,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
     // Handle outbound global resets before building the settings map:
     // null-valued global-resettable fields are excluded from mapConfigToSettings
-    // and processed here instead (clear VS Code global + mark pending reset for LS).
+    // and processed here instead (clear VS Code global + record reset).
     await this.applyOutboundGlobalResets(config);
 
     const settingsMap = mapConfigToSettings(config);
@@ -539,7 +596,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         config.folderConfigs ?? (config['folder_configs'] as HtmlFolderSettingsData[] | undefined),
       );
 
-    await this.applySettingsMap(settingsMap, false);
+    await this.applyOutboundSettingsMap(settingsMap, config);
 
     this.logger.info('Successfully wrote all settings to VS Code configuration');
   }

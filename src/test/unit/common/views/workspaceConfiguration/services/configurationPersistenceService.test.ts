@@ -33,6 +33,11 @@ import {
 } from '../../../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from '../../../../../../snyk/common/languageServer/explicitLsKeyTracking';
+import {
+  ExplicitOverridesMap,
+  IExplicitOverridesMap,
+} from '../../../../../../snyk/common/languageServer/explicitOverridesMap';
+import { LastKnownValueCache } from '../../../../../../snyk/common/languageServer/lastKnownValueCache';
 
 suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let workspace: IVSCodeWorkspace;
@@ -152,7 +157,11 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       );
     });
 
-    test('skips org update when shouldSkipSettingUpdate returns true', async () => {
+    // The outbound save path no longer consults shouldSkipSettingUpdate at all: both settings
+    // webviews only send a field when its value genuinely changed (client-side dirty-tracking),
+    // so every key present in the payload is written directly — this is what structurally rules
+    // out the IDE-2149 class of bug (a save silently skipped because it looked redundant).
+    test('writes org even when shouldSkipSettingUpdate returns true (outbound never consults it)', async () => {
       (scopeDetectionService.getSettingScope as sinon.SinonStub).returns('user');
       (scopeDetectionService.shouldSkipSettingUpdate as sinon.SinonStub).returns(true);
 
@@ -164,7 +173,13 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
 
       await service.handleSaveConfig(configJson);
 
-      sinon.assert.notCalled(updateConfigurationStub);
+      sinon.assert.calledWith(
+        updateConfigurationStub,
+        CONFIGURATION_IDENTIFIER,
+        'advanced.organization',
+        'test-org',
+        true,
+      );
     });
   });
 });
@@ -1079,65 +1094,33 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
 // global-resettable key, handleSaveConfig must:
 //  (a) clear the VS Code global override (updateConfiguration → undefined)
 //  (b) NOT write the raw null as a value
-//  (c) mark a pending reset so the next outbound LS pull emits {value:null, changed:true}
-//  (d) emit the pending reset exactly once
+//  (c) record a reset entry in the explicit-overrides map
+//  (d) update the last-known-value cache to undefined
 suite('ConfigurationPersistenceService — outbound global reset (handleSaveConfig)', () => {
+  function makeMemento(): import('vscode').Memento {
+    const store = new Map<string, unknown>();
+    return {
+      get<T>(key: string, defaultValue?: T): T {
+        return (store.has(key) ? store.get(key) : defaultValue) as T;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        store.set(key, value);
+        return Promise.resolve();
+      },
+      keys(): readonly string[] {
+        return [...store.keys()];
+      },
+    };
+  }
+
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let tracker: FakeTracker2;
-
-  /** In-memory tracker that also records pending resets. */
-  class FakeTracker2 implements IExplicitLspConfigurationChangeTracker {
-    private readonly explicitKeys = new Set<string>();
-    private readonly pendingResets = new Set<string>();
-    private readonly committed = new Set<string>();
-    private readonly lastKnown = new Map<string, unknown>();
-    private readonly pendingInboundWrites = new Set<string>();
-
-    markExplicitlyChanged(lsKey: string): void {
-      this.explicitKeys.add(lsKey);
-    }
-    unmarkExplicitlyChanged(lsKey: string): void {
-      this.explicitKeys.delete(lsKey);
-    }
-    isExplicitlyChanged(lsKey: string): boolean {
-      return this.explicitKeys.has(lsKey);
-    }
-    markPendingReset(lsKey: string): void {
-      this.pendingResets.add(lsKey);
-      this.committed.delete(lsKey);
-    }
-    consumePendingResets(): Set<string> {
-      const snap = new Set(this.pendingResets);
-      this.pendingResets.clear();
-      return snap;
-    }
-    markCommittedSinceReset(lsKey: string): void {
-      this.committed.add(lsKey);
-    }
-    committedSinceReset(lsKey: string): boolean {
-      return this.committed.has(lsKey);
-    }
-    hasLastKnownValue(lsKey: string): boolean {
-      return this.lastKnown.has(lsKey);
-    }
-    getLastKnownValue(lsKey: string): unknown {
-      return this.lastKnown.get(lsKey);
-    }
-    setLastKnownValue(lsKey: string, value: unknown): void {
-      this.lastKnown.set(lsKey, value);
-    }
-    markPendingInboundWrite(vscodeKey: string): void {
-      this.pendingInboundWrites.add(vscodeKey);
-    }
-    consumePendingInboundWrite(vscodeKey: string): boolean {
-      return this.pendingInboundWrites.delete(vscodeKey);
-    }
-  }
+  let explicitOverridesMap: ExplicitOverridesMap;
+  let lastKnownValueCache: LastKnownValueCache;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -1198,7 +1181,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    tracker = new FakeTracker2();
+    explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+    lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
   });
 
   teardown(() => sinon.restore());
@@ -1211,7 +1195,9 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       clientAdapter,
       logger,
       undefined,
-      tracker,
+      undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
   }
 
@@ -1254,8 +1240,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     assert.strictEqual(wroteNull, false, 'null must not be written as a setting value');
   });
 
-  // (c) A pending reset must be recorded so the next outbound pull emits {value:null, changed:true}
-  test('records a pending reset in the tracker after save', async () => {
+  // (c) A reset entry must be recorded in the explicit-overrides map
+  test('records a reset entry in the explicit-overrides map after save', async () => {
     const service = newService();
 
     const configJson = JSON.stringify({
@@ -1266,21 +1252,17 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    const pending = tracker.consumePendingResets();
-    assert.ok(pending.has(LS_GLOBAL_KEY.organization), 'organization must be in pending resets');
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
   });
 
-  // (c2) When the key was already marked explicitly-changed before the reset (the common path),
-  // handleSaveConfig must BOTH unmark explicit-changed AND record a pending reset.
-  // If unmarkExplicitlyChanged is removed from applyOutboundGlobalResets this test fails because
-  // tracker.isExplicitlyChanged(organization) remains true after the save.
-  test('unmarks explicit-changed tracking AND records pending reset when key was pre-marked', async () => {
-    // Pre-condition: the user had previously changed organization (it is tracked as explicit).
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      true,
-      'precondition: key must be explicitly-changed before save',
+  // (c2) When the key already held a concrete explicit value before the reset (the common path),
+  // the reset entry must overwrite it — not leave the stale concrete value in place.
+  test('overwrites a prior explicit value with a reset entry when key was pre-set', async () => {
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'previously-set-org');
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+      { kind: 'value', value: 'previously-set-org' },
+      'precondition: key must hold a concrete explicit value before save',
     );
 
     const service = newService();
@@ -1293,20 +1275,15 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    // After a successful reset, the explicit-changed mark must be cleared.
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      false,
-      'unmarkExplicitlyChanged must have been called: key must no longer be explicitly-changed',
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+      { kind: 'reset' },
+      'the reset must overwrite the prior concrete-value entry',
     );
-
-    // The pending reset must also be recorded so the next outbound pull emits {value:null, changed:true}.
-    const pending = tracker.consumePendingResets();
-    assert.ok(pending.has(LS_GLOBAL_KEY.organization), 'organization must be in pending resets');
   });
 
-  // (d) The outbound LS settings builder emits {value:null, changed:true} for a pending-reset key
-  test('outbound fromConfiguration emits {value:null, changed:true} for a pending-reset key', async () => {
+  // (d) The last-known-value cache must reflect the cleared override
+  test('updates the last-known-value cache to undefined after a successful reset', async () => {
     const service = newService();
 
     const configJson = JSON.stringify({
@@ -1317,56 +1294,7 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    // Consume the pending resets (as the middleware would) and build outbound settings
-    const pendingResets = tracker.consumePendingResets();
-    const lspParam = await LanguageServerSettings.fromConfiguration(
-      configuration,
-      lsKey => tracker.isExplicitlyChanged(lsKey),
-      undefined,
-      lsKey => pendingResets.has(lsKey),
-    );
-
-    const orgSetting = lspParam.settings?.[LS_GLOBAL_KEY.organization];
-    assert.strictEqual(orgSetting?.value, null, 'pending-reset key must emit value:null');
-    assert.strictEqual(orgSetting?.changed, true, 'pending-reset key must emit changed:true');
-  });
-
-  // (d2) Pending reset is consumed exactly once — subsequent calls resolve normally
-  test('pending reset is emitted exactly once (consumed on first pull)', async () => {
-    const service = newService();
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.organization]: null,
-    });
-
-    await service.handleSaveConfig(configJson);
-
-    // First pull: consume resets
-    const pendingResets1 = tracker.consumePendingResets();
-    const lspParam1 = await LanguageServerSettings.fromConfiguration(
-      configuration,
-      lsKey => tracker.isExplicitlyChanged(lsKey),
-      undefined,
-      lsKey => pendingResets1.has(lsKey),
-    );
-    assert.strictEqual(lspParam1.settings?.[LS_GLOBAL_KEY.organization]?.value, null, 'first pull: value must be null');
-
-    // Second pull: no more pending resets
-    const pendingResets2 = tracker.consumePendingResets();
-    const lspParam2 = await LanguageServerSettings.fromConfiguration(
-      configuration,
-      lsKey => tracker.isExplicitlyChanged(lsKey),
-      undefined,
-      lsKey => pendingResets2.has(lsKey),
-    );
-    // After reset, organization resolves to config.organization ('' in this mock)
-    assert.notStrictEqual(
-      lspParam2.settings?.[LS_GLOBAL_KEY.organization]?.value,
-      null,
-      'second pull: pending reset consumed, must not be null',
-    );
+    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), undefined);
   });
 
   // Non-reset fields alongside a reset are persisted normally
@@ -1401,12 +1329,10 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     );
   });
 
-  // Fix 1: tracker must NOT be mutated when updateConfiguration throws
-  test('does not mark pending reset or unmark explicit-changed when updateConfiguration throws', async () => {
-    // Simulate a pre-existing explicit override.
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
-
-    // Make updateConfiguration throw for this key.
+  // A write that throws must not update either new structure
+  test('does not record a reset entry or update the cache when updateConfiguration throws', async () => {
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'previously-set-org');
+    lastKnownValueCache.set(ADVANCED_ORGANIZATION, 'pre-existing-cached-value');
     updateConfigurationStub.rejects(new Error('VS Code write failed'));
 
     const service = newService();
@@ -1417,103 +1343,104 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       [LS_GLOBAL_KEY.organization]: null,
     });
 
-    // handleSaveConfig catches the error internally (per applyOutboundGlobalResets catch block)
-    // and does NOT rethrow — but even if it did, we care about tracker state.
-    try {
-      await service.handleSaveConfig(configJson);
-    } catch (_e) {
-      // Ignore: handleSaveConfig may re-throw from applySettingsMap path for non-reset fields,
-      // but organization is the only field here and it is handled in applyOutboundGlobalResets
-      // which swallows the error. Either way, tracker state is our concern.
-    }
+    await service.handleSaveConfig(configJson);
 
-    // Tracker must NOT have recorded a pending reset (write failed).
-    const pending = tracker.consumePendingResets();
-    assert.strictEqual(
-      pending.has(LS_GLOBAL_KEY.organization),
-      false,
-      'pending reset must not be recorded when VS Code write throws',
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+      { kind: 'value', value: 'previously-set-org' },
+      'a failed write must not overwrite the prior entry with a reset',
     );
-
-    // Tracker must NOT have unmarked the explicit-changed key (write failed).
     assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      true,
-      'explicit-changed must remain set when VS Code write throws',
+      lastKnownValueCache.get(ADVANCED_ORGANIZATION),
+      'pre-existing-cached-value',
+      'a failed write must not update the last-known-value cache',
     );
   });
 });
 
-// ── D1 regression guard: setLastKnownValue seeded in applyOutboundGlobalResets ─
-//
-// The D1 fix seeds the last-known value for each reset key immediately after the
-// VS Code override is cleared (in the applyVscodeKeyResets onWriteSuccess callback).
-// This prevents the subsequent applySettingsMap fan-out from cold-cache-marking
-// committedSinceReset for that key.
-//
-// This integration-style test drives the real outbound reset path (handleSaveConfig
-// with a null-valued field) and asserts that setLastKnownValue was called for each
-// reset key with the post-reset resolved value. It goes RED when the seeding call is
-// removed from the onWriteSuccess lambda in applyOutboundGlobalResets.
-suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after outbound reset', () => {
-  /** Tracker that records setLastKnownValue calls. */
-  class SpyTracker implements IExplicitLspConfigurationChangeTracker {
-    private readonly keys = new Set<string>();
-    private readonly pending = new Set<string>();
-    private readonly committed = new Set<string>();
-    private readonly lastKnown = new Map<string, unknown>();
-    private readonly pendingInboundWrites = new Set<string>();
-    readonly setLastKnownValueCalls: Array<{ lsKey: string; value: unknown }> = [];
+// ── LanguageServerSettings.fromConfiguration — pending-reset predicate contract ──
+// The outbound save handler no longer feeds the old tracker's pending-resets set (see the
+// suite above), but `fromConfiguration`'s `isPendingReset` predicate parameter is still the
+// pull-side contract other code relies on to emit `{ value: null, changed: true }`. These
+// tests exercise that predicate directly (a plain Set, not sourced from a save or a tracker)
+// so the contract keeps regression coverage independent of how callers populate it.
+suite('LanguageServerSettings.fromConfiguration — pending-reset predicate contract', () => {
+  const configuration = {
+    getToken: sinon.stub().resolves('tok'),
+    getFolderConfigs: sinon.stub().returns([]),
+    getFeaturesConfiguration: sinon.stub().returns({
+      ossEnabled: true,
+      codeSecurityEnabled: true,
+      iacEnabled: true,
+      secretsEnabled: true,
+    }),
+    scanningMode: 'auto',
+    organization: '',
+    snykApiEndpoint: 'https://api.snyk.io',
+    getInsecure: sinon.stub().returns(false),
+    getAuthenticationMethod: sinon.stub().returns('oauth'),
+    getDeltaFindingsEnabled: sinon.stub().returns(false),
+    getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
+    getAdditionalCliParameters: sinon.stub().returns(''),
+    getAdditionalCliEnvironment: sinon.stub().returns(undefined),
+    getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
+    getAutoConfigureMcpServer: sinon.stub().returns(false),
+    severityFilter: {},
+    issueViewOptions: {},
+    riskScoreThreshold: 0,
+    getTrustedFolders: sinon.stub().returns([]),
+    getCliPath: sinon.stub().resolves(''),
+    isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
+    getCliBaseDownloadUrl: sinon.stub().returns(''),
+  } as unknown as IConfiguration;
 
-    markExplicitlyChanged(lsKey: string): void {
-      this.keys.add(lsKey);
-    }
-    unmarkExplicitlyChanged(lsKey: string): void {
-      this.keys.delete(lsKey);
-    }
-    isExplicitlyChanged(lsKey: string): boolean {
-      return this.keys.has(lsKey);
-    }
-    markPendingReset(lsKey: string): void {
-      this.pending.add(lsKey);
-      this.committed.delete(lsKey);
-    }
-    consumePendingResets(): Set<string> {
-      const snap = new Set(this.pending);
-      this.pending.clear();
-      return snap;
-    }
-    markCommittedSinceReset(lsKey: string): void {
-      this.committed.add(lsKey);
-    }
-    committedSinceReset(lsKey: string): boolean {
-      return this.committed.has(lsKey);
-    }
-    hasLastKnownValue(lsKey: string): boolean {
-      return this.lastKnown.has(lsKey);
-    }
-    getLastKnownValue(lsKey: string): unknown {
-      return this.lastKnown.get(lsKey);
-    }
-    setLastKnownValue(lsKey: string, value: unknown): void {
-      this.lastKnown.set(lsKey, value);
-      this.setLastKnownValueCalls.push({ lsKey, value });
-    }
-    markPendingInboundWrite(vscodeKey: string): void {
-      this.pendingInboundWrites.add(vscodeKey);
-    }
-    consumePendingInboundWrite(vscodeKey: string): boolean {
-      return this.pendingInboundWrites.delete(vscodeKey);
-    }
-  }
+  test('a key present in the pending-reset predicate emits {value:null, changed:true}', async () => {
+    const pendingResets = new Set<string>([LS_GLOBAL_KEY.organization]);
 
+    const lspParam = await LanguageServerSettings.fromConfiguration(
+      configuration,
+      () => false,
+      undefined,
+      lsKey => pendingResets.has(lsKey),
+    );
+
+    const orgSetting = lspParam.settings?.[LS_GLOBAL_KEY.organization];
+    assert.strictEqual(orgSetting?.value, null, 'pending-reset key must emit value:null');
+    assert.strictEqual(orgSetting?.changed, true, 'pending-reset key must emit changed:true');
+  });
+
+  test('a key absent from the pending-reset predicate resolves normally (not null)', async () => {
+    const lspParam = await LanguageServerSettings.fromConfiguration(
+      configuration,
+      () => false,
+      undefined,
+      () => false,
+    );
+
+    assert.notStrictEqual(
+      lspParam.settings?.[LS_GLOBAL_KEY.organization]?.value,
+      null,
+      'a key with no pending reset must not emit value:null',
+    );
+  });
+});
+
+// ── D1 regression guard, redesigned: fan-out siblings each get an independent entry ──
+//
+// The old D1 fix existed because the tracker's `committedSinceReset` windowed signal was
+// keyed per shared vscodeKey, so resetting one of four severity_filter_* siblings needed a
+// resolver-seeded "last known value" to disambiguate the other three on the next fan-out
+// event. The explicit-overrides map is keyed per LS key directly, so that ambiguity — and
+// the resolver-seeding workaround for it — no longer exists: resetting one sibling can never
+// affect another sibling's entry, with no seeding step required.
+suite('ConfigurationPersistenceService — D1: fan-out siblings reset independently (no seeding needed)', () => {
   let updateConfigurationStub: sinon.SinonStub;
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
-  let tracker: SpyTracker;
+  let explicitOverridesMap: ExplicitOverridesMap;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -1530,30 +1457,6 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
       setToken: sinon.stub().resolves(),
       getFolderConfigs: sinon.stub().returns([]),
       setFolderConfigs: sinon.stub().resolves(),
-      getFeaturesConfiguration: sinon.stub().returns({
-        ossEnabled: true,
-        codeSecurityEnabled: true,
-        iacEnabled: true,
-        secretsEnabled: true,
-      }),
-      scanningMode: 'auto',
-      organization: 'pre-reset-org',
-      snykApiEndpoint: 'https://api.snyk.io',
-      getInsecure: sinon.stub().returns(false),
-      getAuthenticationMethod: sinon.stub().returns('oauth'),
-      getDeltaFindingsEnabled: sinon.stub().returns(false),
-      getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
-      getAdditionalCliParameters: sinon.stub().returns(''),
-      getAdditionalCliEnvironment: sinon.stub().returns(undefined),
-      getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
-      getAutoConfigureMcpServer: sinon.stub().returns(false),
-      severityFilter: {},
-      issueViewOptions: {},
-      riskScoreThreshold: 0,
-      getTrustedFolders: sinon.stub().returns([]),
-      getCliPath: sinon.stub().resolves(''),
-      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
-      getCliBaseDownloadUrl: sinon.stub().returns(''),
     } as unknown as IConfiguration;
 
     scopeDetectionService = {
@@ -1573,75 +1476,6 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    tracker = new SpyTracker();
-  });
-
-  teardown(() => sinon.restore());
-
-  function newService(): ConfigurationPersistenceService {
-    return new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      tracker,
-    );
-  }
-
-  // D1 integration guard: setLastKnownValue must be called for the reset key with the
-  // post-reset resolved value. The organization resolver returns configuration.organization
-  // (a sync string). Removing the seeding call in applyOutboundGlobalResets makes this fail.
-  test('D1-integration: handleSaveConfig calls setLastKnownValue for the reset key with post-reset resolved value', async () => {
-    const service = newService();
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.organization]: null,
-    });
-
-    await service.handleSaveConfig(configJson);
-
-    // setLastKnownValue must have been called for the reset key.
-    const seedCall = tracker.setLastKnownValueCalls.find(c => c.lsKey === LS_GLOBAL_KEY.organization);
-    assert.ok(
-      seedCall !== undefined,
-      'D1-integration: setLastKnownValue must be called for the organization reset key in the ' +
-        'onWriteSuccess callback of applyOutboundGlobalResets. ' +
-        'FAIL here means the D1 seeding call was removed — the subsequent applySettingsMap fan-out ' +
-        'will cold-cache-mark committedSinceReset for this key, suppressing re-enqueue of pending resets.',
-    );
-
-    // The seeded value must be the post-reset resolved value from SETTINGS_REGISTRY[org].resolve(config).
-    // For organization: resolve = c => c.organization = 'pre-reset-org' (the live config value).
-    assert.strictEqual(
-      seedCall.value,
-      'pre-reset-org',
-      'D1-integration: the seeded lastKnownValue must equal the post-reset resolved value ' +
-        '(SETTINGS_REGISTRY.organization.resolve(configuration) = configuration.organization). ' +
-        'FAIL here means the wrong value was seeded — the fan-out guard will still cold-cache-mark ' +
-        'committedSinceReset if the seeded value does not match the resolver output.',
-    );
-  });
-
-  // D1 fan-out guard (severity fan-out): the REAL defect class is fan-out keys.
-  //
-  // Scenario: all four severity_filter_* keys are reset via handleSaveConfig (null values).
-  // The D1 fix seeds lastKnownValue for each key immediately after the VS Code override clear.
-  // A subsequent snyk.severity onDidChangeConfiguration fan-out fires; the resolver returns
-  // the post-reset values (same as seeded). Because the cache is warm and the value is unchanged,
-  // committedSinceReset must NOT be marked for any of the four reset keys.
-  //
-  // This test goes RED when the seeding block in applyOutboundGlobalResets is removed for fan-out
-  // keys: without the seed, the cache is cold → the cold-cache guard fires → committedSinceReset
-  // IS marked → shouldSkipReenqueue returns true → the pending reset is permanently dropped.
-  //
-  // Uses the REAL ExplicitLspConfigurationChangeTracker (not a fake) so the production guard
-  // logic (hasLastKnownValue + lodash isEqual) is exercised directly.
-  test('D1-fanout-severity: after outbound severity reset, post-reset fan-out does NOT mark committedSinceReset for reset keys', async () => {
-    // Make a real in-memory Memento for the real tracker.
     const store = new Map<string, unknown>();
     const memento: import('vscode').Memento = {
       get<T>(key: string, defaultValue?: T): T {
@@ -1655,23 +1489,58 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
         return [...store.keys()];
       },
     };
-    const realTracker = new ExplicitLspConfigurationChangeTracker(memento);
+    explicitOverridesMap = new ExplicitOverridesMap(memento);
+  });
 
-    // Build a service with the real tracker. Configuration has severityFilter: {} so
-    // resolve() falls back to `?? true` for all severity sub-keys.
-    const service = new ConfigurationPersistenceService(
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       clientAdapter,
       logger,
       undefined,
-      realTracker,
+      undefined,
+      explicitOverridesMap,
     );
+  }
 
-    // Reset all four severity_filter_* keys — this triggers the D1 seeding path for fan-out keys.
-    // Each key's onWriteSuccess seeds lastKnownValue with the resolved value (true for all,
-    // via `configuration.severityFilter?.critical ?? true` etc. with severityFilter:{}).
+  test('resetting only one of four severity_filter_* siblings records a reset for that key alone', async () => {
+    // Pre-existing concrete values for the OTHER three siblings — resetting one must not touch them.
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.severityFilterHigh, true);
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.severityFilterMedium, false);
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.severityFilterLow, true);
+
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.severityFilterCritical]: null,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), { kind: 'reset' });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
+      kind: 'value',
+      value: true,
+    });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+      kind: 'value',
+      value: false,
+    });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), {
+      kind: 'value',
+      value: true,
+    });
+  });
+
+  test('resetting all four severity_filter_* siblings records an independent reset entry for each', async () => {
+    const service = newService();
+
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'tok',
@@ -1683,48 +1552,14 @@ suite('ConfigurationPersistenceService — D1: setLastKnownValue seeded after ou
 
     await service.handleSaveConfig(configJson);
 
-    // Post-reset precondition: markPendingReset clears committedSinceReset for each key.
-    assert.ok(
-      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
-      'D1-fanout-severity precondition: committedSinceReset must be false after reset (markPendingReset cleared it)',
-    );
-
-    // Fire the production fan-out: snyk.severity onDidChangeConfiguration.
-    // Resolver returns the post-reset resolved values (same as seeded: true for all keys,
-    // from configuration.severityFilter?.* ?? true with severityFilter:{}).
-    const postResetValues: Record<string, unknown> = {
-      [LS_GLOBAL_KEY.severityFilterCritical]: true,
-      [LS_GLOBAL_KEY.severityFilterHigh]: true,
-      [LS_GLOBAL_KEY.severityFilterMedium]: true,
-      [LS_GLOBAL_KEY.severityFilterLow]: true,
-    };
-    const fakeEvent = {
-      affectsConfiguration(key: string): boolean {
-        return key === 'snyk.severity';
-      },
-    };
-    markExplicitLsKeysFromConfigurationChangeEvent(fakeEvent, realTracker, lsKey => postResetValues[lsKey]);
-
-    // With the D1 seed: cache is warm (seeded to true), resolver returns true (unchanged).
-    // Production guard: cacheWasCold=false, isEqual(true, true)=true → does NOT mark committedSinceReset.
-    // Without the D1 seed: cache is cold → cacheWasCold=true → marks committedSinceReset → pending reset dropped.
-    assert.ok(
-      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
-      'D1-fanout-severity: severity_filter_critical must NOT be marked committedSinceReset after warm-cache fan-out. ' +
-        'FAIL here means the D1 seeding was skipped for fan-out keys — the cold-cache guard fired and the pending reset will be dropped.',
-    );
-    assert.ok(
-      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh),
-      'D1-fanout-severity: severity_filter_high must NOT be marked committedSinceReset after warm-cache fan-out.',
-    );
-    assert.ok(
-      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium),
-      'D1-fanout-severity: severity_filter_medium must NOT be marked committedSinceReset after warm-cache fan-out.',
-    );
-    assert.ok(
-      !realTracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow),
-      'D1-fanout-severity: severity_filter_low must NOT be marked committedSinceReset after warm-cache fan-out.',
-    );
+    for (const lsKey of [
+      LS_GLOBAL_KEY.severityFilterCritical,
+      LS_GLOBAL_KEY.severityFilterHigh,
+      LS_GLOBAL_KEY.severityFilterMedium,
+      LS_GLOBAL_KEY.severityFilterLow,
+    ]) {
+      assert.deepStrictEqual(explicitOverridesMap.getEntry(lsKey), { kind: 'reset' }, `${lsKey} must be reset`);
+    }
   });
 });
 
@@ -1817,6 +1652,218 @@ suite('ConfigurationPersistenceService — outbound save marks explicit', () => 
       realTracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
       'A genuine user save from the settings webview must be marked explicitly-changed so the LS receives changed:true and honors the override.',
     );
+  });
+});
+
+// ── Outbound concrete-value save: explicit-overrides map + last-known-value cache ──
+// Covers the non-reset leg of applyOutboundSettingsMap: every key present in the save
+// payload writes the VS Code setting, records the raw payload value in the
+// explicit-overrides map, and updates the last-known-value cache — with no comparison
+// against any previously-observed value gating whether the write happens.
+suite('ConfigurationPersistenceService — outbound concrete-value save records new structures', () => {
+  let workspace: IVSCodeWorkspace;
+  let configuration: IConfiguration;
+  let scopeDetectionService: IScopeDetectionService;
+  let clientAdapter: ILanguageClientAdapter;
+  let logger: ILog;
+  let updateConfigurationStub: sinon.SinonStub;
+  let explicitOverridesMap: ExplicitOverridesMap;
+  let lastKnownValueCache: LastKnownValueCache;
+
+  setup(() => {
+    updateConfigurationStub = sinon.stub().resolves();
+    workspace = {
+      updateConfiguration: updateConfigurationStub,
+      getConfiguration: sinon.stub().returns(undefined),
+      getWorkspaceFolders: sinon.stub().returns([]),
+      getWorkspaceFolderPaths: sinon.stub().returns([]),
+      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
+    } as unknown as IVSCodeWorkspace;
+
+    configuration = {
+      getToken: sinon.stub().resolves('tok'),
+      setToken: sinon.stub().resolves(),
+      getFolderConfigs: sinon.stub().returns([]),
+      setFolderConfigs: sinon.stub().resolves(),
+    } as unknown as IConfiguration;
+
+    scopeDetectionService = {
+      getSettingScope: sinon.stub().returns('user'),
+      populateScopeIndicators: sinon.stub().returns(''),
+      shouldSkipSettingUpdate: sinon.stub().returns(false),
+    } as unknown as IScopeDetectionService;
+
+    clientAdapter = {
+      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
+    } as unknown as ILanguageClientAdapter;
+
+    logger = {
+      info: sinon.stub(),
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      warn: sinon.stub(),
+    } as unknown as ILog;
+
+    const store = new Map<string, unknown>();
+    const memento: import('vscode').Memento = {
+      get<T>(key: string, defaultValue?: T): T {
+        return (store.has(key) ? store.get(key) : defaultValue) as T;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        store.set(key, value);
+        return Promise.resolve();
+      },
+      keys(): readonly string[] {
+        return [...store.keys()];
+      },
+    };
+    explicitOverridesMap = new ExplicitOverridesMap(memento);
+    lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
+  });
+
+  teardown(() => sinon.restore());
+
+  function newService(): ConfigurationPersistenceService {
+    return new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      undefined,
+      undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
+    );
+  }
+
+  test('a changed field writes the setting, records it in the explicit-overrides map, and updates the cache', async () => {
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.organization]: 'new-org',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.organization',
+      'new-org',
+      true,
+    );
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
+      kind: 'value',
+      value: 'new-org',
+    });
+    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), 'new-org');
+  });
+
+  test('a field absent from the payload is never written and never recorded', async () => {
+    const service = newService();
+
+    // organization is intentionally omitted — the user never touched it this session.
+    const configJson = JSON.stringify({ isFallbackForm: false, token: 'tok' });
+
+    await service.handleSaveConfig(configJson);
+
+    sinon.assert.neverCalledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.organization');
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
+  });
+
+  test('a write that throws does not record an explicit-overrides entry or update the cache', async () => {
+    updateConfigurationStub.rejects(new Error('VS Code write failed'));
+    lastKnownValueCache.set(ADVANCED_ORGANIZATION, 'pre-existing-cached-value');
+
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.organization]: 'new-org',
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
+    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), 'pre-existing-cached-value');
+  });
+
+  test('only the present sibling of a shared-vscodeKey fan-out group is recorded', async () => {
+    const service = newService();
+
+    // Only severity_filter_high was touched this session — its three siblings are absent.
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.severityFilterHigh]: false,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
+      kind: 'value',
+      value: false,
+    });
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined);
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), undefined);
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), undefined);
+  });
+
+  test('a recording exception for one fan-out sibling does not skip recording the others', async () => {
+    const setExplicitValueCalls: string[] = [];
+    const throwingMap: IExplicitOverridesMap = {
+      setExplicitValue: (lsKey: string, value: unknown) => {
+        setExplicitValueCalls.push(lsKey);
+        if (lsKey === LS_GLOBAL_KEY.severityFilterCritical) {
+          throw new Error('simulated recording failure');
+        }
+        explicitOverridesMap.setExplicitValue(lsKey, value);
+      },
+      setReset: (lsKey: string) => explicitOverridesMap.setReset(lsKey),
+      getEntry: (lsKey: string) => explicitOverridesMap.getEntry(lsKey),
+      confirmResetDelivered: (lsKey: string) => explicitOverridesMap.confirmResetDelivered(lsKey),
+    };
+
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      undefined,
+      undefined,
+      throwingMap,
+      lastKnownValueCache,
+    );
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.severityFilterCritical]: true,
+      [LS_GLOBAL_KEY.severityFilterHigh]: false,
+      [LS_GLOBAL_KEY.severityFilterMedium]: true,
+      [LS_GLOBAL_KEY.severityFilterLow]: false,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    assert.strictEqual(setExplicitValueCalls.length, 4, 'all four siblings must have been attempted');
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
+      kind: 'value',
+      value: false,
+    });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+      kind: 'value',
+      value: true,
+    });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), {
+      kind: 'value',
+      value: false,
+    });
   });
 });
 
@@ -2617,8 +2664,8 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 
   teardown(() => sinon.restore());
 
-  test('multi-key batch: both groups queue a pending reset', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+  test('multi-key batch: both groups record a reset entry', async () => {
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
     const updateConfigurationStub = sinon.stub().resolves();
     const workspace = {
@@ -2636,7 +2683,8 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       clientAdapter,
       logger,
       undefined,
-      tracker,
+      undefined,
+      explicitOverridesMap,
     );
 
     // Use two keys that map to DIFFERENT vscodeKeys: organization and scan_net_new.
@@ -2650,14 +2698,13 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 
     await service.handleSaveConfig(configJson);
 
-    const pending = tracker.consumePendingResets();
-    assert.ok(pending.has(LS_GLOBAL_KEY.organization), 'organization must be in pending resets');
-    assert.ok(pending.has(LS_GLOBAL_KEY.scanNetNew), 'scan_net_new must be in pending resets');
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.scanNetNew), { kind: 'reset' });
   });
 
   // Write failure in one group must NOT abort the batch (per-group try/catch preserved).
   test('write failure in first group does not abort batch — second group still resets', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
     let callCount = 0;
     // First vscodeKey write fails; second succeeds. Iteration order follows
@@ -2684,7 +2731,8 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       clientAdapter,
       logger,
       undefined,
-      tracker,
+      undefined,
+      explicitOverridesMap,
     );
 
     // Two keys with different vscodeKeys: organization and scan_net_new.
@@ -2697,35 +2745,37 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 
     await service.handleSaveConfig(configJson);
 
-    // The second (successful) group's reset must still be queued despite the first failing.
-    const pending = tracker.consumePendingResets();
-    assert.ok(
-      pending.has(LS_GLOBAL_KEY.organization),
-      'organization must still be queued as a pending reset after the first group (scan_net_new) failed',
+    // The second (successful) group's reset must still be recorded despite the first failing.
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+      { kind: 'reset' },
+      'organization must still be recorded as reset after the first group (scan_net_new) failed',
     );
-    assert.ok(!pending.has(LS_GLOBAL_KEY.scanNetNew), 'scan_net_new must NOT be queued — its write failed');
+    assert.strictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.scanNetNew),
+      undefined,
+      'scan_net_new must NOT be recorded — its write failed',
+    );
   });
 });
 
 // ── CP-2.1/2.2/2.3: Regression guard for IDE-2149 ───────────────────────────
 //
 // These tests encode the customer-visible outcome for the Project Defaults reset bug
-// (IDE-2149). They use the REAL ScopeDetectionService (not a stub) so that the skip
-// predicate runs the actual ADR-1 production logic.
+// (IDE-2149): after a reset clears the VS Code global override, the resolved scope was
+// 'default', and a guard that compared the saved value against the package.json schema
+// default (true for snyk_code_enabled) silently skipped a matching re-enable save. The LS
+// never received the re-enabled value.
 //
-// Root cause: after a Project Defaults reset clears the VS Code global override
-// (globalValue = undefined), the resolved scope is 'default'. The old guard returned
-// _.isEqual(value, inspection.defaultValue). For snyk_code_enabled the schema default
-// is true. So saving true → isEqual(true, true) = true → write skipped. The LS never
-// received the re-enabled value.
-//
-// Fix (CP-2.2): EFFECTIVE_VALUE_UNKNOWN sentinel + 5th parameter to shouldSkipSettingUpdate;
-// effectiveByVscodeKey snapshot captured in persistInboundLspConfiguration; effective value
-// threaded into the guard from applySettingsMap.
-//
-// These tests are now GREEN and serve as regression guards. Removing either assertion
-// in ACC-001 would make the test pass trivially — both are required.
-// The guard IS the real ScopeDetectionService; workspace and clientAdapter are sibling fakes.
+// The outbound save path no longer has ANY such gate: `saveConfigToVSCodeSettings` never
+// consults `effectiveByVscodeKey` or `shouldSkipSettingUpdate` at all (see
+// `applyOutboundSettingsMap`), so this bug class is now structurally impossible for a
+// webview save, regardless of what the schema default or any previously-observed inbound
+// effective value happens to be — every key present in the save payload is written
+// directly, full stop. `effectiveByVscodeKey` still exists for the (separately migrated)
+// INBOUND leg (`persistInboundLspConfiguration`), so these tests keep using the real
+// `ScopeDetectionService` and drive inbound pushes to prove the outbound save is
+// unaffected by whatever state inbound left behind.
 
 // ── Shared helpers for the CP-2.1 suite ──────────────────────────────────────
 
@@ -2833,13 +2883,12 @@ const INBOUND_PARAM_CODE_FALSE: LspConfigurationParam = {
 
 // ── ACC-001: Acceptance test — the customer-visible outcome ───────────────────
 //
-// Given: LS-resolved effective value for Snyk Code is false (snapshot held by service);
+// Given: LS-resolved effective value for Snyk Code is false (captured by the INBOUND leg);
 //        a Project Defaults reset has cleared the VS Code global override (no globalValue);
 //        inspect() returns the real schema default: { defaultValue: true, globalValue: undefined }.
-// When:  The user re-enables Snyk Code (true) through the real save path (handleSaveConfig
-//        → real ScopeDetectionService).
+// When:  The user re-enables Snyk Code (true) through the real save path (handleSaveConfig).
 // Then:  updateConfiguration IS called with the Snyk Code VS Code key, value true, global scope.
-//        (The write is NOT skipped — the effective value false ≠ new value true.)
+//        (The outbound save never gates on the inbound-captured effective value at all.)
 suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-baseline skip)', () => {
   let updateConfigStub: sinon.SinonStub;
   let workspace: IVSCodeWorkspace;
@@ -2903,7 +2952,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     );
   });
 
-  // INT-001: value equals schema default but differs from effective value → write happens
+  // INT-001: value equals schema default but differs from the inbound-captured effective value → writes
   test('TestApplySettingsMap_RealGuard_SchemaDefaultButDiffersFromEffective_Writes', async () => {
     const service = newService();
 
@@ -2911,8 +2960,8 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
     updateConfigStub.reset();
 
-    // Save true — equals schema default (true) but NOT the effective value (false).
-    // Guard reads effective false, sees true ≠ false → does NOT skip → writes.
+    // Save true — equals schema default (true), differs from the inbound effective value (false).
+    // The outbound save writes it either way; it never consults the inbound snapshot.
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'tok',
@@ -2927,12 +2976,15 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     assert.ok(
       codeSecurityWrites.length > 0,
       'INT-001: updateConfiguration must be called for features.codeSecurity with value true ' +
-        'when value equals schema default but differs from LS effective value.',
+        'when value equals schema default but differs from the inbound-captured effective value.',
     );
   });
 
-  // INT-002: value equals the effective value → write is correctly skipped
-  test('TestApplySettingsMap_RealGuard_EqualsEffective_Skips', async () => {
+  // INT-002 (inverted from the pre-redesign guard): value equals the inbound-captured effective
+  // value → the outbound save still writes it. Both webviews only send a field when its value
+  // genuinely changed client-side, so a match against a server-side snapshot must never suppress
+  // the write — that comparison is exactly what this redesign removes from the outbound leg.
+  test('TestApplySettingsMap_RealGuard_EqualsEffective_StillWrites', async () => {
     // Effective value from LS: true (org policy enables Snyk Code — already enabled).
     const inboundTrue: LspConfigurationParam = {
       settings: {
@@ -2946,34 +2998,8 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     await service.persistInboundLspConfiguration(inboundTrue);
     updateConfigStub.reset();
 
-    // Save true — equals effective value true → skipped (redundant write).
-    // Guard reads effective true, sees true === true → skips.
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
-    });
-    await service.handleSaveConfig(configJson);
-
-    const codeSecurityWrites = updateConfigStub
-      .getCalls()
-      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION);
-
-    assert.strictEqual(
-      codeSecurityWrites.length,
-      0,
-      'INT-002: updateConfiguration must NOT be called when saving a value that equals the effective value — ' +
-        'write would be redundant (effective already true, saving true).',
-    );
-  });
-
-  // INT-003: no inbound snapshot yet; value equals schema default; no override → must NOT skip
-  test('TestApplySettingsMap_RealGuard_NoSnapshot_DoesNotSkipOnSchemaDefault', async () => {
-    // No persistInboundLspConfiguration call → effectiveByVscodeKey is empty.
-    const service = newService();
-
-    // Save true — schema default = true, no globalValue, effective unknown.
-    // effectiveValue is UNKNOWN → fallback: 'default' scope returns false → writes.
+    // Save true — equals the inbound effective value true. The outbound save never compares
+    // against it, so the write still happens.
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'tok',
@@ -2987,21 +3013,43 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
 
     assert.ok(
       codeSecurityWrites.length > 0,
-      'INT-003: updateConfiguration must be called when effective value is unknown — ' +
-        'the fallback must never skip on schema-default equality alone.',
+      'INT-002: updateConfiguration must be called even when saving a value that equals the ' +
+        'inbound-captured effective value — the outbound save has no gate to suppress it.',
     );
   });
 
-  // INT-004: persistInboundLspConfiguration captures the effective snapshot for later saves
+  // INT-003: no inbound snapshot yet; value equals schema default; no override → still writes
+  test('TestApplySettingsMap_RealGuard_NoSnapshot_DoesNotSkipOnSchemaDefault', async () => {
+    // No persistInboundLspConfiguration call — irrelevant to the outbound save either way.
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.snykCodeEnabled]: true,
+    });
+    await service.handleSaveConfig(configJson);
+
+    const codeSecurityWrites = updateConfigStub
+      .getCalls()
+      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === CODE_SECURITY_SECTION && c.args[2] === true);
+
+    assert.ok(
+      codeSecurityWrites.length > 0,
+      'INT-003: updateConfiguration must be called regardless of whether an inbound snapshot exists ' +
+        'or the value happens to equal the schema default.',
+    );
+  });
+
+  // INT-004: an inbound snapshot captured earlier has no bearing on a later outbound save
   test('TestPersistInbound_CapturesEffectiveSnapshotForLaterSaves', async () => {
     const service = newService();
 
-    // Step 1: LS sends effective false.
+    // Step 1: LS sends effective false — captured for the (separately migrated) inbound leg only.
     await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
     updateConfigStub.reset();
 
-    // Step 2: Save true — consults the captured effective value (false) and does NOT skip.
-    // effectiveByVscodeKey has {codeSecurity → false}, guard sees true ≠ false → writes.
+    // Step 2: Save true — the outbound save writes it unconditionally.
     const configJson = JSON.stringify({
       isFallbackForm: false,
       token: 'tok',
@@ -3015,8 +3063,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
 
     assert.ok(
       codeSecurityWrites.length > 0,
-      'INT-004: persistInboundLspConfiguration must capture the effective snapshot so a subsequent ' +
-        'save consults it and does not skip on schema-default equality.',
+      'INT-004: a prior inbound snapshot must not affect a later outbound save — it is never consulted.',
     );
   });
 });
@@ -3034,12 +3081,15 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
 // Fix: accumulate/merge partial objects in captureEffectiveSnapshot using the same
 // setOrMerge logic as mapLspSettingsToVscodeSettings, so the stored effective value
 // has the same shape the guard compares against.
+//
+// `effectiveByVscodeKey` and its guard are now INBOUND-only (the outbound save no longer
+// consults them at all — see the IDE-2149 suite above), so this merge-correctness fix is
+// probed via a second inbound push rather than an outbound save.
 
 suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey partials (Defect 1)', () => {
   let updateConfigStub: sinon.SinonStub;
   let workspace: IVSCodeWorkspace;
   let realScopeService: ScopeDetectionService;
-  let logger: ILog;
 
   setup(() => {
     updateConfigStub = sinon.stub().resolves();
@@ -3129,13 +3179,13 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     );
   }
 
-  // Defect 1a: after a full severity batch inbound, saving the identical merged value must be SKIPPED.
-  // RED reason (before fix): snapshot holds only the last-written partial {low:true};
+  // Defect 1a: after a full severity batch inbound, an identical second inbound push must be
+  // SKIPPED. RED reason (before fix): snapshot holds only the last-written partial {low:true};
   //   _.isEqual({critical,high,medium,low}, {low:true}) = false → guard always writes → spurious update.
-  test('Defect1a: saving merged severity equal to effective snapshot is skipped (no spurious write)', async () => {
+  test('Defect1a: a second identical inbound severity batch is skipped (no spurious write)', async () => {
     const service = newService();
 
-    // Inbound: LS sends all four severity keys (effective = all enabled).
+    // First inbound push: LS sends all four severity keys (effective = all enabled).
     const inboundAllSeverity: LspConfigurationParam = {
       settings: {
         [LS_GLOBAL_KEY.severityFilterCritical]: { value: true, changed: false },
@@ -3147,16 +3197,8 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     await service.persistInboundLspConfiguration(inboundAllSeverity);
     updateConfigStub.reset();
 
-    // Outbound: user saves with the identical merged value → must be skipped (no-op).
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.severityFilterCritical]: true,
-      [LS_GLOBAL_KEY.severityFilterHigh]: true,
-      [LS_GLOBAL_KEY.severityFilterMedium]: true,
-      [LS_GLOBAL_KEY.severityFilterLow]: true,
-    });
-    await service.handleSaveConfig(configJson);
+    // Second, identical inbound push → must be skipped against the merged snapshot (no-op).
+    await service.persistInboundLspConfiguration(inboundAllSeverity);
 
     const severityWrites = updateConfigStub
       .getCalls()
@@ -3165,18 +3207,17 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     assert.strictEqual(
       severityWrites.length,
       0,
-      `Defect1a regression: severity write must be skipped when the saved value equals the effective snapshot. ` +
-        `Got ${severityWrites.length} write(s). ` +
-        `A write here means captureEffectiveSnapshot stored a partial object instead of merging the shared ` +
-        `vscodeKey partials (last-writer-wins reintroduced), so the merged value no longer equals the snapshot and the guard never skips.`,
+      `Defect1a regression: a second identical inbound push must be skipped against the merged effective ` +
+        `snapshot. Got ${severityWrites.length} write(s). A write here means captureEffectiveSnapshot stored a ` +
+        `partial object instead of merging the shared vscodeKey partials (last-writer-wins reintroduced), so the ` +
+        `merged value no longer equals the snapshot and the guard never skips.`,
     );
   });
 
   // Defect 1b: same for issueViewOptions (two LS keys → one vscodeKey).
-  test('Defect1b: saving merged issueViewOptions equal to effective snapshot is skipped', async () => {
+  test('Defect1b: a second identical inbound issueViewOptions batch is skipped', async () => {
     const service = newService();
 
-    // Inbound: LS sends both issueView keys (effective = both visible).
     const inboundIssueView: LspConfigurationParam = {
       settings: {
         [LS_GLOBAL_KEY.issueViewOpenIssues]: { value: true, changed: false },
@@ -3186,14 +3227,8 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     await service.persistInboundLspConfiguration(inboundIssueView);
     updateConfigStub.reset();
 
-    // Outbound: user saves with identical values → must be skipped.
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.issueViewOpenIssues]: true,
-      [LS_GLOBAL_KEY.issueViewIgnoredIssues]: true,
-    });
-    await service.handleSaveConfig(configJson);
+    // Second, identical inbound push → must be skipped.
+    await service.persistInboundLspConfiguration(inboundIssueView);
 
     const issueViewWrites = updateConfigStub
       .getCalls()
@@ -3202,10 +3237,10 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
     assert.strictEqual(
       issueViewWrites.length,
       0,
-      `Defect1b regression: issueViewOptions write must be skipped when the saved value equals the effective snapshot. ` +
-        `Got ${issueViewWrites.length} write(s). ` +
-        `A write here means captureEffectiveSnapshot left a partial {ignoredIssues:true} instead of merging both ` +
-        `issueView partials, so isEqual({openIssues,ignoredIssues}, {ignoredIssues}) is false and the guard never skips.`,
+      `Defect1b regression: a second identical inbound push must be skipped against the merged effective ` +
+        `snapshot. Got ${issueViewWrites.length} write(s). A write here means captureEffectiveSnapshot left a ` +
+        `partial {ignoredIssues:true} instead of merging both issueView partials, so ` +
+        `isEqual({openIssues,ignoredIssues}, {ignoredIssues}) is false and the guard never skips.`,
     );
   });
 });
@@ -3531,24 +3566,18 @@ suite('ConfigurationPersistenceService — Fix 2: undefined value treated as res
   });
 });
 
-// ── Fix: onWriteSuccess callback exception must not skip remaining fan-out siblings ─
+// ── Fix: a per-key recording exception must not skip remaining fan-out siblings ─
 //
-// applyVscodeKeyResets iterates lsKeys for a shared vscodeKey and calls onWriteSuccess(lsKey)
-// for each one.  If the callback throws for lsKey[0] (e.g. the D1 resolver throws), the
-// catch block for the outer try/catch (which wraps the VS Code write) absorbs the throw,
-// causing lsKey[1..N] to never receive their onWriteSuccess call → markPendingReset is never
-// called for those siblings → the LS misses the reset signal for those keys.
-//
-// The fix wraps each onWriteSuccess(lsKey) invocation in its own per-key try/catch so
-// that a callback failure for one key never prevents the remaining keys from being notified.
-suite('ConfigurationPersistenceService — onWriteSuccess callback exception resilience', () => {
+// applyOutboundGlobalResets iterates lsKeys for a shared vscodeKey and records a reset in
+// the explicit-overrides map for each one. If recording throws for lsKey[0], that must not
+// prevent lsKey[1..N] from being recorded — each is wrapped in its own per-key try/catch.
+suite('ConfigurationPersistenceService — per-key recording exception resilience', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let originalCriticalResolve: typeof SETTINGS_REGISTRY[typeof LS_GLOBAL_KEY.severityFilterCritical]['resolve'];
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -3583,38 +3612,25 @@ suite('ConfigurationPersistenceService — onWriteSuccess callback exception res
       error: sinon.stub(),
       warn: sinon.stub(),
     } as unknown as ILog;
-
-    originalCriticalResolve = SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve;
   });
 
-  teardown(() => {
-    SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalCriticalResolve;
-    sinon.restore();
-  });
+  teardown(() => sinon.restore());
 
   // All four severity_filter_* keys share the same vscodeKey (a fan-out group).
-  // If the D1 resolver throws for severity_filter_critical (the first key processed),
-  // the remaining three siblings must still receive markPendingReset via onWriteSuccess.
-  test('resolver throw for first fan-out sibling does not skip markPendingReset for remaining siblings', async () => {
-    // Force the severity_filter_critical resolver to throw to simulate the failure.
-    SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = () => {
-      throw new Error('simulated resolver boom');
-    };
-
-    const markPendingResetSpy = sinon.spy();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.spy(),
-      unmarkExplicitlyChanged: sinon.spy(),
-      isExplicitlyChanged: sinon.stub().returns(false),
-      consumePendingResets: sinon.stub().returns(new Set()),
-      markPendingReset: markPendingResetSpy,
-      committedSinceReset: sinon.stub().returns(false),
-      markCommittedSinceReset: sinon.spy(),
-      setLastKnownValue: sinon.spy(),
-      hasLastKnownValue: sinon.stub().returns(false),
-      getLastKnownValue: sinon.stub().returns(undefined),
-      markPendingInboundWrite: sinon.spy(),
-      consumePendingInboundWrite: sinon.stub().returns(false),
+  // If recording a reset throws for severity_filter_critical (the first key processed),
+  // the remaining three siblings must still be recorded.
+  test('a recording exception for the first fan-out sibling does not skip the remaining siblings', async () => {
+    const setResetCalls: string[] = [];
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.spy(),
+      setReset: (lsKey: string) => {
+        setResetCalls.push(lsKey);
+        if (lsKey === LS_GLOBAL_KEY.severityFilterCritical) {
+          throw new Error('simulated recording failure');
+        }
+      },
+      getEntry: sinon.stub().returns(undefined),
+      confirmResetDelivered: sinon.spy(),
     };
 
     const service = new ConfigurationPersistenceService(
@@ -3624,7 +3640,8 @@ suite('ConfigurationPersistenceService — onWriteSuccess callback exception res
       clientAdapter,
       logger,
       undefined, // contextService — not needed for this test
-      tracker,
+      undefined,
+      explicitOverridesMap,
     );
 
     // Send all four severity keys as null → outbound reset for the fan-out group.
@@ -3638,13 +3655,20 @@ suite('ConfigurationPersistenceService — onWriteSuccess callback exception res
 
     await service.handleSaveConfig(config);
 
-    // All four siblings must have their pending reset marked — the resolver throw for
-    // severity_filter_critical must not prevent the other three from being marked.
+    // All four siblings must have been attempted — the throw for severity_filter_critical
+    // must not prevent the other three from being recorded.
     assert.strictEqual(
-      markPendingResetSpy.callCount,
+      setResetCalls.length,
       4,
-      `Expected markPendingReset to be called 4 times (once per severity sibling) but got ${markPendingResetSpy.callCount}. ` +
-        'A resolver throw for severity_filter_critical must not skip the remaining siblings.',
+      `Expected setReset to be attempted 4 times (once per severity sibling) but got ${setResetCalls.length}. ` +
+        'A recording exception for severity_filter_critical must not skip the remaining siblings.',
     );
+    for (const lsKey of [
+      LS_GLOBAL_KEY.severityFilterHigh,
+      LS_GLOBAL_KEY.severityFilterMedium,
+      LS_GLOBAL_KEY.severityFilterLow,
+    ]) {
+      assert.ok(setResetCalls.includes(lsKey), `${lsKey} must have been recorded despite the sibling's throw`);
+    }
   });
 });

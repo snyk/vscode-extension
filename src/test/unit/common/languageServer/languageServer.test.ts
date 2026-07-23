@@ -37,6 +37,7 @@ import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeVie
 import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import {
   IScopeDetectionService,
@@ -1485,12 +1486,14 @@ suite('Language Server', () => {
       );
     });
 
-    // IDE-2264: the outbound reset path survives a genuinely delayed onDidChangeConfiguration
-    // dispatch, via the same fix (write-time tag) as inbound persistence. Uses the real
-    // ConfigurationPersistenceService.handleSaveConfig (production wiring), not a hand-rolled
-    // tracker call, so it exercises applyVscodeKeyResets' actual tag placement.
-    test('a change event delayed past the write no longer deletes the pending reset', async () => {
+    // The outbound save path now records a reset directly in the explicit-overrides map
+    // (ConfigurationPersistenceService.applyOutboundGlobalResets) instead of the old tracker's
+    // write-time tag + pendingResets set. Nothing wires the onDidChangeConfiguration listener to
+    // the explicit-overrides map, so a genuinely delayed dispatch has nothing to interfere with —
+    // this adversarial-ordering class of bug is now structurally impossible for the outbound leg.
+    test('a change event delayed past the write does not affect the explicit-overrides reset entry', async () => {
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+      const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
       const deferredDispatches: Array<() => void> = [];
@@ -1501,9 +1504,6 @@ suite('Language Server', () => {
         getWorkspaceFolders: () => [],
         getWorkspaceFolderPaths: () => [],
         getConfiguration: () => undefined,
-        // A pre-existing global override so applyVscodeKeyResets takes its mark+write branch
-        // — this test exercises the delayed-dispatch survival of that write, so there must
-        // be an override for the write to actually happen [IDE-2264].
         inspectConfiguration: () => ({
           defaultValue: undefined,
           globalValue: 'existing-org',
@@ -1534,6 +1534,7 @@ suite('Language Server', () => {
         logger,
         undefined,
         tracker,
+        explicitOverridesMap,
       );
 
       const ls = makeLanguageServerWithListener(tracker, fn => {
@@ -1545,20 +1546,16 @@ suite('Language Server', () => {
         JSON.stringify({ isFallbackForm: false, [LS_GLOBAL_KEY.organization]: null }),
       );
 
-      // The write's change event has NOT fired yet.
-      assert.ok(tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization), 'reset queued before the event fires');
-      // consumePendingResets() drained it above — requeue to observe what the deferred event does to it.
-      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
+      // The reset is recorded directly — no write-time tag involved.
+      assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
 
-      // The change event finally arrives, long after the write returned. The write-time tag
-      // (set by applyVscodeKeyResets before its updateConfiguration call, inside
-      // handleSaveConfig above) is what protects the pending reset.
+      // The change event finally arrives, long after the write returned.
       deferredDispatches.forEach(dispatch => dispatch());
 
-      assert.ok(
-        tracker.consumePendingResets().has(LS_GLOBAL_KEY.organization),
-        'fix verified: the write-time tag survives a genuinely delayed dispatch, ' +
-          'same mechanism as the inbound path',
+      assert.deepStrictEqual(
+        explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+        { kind: 'reset' },
+        'a delayed onDidChangeConfiguration dispatch must not affect the explicit-overrides reset entry',
       );
     });
   });
