@@ -117,7 +117,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
       if (Object.keys(settingsMap).length > 0) {
         this.logger.debug('Persisting inbound Snyk Language Server configuration to VS Code settings');
-        await this.applySettingsMap(settingsMap);
+        await this.applySettingsMap(settingsMap, true);
       }
 
       // Capture the LS-resolved effective values AFTER writing, so that subsequent
@@ -260,26 +260,38 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   /**
-   * Marks `vscodeKey` pending BEFORE writing, so the pending marker exists no matter how
-   * quickly (or slowly) VS Code delivers the resulting `onDidChangeConfiguration` event. If
-   * the write throws, no such event will ever arrive to consume the marker, so it is consumed
-   * here instead, before rethrowing — otherwise it would leak forward and silently suppress
-   * the explicit-change marking of the next genuine user edit of this key [IDE-2264]. Shared by
-   * both `applyVscodeKeyResets` and `applySettingsMap` so neither call site can forget to pair
-   * the mark with a failure-path consume.
+   * Writes a VS Code setting, optionally tagging it as an inbound-origin write first.
+   *
+   * The tag (`markPendingInboundWrite`/`consumePendingInboundWrite`) tells the explicit-change
+   * listener to treat the resulting `onDidChangeConfiguration` event as an echo rather than a
+   * user edit, so it's marked BEFORE writing (surviving an arbitrarily delayed event) and
+   * consumed on a thrown write so it can't leak into the next genuine edit of the same key.
+   *
+   * Pass `tagAsInboundOrigin: true` only when the write itself is not a user override to honor:
+   * an LS-authoritative echo (`applySettingsMap` from `persistInboundLspConfiguration`), or a
+   * reset clearing an override (`applyVscodeKeyResets`, both the inbound echo and the outbound
+   * "reset to project defaults" write — the caller already unmarks the key via `onWriteSuccess`).
+   * Pass `false` for a genuine user-initiated save (`applySettingsMap` from
+   * `saveConfigToVSCodeSettings`): tagging it would suppress explicit-change marking and the LS
+   * would never receive `changed:true` for the user's own edit.
    */
   private async writeTaggedAsInboundOrigin(
     vscodeKey: string,
     configurationId: string,
     section: string,
     value: unknown,
-    configurationTarget?: boolean | WorkspaceFolder,
+    configurationTarget: boolean | WorkspaceFolder | undefined,
+    tagAsInboundOrigin: boolean,
   ): Promise<void> {
-    this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite(vscodeKey);
+    if (tagAsInboundOrigin) {
+      this.explicitLspConfigurationChangeTracker?.markPendingInboundWrite(vscodeKey);
+    }
     try {
       await this.workspace.updateConfiguration(configurationId, section, value, configurationTarget);
     } catch (e) {
-      this.explicitLspConfigurationChangeTracker?.consumePendingInboundWrite(vscodeKey);
+      if (tagAsInboundOrigin) {
+        this.explicitLspConfigurationChangeTracker?.consumePendingInboundWrite(vscodeKey);
+      }
       throw e;
     }
   }
@@ -323,7 +335,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         );
         if (!shouldSkip) {
           // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
-          await this.writeTaggedAsInboundOrigin(vscodeKey, configurationId, section, undefined, true);
+          await this.writeTaggedAsInboundOrigin(vscodeKey, configurationId, section, undefined, true, true);
           // Invalidate the effective snapshot for this vscodeKey: the reset cleared the
           // VS Code override, so the stored effective value is now stale. The next outbound
           // save must fall back to EFFECTIVE_VALUE_UNKNOWN (override-aware fallback) rather
@@ -348,7 +360,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     }
   }
 
-  private async applySettingsMap(settingsMap: Record<string, unknown>): Promise<void> {
+  private async applySettingsMap(settingsMap: Record<string, unknown>, tagAsInboundOrigin: boolean): Promise<void> {
     for (const [settingKey, value] of Object.entries(settingsMap)) {
       try {
         const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
@@ -392,6 +404,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           settingName,
           effectiveValue,
           scope !== 'workspace',
+          tagAsInboundOrigin,
         );
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
@@ -526,7 +539,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         config.folderConfigs ?? (config['folder_configs'] as HtmlFolderSettingsData[] | undefined),
       );
 
-    await this.applySettingsMap(settingsMap);
+    await this.applySettingsMap(settingsMap, false);
 
     this.logger.info('Successfully wrote all settings to VS Code configuration');
   }
