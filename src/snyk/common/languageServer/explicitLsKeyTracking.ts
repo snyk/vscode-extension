@@ -70,6 +70,30 @@ export function vscodeValueMatchesLastKnown(
 }
 
 /**
+ * [IDE-2264 ticket 05]: the middleware's outbound echo-suppression decision. Iterates every
+ * tracked VS Code key and reuses {@link vscodeValueMatchesLastKnown} — the same stateless
+ * comparison {@link markExplicitLsKeysFromConfigurationChangeEvent} uses — against current VS
+ * Code state at the moment it's called. Returns true (forward to the LS) iff at least one
+ * tracked key currently differs from the last-known-value cache, i.e. a genuine change is not
+ * yet reflected; false (suppress) when every tracked key already matches, i.e. this event is
+ * purely an echo of a write the extension itself already made.
+ *
+ * Computed independently of {@link markExplicitLsKeysFromConfigurationChangeEvent} — no shared
+ * per-event flag. The two decisions agree regardless of which of the two `onDidChangeConfiguration`
+ * listeners VS Code happens to invoke first for a given event: `markExplicitLsKeysFromConfigurationChangeEvent`
+ * defers its own cache mutation to a microtask specifically so this check never observes a
+ * same-event write it hasn't run yet.
+ */
+export function hasUnreflectedConfigurationChange(
+  workspace: Pick<IVSCodeWorkspace, 'getConfiguration'>,
+  cache: Pick<ILastKnownValueCache, 'get'>,
+): boolean {
+  return Object.keys(VSCODE_KEY_TO_LS_KEYS).some(
+    vscodeKey => !vscodeValueMatchesLastKnown(vscodeKey, workspace, cache),
+  );
+}
+
+/**
  * When native VS Code configuration changes (a direct settings.json edit or the native
  * Settings UI), marks matching LS keys explicit in the explicit-overrides map so outbound
  * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for genuine user edits.
@@ -112,7 +136,16 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
       continue;
     }
 
-    lastKnownValueCache.set(vscodeKey, newValue);
+    // [IDE-2264 ticket 05]: deferred rather than applied immediately. VS Code invokes every
+    // onDidChangeConfiguration listener for this one event synchronously, back-to-back —
+    // including the language client's own internal listener that drives
+    // LanguageClientMiddleware.didChangeConfiguration's independent hasUnreflectedConfigurationChange
+    // check. Mutating the cache here immediately would make that check's outcome depend on
+    // whether it happens to run before or after this listener for the same event. Queuing the
+    // mutation as a microtask guarantees every listener for THIS event observes the pre-mutation
+    // value, regardless of registration order — it still lands well before the next distinct
+    // configuration-change event or LS pull can observe it.
+    queueMicrotask(() => lastKnownValueCache.set(vscodeKey, newValue));
 
     if (lsKeys.length === 1) {
       // VS Code only fires the event when the value actually changed, and the whole-value

@@ -18,7 +18,8 @@ import type {
 import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
-import { unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
+import { hasUnreflectedConfigurationChange, unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
+import type { ILastKnownValueCache } from './lastKnownValueCache';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
@@ -62,7 +63,7 @@ export class LanguageClientMiddleware implements Middleware {
     private commands: IVSCodeCommands,
     private readonly vscodeWorkspace?: IVSCodeWorkspace,
     private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
-    private readonly isInboundPersistenceSuppressed: () => boolean = () => false,
+    private readonly lastKnownValueCache?: ILastKnownValueCache,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -131,8 +132,16 @@ export class LanguageClientMiddleware implements Middleware {
       return [{ settings: lspParam }];
     },
     didChangeConfiguration: async (sections, next) => {
-      if (this.isInboundPersistenceSuppressed()) {
-        this.logger.debug('didChangeConfiguration suppressed during inbound LS persistence');
+      // [IDE-2264 ticket 05]: computed fresh on every call against current VS Code state — no
+      // shared per-event flag. Agrees with the configuration-change-event handler's own decision
+      // (explicitLsKeyTracking.ts) regardless of listener registration order — see
+      // hasUnreflectedConfigurationChange's doc comment for why.
+      if (
+        this.vscodeWorkspace &&
+        this.lastKnownValueCache &&
+        !hasUnreflectedConfigurationChange(this.vscodeWorkspace, this.lastKnownValueCache)
+      ) {
+        this.logger.debug('didChangeConfiguration suppressed: matches last-known-value cache');
         return;
       }
       await next(sections);

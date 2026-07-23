@@ -76,8 +76,6 @@ export class LanguageServer implements ILanguageServer {
 
   private workspaceConfigurationProvider?: IWorkspaceConfigurationWebviewProvider;
   private configurationChangeDisposable?: Disposable;
-  /** When true, VS Code `settings.json` updates triggered by inbound LS persistence are suppressed from feeding back to the LS. */
-  private suppressConfigFeedbackFromInboundPersistence = false;
   /** Serializes disk persistence so concurrent `$/snyk.configuration` handlers do not interleave writes. */
   private configPersistenceQueue: Promise<void> = Promise.resolve();
   setWorkspaceConfigurationProvider(provider: IWorkspaceConfigurationWebviewProvider): void {
@@ -185,7 +183,7 @@ export class LanguageServer implements ILanguageServer {
         this.codeCommands,
         this.workspace,
         this.explicitLspConfigurationChangeTracker,
-        () => this.suppressConfigFeedbackFromInboundPersistence,
+        this.lastKnownValueCache,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
@@ -344,19 +342,12 @@ export class LanguageServer implements ILanguageServer {
         /* keep serialized queue alive if a prior step rejected unexpectedly */
       })
       .then(async () => {
-        // Gates LanguageClientMiddleware's outbound didChangeConfiguration forwarding (see
-        // middleware.ts) so an inbound-persistence write doesn't echo straight back to the LS
-        // as a fresh user edit. Not used for explicit-key marking any more — that's
-        // markPendingInboundWrite/consumePendingInboundWrite, immune to this flag's timing gap.
-        this.suppressConfigFeedbackFromInboundPersistence = true;
         try {
           await this.persistInboundConfiguration(params);
         } catch (e) {
           this.logger.error(
             `Inbound LS configuration persistence failed: ${e instanceof Error ? e.message : String(e)}`,
           );
-        } finally {
-          this.suppressConfigFeedbackFromInboundPersistence = false;
         }
       });
     return this.configPersistenceQueue;

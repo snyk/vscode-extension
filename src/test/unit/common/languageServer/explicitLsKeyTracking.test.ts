@@ -8,13 +8,14 @@ import {
 } from '../../../../snyk/common/configuration/configuration';
 import { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import {
+  hasUnreflectedConfigurationChange,
   markExplicitLsKeysFromConfigurationChangeEvent,
   seedExplicitChangesFromExistingSettings,
   vscodeValueMatchesLastKnown,
 } from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
-import { SETTINGS_REGISTRY } from '../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
+import { SETTINGS_REGISTRY, VSCODE_KEY_TO_LS_KEYS } from '../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
 import { SEVERITY_FILTER_SETTING, ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { LS_GLOBAL_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
@@ -558,6 +559,80 @@ suite('seedExplicitChangesFromExistingSettings', () => {
       const workspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'new-org' });
 
       assert.strictEqual(vscodeValueMatchesLastKnown(ADVANCED_ORGANIZATION, workspace, cache), false);
+    });
+  });
+
+  // ── hasUnreflectedConfigurationChange [IDE-2264 ticket 05] ─────────────────────
+  // The middleware's independent echo-suppression decision: reuses the same
+  // vscodeValueMatchesLastKnown primitive across every tracked VS Code key.
+
+  suite('hasUnreflectedConfigurationChange', () => {
+    test('returns false when every tracked key currently matches the last-known-value cache', () => {
+      const workspace = fakeGetConfigWorkspace({});
+      const cache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
+
+      assert.strictEqual(
+        hasUnreflectedConfigurationChange(workspace, cache),
+        false,
+        'a purely-echoed event (nothing diverges from the cache) must not report an unreflected change',
+      );
+    });
+
+    test('returns true when a single tracked key currently diverges from the last-known-value cache', () => {
+      const activationWorkspace = fakeGetConfigWorkspace({});
+      const cache = new LastKnownValueCache(activationWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
+      const currentWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'new-org' });
+
+      assert.strictEqual(
+        hasUnreflectedConfigurationChange(currentWorkspace, cache),
+        true,
+        'a genuine external edit to even one tracked key must be reported as an unreflected change',
+      );
+    });
+
+    test('is immune to a batch-scoped timing gap: still reports "no change" for a delayed event once the cache already reflects the write', () => {
+      // Simulates ticket 05's target scenario: an inbound-write batch already updated the
+      // last-known-value cache for the LAST key in the batch (at write time), well before this
+      // configuration-change event actually fires. There is no flag to have expired — the cache
+      // is simply already up to date, regardless of how late the event arrives.
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({}), Object.keys(VSCODE_KEY_TO_LS_KEYS));
+      cache.set(ADVANCED_ORGANIZATION, 'inbound-value');
+      const delayedWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'inbound-value' });
+
+      assert.strictEqual(hasUnreflectedConfigurationChange(delayedWorkspace, cache), false);
+    });
+
+    test('agrees with markExplicitLsKeysFromConfigurationChangeEvent for the same event regardless of which runs first', async () => {
+      // Simulates VS Code invoking the explicit-marking listener FIRST for this event, with the
+      // middleware's independent check running synchronously right after (before the marking
+      // listener's own promise has been awaited to completion) — the adversarial ordering ticket
+      // 05 must be immune to.
+      const overrides = new ExplicitOverridesMap(makeMemento());
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'old-org' }), [
+        ADVANCED_ORGANIZATION,
+      ]);
+      const currentWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'new-org' });
+      const configuration: IConfiguration = { ...minimalConfig, organization: 'new-org' } as unknown as IConfiguration;
+      const e = { affectsConfiguration: (key: string) => key === ADVANCED_ORGANIZATION };
+
+      const markingDone = markExplicitLsKeysFromConfigurationChangeEvent(
+        e,
+        overrides,
+        cache,
+        currentWorkspace,
+        configuration,
+      );
+      // Still within the same synchronous dispatch as the line above — the marking listener's
+      // cache mutation (if any) has not yet had a chance to run.
+      const shouldForward = hasUnreflectedConfigurationChange(currentWorkspace, cache);
+      await markingDone;
+
+      assert.strictEqual(
+        shouldForward,
+        true,
+        'the middleware must detect the genuine external edit even though the marking listener ran first',
+      );
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.organization), { kind: 'value', value: 'new-org' });
     });
   });
 

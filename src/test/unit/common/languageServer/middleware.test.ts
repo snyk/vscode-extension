@@ -10,6 +10,8 @@ import {
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import type { ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
+import { ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -20,6 +22,7 @@ import type {
 } from '../../../../snyk/common/vscode/types';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
+import type { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import {
@@ -206,7 +209,10 @@ suite('Language Server: Middleware', () => {
     });
   });
 
-  test('didChangeConfiguration calls next when not suppressed', async () => {
+  // [IDE-2264 ticket 05]: echo-suppression is computed fresh on every call by comparing every
+  // tracked VS Code key against the last-known-value cache — no batch-scoped flag.
+
+  test('didChangeConfiguration calls next when no vscodeWorkspace/lastKnownValueCache is wired (default: never suppress)', async () => {
     const nextStub = sinon.stub().resolves();
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -214,26 +220,87 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
-      undefined,
-      undefined,
-      () => false,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
     sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
   });
 
-  test('didChangeConfiguration skips next when inbound persistence is active', async () => {
+  test('didChangeConfiguration calls next when a tracked key currently diverges from the last-known-value cache', async () => {
     const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: (configId: string, section: string) =>
+        configId === 'snyk' && section === 'advanced.organization' ? 'new-org' : undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: (vscodeKey: string) => (vscodeKey === ADVANCED_ORGANIZATION ? 'old-org' : undefined),
+      set: sinon.stub(),
+    };
+
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      vscodeWorkspace,
       undefined,
+      lastKnownValueCache,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
+  });
+
+  test('didChangeConfiguration skips next when every tracked key matches the last-known-value cache (own echoed write)', async () => {
+    const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: () => undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: () => undefined,
+      set: sinon.stub(),
+    };
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      vscodeWorkspace,
       undefined,
-      () => true,
+      lastKnownValueCache,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.notCalled(nextStub);
+  });
+
+  test('didChangeConfiguration suppresses a delayed event for an already-completed inbound-write batch (no batch-scoped flag to expire)', async () => {
+    // The old boolean flag was reset to false once the whole write batch finished, so a
+    // change event for the LAST key that arrived after the batch completed slipped through
+    // unsuppressed. The cache has no such window: it was updated at write time, so a comparison
+    // run at any later point still finds a match.
+    const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: (configId: string, section: string) =>
+        configId === 'snyk' && section === 'advanced.organization' ? 'inbound-value' : undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: (vscodeKey: string) => (vscodeKey === ADVANCED_ORGANIZATION ? 'inbound-value' : undefined),
+      set: sinon.stub(),
+    };
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      vscodeWorkspace,
+      undefined,
+      lastKnownValueCache,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
