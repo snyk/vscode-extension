@@ -31,8 +31,6 @@ import {
   mapConfigToSettings,
   SETTINGS_REGISTRY,
 } from '../../../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
-import { ExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { markExplicitLsKeysFromConfigurationChangeEvent } from '../../../../../../snyk/common/languageServer/explicitLsKeyTracking';
 import {
   ExplicitOverridesMap,
   IExplicitOverridesMap,
@@ -1628,97 +1626,11 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
   });
 });
 
-// A genuine user save from the settings webview (a concrete new value, not a reset) must end up
-// marked as explicitly-changed once VS Code's resulting onDidChangeConfiguration fires — otherwise
-// the LS receives changed:false and never honors it as an override.
-suite('ConfigurationPersistenceService — outbound save marks explicit', () => {
-  test('a concrete global value saved via handleSaveConfig is marked explicitly-changed after its onDidChangeConfiguration fires', async () => {
-    const store = new Map<string, unknown>();
-    const memento: import('vscode').Memento = {
-      get<T>(key: string, defaultValue?: T): T {
-        return (store.has(key) ? store.get(key) : defaultValue) as T;
-      },
-      update(key: string, value: unknown): Thenable<void> {
-        store.set(key, value);
-        return Promise.resolve();
-      },
-      keys(): readonly string[] {
-        return [...store.keys()];
-      },
-    };
-    const realTracker = new ExplicitLspConfigurationChangeTracker(memento);
-
-    const updateConfigurationStub = sinon.stub().resolves();
-    const workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({
-        defaultValue: undefined,
-        globalValue: undefined,
-        workspaceValue: undefined,
-        workspaceFolderValue: undefined,
-      }),
-    } as unknown as IVSCodeWorkspace;
-
-    const configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      organization: 'pre-existing-org',
-    } as unknown as IConfiguration;
-
-    const scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    const clientAdapter = {
-      getLanguageClient: sinon.stub().returns(undefined),
-    } as unknown as ILanguageClientAdapter;
-
-    const logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      realTracker,
-    );
-
-    const configJson = JSON.stringify({
-      isFallbackForm: false,
-      token: 'tok',
-      [LS_GLOBAL_KEY.organization]: 'new-org',
-    });
-
-    await service.handleSaveConfig(configJson);
-
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.organization', 'new-org');
-
-    // Simulate the onDidChangeConfiguration event VS Code fires as a result of that write — the
-    // same event registerExplicitKeyMarkingListener wires up in production.
-    const fakeEvent = {
-      affectsConfiguration(key: string): boolean {
-        return key === ADVANCED_ORGANIZATION;
-      },
-    };
-    markExplicitLsKeysFromConfigurationChangeEvent(fakeEvent, realTracker);
-
-    assert.ok(
-      realTracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      'A genuine user save from the settings webview must be marked explicitly-changed so the LS receives changed:true and honors the override.',
-    );
-  });
-});
+// Note: the outbound-save-marks-explicit scenario that used to live here (simulating
+// registerExplicitKeyMarkingListener via the old 2-arg markExplicitLsKeysFromConfigurationChangeEvent)
+// is superseded by the suite below — as of ticket 02, an outbound webview save records the
+// explicit-overrides entry directly at save time, not via a simulated onDidChangeConfiguration
+// echo, and as of ticket 04 the direct-edit listener no longer takes a tracker at all.
 
 // ── Outbound concrete-value save: explicit-overrides map + last-known-value cache ──
 // Covers the non-reset leg of applyOutboundSettingsMap: every key present in the save

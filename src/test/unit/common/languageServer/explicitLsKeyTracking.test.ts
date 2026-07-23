@@ -10,10 +10,39 @@ import { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/
 import {
   markExplicitLsKeysFromConfigurationChangeEvent,
   seedExplicitChangesFromExistingSettings,
+  vscodeValueMatchesLastKnown,
 } from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
+import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
+import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
+import { SETTINGS_REGISTRY } from '../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
+import { SEVERITY_FILTER_SETTING, ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { LS_GLOBAL_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
+
+/** Minimal in-memory Memento, sufficient for ExplicitOverridesMap's constructor read. */
+function makeMemento(): import('vscode').Memento {
+  const store = new Map<string, unknown>();
+  return {
+    get<T>(key: string, defaultValue?: T): T {
+      return (store.has(key) ? store.get(key) : defaultValue) as T;
+    },
+    update(key: string, value: unknown): Thenable<void> {
+      store.set(key, value);
+      return Promise.resolve();
+    },
+    keys(): readonly string[] {
+      return [...store.keys()];
+    },
+  };
+}
+
+/** Fake workspace whose getConfiguration is driven by a `${configId}.${section}` lookup map. */
+function fakeGetConfigWorkspace(map: Record<string, unknown>): Pick<IVSCodeWorkspace, 'getConfiguration'> {
+  return {
+    getConfiguration: (configId: string, section: string) => map[`${configId}.${section}`],
+  } as Pick<IVSCodeWorkspace, 'getConfiguration'>;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -309,9 +338,12 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     }, 'seedExplicitChangesFromExistingSettings must not throw when inspect returns undefined');
   });
 
-  // ── Integration-style suite (CP2) ─────────────────────────────────────────
+  // ── markExplicitLsKeysFromConfigurationChangeEvent [IDE-2264 ticket 04] ────────────────────
+  // Direct settings.json-edit detection: compares each affected VS Code key's current raw
+  // value against the shared last-known-value cache (ticket 01) instead of a write-time
+  // pending tag, and folds fan-out sibling disambiguation into the very same cache.
 
-  suite('markExplicitLsKeysFromConfigurationChangeEvent (ADR-2 windowed signal)', () => {
+  suite('markExplicitLsKeysFromConfigurationChangeEvent (direct-edit detection)', () => {
     /** Fake ConfigurationChangeEvent that reports all keys as affected. */
     function fakeEvent(affectedVscodeKeys: string[]): { affectsConfiguration(key: string): boolean } {
       return {
@@ -321,109 +353,211 @@ suite('seedExplicitChangesFromExistingSettings', () => {
       };
     }
 
-    // Import the severity vscodeKey from the registry so the test does not hard-code the string.
-    // The severity fan-out group shares one VS Code key: 'snyk.severity'.
-    const SEVERITY_VSCODE_KEY = 'snyk.severity';
+    function newOverridesMap(): ExplicitOverridesMap {
+      return new ExplicitOverridesMap(makeMemento());
+    }
 
-    test('fan-out: only the sibling whose value changed is marked in committedSinceReset', () => {
-      const tracker = new FakeTracker();
-
-      // Pre-populate lastKnownValues: high=true, low=true (cached from previous call).
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterHigh, true);
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterLow, true);
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterMedium, true);
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterCritical, true);
-
-      // User edited: medium becomes false; the others stay the same.
-      const currentValues: Record<string, unknown> = {
-        [LS_GLOBAL_KEY.severityFilterCritical]: true,
-        [LS_GLOBAL_KEY.severityFilterHigh]: true,
-        [LS_GLOBAL_KEY.severityFilterMedium]: false, // changed!
-        [LS_GLOBAL_KEY.severityFilterLow]: true,
-      };
-
-      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
-      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, lsKey => currentValues[lsKey]);
-
-      // All siblings get the cumulative mark (isExplicitlyChanged).
-      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical), 'critical: cumulative marked');
-      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh), 'high: cumulative marked');
-      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium), 'medium: cumulative marked');
-      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow), 'low: cumulative marked');
-
-      // Only the sibling that CHANGED gets the windowed signal.
-      assert.ok(
-        !tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
-        'critical: NOT committed (unchanged)',
+    test('fan-out: only the sibling whose projected sub-value changed is marked explicit', async () => {
+      const overrides = newOverridesMap();
+      // Cache seeded with the previous raw severity object.
+      const cache = new LastKnownValueCache(
+        fakeGetConfigWorkspace({ 'snyk.severity': { critical: true, high: true, medium: true, low: true } }),
+        [SEVERITY_FILTER_SETTING],
       );
-      assert.ok(!tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: NOT committed (unchanged)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: committed (value changed)');
-      assert.ok(!tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: NOT committed (unchanged)');
+      // The current raw value has only 'medium' changed.
+      const newWorkspace = fakeGetConfigWorkspace({
+        'snyk.severity': { critical: true, high: true, medium: false, low: true },
+      });
+
+      const e = fakeEvent([SEVERITY_FILTER_SETTING]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
+
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+        kind: 'value',
+        value: false,
+      });
+      assert.strictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined, 'critical: unchanged');
+      assert.strictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterHigh), undefined, 'high: unchanged');
+      assert.strictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterLow), undefined, 'low: unchanged');
     });
 
-    test('fan-out: cold cache (no prior lastKnownValue) conservatively marks committedSinceReset', () => {
-      const tracker = new FakeTracker();
-      // No pre-seeded lastKnownValues — all return undefined.
+    test('fan-out: a never-before-seeded cache still marks only the sibling that genuinely differs from default', async () => {
+      const overrides = newOverridesMap();
+      // Cache never seeded for the severity key (e.g. it was never customised before activation).
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({}), []);
+      // User writes an explicit object where only 'medium' differs from the schema default.
+      const newWorkspace = fakeGetConfigWorkspace({
+        'snyk.severity': { critical: true, high: true, medium: false, low: true },
+      });
 
-      const currentValues: Record<string, unknown> = {
-        [LS_GLOBAL_KEY.severityFilterCritical]: true,
-        [LS_GLOBAL_KEY.severityFilterHigh]: true,
-        [LS_GLOBAL_KEY.severityFilterMedium]: true,
-        [LS_GLOBAL_KEY.severityFilterLow]: true,
-      };
+      const e = fakeEvent([SEVERITY_FILTER_SETTING]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
 
-      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
-      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, lsKey => currentValues[lsKey]);
-
-      // Cold cache (oldValue undefined) → all siblings conservatively marked.
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical), 'critical: marked (cold cache)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: marked (cold cache)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: marked (cold cache)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: marked (cold cache)');
-    });
-
-    test('single-LS-key setting: always marks both signals regardless of value change', () => {
-      const tracker = new FakeTracker();
-
-      // organization maps to a single LS key.  Pre-seed lastKnownValue with the same value.
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.organization, 'my-org');
-
-      const e = fakeEvent(['snyk.advanced.organization']);
-      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, _lsKey => 'my-org');
-
-      // VS Code only fires the event when value changed, so we always mark both signals.
-      assert.ok(tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization), 'org: cumulative marked');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.organization), 'org: windowed signal marked');
-    });
-
-    test('without currentValueOf: all matching LS keys marked in both signals', () => {
-      const tracker = new FakeTracker();
-
-      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
-      // No currentValueOf → falls back to pre-ADR-2 behaviour (marks all).
-      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker);
-
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical), 'critical: marked (no resolver)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterHigh), 'high: marked (no resolver)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterMedium), 'medium: marked (no resolver)');
-      assert.ok(tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterLow), 'low: marked (no resolver)');
-    });
-
-    test('lastKnownValues cache updated after call', () => {
-      const tracker = new FakeTracker();
-
-      const e = fakeEvent([SEVERITY_VSCODE_KEY]);
-      const resolver = (lsKey: string): unknown => (lsKey === LS_GLOBAL_KEY.severityFilterMedium ? false : true);
-
-      markExplicitLsKeysFromConfigurationChangeEvent(e, tracker, resolver);
-
-      // The cache should now hold the new values from the resolver.
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+        kind: 'value',
+        value: false,
+      });
       assert.strictEqual(
-        tracker.getLastKnownValue(LS_GLOBAL_KEY.severityFilterMedium),
-        false,
-        'medium cached as false',
+        overrides.getEntry(LS_GLOBAL_KEY.severityFilterCritical),
+        undefined,
+        'critical: matches default (true), not marked despite the cold cache',
       );
-      assert.strictEqual(tracker.getLastKnownValue(LS_GLOBAL_KEY.severityFilterHigh), true, 'high cached as true');
+    });
+
+    test('fan-out: whole-object match against the cache skips all siblings (no divergence at all)', async () => {
+      const overrides = newOverridesMap();
+      const raw = { critical: true, high: true, medium: true, low: true };
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.severity': raw }), [
+        SEVERITY_FILTER_SETTING,
+      ]);
+      const newWorkspace = fakeGetConfigWorkspace({ 'snyk.severity': raw });
+
+      const e = fakeEvent([SEVERITY_FILTER_SETTING]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
+
+      for (const lsKey of [
+        LS_GLOBAL_KEY.severityFilterCritical,
+        LS_GLOBAL_KEY.severityFilterHigh,
+        LS_GLOBAL_KEY.severityFilterMedium,
+        LS_GLOBAL_KEY.severityFilterLow,
+      ]) {
+        assert.strictEqual(overrides.getEntry(lsKey), undefined, `${lsKey}: not marked — raw value unchanged`);
+      }
+    });
+
+    test('single-LS-key setting: a genuinely different value is marked explicit with the resolved LS value', async () => {
+      const overrides = newOverridesMap();
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'old-org' }), [
+        ADVANCED_ORGANIZATION,
+      ]);
+      const newWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'new-org' });
+      const configuration: IConfiguration = { ...minimalConfig, organization: 'new-org' } as unknown as IConfiguration;
+
+      const e = fakeEvent([ADVANCED_ORGANIZATION]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, configuration);
+
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.organization), { kind: 'value', value: 'new-org' });
+      assert.strictEqual(cache.get(ADVANCED_ORGANIZATION), 'new-org', 'cache updated to the new raw value');
+    });
+
+    test('a change event whose value matches the cache is not marked explicit (own echoed write)', async () => {
+      const overrides = newOverridesMap();
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'my-org' }), [
+        ADVANCED_ORGANIZATION,
+      ]);
+      // The event fired (e.g. a delayed echo of the extension's own write), but the current
+      // value already matches what the cache holds.
+      const newWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'my-org' });
+
+      const e = fakeEvent([ADVANCED_ORGANIZATION]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
+
+      assert.strictEqual(overrides.getEntry(LS_GLOBAL_KEY.organization), undefined);
+    });
+
+    test('cold-start: a key seeded from existing VS Code configuration at construction is not a false positive on the first event', async () => {
+      const overrides = newOverridesMap();
+      // Cache constructed at "activation" from a workspace that already has a customised value.
+      const activationWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'acme-corp' });
+      const cache = new LastKnownValueCache(activationWorkspace, [ADVANCED_ORGANIZATION]);
+
+      // First onDidChangeConfiguration event after activation for this key fires, but nothing
+      // has actually changed since the cache was seeded.
+      const e = fakeEvent([ADVANCED_ORGANIZATION]);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, activationWorkspace, minimalConfig);
+
+      assert.strictEqual(
+        overrides.getEntry(LS_GLOBAL_KEY.organization),
+        undefined,
+        'a pre-existing, already-seeded customisation must not be treated as a fresh explicit edit',
+      );
+    });
+
+    test('resolver throw for one fan-out sibling does not prevent the remaining siblings from being marked', async () => {
+      const overrides = newOverridesMap();
+      const cache = new LastKnownValueCache(
+        fakeGetConfigWorkspace({ 'snyk.severity': { critical: true, high: true, medium: true, low: true } }),
+        [SEVERITY_FILTER_SETTING],
+      );
+      const newWorkspace = fakeGetConfigWorkspace({
+        'snyk.severity': { critical: true, high: true, medium: false, low: true },
+      });
+
+      const originalResolve = SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve;
+      SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = () => {
+        throw new Error('resolver boom');
+      };
+
+      try {
+        const e = fakeEvent([SEVERITY_FILTER_SETTING]);
+        await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
+
+        assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+          kind: 'value',
+          value: false,
+        });
+        assert.strictEqual(
+          overrides.getEntry(LS_GLOBAL_KEY.severityFilterCritical),
+          undefined,
+          'critical: throwing resolver is treated as value-unknown on both sides, so no (false) change is detected',
+        );
+      } finally {
+        SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalResolve;
+      }
+    });
+
+    test('single-key: an async resolver (e.g. cliPath) is awaited, not discarded', async () => {
+      const overrides = newOverridesMap();
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.cliPath': '/old/cli' }), [
+        'snyk.advanced.cliPath',
+      ]);
+      const newWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.cliPath': '/new/cli' });
+      const configuration: IConfiguration = {
+        ...minimalConfig,
+        getCliPath: () => Promise.resolve('/new/cli'),
+      } as unknown as IConfiguration;
+
+      const e = fakeEvent(['snyk.advanced.cliPath']);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, configuration);
+
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.cliPath), { kind: 'value', value: '/new/cli' });
+    });
+
+    test('single-key: a rejected async resolver is treated as value-unknown, not left uncaught', async () => {
+      const overrides = newOverridesMap();
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.cliPath': '/old/cli' }), [
+        'snyk.advanced.cliPath',
+      ]);
+      const newWorkspace = fakeGetConfigWorkspace({ 'snyk.advanced.cliPath': '/new/cli' });
+      const configuration: IConfiguration = {
+        ...minimalConfig,
+        getCliPath: () => Promise.reject(new Error('cliPath resolution boom')),
+      } as unknown as IConfiguration;
+
+      const e = fakeEvent(['snyk.advanced.cliPath']);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, configuration);
+
+      assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.cliPath), { kind: 'value', value: undefined });
+    });
+  });
+
+  suite('vscodeValueMatchesLastKnown', () => {
+    test('returns true when the current value equals the cache entry', () => {
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'my-org' }), [
+        ADVANCED_ORGANIZATION,
+      ]);
+      const workspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'my-org' });
+
+      assert.strictEqual(vscodeValueMatchesLastKnown(ADVANCED_ORGANIZATION, workspace, cache), true);
+    });
+
+    test('returns false when the current value diverges from the cache entry', () => {
+      const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'my-org' }), [
+        ADVANCED_ORGANIZATION,
+      ]);
+      const workspace = fakeGetConfigWorkspace({ 'snyk.advanced.organization': 'new-org' });
+
+      assert.strictEqual(vscodeValueMatchesLastKnown(ADVANCED_ORGANIZATION, workspace, cache), false);
     });
   });
 

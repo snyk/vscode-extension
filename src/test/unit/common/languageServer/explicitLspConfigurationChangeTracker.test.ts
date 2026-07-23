@@ -13,8 +13,6 @@
 import assert from 'assert';
 import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { MEMENTO_EXPLICIT_LSP_CONFIGURATION_LS_KEYS } from '../../../../snyk/common/constants/explicitLspConfiguration';
-import { markExplicitLsKeysFromConfigurationChangeEvent } from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
-import { LS_GLOBAL_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 
 /** Minimal in-memory Memento that satisfies the interface used by the tracker. */
 function makeMemento(): import('vscode').Memento {
@@ -147,64 +145,13 @@ suite('ExplicitLspConfigurationChangeTracker', () => {
       );
     });
 
-    // Defect 2: regression test — a second fan-out event for a key whose value is legitimately
-    // undefined must NOT mark committedSinceReset.
-    //
-    // This test exercises the REAL production guard in
-    // markExplicitLsKeysFromConfigurationChangeEvent (which uses lodash isEqual, not reference
-    // equality), so any change to the guard logic is caught here rather than by an inline
-    // reimplementation that could drift from production.
-    //
-    // Scenario: severity_filter_critical is pre-seeded to undefined (warm cache — e.g. after a
-    // reset seed).  A second fan-out event fires for snyk.severity.  The resolver returns
-    // undefined for critical again (value unchanged).  With the production guard
-    // (cacheWasCold = !hasLastKnownValue → false; isEqual(undefined, undefined) → true) the
-    // windowed signal must NOT be marked.
-    test('D2: second fan-out event with unchanged undefined value does NOT mark committedSinceReset', () => {
-      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-
-      // Pre-seed the tracker: warm cache for severity_filter_critical with value undefined
-      // (simulates what applyOutboundGlobalResets does after a reset seed for this key).
-      tracker.setLastKnownValue(LS_GLOBAL_KEY.severityFilterCritical, undefined);
-
-      // Verify the cache is warm (hasLastKnownValue = true) even though the stored value is undefined.
-      assert.ok(
-        tracker.hasLastKnownValue(LS_GLOBAL_KEY.severityFilterCritical),
-        'D2 precondition: hasLastKnownValue must return true after setLastKnownValue was called — ' +
-          'even when the stored value is undefined (warm-cache-undefined vs cold-cache-undefined)',
-      );
-
-      // Fake event: snyk.severity fired (shared key for all four severity_filter_* keys).
-      const SEVERITY_VSCODE_KEY = 'snyk.severity';
-      const fakeEvent = {
-        affectsConfiguration(key: string): boolean {
-          return key === SEVERITY_VSCODE_KEY;
-        },
-      };
-
-      // Resolver: critical returns undefined (unchanged), siblings return true (different to
-      // ensure the fan-out branch is taken with currentValueOf provided).
-      const currentValues: Record<string, unknown> = {
-        [LS_GLOBAL_KEY.severityFilterCritical]: undefined, // unchanged — warm cache
-        [LS_GLOBAL_KEY.severityFilterHigh]: true,
-        [LS_GLOBAL_KEY.severityFilterMedium]: true,
-        [LS_GLOBAL_KEY.severityFilterLow]: true,
-      };
-
-      // Call the REAL production guard — not an inline reimplementation.
-      markExplicitLsKeysFromConfigurationChangeEvent(fakeEvent, tracker, lsKey => currentValues[lsKey]);
-
-      // The production guard: cacheWasCold (Map.has snapshot = false → warm) → skip mark
-      // when isEqual(undefined, undefined) = true. committedSinceReset must remain false.
-      assert.ok(
-        !tracker.committedSinceReset(LS_GLOBAL_KEY.severityFilterCritical),
-        'D2: severity_filter_critical must NOT be marked committedSinceReset on a second fan-out ' +
-          'event when the cached value is warm-undefined and the new value is also undefined ' +
-          '— the production guard (hasLastKnownValue + isEqual) must distinguish warm-cache-undefined ' +
-          'from cold-cache-undefined. FAIL here means the guard uses reference equality or Map.get ' +
-          'instead of Map.has, reverting the Defect 2 fix.',
-      );
-    });
+    // D2 (superseded, [IDE-2264 ticket 04]): previously exercised markExplicitLsKeysFromConfigu-
+    // rationChangeEvent's cold-vs-warm-cache distinction for fan-out siblings via this tracker's
+    // hasLastKnownValue/setLastKnownValue. That function no longer reads the tracker at all — it
+    // now compares against LastKnownValueCache (ticket 01), which is always seeded at
+    // construction for every tracked VS Code key, so the cold-vs-warm-undefined ambiguity this
+    // test guarded against cannot occur in the new code path. Coverage for the new comparison
+    // lives in explicitLsKeyTracking.test.ts.
 
     // D2b: hasLastKnownValue returns false before setLastKnownValue is called (cold cache).
     test('D2b: hasLastKnownValue returns false for a key that was never set', () => {
@@ -241,4 +188,11 @@ suite('ExplicitLspConfigurationChangeTracker', () => {
       );
     });
   });
+
+  // The pendingInboundWrite tag-leak concern formerly documented here (a no-op write's tag
+  // never being consumed, swallowing the next genuine edit) is moot for direct-edit detection
+  // as of [IDE-2264 ticket 04]: markExplicitLsKeysFromConfigurationChangeEvent no longer reads
+  // pendingInboundWrite at all — it compares against LastKnownValueCache instead. The tag
+  // itself (markPendingInboundWrite/consumePendingInboundWrite) remains on this tracker only
+  // for the inbound-push write path (ticket 08 removes it once that path is also migrated).
 });

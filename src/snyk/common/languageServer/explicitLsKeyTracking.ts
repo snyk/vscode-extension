@@ -1,99 +1,135 @@
 import type { ConfigurationChangeEvent } from '../vscode/types';
 import { SETTINGS_REGISTRY, VSCODE_KEY_TO_LS_KEYS } from './lsKeyToVscodeKeyMap';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import type { IExplicitOverridesMap } from './explicitOverridesMap';
+import type { ILastKnownValueCache } from './lastKnownValueCache';
 import type { LspConfigSetting } from './types';
-import { Configuration } from '../configuration/configuration';
+import {
+  Configuration,
+  DEFAULT_ISSUE_VIEW_OPTIONS,
+  DEFAULT_SEVERITY_FILTER,
+  type IConfiguration,
+} from '../configuration/configuration';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import isEqual from 'lodash/isEqual';
 
 /**
- * When native VS Code configuration changes, mark matching LS keys so outbound
- * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for user edits.
+ * Projects a single fan-out LS key's sub-value directly out of a raw VS Code setting value
+ * (e.g. the whole `snyk.severity` object) — without a live {@link IConfiguration}. Reuses the
+ * entry's own `resolve` as the single source of truth for the sub-field name and its default,
+ * by handing it a minimal stub exposing only the getters the current fan-out settings
+ * (severityFilter, issueViewOptions) read from.
+ *
+ * A throwing resolver (or an unmapped lsKey) is treated as "value unknown" rather than letting
+ * the throw escape — a broken sibling must not abort the fan-out loop for the rest of the group.
+ */
+function projectFanOutSubValue(lsKey: string, rawVscodeValue: unknown): unknown {
+  const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+  const stub = {
+    severityFilter: (rawVscodeValue as typeof DEFAULT_SEVERITY_FILTER) ?? DEFAULT_SEVERITY_FILTER,
+    issueViewOptions: (rawVscodeValue as typeof DEFAULT_ISSUE_VIEW_OPTIONS) ?? DEFAULT_ISSUE_VIEW_OPTIONS,
+  } as unknown as IConfiguration;
+  try {
+    return entry.resolve(stub);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Returns the current LS-shaped value for a single-LS-key VS Code setting, via the registry's
+ * own `resolve`. Awaiting works uniformly whether `resolve` is sync or returns a Promise (e.g.
+ * cliPath) — the explicit-overrides map stores this value directly as the outbound LS value, so
+ * an async resolver's real result must not be discarded.
+ */
+async function resolveCurrentLsValue(lsKey: string, configuration: IConfiguration): Promise<unknown> {
+  const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
+  try {
+    return await entry.resolve(configuration);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Compares the current VS Code value for `vscodeKey` against the last-known-value cache
+ * (ticket 01). Equal means the pending change reflects a write the extension itself already
+ * made (or no real change occurred); different means a genuine external edit occurred.
+ *
+ * Exported so the middleware's independent echo-suppression decision (ticket 05) can run the
+ * same stateless comparison against current VS Code state, instead of relying on a shared
+ * per-event flag.
+ */
+export function vscodeValueMatchesLastKnown(
+  vscodeKey: string,
+  workspace: Pick<IVSCodeWorkspace, 'getConfiguration'>,
+  cache: Pick<ILastKnownValueCache, 'get'>,
+): boolean {
+  const { configurationId, section } = Configuration.getConfigName(vscodeKey);
+  return isEqual(workspace.getConfiguration(configurationId, section), cache.get(vscodeKey));
+}
+
+/**
+ * When native VS Code configuration changes (a direct settings.json edit or the native
+ * Settings UI), marks matching LS keys explicit in the explicit-overrides map so outbound
+ * `workspace/didChangeConfiguration` sets `ConfigSetting.changed` for genuine user edits.
  *
  * Uses the pre-computed {@link VSCODE_KEY_TO_LS_KEYS} reverse index directly.
  *
- * ADR-2: For the windowed `committedSinceReset` signal, fan-out groups (multiple LS
- * keys sharing one VS Code setting, e.g. four `severity_filter_*` sharing `snyk.severity`)
- * must only mark the sibling LS keys whose concrete sub-key value actually changed.
- * Pass `currentValueOf` to enable this value-comparison; if omitted, all matching LS
- * keys are marked in both signals (safe for single-LS-key settings and for callers that
- * do not need the windowed signal).
+ * Replaces the old write-time pending-tag consumption with a value comparison against the
+ * shared last-known-value cache (ticket 01): a VS Code key whose current value matches the
+ * cache entry reflects a write the extension itself already made (correct regardless of how
+ * much later the event fires) and is left alone; a divergent value is a genuine external edit.
  *
- * @param e - VS Code configuration change event.
- * @param tracker - Tracker that owns both the cumulative and windowed signals.
- * @param currentValueOf - Optional resolver: given an LS key, returns its current resolved
- *   value (must be sync).  Used to compare against the cached last-known value to determine
- *   which sibling sub-keys actually changed in a fan-out group.  When absent, all siblings
- *   are marked in the windowed signal (same as pre-ADR-2 behaviour for the cumulative set).
+ * For a VS Code key shared by several LS keys (fan-out, e.g. severity filters, issueViewOptions),
+ * only the sibling(s) whose own projected sub-value actually changed are marked — the
+ * projection is read from the very same cache entry (old vs new raw value), so no separate
+ * fan-out-specific cache is needed.
+ *
+ * Async only for the single-LS-key path, which awaits the registry's `resolve` to get the real
+ * value of an async setting (e.g. cliPath) rather than discarding it — the stored value here
+ * becomes the outbound LS value, unlike the old boolean-only tracker mark.
  */
-export function markExplicitLsKeysFromConfigurationChangeEvent(
+export async function markExplicitLsKeysFromConfigurationChangeEvent(
   e: ConfigurationChangeEvent,
-  tracker: IExplicitLspConfigurationChangeTracker,
-  currentValueOf?: (lsKey: string) => unknown,
-): void {
+  explicitOverrides: IExplicitOverridesMap,
+  lastKnownValueCache: ILastKnownValueCache,
+  workspace: Pick<IVSCodeWorkspace, 'getConfiguration'>,
+  configuration: IConfiguration,
+): Promise<void> {
   for (const [vscodeKey, lsKeys] of Object.entries(VSCODE_KEY_TO_LS_KEYS)) {
     if (!e.affectsConfiguration(vscodeKey)) {
       continue;
     }
 
-    // This event may arrive well after the write that caused it. Consuming the pending
-    // marker (set by the writer) attributes it correctly regardless of arrival timing.
-    //
-    // Known narrow-window limitation [IDE-2264]: if a user edits this same vscodeKey while
-    // an inbound write to it is still in flight, VS Code coalesces both writes into a single
-    // onDidChangeConfiguration event. This one `consumePendingInboundWrite` call can't tell
-    // the two apart, so it attributes the coalesced event to the inbound write and the user's
-    // concurrent edit is not marked explicit. Not fixed here — narrow (requires a genuine
-    // race between an LS push and a user edit of the identical key) and would need per-write
-    // value comparison (not just presence) to close.
-    if (tracker.consumePendingInboundWrite(vscodeKey)) {
+    const { configurationId, section } = Configuration.getConfigName(vscodeKey);
+    const newValue = workspace.getConfiguration(configurationId, section);
+    const oldValue = lastKnownValueCache.get(vscodeKey);
+
+    if (isEqual(newValue, oldValue)) {
+      // Reflects a write the extension itself already made (its last-known-value cache entry
+      // was updated at write time) — not a genuine external edit. Take no action.
       continue;
     }
 
-    if (lsKeys.length === 1 || !currentValueOf) {
-      // Single LS key, or no resolver provided: mark both signals for all keys.
-      // For a single-key mapping, VS Code only fires the event when the value
-      // actually changed, so marking the windowed signal unconditionally is correct.
-      for (const lsKey of lsKeys) {
-        tracker.markExplicitlyChanged(lsKey);
-        tracker.markCommittedSinceReset(lsKey);
-        // Only update the cache when the value is defined — storing undefined would
-        // incorrectly warm the cache and suppress future cold-cache conservative marks.
-        if (currentValueOf) {
-          const v = currentValueOf(lsKey);
-          if (v !== undefined) {
-            tracker.setLastKnownValue(lsKey, v);
-          }
-        }
-      }
-    } else {
-      // Fan-out: multiple LS keys share one VS Code setting (e.g. severity, issueViewOptions).
-      // Always mark the cumulative set for all siblings (unchanged — drives changed:true).
-      // Mark the windowed signal only for siblings whose concrete sub-key value changed.
-      for (const lsKey of lsKeys) {
-        tracker.markExplicitlyChanged(lsKey);
+    lastKnownValueCache.set(vscodeKey, newValue);
 
-        const newValue = currentValueOf(lsKey);
-        // Snapshot hasLastKnownValue and oldValue BEFORE updating the cache, so the
-        // cold-cache check reflects the pre-event state (not the freshly-set value).
-        const cacheWasCold = !tracker.hasLastKnownValue(lsKey);
-        const oldValue = tracker.getLastKnownValue(lsKey);
-        // Always update the cache (including undefined — warm cache after a reset seed).
-        tracker.setLastKnownValue(lsKey, newValue);
+    if (lsKeys.length === 1) {
+      // VS Code only fires the event when the value actually changed, and the whole-value
+      // compare above already confirmed that — mark unconditionally.
+      explicitOverrides.setExplicitValue(lsKeys[0], await resolveCurrentLsValue(lsKeys[0], configuration));
+      continue;
+    }
 
-        // Mark the windowed signal only when the value genuinely changed.
-        // Use cacheWasCold (Map.has snapshot before set) to distinguish cold cache (never seen)
-        // from warm cache with stored undefined (e.g. after a reset seed or a legitimately-
-        // undefined value).  Without this distinction, a second event for a key whose
-        // value is legitimately undefined would incorrectly stay in cold-cache mode and
-        // mark committedSinceReset every time — suppressing re-enqueue of valid resets.
-        if (cacheWasCold || !isEqual(newValue, oldValue)) {
-          tracker.markCommittedSinceReset(lsKey);
-        }
-        // If !cacheWasCold && isEqual(newValue, oldValue): a sibling edit fired the
-        // event for this shared VS Code key, but this particular sub-key did NOT change
-        // → do NOT mark the windowed signal.  This is the fan-out false-positive the ADR eliminates.
+    // Fan-out: multiple LS keys share one VS Code setting. Mark only the siblings whose own
+    // projected sub-value actually changed, not every sibling sharing the VS Code key.
+    for (const lsKey of lsKeys) {
+      const oldProjected = projectFanOutSubValue(lsKey, oldValue);
+      const newProjected = projectFanOutSubValue(lsKey, newValue);
+      if (isEqual(oldProjected, newProjected)) {
+        continue;
       }
+      explicitOverrides.setExplicitValue(lsKey, newProjected);
     }
   }
 }

@@ -28,9 +28,9 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware, shouldSkipReenqueue } from './middleware';
 import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
-import { SETTINGS_REGISTRY } from './lsKeyToVscodeKeyMap';
-import { isThenable } from '../tsUtil';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
+import type { IExplicitOverridesMap } from './explicitOverridesMap';
+import type { ILastKnownValueCache } from './lastKnownValueCache';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, type LspInitializationOptions, Scan, ShowIssueDetailTopicParams } from './types';
 import { IExtensionRetriever } from '../vscode/extensionContext';
@@ -103,6 +103,8 @@ export class LanguageServer implements ILanguageServer {
     private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider: ITreeViewProviderService | undefined,
+    private readonly explicitOverridesMap?: IExplicitOverridesMap,
+    private readonly lastKnownValueCache?: ILastKnownValueCache,
   ) {
     this.downloadService = downloadService;
 
@@ -307,32 +309,21 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      // Both inbound-persistence writes and outbound reset writes are attributed by a
-      // write-time tag (markPendingInboundWrite/consumePendingInboundWrite, keyed per
-      // vscodeKey), consumed inside markExplicitLsKeysFromConfigurationChangeEvent — correct
-      // regardless of when the resulting change event actually arrives [IDE-2264].
-      // ADR-2: pass a sync value resolver so the fan-out path can value-compare each
-      // sibling sub-key and only mark committedSinceReset for the sub-keys that actually
-      // changed (not blindly for all siblings sharing the same VS Code setting).
-      // If a resolver returns a Promise (e.g. token, cliPath), the result is treated as
-      // undefined — the fan-out cache misses and marks conservatively (correct: those keys
-      // do not appear in multi-key fan-out groups).
-      markExplicitLsKeysFromConfigurationChangeEvent(e, this.explicitLspConfigurationChangeTracker, lsKey => {
-        const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
-        if (!entry) return undefined;
-        let result: unknown;
-        try {
-          result = entry.resolve(this.configuration);
-        } catch {
-          // A resolver that throws during partial init is treated as "value unknown" —
-          // the same conservative undefined already handled downstream.
-          this.logger.debug(`currentValueOf: resolver for lsKey "${lsKey}" threw; treating as value-unknown`);
-          return undefined;
-        }
-        // Only use sync results for value-comparison; async (Thenable) results resolve
-        // after the event handler returns, so treat them as undefined (conservative).
-        if (isThenable(result)) return undefined;
-        return result;
+      // [IDE-2264 ticket 04]: compares each affected VS Code key's current value against the
+      // shared last-known-value cache instead of consuming a write-time pending tag — correct
+      // regardless of when the resulting change event actually arrives, and doubles as the
+      // fan-out sibling-disambiguation cache (no separate per-LS-key cache).
+      if (!this.explicitOverridesMap || !this.lastKnownValueCache) {
+        return;
+      }
+      markExplicitLsKeysFromConfigurationChangeEvent(
+        e,
+        this.explicitOverridesMap,
+        this.lastKnownValueCache,
+        this.workspace,
+        this.configuration,
+      ).catch((error: unknown) => {
+        this.logger.error(`Failed to mark explicit LS keys from configuration change: ${String(error)}`);
       });
     });
     return this.configurationChangeDisposable;

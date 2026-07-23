@@ -24,7 +24,7 @@ import { LoggerMock, LoggerMockFailOnErrors } from '../../mocks/logger.mock';
 import { WindowMock } from '../../mocks/window.mock';
 import { stubWorkspaceConfiguration } from '../../mocks/workspace.mock';
 import { PROTOCOL_VERSION } from '../../../../snyk/common/constants/languageServer';
-import { ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
+import { ADVANCED_ORGANIZATION, SEVERITY_FILTER_SETTING } from '../../../../snyk/common/constants/settings';
 import { IExtensionRetriever } from '../../../../snyk/common/vscode/extensionContext';
 import { ISummaryProviderService } from '../../../../snyk/base/summary/summaryProviderService';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
@@ -392,6 +392,11 @@ suite('Language Server', () => {
       tracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       undefined,
+      // Same instances as configPersistenceService above (mirrors extension.ts wiring), so the
+      // ticket-04 direct-edit listener sees the cache updates the inbound-push write just made
+      // and correctly recognizes the resulting change events as its own echo, not a user edit.
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -445,6 +450,11 @@ suite('Language Server', () => {
   // suppress the marking of the user's next genuine edit of that same key [IDE-2264].
   test('global reset of a never-overridden key does not leak a pending marker into the next genuine user edit', async () => {
     const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
+    // [IDE-2264 ticket 04]: the old write-time tag (markPendingInboundWrite) this test used to
+    // exercise is gone from the direct-edit listener — it now compares against this cache
+    // instead, so a no-op reset write (nothing changes in the cache) cannot leak anything that
+    // would suppress a later genuine edit.
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const store = new Map<string, unknown>();
@@ -477,6 +487,7 @@ suite('Language Server', () => {
       },
     } as unknown as IVSCodeWorkspace;
 
+    const lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
     const scopeDetectionService = new ScopeDetectionService(workspace);
     const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
     const configPersistenceService = new ConfigurationPersistenceService(
@@ -487,6 +498,8 @@ suite('Language Server', () => {
       logger,
       undefined,
       tracker,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
 
     const { notificationHandlers, adapter } = createRecordingLanguageClientAdapter();
@@ -509,13 +522,15 @@ suite('Language Server', () => {
       tracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
 
     // organization was never overridden (globalValue undefined in the fake store above).
     // A "reset to project defaults" nulls it anyway — the clear-to-undefined write is a
-    // no-op, so no config-change event follows to consume the pending marker.
+    // no-op (nothing to clear), so no config-change event follows and the cache is untouched.
     const handler = notificationHandlers['$/snyk.configuration'];
     handler({
       settings: {
@@ -527,34 +542,40 @@ suite('Language Server', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     // The user now genuinely edits the same setting by hand (e.g. an external settings.json
-    // edit) — a real config-change event that our code never caused.
+    // edit) — the raw VS Code value actually changes, then a real config-change event fires
+    // that our code never caused.
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    store.set(`${configurationId}.${section}`, 'user-edited-org');
+    // The live IConfiguration the listener resolves through must reflect the same edit.
+    (configurationMock as { organization: string }).organization = 'user-edited-org';
     configListener({ affectsConfiguration: (s: string) => s === `${configurationId}.${section}` });
+    // The listener fires-and-forgets an async mark (single-key path awaits entry.resolve).
+    await new Promise(resolve => setTimeout(resolve, 0));
 
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      true,
-      'a genuine user edit must be marked explicit even though an earlier no-op reset write left a pending marker',
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
+      { kind: 'value', value: 'user-edited-org' },
+      'a genuine user edit must be marked explicit even though an earlier no-op reset write ' +
+        'touched nothing that could suppress it',
     );
   });
 
   test('marks explicit LS keys when snyk settings change', async () => {
-    const markStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: markStub,
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: () => true,
-      markPendingReset: sinon.stub(),
-      consumePendingResets: sinon.stub().returns(new Set<string>()),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-      markPendingInboundWrite: sinon.stub(),
-      consumePendingInboundWrite: sinon.stub().returns(false),
-    };
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+    const store = new Map<string, unknown>();
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+
+    const workspace = {
+      getWorkspaceFolders: () => [],
+      getWorkspaceFolderPaths: () => [],
+      getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
+
     const adapter = {
       create(): LanguageClient {
         return {
@@ -567,15 +588,6 @@ suite('Language Server', () => {
         } as unknown as LanguageClient;
       },
     } as unknown as ILanguageClientAdapter;
-
-    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
-    const workspace = {
-      ...baseWorkspace,
-      onDidChangeConfiguration: (fn: typeof configListener) => {
-        configListener = fn;
-        return { dispose: sinon.stub() };
-      },
-    } as IVSCodeWorkspace;
 
     languageServer = new LanguageServer(
       user,
@@ -593,33 +605,45 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
+      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
+
+    // A genuine settings.json edit: the raw VS Code value changes...
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    store.set(`${configurationId}.${section}`, 'new-org');
+    // ...and the live IConfiguration the listener resolves through reflects the same edit.
+    (configurationMock as { organization: string }).organization = 'new-org';
+
     configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
-    sinon.assert.called(markStub);
+    // The listener fires-and-forgets an async mark (single-key path awaits entry.resolve).
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
+      kind: 'value',
+      value: 'new-org',
+    });
   });
 
   test('does not mark explicit LS keys when only non-snyk configuration changes', async () => {
-    const markStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: markStub,
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: () => true,
-      markPendingReset: sinon.stub(),
-      consumePendingResets: sinon.stub().returns(new Set<string>()),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-      markPendingInboundWrite: sinon.stub(),
-      consumePendingInboundWrite: sinon.stub().returns(false),
-    };
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+
+    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
+    const workspace = {
+      ...baseWorkspace,
+      onDidChangeConfiguration: (fn: typeof configListener) => {
+        configListener = fn;
+        return { dispose: sinon.stub() };
+      },
+    } as IVSCodeWorkspace;
+    const lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
+
     const adapter = {
       create(): LanguageClient {
         return {
@@ -632,15 +656,6 @@ suite('Language Server', () => {
         } as unknown as LanguageClient;
       },
     } as unknown as ILanguageClientAdapter;
-
-    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
-    const workspace = {
-      ...baseWorkspace,
-      onDidChangeConfiguration: (fn: typeof configListener) => {
-        configListener = fn;
-        return { dispose: sinon.stub() };
-      },
-    } as IVSCodeWorkspace;
 
     languageServer = new LanguageServer(
       user,
@@ -658,32 +673,21 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
+      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
     configListener({ affectsConfiguration: () => false });
-    sinon.assert.notCalled(markStub);
+    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
   });
 
-  test('tracks explicit LS keys while the LS is down (listener registered without start)', () => {
-    const markStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: markStub,
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: () => true,
-      markPendingReset: sinon.stub(),
-      consumePendingResets: sinon.stub().returns(new Set<string>()),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-      markPendingInboundWrite: sinon.stub(),
-      consumePendingInboundWrite: sinon.stub().returns(false),
-    };
+  test('tracks explicit LS keys while the LS is down (listener registered without start)', async () => {
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+    const store = new Map<string, unknown>();
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const onDidChangeConfigurationStub = sinon.stub().callsFake((fn: typeof configListener) => {
       configListener = fn;
@@ -693,9 +697,12 @@ suite('Language Server', () => {
     const adapter = { create: createStub } as unknown as ILanguageClientAdapter;
 
     const workspace = {
-      ...stubWorkspaceConfiguration('snyk.loglevel', 'trace'),
+      getWorkspaceFolders: () => [],
+      getWorkspaceFolderPaths: () => [],
+      getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
       onDidChangeConfiguration: onDidChangeConfigurationStub,
-    } as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
 
     languageServer = new LanguageServer(
       user,
@@ -713,9 +720,11 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
+      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
 
     // No start() — the CLI hasn't downloaded yet, but the listener must already be active.
@@ -723,54 +732,35 @@ suite('Language Server', () => {
     // Idempotent: a second call must not subscribe again.
     languageServer.registerExplicitKeyMarkingListener();
 
+    const { configurationId, section } = Configuration.getConfigName(ADVANCED_ORGANIZATION);
+    store.set(`${configurationId}.${section}`, 'new-org');
+    (configurationMock as { organization: string }).organization = 'new-org';
+
     configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
+    // The listener fires-and-forgets an async mark (single-key path awaits entry.resolve).
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     sinon.assert.calledOnce(onDidChangeConfigurationStub);
-    sinon.assert.called(markStub);
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
+      kind: 'value',
+      value: 'new-org',
+    });
     sinon.assert.notCalled(createStub);
   });
 
-  test('resolver throw in currentValueOf does not prevent sibling LS keys from being marked', async () => {
-    // This test covers the loop-continuity guarantee: the lambda passed to
-    // markExplicitLsKeysFromConfigurationChangeEvent as currentValueOf must not let a
-    // synchronous throw from entry.resolve() escape and abort processing of the remaining
-    // LS keys in the same event.
+  test('resolver throw for one fan-out sibling does not prevent the remaining siblings from being marked', async () => {
+    // Loop-continuity guarantee: a synchronous throw from one fan-out sibling's entry.resolve()
+    // must not abort processing of the remaining LS keys sharing the same VS Code setting.
     //
-    // We use the severity fan-out group (four LS keys share snyk.severity) so we can:
-    //   - make severityFilterCritical.resolve throw
-    //   - pre-warm the cache for severityFilterHigh with its current value (true) so that
-    //     its "newValue === oldValue" comparison suppresses markCommittedSinceReset — proving
-    //     the selectivity of the fan-out path (the assertion is not vacuously true)
-    //   - assert severityFilterMedium IS still marked committedSinceReset (loop continuity)
-    //   - assert severityFilterHigh is NOT marked committedSinceReset (value unchanged, warm cache)
-    //
-    // The mock configurationMock has severityFilter: DEFAULT_SEVERITY_FILTER = {critical:true,
-    // high:true, medium:true, low:true}, so severityFilterHigh.resolve returns true.
-    // By returning hasLastKnownValue=true and getLastKnownValue=true for severityFilterHigh,
-    // the fan-out path sees cacheWasCold=false and isEqual(true,true)=true → does NOT call
-    // markCommittedSinceReset for that key.  If the try/catch were removed and the throw from
-    // severityFilterCritical escaped, the loop would abort before reaching severityFilterMedium,
-    // and the sinon.assert.calledWith(markCommittedSinceResetStub, severityFilterMedium) would fail.
-    const markCommittedSinceResetStub = sinon.stub();
-    const markExplicitlyChangedStub = sinon.stub();
-
-    // severityFilterHigh gets a warm cache returning the same value as its resolver (true).
-    // All other keys get a cold cache (hasLastKnownValue returns false) so they ARE marked.
-    const warmKey = LS_GLOBAL_KEY.severityFilterHigh;
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: markExplicitlyChangedStub,
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: () => true,
-      markPendingReset: sinon.stub(),
-      consumePendingResets: sinon.stub().returns(new Set<string>()),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: markCommittedSinceResetStub,
-      hasLastKnownValue: (lsKey: string) => lsKey === warmKey,
-      getLastKnownValue: (lsKey: string) => (lsKey === warmKey ? true : undefined),
-      setLastKnownValue: sinon.stub(),
-      markPendingInboundWrite: sinon.stub(),
-      consumePendingInboundWrite: sinon.stub().returns(false),
-    };
+    // Severity fan-out group (four LS keys share snyk.severity):
+    //   - severityFilterCritical.resolve throws
+    //   - severityFilterHigh's raw value is unchanged (old === new) — must NOT be marked
+    //     (proves selectivity: the assertion below is not vacuously true)
+    //   - severityFilterMedium's raw value genuinely changed — must still be marked despite
+    //     critical's throw occurring earlier in the same loop
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+    const store = new Map<string, unknown>();
+    store.set('snyk.severity', { critical: true, high: true, medium: true, low: true });
 
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
@@ -786,14 +776,16 @@ suite('Language Server', () => {
       },
     } as unknown as ILanguageClientAdapter;
 
-    const baseWorkspace = stubWorkspaceConfiguration('snyk.loglevel', 'trace');
     const workspace = {
-      ...baseWorkspace,
+      getWorkspaceFolders: () => [],
+      getWorkspaceFolderPaths: () => [],
+      getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
       onDidChangeConfiguration: (fn: typeof configListener) => {
         configListener = fn;
         return { dispose: sinon.stub() };
       },
-    } as IVSCodeWorkspace;
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache = new LastKnownValueCache(workspace, [SEVERITY_FILTER_SETTING]);
 
     languageServer = new LanguageServer(
       user,
@@ -811,9 +803,11 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
+      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
     downloadServiceMock.downloadReady$.next();
     await languageServer.start();
@@ -826,24 +820,25 @@ suite('Language Server', () => {
     };
 
     try {
-      // Trigger a snyk.severity change — all four severity LS keys share that VS Code key.
-      configListener({ affectsConfiguration: (s: string) => s === 'snyk.severity' });
+      // Only medium's raw value actually changes.
+      store.set('snyk.severity', { critical: true, high: true, medium: false, low: true });
+      configListener({ affectsConfiguration: (s: string) => s === SEVERITY_FILTER_SETTING });
 
       // PRIMARY ASSERTION (loop continuity): despite severityFilterCritical.resolve throwing,
-      // severityFilterMedium must still be marked in both cumulative and windowed signals.
-      // If the try/catch is removed the throw escapes and aborts the loop — this fails RED.
-      sinon.assert.calledWith(markExplicitlyChangedStub, LS_GLOBAL_KEY.severityFilterMedium);
-      sinon.assert.calledWith(markCommittedSinceResetStub, LS_GLOBAL_KEY.severityFilterMedium);
+      // severityFilterMedium must still be marked. If the throw escaped uncaught, the loop
+      // would abort before reaching medium — this fails RED without the try/catch.
+      assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
+        kind: 'value',
+        value: false,
+      });
 
-      // SELECTIVITY ASSERTION (non-vacuous committedSinceReset): severityFilterHigh has a
-      // warm cache whose value matches its current resolver output (true === true), so the
-      // fan-out path must NOT mark it committedSinceReset.  Without the warm-cache setup,
-      // cacheWasCold would always be true and this assertion would pass vacuously.
-      sinon.assert.neverCalledWith(markCommittedSinceResetStub, LS_GLOBAL_KEY.severityFilterHigh);
+      // SELECTIVITY ASSERTION: severityFilterHigh's raw value is unchanged, so it must not be
+      // marked — proving the fan-out path only marks siblings that genuinely changed.
+      assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), undefined);
 
-      // Cumulative signal IS still marked for severityFilterHigh (markExplicitlyChanged is
-      // unconditional in the fan-out path — it drives changed:true regardless of value).
-      sinon.assert.calledWith(markExplicitlyChangedStub, LS_GLOBAL_KEY.severityFilterHigh);
+      // A throwing resolver is treated as value-unknown on both the old and new projection, so
+      // no (false) change is detected for critical itself.
+      assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined);
     } finally {
       // Restore the original resolver regardless of test outcome.
       SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalCriticalResolve;
@@ -1348,26 +1343,22 @@ suite('Language Server', () => {
     });
   });
 
-  // ── Outbound reset self-cancel guard (IDE-2149, fixed via write-time tag in IDE-2264) ──
+  // ── Outbound reset self-cancel guard (IDE-2149, originally fixed via write-time tag) ──
   //
   // markExplicitlyChanged calls pendingResets.delete so that a user re-edit after a reset
-  // cancels the stale pending signal. But the onDidChangeConfiguration listener (registered
-  // in registerExplicitKeyMarkingListener) also calls markExplicitlyChanged for ANY snyk.*
-  // setting change — including the change triggered by the reset's own updateConfiguration
-  // write.
+  // cancels the stale pending signal. The ORIGINAL bug: the onDidChangeConfiguration listener
+  // (registered in registerExplicitKeyMarkingListener) used to call markExplicitlyChanged for
+  // ANY snyk.* setting change — including the change triggered by a reset's own
+  // updateConfiguration write — which could delete a still-pending reset out from under it
+  // depending on event-arrival ordering. IDE-2264 first fixed this with a write-time tag
+  // (markPendingInboundWrite/consumePendingInboundWrite).
   //
-  // Adversarial ordering:
-  //   1. applyOutboundGlobalResets calls updateConfiguration (clears VS Code override)
-  //   2. markPendingReset(key) — key is now in pendingResets
-  //   3. VS Code fires onDidChangeConfiguration (asynchronously, after step 2)
-  //   4. listener calls markExplicitlyChanged(key) → pendingResets.delete(key) → LOST
-  //
-  // Fix (IDE-2264): applyVscodeKeyResets tags each vscodeKey with markPendingInboundWrite
-  // before its write, mirroring the inbound-persistence fix. The listener consumes that tag
-  // (consumePendingInboundWrite) instead of relying on a suppression window scoped to the
-  // synchronous duration of the write — correct no matter when the change event arrives.
-  // (An earlier suppressor-based guard, outboundResetSuppressor, made exactly that timing
-  // assumption and was removed as dead code once the tag-based fix landed.)
+  // [IDE-2264 ticket 04] superseded that tag entirely: the listener now writes only to the
+  // explicit-overrides map (via markExplicitLsKeysFromConfigurationChangeEvent) and no longer
+  // calls the tracker's markExplicitlyChanged/pendingResets at all, for any key, tagged or not.
+  // The whole adversarial-ordering class this suite exists to guard against is therefore
+  // structurally impossible now, independent of ordering — proven below without needing to
+  // simulate the tag or its timing.
   suite('outbound reset self-cancel guard (adversarial onDidChangeConfiguration ordering)', () => {
     function makeLanguageServerWithListener(
       tracker: ExplicitLspConfigurationChangeTracker,
@@ -1417,10 +1408,7 @@ suite('Language Server', () => {
       );
     }
 
-    test('adversarial ordering — listener fires AFTER markPendingReset: pending reset SURVIVES via the write-time tag', () => {
-      // Proves the IDE-2264 fix: markPendingInboundWrite(vscodeKey) — set by
-      // applyVscodeKeyResets right before its write, exactly as it would be in production —
-      // is enough on its own, independent of the change event's timing.
+    test('pending reset survives any listener firing, tagged or not — the listener no longer touches the tracker at all', () => {
       const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
@@ -1430,73 +1418,24 @@ suite('Language Server', () => {
 
       ls.registerExplicitKeyMarkingListener();
 
-      // Step 1: tag the vscodeKey, as applyVscodeKeyResets does right before its write.
-      tracker.markPendingInboundWrite(ADVANCED_ORGANIZATION);
-
-      // Step 2: markPendingReset is called (as applyOutboundGlobalResets does after updateConfiguration).
+      // Queue a pending reset (simulates what applyOutboundGlobalResets does after
+      // updateConfiguration) with no pending-write tag at all — the adversarial case that used
+      // to lose the reset under the old tag-based design.
       tracker.markPendingReset(LS_GLOBAL_KEY.organization);
 
-      // Step 3: VS Code fires onDidChangeConfiguration for the reset key (adversarial ordering:
-      // fires AFTER markPendingReset). The listener must consume the tag and skip marking.
-      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
-
-      // The pending reset MUST still be present — the listener must not have deleted it.
-      const pending = tracker.consumePendingResets();
-      assert.ok(
-        pending.has(LS_GLOBAL_KEY.organization),
-        'Pending reset must survive when the listener fires after markPendingReset — ' +
-          'the write-time tag must prevent markExplicitlyChanged from deleting the pending reset.',
-      );
-    });
-
-    test('markExplicitlyChanged deletes pending reset when the write is untagged (adversarial timing root cause)', () => {
-      // Documents the root cause: without the write-time tag, the onDidChangeConfiguration
-      // listener calls markExplicitlyChanged for any snyk.* change, which deletes the key
-      // from pendingResets. The fix (tagging the write) is proven by the sibling test above.
-      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-
-      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, fn => {
-        configListener = fn;
-      });
-
-      ls.registerExplicitKeyMarkingListener();
-
-      // Queue a pending reset (simulates what applyOutboundGlobalResets does after updateConfiguration).
-      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
-
-      // Listener fires without a pending-write tag — markExplicitlyChanged is called,
-      // which calls pendingResets.delete(key), removing the pending reset signal.
+      // VS Code fires onDidChangeConfiguration for the reset key.
       configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
 
       const pending = tracker.consumePendingResets();
       assert.ok(
-        !pending.has(LS_GLOBAL_KEY.organization),
-        'markExplicitlyChanged deletes from pendingResets when the write was not tagged — ' +
-          'this is the timing sensitivity the write-time tag in the listener addresses.',
+        pending.has(LS_GLOBAL_KEY.organization),
+        'the direct-edit listener must never call markExplicitlyChanged on the old tracker, so ' +
+          'pendingResets is untouched regardless of ordering or tagging',
       );
-    });
-
-    test('listener still fires normally for an untagged user edit (no regression)', () => {
-      // Normal user edit: no pending-write tag, listener SHOULD call markExplicitlyChanged.
-      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-
-      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, fn => {
-        configListener = fn;
-      });
-
-      ls.registerExplicitKeyMarkingListener();
-
-      // Fire listener for an untagged change — must mark the key.
-      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
-
-      // At least one snyk.* LS key must be marked explicitly.
-      // (VSCODE_KEY_TO_LS_KEYS maps snyk.* vscode keys to LS keys; affectsConfiguration returns
-      //  true for all of them, so all snyk.* LS keys that have a vscodeKey get marked.)
       assert.ok(
-        tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-        'organization LS key must be marked explicitly when listener fires for an untagged change',
+        !tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
+        'the listener no longer writes to the tracker cumulative set at all — this leg is now ' +
+          'exclusively handled by the explicit-overrides map (see the direct-edit-detection suite)',
       );
     });
 

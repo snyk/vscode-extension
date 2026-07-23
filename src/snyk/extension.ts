@@ -287,6 +287,8 @@ class SnykExtension extends SnykLib implements IExtension {
       explicitLspConfigurationChangeTracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(

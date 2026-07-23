@@ -65,19 +65,18 @@ export interface IExplicitLspConfigurationChangeTracker {
   /**
    * Returns the last cached value for `lsKey`, or `undefined` if not yet seen.
    *
-   * Used by `markExplicitLsKeysFromConfigurationChangeEvent` to compare the new
-   * sub-key value against the prior value for shared-setting fan-out groups (e.g.
-   * four `severity_filter_*` keys that share `snyk.severity`).  A sibling whose
-   * sub-key value did not change is NOT marked in the windowed `committedSinceReset`
-   * signal, even though the shared VS Code setting fired `onDidChangeConfiguration`.
+   * [IDE-2264 ticket 04]: no longer read by markExplicitLsKeysFromConfigurationChangeEvent —
+   * that function now compares against the shared, vscodeKey-keyed LastKnownValueCache
+   * (ticket 01) instead. Retained on this tracker only for its own direct unit coverage until
+   * ticket 08 removes the now-unused ADR-2 fan-out cache entirely.
    */
   getLastKnownValue(lsKey: string): unknown;
 
   /**
    * Updates the cached value for `lsKey` to `value`.
    *
-   * Called by `markExplicitLsKeysFromConfigurationChangeEvent` after reading each
-   * sub-key's new value, so the next event can compare against it.
+   * [IDE-2264 ticket 04]: no longer called by markExplicitLsKeysFromConfigurationChangeEvent —
+   * see {@link getLastKnownValue}.
    *
    * NOT persisted to Memento — cache starts empty on construction.
    */
