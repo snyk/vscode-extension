@@ -312,7 +312,7 @@ export class LanguageServer implements ILanguageServer {
     }
 
     this.configurationChangeDisposable = this.workspace.onDidChangeConfiguration(e => {
-      // [IDE-2264 ticket 04]: compares each affected VS Code key's current value against the
+      // Compares each affected VS Code key's current value against the
       // shared last-known-value cache instead of consuming a write-time pending tag — correct
       // regardless of when the resulting change event actually arrives, and doubles as the
       // fan-out sibling-disambiguation cache (no separate per-LS-key cache).
@@ -466,7 +466,7 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<LspInitializationOptions> {
-    // [IDE-2264 ticket 06]: a reset queued before an LS (re)start is still emitted as
+    // A reset queued before an LS (re)start is still emitted as
     // { value: null, changed: true } here — the explicit-overrides map's reset sentinel is read
     // live (never drained before this response is built), so a failure below leaves it intact for
     // an automatic retry on the next call, whether that's another getInitializationOptions or the

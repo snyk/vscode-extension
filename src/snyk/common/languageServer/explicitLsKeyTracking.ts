@@ -74,7 +74,7 @@ export function vscodeValueMatchesLastKnown(
 }
 
 /**
- * [IDE-2264 ticket 05]: the middleware's outbound echo-suppression decision. Iterates every
+ * Backs the middleware's outbound echo-suppression decision. Iterates every
  * tracked VS Code key and reuses {@link vscodeValueMatchesLastKnown} — the same stateless
  * comparison {@link markExplicitLsKeysFromConfigurationChangeEvent} uses — against current VS
  * Code state at the moment it's called. Returns true (forward to the LS) iff at least one
@@ -141,7 +141,7 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
       continue;
     }
 
-    // [IDE-2264 ticket 05]: deferred rather than applied immediately. VS Code invokes every
+    // Deferred rather than applied immediately. VS Code invokes every
     // onDidChangeConfiguration listener for this one event synchronously, back-to-back —
     // including the language client's own internal listener that drives
     // LanguageClientMiddleware.didChangeConfiguration's independent hasUnreflectedConfigurationChange
@@ -191,6 +191,7 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
 export function seedExplicitChangesFromExistingSettings(
   explicitOverrides: IExplicitOverridesMap,
   workspace: Pick<IVSCodeWorkspace, 'inspectConfiguration'>,
+  logger?: Pick<ILog, 'error'>,
 ): void {
   for (const [lsKey, entry] of Object.entries(SETTINGS_REGISTRY)) {
     // R3: skip alwaysChanged
@@ -205,17 +206,33 @@ export function seedExplicitChangesFromExistingSettings(
 
     // R4: only seed when globalValue is defined and differs from the default (which may be undefined)
     if (inspect === undefined || inspect.globalValue === undefined) continue;
-    if (!isEqual(inspect.globalValue, inspect.defaultValue)) {
-      explicitOverrides.setExplicitValue(lsKey, inspect.globalValue);
+
+    // Fan-out: several LS keys share one vscodeKey (severity filters, issue view options).
+    // inspect.globalValue/defaultValue are the WHOLE shared object for every sibling, so
+    // comparing them directly would seed every sibling whenever any one of them deviates from
+    // default. Project each sibling's own sub-value first (same projection the config-change
+    // path uses) and seed only the sibling whose own value actually differs.
+    const isFanOut = (VSCODE_KEY_TO_LS_KEYS[entry.vscodeKey]?.length ?? 0) > 1;
+    if (!isFanOut) {
+      if (!isEqual(inspect.globalValue, inspect.defaultValue)) {
+        explicitOverrides.setExplicitValue(lsKey, inspect.globalValue);
+      }
+      continue;
+    }
+
+    const projectedGlobal = projectFanOutSubValue(lsKey, inspect.globalValue, logger);
+    const projectedDefault = projectFanOutSubValue(lsKey, inspect.defaultValue, logger);
+    if (!isEqual(projectedGlobal, projectedDefault)) {
+      explicitOverrides.setExplicitValue(lsKey, projectedGlobal);
     }
   }
 }
 
 /**
- * [IDE-2264 ticket 09]: the sole `changed` predicate for `LanguageServerSettings.fromConfiguration`
+ * The sole `changed` predicate for `LanguageServerSettings.fromConfiguration`
  * — both `'value'` and `'reset'` entries count as explicitly changed. Shared by every
  * `fromConfiguration` call site (`middleware.ts`, `languageServer.ts`) so the read-side definition
- * of "changed" can't drift between them, the exact class of bug this ticket fixed.
+ * of "changed" can't drift between them.
  */
 export function isExplicitlyChanged(lsKey: string, explicitOverrides?: IExplicitOverridesMap): boolean {
   return explicitOverrides?.getEntry(lsKey) !== undefined;
@@ -243,7 +260,7 @@ export function assertExplicitOverrideDepsPresent(
 }
 
 /**
- * [IDE-2264 ticket 06]: after a pull response sends a reset (`{ value: null, changed: true }`),
+ * After a pull response sends a reset (`{ value: null, changed: true }`),
  * confirms delivery in the explicit-overrides map so the sentinel is cleared and not resent on a
  * later pull. Only called with the settings that actually made it into a successfully built
  * response — the map is never drained before that point, so a build failure automatically leaves

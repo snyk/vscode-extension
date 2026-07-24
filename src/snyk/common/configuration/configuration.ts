@@ -348,7 +348,7 @@ export class Configuration implements IConfiguration {
     this.extensionId = extensionId;
   }
 
-  // [IDE-2264 ticket 07]: cli_release_channel is an IDE-only field (see mapConfigToSettings) —
+  // cli_release_channel is an IDE-only field (see mapConfigToSettings) —
   // it has no SETTINGS_REGISTRY entry, so it's not a tracked key and has no cache to update.
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
@@ -635,7 +635,7 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
-  // [IDE-2264 ticket 07]: yes_welcome_notification has no SETTINGS_REGISTRY entry — not a
+  // yes_welcome_notification has no SETTINGS_REGISTRY entry — not a
   // tracked key, so no cache to update.
   async hideWelcomeNotification(): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(YES_WELCOME_NOTIFICATION_SETTING);

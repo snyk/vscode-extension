@@ -79,7 +79,7 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      // [IDE-2264 ticket 09]: the explicit-overrides map is the sole source for `changed` —
+      // The explicit-overrides map is the sole source for `changed` —
       // both 'value' and 'reset' entries count. Reset entries are read live — never drained
       // before the response is built — so a failure below leaves every entry intact for an
       // automatic retry on the next pull. No re-enqueue bookkeeping needed.
@@ -98,7 +98,7 @@ export class LanguageClientMiddleware implements Middleware {
       return [{ settings: lspParam }];
     },
     didChangeConfiguration: async (sections, next) => {
-      // [IDE-2264 ticket 05]: computed fresh on every call against current VS Code state — no
+      // Computed fresh on every call against current VS Code state — no
       // shared per-event flag. Agrees with the configuration-change-event handler's own decision
       // (explicitLsKeyTracking.ts) regardless of listener registration order — see
       // hasUnreflectedConfigurationChange's doc comment for why.
