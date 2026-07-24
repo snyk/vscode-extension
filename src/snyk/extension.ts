@@ -44,7 +44,6 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
-import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitOverridesMap } from './common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache } from './common/languageServer/lastKnownValueCache';
 import { VSCODE_KEY_TO_LS_KEYS } from './common/languageServer/lsKeyToVscodeKeyMap';
@@ -235,10 +234,9 @@ class SnykExtension extends SnykLib implements IExtension {
       );
     }
 
-    const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
-    seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
-
     const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState);
+    seedExplicitChangesFromExistingSettings(explicitOverridesMap, vsCodeWorkspace);
+
     const lastKnownValueCache = new LastKnownValueCache(vsCodeWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
     configuration.setLastKnownValueCache(lastKnownValueCache);
 
@@ -250,7 +248,6 @@ class SnykExtension extends SnykLib implements IExtension {
       languageClientAdapter,
       Logger,
       this.contextService,
-      explicitLspConfigurationChangeTracker,
       explicitOverridesMap,
       lastKnownValueCache,
     );
@@ -285,7 +282,6 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
-      explicitLspConfigurationChangeTracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
       explicitOverridesMap,

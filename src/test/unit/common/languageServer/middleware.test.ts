@@ -9,7 +9,6 @@ import {
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import type { IExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import type { ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
@@ -245,7 +244,6 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       vscodeWorkspace,
-      undefined,
       lastKnownValueCache,
     );
 
@@ -270,7 +268,6 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       vscodeWorkspace,
-      undefined,
       lastKnownValueCache,
     );
 
@@ -300,7 +297,6 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       vscodeWorkspace,
-      undefined,
       lastKnownValueCache,
     );
 
@@ -308,28 +304,25 @@ suite('Language Server: Middleware', () => {
     sinon.assert.notCalled(nextStub);
   });
 
-  test('unmarks explicitly changed keys after emitting a reset (value: null)', async () => {
-    const unmarkStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: unmarkStub,
-      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
+  // [IDE-2264 ticket 09]: the explicit-overrides map is the sole source for `changed` — both
+  // 'value' and 'reset' entries count. Replaces the old tracker-based unmark-on-reset test.
+  test('reads changed:true from the explicit-overrides map for a "value" entry', async () => {
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: sinon.stub(),
+      getEntry: (lsKey: string) => (lsKey === LS_KEY.organization ? { kind: 'value', value: 'acme-corp' } : undefined),
+      confirmResetDelivered: sinon.stub(),
     };
-
-    // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
-    const configWithNullOrg = {
-      ...configuration,
-      organization: null as unknown as string,
-    } as IConfiguration;
 
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
-      configWithNullOrg,
+      configuration,
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      tracker,
+      undefined,
+      explicitOverridesMap,
     );
 
     const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
@@ -338,9 +331,15 @@ suite('Language Server: Middleware', () => {
       onCancellationRequested: sinon.fake(),
     };
 
-    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+    const res = await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+    if (res instanceof Error) {
+      assert.fail('Handler returned an error');
+    }
+    const pullItem = (res as Array<{ settings: LspConfigurationParam }>)[0];
+    const settings = pullItem.settings.settings!;
 
-    assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
+    assert.strictEqual(settings[LS_KEY.organization]?.changed, true, 'organization should be changed:true');
+    assert.strictEqual(settings[LS_KEY.apiEndpoint]?.changed, false, 'untouched key remains changed:false');
   });
 
   // ── [IDE-2264 ticket 06]: reset delivery is driven by the explicit-overrides map's reset
@@ -363,7 +362,6 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
-      undefined,
       undefined,
       undefined,
       explicitOverridesMap,
@@ -406,7 +404,6 @@ suite('Language Server: Middleware', () => {
       {} as IVSCodeCommands,
       undefined,
       undefined,
-      undefined,
       explicitOverridesMap,
     );
 
@@ -440,7 +437,6 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
-      undefined,
       undefined,
       undefined,
       explicitOverridesMap,

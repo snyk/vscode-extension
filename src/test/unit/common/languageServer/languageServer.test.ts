@@ -35,8 +35,6 @@ import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diag
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
 import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { ExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
@@ -64,12 +62,6 @@ suite('Language Server', () => {
 
   const logger = new LoggerMockFailOnErrors();
 
-  const explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker = {
-    markExplicitlyChanged: sinon.stub(),
-    unmarkExplicitlyChanged: sinon.stub(),
-    isExplicitlyChanged: () => true,
-  };
-
   const createFakeLanguageServer = (
     languageClientAdapter: ILanguageClientAdapter,
     workspace: IVSCodeWorkspace,
@@ -91,7 +83,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       treeViewProvider,
     );
@@ -121,7 +112,7 @@ suite('Language Server', () => {
     return { notificationHandlers, sendNotification, adapter };
   }
 
-  /** Minimal in-memory Memento for ExplicitLspConfigurationChangeTracker. */
+  /** Minimal in-memory Memento for ExplicitOverridesMap. */
   function makeMemento(): import('vscode').Memento {
     const store = new Map<string, unknown>();
     return {
@@ -315,7 +306,6 @@ suite('Language Server', () => {
   // separate async round-trip from the write — modeling real VS Code (settings.json write,
   // then a later file-watcher-driven config refresh), not one synchronous call.
   test('inbound LS persistence never marks settings explicit, even on a delayed change event', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
     // [IDE-2264 ticket 03]: wired the same way as extension.ts, to prove by construction that
     // an inbound push never writes to the explicit-overrides map — even for a migration-shaped
     // payload whose resulting change events are delayed past this operation's completion.
@@ -358,7 +348,6 @@ suite('Language Server', () => {
       clientAdapter,
       logger,
       undefined,
-      tracker,
       explicitOverridesMap,
       lastKnownValueCache,
     );
@@ -380,7 +369,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       undefined,
       // Same instances as configPersistenceService above (mirrors extension.ts wiring), so the
@@ -420,12 +408,6 @@ suite('Language Server', () => {
       LS_GLOBAL_KEY.organization,
     ]) {
       assert.strictEqual(
-        tracker.isExplicitlyChanged(lsKey),
-        false,
-        `${lsKey}: inbound-persisted setting must not be marked explicit just because VS Code ` +
-          'delivered the change event on a later tick than the write',
-      );
-      assert.strictEqual(
         explicitOverridesMap.getEntry(lsKey),
         undefined,
         `${lsKey}: an inbound push must never write to the explicit-overrides map, even for a ` +
@@ -439,7 +421,6 @@ suite('Language Server', () => {
   // overridden GLOBAL_RESET_FIELDS key would leak a marker that no event ever consumed,
   // wrongly suppressing the marking of the user's next genuine edit of that key [IDE-2264].
   test('global reset of a never-overridden key does not leak a pending marker into the next genuine user edit', async () => {
-    const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
     // [IDE-2264 ticket 04]: the old write-time tag (markPendingInboundWrite) this test used to
     // exercise is gone from the direct-edit listener — it now compares against this cache
     // instead, so a no-op reset write (nothing changes in the cache) cannot leak anything that
@@ -487,7 +468,6 @@ suite('Language Server', () => {
       clientAdapter,
       logger,
       undefined,
-      tracker,
       explicitOverridesMap,
       lastKnownValueCache,
     );
@@ -509,7 +489,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      tracker,
       view => configPersistenceService.persistInboundLspConfiguration(view),
       undefined,
       explicitOverridesMap,
@@ -595,7 +574,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
       explicitOverridesMap,
@@ -663,7 +641,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
       explicitOverridesMap,
@@ -710,7 +687,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
       explicitOverridesMap,
@@ -793,7 +769,6 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      explicitLspConfigurationChangeTracker,
       sinon.stub().resolves(),
       undefined,
       explicitOverridesMap,
@@ -985,7 +960,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
@@ -1029,7 +1003,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
@@ -1070,7 +1043,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
@@ -1084,7 +1056,6 @@ suite('Language Server', () => {
 
     test('pending reset is delivered exactly once: middleware pull confirms delivery; getInitializationOptions does not re-deliver', async () => {
       // Arrange: one real explicit-overrides map shared by both consumers.
-      const sharedTracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
       const sharedExplicitOverridesMap = new ExplicitOverridesMap(makeMemento());
       sharedExplicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
 
@@ -1096,7 +1067,6 @@ suite('Language Server', () => {
         {} as IUriAdapter,
         {} as IVSCodeCommands,
         undefined,
-        sharedTracker,
         undefined,
         sharedExplicitOverridesMap,
       );
@@ -1144,7 +1114,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        sharedTracker,
         sinon.stub().resolves(),
         undefined,
         sharedExplicitOverridesMap,
@@ -1260,7 +1229,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         persistStub,
         undefined,
       );
@@ -1295,14 +1263,13 @@ suite('Language Server', () => {
   // registerExplicitKeyMarkingListener) used to call markExplicitlyChanged for ANY snyk.*
   // setting change — including the change triggered by a reset's own updateConfiguration
   // write — which could cancel a still-pending reset depending on event-arrival ordering.
-  // Fixed first via a write-time tag, then [IDE-2264 ticket 04] superseded that tag entirely:
-  // the listener now writes only to the explicit-overrides map (via
-  // markExplicitLsKeysFromConfigurationChangeEvent) and no longer touches the tracker at all.
+  // Fixed first via a write-time tag, then [IDE-2264 ticket 04] superseded that tag entirely,
+  // and [IDE-2264 ticket 09] deleted the tracker outright: the listener writes only to the
+  // explicit-overrides map (via markExplicitLsKeysFromConfigurationChangeEvent).
   // The whole adversarial-ordering class this suite exists to guard against is therefore
   // structurally impossible now, independent of ordering.
   suite('outbound reset self-cancel guard (adversarial onDidChangeConfiguration ordering)', () => {
     function makeLanguageServerWithListener(
-      tracker: ExplicitLspConfigurationChangeTracker,
       onListener: (fn: (e: { affectsConfiguration: (s: string) => boolean }) => void) => void,
     ): LanguageServer {
       const adapter = {
@@ -1343,19 +1310,17 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        tracker,
         sinon.stub().resolves(),
         undefined,
       );
     }
 
     // The outbound save path now records a reset directly in the explicit-overrides map
-    // (ConfigurationPersistenceService.applyOutboundGlobalResets) instead of the old tracker's
-    // write-time tag + pendingResets set. Nothing wires the onDidChangeConfiguration listener to
-    // the explicit-overrides map, so a genuinely delayed dispatch has nothing to interfere with —
-    // this adversarial-ordering class of bug is now structurally impossible for the outbound leg.
+    // (ConfigurationPersistenceService.applyOutboundGlobalResets). Nothing wires the
+    // onDidChangeConfiguration listener to the explicit-overrides map, so a genuinely delayed
+    // dispatch has nothing to interfere with — this adversarial-ordering class of bug is now
+    // structurally impossible for the outbound leg.
     test('a change event delayed past the write does not affect the explicit-overrides reset entry', async () => {
-      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
       const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
 
       let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
@@ -1396,11 +1361,10 @@ suite('Language Server', () => {
         clientAdapter,
         logger,
         undefined,
-        tracker,
         explicitOverridesMap,
       );
 
-      const ls = makeLanguageServerWithListener(tracker, fn => {
+      const ls = makeLanguageServerWithListener(fn => {
         configListener = fn;
       });
       ls.registerExplicitKeyMarkingListener();
@@ -1465,7 +1429,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
       );
@@ -1505,7 +1468,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
       );
@@ -1540,7 +1502,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
       );
@@ -1577,7 +1538,6 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         commands,
         {} as IDiagnosticsIssueProvider<unknown>,
-        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
       );

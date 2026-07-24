@@ -20,7 +20,6 @@ import {
 import _ from 'lodash';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
 import { HtmlSettingsData, HtmlFolderSettingsData } from '../types/workspaceConfiguration.types';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../languageServer/explicitLspConfigurationChangeTracker';
 import type { IExplicitOverridesMap } from '../../../languageServer/explicitOverridesMap';
 import type { ILastKnownValueCache } from '../../../languageServer/lastKnownValueCache';
 import { IScopeDetectionService } from './scopeDetectionService';
@@ -43,7 +42,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
     private readonly contextService?: IContextService,
-    private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
     private readonly explicitOverridesMap?: IExplicitOverridesMap,
     private readonly lastKnownValueCache?: ILastKnownValueCache,
   ) {}
@@ -137,16 +135,16 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
   }
 
   /**
-   * For each inbound global reset, clear the persisted VS Code global value
-   * (`update(section, undefined, ConfigurationTarget.Global)`) and unmark explicit-changed
-   * tracking so the now-reverted value is not re-pushed on the next sync/reconnect.
+   * For each inbound global reset, clears the persisted VS Code global value
+   * (`update(section, undefined, ConfigurationTarget.Global)`).
    *
-   * [IDE-2264 ticket 06]: deliberately does NOT record a reset entry in the explicit-overrides
-   * map. The map's reset sentinel exists to get OUR OWN pending reset delivered to the LS; this
-   * path is the LS itself telling us a reset already happened. Re-queuing it here would echo the
-   * LS's own reset back to it on the next pull — a redundant `Unset`/disk write at best, and a
-   * resend of an already-confirmed reset at worst, if this echo arrives after our own outbound
-   * delivery already cleared the sentinel (see `applyOutboundGlobalResets`).
+   * [IDE-2264 ticket 03/09]: deliberately does NOT touch the explicit-overrides map — this
+   * inbound path has no access to it, structurally. The map's reset sentinel exists to get OUR
+   * OWN pending reset delivered to the LS; this path is the LS itself telling us a reset already
+   * happened. Writing to the map here would echo the LS's own reset back to it on the next pull —
+   * a redundant `Unset`/disk write at best, and a resend of an already-confirmed reset at worst,
+   * if this echo arrives after our own outbound delivery already cleared the sentinel (see
+   * `applyOutboundGlobalResets`).
    *
    * Only keys that are members of GLOBAL_RESET_FIELDS are handled: the LS can send
    * `{ value: null, changed: true }` for non-resettable keys (e.g. `api_endpoint`,
@@ -154,10 +152,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    *
    * Deduplication: multiple LS keys may share one vscodeKey (e.g. all four
    * `severity_filter_*` map to `snyk.severity`). Each distinct vscodeKey is cleared at
-   * most once per batch. Tracker mutations (unmarkExplicitlyChanged) happen AFTER the VS
-   * Code write succeeds — mirroring `applyOutboundGlobalResets` — so state is never
-   * updated when the write throws. On failure, the tracker is left unchanged so the
-   * still-present override is re-pushed on the next sync/reconnect (fail-safe ordering).
+   * most once per batch.
    */
   private async applyGlobalResets(settings: Record<string, LspConfigSetting>): Promise<void> {
     // Group qualifying lsKeys by their shared vscodeKey (dedup writes).
@@ -187,9 +182,9 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
       }
     }
 
-    // For each distinct vscodeKey: write first, mutate tracker only on success.
+    // For each distinct vscodeKey: write first, log only on success. [IDE-2264 ticket 03]: this
+    // inbound path never writes to the explicit-overrides map — it has no access to it.
     await this.applyVscodeKeyResets(vscodeKeyToLsKeys, lsKey => {
-      this.explicitLspConfigurationChangeTracker?.unmarkExplicitlyChanged(lsKey);
       this.logger.debug(`Reset global setting: ${lsKey}`);
     });
   }

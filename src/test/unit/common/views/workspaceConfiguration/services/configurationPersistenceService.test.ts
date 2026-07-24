@@ -23,8 +23,6 @@ import {
   LS_KEY,
 } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
-import { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
-import { FakeExplicitLspConfigurationChangeTracker } from '../../../../mocks/explicitLspConfigurationChangeTracker.mock';
 import { LanguageServerSettings } from '../../../../../../snyk/common/languageServer/settings';
 import {
   GLOBAL_RESET_FIELDS,
@@ -566,7 +564,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       logger,
       undefined,
       undefined,
-      undefined,
       lastKnownValueCache,
     );
 
@@ -621,7 +618,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       noOverrideScopeService,
       clientAdapter,
       logger,
-      undefined,
       undefined,
       undefined,
       emptyCache,
@@ -841,7 +837,7 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let tracker: FakeExplicitLspConfigurationChangeTracker;
+  let explicitOverridesMap: ExplicitOverridesMap;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -904,12 +900,28 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    tracker = new FakeExplicitLspConfigurationChangeTracker();
+    explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
   });
 
   teardown(() => {
     sinon.restore();
   });
+
+  function makeMemento(): import('vscode').Memento {
+    const store = new Map<string, unknown>();
+    return {
+      get<T>(key: string, defaultValue?: T): T {
+        return (store.has(key) ? store.get(key) : defaultValue) as T;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        store.set(key, value);
+        return Promise.resolve();
+      },
+      keys(): readonly string[] {
+        return [...store.keys()];
+      },
+    };
+  }
 
   function newService(): ConfigurationPersistenceService {
     return new ConfigurationPersistenceService(
@@ -919,14 +931,17 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       clientAdapter,
       logger,
       undefined,
-      tracker,
+      explicitOverridesMap,
     );
   }
 
-  // 3(a): inbound { value: null, changed: true } clears the global value AND unmarks the tracker.
-  test('clears the global VS Code value and unmarks the tracker on reset', async () => {
-    // Simulate a pre-existing explicit override that must be dropped.
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
+  // 3(a): inbound { value: null, changed: true } clears the global value.
+  // [IDE-2264 ticket 03/09]: the inbound path never writes to the explicit-overrides map —
+  // structurally, not via a suppression check — so a pre-existing entry for the key is left
+  // untouched by this reset, unlike the deleted tracker's unmark-on-reset behavior.
+  test('clears the global VS Code value on reset, without touching the explicit-overrides map', async () => {
+    // A pre-existing explicit override recorded via the outbound (webview-save) path.
+    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'acme-corp');
 
     const service = newService();
 
@@ -947,12 +962,12 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       true,
     );
 
-    // (a2) tracker no longer marks the key as explicitly changed.
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-      false,
-      'reset must unmark explicit-changed tracking',
-    );
+    // (a2) the inbound path has no access to the explicit-overrides map; the pre-existing entry
+    // is left exactly as it was.
+    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
+      kind: 'value',
+      value: 'acme-corp',
+    });
   });
 
   // The reset value (null) must never be persisted as an actual setting value.
@@ -1004,42 +1019,8 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     );
   });
 
-  // 3(b): RE-PUSH GUARD — after a reset clears tracking, building the outbound config
-  // (LanguageServerSettings.fromConfiguration, the same path the middleware pull uses)
-  // produces NO { changed: true } for that key. This is the regression that otherwise
-  // requires a manual IDE restart.
-  test('re-push guard: outbound config has changed:false for the key after reset', async () => {
-    // Pre-existing override → would push changed:true before the reset.
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
-
-    // Sanity: before reset, the outbound build would mark it changed:true.
-    const before = await LanguageServerSettings.fromConfiguration(configuration, lsKey =>
-      tracker.isExplicitlyChanged(lsKey),
-    );
-    assert.strictEqual(
-      before.settings?.[LS_GLOBAL_KEY.organization]?.changed,
-      true,
-      'precondition: key is changed:true before reset',
-    );
-
-    const service = newService();
-    await service.persistInboundLspConfiguration({
-      settings: { [LS_GLOBAL_KEY.organization]: { value: null, changed: true } },
-    });
-
-    // After the reset clears tracking, the outbound build must NOT re-push the stale override.
-    const after = await LanguageServerSettings.fromConfiguration(configuration, lsKey =>
-      tracker.isExplicitlyChanged(lsKey),
-    );
-    assert.strictEqual(
-      after.settings?.[LS_GLOBAL_KEY.organization]?.changed,
-      false,
-      're-push guard: key must be changed:false after reset',
-    );
-  });
-
-  // Resets must be handled even when no tracker is wired (defensive — no throw).
-  test('does not throw when tracker is absent', async () => {
+  // Resets must be handled even when no explicit-overrides map is wired (defensive — no throw).
+  test('does not throw when explicit-overrides map is absent', async () => {
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
@@ -1167,7 +1148,6 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       scopeDetectionService,
       clientAdapter,
       logger,
-      undefined,
       undefined,
       explicitOverridesMap,
       lastKnownValueCache,
@@ -1475,7 +1455,6 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
       clientAdapter,
       logger,
       undefined,
-      undefined,
       explicitOverridesMap,
     );
   }
@@ -1618,7 +1597,6 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
       clientAdapter,
       logger,
       undefined,
-      undefined,
       explicitOverridesMap,
       lastKnownValueCache,
     );
@@ -1722,7 +1700,6 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
       clientAdapter,
       logger,
       undefined,
-      undefined,
       throwingMap,
       lastKnownValueCache,
     );
@@ -1756,8 +1733,7 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
 
 // ── FIX 1: applyGlobalResets (INBOUND) must be scoped to GLOBAL_RESET_FIELDS ─
 // A key NOT in GLOBAL_RESET_FIELDS that arrives as { value: null, changed: true }
-// must NOT trigger updateConfiguration(..., undefined, ...) and must NOT be
-// unmarkExplicitlyChanged'd by the inbound reset path.
+// must NOT trigger updateConfiguration(..., undefined, ...) via the inbound reset path.
 suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
@@ -1765,19 +1741,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-
-  class StubTracker implements IExplicitLspConfigurationChangeTracker {
-    unmarkCalled: string[] = [];
-    markExplicitlyChanged(_lsKey: string): void {
-      /* no-op */
-    }
-    unmarkExplicitlyChanged(lsKey: string): void {
-      this.unmarkCalled.push(lsKey);
-    }
-    isExplicitlyChanged(_lsKey: string): boolean {
-      return false;
-    }
-  }
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -1820,15 +1783,12 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
   // for it must NOT call updateConfiguration with undefined (which would silently wipe
   // the user's custom endpoint setting).
   test('inbound {value:null,changed:true} for a non-resettable key (api_endpoint) does NOT clear VS Code setting', async () => {
-    const tracker = new StubTracker();
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       clientAdapter,
       logger,
-      undefined,
-      tracker,
     );
 
     const param: LspConfigurationParam = {
@@ -1851,45 +1811,15 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
     );
   });
 
-  // api_endpoint with {value:null, changed:true} must NOT unmark the tracker either.
-  test('inbound {value:null,changed:true} for a non-resettable key does NOT call unmarkExplicitlyChanged', async () => {
-    const tracker = new StubTracker();
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      tracker,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    assert.ok(
-      !tracker.unmarkCalled.includes(LS_KEY.apiEndpoint),
-      'api_endpoint is not in GLOBAL_RESET_FIELDS; unmarkExplicitlyChanged must NOT be called for it',
-    );
-  });
-
   // A key that IS in GLOBAL_RESET_FIELDS (organization) must still be handled correctly
   // even when a non-resettable key is present in the same batch.
   test('inbound {value:null,changed:true} for a resettable key (organization) still clears VS Code setting', async () => {
-    const tracker = new StubTracker();
     const service = new ConfigurationPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
       clientAdapter,
       logger,
-      undefined,
-      tracker,
     );
 
     const param: LspConfigurationParam = {
@@ -1910,14 +1840,13 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
     );
   });
 
-  // [IDE-2264 ticket 06]: the inbound-echoed reset (the LS unsetting a global override and
+  // [IDE-2264 ticket 03/09]: the inbound-echoed reset (the LS unsetting a global override and
   // echoing {value:null, changed:true}) must NOT record a reset entry in the explicit-overrides
-  // map. That map's sentinel exists to get OUR OWN pending reset delivered to the LS; recording
-  // one here would echo the LS's own reset back to it on the next pull — redundant at best, and
-  // a resend of an already-confirmed reset at worst if this echo arrives after our own outbound
-  // delivery already cleared the sentinel.
+  // map — the inbound path never writes to it, for any value. Recording one here would echo the
+  // LS's own reset back to it on the next pull — redundant at best, and a resend of an
+  // already-confirmed reset at worst if this echo arrives after our own outbound delivery
+  // already cleared the sentinel.
   test('inbound {value:null,changed:true} for a resettable key (organization) does NOT record a reset sentinel in the explicit-overrides map', async () => {
-    const tracker = new StubTracker();
     const setResetSpy = sinon.spy();
     const explicitOverridesMap: IExplicitOverridesMap = {
       setExplicitValue: sinon.stub(),
@@ -1932,7 +1861,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       clientAdapter,
       logger,
       undefined,
-      tracker,
       explicitOverridesMap,
     );
 
@@ -2098,184 +2026,6 @@ suite('GLOBAL_RESET_FIELDS invariant (FIX 3)', () => {
         `GLOBAL_RESET_FIELDS member '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY — only fields with a vscodeKey are resettable`,
       );
     }
-  });
-});
-
-// ── FIX 1: inbound applyGlobalResets must NOT mutate tracker on write failure ─
-// When updateConfiguration throws for a shared vscodeKey (e.g. snyk.severity),
-// the lsKeys for that group must remain marked as explicitly changed.
-suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker atomicity (FIX 1)', () => {
-  let workspace: IVSCodeWorkspace;
-  let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-  let updateConfigurationStub: sinon.SinonStub;
-  let tracker: FakeExplicitLspConfigurationChangeTracker;
-
-  setup(() => {
-    updateConfigurationStub = sinon.stub();
-    workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-    } as unknown as IConfiguration;
-
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-
-    tracker = new FakeExplicitLspConfigurationChangeTracker();
-  });
-
-  teardown(() => sinon.restore());
-
-  // The critical case: all four severity_filter_* arrive as {value:null, changed:true},
-  // they all share vscodeKey 'snyk.severity'. If updateConfiguration rejects for that
-  // vscodeKey, the tracker must NOT be mutated for any of the lsKeys in that group.
-  test('tracker is NOT mutated when updateConfiguration rejects for the severity vscodeKey', async () => {
-    // Pre-mark all four severity keys as explicitly changed.
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow);
-
-    // Make updateConfiguration reject for ANY call (severity vscodeKey will be hit).
-    updateConfigurationStub.rejects(new Error('VS Code write failed'));
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      tracker,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.severityFilterCritical]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterHigh]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterMedium]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterLow]: { value: null, changed: true },
-      },
-    };
-
-    // applyGlobalResets catches write errors internally; the method may or may not rethrow.
-    try {
-      await service.persistInboundLspConfiguration(param);
-    } catch (_e) {
-      // Any rethrow is acceptable; we care about tracker state.
-    }
-
-    // All four severity lsKeys must still be marked as explicitly changed — the write failed.
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical),
-      true,
-      'severity_filter_critical must remain explicitly changed when write fails',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh),
-      true,
-      'severity_filter_high must remain explicitly changed when write fails',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium),
-      true,
-      'severity_filter_medium must remain explicitly changed when write fails',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow),
-      true,
-      'severity_filter_low must remain explicitly changed when write fails',
-    );
-  });
-
-  // Happy-path: a successful inbound reset unmarks the keys and clears the
-  // shared vscodeKey exactly once.
-  test('successful inbound reset unmarks all lsKeys and clears shared vscodeKey exactly once', async () => {
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium);
-    tracker.markExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow);
-
-    updateConfigurationStub.resolves();
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      tracker,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.severityFilterCritical]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterHigh]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterMedium]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.severityFilterLow]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // All four lsKeys must be unmarked after a successful write.
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterCritical),
-      false,
-      'severity_filter_critical must be unmarked after successful reset',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterHigh),
-      false,
-      'severity_filter_high must be unmarked after successful reset',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterMedium),
-      false,
-      'severity_filter_medium must be unmarked after successful reset',
-    );
-    assert.strictEqual(
-      tracker.isExplicitlyChanged(LS_GLOBAL_KEY.severityFilterLow),
-      false,
-      'severity_filter_low must be unmarked after successful reset',
-    );
-
-    // The shared vscodeKey (snyk.severity) must be cleared exactly once.
-    const severityClearCalls = updateConfigurationStub
-      .getCalls()
-      .filter(c => c.args[1] === 'severity' && c.args[2] === undefined);
-    assert.strictEqual(
-      severityClearCalls.length,
-      1,
-      `Expected exactly 1 updateConfiguration call for 'severity' (undefined), got ${severityClearCalls.length}`,
-    );
   });
 });
 
@@ -2533,7 +2283,6 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       clientAdapter,
       logger,
       undefined,
-      undefined,
       explicitOverridesMap,
     );
 
@@ -2580,7 +2329,6 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       scopeDetectionService,
       clientAdapter,
       logger,
-      undefined,
       undefined,
       explicitOverridesMap,
     );
@@ -3024,7 +2772,6 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
         getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
-      undefined,
       undefined,
       undefined,
       lastKnownValueCache,
@@ -3494,7 +3241,6 @@ suite('ConfigurationPersistenceService — per-key recording exception resilienc
       clientAdapter,
       logger,
       undefined, // contextService — not needed for this test
-      undefined,
       explicitOverridesMap,
     );
 

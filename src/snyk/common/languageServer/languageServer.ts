@@ -29,10 +29,10 @@ import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import {
   confirmResetsDeliveredAfterPull,
+  isExplicitlyChanged,
+  isPendingReset,
   markExplicitLsKeysFromConfigurationChangeEvent,
-  unmarkResetLsKeysAfterPull,
 } from './explicitLsKeyTracking';
-import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import type { IExplicitOverridesMap } from './explicitOverridesMap';
 import type { ILastKnownValueCache } from './lastKnownValueCache';
 import { LanguageServerSettings } from './settings';
@@ -102,7 +102,6 @@ export class LanguageServer implements ILanguageServer {
     private readonly markdownAdapter: IMarkdownStringAdapter,
     private readonly codeCommands: IVSCodeCommands,
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
-    private readonly explicitLspConfigurationChangeTracker: IExplicitLspConfigurationChangeTracker,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider: ITreeViewProviderService | undefined,
     private readonly explicitOverridesMap?: IExplicitOverridesMap,
@@ -186,7 +185,6 @@ export class LanguageServer implements ILanguageServer {
         this.uriAdapter,
         this.codeCommands,
         this.workspace,
-        this.explicitLspConfigurationChangeTracker,
         this.lastKnownValueCache,
         this.explicitOverridesMap,
       ),
@@ -475,18 +473,14 @@ export class LanguageServer implements ILanguageServer {
     // first workspace/configuration pull.
     const config = await LanguageServerSettings.fromConfiguration(
       this.configuration,
-      lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
+      lsKey => isExplicitlyChanged(lsKey, this.explicitOverridesMap),
       this.workspace,
-      lsKey => this.explicitOverridesMap?.getEntry(lsKey)?.kind === 'reset',
+      lsKey => isPendingReset(lsKey, this.explicitOverridesMap),
     );
-    if (config.settings) {
-      // Mirrors the middleware's pull-response handling: unmark the old tracker for
-      // isExplicitlyChanged correctness, then confirm delivery in the new map so the sentinel is
-      // not resent on a later call.
-      unmarkResetLsKeysAfterPull(config.settings, this.explicitLspConfigurationChangeTracker);
-      if (this.explicitOverridesMap) {
-        confirmResetsDeliveredAfterPull(config.settings, this.explicitOverridesMap);
-      }
+    if (config.settings && this.explicitOverridesMap) {
+      // Mirrors the middleware's pull-response handling: confirm delivery in the map so the
+      // reset sentinel is not resent on a later call.
+      confirmResetsDeliveredAfterPull(config.settings, this.explicitOverridesMap);
     }
     return {
       settings: config.settings ?? {},

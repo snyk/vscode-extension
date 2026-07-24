@@ -17,12 +17,12 @@ import type {
 } from '../vscode/types';
 import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
-import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import type { IExplicitOverridesMap } from './explicitOverridesMap';
 import {
   confirmResetsDeliveredAfterPull,
   hasUnreflectedConfigurationChange,
-  unmarkResetLsKeysAfterPull,
+  isExplicitlyChanged,
+  isPendingReset,
 } from './explicitLsKeyTracking';
 import type { ILastKnownValueCache } from './lastKnownValueCache';
 import { LanguageServerSettings } from './settings';
@@ -48,7 +48,6 @@ export class LanguageClientMiddleware implements Middleware {
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
     private readonly vscodeWorkspace?: IVSCodeWorkspace,
-    private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
     private readonly lastKnownValueCache?: ILastKnownValueCache,
     private readonly explicitOverridesMap?: IExplicitOverridesMap,
   ) {}
@@ -77,22 +76,17 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      // [IDE-2264 ticket 06]: reset entries are read live from the explicit-overrides map — never
-      // drained before the response is built — so a failure below leaves every entry intact for
-      // an automatic retry on the next pull. No re-enqueue bookkeeping needed.
+      // [IDE-2264 ticket 09]: the explicit-overrides map is the sole source for `changed` —
+      // both 'value' and 'reset' entries count. Reset entries are read live — never drained
+      // before the response is built — so a failure below leaves every entry intact for an
+      // automatic retry on the next pull. No re-enqueue bookkeeping needed.
       const lspParam = await LanguageServerSettings.fromConfiguration(
         this.configuration,
-        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+        lsKey => isExplicitlyChanged(lsKey, this.explicitOverridesMap),
         this.vscodeWorkspace,
-        lsKey => this.explicitOverridesMap?.getEntry(lsKey)?.kind === 'reset',
+        lsKey => isPendingReset(lsKey, this.explicitOverridesMap),
       );
 
-      if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
-        // Pending-reset keys emitted as {value:null, changed:true} were already unmarked at
-        // save time by applyOutboundGlobalResets, so this unmark pass is safely idempotent
-        // (Set.delete of an absent key is a no-op).
-        unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
-      }
       if (this.explicitOverridesMap && lspParam.settings) {
         // Confirm delivery only now that the response was built successfully — never before.
         confirmResetsDeliveredAfterPull(lspParam.settings, this.explicitOverridesMap);
