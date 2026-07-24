@@ -228,11 +228,12 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     assert.ok(overrides.getEntry(LS_GLOBAL_KEY.organization) !== undefined, 'organization should still be in the map');
   });
 
-  // T7: shared vscodeKey (severity filter object customised) → all 4 severity LS keys seeded
-  test('T7: seeds all severity LS keys when the shared severity vscodeKey object differs from default', () => {
+  // T7: shared vscodeKey (severity filter object customised) → only the siblings whose own
+  // projected sub-value differs are seeded, not every sibling sharing the vscodeKey.
+  test('T7: seeds only the severity LS keys whose own sub-value differs from default', () => {
     const overrides = newOverridesMap();
     // SEVERITY_FILTER_SETTING = 'snyk.severity' → configId: 'snyk', section: 'severity'
-    // User customised — object differs from default.
+    // critical/high match their default; only medium/low were customised.
     const ws = fakeWorkspace({
       snyk: {
         severity: {
@@ -244,8 +245,14 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
     seedExplicitChangesFromExistingSettings(overrides, ws);
 
-    assert.ok(overrides.getEntry(LS_GLOBAL_KEY.severityFilterCritical) !== undefined, 'severityFilterCritical seeded');
-    assert.ok(overrides.getEntry(LS_GLOBAL_KEY.severityFilterHigh) !== undefined, 'severityFilterHigh seeded');
+    assert.ok(
+      overrides.getEntry(LS_GLOBAL_KEY.severityFilterCritical) === undefined,
+      'severityFilterCritical not seeded (matches default)',
+    );
+    assert.ok(
+      overrides.getEntry(LS_GLOBAL_KEY.severityFilterHigh) === undefined,
+      'severityFilterHigh not seeded (matches default)',
+    );
     assert.ok(overrides.getEntry(LS_GLOBAL_KEY.severityFilterMedium) !== undefined, 'severityFilterMedium seeded');
     assert.ok(overrides.getEntry(LS_GLOBAL_KEY.severityFilterLow) !== undefined, 'severityFilterLow seeded');
   });
