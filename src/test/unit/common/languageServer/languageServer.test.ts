@@ -41,6 +41,7 @@ import {
 } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache, ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { InboundConfigPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/inboundConfigPersistenceService';
 import {
   IScopeDetectionService,
   ScopeDetectionService,
@@ -406,16 +407,12 @@ suite('Language Server', () => {
     } as unknown as IVSCodeWorkspace;
 
     const scopeDetectionService = new ScopeDetectionService(workspace);
-    const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
     const lastKnownValueCache = new LastKnownValueCache(workspace, []);
-    const configPersistenceService = new ConfigurationPersistenceService(
+    const inboundConfigPersistenceService = new InboundConfigPersistenceService(
       workspace,
       configurationMock,
       scopeDetectionService,
-      clientAdapter,
       logger,
-      undefined,
-      explicitOverridesMap,
       lastKnownValueCache,
     );
 
@@ -436,9 +433,9 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      view => configPersistenceService.persistInboundLspConfiguration(view),
+      view => inboundConfigPersistenceService.persistInboundLspConfiguration(view),
       undefined,
-      // Same instances as configPersistenceService above (mirrors extension.ts wiring), so the
+      // Same instances as inboundConfigPersistenceService above (mirrors extension.ts wiring), so the
       // ticket-04 direct-edit listener sees the cache updates the inbound-push write just made
       // and correctly recognizes the resulting change events as its own echo, not a user edit.
       explicitOverridesMap,
@@ -527,15 +524,11 @@ suite('Language Server', () => {
 
     const lastKnownValueCache = new LastKnownValueCache(workspace, [ADVANCED_ORGANIZATION]);
     const scopeDetectionService = new ScopeDetectionService(workspace);
-    const clientAdapter = { getLanguageClient: () => undefined } as unknown as ILanguageClientAdapter;
-    const configPersistenceService = new ConfigurationPersistenceService(
+    const inboundConfigPersistenceService = new InboundConfigPersistenceService(
       workspace,
       configurationMock,
       scopeDetectionService,
-      clientAdapter,
       logger,
-      undefined,
-      explicitOverridesMap,
       lastKnownValueCache,
     );
 
@@ -556,7 +549,7 @@ suite('Language Server', () => {
       {} as IMarkdownStringAdapter,
       new CommandsMock(),
       {} as IDiagnosticsIssueProvider<unknown>,
-      view => configPersistenceService.persistInboundLspConfiguration(view),
+      view => inboundConfigPersistenceService.persistInboundLspConfiguration(view),
       undefined,
       explicitOverridesMap,
       lastKnownValueCache,

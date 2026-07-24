@@ -99,6 +99,7 @@ import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceC
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { InboundConfigPersistenceService } from './common/views/workspaceConfiguration/services/inboundConfigPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { TreeViewProviderService } from './base/treeView/treeViewProviderService';
@@ -251,6 +252,13 @@ class SnykExtension extends SnykLib implements IExtension {
       explicitOverridesMap,
       lastKnownValueCache,
     );
+    const inboundConfigPersistenceService = new InboundConfigPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      Logger,
+      lastKnownValueCache,
+    );
 
     // Must run before LanguageServer is constructed/started: it seeds in-memory folderConfigs
     // so the very first initializationOptions sent to snyk-ls already carries the migrated
@@ -282,7 +290,7 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
-      view => configPersistenceService.persistInboundLspConfiguration(view),
+      view => inboundConfigPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
       explicitOverridesMap,
       lastKnownValueCache,

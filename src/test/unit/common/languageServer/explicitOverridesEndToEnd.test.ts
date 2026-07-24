@@ -9,6 +9,7 @@ import {
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { InboundConfigPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/inboundConfigPersistenceService';
 import { IScopeDetectionService } from '../../../../snyk/common/views/workspaceConfiguration/services/scopeDetectionService';
 import { ILanguageClientAdapter } from '../../../../snyk/common/vscode/languageClient';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
@@ -294,14 +295,11 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
 
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
 
-    const service = new ConfigurationPersistenceService(
+    const service = new InboundConfigPersistenceService(
       workspace,
       makeConfiguration(),
       fakeScopeDetectionService,
-      fakeClientAdapter,
       new LoggerMockFailOnErrors(),
-      undefined,
-      explicitOverridesMap,
       lastKnownValueCache,
     );
 

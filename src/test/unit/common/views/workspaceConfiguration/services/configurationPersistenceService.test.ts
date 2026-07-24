@@ -3,6 +3,7 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { ConfigurationPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { InboundConfigPersistenceService } from '../../../../../../snyk/common/views/workspaceConfiguration/services/inboundConfigPersistenceService';
 import { FolderConfig, IConfiguration } from '../../../../../../snyk/common/configuration/configuration';
 import { IVSCodeWorkspace } from '../../../../../../snyk/common/vscode/workspace';
 import {
@@ -519,322 +520,6 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
   });
 });
 
-suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
-  let workspace: IVSCodeWorkspace;
-  let configuration: IConfiguration;
-  // CP-2.3: real ScopeDetectionService — replaces the old faked stub that returned false
-  // unconditionally, which masked the schema-default skip defect (IDE-2149).
-  let realScopeService: ScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-  let updateConfigurationStub: sinon.SinonStub;
-
-  setup(() => {
-    updateConfigurationStub = sinon.stub().resolves();
-    workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      // CP-2.3: return real schema defaults per key so the real guard never
-      // skips an inbound write due to schema-default equality.
-      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.customEndpoint') {
-          return {
-            defaultValue: '',
-            globalValue: undefined,
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'allIssuesVsNetNewIssues') {
-          return {
-            defaultValue: ALLISSUES,
-            globalValue: undefined,
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        return {
-          defaultValue: undefined,
-          globalValue: undefined,
-          workspaceValue: undefined,
-          workspaceFolderValue: undefined,
-        };
-      }),
-    } as unknown as IVSCodeWorkspace;
-
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-      getFeaturesConfiguration: sinon.stub().returns({
-        ossEnabled: true,
-        codeSecurityEnabled: true,
-        iacEnabled: true,
-        secretsEnabled: true,
-      }),
-      scanningMode: 'auto',
-      organization: '',
-      snykApiEndpoint: 'https://api.snyk.io',
-      getInsecure: sinon.stub().returns(false),
-      getAuthenticationMethod: sinon.stub().returns('oauth'),
-      getDeltaFindingsEnabled: sinon.stub().returns(false),
-      severityFilter: {},
-      issueViewOptions: {},
-      riskScoreThreshold: 0,
-      getTrustedFolders: sinon.stub().returns([]),
-      getCliPath: sinon.stub().resolves(''),
-      isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
-      getCliBaseDownloadUrl: sinon.stub().returns(''),
-    } as unknown as IConfiguration;
-
-    // CP-2.3: wire real ScopeDetectionService so the guard exercises the real predicate.
-    // Under the old faked stub (shouldSkipSettingUpdate: stub().returns(false)) these tests
-    // would pass even if the guard were broken. The real service uses the ADR-1 predicate.
-    realScopeService = new ScopeDetectionService(workspace);
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({
-        sendNotification: sinon.stub().resolves(),
-      }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-  });
-
-  teardown(() => {
-    sinon.restore();
-  });
-
-  test('persists LS endpoint directly without filtering', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.called(updateConfigurationStub);
-  });
-
-  // Regression/proof coverage for a "should fix" raised on PR #782 (a value-unchanged write
-  // leaks a marker because no onDidChangeConfiguration event follows a VS Code no-op write).
-  // [IDE-2264 ticket 03]: the inbound redundancy check now compares purely against the
-  // last-known-value cache — warm from activation-time seeding in production (see
-  // extension.ts's `new LastKnownValueCache(workspace, ...)`) — rather than falling back to
-  // an override-aware inspectConfiguration peek. A cache hit that matches the incoming value
-  // must skip the write entirely.
-  test('an inbound value equal to what the last-known-value cache holds for that key is skipped (no write)', async () => {
-    const warmCacheWorkspace = {
-      updateConfiguration: updateConfigurationStub,
-      // Seeds the cache with the pre-existing value, same as activation-time seeding.
-      getConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') return 'existing-org';
-        return undefined;
-      }),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') {
-          return {
-            defaultValue: '',
-            globalValue: 'existing-org',
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        return {
-          defaultValue: undefined,
-          globalValue: undefined,
-          workspaceValue: undefined,
-          workspaceFolderValue: undefined,
-        };
-      }),
-    } as unknown as IVSCodeWorkspace;
-    const warmCacheScopeService = new ScopeDetectionService(warmCacheWorkspace);
-
-    const lastKnownValueCache = new LastKnownValueCache(warmCacheWorkspace, [ADVANCED_ORGANIZATION]);
-
-    const service = new ConfigurationPersistenceService(
-      warmCacheWorkspace,
-      configuration,
-      warmCacheScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      lastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        // Same value the cache already holds — a genuine VS Code no-op if written.
-        [LS_GLOBAL_KEY.organization]: { value: 'existing-org', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.notCalled(updateConfigurationStub);
-  });
-
-  // [IDE-2264 ticket 03]: a cache miss (nothing written yet this session for this key) must
-  // never cause a skip, even when the incoming value happens to equal the schema default —
-  // this is the regression the old "effective value" snapshot existed to prevent (a
-  // resolved-value-equals-default write silently turning into a permanent override on sync).
-  test('the very first inbound push for a key not yet in the cache is never skipped, even if its value equals the schema default', async () => {
-    const noOverrideWorkspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'advanced.organization') {
-          // The incoming value equals the schema default; no override exists at any scope.
-          return {
-            defaultValue: 'existing-org',
-            globalValue: undefined,
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        return {
-          defaultValue: undefined,
-          globalValue: undefined,
-          workspaceValue: undefined,
-          workspaceFolderValue: undefined,
-        };
-      }),
-    } as unknown as IVSCodeWorkspace;
-    const noOverrideScopeService = new ScopeDetectionService(noOverrideWorkspace);
-
-    // Seeded with no tracked keys: the cache has no entry for organization.
-    const emptyCache = new LastKnownValueCache(noOverrideWorkspace, []);
-
-    const service = new ConfigurationPersistenceService(
-      noOverrideWorkspace,
-      configuration,
-      noOverrideScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      emptyCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.organization]: { value: 'existing-org', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      'existing-org',
-      true,
-    );
-  });
-
-  test('persistInbound writes delta setting from global settings', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.scanNetNew]: { value: true, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      DELTA_FINDINGS.replace(`${CONFIGURATION_IDENTIFIER}.`, ''),
-      NEWISSUES,
-      true,
-    );
-  });
-
-  test('persistInbound clears folder configs when LS sends empty array', async () => {
-    const svc = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
-
-    const param: LspConfigurationParam = {
-      settings: {},
-      folderConfigs: [],
-    };
-
-    await svc.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledOnce(setFolderConfigsStub);
-    assert.deepStrictEqual(setFolderConfigsStub.firstCall.args[0], []);
-  });
-
-  test('persistInbound does not call setFolderConfigs when folderConfigs is absent', async () => {
-    const svc = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
-
-    const param: LspConfigurationParam = {
-      settings: {},
-    };
-
-    await svc.persistInboundLspConfiguration(param);
-
-    sinon.assert.notCalled(setFolderConfigsStub);
-  });
-});
-
 suite('ConfigurationPersistenceService — folder override reset (flat null)', () => {
   const FOLDER_PATH = '/work/project-a';
   let workspace: IVSCodeWorkspace;
@@ -974,14 +659,13 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
   });
 });
 
-suite('ConfigurationPersistenceService — global ("Project Defaults") reset', () => {
+suite('ConfigurationPersistenceService — required constructor deps', () => {
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let explicitOverridesMap: ExplicitOverridesMap;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -1043,129 +727,10 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       error: sinon.stub(),
       warn: sinon.stub(),
     } as unknown as ILog;
-
-    explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
   });
 
   teardown(() => {
     sinon.restore();
-  });
-
-  function makeMemento(): import('vscode').Memento {
-    const store = new Map<string, unknown>();
-    return {
-      get<T>(key: string, defaultValue?: T): T {
-        return (store.has(key) ? store.get(key) : defaultValue) as T;
-      },
-      update(key: string, value: unknown): Thenable<void> {
-        store.set(key, value);
-        return Promise.resolve();
-      },
-      keys(): readonly string[] {
-        return [...store.keys()];
-      },
-    };
-  }
-
-  function newService(): ConfigurationPersistenceService {
-    return new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      explicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-  }
-
-  // 3(a): inbound { value: null, changed: true } clears the global value.
-  // [IDE-2264 ticket 03/09]: the inbound path never writes to the explicit-overrides map —
-  // structurally, not via a suppression check — so a pre-existing entry for the key is left
-  // untouched by this reset, unlike the deleted tracker's unmark-on-reset behavior.
-  test('clears the global VS Code value on reset, without touching the explicit-overrides map', async () => {
-    // A pre-existing explicit override recorded via the outbound (webview-save) path.
-    explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'acme-corp');
-
-    const service = newService();
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // (a1) update(section, undefined, Global=true) — removes the override rather than writing null.
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      undefined,
-      true,
-    );
-
-    // (a2) the inbound path has no access to the explicit-overrides map; the pre-existing entry
-    // is left exactly as it was — proven through the real pull read path: still reported as an
-    // explicit change (changed:true) with a resolved value, not converted into a reset sentinel
-    // (which would surface as value:null).
-    const setting = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
-    assertPullSetting(
-      setting,
-      { changed: true, value: NOT_NULL },
-      'the pre-existing explicit override must remain in place, not turned into a reset entry',
-    );
-  });
-
-  // The reset value (null) must never be persisted as an actual setting value.
-  test('does not write null as a value for the reset key', async () => {
-    const service = newService();
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    const wroteNull = updateConfigurationStub
-      .getCalls()
-      .some(c => c.args[1] === 'advanced.organization' && c.args[2] === null);
-    assert.strictEqual(wroteNull, false, 'reset must not persist null as a setting value');
-  });
-
-  // Non-reset entries alongside a reset are still persisted normally.
-  test('persists non-reset entries while resetting reset entries', async () => {
-    const service = newService();
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // reset → undefined
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      undefined,
-      true,
-    );
-    // non-reset → value written
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.customEndpoint',
-      'https://from-ls.example',
-      true,
-    );
   });
 
   // [IDE-2264 ticket 11]: explicitOverridesMap/lastKnownValueCache are required constructor
@@ -1318,6 +883,19 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     );
   }
 
+  // Round-trip tests below construct this alongside newService()'s outbound instance,
+  // sharing the same workspace/configuration/scopeDetectionService/lastKnownValueCache fakes,
+  // to prove an outbound write's effect on the cache is visible to a later inbound push.
+  function newInboundService(): InboundConfigPersistenceService {
+    return new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      logger,
+      lastKnownValueCache,
+    );
+  }
+
   // (a) VS Code global override must be cleared (updateConfiguration called with undefined)
   test('clears the global VS Code override for a null-valued global-resettable field', async () => {
     const service = newService();
@@ -1419,7 +997,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     updateConfigurationStub.resetHistory();
 
     // Probe: an inbound push echoing the stale pre-reset value must NOT be skipped as redundant.
-    await service.persistInboundLspConfiguration({
+    const inboundService = newInboundService();
+    await inboundService.persistInboundLspConfiguration({
       settings: { [LS_GLOBAL_KEY.organization]: { value: 'stale-pre-reset-value', changed: false } },
     });
 
@@ -1490,7 +1069,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     updateConfigurationStub.resetHistory();
     // Probe: an inbound push echoing the SAME cached value must be skipped as redundant,
     // proving the failed write left the last-known-value cache untouched.
-    await service.persistInboundLspConfiguration({
+    const inboundService = newInboundService();
+    await inboundService.persistInboundLspConfiguration({
       settings: { [LS_GLOBAL_KEY.organization]: { value: 'pre-existing-cached-value', changed: false } },
     });
     sinon.assert.notCalled(updateConfigurationStub);
@@ -1794,6 +1374,19 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
     );
   }
 
+  // Round-trip tests below construct this alongside newService()'s outbound instance,
+  // sharing the same workspace/configuration/scopeDetectionService/lastKnownValueCache fakes,
+  // to prove an outbound write's effect on the cache is visible to a later inbound push.
+  function newInboundService(): InboundConfigPersistenceService {
+    return new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      logger,
+      lastKnownValueCache,
+    );
+  }
+
   test('a changed field writes the setting, records it in the explicit-overrides map, and updates the cache', async () => {
     const service = newService();
 
@@ -1824,7 +1417,8 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
     // Cache probe: an inbound push echoing the SAME value must be skipped as redundant,
     // proving the last-known-value cache was updated to 'new-org'.
     updateConfigurationStub.resetHistory();
-    await service.persistInboundLspConfiguration({
+    const inboundService = newInboundService();
+    await inboundService.persistInboundLspConfiguration({
       settings: { [LS_GLOBAL_KEY.organization]: { value: 'new-org', changed: false } },
     });
     sinon.assert.notCalled(updateConfigurationStub);
@@ -1871,7 +1465,8 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
     updateConfigurationStub.resetHistory();
     // Probe: an inbound push echoing the pre-existing cached value must be skipped as
     // redundant, proving the failed write left the cache untouched.
-    await service.persistInboundLspConfiguration({
+    const inboundService = newInboundService();
+    await inboundService.persistInboundLspConfiguration({
       settings: { [LS_GLOBAL_KEY.organization]: { value: 'pre-existing-cached-value', changed: false } },
     });
     sinon.assert.notCalled(updateConfigurationStub);
@@ -1967,155 +1562,6 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
 // ── FIX 1: applyGlobalResets (INBOUND) must be scoped to GLOBAL_RESET_FIELDS ─
 // A key NOT in GLOBAL_RESET_FIELDS that arrives as { value: null, changed: true }
 // must NOT trigger updateConfiguration(..., undefined, ...) via the inbound reset path.
-suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
-  let workspace: IVSCodeWorkspace;
-  let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-  let updateConfigurationStub: sinon.SinonStub;
-
-  setup(() => {
-    updateConfigurationStub = sinon.stub().resolves();
-    workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-    } as unknown as IConfiguration;
-
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-  });
-
-  teardown(() => sinon.restore());
-
-  // api_endpoint is NOT in GLOBAL_RESET_FIELDS; an inbound {value:null, changed:true}
-  // for it must NOT call updateConfiguration with undefined (which would silently wipe
-  // the user's custom endpoint setting).
-  test('inbound {value:null,changed:true} for a non-resettable key (api_endpoint) does NOT clear VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // updateConfiguration must NOT have been called with (_, _, undefined, true)
-    // for api_endpoint (snyk.advanced.customEndpoint).
-    const clearedEndpoint = updateConfigurationStub
-      .getCalls()
-      .some(c => c.args[1] === 'advanced.customEndpoint' && c.args[2] === undefined);
-    assert.strictEqual(
-      clearedEndpoint,
-      false,
-      'api_endpoint is not in GLOBAL_RESET_FIELDS; inbound null must NOT clear the VS Code setting',
-    );
-  });
-
-  // A key that IS in GLOBAL_RESET_FIELDS (organization) must still be handled correctly
-  // even when a non-resettable key is present in the same batch.
-  test('inbound {value:null,changed:true} for a resettable key (organization) still clears VS Code setting', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      undefined,
-      true,
-    );
-  });
-
-  // [IDE-2264 ticket 03/09]: the inbound-echoed reset (the LS unsetting a global override and
-  // echoing {value:null, changed:true}) must NOT record a reset entry in the explicit-overrides
-  // map — the inbound path never writes to it, for any value. Recording one here would echo the
-  // LS's own reset back to it on the next pull — redundant at best, and a resend of an
-  // already-confirmed reset at worst if this echo arrives after our own outbound delivery
-  // already cleared the sentinel.
-  test('inbound {value:null,changed:true} for a resettable key (organization) does NOT record a reset sentinel in the explicit-overrides map', async () => {
-    const setResetSpy = sinon.spy();
-    const explicitOverridesMap: IExplicitOverridesMap = {
-      setExplicitValue: sinon.stub(),
-      setReset: setResetSpy,
-      getEntry: sinon.stub().returns(undefined),
-      confirmResetDelivered: sinon.stub(),
-    };
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      explicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.notCalled(setResetSpy);
-  });
-});
-
 // ── FIX 2: deduplication of shared-vscodeKey clears ────────────────────────
 // severity_filter_critical/high/medium/low all map to snyk.severity.
 // A full reset of all four severity keys must call updateConfiguration for
@@ -2227,14 +1673,11 @@ suite('ConfigurationPersistenceService — shared-vscodeKey dedupe in reset (FIX
   // Inbound path (persistInboundLspConfiguration): all four severity_filter_* as
   // {value:null, changed:true} → exactly 1 write for snyk.severity, not 4.
   test('inbound reset of all four severity_filter_* keys calls updateConfiguration for snyk.severity exactly once', async () => {
-    const service = new ConfigurationPersistenceService(
+    const service = new InboundConfigPersistenceService(
       workspace,
       configuration,
       scopeDetectionService,
-      clientAdapter,
       logger,
-      undefined,
-      noopExplicitOverridesMap,
       noopLastKnownValueCache,
     );
 
@@ -2278,166 +1721,6 @@ suite('GLOBAL_RESET_FIELDS invariant (FIX 3)', () => {
 // ── FIX 2: withoutGlobalResets must be scoped to GLOBAL_RESET_FIELDS ─────────
 // A non-resettable LS key arriving as {value:null, changed:true} must NOT be
 // silently dropped from the write path; it must be passed through.
-suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIELDS scope (FIX 2)', () => {
-  let workspace: IVSCodeWorkspace;
-  let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-  let updateConfigurationStub: sinon.SinonStub;
-
-  setup(() => {
-    updateConfigurationStub = sinon.stub().resolves();
-    workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-    } as unknown as IConfiguration;
-
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-  });
-
-  teardown(() => sinon.restore());
-
-  // api_endpoint (LS_KEY.apiEndpoint) is NOT in GLOBAL_RESET_FIELDS. When it arrives as
-  // {value:null, changed:true}, withoutGlobalResets must keep it in the result map so that
-  // the write path processes it (rather than silently dropping it as if it were a reset).
-  //
-  // mapLspSettingsToVscodeSettings skips null values (value===null means nothing to write),
-  // so the observable assertion is that updateConfiguration is NOT called with the endpoint
-  // value AND the inbound null is not silently swallowed before reaching mapLspSettingsToVscodeSettings.
-  // We verify via a spy on workspace.getConfiguration — if the key was retained, the flow
-  // continues past withoutGlobalResets. The simplest observable: assert updateConfiguration
-  // is never called with (_, 'advanced.customEndpoint', undefined, true) — i.e. the inbound
-  // null was NOT treated as a reset (which would clear the VS Code setting).
-  test('non-GLOBAL_RESET_FIELDS key with {value:null,changed:true} is NOT dropped by withoutGlobalResets (not treated as reset)', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
-    // Send it as {value:null, changed:true} — must NOT be treated as a global reset.
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // The key must NOT have been cleared as a global reset (updateConfiguration with undefined).
-    const clearedAsReset = updateConfigurationStub
-      .getCalls()
-      .some(c => c.args[1] === 'advanced.customEndpoint' && c.args[2] === undefined);
-    assert.strictEqual(
-      clearedAsReset,
-      false,
-      'api_endpoint is not in GLOBAL_RESET_FIELDS; withoutGlobalResets must not drop or treat it as a reset',
-    );
-  });
-
-  // FIX: mapLspSettingsToVscodeSettings must skip null values (same as undefined).
-  // A non-GLOBAL_RESET_FIELDS key arriving as {value:null, changed:true} must NOT cause
-  // updateConfiguration to be called with null as the value — that would silently clear
-  // or garble the user's VS Code setting.
-  test('non-GLOBAL_RESET_FIELDS key with {value:null,changed:true} does NOT write null to VS Code settings', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
-    // Send it as {value:null, changed:true} — mapLspSettingsToVscodeSettings must skip it.
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // updateConfiguration must NOT be called with null as the value for the endpoint setting.
-    const wroteNull = updateConfigurationStub
-      .getCalls()
-      .some(c => c.args[1] === 'advanced.customEndpoint' && c.args[2] === null);
-    assert.strictEqual(
-      wroteNull,
-      false,
-      'mapLspSettingsToVscodeSettings must skip null values; null must not be written to VS Code settings',
-    );
-  });
-
-  // Positive case: a non-GLOBAL_RESET_FIELDS key with a real (non-null) value arriving
-  // alongside another non-GLOBAL_RESET_FIELDS null key — both reach the write path.
-  // The null key is retained by withoutGlobalResets (not a reset-field drop); null values
-  // are simply not written by mapLspSettingsToVscodeSettings (they are undefined-valued in
-  // the registry lookup). The non-null key IS written.
-  test('non-GLOBAL_RESET_FIELDS key with a real value is written normally when a null sibling is present', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        // Not in GLOBAL_RESET_FIELDS — null, but must not be treated as a reset.
-        [LS_KEY.apiEndpoint]: { value: null, changed: true },
-        // Not in GLOBAL_RESET_FIELDS — real value, must be written.
-        [LS_KEY.organization]: { value: 'my-org', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // organization (LS_KEY.organization) has vscodeKey ADVANCED_ORGANIZATION;
-    // it is NOT in GLOBAL_RESET_FIELDS so it must be written via the normal path.
-    sinon.assert.calledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.organization', 'my-org', true);
-  });
-});
-
 // ── applyOutboundGlobalResets: multi-vscodeKey batch behavior ────────────────
 //
 // A multi-vscodeKey reset batch (organization + scan_net_new) must queue a pending
@@ -2779,6 +2062,19 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     );
   }
 
+  // Round-trip tests below construct this alongside newService()'s outbound instance,
+  // sharing the same workspace/configuration/realScopeDetectionService fakes, to prove an
+  // inbound-captured snapshot has no bearing on a later outbound save.
+  function newInboundService(): InboundConfigPersistenceService {
+    return new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      realScopeDetectionService,
+      logger,
+      noopLastKnownValueCache,
+    );
+  }
+
   // ACC-001
   test('TestSaveAfterReset_ReEnableEqualsSchemaDefault_PersistsAndMarksChanged', async () => {
     const service = newService();
@@ -2786,7 +2082,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     // Step 1: LS delivers effective value false via $/snyk.configuration.
     // This records false in the last-known-value cache (the inbound leg's own
     // redundancy check, irrelevant to the outbound save below).
-    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+    await newInboundService().persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
 
     // Reset the stub so we only observe calls from the save path below.
     updateConfigStub.reset();
@@ -2818,7 +2114,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     const service = newService();
 
     // Deliver effective value false (LS resolved: org policy disables Snyk Code).
-    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+    await newInboundService().persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
     updateConfigStub.reset();
 
     // Save true — equals schema default (true), differs from the inbound effective value (false).
@@ -2856,7 +2152,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     const service = newService();
 
     // Deliver effective value true.
-    await service.persistInboundLspConfiguration(inboundTrue);
+    await newInboundService().persistInboundLspConfiguration(inboundTrue);
     updateConfigStub.reset();
 
     // Save true — equals the inbound effective value true. The outbound save never compares
@@ -2907,7 +2203,7 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
     const service = newService();
 
     // Step 1: LS sends effective false — captured for the (separately migrated) inbound leg only.
-    await service.persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
+    await newInboundService().persistInboundLspConfiguration(INBOUND_PARAM_CODE_FALSE);
     updateConfigStub.reset();
 
     // Step 2: Save true — the outbound save writes it unconditionally.
@@ -2940,171 +2236,6 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
 // stale partial cache entry and spuriously rewrite on every sync.
 //
 // These tests probe that the cache holds the fully-merged shape via a second inbound push.
-
-suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey partials (Defect 1)', () => {
-  let updateConfigStub: sinon.SinonStub;
-  let workspace: IVSCodeWorkspace;
-  let realScopeService: ScopeDetectionService;
-  let lastKnownValueCache: LastKnownValueCache;
-
-  setup(() => {
-    updateConfigStub = sinon.stub().resolves();
-    workspace = {
-      updateConfiguration: updateConfigStub,
-      // getConfiguration returns the merged severity object (as VS Code would after a prior write).
-      getConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'severity') {
-          return { critical: true, high: true, medium: true, low: true };
-        }
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'issueViewOptions') {
-          return { openIssues: true, ignoredIssues: true };
-        }
-        return undefined;
-      }),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      // User has an explicit global override for severity (so scope = 'user' → guard checks globalValue).
-      inspectConfiguration: sinon.stub().callsFake((configId: string, section: string) => {
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'severity') {
-          return {
-            defaultValue: { critical: true, high: true, medium: true, low: true },
-            globalValue: { critical: true, high: true, medium: true, low: true },
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        if (configId === CONFIGURATION_IDENTIFIER && section === 'issueViewOptions') {
-          return {
-            defaultValue: { openIssues: true, ignoredIssues: true },
-            globalValue: { openIssues: true, ignoredIssues: true },
-            workspaceValue: undefined,
-            workspaceFolderValue: undefined,
-          };
-        }
-        return {
-          defaultValue: undefined,
-          globalValue: undefined,
-          workspaceValue: undefined,
-          workspaceFolderValue: undefined,
-        };
-      }),
-    } as unknown as IVSCodeWorkspace;
-
-    realScopeService = new ScopeDetectionService(workspace);
-    // Empty seed: each test's first inbound push populates it, mirroring a fresh session.
-    lastKnownValueCache = new LastKnownValueCache(workspace, []);
-  });
-
-  teardown(() => sinon.restore());
-
-  function newService(): ConfigurationPersistenceService {
-    return new ConfigurationPersistenceService(
-      workspace,
-      {
-        getToken: sinon.stub().resolves('tok'),
-        setToken: sinon.stub().resolves(),
-        getFolderConfigs: sinon.stub().returns([]),
-        setFolderConfigs: sinon.stub().resolves(),
-        getFeaturesConfiguration: sinon.stub().returns({
-          ossEnabled: true,
-          codeSecurityEnabled: true,
-          iacEnabled: true,
-          secretsEnabled: true,
-        }),
-        scanningMode: 'auto',
-        organization: '',
-        snykApiEndpoint: 'https://api.snyk.io',
-        getInsecure: sinon.stub().returns(false),
-        getAuthenticationMethod: sinon.stub().returns('oauth'),
-        getDeltaFindingsEnabled: sinon.stub().returns(false),
-        getOssQuickFixCodeActionsEnabled: sinon.stub().returns(true),
-        getAdditionalCliParameters: sinon.stub().returns(''),
-        getSecureAtInceptionExecutionFrequency: sinon.stub().returns('Manual'),
-        getAutoConfigureMcpServer: sinon.stub().returns(false),
-        severityFilter: { critical: true, high: true, medium: true, low: true },
-        issueViewOptions: { openIssues: true, ignoredIssues: true },
-        riskScoreThreshold: 0,
-        getTrustedFolders: sinon.stub().returns([]),
-        getCliPath: sinon.stub().resolves(''),
-        isAutomaticDependencyManagementEnabled: sinon.stub().returns(true),
-        getCliBaseDownloadUrl: sinon.stub().returns(''),
-      } as unknown as IConfiguration,
-      realScopeService,
-      {
-        getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-      } as unknown as ILanguageClientAdapter,
-      { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
-      undefined,
-      noopExplicitOverridesMap,
-      lastKnownValueCache,
-    );
-  }
-
-  // Defect 1a: after a full severity batch inbound, an identical second inbound push must be
-  // SKIPPED. RED reason (before fix): snapshot holds only the last-written partial {low:true};
-  //   _.isEqual({critical,high,medium,low}, {low:true}) = false → guard always writes → spurious update.
-  test('Defect1a: a second identical inbound severity batch is skipped (no spurious write)', async () => {
-    const service = newService();
-
-    // First inbound push: LS sends all four severity keys (effective = all enabled).
-    const inboundAllSeverity: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.severityFilterCritical]: { value: true, changed: false },
-        [LS_GLOBAL_KEY.severityFilterHigh]: { value: true, changed: false },
-        [LS_GLOBAL_KEY.severityFilterMedium]: { value: true, changed: false },
-        [LS_GLOBAL_KEY.severityFilterLow]: { value: true, changed: false },
-      },
-    };
-    await service.persistInboundLspConfiguration(inboundAllSeverity);
-    updateConfigStub.reset();
-
-    // Second, identical inbound push → must be skipped against the merged snapshot (no-op).
-    await service.persistInboundLspConfiguration(inboundAllSeverity);
-
-    const severityWrites = updateConfigStub
-      .getCalls()
-      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === 'severity');
-
-    assert.strictEqual(
-      severityWrites.length,
-      0,
-      `Defect1a regression: a second identical inbound push must be skipped against the last-known-value ` +
-        `cache. Got ${severityWrites.length} write(s). A write here means the cache held a partial object ` +
-        `instead of the fully-merged value (last-writer-wins reintroduced), so the merged incoming value no ` +
-        `longer equals the cached value and the guard never skips.`,
-    );
-  });
-
-  // Defect 1b: same for issueViewOptions (two LS keys → one vscodeKey).
-  test('Defect1b: a second identical inbound issueViewOptions batch is skipped', async () => {
-    const service = newService();
-
-    const inboundIssueView: LspConfigurationParam = {
-      settings: {
-        [LS_GLOBAL_KEY.issueViewOpenIssues]: { value: true, changed: false },
-        [LS_GLOBAL_KEY.issueViewIgnoredIssues]: { value: true, changed: false },
-      },
-    };
-    await service.persistInboundLspConfiguration(inboundIssueView);
-    updateConfigStub.reset();
-
-    // Second, identical inbound push → must be skipped.
-    await service.persistInboundLspConfiguration(inboundIssueView);
-
-    const issueViewWrites = updateConfigStub
-      .getCalls()
-      .filter(c => c.args[0] === CONFIGURATION_IDENTIFIER && c.args[1] === 'issueViewOptions');
-
-    assert.strictEqual(
-      issueViewWrites.length,
-      0,
-      `Defect1b regression: a second identical inbound push must be skipped against the last-known-value ` +
-        `cache. Got ${issueViewWrites.length} write(s). A write here means the cache held a partial ` +
-        `{ignoredIssues:true} instead of the fully-merged issueView value, so ` +
-        `isEqual({openIssues,ignoredIssues}, {ignoredIssues}) is false and the guard never skips.`,
-    );
-  });
-});
 
 // ── Defect 2: the last-known-value cache must be invalidated on global reset ──
 //
@@ -3215,6 +2346,24 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
     );
   }
 
+  // Round-trip test below constructs this alongside newService()'s outbound instance,
+  // sharing the same workspace/realScopeService fakes, so the reset it drives is visible
+  // to the later outbound save.
+  function newInboundService(): InboundConfigPersistenceService {
+    return new InboundConfigPersistenceService(
+      workspace,
+      {
+        getToken: sinon.stub().resolves('tok'),
+        setToken: sinon.stub().resolves(),
+        getFolderConfigs: sinon.stub().returns([]),
+        setFolderConfigs: sinon.stub().resolves(),
+      } as unknown as IConfiguration,
+      realScopeService,
+      { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
+      noopLastKnownValueCache,
+    );
+  }
+
   // Defect 2: stale effective snapshot must be cleared on reset so save is not dropped.
   //
   // Scenario: LS sends scanNetNew=ALLISSUES (effective = 'All issues'), then resets it
@@ -3222,9 +2371,10 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
   // cleared the override; the user is explicitly setting the value again).
   test('Defect2: post-reset save of value matching stale effective is NOT skipped', async () => {
     const service = newService();
+    const inboundService = newInboundService();
 
     // Step 1: LS delivers effective value ALLISSUES.
-    await service.persistInboundLspConfiguration({
+    await inboundService.persistInboundLspConfiguration({
       settings: {
         [LS_GLOBAL_KEY.scanNetNew]: { value: false, changed: true }, // false → ALLISSUES in VS Code
       },
@@ -3233,7 +2383,7 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
 
     // Step 2: LS sends reset for scanNetNew ({value:null, changed:true}).
     // This clears the VS Code override. The stale effective should also be purged.
-    await service.persistInboundLspConfiguration({
+    await inboundService.persistInboundLspConfiguration({
       settings: {
         [LS_GLOBAL_KEY.scanNetNew]: { value: null, changed: true },
       },
@@ -3326,118 +2476,6 @@ suite('mapConfigToSettings — broadened null guard (STEP 3)', () => {
 //
 // Non-resettable keys with { value: undefined, changed: true } must NOT trigger
 // a reset (the GLOBAL_RESET_FIELDS guard is unchanged).
-suite('ConfigurationPersistenceService — Fix 2: undefined value treated as reset for GLOBAL_RESET_FIELDS', () => {
-  let workspace: IVSCodeWorkspace;
-  let configuration: IConfiguration;
-  let scopeDetectionService: IScopeDetectionService;
-  let clientAdapter: ILanguageClientAdapter;
-  let logger: ILog;
-  let updateConfigurationStub: sinon.SinonStub;
-
-  setup(() => {
-    updateConfigurationStub = sinon.stub().resolves();
-    workspace = {
-      updateConfiguration: updateConfigurationStub,
-      getConfiguration: sinon.stub().returns(undefined),
-      getWorkspaceFolders: sinon.stub().returns([]),
-      getWorkspaceFolderPaths: sinon.stub().returns([]),
-      inspectConfiguration: sinon.stub().returns({ globalValue: undefined, defaultValue: undefined }),
-    } as unknown as IVSCodeWorkspace;
-
-    configuration = {
-      getToken: sinon.stub().resolves('tok'),
-      setToken: sinon.stub().resolves(),
-      getFolderConfigs: sinon.stub().returns([]),
-      setFolderConfigs: sinon.stub().resolves(),
-    } as unknown as IConfiguration;
-
-    scopeDetectionService = {
-      getSettingScope: sinon.stub().returns('user'),
-      populateScopeIndicators: sinon.stub().returns(''),
-      shouldSkipSettingUpdate: sinon.stub().returns(false),
-    } as unknown as IScopeDetectionService;
-
-    clientAdapter = {
-      getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
-    } as unknown as ILanguageClientAdapter;
-
-    logger = {
-      info: sinon.stub(),
-      debug: sinon.stub(),
-      error: sinon.stub(),
-      warn: sinon.stub(),
-    } as unknown as ILog;
-  });
-
-  teardown(() => sinon.restore());
-
-  // LS sends { changed: true } with value field absent → JS produces { value: undefined }.
-  // For a GLOBAL_RESET_FIELDS key this must trigger the reset path (clear VS Code override).
-  test('inbound {value:undefined, changed:true} for a GLOBAL_RESET_FIELDS key (organization) triggers reset', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        // Simulate a missing value field: { changed: true } with no value key.
-        [LS_GLOBAL_KEY.organization]: { value: undefined as unknown as null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // The reset path must have been triggered: updateConfiguration called with undefined value.
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      undefined,
-      true,
-    );
-  });
-
-  // A non-resettable key with { value: undefined, changed: true } must NOT trigger a reset.
-  // The GLOBAL_RESET_FIELDS allowlist gate must remain intact regardless of the null broadening.
-  test('inbound {value:undefined, changed:true} for a non-GLOBAL_RESET_FIELDS key (api_endpoint) does NOT trigger reset', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
-      undefined,
-      noopExplicitOverridesMap,
-      noopLastKnownValueCache,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: undefined as unknown as null, changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    // Must NOT have cleared api_endpoint — not a resettable key.
-    const clearedEndpoint = updateConfigurationStub
-      .getCalls()
-      .some(c => c.args[1] === 'advanced.customEndpoint' && c.args[2] === undefined);
-    assert.strictEqual(
-      clearedEndpoint,
-      false,
-      'api_endpoint is not in GLOBAL_RESET_FIELDS; {value:undefined, changed:true} must not clear it',
-    );
-  });
-});
-
 // ── Fix: a per-key recording exception must not skip remaining fan-out siblings ─
 //
 // applyOutboundGlobalResets iterates lsKeys for a shared vscodeKey and records a reset in
