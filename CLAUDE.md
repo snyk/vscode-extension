@@ -19,9 +19,12 @@ npm run test:integration   # Rebuild + run integration tests (vscode-test-electr
 # Linting
 npm run lint               # ESLint check
 npm run lint:fix           # ESLint auto-fix
+npm run knip               # Unused exports/files/deps check
 ```
 
 Unit tests use Mocha TDD UI (`describe`/`it`) with Sinon for mocking.
+
+Before committing: run `npm run lint:fix` and `npm run knip`.
 
 ## Architecture
 

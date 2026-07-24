@@ -15,7 +15,7 @@ import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToL
 import type { ILastKnownValueCache } from '../../../languageServer/lastKnownValueCache';
 import { IScopeDetectionService } from './scopeDetectionService';
 
-export interface IInboundConfigPersistenceService {
+interface IInboundConfigPersistenceService {
   /**
    * Writes LS global settings from `$/snyk.configuration` into VS Code `settings.json`.
    * No-op when the global snapshot has no mappable keys.

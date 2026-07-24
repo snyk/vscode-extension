@@ -5,7 +5,7 @@ import { MEMENTO_EXPLICIT_OVERRIDES_MAP } from '../constants/explicitLspConfigur
  * Either a concrete value the user explicitly set for an LS key, or a reset sentinel
  * queued for delivery to the language server as `{ value: null, changed: true }`.
  */
-export type ExplicitOverrideEntry = { readonly kind: 'value'; readonly value: unknown } | { readonly kind: 'reset' };
+type ExplicitOverrideEntry = { readonly kind: 'value'; readonly value: unknown } | { readonly kind: 'reset' };
 
 export interface IExplicitOverridesMap {
   /** Records that the user explicitly set `lsKey` to `value`. Overwrites any pending reset. */
