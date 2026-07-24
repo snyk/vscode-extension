@@ -41,10 +41,16 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
     private readonly scopeDetectionService: IScopeDetectionService,
     private readonly clientAdapter: ILanguageClientAdapter,
     private readonly logger: ILog,
-    private readonly contextService?: IContextService,
-    private readonly explicitOverridesMap?: IExplicitOverridesMap,
-    private readonly lastKnownValueCache?: ILastKnownValueCache,
-  ) {}
+    private readonly contextService: IContextService | undefined,
+    private readonly explicitOverridesMap: IExplicitOverridesMap,
+    private readonly lastKnownValueCache: ILastKnownValueCache,
+  ) {
+    if (!explicitOverridesMap || !lastKnownValueCache) {
+      throw new Error(
+        'ConfigurationPersistenceService requires explicitOverridesMap and lastKnownValueCache to track explicit LS-key overrides',
+      );
+    }
+  }
 
   async handleSaveConfig(configJson: string): Promise<void> {
     try {
@@ -227,7 +233,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           await this.workspace.updateConfiguration(configurationId, section, undefined, true);
           // The reset cleared the VS Code override, so the next inbound push for this key
           // must not be skipped as redundant against the now-stale pre-reset value.
-          this.lastKnownValueCache?.set(vscodeKey, undefined);
+          this.lastKnownValueCache.set(vscodeKey, undefined);
         }
         // Mutate caller-supplied state whether or not there was anything to write.
         // Each key's callback is wrapped independently: a callback failure (e.g. a resolver
@@ -272,7 +278,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         // (nothing written yet this session for this key) never causes a skip, which is
         // what prevents a resolved value that happens to equal the schema default from
         // getting written as a permanent-looking override on the very first sync.
-        const lastKnown = this.lastKnownValueCache?.get(settingKey);
+        const lastKnown = this.lastKnownValueCache.get(settingKey);
         if (lastKnown !== undefined && _.isEqual(effectiveValue, lastKnown)) {
           this.logger.debug(`Skipping ${settingKey}: unchanged since last write`);
           continue;
@@ -280,7 +286,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
         await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
 
-        this.lastKnownValueCache?.set(settingKey, effectiveValue);
+        this.lastKnownValueCache.set(settingKey, effectiveValue);
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
@@ -372,10 +378,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
         // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
         await this.workspace.updateConfiguration(configurationId, section, undefined, true);
 
-        this.lastKnownValueCache?.set(vscodeKey, undefined);
+        this.lastKnownValueCache.set(vscodeKey, undefined);
         for (const lsKey of lsKeys) {
           try {
-            this.explicitOverridesMap?.setReset(lsKey);
+            this.explicitOverridesMap.setReset(lsKey);
             this.logger.debug(`Outbound reset: cleared global override for ${lsKey}`);
           } catch (cbErr) {
             this.logger.error(`Failed to record explicit-overrides reset for ${lsKey}: ${cbErr}`);
@@ -425,7 +431,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
         await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
 
-        this.lastKnownValueCache?.set(settingKey, effectiveValue);
+        this.lastKnownValueCache.set(settingKey, effectiveValue);
         // Each sibling is recorded independently: a shared vscodeKey (e.g. snyk.severity) can
         // have several LS keys, and one throwing must not skip recording the others — the VS
         // Code write above already succeeded for all of them.
@@ -433,7 +439,7 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
           const lsValue = config[lsKey];
           if (lsValue === undefined || lsValue === null) continue;
           try {
-            this.explicitOverridesMap?.setExplicitValue(lsKey, lsValue);
+            this.explicitOverridesMap.setExplicitValue(lsKey, lsValue);
           } catch (cbErr) {
             this.logger.error(`Failed to record explicit-overrides value for ${lsKey}: ${cbErr}`);
           }

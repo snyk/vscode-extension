@@ -37,7 +37,11 @@ import {
   ExplicitOverridesMap,
   IExplicitOverridesMap,
 } from '../../../../../../snyk/common/languageServer/explicitOverridesMap';
-import { LastKnownValueCache } from '../../../../../../snyk/common/languageServer/lastKnownValueCache';
+import {
+  ILastKnownValueCache,
+  LastKnownValueCache,
+} from '../../../../../../snyk/common/languageServer/lastKnownValueCache';
+import { noopExplicitOverridesMap, noopLastKnownValueCache } from '../../../../mocks/explicitOverridesMap.mock';
 import {
   isExplicitlyChanged,
   isPendingReset,
@@ -191,6 +195,9 @@ suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
   });
 
@@ -320,6 +327,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -351,6 +361,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       noClientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -376,6 +389,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -401,6 +417,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -427,6 +446,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -453,6 +475,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -478,6 +503,9 @@ suite('ConfigurationPersistenceService — LS key mapping', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -591,6 +619,9 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       realScopeService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -649,7 +680,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       clientAdapter,
       logger,
       undefined,
-      undefined,
+      noopExplicitOverridesMap,
       lastKnownValueCache,
     );
 
@@ -705,7 +736,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       clientAdapter,
       logger,
       undefined,
-      undefined,
+      noopExplicitOverridesMap,
       emptyCache,
     );
 
@@ -733,6 +764,9 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       realScopeService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -753,7 +787,16 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound clears folder configs when LS sends empty array', async () => {
-    const svc = new ConfigurationPersistenceService(workspace, configuration, realScopeService, clientAdapter, logger);
+    const svc = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      realScopeService,
+      clientAdapter,
+      logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
+    );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
 
@@ -769,7 +812,16 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
   });
 
   test('persistInbound does not call setFolderConfigs when folderConfigs is absent', async () => {
-    const svc = new ConfigurationPersistenceService(workspace, configuration, realScopeService, clientAdapter, logger);
+    const svc = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      realScopeService,
+      clientAdapter,
+      logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
+    );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
 
@@ -843,6 +895,9 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
@@ -885,6 +940,9 @@ suite('ConfigurationPersistenceService — folder override reset (flat null)', (
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setFolderConfigsStub = configuration.setFolderConfigs as unknown as sinon.SinonStub;
@@ -1018,6 +1076,7 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       logger,
       undefined,
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
   }
 
@@ -1109,26 +1168,41 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     );
   });
 
-  // Resets must be handled even when no explicit-overrides map is wired (defensive — no throw).
-  test('does not throw when explicit-overrides map is absent', async () => {
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      scopeDetectionService,
-      clientAdapter,
-      logger,
+  // [IDE-2264 ticket 11]: explicitOverridesMap/lastKnownValueCache are required constructor
+  // params — a missing dependency now fails loudly at construction instead of silently
+  // disabling explicit-marking. Replaces the old "does not throw when absent" test, whose
+  // premise (silent no-op) is exactly what this ticket removed.
+  test('throws at construction when explicitOverridesMap is omitted', () => {
+    assert.throws(
+      () =>
+        new ConfigurationPersistenceService(
+          workspace,
+          configuration,
+          scopeDetectionService,
+          clientAdapter,
+          logger,
+          undefined,
+          undefined as unknown as IExplicitOverridesMap,
+          noopLastKnownValueCache,
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
     );
+  });
 
-    await service.persistInboundLspConfiguration({
-      settings: { [LS_GLOBAL_KEY.organization]: { value: null, changed: true } },
-    });
-
-    sinon.assert.calledWith(
-      updateConfigurationStub,
-      CONFIGURATION_IDENTIFIER,
-      'advanced.organization',
-      undefined,
-      true,
+  test('throws at construction when lastKnownValueCache is omitted', () => {
+    assert.throws(
+      () =>
+        new ConfigurationPersistenceService(
+          workspace,
+          configuration,
+          scopeDetectionService,
+          clientAdapter,
+          logger,
+          undefined,
+          noopExplicitOverridesMap,
+          undefined as unknown as ILastKnownValueCache,
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
     );
   });
 });
@@ -1568,6 +1642,7 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
       logger,
       undefined,
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
   }
 
@@ -1947,6 +2022,9 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -1978,6 +2056,9 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -2020,6 +2101,7 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       logger,
       undefined,
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -2115,6 +2197,9 @@ suite('ConfigurationPersistenceService — shared-vscodeKey dedupe in reset (FIX
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const configJson = JSON.stringify({
@@ -2148,6 +2233,9 @@ suite('ConfigurationPersistenceService — shared-vscodeKey dedupe in reset (FIX
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -2253,6 +2341,9 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
@@ -2287,6 +2378,9 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     // api_endpoint is NOT in GLOBAL_RESET_FIELDS.
@@ -2322,6 +2416,9 @@ suite('ConfigurationPersistenceService — withoutGlobalResets GLOBAL_RESET_FIEL
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -2442,6 +2539,7 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       logger,
       undefined,
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     // Use two keys that map to DIFFERENT vscodeKeys: organization and scan_net_new.
@@ -2492,6 +2590,7 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
       logger,
       undefined,
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     // Two keys with different vscodeKeys: organization and scan_net_new.
@@ -2674,6 +2773,9 @@ suite('ConfigurationPersistenceService — IDE-2149 regression guard (effective-
       realScopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
   }
 
@@ -2933,7 +3035,7 @@ suite('ConfigurationPersistenceService — snapshot merges shared-vscodeKey part
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
       undefined,
-      undefined,
+      noopExplicitOverridesMap,
       lastKnownValueCache,
     );
   }
@@ -3107,6 +3209,9 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
         getLanguageClient: sinon.stub().returns({ sendNotification: sinon.stub().resolves() }),
       } as unknown as ILanguageClientAdapter,
       { info: sinon.stub(), debug: sinon.stub(), error: sinon.stub(), warn: sinon.stub() } as unknown as ILog,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
   }
 
@@ -3275,6 +3380,9 @@ suite('ConfigurationPersistenceService — Fix 2: undefined value treated as res
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -3305,6 +3413,9 @@ suite('ConfigurationPersistenceService — Fix 2: undefined value treated as res
       scopeDetectionService,
       clientAdapter,
       logger,
+      undefined,
+      noopExplicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     const param: LspConfigurationParam = {
@@ -3402,6 +3513,7 @@ suite('ConfigurationPersistenceService — per-key recording exception resilienc
       logger,
       undefined, // contextService — not needed for this test
       explicitOverridesMap,
+      noopLastKnownValueCache,
     );
 
     // Send all four severity keys as null → outbound reset for the fan-out group.

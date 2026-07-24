@@ -35,8 +35,11 @@ import { IDiagnosticsIssueProvider } from '../../../../snyk/common/services/diag
 import { IMcpProvider } from '../../../../snyk/common/vscode/mcpProvider';
 import { ITreeViewProviderService } from '../../../../snyk/base/treeView/treeViewProviderService';
 import { IWorkspaceConfigurationWebviewProvider } from '../../../../snyk/common/views/workspaceConfiguration/types/workspaceConfiguration.types';
-import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
-import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
+import {
+  ExplicitOverridesMap,
+  IExplicitOverridesMap,
+} from '../../../../snyk/common/languageServer/explicitOverridesMap';
+import { LastKnownValueCache, ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { ConfigurationPersistenceService } from '../../../../snyk/common/views/workspaceConfiguration/services/configurationPersistenceService';
 import {
   IScopeDetectionService,
@@ -66,6 +69,8 @@ suite('Language Server', () => {
     languageClientAdapter: ILanguageClientAdapter,
     workspace: IVSCodeWorkspace,
     treeViewProvider?: ITreeViewProviderService,
+    explicitOverridesMap: IExplicitOverridesMap = new ExplicitOverridesMap(makeMemento()),
+    lastKnownValueCache: ILastKnownValueCache = new LastKnownValueCache(workspace, []),
   ) => {
     return new LanguageServer(
       user,
@@ -85,6 +90,8 @@ suite('Language Server', () => {
       {} as IDiagnosticsIssueProvider<unknown>,
       sinon.stub().resolves(),
       treeViewProvider,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
   };
 
@@ -217,6 +224,66 @@ suite('Language Server', () => {
 
   teardown(() => {
     sinon.restore();
+  });
+
+  // [IDE-2264 ticket 11]: explicitOverridesMap/lastKnownValueCache are required constructor
+  // params — a missing dependency now fails loudly at construction instead of silently
+  // disabling explicit-marking. Constructed directly (not via createFakeLanguageServer,
+  // whose default parameters would substitute a real instance for an explicit `undefined`).
+  test('throws at construction when explicitOverridesMap is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageServer(
+          user,
+          configurationMock,
+          {} as ILanguageClientAdapter,
+          {} as IVSCodeWorkspace,
+          new WindowMock(),
+          authServiceMock,
+          logger,
+          downloadServiceMock,
+          {} as IMcpProvider,
+          {} as IExtensionRetriever,
+          {} as ISummaryProviderService,
+          {} as IUriAdapter,
+          {} as IMarkdownStringAdapter,
+          new CommandsMock(),
+          {} as IDiagnosticsIssueProvider<unknown>,
+          sinon.stub().resolves(),
+          undefined,
+          undefined as unknown as IExplicitOverridesMap,
+          new LastKnownValueCache({} as IVSCodeWorkspace, []),
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
+    );
+  });
+
+  test('throws at construction when lastKnownValueCache is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageServer(
+          user,
+          configurationMock,
+          {} as ILanguageClientAdapter,
+          {} as IVSCodeWorkspace,
+          new WindowMock(),
+          authServiceMock,
+          logger,
+          downloadServiceMock,
+          {} as IMcpProvider,
+          {} as IExtensionRetriever,
+          {} as ISummaryProviderService,
+          {} as IUriAdapter,
+          {} as IMarkdownStringAdapter,
+          new CommandsMock(),
+          {} as IDiagnosticsIssueProvider<unknown>,
+          sinon.stub().resolves(),
+          undefined,
+          new ExplicitOverridesMap(makeMemento()),
+          undefined as unknown as ILastKnownValueCache,
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
+    );
   });
 
   test('LanguageServer starts with correct args', async () => {
@@ -963,6 +1030,7 @@ suite('Language Server', () => {
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
 
       const options = await ls.getInitializationOptions();
@@ -1006,6 +1074,7 @@ suite('Language Server', () => {
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
 
       await assert.rejects(() => ls.getInitializationOptions(), fromConfigError);
@@ -1046,6 +1115,7 @@ suite('Language Server', () => {
         sinon.stub().resolves(),
         undefined,
         explicitOverridesMap,
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
 
       const options = await ls.getInitializationOptions();
@@ -1058,6 +1128,7 @@ suite('Language Server', () => {
       // Arrange: one real explicit-overrides map shared by both consumers.
       const sharedExplicitOverridesMap = new ExplicitOverridesMap(makeMemento());
       sharedExplicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
+      const sharedLastKnownValueCache = new LastKnownValueCache({} as IVSCodeWorkspace, []);
 
       // Wire the map into middleware.
       const middleware = new LanguageClientMiddleware(
@@ -1067,7 +1138,7 @@ suite('Language Server', () => {
         {} as IUriAdapter,
         {} as IVSCodeCommands,
         undefined,
-        undefined,
+        sharedLastKnownValueCache,
         sharedExplicitOverridesMap,
       );
 
@@ -1117,6 +1188,7 @@ suite('Language Server', () => {
         sinon.stub().resolves(),
         undefined,
         sharedExplicitOverridesMap,
+        sharedLastKnownValueCache,
       );
 
       const initOptions = await ls.getInitializationOptions();
@@ -1231,6 +1303,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         persistStub,
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
       languageServer.setWorkspaceConfigurationProvider(providerMock);
       downloadServiceMock.downloadReady$.next();
@@ -1312,6 +1386,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         sinon.stub().resolves(),
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
     }
 
@@ -1362,6 +1438,7 @@ suite('Language Server', () => {
         logger,
         undefined,
         explicitOverridesMap,
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
 
       const ls = makeLanguageServerWithListener(fn => {
@@ -1431,6 +1508,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         sinon.stub().resolves(),
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1470,6 +1549,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         sinon.stub().resolves(),
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1504,6 +1585,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         sinon.stub().resolves(),
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
       downloadServiceMock.downloadReady$.next();
 
@@ -1540,6 +1623,8 @@ suite('Language Server', () => {
         {} as IDiagnosticsIssueProvider<unknown>,
         sinon.stub().resolves(),
         undefined,
+        new ExplicitOverridesMap(makeMemento()),
+        new LastKnownValueCache({} as IVSCodeWorkspace, []),
       );
       downloadServiceMock.downloadReady$.next();
 

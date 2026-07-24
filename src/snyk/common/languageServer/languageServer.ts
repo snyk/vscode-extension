@@ -104,9 +104,14 @@ export class LanguageServer implements ILanguageServer {
     private readonly diagnosticsProvider: IDiagnosticsIssueProvider<unknown>,
     private readonly persistInboundConfiguration: (view: LspConfigurationParam) => Promise<void>,
     private readonly treeViewProvider: ITreeViewProviderService | undefined,
-    private readonly explicitOverridesMap?: IExplicitOverridesMap,
-    private readonly lastKnownValueCache?: ILastKnownValueCache,
+    private readonly explicitOverridesMap: IExplicitOverridesMap,
+    private readonly lastKnownValueCache: ILastKnownValueCache,
   ) {
+    if (!explicitOverridesMap || !lastKnownValueCache) {
+      throw new Error(
+        'LanguageServer requires explicitOverridesMap and lastKnownValueCache to track explicit LS-key overrides',
+      );
+    }
     this.downloadService = downloadService;
 
     this.geminiIntegrationService = new GeminiIntegrationService(
@@ -314,9 +319,6 @@ export class LanguageServer implements ILanguageServer {
       // shared last-known-value cache instead of consuming a write-time pending tag — correct
       // regardless of when the resulting change event actually arrives, and doubles as the
       // fan-out sibling-disambiguation cache (no separate per-LS-key cache).
-      if (!this.explicitOverridesMap || !this.lastKnownValueCache) {
-        return;
-      }
       markExplicitLsKeysFromConfigurationChangeEvent(
         e,
         this.explicitOverridesMap,

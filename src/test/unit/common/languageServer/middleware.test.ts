@@ -33,6 +33,7 @@ import {
 } from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
 import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
+import { noopExplicitOverridesMap, noopLastKnownValueCache } from '../../mocks/explicitOverridesMap.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
@@ -86,6 +87,43 @@ suite('Language Server: Middleware', () => {
     sinon.restore();
   });
 
+  // [IDE-2264 ticket 11]: lastKnownValueCache/explicitOverridesMap are required constructor
+  // params — a missing dependency now fails loudly at construction instead of silently
+  // disabling explicit-marking.
+  test('throws at construction when lastKnownValueCache is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageClientMiddleware(
+          new LoggerMockFailOnErrors(),
+          configuration,
+          new Subject<ShowIssueDetailTopicParams>(),
+          {} as IUriAdapter,
+          {} as IVSCodeCommands,
+          undefined,
+          undefined as unknown as ILastKnownValueCache,
+          noopExplicitOverridesMap,
+        ),
+      /requires lastKnownValueCache and explicitOverridesMap/,
+    );
+  });
+
+  test('throws at construction when explicitOverridesMap is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageClientMiddleware(
+          new LoggerMockFailOnErrors(),
+          configuration,
+          new Subject<ShowIssueDetailTopicParams>(),
+          {} as IUriAdapter,
+          {} as IVSCodeCommands,
+          undefined,
+          noopLastKnownValueCache,
+          undefined as unknown as IExplicitOverridesMap,
+        ),
+      /requires lastKnownValueCache and explicitOverridesMap/,
+    );
+  });
+
   test('Configuration request should translate settings', async () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -93,6 +131,9 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ConfigurationParams = {
       items: [
@@ -138,6 +179,9 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ConfigurationParams = {
       items: [
@@ -182,6 +226,9 @@ suite('Language Server: Middleware', () => {
       showIssueDetailTopic$,
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ShowDocumentParams = {
       uri: `snyk:///fake/file/path?product=${product.replaceAll(' ', '+')}&issueId=${issueId}&action=${
@@ -212,7 +259,7 @@ suite('Language Server: Middleware', () => {
   // [IDE-2264 ticket 05]: echo-suppression is computed fresh on every call by comparing every
   // tracked VS Code key against the last-known-value cache — no batch-scoped flag.
 
-  test('didChangeConfiguration calls next when no vscodeWorkspace/lastKnownValueCache is wired (default: never suppress)', async () => {
+  test('didChangeConfiguration calls next when no vscodeWorkspace is wired (default: never suppress)', async () => {
     const nextStub = sinon.stub().resolves();
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -220,6 +267,9 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
@@ -245,6 +295,7 @@ suite('Language Server: Middleware', () => {
       {} as IVSCodeCommands,
       vscodeWorkspace,
       lastKnownValueCache,
+      noopExplicitOverridesMap,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
@@ -269,6 +320,7 @@ suite('Language Server: Middleware', () => {
       {} as IVSCodeCommands,
       vscodeWorkspace,
       lastKnownValueCache,
+      noopExplicitOverridesMap,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
@@ -298,6 +350,7 @@ suite('Language Server: Middleware', () => {
       {} as IVSCodeCommands,
       vscodeWorkspace,
       lastKnownValueCache,
+      noopExplicitOverridesMap,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
@@ -321,7 +374,7 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
+      noopLastKnownValueCache,
       explicitOverridesMap,
     );
 
@@ -363,7 +416,7 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
+      noopLastKnownValueCache,
       explicitOverridesMap,
     );
 
@@ -403,7 +456,7 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
+      noopLastKnownValueCache,
       explicitOverridesMap,
     );
 
@@ -438,7 +491,7 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
+      noopLastKnownValueCache,
       explicitOverridesMap,
     );
 

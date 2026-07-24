@@ -47,10 +47,16 @@ export class LanguageClientMiddleware implements Middleware {
     private showIssueDetailTopic$: Subject<ShowIssueDetailTopicParams>,
     private uriAdapter: IUriAdapter,
     private commands: IVSCodeCommands,
-    private readonly vscodeWorkspace?: IVSCodeWorkspace,
-    private readonly lastKnownValueCache?: ILastKnownValueCache,
-    private readonly explicitOverridesMap?: IExplicitOverridesMap,
-  ) {}
+    private readonly vscodeWorkspace: IVSCodeWorkspace | undefined,
+    private readonly lastKnownValueCache: ILastKnownValueCache,
+    private readonly explicitOverridesMap: IExplicitOverridesMap,
+  ) {
+    if (!lastKnownValueCache || !explicitOverridesMap) {
+      throw new Error(
+        'LanguageClientMiddleware requires lastKnownValueCache and explicitOverridesMap to track explicit LS-key overrides',
+      );
+    }
+  }
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
     const uri = this.uriAdapter.parse(uriString);
@@ -87,7 +93,7 @@ export class LanguageClientMiddleware implements Middleware {
         lsKey => isPendingReset(lsKey, this.explicitOverridesMap),
       );
 
-      if (this.explicitOverridesMap && lspParam.settings) {
+      if (lspParam.settings) {
         // Confirm delivery only now that the response was built successfully — never before.
         confirmResetsDeliveredAfterPull(lspParam.settings, this.explicitOverridesMap);
       }
