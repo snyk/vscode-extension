@@ -6,7 +6,7 @@ import {
   FolderConfig,
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
-import { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { FakeExplicitLspConfigurationChangeTracker } from '../../mocks/explicitLspConfigurationChangeTracker.mock';
 import {
   hasUnreflectedConfigurationChange,
   markExplicitLsKeysFromConfigurationChangeEvent,
@@ -46,23 +46,6 @@ function fakeGetConfigWorkspace(map: Record<string, unknown>): Pick<IVSCodeWorks
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Minimal in-memory tracker that fulfils the interface. */
-class FakeTracker implements IExplicitLspConfigurationChangeTracker {
-  private readonly keys = new Set<string>();
-
-  markExplicitlyChanged(lsKey: string): void {
-    this.keys.add(lsKey);
-  }
-
-  unmarkExplicitlyChanged(lsKey: string): void {
-    this.keys.delete(lsKey);
-  }
-
-  isExplicitlyChanged(lsKey: string): boolean {
-    return this.keys.has(lsKey);
-  }
-}
 
 type InspectResult = { globalValue?: unknown; defaultValue?: unknown };
 
@@ -115,7 +98,7 @@ const minimalConfig: IConfiguration = {
 suite('seedExplicitChangesFromExistingSettings', () => {
   // T1: global value differs from default → LS key seeded
   test('T1: seeds LS key when global value differs from default', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // organization: ADVANCED_ORGANIZATION = 'snyk.advanced.organization'
     // → configId: 'snyk', section: 'advanced.organization'
     const ws = fakeWorkspace({
@@ -134,7 +117,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T2: global value equals default → NOT seeded
   test('T2: does not seed when global value equals default', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     const ws = fakeWorkspace({
       snyk: {
         'advanced.organization': { globalValue: '', defaultValue: '' },
@@ -151,7 +134,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T3: globalValue undefined → NOT seeded
   test('T3: does not seed when globalValue is undefined', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     const ws = fakeWorkspace({
       snyk: {
         'advanced.organization': { globalValue: undefined, defaultValue: '' },
@@ -168,7 +151,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T4: alwaysChanged entry → never seeded regardless of inspected value
   test('T4: never seeds alwaysChanged entries', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // Even if inspect would match, alwaysChanged keys must be skipped.
     // trustEnabled, automaticAuthentication, hoverVerbosity, trustedFolders are alwaysChanged.
     const ws = fakeWorkspace({
@@ -201,7 +184,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T5: entry without vscodeKey → skipped
   test('T5: skips entries without vscodeKey (LS-only settings)', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // token, sendErrorReports, enableSnykOssQuickFixActions have no vscodeKey.
     // Provide an empty workspace — if the seed incorrectly tries to inspect them it may throw or mark.
     const ws = fakeWorkspace({});
@@ -221,7 +204,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T6: key already in tracker → idempotent; inspect not re-evaluated
   test('T6: is idempotent — does not re-evaluate keys already in tracker', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // Pre-seed organization
     tracker.markExplicitlyChanged(LS_GLOBAL_KEY.organization);
 
@@ -248,7 +231,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T7: shared vscodeKey (severity filter object customised) → all 4 severity LS keys seeded
   test('T7: seeds all severity LS keys when the shared severity vscodeKey object differs from default', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // SEVERITY_FILTER_SETTING = 'snyk.severity' → configId: 'snyk', section: 'severity'
     // User customised — object differs from default.
     const ws = fakeWorkspace({
@@ -270,7 +253,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T_F2: defaultValue undefined but globalValue defined → IS seeded (defined globalValue is itself a deviation)
   test('T_F2: seeds when defaultValue is undefined but the user set a global value', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     const ws = fakeWorkspace({
       snyk: {
         'advanced.organization': { globalValue: 'custom-value', defaultValue: undefined },
@@ -287,7 +270,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
   // T8: inspectConfiguration returns undefined → skip without throwing
   test('T8: does not throw when inspectConfiguration returns undefined', () => {
-    const tracker = new FakeTracker();
+    const tracker = new FakeExplicitLspConfigurationChangeTracker();
     // All inspections return undefined
     const ws = fakeWorkspace({});
 
@@ -596,7 +579,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
   suite('integration: seeded org produces changed:true via LanguageServerSettings.fromConfiguration', () => {
     // T9: seeded org/endpoint → changed:true; untouched setting → changed:false
     test('T9: seeded org produces changed:true; untouched api endpoint produces changed:false', async () => {
-      const tracker = new FakeTracker();
+      const tracker = new FakeExplicitLspConfigurationChangeTracker();
 
       // Build a config with a custom org and default-like endpoint.
       const config: IConfiguration = {
@@ -633,7 +616,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
     // T10: no-default setting (defaultValue undefined) with user global value → changed:true via fromConfiguration
     test('T10: no-default setting with user global value produces changed:true via fromConfiguration', async () => {
-      const tracker = new FakeTracker();
+      const tracker = new FakeExplicitLspConfigurationChangeTracker();
 
       // organization has no package.json default (defaultValue: undefined); user set a global value.
       const config: IConfiguration = {

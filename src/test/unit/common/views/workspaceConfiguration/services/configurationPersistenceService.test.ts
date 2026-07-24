@@ -24,6 +24,7 @@ import {
 } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
 import { IExplicitLspConfigurationChangeTracker } from '../../../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import { FakeExplicitLspConfigurationChangeTracker } from '../../../../mocks/explicitLspConfigurationChangeTracker.mock';
 import { LanguageServerSettings } from '../../../../../../snyk/common/languageServer/settings';
 import {
   GLOBAL_RESET_FIELDS,
@@ -840,21 +841,7 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let tracker: FakeTracker;
-
-  /** Minimal in-memory tracker that fulfils the interface. */
-  class FakeTracker implements IExplicitLspConfigurationChangeTracker {
-    private readonly keys = new Set<string>();
-    markExplicitlyChanged(lsKey: string): void {
-      this.keys.add(lsKey);
-    }
-    unmarkExplicitlyChanged(lsKey: string): void {
-      this.keys.delete(lsKey);
-    }
-    isExplicitlyChanged(lsKey: string): boolean {
-      return this.keys.has(lsKey);
-    }
-  }
+  let tracker: FakeExplicitLspConfigurationChangeTracker;
 
   setup(() => {
     updateConfigurationStub = sinon.stub().resolves();
@@ -917,7 +904,7 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    tracker = new FakeTracker();
+    tracker = new FakeExplicitLspConfigurationChangeTracker();
   });
 
   teardown(() => {
@@ -2118,26 +2105,13 @@ suite('GLOBAL_RESET_FIELDS invariant (FIX 3)', () => {
 // When updateConfiguration throws for a shared vscodeKey (e.g. snyk.severity),
 // the lsKeys for that group must remain marked as explicitly changed.
 suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker atomicity (FIX 1)', () => {
-  class FakeTrackerFix1 implements IExplicitLspConfigurationChangeTracker {
-    private readonly keys = new Set<string>();
-    markExplicitlyChanged(lsKey: string): void {
-      this.keys.add(lsKey);
-    }
-    unmarkExplicitlyChanged(lsKey: string): void {
-      this.keys.delete(lsKey);
-    }
-    isExplicitlyChanged(lsKey: string): boolean {
-      return this.keys.has(lsKey);
-    }
-  }
-
   let workspace: IVSCodeWorkspace;
   let configuration: IConfiguration;
   let scopeDetectionService: IScopeDetectionService;
   let clientAdapter: ILanguageClientAdapter;
   let logger: ILog;
   let updateConfigurationStub: sinon.SinonStub;
-  let tracker: FakeTrackerFix1;
+  let tracker: FakeExplicitLspConfigurationChangeTracker;
 
   setup(() => {
     updateConfigurationStub = sinon.stub();
@@ -2173,7 +2147,7 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
       warn: sinon.stub(),
     } as unknown as ILog;
 
-    tracker = new FakeTrackerFix1();
+    tracker = new FakeExplicitLspConfigurationChangeTracker();
   });
 
   teardown(() => sinon.restore());
