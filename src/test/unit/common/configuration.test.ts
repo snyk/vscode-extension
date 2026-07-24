@@ -16,10 +16,19 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  AUTO_CONFIGURE_MCP_SERVER,
+  CODE_SECURITY_ENABLED_SETTING,
+  DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
+  IAC_ENABLED_SETTING,
+  OSS_ENABLED_SETTING,
   SCANNING_MODE,
+  SECRETS_ENABLED_SETTING,
+  SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
+  TRUSTED_FOLDERS,
   CONFIGURATION_IDENTIFIER,
 } from '../../../snyk/common/constants/settings';
+import type { ILastKnownValueCache } from '../../../snyk/common/languageServer/lastKnownValueCache';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { createWorkspaceMockWithInspection, stubWorkspaceConfiguration } from '../mocks/workspace.mock';
@@ -375,6 +384,132 @@ suite('Configuration', () => {
         const fc = makeFolderConfig(undefined, key);
         strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), undefined);
       });
+    });
+  });
+
+  suite('Last-known-value cache updates on direct writes [IDE-2264 ticket 07]', () => {
+    function fakeCache(): ILastKnownValueCache & { set: sinon.SinonSpy } {
+      return { get: sinon.stub(), set: sinon.spy() };
+    }
+
+    test('setCliBaseDownloadUrl updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setCliBaseDownloadUrl('https://custom.downloads.snyk.io');
+
+      sinon.assert.calledOnceWithExactly(cache.set, ADVANCED_CLI_BASE_DOWNLOAD_URL, 'https://custom.downloads.snyk.io');
+    });
+
+    test('setEndpoint updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setEndpoint('https://api.custom.snyk.io');
+
+      sinon.assert.calledOnceWithExactly(cache.set, ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.snyk.io');
+    });
+
+    test('setCliPath updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setCliPath('/usr/local/bin/snyk');
+
+      sinon.assert.calledOnceWithExactly(cache.set, ADVANCED_CLI_PATH, '/usr/local/bin/snyk');
+    });
+
+    test('setDeltaFindingsEnabled updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setDeltaFindingsEnabled(true);
+
+      sinon.assert.calledOnceWithExactly(cache.set, DELTA_FINDINGS, NEWISSUES);
+    });
+
+    test('setFeaturesConfiguration updates the cache for each product toggle after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setFeaturesConfiguration({
+        ossEnabled: true,
+        codeSecurityEnabled: false,
+        iacEnabled: true,
+        secretsEnabled: false,
+      });
+
+      sinon.assert.calledWithExactly(cache.set, OSS_ENABLED_SETTING, true);
+      sinon.assert.calledWithExactly(cache.set, CODE_SECURITY_ENABLED_SETTING, false);
+      sinon.assert.calledWithExactly(cache.set, IAC_ENABLED_SETTING, true);
+      sinon.assert.calledWithExactly(cache.set, SECRETS_ENABLED_SETTING, false);
+    });
+
+    test('setTrustedFolders updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setTrustedFolders(['/a', '/b']);
+
+      sinon.assert.calledOnceWithExactly(cache.set, TRUSTED_FOLDERS, ['/a', '/b']);
+    });
+
+    test('setSecureAtInceptionExecutionFrequency updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setSecureAtInceptionExecutionFrequency('On Code Generation');
+
+      sinon.assert.calledOnceWithExactly(cache.set, SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY, 'On Code Generation');
+    });
+
+    test('setAutoConfigureMcpServer updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setAutoConfigureMcpServer(true);
+
+      sinon.assert.calledOnceWithExactly(cache.set, AUTO_CONFIGURE_MCP_SERVER, true);
+    });
+
+    test('a write that throws does not update the cache', async () => {
+      const workspace = {
+        updateConfiguration: sinon.stub().rejects(new Error('write failed')),
+      } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setCliPath('/usr/local/bin/snyk').catch(() => undefined);
+
+      sinon.assert.notCalled(cache.set);
+    });
+
+    test('setCliReleaseChannel (not a tracked LS key) does not touch the cache', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.setCliReleaseChannel('preview');
+
+      sinon.assert.notCalled(cache.set);
+    });
+
+    test('hideWelcomeNotification (not a tracked LS key) does not touch the cache', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeCache();
+      const config = new Configuration({}, workspace, undefined, cache);
+
+      await config.hideWelcomeNotification();
+
+      sinon.assert.notCalled(cache.set);
     });
   });
 });

@@ -240,6 +240,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
     const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState);
     const lastKnownValueCache = new LastKnownValueCache(vsCodeWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
+    configuration.setLastKnownValueCache(lastKnownValueCache);
 
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configPersistenceService = new ConfigurationPersistenceService(

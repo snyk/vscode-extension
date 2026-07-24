@@ -6,6 +6,7 @@ import { SNYK_TOKEN_KEY } from '../constants/general';
 import { DID_CHANGE_CONFIGURATION_METHOD } from '../constants/languageServer';
 import type { LspConfigSetting, LspFolderConfiguration } from '../languageServer/types';
 import { LS_KEY } from '../languageServer/serverSettingsToLspConfigurationParam';
+import type { ILastKnownValueCache } from '../languageServer/lastKnownValueCache';
 import { ILanguageClientAdapter } from '../vscode/languageClient';
 import {
   ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
@@ -292,6 +293,8 @@ export interface IConfiguration {
   setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void>;
 
   setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void;
+
+  setLastKnownValueCache(lastKnownValueCache: ILastKnownValueCache): void;
 }
 
 export class Configuration implements IConfiguration {
@@ -308,6 +311,7 @@ export class Configuration implements IConfiguration {
     private processEnv: NodeJS.ProcessEnv = process.env,
     private workspace: IVSCodeWorkspace,
     private languageClientAdapter?: ILanguageClientAdapter,
+    private lastKnownValueCache?: ILastKnownValueCache,
   ) {}
 
   /**
@@ -343,6 +347,8 @@ export class Configuration implements IConfiguration {
     this.extensionId = extensionId;
   }
 
+  // [IDE-2264 ticket 07]: cli_release_channel is an IDE-only field (see mapConfigToSettings) —
+  // it has no SETTINGS_REGISTRY entry, so it's not a tracked key and has no cache to update.
   async setCliReleaseChannel(releaseChannel: string): Promise<void> {
     if (!releaseChannel) return;
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_RELEASE_CHANNEL);
@@ -352,7 +358,8 @@ export class Configuration implements IConfiguration {
   async setCliBaseDownloadUrl(baseDownloadUrl: string): Promise<void> {
     if (!baseDownloadUrl) return;
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_BASE_DOWNLOAD_URL);
-    return this.workspace.updateConfiguration(configurationId, section, baseDownloadUrl, true);
+    await this.workspace.updateConfiguration(configurationId, section, baseDownloadUrl, true);
+    this.lastKnownValueCache?.set(ADVANCED_CLI_BASE_DOWNLOAD_URL, baseDownloadUrl);
   }
 
   getAutoConfigureMcpServer(): boolean {
@@ -363,6 +370,10 @@ export class Configuration implements IConfiguration {
 
   setLanguageClientAdapter(languageClientAdapter: ILanguageClientAdapter): void {
     this.languageClientAdapter = languageClientAdapter;
+  }
+
+  setLastKnownValueCache(lastKnownValueCache: ILastKnownValueCache): void {
+    this.lastKnownValueCache = lastKnownValueCache;
   }
 
   getSecureAtInceptionExecutionFrequency(): string {
@@ -464,6 +475,7 @@ export class Configuration implements IConfiguration {
   async setEndpoint(endpoint: string): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CUSTOM_ENDPOINT);
     await this.workspace.updateConfiguration(configurationId, section, endpoint.toString(), true);
+    this.lastKnownValueCache?.set(ADVANCED_CUSTOM_ENDPOINT, endpoint.toString());
   }
 
   get isFedramp(): boolean {
@@ -534,7 +546,8 @@ export class Configuration implements IConfiguration {
       cliPath = await CliExecutable.getPath();
     }
     const { configurationId, section } = Configuration.getConfigName(ADVANCED_CLI_PATH);
-    return this.workspace.updateConfiguration(configurationId, section, cliPath, true);
+    await this.workspace.updateConfiguration(configurationId, section, cliPath, true);
+    this.lastKnownValueCache?.set(ADVANCED_CLI_PATH, cliPath);
   }
 
   async setDeltaFindingsEnabled(isEnabled: boolean): Promise<void> {
@@ -544,6 +557,7 @@ export class Configuration implements IConfiguration {
     }
     const { configurationId, section } = Configuration.getConfigName(DELTA_FINDINGS);
     await this.workspace.updateConfiguration(configurationId, section, deltaValue, true);
+    this.lastKnownValueCache?.set(DELTA_FINDINGS, deltaValue);
   }
 
   async clearToken(): Promise<void> {
@@ -593,17 +607,21 @@ export class Configuration implements IConfiguration {
   async setFeaturesConfiguration(config: FeaturesConfiguration | undefined): Promise<void> {
     const { configurationId: ossConfigId, section: ossSection } = Configuration.getConfigName(OSS_ENABLED_SETTING);
     await this.workspace.updateConfiguration(ossConfigId, ossSection, config?.ossEnabled, true);
+    this.lastKnownValueCache?.set(OSS_ENABLED_SETTING, config?.ossEnabled);
 
     const { configurationId: codeConfigId, section: codeSection } =
       Configuration.getConfigName(CODE_SECURITY_ENABLED_SETTING);
     await this.workspace.updateConfiguration(codeConfigId, codeSection, config?.codeSecurityEnabled, true);
+    this.lastKnownValueCache?.set(CODE_SECURITY_ENABLED_SETTING, config?.codeSecurityEnabled);
 
     const { configurationId: iacConfigId, section: iacSection } = Configuration.getConfigName(IAC_ENABLED_SETTING);
     await this.workspace.updateConfiguration(iacConfigId, iacSection, config?.iacEnabled, true);
+    this.lastKnownValueCache?.set(IAC_ENABLED_SETTING, config?.iacEnabled);
 
     const { configurationId: secretsConfigId, section: secretsSection } =
       Configuration.getConfigName(SECRETS_ENABLED_SETTING);
     await this.workspace.updateConfiguration(secretsConfigId, secretsSection, config?.secretsEnabled, true);
+    this.lastKnownValueCache?.set(SECRETS_ENABLED_SETTING, config?.secretsEnabled);
   }
 
   get shouldReportErrors(): boolean {
@@ -616,6 +634,8 @@ export class Configuration implements IConfiguration {
     return !!this.workspace.getConfiguration<boolean>(configurationId, section);
   }
 
+  // [IDE-2264 ticket 07]: yes_welcome_notification has no SETTINGS_REGISTRY entry — not a
+  // tracked key, so no cache to update.
   async hideWelcomeNotification(): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(YES_WELCOME_NOTIFICATION_SETTING);
     await this.workspace.updateConfiguration(configurationId, section, false, true);
@@ -724,6 +744,7 @@ export class Configuration implements IConfiguration {
   async setTrustedFolders(trustedFolders: string[]): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(TRUSTED_FOLDERS);
     await this.workspace.updateConfiguration(configurationId, section, trustedFolders, true);
+    this.lastKnownValueCache?.set(TRUSTED_FOLDERS, trustedFolders);
   }
 
   async setFolderConfigs(folderConfigs: FolderConfig[], triggerConfigChangeEvent: boolean = false): Promise<void> {
@@ -738,10 +759,12 @@ export class Configuration implements IConfiguration {
   async setSecureAtInceptionExecutionFrequency(frequency: string): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY);
     await this.workspace.updateConfiguration(configurationId, section, frequency, true);
+    this.lastKnownValueCache?.set(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY, frequency);
   }
 
   async setAutoConfigureMcpServer(autoConfigureMcpServer: boolean): Promise<void> {
     const { configurationId, section } = Configuration.getConfigName(AUTO_CONFIGURE_MCP_SERVER);
     await this.workspace.updateConfiguration(configurationId, section, autoConfigureMcpServer, true);
+    this.lastKnownValueCache?.set(AUTO_CONFIGURE_MCP_SERVER, autoConfigureMcpServer);
   }
 }
