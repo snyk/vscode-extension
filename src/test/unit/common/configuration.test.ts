@@ -395,7 +395,8 @@ suite('Configuration', () => {
     test('setCliBaseDownloadUrl updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setCliBaseDownloadUrl('https://custom.downloads.snyk.io');
 
@@ -405,7 +406,8 @@ suite('Configuration', () => {
     test('setEndpoint updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setEndpoint('https://api.custom.snyk.io');
 
@@ -415,7 +417,8 @@ suite('Configuration', () => {
     test('setCliPath updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setCliPath('/usr/local/bin/snyk');
 
@@ -425,7 +428,8 @@ suite('Configuration', () => {
     test('setDeltaFindingsEnabled updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setDeltaFindingsEnabled(true);
 
@@ -435,7 +439,8 @@ suite('Configuration', () => {
     test('setFeaturesConfiguration updates the cache for each product toggle after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setFeaturesConfiguration({
         ossEnabled: true,
@@ -453,7 +458,8 @@ suite('Configuration', () => {
     test('setTrustedFolders updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setTrustedFolders(['/a', '/b']);
 
@@ -463,7 +469,8 @@ suite('Configuration', () => {
     test('setSecureAtInceptionExecutionFrequency updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setSecureAtInceptionExecutionFrequency('On Code Generation');
 
@@ -473,7 +480,8 @@ suite('Configuration', () => {
     test('setAutoConfigureMcpServer updates the cache after a successful write', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setAutoConfigureMcpServer(true);
 
@@ -485,7 +493,8 @@ suite('Configuration', () => {
         updateConfiguration: sinon.stub().rejects(new Error('write failed')),
       } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setCliPath('/usr/local/bin/snyk').catch(() => undefined);
 
@@ -495,7 +504,8 @@ suite('Configuration', () => {
     test('setCliReleaseChannel (not a tracked LS key) does not touch the cache', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.setCliReleaseChannel('preview');
 
@@ -505,7 +515,8 @@ suite('Configuration', () => {
     test('hideWelcomeNotification (not a tracked LS key) does not touch the cache', async () => {
       const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
       const cache = fakeCache();
-      const config = new Configuration({}, workspace, undefined, cache);
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
 
       await config.hideWelcomeNotification();
 

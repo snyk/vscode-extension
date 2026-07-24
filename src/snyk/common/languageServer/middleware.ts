@@ -19,6 +19,7 @@ import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { IExplicitOverridesMap } from './explicitOverridesMap';
 import {
+  assertExplicitOverrideDepsPresent,
   confirmResetsDeliveredAfterPull,
   hasUnreflectedConfigurationChange,
   isExplicitlyChanged,
@@ -51,11 +52,7 @@ export class LanguageClientMiddleware implements Middleware {
     private readonly lastKnownValueCache: ILastKnownValueCache,
     private readonly explicitOverridesMap: IExplicitOverridesMap,
   ) {
-    if (!lastKnownValueCache || !explicitOverridesMap) {
-      throw new Error(
-        'LanguageClientMiddleware requires lastKnownValueCache and explicitOverridesMap to track explicit LS-key overrides',
-      );
-    }
+    assertExplicitOverrideDepsPresent('LanguageClientMiddleware', explicitOverridesMap, lastKnownValueCache);
   }
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -105,11 +102,7 @@ export class LanguageClientMiddleware implements Middleware {
       // shared per-event flag. Agrees with the configuration-change-event handler's own decision
       // (explicitLsKeyTracking.ts) regardless of listener registration order — see
       // hasUnreflectedConfigurationChange's doc comment for why.
-      if (
-        this.vscodeWorkspace &&
-        this.lastKnownValueCache &&
-        !hasUnreflectedConfigurationChange(this.vscodeWorkspace, this.lastKnownValueCache)
-      ) {
+      if (this.vscodeWorkspace && !hasUnreflectedConfigurationChange(this.vscodeWorkspace, this.lastKnownValueCache)) {
         this.logger.debug('didChangeConfiguration suppressed: matches last-known-value cache');
         return;
       }

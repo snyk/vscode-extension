@@ -227,6 +227,22 @@ export function isPendingReset(lsKey: string, explicitOverrides?: IExplicitOverr
 }
 
 /**
+ * Shared by every constructor (`LanguageServer`, `LanguageClientMiddleware`,
+ * `ConfigurationPersistenceService`) that requires both explicit-override-tracking deps.
+ */
+export function assertExplicitOverrideDepsPresent(
+  className: string,
+  explicitOverrides: IExplicitOverridesMap | undefined,
+  lastKnownValueCache: ILastKnownValueCache | undefined,
+): void {
+  if (!explicitOverrides || !lastKnownValueCache) {
+    throw new Error(
+      `${className} requires explicitOverridesMap and lastKnownValueCache to track explicit LS-key overrides`,
+    );
+  }
+}
+
+/**
  * [IDE-2264 ticket 06]: after a pull response sends a reset (`{ value: null, changed: true }`),
  * confirms delivery in the explicit-overrides map so the sentinel is cleared and not resent on a
  * later pull. Only called with the settings that actually made it into a successfully built

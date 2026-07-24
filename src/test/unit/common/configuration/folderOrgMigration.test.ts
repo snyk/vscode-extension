@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as sinon from 'sinon';
-import { describe, it, beforeEach, afterEach } from 'mocha';
 import * as assert from 'assert';
 import { migrateFolderOrgSettingsIfNeeded } from '../../../../snyk/common/configuration/folderOrgMigration';
 import { FolderConfig, IConfiguration } from '../../../../snyk/common/configuration/configuration';
@@ -12,7 +11,7 @@ import { MEMENTO_FOLDER_ORG_MIGRATION_V1 } from '../../../../snyk/common/constan
 import { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { ILog } from '../../../../snyk/common/logger/interfaces';
 
-describe('per-folder org lost on upgrade (IDE-2259)', () => {
+suite('per-folder org lost on upgrade (IDE-2259)', () => {
   let tmpDir: string;
   let workspace: Pick<IVSCodeWorkspace, 'getWorkspaceFolders' | 'getWorkspaceFile'>;
   // In-memory stand-in for Configuration's folderConfig store, matching the real
@@ -37,7 +36,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     (workspace.getWorkspaceFile as sinon.SinonStub).returns({ scheme: 'file', fsPath: workspaceFilePath });
   }
 
-  beforeEach(() => {
+  setup(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snyk-folder-org-migration-'));
     workspace = { getWorkspaceFolders: sinon.stub().returns([]), getWorkspaceFile: sinon.stub().returns(undefined) };
     inMemoryFolderConfigs = [];
@@ -65,7 +64,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     };
   });
 
-  afterEach(() => {
+  teardown(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -78,7 +77,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     );
   }
 
-  it('BUG (pre-fix regression guard): without migration, resolveFolderConfigs ignores the legacy per-folder org entirely', () => {
+  test('BUG (pre-fix regression guard): without migration, resolveFolderConfigs ignores the legacy per-folder org entirely', () => {
     // This is the exact real code path LanguageServer.getInitializationOptions() uses to
     // build the folderConfigs sent to snyk-ls on startup. On a fresh v2.31.0->main upgrade,
     // in-memory folder configs are empty, so it falls back to a bare `new FolderConfig(path)`
@@ -100,7 +99,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(juiceShopConfig.preferredOrg(), '');
   });
 
-  it('FIX: migration promotes each folder explicit org before LS init, so resolveFolderConfigs preserves it', async () => {
+  test('FIX: migration promotes each folder explicit org before LS init, so resolveFolderConfigs preserves it', async () => {
     const juiceShop = path.join(tmpDir, 'juice-shop');
     const snykGoof = path.join(tmpDir, 'snyk-goof');
     writeLegacySettings(juiceShop, {
@@ -129,7 +128,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(snykGoofConfig.preferredOrg(), 'code-consistent-ignores-early-access-verification');
   });
 
-  it('does not send a config-change notification (LanguageClient does not exist yet at this point in activation)', async () => {
+  test('does not send a config-change notification (LanguageClient does not exist yet at this point in activation)', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'my-org' });
     setWorkspaceFolders(folderPath);
@@ -141,7 +140,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(setFolderConfigsSpy.getCall(0).args[1], false);
   });
 
-  it('treats autoSelectOrganization=true as an explicit opt-out, even if an org string is present', async () => {
+  test('treats autoSelectOrganization=true as an explicit opt-out, even if an org string is present', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, {
       'snyk.advanced.organization': 'org-b',
@@ -154,7 +153,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs.length, 0);
   });
 
-  it('does nothing when a folder has no legacy org settings', async () => {
+  test('does nothing when a folder has no legacy org settings', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, {});
     setWorkspaceFolders(folderPath);
@@ -165,7 +164,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     sinon.assert.calledWith(context.globalState.update, MEMENTO_FOLDER_ORG_MIGRATION_V1, [folderPath]);
   });
 
-  it('preserves other pre-existing folder settings when merging in the migrated org keys', async () => {
+  test('preserves other pre-existing folder settings when merging in the migrated org keys', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'my-org' });
     const existingConfig = new FolderConfig(folderPath);
@@ -179,7 +178,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
   });
 
-  it('FIX: tolerates JSONC comments in settings.json (VS Code settings files allow them)', async () => {
+  test('FIX: tolerates JSONC comments in settings.json (VS Code settings files allow them)', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     fs.mkdirSync(path.join(folderPath, '.vscode'), { recursive: true });
     fs.writeFileSync(
@@ -196,7 +195,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0].preferredOrg(), 'my-org');
   });
 
-  it('logs (but does not throw) when settings.json cannot be read for a reason other than ENOENT', async () => {
+  test('logs (but does not throw) when settings.json cannot be read for a reason other than ENOENT', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     // Making settings.json a directory forces a non-ENOENT (EISDIR) read failure.
     fs.mkdirSync(path.join(folderPath, '.vscode', 'settings.json'), { recursive: true });
@@ -208,7 +207,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     sinon.assert.calledOnce(loggerDebugStub);
   });
 
-  it('FIX: malformed JSON in settings.json is NOT marked migrated, so it is retried next activation', async () => {
+  test('FIX: malformed JSON in settings.json is NOT marked migrated, so it is retried next activation', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     fs.mkdirSync(path.join(folderPath, '.vscode'), { recursive: true });
     fs.writeFileSync(path.join(folderPath, '.vscode', 'settings.json'), '{ "snyk.advanced.organization": ');
@@ -231,7 +230,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0]?.preferredOrg(), 'recovered-org');
   });
 
-  it('FIX: a missing settings.json (ENOENT) is still marked migrated (unchanged behavior)', async () => {
+  test('FIX: a missing settings.json (ENOENT) is still marked migrated (unchanged behavior)', async () => {
     const folderPath = path.join(tmpDir, 'folder-with-no-vscode-dir');
     fs.mkdirSync(folderPath, { recursive: true });
     setWorkspaceFolders(folderPath);
@@ -242,7 +241,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     sinon.assert.calledWith(context.globalState.update, MEMENTO_FOLDER_ORG_MIGRATION_V1, [folderPath]);
   });
 
-  it('does not re-check a folder whose path is already recorded as migrated', async () => {
+  test('does not re-check a folder whose path is already recorded as migrated', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     context.globalState.get.returns([folderPath]);
     writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'my-org' });
@@ -255,7 +254,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     sinon.assert.notCalled(context.globalState.update);
   });
 
-  it('still migrates a distinct, never-before-seen folder even though a different folder is already recorded as migrated', async () => {
+  test('still migrates a distinct, never-before-seen folder even though a different folder is already recorded as migrated', async () => {
     const migratedFolder = path.join(tmpDir, 'already-migrated-folder');
     const newFolder = path.join(tmpDir, 'new-folder');
     context.globalState.get.returns([migratedFolder]);
@@ -269,7 +268,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.deepStrictEqual(new Set(updatedPaths), new Set([migratedFolder, newFolder]));
   });
 
-  it('FIX: a folder with no per-folder org falls back to the .code-workspace top-level settings org', async () => {
+  test('FIX: a folder with no per-folder org falls back to the .code-workspace top-level settings org', async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, {}); // no per-folder org
     writeWorkspaceFile(path.join(tmpDir, 'project.code-workspace'), { 'snyk.advanced.organization': 'workspace-org' });
@@ -281,7 +280,7 @@ describe('per-folder org lost on upgrade (IDE-2259)', () => {
     assert.strictEqual(inMemoryFolderConfigs[0]?.preferredOrg(), 'workspace-org');
   });
 
-  it("FIX: a folder's own per-folder org is kept, ignoring the .code-workspace top-level org", async () => {
+  test("FIX: a folder's own per-folder org is kept, ignoring the .code-workspace top-level org", async () => {
     const folderPath = path.join(tmpDir, 'folder1');
     writeLegacySettings(folderPath, { 'snyk.advanced.organization': 'folder-org' });
     writeWorkspaceFile(path.join(tmpDir, 'project.code-workspace'), { 'snyk.advanced.organization': 'workspace-org' });

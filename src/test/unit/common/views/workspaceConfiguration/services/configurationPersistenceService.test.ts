@@ -1714,7 +1714,7 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
 // echo, and as of ticket 04 the direct-edit listener no longer takes a tracker at all.
 
 // ── Outbound concrete-value save: explicit-overrides map + last-known-value cache ──
-// Covers the non-reset leg of applyOutboundSettingsMap: every key present in the save
+// Covers the outbound (skipIfUnchanged=false) leg of applySettingsMap: every key present in the save
 // payload writes the VS Code setting, records the raw payload value in the
 // explicit-overrides map, and updates the last-known-value cache — with no comparison
 // against any previously-observed value gating whether the write happens.
@@ -2626,7 +2626,7 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 //
 // The outbound save path no longer has ANY such gate: `saveConfigToVSCodeSettings` never
 // consults the last-known-value cache or `shouldSkipSettingUpdate` at all (see
-// `applyOutboundSettingsMap`), so this bug class is now structurally impossible for a
+// `applySettingsMap`'s outbound leg), so this bug class is now structurally impossible for a
 // webview save, regardless of what the schema default or any previously-observed inbound
 // value happens to be — every key present in the save payload is written directly, full
 // stop. The last-known-value cache is still updated by the (separately migrated) INBOUND
@@ -3261,7 +3261,7 @@ suite('ConfigurationPersistenceService — snapshot invalidated on reset (Defect
         `when user saves the same value as the pre-reset effective. ` +
         `Got ${deltaWrites.length} write(s). ` +
         `The outbound save path never consults the last-known-value cache, so a skip here would mean ` +
-        `a regression elsewhere in applyOutboundSettingsMap re-introduced a redundancy gate.`,
+        `a regression elsewhere in applySettingsMap's outbound leg re-introduced a redundancy gate.`,
     );
   });
 });

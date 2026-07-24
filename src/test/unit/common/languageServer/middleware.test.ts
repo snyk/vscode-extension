@@ -103,7 +103,7 @@ suite('Language Server: Middleware', () => {
           undefined as unknown as ILastKnownValueCache,
           noopExplicitOverridesMap,
         ),
-      /requires lastKnownValueCache and explicitOverridesMap/,
+      /requires explicitOverridesMap and lastKnownValueCache/,
     );
   });
 
@@ -120,7 +120,7 @@ suite('Language Server: Middleware', () => {
           noopLastKnownValueCache,
           undefined as unknown as IExplicitOverridesMap,
         ),
-      /requires lastKnownValueCache and explicitOverridesMap/,
+      /requires explicitOverridesMap and lastKnownValueCache/,
     );
   });
 

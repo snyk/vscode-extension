@@ -28,6 +28,7 @@ import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
 import { LanguageClientMiddleware } from './middleware';
 import {
+  assertExplicitOverrideDepsPresent,
   confirmResetsDeliveredAfterPull,
   isExplicitlyChanged,
   isPendingReset,
@@ -107,11 +108,7 @@ export class LanguageServer implements ILanguageServer {
     private readonly explicitOverridesMap: IExplicitOverridesMap,
     private readonly lastKnownValueCache: ILastKnownValueCache,
   ) {
-    if (!explicitOverridesMap || !lastKnownValueCache) {
-      throw new Error(
-        'LanguageServer requires explicitOverridesMap and lastKnownValueCache to track explicit LS-key overrides',
-      );
-    }
+    assertExplicitOverrideDepsPresent('LanguageServer', explicitOverridesMap, lastKnownValueCache);
     this.downloadService = downloadService;
 
     this.geminiIntegrationService = new GeminiIntegrationService(
@@ -480,7 +477,7 @@ export class LanguageServer implements ILanguageServer {
       this.workspace,
       lsKey => isPendingReset(lsKey, this.explicitOverridesMap),
     );
-    if (config.settings && this.explicitOverridesMap) {
+    if (config.settings) {
       // Mirrors the middleware's pull-response handling: confirm delivery in the map so the
       // reset sentinel is not resent on a later call.
       confirmResetsDeliveredAfterPull(config.settings, this.explicitOverridesMap);

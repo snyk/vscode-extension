@@ -307,11 +307,12 @@ export class Configuration implements IConfiguration {
   private extensionId: string;
   private inMemoryFolderConfigs: FolderConfig[] = [];
 
+  private lastKnownValueCache?: ILastKnownValueCache;
+
   constructor(
     private processEnv: NodeJS.ProcessEnv = process.env,
     private workspace: IVSCodeWorkspace,
     private languageClientAdapter?: ILanguageClientAdapter,
-    private lastKnownValueCache?: ILastKnownValueCache,
   ) {}
 
   /**
