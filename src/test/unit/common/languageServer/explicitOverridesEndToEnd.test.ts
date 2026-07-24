@@ -166,10 +166,9 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     const lastKnownValueCache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
 
     // Simulated activation: seeds the map from pre-existing settings. A no-op here since
-    // organization has no pre-existing global value — asserts the gap the ticket describes,
-    // not a value the seed step happened to produce.
+    // organization has no pre-existing global value — the gap the ticket describes, proven
+    // below by the pull surfacing changed:true after a genuine post-activation change.
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
 
     const service = new ConfigurationPersistenceService(
       workspace,
@@ -211,10 +210,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     const lastKnownValueCache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
 
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
-      kind: 'value',
-      value: 'seed-org',
-    });
 
     const service = new ConfigurationPersistenceService(
       workspace,
@@ -230,8 +225,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     await service.handleSaveConfig(
       JSON.stringify({ isFallbackForm: false, token: 'tok', [LS_GLOBAL_KEY.organization]: null }),
     );
-
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
 
     const configuration = makeConfiguration({ organization: 'seed-org' });
     const settings = await pullLspConfiguration(configuration, explicitOverridesMap, lastKnownValueCache, workspace);
@@ -265,12 +258,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     await service.handleSaveConfig(
       JSON.stringify({ isFallbackForm: false, token: 'tok', [LS_GLOBAL_KEY.severityFilterCritical]: false }),
     );
-
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), {
-      kind: 'value',
-      value: false,
-    });
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), undefined);
 
     const configuration = makeConfiguration({ severityFilter: { ...DEFAULT_SEVERITY_FILTER, critical: false } });
     const settings = await pullLspConfiguration(configuration, explicitOverridesMap, lastKnownValueCache, workspace);
@@ -312,11 +299,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
       'https://org.snyk.io/api',
       'the inbound value must be persisted to VS Code settings',
     );
-    assert.strictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.apiEndpoint),
-      undefined,
-      'an inbound push must never be recorded as an explicit user change',
-    );
 
     const configuration = makeConfiguration({ snykApiEndpoint: 'https://org.snyk.io/api' });
     const settings = await pullLspConfiguration(configuration, explicitOverridesMap, lastKnownValueCache, workspace);
@@ -340,7 +322,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     const lastKnownValueCache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
 
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
 
     // The user hand-edits settings.json: the value is now on disk, but the last-known-value
     // cache (still holding the pre-edit snapshot from "activation") hasn't observed it yet —
@@ -356,11 +337,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
       workspace,
       configuration,
     );
-
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
-      kind: 'value',
-      value: 'hand-edited-org',
-    });
 
     const settings = await pullLspConfiguration(configuration, explicitOverridesMap, lastKnownValueCache, workspace);
 
@@ -382,7 +358,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
     const lastKnownValueCache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
 
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined);
 
     // The user hand-edits settings.json, flipping only `critical` in the shared `snyk.severity`
     // object — the last-known-value cache still holds the pre-edit (absent) snapshot.
@@ -398,12 +373,6 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
       workspace,
       configuration,
     );
-
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), {
-      kind: 'value',
-      value: false,
-    });
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), undefined);
 
     const settings = await pullLspConfiguration(configuration, explicitOverridesMap, lastKnownValueCache, workspace);
 
