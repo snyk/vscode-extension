@@ -18,7 +18,12 @@ import type {
 import { IUriAdapter } from '../vscode/uri';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
-import { hasUnreflectedConfigurationChange, unmarkResetLsKeysAfterPull } from './explicitLsKeyTracking';
+import type { IExplicitOverridesMap } from './explicitOverridesMap';
+import {
+  confirmResetsDeliveredAfterPull,
+  hasUnreflectedConfigurationChange,
+  unmarkResetLsKeysAfterPull,
+} from './explicitLsKeyTracking';
 import type { ILastKnownValueCache } from './lastKnownValueCache';
 import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
@@ -26,6 +31,11 @@ import { Subject } from 'rxjs';
 
 /**
  * ADR-2: Re-enqueue guard predicate.
+ *
+ * [IDE-2264 ticket 06]: no longer called by middleware.ts or languageServer.ts — the
+ * explicit-overrides map's reset sentinel is read live (never drained before a response is
+ * built), so a build failure automatically leaves it intact without any re-enqueue bookkeeping.
+ * Retained until ticket 08 removes the mechanism it guards.
  *
  * Returns true when the re-enqueue for `lsKey` should be SKIPPED (i.e. the user
  * committed a concrete value for this key in the current window, so restoring
@@ -64,6 +74,7 @@ export class LanguageClientMiddleware implements Middleware {
     private readonly vscodeWorkspace?: IVSCodeWorkspace,
     private readonly explicitLspConfigurationChangeTracker?: IExplicitLspConfigurationChangeTracker,
     private readonly lastKnownValueCache?: ILastKnownValueCache,
+    private readonly explicitOverridesMap?: IExplicitOverridesMap,
   ) {}
 
   private async openFileInEditor(uriString: string, selection?: ShowDocumentParams['selection']): Promise<void> {
@@ -90,43 +101,25 @@ export class LanguageClientMiddleware implements Middleware {
         return [];
       }
 
-      // Consume any pending outbound resets before building the param so they are
-      // emitted as { value: null, changed: true } exactly once on this pull.
-      const pendingResets = this.explicitLspConfigurationChangeTracker?.consumePendingResets() ?? new Set<string>();
-
-      let lspParam: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
-      try {
-        lspParam = await LanguageServerSettings.fromConfiguration(
-          this.configuration,
-          lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
-          this.vscodeWorkspace,
-          lsKey => pendingResets.has(lsKey),
-        );
-      } catch (err) {
-        // fromConfiguration failed after consumePendingResets() already drained the set.
-        // Re-enqueue keys for prompt, deterministic delivery on the next pull — but only if the
-        // user has NOT committed a concrete value for this key since the drain.
-        //
-        // ADR-2: The guard reads `committedSinceReset` (transient, windowed, per-LS-key) instead
-        // of `isExplicitlyChanged` (cumulative, persisted, cross-session, fanned-out).
-        // `isExplicitlyChanged` answered the wrong question: it was true if the key was ever
-        // customised (prior session), if a sibling sharing the same VS Code setting was edited
-        // (fan-out), or if an inbound write slipped past the suppressor — all of which would
-        // incorrectly drop a legitimate re-enqueue.  `committedSinceReset` is set only when the
-        // user genuinely commits a concrete value for exactly this LS key in this window.
-        for (const key of pendingResets) {
-          if (!shouldSkipReenqueue(key, this.explicitLspConfigurationChangeTracker)) {
-            this.explicitLspConfigurationChangeTracker?.markPendingReset(key);
-          }
-        }
-        throw err;
-      }
+      // [IDE-2264 ticket 06]: reset entries are read live from the explicit-overrides map — never
+      // drained before the response is built — so a failure below leaves every entry intact for
+      // an automatic retry on the next pull. No re-enqueue bookkeeping needed.
+      const lspParam = await LanguageServerSettings.fromConfiguration(
+        this.configuration,
+        lsKey => this.explicitLspConfigurationChangeTracker?.isExplicitlyChanged(lsKey) ?? false,
+        this.vscodeWorkspace,
+        lsKey => this.explicitOverridesMap?.getEntry(lsKey)?.kind === 'reset',
+      );
 
       if (this.explicitLspConfigurationChangeTracker && lspParam.settings) {
         // Pending-reset keys emitted as {value:null, changed:true} were already unmarked at
         // save time by applyOutboundGlobalResets, so this unmark pass is safely idempotent
         // (Set.delete of an absent key is a no-op).
         unmarkResetLsKeysAfterPull(lspParam.settings, this.explicitLspConfigurationChangeTracker);
+      }
+      if (this.explicitOverridesMap && lspParam.settings) {
+        // Confirm delivery only now that the response was built successfully — never before.
+        confirmResetsDeliveredAfterPull(lspParam.settings, this.explicitOverridesMap);
       }
 
       return [{ settings: lspParam }];

@@ -142,6 +142,13 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * (`update(section, undefined, ConfigurationTarget.Global)`) and unmark explicit-changed
    * tracking so the now-reverted value is not re-pushed on the next sync/reconnect.
    *
+   * [IDE-2264 ticket 06]: deliberately does NOT record a reset entry in the explicit-overrides
+   * map. The map's reset sentinel exists to get OUR OWN pending reset delivered to the LS; this
+   * path is the LS itself telling us a reset already happened. Re-queuing it here would echo the
+   * LS's own reset back to it on the next pull — a redundant `Unset`/disk write at best, and a
+   * resend of an already-confirmed reset at worst, if this echo arrives after our own outbound
+   * delivery already cleared the sentinel (see `applyOutboundGlobalResets`).
+   *
    * Only keys that are members of GLOBAL_RESET_FIELDS are handled: the LS can send
    * `{ value: null, changed: true }` for non-resettable keys (e.g. `api_endpoint`,
    * `trusted_folders`) and we must not silently wipe those user settings.

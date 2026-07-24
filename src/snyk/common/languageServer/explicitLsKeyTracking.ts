@@ -243,3 +243,22 @@ export function unmarkResetLsKeysAfterPull(
     }
   }
 }
+
+/**
+ * [IDE-2264 ticket 06]: after a pull response sends a reset (`{ value: null, changed: true }`),
+ * confirms delivery in the explicit-overrides map so the sentinel is cleared and not resent on a
+ * later pull. Only called with the settings that actually made it into a successfully built
+ * response — the map is never drained before that point, so a build failure automatically leaves
+ * every entry intact for retry (see the `isPendingReset` predicate at each `fromConfiguration`
+ * call site, which reads the map live rather than a pre-drained snapshot).
+ */
+export function confirmResetsDeliveredAfterPull(
+  settings: Record<string, LspConfigSetting>,
+  explicitOverrides: IExplicitOverridesMap,
+): void {
+  for (const [key, entry] of Object.entries(settings)) {
+    if (entry.value === null && entry.changed === true) {
+      explicitOverrides.confirmResetDelivered(key);
+    }
+  }
+}

@@ -966,25 +966,13 @@ suite('Language Server', () => {
       });
     });
 
-    // Fix 2: pending resets queued before LS (re)start are emitted as {value:null, changed:true}
-    // in initializationOptions, so a reset is not lost when the LS restarts.
-    test('getInitializationOptions emits {value:null,changed:true} for a pending-reset key', async () => {
-      // Build a tracker that has one pending reset (organization).
-      const consumePendingResetsStub = sinon.stub().returns(new Set<string>([LS_GLOBAL_KEY.organization]));
-      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: () => false,
-        markPendingReset: sinon.stub(),
-        consumePendingResets: consumePendingResetsStub,
-        committedSinceReset: () => false,
-        markCommittedSinceReset: sinon.stub(),
-        hasLastKnownValue: () => false,
-        getLastKnownValue: () => undefined,
-        setLastKnownValue: sinon.stub(),
-        markPendingInboundWrite: sinon.stub(),
-        consumePendingInboundWrite: sinon.stub().returns(false),
-      };
+    // [IDE-2264 ticket 06]: pending resets queued before LS (re)start are emitted as
+    // {value:null, changed:true} in initializationOptions, so a reset is not lost when the LS
+    // restarts. Delivery is driven by the explicit-overrides map's reset sentinel, read live —
+    // never drained into a separate pending-reset queue.
+    test('getInitializationOptions emits {value:null,changed:true} for a pending-reset key in the explicit-overrides map', async () => {
+      const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+      explicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
 
       const mockLanguageClientAdapter = {
         create: sinon.stub().returns({ start: sinon.stub().resolves() }),
@@ -1007,9 +995,10 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        pendingResetTracker,
+        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
+        explicitOverridesMap,
       );
 
       const options = await ls.getInitializationOptions();
@@ -1018,29 +1007,14 @@ suite('Language Server', () => {
       strictEqual(options.settings[LS_GLOBAL_KEY.organization]?.value, null);
       strictEqual(options.settings[LS_GLOBAL_KEY.organization]?.changed, true);
 
-      // consumePendingResets must have been called exactly once (so the reset is delivered).
-      sinon.assert.calledOnce(consumePendingResetsStub);
+      // Confirmed delivered: the sentinel is cleared so it is not resent on the next call.
+      strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
     });
 
-    test('getInitializationOptions re-enqueues pending resets when fromConfiguration rejects', async () => {
-      // Arrange: tracker with one pending reset key.
-      const markPendingResetStub = sinon.stub();
-      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: () => false,
-        markPendingReset: markPendingResetStub,
-        consumePendingResets: sinon.stub().returns(new Set<string>([LS_GLOBAL_KEY.organization])),
-        committedSinceReset: () => false,
-        markCommittedSinceReset: sinon.stub(),
-        hasLastKnownValue: () => false,
-        getLastKnownValue: () => undefined,
-        setLastKnownValue: sinon.stub(),
-        markPendingInboundWrite: sinon.stub(),
-        consumePendingInboundWrite: sinon.stub().returns(false),
-      };
+    test('getInitializationOptions leaves a pending-reset entry untouched when fromConfiguration rejects (no premature drain)', async () => {
+      const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+      explicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
 
-      // Stub fromConfiguration to reject after consumePendingResets has drained the set.
       const fromConfigError = new Error('fromConfiguration failed in getInitializationOptions');
       sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
 
@@ -1065,44 +1039,25 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        pendingResetTracker,
+        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
+        explicitOverridesMap,
       );
 
-      // Act + Assert: must throw, AND the key must be re-enqueued.
       await assert.rejects(() => ls.getInitializationOptions(), fromConfigError);
 
-      // The drained key must have been re-enqueued via markPendingReset so the next init retries.
-      sinon.assert.calledWith(markPendingResetStub, LS_GLOBAL_KEY.organization);
+      // Never drained speculatively, so a failed build leaves the sentinel intact for retry.
+      deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
     });
 
-    test('getInitializationOptions does not re-enqueue a pending reset key that was explicitly changed during the await gap', async () => {
-      // Arrange: two keys pending reset — 'organization' and 'cliPath'.
-      // Simulate the race: consumePendingResets drained the live set, then during the
-      // await gap the user re-edited 'organization' (committedSinceReset returns true for it).
-      // 'cliPath' was NOT re-edited (committedSinceReset returns false).
-      // ADR-2: the guard reads committedSinceReset, not isExplicitlyChanged.
-      const markPendingResetStub = sinon.stub();
-      const pendingResetTracker: IExplicitLspConfigurationChangeTracker = {
-        markExplicitlyChanged: sinon.stub(),
-        unmarkExplicitlyChanged: sinon.stub(),
-        isExplicitlyChanged: sinon.stub().returns(false),
-        markPendingReset: markPendingResetStub,
-        consumePendingResets: sinon
-          .stub()
-          .returns(new Set<string>([LS_GLOBAL_KEY.organization, LS_GLOBAL_KEY.cliPath])),
-        committedSinceReset: (key: string) => key === LS_GLOBAL_KEY.organization,
-        markCommittedSinceReset: sinon.stub(),
-        hasLastKnownValue: () => false,
-        getLastKnownValue: () => undefined,
-        setLastKnownValue: sinon.stub(),
-        markPendingInboundWrite: sinon.stub(),
-        consumePendingInboundWrite: sinon.stub().returns(false),
-      };
-
-      const fromConfigError = new Error('fromConfiguration failed during race (getInitializationOptions)');
-      sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
+    test('a concrete edit committed before the next call supersedes an earlier pending reset with no companion signal', async () => {
+      // [IDE-2264 ticket 06]: setExplicitValue overwrites the same map slot a prior setReset
+      // occupied — no separate "committed since reset" signal is read or needed.
+      const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+      explicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
+      explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'user-set-org');
+      (configurationMock as { organization: string }).organization = 'user-set-org';
 
       const mockLanguageClientAdapter = {
         create: sinon.stub().returns({ start: sinon.stub().resolves() }),
@@ -1125,27 +1080,25 @@ suite('Language Server', () => {
         {} as IMarkdownStringAdapter,
         new CommandsMock(),
         {} as IDiagnosticsIssueProvider<unknown>,
-        pendingResetTracker,
+        explicitLspConfigurationChangeTracker,
         sinon.stub().resolves(),
         undefined,
+        explicitOverridesMap,
       );
 
-      // Act + Assert: must throw, AND only the key that was NOT re-edited gets re-enqueued.
-      await assert.rejects(() => ls.getInitializationOptions(), fromConfigError);
+      const options = await ls.getInitializationOptions();
 
-      // 'cliPath' was NOT re-edited → must be re-enqueued so the next init retries.
-      sinon.assert.calledWith(markPendingResetStub, LS_GLOBAL_KEY.cliPath);
-      // 'organization' WAS re-edited with a concrete value → must NOT be re-enqueued,
-      // or the pending reset would clobber the user's new concrete value on the next init.
-      sinon.assert.neverCalledWith(markPendingResetStub, LS_GLOBAL_KEY.organization);
+      // The reset never reaches the LS: the current configuration value flows through untouched.
+      strictEqual(options.settings[LS_GLOBAL_KEY.organization]?.value, 'user-set-org');
     });
 
-    test('pending reset is delivered exactly once: middleware pull drains; getInitializationOptions does not re-deliver', async () => {
-      // Arrange: one real tracker shared by both consumers.
+    test('pending reset is delivered exactly once: middleware pull confirms delivery; getInitializationOptions does not re-deliver', async () => {
+      // Arrange: one real explicit-overrides map shared by both consumers.
       const sharedTracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-      sharedTracker.markPendingReset(LS_GLOBAL_KEY.organization);
+      const sharedExplicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+      sharedExplicitOverridesMap.setReset(LS_GLOBAL_KEY.organization);
 
-      // Wire tracker into middleware.
+      // Wire the map into middleware.
       const middleware = new LanguageClientMiddleware(
         new LoggerMockFailOnErrors(),
         configurationMock,
@@ -1154,6 +1107,8 @@ suite('Language Server', () => {
         {} as IVSCodeCommands,
         undefined,
         sharedTracker,
+        undefined,
+        sharedExplicitOverridesMap,
       );
 
       const handler: ConfigurationRequestHandlerSignature = (
@@ -1165,7 +1120,7 @@ suite('Language Server', () => {
         onCancellationRequested: sinon.fake(),
       };
 
-      // Consumer A: middleware pull — drains pendingResets and emits {value:null, changed:true}.
+      // Consumer A: middleware pull — delivers {value:null, changed:true} and confirms it.
       const pullResult = await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
       if (pullResult instanceof Error) {
         assert.fail('Middleware pull returned an error');
@@ -1178,7 +1133,7 @@ suite('Language Server', () => {
       strictEqual(pullSettings[LS_GLOBAL_KEY.organization]?.value, null, 'middleware pull: value must be null');
       strictEqual(pullSettings[LS_GLOBAL_KEY.organization]?.changed, true, 'middleware pull: changed must be true');
 
-      // Consumer B: getInitializationOptions — pendingResets is now empty (drained by A).
+      // Consumer B: getInitializationOptions — the sentinel was already confirmed-delivered by A.
       const mockLca = {
         create: sinon.stub().returns({ start: sinon.stub().resolves() }),
         getLanguageClient: sinon.stub().returns({ start: sinon.stub().resolves() }),
@@ -1202,12 +1157,13 @@ suite('Language Server', () => {
         sharedTracker,
         sinon.stub().resolves(),
         undefined,
+        sharedExplicitOverridesMap,
       );
 
       const initOptions = await ls.getInitializationOptions();
 
-      // The reset was already delivered by the middleware pull, so getInitializationOptions
-      // must NOT re-deliver it as {value:null, changed:true}.
+      // The reset was already confirmed-delivered by the middleware pull, so
+      // getInitializationOptions must NOT re-deliver it as {value:null, changed:true}.
       const initSetting = initOptions.settings[LS_GLOBAL_KEY.organization];
       strictEqual(
         initSetting?.changed,

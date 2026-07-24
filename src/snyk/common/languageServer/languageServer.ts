@@ -26,8 +26,12 @@ import { ILanguageClientAdapter } from '../vscode/languageClient';
 import { Disposable, LanguageClient, LanguageClientOptions, ServerOptions } from '../vscode/types';
 import { IVSCodeWindow } from '../vscode/window';
 import { IVSCodeWorkspace } from '../vscode/workspace';
-import { LanguageClientMiddleware, shouldSkipReenqueue } from './middleware';
-import { markExplicitLsKeysFromConfigurationChangeEvent } from './explicitLsKeyTracking';
+import { LanguageClientMiddleware } from './middleware';
+import {
+  confirmResetsDeliveredAfterPull,
+  markExplicitLsKeysFromConfigurationChangeEvent,
+  unmarkResetLsKeysAfterPull,
+} from './explicitLsKeyTracking';
 import type { IExplicitLspConfigurationChangeTracker } from './explicitLspConfigurationChangeTracker';
 import type { IExplicitOverridesMap } from './explicitOverridesMap';
 import type { ILastKnownValueCache } from './lastKnownValueCache';
@@ -184,6 +188,7 @@ export class LanguageServer implements ILanguageServer {
         this.workspace,
         this.explicitLspConfigurationChangeTracker,
         this.lastKnownValueCache,
+        this.explicitOverridesMap,
       ),
       /**
        * We reuse the output channel here as it's not properly disposed of by the language client (vscode-languageclient@8.0.0-next.2)
@@ -463,66 +468,25 @@ export class LanguageServer implements ILanguageServer {
   // Initialization options are not semantically equal to server settings, thus separated here
   // https://github.com/microsoft/language-server-protocol/issues/567
   async getInitializationOptions(): Promise<LspInitializationOptions> {
-    // Consume any pending resets so that a reset queued before an LS (re)start is still
-    // emitted as { value: null, changed: true } in initializationOptions. Under normal
-    // flow this set is empty; it is only non-empty when the user triggered a global reset
-    // and the LS restarted before the next workspace/configuration pull.
-    //
-    // CLAIM 3 analysis (IDE-2149): A concern was raised that `getInitializationOptions` does not
-    // call `unmarkResetLsKeysAfterPull` after consuming the pending resets, and that a reset
-    // key could be re-pushed as `changed:true` after a mid-session LS restart/reload.
-    //
-    // Investigation result — NOT REACHABLE:
-    //
-    // (a) The tracker (`ExplicitLspConfigurationChangeTracker`) is constructed ONCE at extension
-    //     activation (extension.ts) and shared across LS restarts.  It is NOT reconstructed on a
-    //     mid-session LS restart — only on a full extension deactivation/reactivation.
-    //
-    // (b) At reset-save time, `applyOutboundGlobalResets` calls BOTH:
-    //       - `updateConfiguration(section, undefined, true)` → clears the VS Code global override
-    //       - `unmarkExplicitlyChanged(lsKey)` → removes the key from the persisted `keys` Set
-    //     So after a successful reset, the VS Code global override is gone AND the key is not in
-    //     the `keys` Set.
-    //
-    // (c) `seedExplicitChangesFromExistingSettings` runs once at activation (before any LS start).
-    //     It skips keys whose VS Code `globalValue` is `undefined`.  Because the reset cleared the
-    //     global override (step b), a subsequent seed would NOT re-add the key.
-    //
-    // (d) On LS restart (not extension restart), `getInitializationOptions` calls
-    //     `consumePendingResets()`.  If the pending reset was already consumed by the middleware
-    //     before the restart, `pendingResets` is empty and nothing is emitted.  If the LS restarted
-    //     BEFORE the middleware pull, `pendingResets` still holds the key (same in-memory tracker)
-    //     and it is emitted as `{value:null, changed:true}` — exactly the intended behaviour.
-    //
-    // (e) After `consumePendingResets()` drains the set, `isExplicitlyChanged(key)` returns false
-    //     (the key was already removed from `keys` at step b).  Therefore the key will NOT appear
-    //     as `changed:true` on any subsequent pull — `unmarkResetLsKeysAfterPull` is not needed here.
-    //
-    // Calling `unmarkResetLsKeysAfterPull` here would be a no-op (the key is already absent from
-    // `keys`), so no code change is required.  This comment documents the reasoning.
-    const pendingResets = this.explicitLspConfigurationChangeTracker.consumePendingResets();
-    let config: Awaited<ReturnType<typeof LanguageServerSettings.fromConfiguration>>;
-    try {
-      config = await LanguageServerSettings.fromConfiguration(
-        this.configuration,
-        lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
-        this.workspace,
-        lsKey => pendingResets.has(lsKey),
-      );
-    } catch (err) {
-      // fromConfiguration failed after consumePendingResets() already drained the set.
-      // Re-enqueue keys for prompt, deterministic delivery on the next getInitializationOptions
-      // call — but only if the user has NOT committed a concrete value for this key since the drain.
-      //
-      // ADR-2: use the shared `shouldSkipReenqueue` predicate (reads `committedSinceReset`,
-      // not `isExplicitlyChanged`) so both call sites stay in sync and the guard answers the
-      // correct transient, windowed, per-LS-key question.
-      for (const key of pendingResets) {
-        if (!shouldSkipReenqueue(key, this.explicitLspConfigurationChangeTracker)) {
-          this.explicitLspConfigurationChangeTracker.markPendingReset(key);
-        }
+    // [IDE-2264 ticket 06]: a reset queued before an LS (re)start is still emitted as
+    // { value: null, changed: true } here — the explicit-overrides map's reset sentinel is read
+    // live (never drained before this response is built), so a failure below leaves it intact for
+    // an automatic retry on the next call, whether that's another getInitializationOptions or the
+    // first workspace/configuration pull.
+    const config = await LanguageServerSettings.fromConfiguration(
+      this.configuration,
+      lsKey => this.explicitLspConfigurationChangeTracker.isExplicitlyChanged(lsKey),
+      this.workspace,
+      lsKey => this.explicitOverridesMap?.getEntry(lsKey)?.kind === 'reset',
+    );
+    if (config.settings) {
+      // Mirrors the middleware's pull-response handling: unmark the old tracker for
+      // isExplicitlyChanged correctness, then confirm delivery in the new map so the sentinel is
+      // not resent on a later call.
+      unmarkResetLsKeysAfterPull(config.settings, this.explicitLspConfigurationChangeTracker);
+      if (this.explicitOverridesMap) {
+        confirmResetsDeliveredAfterPull(config.settings, this.explicitOverridesMap);
       }
-      throw err;
     }
     return {
       settings: config.settings ?? {},

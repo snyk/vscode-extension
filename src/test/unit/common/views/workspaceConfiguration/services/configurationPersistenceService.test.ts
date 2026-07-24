@@ -2026,6 +2026,43 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
       true,
     );
   });
+
+  // [IDE-2264 ticket 06]: the inbound-echoed reset (the LS unsetting a global override and
+  // echoing {value:null, changed:true}) must NOT record a reset entry in the explicit-overrides
+  // map. That map's sentinel exists to get OUR OWN pending reset delivered to the LS; recording
+  // one here would echo the LS's own reset back to it on the next pull — redundant at best, and
+  // a resend of an already-confirmed reset at worst if this echo arrives after our own outbound
+  // delivery already cleared the sentinel.
+  test('inbound {value:null,changed:true} for a resettable key (organization) does NOT record a reset sentinel in the explicit-overrides map', async () => {
+    const tracker = new StubTracker();
+    const setResetSpy = sinon.spy();
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: setResetSpy,
+      getEntry: sinon.stub().returns(undefined),
+      confirmResetDelivered: sinon.stub(),
+    };
+    const service = new ConfigurationPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      clientAdapter,
+      logger,
+      undefined,
+      tracker,
+      explicitOverridesMap,
+    );
+
+    const param: LspConfigurationParam = {
+      settings: {
+        [LS_GLOBAL_KEY.organization]: { value: null, changed: true },
+      },
+    };
+
+    await service.persistInboundLspConfiguration(param);
+
+    sinon.assert.notCalled(setResetSpy);
+  });
 });
 
 // ── FIX 2: deduplication of shared-vscodeKey clears ────────────────────────
