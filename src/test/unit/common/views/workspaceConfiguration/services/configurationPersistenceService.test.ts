@@ -17,12 +17,16 @@ import {
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
 } from '../../../../../../snyk/common/constants/settings';
-import { ALLISSUES, NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
+import {
+  ALLISSUES,
+  DEFAULT_SEVERITY_FILTER,
+  NEWISSUES,
+} from '../../../../../../snyk/common/configuration/configuration';
 import {
   LS_GLOBAL_KEY,
   LS_KEY,
 } from '../../../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import type { LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
+import type { LspConfigSetting, LspConfigurationParam } from '../../../../../../snyk/common/languageServer/types';
 import { LanguageServerSettings } from '../../../../../../snyk/common/languageServer/settings';
 import {
   GLOBAL_RESET_FIELDS,
@@ -34,6 +38,88 @@ import {
   IExplicitOverridesMap,
 } from '../../../../../../snyk/common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache } from '../../../../../../snyk/common/languageServer/lastKnownValueCache';
+import {
+  isExplicitlyChanged,
+  isPendingReset,
+} from '../../../../../../snyk/common/languageServer/explicitLsKeyTracking';
+
+/**
+ * [IDE-2264 ticket 10]: public-seam read helper — the real `LanguageServerSettings.fromConfiguration`
+ * static method wired with the same `isExplicitlyChanged`/`isPendingReset` predicates production code
+ * uses (middleware.ts/languageServer.ts), so tests observe a pull response's `changed`/`value` per LS
+ * key instead of reaching into the explicit-overrides map's internal entry shape.
+ */
+async function readPullSetting(
+  configuration: IConfiguration,
+  explicitOverridesMap: IExplicitOverridesMap,
+  lsKey: string,
+): Promise<LspConfigSetting | undefined> {
+  const lspParam = await LanguageServerSettings.fromConfiguration(
+    configuration,
+    key => isExplicitlyChanged(key, explicitOverridesMap),
+    undefined,
+    key => isPendingReset(key, explicitOverridesMap),
+  );
+  return lspParam.settings?.[lsKey];
+}
+
+/**
+ * Asserts a pull-response setting's `changed` flag, and — unless `value` is omitted (the
+ * `changed:false` case, where no entry exists and the resolved value is irrelevant to this
+ * ticket's assertions) — its `value` too: either an exact expected value, or (pass `NOT_NULL`)
+ * merely that it isn't the reset sentinel, for callers that can't predict the resolved value.
+ */
+const NOT_NULL = Symbol('not-null');
+function assertPullSetting(
+  setting: LspConfigSetting | undefined,
+  expected: { changed: boolean; value?: unknown },
+  message: string,
+): void {
+  assert.strictEqual(setting?.changed, expected.changed, message);
+  if (expected.value === NOT_NULL) {
+    assert.notStrictEqual(setting?.value, null, message);
+  } else if ('value' in expected) {
+    assert.strictEqual(setting?.value, expected.value, message);
+  }
+}
+
+/**
+ * Full IConfiguration fixture for `readPullSetting` — every SETTINGS_REGISTRY entry's `resolve`
+ * must run without throwing. Suites whose own `configuration` mock is deliberately minimal
+ * (only what the write path under test touches) pass this instead of expanding their fixture.
+ */
+function makeReadPathConfiguration(overrides: Partial<IConfiguration> = {}): IConfiguration {
+  return {
+    getToken: () => Promise.resolve('tok'),
+    getFolderConfigs: () => [],
+    getFeaturesConfiguration: () => ({
+      ossEnabled: true,
+      codeSecurityEnabled: true,
+      iacEnabled: true,
+      secretsEnabled: true,
+    }),
+    scanningMode: 'auto',
+    organization: '',
+    snykApiEndpoint: 'https://api.snyk.io',
+    getInsecure: () => false,
+    getAuthenticationMethod: () => 'oauth',
+    getDeltaFindingsEnabled: () => false,
+    getOssQuickFixCodeActionsEnabled: () => true,
+    getAdditionalCliParameters: () => '',
+    getAdditionalCliEnvironment: () => undefined,
+    getSecureAtInceptionExecutionFrequency: () => 'Manual',
+    getAutoConfigureMcpServer: () => false,
+    severityFilter: {},
+    issueViewOptions: {},
+    riskScoreThreshold: 0,
+    getTrustedFolders: () => [],
+    getCliPath: () => Promise.resolve(''),
+    isAutomaticDependencyManagementEnabled: () => true,
+    getCliBaseDownloadUrl: () => '',
+    shouldReportErrors: false,
+    ...overrides,
+  } as unknown as IConfiguration;
+}
 
 suite('ConfigurationPersistenceService - Organization Scope Detection', () => {
   let workspace: IVSCodeWorkspace;
@@ -963,11 +1049,15 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     );
 
     // (a2) the inbound path has no access to the explicit-overrides map; the pre-existing entry
-    // is left exactly as it was.
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
-      kind: 'value',
-      value: 'acme-corp',
-    });
+    // is left exactly as it was — proven through the real pull read path: still reported as an
+    // explicit change (changed:true) with a resolved value, not converted into a reset sentinel
+    // (which would surface as value:null).
+    const setting = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      setting,
+      { changed: true, value: NOT_NULL },
+      'the pre-existing explicit override must remain in place, not turned into a reset entry',
+    );
   });
 
   // The reset value (null) must never be persisted as an actual setting value.
@@ -1193,8 +1283,8 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     assert.strictEqual(wroteNull, false, 'null must not be written as a setting value');
   });
 
-  // (c) A reset entry must be recorded in the explicit-overrides map
-  test('records a reset entry in the explicit-overrides map after save', async () => {
+  // (c) A reset must surface as changed:true, value:null on the real pull read path
+  test('a reset surfaces as changed:true, value:null on the real pull read path', async () => {
     const service = newService();
 
     const configJson = JSON.stringify({
@@ -1205,16 +1295,18 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
+    const setting = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(setting, { changed: true, value: null }, 'a reset must surface as changed:true, value:null');
   });
 
   // (c2) When the key already held a concrete explicit value before the reset (the common path),
   // the reset entry must overwrite it — not leave the stale concrete value in place.
   test('overwrites a prior explicit value with a reset entry when key was pre-set', async () => {
     explicitOverridesMap.setExplicitValue(LS_GLOBAL_KEY.organization, 'previously-set-org');
-    assert.deepStrictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
-      { kind: 'value', value: 'previously-set-org' },
+    const precondition = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      precondition,
+      { changed: true, value: NOT_NULL },
       'precondition: key must hold a concrete explicit value before save',
     );
 
@@ -1228,16 +1320,20 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
-      { kind: 'reset' },
+    const setting = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      setting,
+      { changed: true, value: null },
       'the reset must overwrite the prior concrete-value entry',
     );
   });
 
-  // (d) The last-known-value cache must reflect the cleared override
+  // (d) The last-known-value cache must reflect the cleared override: a subsequent inbound push
+  // carrying the OLD pre-reset value must not be skipped as redundant (applySettingsMap's
+  // redundancy check compares only against the cache) — proving the cache no longer holds it.
   test('updates the last-known-value cache to undefined after a successful reset', async () => {
     const service = newService();
+    lastKnownValueCache.set(ADVANCED_ORGANIZATION, 'stale-pre-reset-value');
 
     const configJson = JSON.stringify({
       isFallbackForm: false,
@@ -1246,8 +1342,20 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
     });
 
     await service.handleSaveConfig(configJson);
+    updateConfigurationStub.resetHistory();
 
-    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), undefined);
+    // Probe: an inbound push echoing the stale pre-reset value must NOT be skipped as redundant.
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: 'stale-pre-reset-value', changed: false } },
+    });
+
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'advanced.organization',
+      'stale-pre-reset-value',
+      true,
+    );
   });
 
   // Non-reset fields alongside a reset are persisted normally
@@ -1298,16 +1406,20 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
-      { kind: 'value', value: 'previously-set-org' },
+    const setting = await readPullSetting(configuration, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      setting,
+      { changed: true, value: NOT_NULL },
       'a failed write must not overwrite the prior entry with a reset',
     );
-    assert.strictEqual(
-      lastKnownValueCache.get(ADVANCED_ORGANIZATION),
-      'pre-existing-cached-value',
-      'a failed write must not update the last-known-value cache',
-    );
+
+    updateConfigurationStub.resetHistory();
+    // Probe: an inbound push echoing the SAME cached value must be skipped as redundant,
+    // proving the failed write left the last-known-value cache untouched.
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: 'pre-existing-cached-value', changed: false } },
+    });
+    sinon.assert.notCalled(updateConfigurationStub);
   });
 });
 
@@ -1475,19 +1587,22 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), { kind: 'reset' });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
-      kind: 'value',
-      value: true,
-    });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
-      kind: 'value',
-      value: false,
-    });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), {
-      kind: 'value',
-      value: true,
-    });
+    const readConfig = makeReadPathConfiguration();
+    const critical = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.severityFilterCritical);
+    assertPullSetting(critical, { changed: true, value: null }, 'critical must be reset');
+
+    for (const lsKey of [
+      LS_GLOBAL_KEY.severityFilterHigh,
+      LS_GLOBAL_KEY.severityFilterMedium,
+      LS_GLOBAL_KEY.severityFilterLow,
+    ]) {
+      const setting = await readPullSetting(readConfig, explicitOverridesMap, lsKey);
+      assertPullSetting(
+        setting,
+        { changed: true, value: NOT_NULL },
+        `${lsKey} must remain an explicit value, untouched by the reset`,
+      );
+    }
   });
 
   test('resetting all four severity_filter_* siblings records an independent reset entry for each', async () => {
@@ -1504,13 +1619,15 @@ suite('ConfigurationPersistenceService — D1: fan-out siblings reset independen
 
     await service.handleSaveConfig(configJson);
 
+    const readConfig = makeReadPathConfiguration();
     for (const lsKey of [
       LS_GLOBAL_KEY.severityFilterCritical,
       LS_GLOBAL_KEY.severityFilterHigh,
       LS_GLOBAL_KEY.severityFilterMedium,
       LS_GLOBAL_KEY.severityFilterLow,
     ]) {
-      assert.deepStrictEqual(explicitOverridesMap.getEntry(lsKey), { kind: 'reset' }, `${lsKey} must be reset`);
+      const setting = await readPullSetting(readConfig, explicitOverridesMap, lsKey);
+      assertPullSetting(setting, { changed: true, value: null }, `${lsKey} must be reset`);
     }
   });
 });
@@ -1620,11 +1737,22 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
       'new-org',
       true,
     );
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), {
-      kind: 'value',
-      value: 'new-org',
+
+    const readConfig = makeReadPathConfiguration({ organization: 'new-org' });
+    const setting = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      setting,
+      { changed: true, value: 'new-org' },
+      'explicit change must surface on the real pull read path',
+    );
+
+    // Cache probe: an inbound push echoing the SAME value must be skipped as redundant,
+    // proving the last-known-value cache was updated to 'new-org'.
+    updateConfigurationStub.resetHistory();
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: 'new-org', changed: false } },
     });
-    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), 'new-org');
+    sinon.assert.notCalled(updateConfigurationStub);
   });
 
   test('a field absent from the payload is never written and never recorded', async () => {
@@ -1636,7 +1764,12 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
     await service.handleSaveConfig(configJson);
 
     sinon.assert.neverCalledWith(updateConfigurationStub, CONFIGURATION_IDENTIFIER, 'advanced.organization');
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
+    const setting = await readPullSetting(
+      makeReadPathConfiguration(),
+      explicitOverridesMap,
+      LS_GLOBAL_KEY.organization,
+    );
+    assert.strictEqual(setting?.changed, false, 'an omitted field must not be recorded as an explicit change');
   });
 
   test('a write that throws does not record an explicit-overrides entry or update the cache', async () => {
@@ -1653,8 +1786,20 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
 
     await service.handleSaveConfig(configJson);
 
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), undefined);
-    assert.strictEqual(lastKnownValueCache.get(ADVANCED_ORGANIZATION), 'pre-existing-cached-value');
+    const setting = await readPullSetting(
+      makeReadPathConfiguration(),
+      explicitOverridesMap,
+      LS_GLOBAL_KEY.organization,
+    );
+    assert.strictEqual(setting?.changed, false, 'a failed write must not record an explicit-overrides entry');
+
+    updateConfigurationStub.resetHistory();
+    // Probe: an inbound push echoing the pre-existing cached value must be skipped as
+    // redundant, proving the failed write left the cache untouched.
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: 'pre-existing-cached-value', changed: false } },
+    });
+    sinon.assert.notCalled(updateConfigurationStub);
   });
 
   test('only the present sibling of a shared-vscodeKey fan-out group is recorded', async () => {
@@ -1669,13 +1814,22 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
-      kind: 'value',
-      value: false,
-    });
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined);
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), undefined);
-    assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), undefined);
+    const readConfig = makeReadPathConfiguration({ severityFilter: { ...DEFAULT_SEVERITY_FILTER, high: false } });
+    const high = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.severityFilterHigh);
+    assertPullSetting(
+      high,
+      { changed: true, value: false },
+      'the touched sibling must be recorded as an explicit change',
+    );
+
+    for (const lsKey of [
+      LS_GLOBAL_KEY.severityFilterCritical,
+      LS_GLOBAL_KEY.severityFilterMedium,
+      LS_GLOBAL_KEY.severityFilterLow,
+    ]) {
+      const setting = await readPullSetting(readConfig, explicitOverridesMap, lsKey);
+      assert.strictEqual(setting?.changed, false, `${lsKey} must not be recorded — absent from the payload`);
+    }
   });
 
   test('a recording exception for one fan-out sibling does not skip recording the others', async () => {
@@ -1716,18 +1870,22 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
     await service.handleSaveConfig(configJson);
 
     assert.strictEqual(setExplicitValueCalls.length, 4, 'all four siblings must have been attempted');
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterHigh), {
-      kind: 'value',
-      value: false,
+
+    const readConfig = makeReadPathConfiguration({
+      severityFilter: { ...DEFAULT_SEVERITY_FILTER, high: false, medium: true, low: false },
     });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
-      kind: 'value',
-      value: true,
-    });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterLow), {
-      kind: 'value',
-      value: false,
-    });
+    for (const [lsKey, expectedValue] of [
+      [LS_GLOBAL_KEY.severityFilterHigh, false],
+      [LS_GLOBAL_KEY.severityFilterMedium, true],
+      [LS_GLOBAL_KEY.severityFilterLow, false],
+    ] as const) {
+      const setting = await readPullSetting(readConfig, explicitOverridesMap, lsKey);
+      assertPullSetting(
+        setting,
+        { changed: true, value: expectedValue },
+        `${lsKey} must be recorded despite the sibling's recording failure`,
+      );
+    }
   });
 });
 
@@ -2297,8 +2455,11 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
 
     await service.handleSaveConfig(configJson);
 
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization), { kind: 'reset' });
-    assert.deepStrictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.scanNetNew), { kind: 'reset' });
+    const readConfig = makeReadPathConfiguration();
+    const org = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(org, { changed: true, value: null }, 'organization must be reset');
+    const scanNetNew = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.scanNetNew);
+    assertPullSetting(scanNetNew, { changed: true, value: null }, 'scan_net_new must be reset');
   });
 
   // Write failure in one group must NOT abort the batch (per-group try/catch preserved).
@@ -2344,16 +2505,15 @@ suite('ConfigurationPersistenceService — applyOutboundGlobalResets multi-key b
     await service.handleSaveConfig(configJson);
 
     // The second (successful) group's reset must still be recorded despite the first failing.
-    assert.deepStrictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.organization),
-      { kind: 'reset' },
+    const readConfig = makeReadPathConfiguration();
+    const org = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.organization);
+    assertPullSetting(
+      org,
+      { changed: true, value: null },
       'organization must still be recorded as reset after the first group (scan_net_new) failed',
     );
-    assert.strictEqual(
-      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.scanNetNew),
-      undefined,
-      'scan_net_new must NOT be recorded — its write failed',
-    );
+    const scanNetNew = await readPullSetting(readConfig, explicitOverridesMap, LS_GLOBAL_KEY.scanNetNew);
+    assertPullSetting(scanNetNew, { changed: false }, 'scan_net_new must NOT be recorded — its write failed');
   });
 });
 
