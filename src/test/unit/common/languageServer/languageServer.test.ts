@@ -68,15 +68,6 @@ suite('Language Server', () => {
     markExplicitlyChanged: sinon.stub(),
     unmarkExplicitlyChanged: sinon.stub(),
     isExplicitlyChanged: () => true,
-    markPendingReset: sinon.stub(),
-    consumePendingResets: sinon.stub().returns(new Set<string>()),
-    committedSinceReset: () => false,
-    markCommittedSinceReset: sinon.stub(),
-    hasLastKnownValue: () => false,
-    getLastKnownValue: () => undefined,
-    setLastKnownValue: sinon.stub(),
-    markPendingInboundWrite: sinon.stub(),
-    consumePendingInboundWrite: sinon.stub().returns(false),
   };
 
   const createFakeLanguageServer = (
@@ -444,10 +435,9 @@ suite('Language Server', () => {
   });
 
   // Real VS Code fires no onDidChangeConfiguration event for a no-op write (clearing an
-  // override that was never set). markPendingInboundWrite is called before every reset
-  // write regardless, so a never-overridden GLOBAL_RESET_FIELDS key leaks a marker that
-  // is never consumed by this write's own (nonexistent) event — it survives to wrongly
-  // suppress the marking of the user's next genuine edit of that same key [IDE-2264].
+  // override that was never set). Historically (the write-time tag design), a never-
+  // overridden GLOBAL_RESET_FIELDS key would leak a marker that no event ever consumed,
+  // wrongly suppressing the marking of the user's next genuine edit of that key [IDE-2264].
   test('global reset of a never-overridden key does not leak a pending marker into the next genuine user edit', async () => {
     const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
     // [IDE-2264 ticket 04]: the old write-time tag (markPendingInboundWrite) this test used to
@@ -1299,22 +1289,17 @@ suite('Language Server', () => {
     });
   });
 
-  // ── Outbound reset self-cancel guard (IDE-2149, originally fixed via write-time tag) ──
+  // ── Outbound reset self-cancel guard (IDE-2149, historical) ──
   //
-  // markExplicitlyChanged calls pendingResets.delete so that a user re-edit after a reset
-  // cancels the stale pending signal. The ORIGINAL bug: the onDidChangeConfiguration listener
-  // (registered in registerExplicitKeyMarkingListener) used to call markExplicitlyChanged for
-  // ANY snyk.* setting change — including the change triggered by a reset's own
-  // updateConfiguration write — which could delete a still-pending reset out from under it
-  // depending on event-arrival ordering. IDE-2264 first fixed this with a write-time tag
-  // (markPendingInboundWrite/consumePendingInboundWrite).
-  //
-  // [IDE-2264 ticket 04] superseded that tag entirely: the listener now writes only to the
-  // explicit-overrides map (via markExplicitLsKeysFromConfigurationChangeEvent) and no longer
-  // calls the tracker's markExplicitlyChanged/pendingResets at all, for any key, tagged or not.
+  // ORIGINAL bug: the onDidChangeConfiguration listener (registered in
+  // registerExplicitKeyMarkingListener) used to call markExplicitlyChanged for ANY snyk.*
+  // setting change — including the change triggered by a reset's own updateConfiguration
+  // write — which could cancel a still-pending reset depending on event-arrival ordering.
+  // Fixed first via a write-time tag, then [IDE-2264 ticket 04] superseded that tag entirely:
+  // the listener now writes only to the explicit-overrides map (via
+  // markExplicitLsKeysFromConfigurationChangeEvent) and no longer touches the tracker at all.
   // The whole adversarial-ordering class this suite exists to guard against is therefore
-  // structurally impossible now, independent of ordering — proven below without needing to
-  // simulate the tag or its timing.
+  // structurally impossible now, independent of ordering.
   suite('outbound reset self-cancel guard (adversarial onDidChangeConfiguration ordering)', () => {
     function makeLanguageServerWithListener(
       tracker: ExplicitLspConfigurationChangeTracker,
@@ -1363,37 +1348,6 @@ suite('Language Server', () => {
         undefined,
       );
     }
-
-    test('pending reset survives any listener firing, tagged or not — the listener no longer touches the tracker at all', () => {
-      const tracker = new ExplicitLspConfigurationChangeTracker(makeMemento());
-
-      let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
-      const ls = makeLanguageServerWithListener(tracker, fn => {
-        configListener = fn;
-      });
-
-      ls.registerExplicitKeyMarkingListener();
-
-      // Queue a pending reset (simulates what applyOutboundGlobalResets does after
-      // updateConfiguration) with no pending-write tag at all — the adversarial case that used
-      // to lose the reset under the old tag-based design.
-      tracker.markPendingReset(LS_GLOBAL_KEY.organization);
-
-      // VS Code fires onDidChangeConfiguration for the reset key.
-      configListener({ affectsConfiguration: (s: string) => s === 'snyk' || s.startsWith('snyk.') });
-
-      const pending = tracker.consumePendingResets();
-      assert.ok(
-        pending.has(LS_GLOBAL_KEY.organization),
-        'the direct-edit listener must never call markExplicitlyChanged on the old tracker, so ' +
-          'pendingResets is untouched regardless of ordering or tagging',
-      );
-      assert.ok(
-        !tracker.isExplicitlyChanged(LS_GLOBAL_KEY.organization),
-        'the listener no longer writes to the tracker cumulative set at all — this leg is now ' +
-          'exclusively handled by the explicit-overrides map (see the direct-edit-detection suite)',
-      );
-    });
 
     // The outbound save path now records a reset directly in the explicit-overrides map
     // (ConfigurationPersistenceService.applyOutboundGlobalResets) instead of the old tracker's

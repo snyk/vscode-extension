@@ -17,10 +17,10 @@
  * settings.json write, then a later file-watcher-driven config refresh), so a
  * synchronous-scoped boolean silently missed the event and misattributed the
  * write. Production code (`ConfigurationPersistenceService`) does NOT rely on
- * the synchronous timing this test observes — it uses a write-time tag
- * (`markPendingInboundWrite`/`consumePendingInboundWrite`) that survives an
- * arbitrarily delayed event instead. This test only documents that, in this
- * environment, the simpler timing also happens to hold; it is not the
+ * the synchronous timing this test observes — it compares each changed key
+ * against the last-known-value cache (updated synchronously at write time),
+ * which survives an arbitrarily delayed event. This test only documents that,
+ * in this environment, the simpler timing also happens to hold; it is not the
  * mechanism the production code depends on.
  */
 import { strictEqual } from 'assert';

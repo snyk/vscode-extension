@@ -29,30 +29,6 @@ import { LanguageServerSettings } from './settings';
 import { LspConfigurationParam, LsScanProduct, ScanProduct, ShowIssueDetailTopicParams, SnykURIAction } from './types';
 import { Subject } from 'rxjs';
 
-/**
- * ADR-2: Re-enqueue guard predicate.
- *
- * [IDE-2264 ticket 06]: no longer called by middleware.ts or languageServer.ts — the
- * explicit-overrides map's reset sentinel is read live (never drained before a response is
- * built), so a build failure automatically leaves it intact without any re-enqueue bookkeeping.
- * Retained until ticket 08 removes the mechanism it guards.
- *
- * Returns true when the re-enqueue for `lsKey` should be SKIPPED (i.e. the user
- * committed a concrete value for this key in the current window, so restoring
- * the reset would clobber it).
- *
- * Reads `committedSinceReset` — a transient, windowed, per-LS-key signal — NOT
- * `isExplicitlyChanged` (cumulative, persisted, cross-session, fanned-out across
- * shared VS Code settings).  The shared predicate is extracted here so both call
- * sites (middleware.ts and languageServer.ts) stay in sync.
- */
-export function shouldSkipReenqueue(
-  lsKey: string,
-  tracker: IExplicitLspConfigurationChangeTracker | undefined,
-): boolean {
-  return tracker?.committedSinceReset(lsKey) ?? false;
-}
-
 /** snyk-ls unmarshals the pull response as `[]DidChangeConfigurationParams` where each element is `{ settings: LspConfigurationParam }`. */
 type LspPullResponseItem = { settings: LspConfigurationParam };
 

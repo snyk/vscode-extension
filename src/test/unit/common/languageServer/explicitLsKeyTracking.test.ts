@@ -50,10 +50,6 @@ function fakeGetConfigWorkspace(map: Record<string, unknown>): Pick<IVSCodeWorks
 /** Minimal in-memory tracker that fulfils the interface. */
 class FakeTracker implements IExplicitLspConfigurationChangeTracker {
   private readonly keys = new Set<string>();
-  private readonly pending = new Set<string>();
-  private readonly committed = new Set<string>();
-  private readonly lastKnown = new Map<string, unknown>();
-  private readonly pendingInboundWrites = new Set<string>();
 
   markExplicitlyChanged(lsKey: string): void {
     this.keys.add(lsKey);
@@ -65,45 +61,6 @@ class FakeTracker implements IExplicitLspConfigurationChangeTracker {
 
   isExplicitlyChanged(lsKey: string): boolean {
     return this.keys.has(lsKey);
-  }
-
-  markPendingReset(lsKey: string): void {
-    this.pending.add(lsKey);
-    this.committed.delete(lsKey);
-  }
-
-  consumePendingResets(): Set<string> {
-    const snap = new Set(this.pending);
-    this.pending.clear();
-    return snap;
-  }
-
-  markCommittedSinceReset(lsKey: string): void {
-    this.committed.add(lsKey);
-  }
-  committedSinceReset(lsKey: string): boolean {
-    return this.committed.has(lsKey);
-  }
-  hasLastKnownValue(lsKey: string): boolean {
-    return this.lastKnown.has(lsKey);
-  }
-  getLastKnownValue(lsKey: string): unknown {
-    return this.lastKnown.get(lsKey);
-  }
-  setLastKnownValue(lsKey: string, value: unknown): void {
-    this.lastKnown.set(lsKey, value);
-  }
-
-  markPendingInboundWrite(vscodeKey: string): void {
-    this.pendingInboundWrites.add(vscodeKey);
-  }
-
-  consumePendingInboundWrite(vscodeKey: string): boolean {
-    return this.pendingInboundWrites.delete(vscodeKey);
-  }
-
-  allKeys(): Set<string> {
-    return new Set(this.keys);
   }
 }
 
@@ -713,5 +670,6 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 //     in configurationPersistenceService.test.ts (goes RED when the seeding call is deleted)
 //   - 'D1-fanout-severity' in the same file (real tracker, real handleSaveConfig + real fan-out,
 //     goes RED if D1 seeding is skipped for fan-out keys)
-//   - 'D2' in explicitLspConfigurationChangeTracker.test.ts (real tracker, warm-cache-undefined
-//     → not marked, uses the production guard directly)
+// [IDE-2264 ticket 08]: the third leg ('D2' in explicitLspConfigurationChangeTracker.test.ts,
+// covering the tracker's own hasLastKnownValue/setLastKnownValue ADR-2 fan-out cache) was removed
+// along with that now-unused mechanism; this file's own fan-out tests above are the only coverage.

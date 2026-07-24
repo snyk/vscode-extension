@@ -12,7 +12,6 @@ import {
 import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/languageClient';
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import {
-  ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_ORGANIZATION,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
@@ -520,50 +519,14 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     sinon.assert.called(updateConfigurationStub);
   });
 
-  // Mirrors the reset-path failure test ('does not mark pending reset or unmark
-  // explicit-changed when updateConfiguration throws') for the regular settings-sync path:
-  // a write-time pending marker must not leak past a failed write, or it silently suppresses
-  // the explicit-change marking of the next genuine user edit of that key [IDE-2264].
-  test('clears the pending inbound-write marker when updateConfiguration throws during a settings-sync write', async () => {
-    updateConfigurationStub.rejects(new Error('VS Code write failed'));
-    const markPendingInboundWriteStub = sinon.stub();
-    const consumePendingInboundWriteStub = sinon.stub();
-    const tracker = {
-      markPendingInboundWrite: markPendingInboundWriteStub,
-      consumePendingInboundWrite: consumePendingInboundWriteStub,
-    } as unknown as IExplicitLspConfigurationChangeTracker;
-
-    const service = new ConfigurationPersistenceService(
-      workspace,
-      configuration,
-      realScopeService,
-      clientAdapter,
-      logger,
-      undefined,
-      tracker,
-    );
-
-    const param: LspConfigurationParam = {
-      settings: {
-        [LS_KEY.apiEndpoint]: { value: 'https://from-ls.example', changed: true },
-      },
-    };
-
-    await service.persistInboundLspConfiguration(param);
-
-    sinon.assert.calledWith(markPendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
-    sinon.assert.calledWith(consumePendingInboundWriteStub, ADVANCED_CUSTOM_ENDPOINT);
-  });
-
   // Regression/proof coverage for a "should fix" raised on PR #782 (a value-unchanged write
   // leaks a marker because no onDidChangeConfiguration event follows a VS Code no-op write).
   // [IDE-2264 ticket 03]: the inbound redundancy check now compares purely against the
   // last-known-value cache — warm from activation-time seeding in production (see
   // extension.ts's `new LastKnownValueCache(workspace, ...)`) — rather than falling back to
   // an override-aware inspectConfiguration peek. A cache hit that matches the incoming value
-  // must skip the write entirely, so writeTaggedAsInboundOrigin never marks pending in the
-  // first place.
-  test('an inbound value equal to what the last-known-value cache holds for that key is skipped (no write, no marker)', async () => {
+  // must skip the write entirely.
+  test('an inbound value equal to what the last-known-value cache holds for that key is skipped (no write)', async () => {
     const warmCacheWorkspace = {
       updateConfiguration: updateConfigurationStub,
       // Seeds the cache with the pre-existing value, same as activation-time seeding.
@@ -592,11 +555,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     } as unknown as IVSCodeWorkspace;
     const warmCacheScopeService = new ScopeDetectionService(warmCacheWorkspace);
 
-    const markPendingInboundWriteStub = sinon.stub();
-    const tracker = {
-      markPendingInboundWrite: markPendingInboundWriteStub,
-    } as unknown as IExplicitLspConfigurationChangeTracker;
-
     const lastKnownValueCache = new LastKnownValueCache(warmCacheWorkspace, [ADVANCED_ORGANIZATION]);
 
     const service = new ConfigurationPersistenceService(
@@ -606,7 +564,7 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
       clientAdapter,
       logger,
       undefined,
-      tracker,
+      undefined,
       undefined,
       lastKnownValueCache,
     );
@@ -621,7 +579,6 @@ suite('ConfigurationPersistenceService — persistInbound trusts LS', () => {
     await service.persistInboundLspConfiguration(param);
 
     sinon.assert.notCalled(updateConfigurationStub);
-    sinon.assert.notCalled(markPendingInboundWriteStub);
   });
 
   // [IDE-2264 ticket 03]: a cache miss (nothing written yet this session for this key) must
@@ -888,10 +845,6 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
   /** Minimal in-memory tracker that fulfils the interface. */
   class FakeTracker implements IExplicitLspConfigurationChangeTracker {
     private readonly keys = new Set<string>();
-    private readonly pending = new Set<string>();
-    private readonly committed = new Set<string>();
-    private readonly lastKnown = new Map<string, unknown>();
-    private readonly pendingInboundWrites = new Set<string>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -900,36 +853,6 @@ suite('ConfigurationPersistenceService — global ("Project Defaults") reset', (
     }
     isExplicitlyChanged(lsKey: string): boolean {
       return this.keys.has(lsKey);
-    }
-    markPendingReset(lsKey: string): void {
-      this.pending.add(lsKey);
-      this.committed.delete(lsKey);
-    }
-    consumePendingResets(): Set<string> {
-      const snap = new Set(this.pending);
-      this.pending.clear();
-      return snap;
-    }
-    markCommittedSinceReset(lsKey: string): void {
-      this.committed.add(lsKey);
-    }
-    committedSinceReset(lsKey: string): boolean {
-      return this.committed.has(lsKey);
-    }
-    hasLastKnownValue(lsKey: string): boolean {
-      return this.lastKnown.has(lsKey);
-    }
-    getLastKnownValue(lsKey: string): unknown {
-      return this.lastKnown.get(lsKey);
-    }
-    setLastKnownValue(lsKey: string, value: unknown): void {
-      this.lastKnown.set(lsKey, value);
-    }
-    markPendingInboundWrite(vscodeKey: string): void {
-      this.pendingInboundWrites.add(vscodeKey);
-    }
-    consumePendingInboundWrite(vscodeKey: string): boolean {
-      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
@@ -1867,33 +1790,6 @@ suite('ConfigurationPersistenceService — inbound reset scope (FIX 1)', () => {
     isExplicitlyChanged(_lsKey: string): boolean {
       return false;
     }
-    markPendingReset(_lsKey: string): void {
-      /* no-op */
-    }
-    consumePendingResets(): Set<string> {
-      return new Set();
-    }
-    markCommittedSinceReset(_lsKey: string): void {
-      /* no-op */
-    }
-    committedSinceReset(_lsKey: string): boolean {
-      return false;
-    }
-    hasLastKnownValue(_lsKey: string): boolean {
-      return false;
-    }
-    getLastKnownValue(_lsKey: string): unknown {
-      return undefined;
-    }
-    setLastKnownValue(_lsKey: string, _value: unknown): void {
-      /* no-op */
-    }
-    markPendingInboundWrite(_vscodeKey: string): void {
-      /* no-op */
-    }
-    consumePendingInboundWrite(_vscodeKey: string): boolean {
-      return false;
-    }
   }
 
   setup(() => {
@@ -2224,10 +2120,6 @@ suite('GLOBAL_RESET_FIELDS invariant (FIX 3)', () => {
 suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker atomicity (FIX 1)', () => {
   class FakeTrackerFix1 implements IExplicitLspConfigurationChangeTracker {
     private readonly keys = new Set<string>();
-    private readonly pending = new Set<string>();
-    private readonly committed = new Set<string>();
-    private readonly lastKnown = new Map<string, unknown>();
-    private readonly pendingInboundWrites = new Set<string>();
     markExplicitlyChanged(lsKey: string): void {
       this.keys.add(lsKey);
     }
@@ -2236,36 +2128,6 @@ suite('ConfigurationPersistenceService — inbound applyGlobalResets tracker ato
     }
     isExplicitlyChanged(lsKey: string): boolean {
       return this.keys.has(lsKey);
-    }
-    markPendingReset(lsKey: string): void {
-      this.pending.add(lsKey);
-      this.committed.delete(lsKey);
-    }
-    consumePendingResets(): Set<string> {
-      const snap = new Set(this.pending);
-      this.pending.clear();
-      return snap;
-    }
-    markCommittedSinceReset(lsKey: string): void {
-      this.committed.add(lsKey);
-    }
-    committedSinceReset(lsKey: string): boolean {
-      return this.committed.has(lsKey);
-    }
-    hasLastKnownValue(lsKey: string): boolean {
-      return this.lastKnown.has(lsKey);
-    }
-    getLastKnownValue(lsKey: string): unknown {
-      return this.lastKnown.get(lsKey);
-    }
-    setLastKnownValue(lsKey: string, value: unknown): void {
-      this.lastKnown.set(lsKey, value);
-    }
-    markPendingInboundWrite(vscodeKey: string): void {
-      this.pendingInboundWrites.add(vscodeKey);
-    }
-    consumePendingInboundWrite(vscodeKey: string): boolean {
-      return this.pendingInboundWrites.delete(vscodeKey);
     }
   }
 
