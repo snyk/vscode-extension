@@ -795,6 +795,12 @@ suite('Language Server', () => {
     const store = new Map<string, unknown>();
     store.set('snyk.severity', { critical: true, high: true, medium: true, low: true });
 
+    // Not the shared fail-on-error `logger` — this test deliberately provokes a resolver throw,
+    // which [IDE-2264 ticket 12] now logs rather than silently swallows.
+    const loggedErrors: unknown[] = [];
+    const throwTolerantLogger = new LoggerMock();
+    throwTolerantLogger.error = (message: string) => loggedErrors.push(message);
+
     let configListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
     const adapter = {
       create(): LanguageClient {
@@ -827,7 +833,7 @@ suite('Language Server', () => {
       workspace,
       new WindowMock(),
       authServiceMock,
-      logger,
+      throwTolerantLogger,
       downloadServiceMock,
       {} as IMcpProvider,
       {} as IExtensionRetriever,
@@ -871,6 +877,9 @@ suite('Language Server', () => {
       // A throwing resolver is treated as value-unknown on both the old and new projection, so
       // no (false) change is detected for critical itself.
       assert.strictEqual(explicitOverridesMap.getEntry(LS_GLOBAL_KEY.severityFilterCritical), undefined);
+
+      // [IDE-2264 ticket 12]: the throw is logged rather than silently swallowed.
+      assert.strictEqual(loggedErrors.length > 0, true, 'the resolver throw must be logged');
     } finally {
       // Restore the original resolver regardless of test outcome.
       SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalCriticalResolve;

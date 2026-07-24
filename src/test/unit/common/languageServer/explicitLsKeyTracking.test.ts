@@ -409,7 +409,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
       );
     });
 
-    test('resolver throw for one fan-out sibling does not prevent the remaining siblings from being marked', async () => {
+    test('resolver throw for one fan-out sibling does not prevent the remaining siblings from being marked, and is logged', async () => {
       const overrides = newOverridesMap();
       const cache = new LastKnownValueCache(
         fakeGetConfigWorkspace({ 'snyk.severity': { critical: true, high: true, medium: true, low: true } }),
@@ -418,6 +418,8 @@ suite('seedExplicitChangesFromExistingSettings', () => {
       const newWorkspace = fakeGetConfigWorkspace({
         'snyk.severity': { critical: true, high: true, medium: false, low: true },
       });
+      const errors: unknown[] = [];
+      const logger = { error: (message: unknown) => errors.push(message) };
 
       const originalResolve = SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve;
       SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = () => {
@@ -426,7 +428,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
       try {
         const e = fakeEvent([SEVERITY_FILTER_SETTING]);
-        await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig);
+        await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, minimalConfig, logger);
 
         assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.severityFilterMedium), {
           kind: 'value',
@@ -437,6 +439,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
           undefined,
           'critical: throwing resolver is treated as value-unknown on both sides, so no (false) change is detected',
         );
+        assert.strictEqual(errors.length > 0, true, 'a resolver throw must be logged, not silently swallowed');
       } finally {
         SETTINGS_REGISTRY[LS_GLOBAL_KEY.severityFilterCritical].resolve = originalResolve;
       }

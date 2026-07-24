@@ -3,6 +3,7 @@ import { SETTINGS_REGISTRY, VSCODE_KEY_TO_LS_KEYS } from './lsKeyToVscodeKeyMap'
 import type { IExplicitOverridesMap } from './explicitOverridesMap';
 import type { ILastKnownValueCache } from './lastKnownValueCache';
 import type { LspConfigSetting } from './types';
+import type { ILog } from '../logger/interfaces';
 import {
   Configuration,
   DEFAULT_ISSUE_VIEW_OPTIONS,
@@ -21,8 +22,11 @@ import isEqual from 'lodash/isEqual';
  *
  * A throwing resolver (or an unmapped lsKey) is treated as "value unknown" rather than letting
  * the throw escape — a broken sibling must not abort the fan-out loop for the rest of the group.
+ * The throw is logged rather than silently swallowed, since it means a registered fan-out
+ * entry's resolver reads a field the stub above doesn't provide — a bug worth surfacing, not a
+ * routine "no change" outcome.
  */
-function projectFanOutSubValue(lsKey: string, rawVscodeValue: unknown): unknown {
+function projectFanOutSubValue(lsKey: string, rawVscodeValue: unknown, logger?: Pick<ILog, 'error'>): unknown {
   const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
   const stub = {
     severityFilter: (rawVscodeValue as typeof DEFAULT_SEVERITY_FILTER) ?? DEFAULT_SEVERITY_FILTER,
@@ -30,7 +34,8 @@ function projectFanOutSubValue(lsKey: string, rawVscodeValue: unknown): unknown 
   } as unknown as IConfiguration;
   try {
     return entry.resolve(stub);
-  } catch {
+  } catch (error) {
+    logger?.error(`Fan-out resolver for LS key "${lsKey}" threw while projecting its sub-value: ${String(error)}`);
     return undefined;
   }
 }
@@ -119,6 +124,7 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
   lastKnownValueCache: ILastKnownValueCache,
   workspace: Pick<IVSCodeWorkspace, 'getConfiguration'>,
   configuration: IConfiguration,
+  logger?: Pick<ILog, 'error'>,
 ): Promise<void> {
   for (const [vscodeKey, lsKeys] of Object.entries(VSCODE_KEY_TO_LS_KEYS)) {
     if (!e.affectsConfiguration(vscodeKey)) {
@@ -156,8 +162,8 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
     // Fan-out: multiple LS keys share one VS Code setting. Mark only the siblings whose own
     // projected sub-value actually changed, not every sibling sharing the VS Code key.
     for (const lsKey of lsKeys) {
-      const oldProjected = projectFanOutSubValue(lsKey, oldValue);
-      const newProjected = projectFanOutSubValue(lsKey, newValue);
+      const oldProjected = projectFanOutSubValue(lsKey, oldValue, logger);
+      const newProjected = projectFanOutSubValue(lsKey, newValue, logger);
       if (isEqual(oldProjected, newProjected)) {
         continue;
       }

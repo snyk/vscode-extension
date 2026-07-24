@@ -325,6 +325,7 @@ export class LanguageServer implements ILanguageServer {
         this.lastKnownValueCache,
         this.workspace,
         this.configuration,
+        this.logger,
       ).catch((error: unknown) => {
         this.logger.error(`Failed to mark explicit LS keys from configuration change: ${String(error)}`);
       });
