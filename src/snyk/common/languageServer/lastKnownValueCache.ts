@@ -13,6 +13,11 @@ export interface ILastKnownValueCache {
  * Non-persisted cache mapping each VS Code configuration key to the value the extension
  * itself most recently wrote for it (or observed at activation). Seeded once at construction
  * from current VS Code configuration for every tracked key.
+ *
+ * Purpose: comparing a key's current VS Code value against its cache entry tells apart a write
+ * the extension itself just made from a genuine external edit, so callers (config-change
+ * marking, middleware echo suppression) can early-return on the former instead of treating it
+ * as a new user change.
  */
 export class LastKnownValueCache implements ILastKnownValueCache {
   private readonly values = new Map<string, unknown>();

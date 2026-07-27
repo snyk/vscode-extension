@@ -17,6 +17,7 @@ import {
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
+  SCANNING_MODE,
 } from '../../../../../../snyk/common/constants/settings';
 import {
   ALLISSUES,
@@ -1008,6 +1009,32 @@ suite('ConfigurationPersistenceService — outbound global reset (handleSaveConf
       'advanced.organization',
       'stale-pre-reset-value',
       true,
+    );
+  });
+
+  // Regression (PR #782 review r3657978700): a successful reset must seed the cache with the
+  // actual post-clear value, not unconditionally `undefined`. `scanningMode` has a package.json
+  // schema default ('auto'), so clearing its override resolves to 'auto', not undefined — a
+  // stale `undefined` cache entry would make a later onDidChangeConfiguration event (which reads
+  // 'auto' via getConfiguration) look like a genuine external edit and re-mark it explicit.
+  test('seeds the last-known-value cache with the schema default (not undefined) after a successful reset', async () => {
+    (workspace.getConfiguration as sinon.SinonStub).withArgs(CONFIGURATION_IDENTIFIER, 'scanningMode').returns('auto');
+    lastKnownValueCache.set(SCANNING_MODE, 'manual');
+
+    const service = newService();
+
+    const configJson = JSON.stringify({
+      isFallbackForm: false,
+      token: 'tok',
+      [LS_GLOBAL_KEY.scanAutomatic]: null,
+    });
+
+    await service.handleSaveConfig(configJson);
+
+    assert.strictEqual(
+      lastKnownValueCache.get(SCANNING_MODE),
+      'auto',
+      'the cache must hold the resolved schema default, not undefined',
     );
   });
 

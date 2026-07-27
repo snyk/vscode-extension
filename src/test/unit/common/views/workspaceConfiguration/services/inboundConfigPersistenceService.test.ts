@@ -14,6 +14,7 @@ import {
   ADVANCED_ORGANIZATION,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
+  SCANNING_MODE,
 } from '../../../../../../snyk/common/constants/settings';
 import { ALLISSUES, NEWISSUES } from '../../../../../../snyk/common/configuration/configuration';
 import {
@@ -556,6 +557,38 @@ suite('InboundConfigPersistenceService — global ("Project Defaults") reset', (
       lastKnownValueCache.get(ADVANCED_ORGANIZATION),
       'old-org',
       'a rejected reset write must not leave the cache holding the optimistic undefined',
+    );
+  });
+
+  // Regression (PR #782 review r3657978700): a successful reset must seed the cache with the
+  // actual post-clear value, not unconditionally `undefined`. `scanningMode` has a package.json
+  // schema default ('auto'), so clearing its override resolves to 'auto', not undefined — a
+  // stale `undefined` cache entry would make a later onDidChangeConfiguration event (which reads
+  // 'auto' via getConfiguration) look like a genuine external edit and re-mark it explicit.
+  test('seeds the last-known-value cache with the schema default (not undefined) after a successful reset', async () => {
+    (workspace.inspectConfiguration as sinon.SinonStub)
+      .withArgs(CONFIGURATION_IDENTIFIER, 'scanningMode')
+      .returns({ globalValue: 'manual', defaultValue: 'auto' });
+
+    const lastKnownValueCache = new LastKnownValueCache(workspace, []);
+    lastKnownValueCache.set(SCANNING_MODE, 'manual');
+
+    const service = new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      logger,
+      lastKnownValueCache,
+    );
+
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.scanAutomatic]: { value: null, changed: true } },
+    });
+
+    assert.strictEqual(
+      lastKnownValueCache.get(SCANNING_MODE),
+      'auto',
+      'the cache must hold the resolved schema default, not undefined',
     );
   });
 

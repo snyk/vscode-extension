@@ -9,6 +9,7 @@ import {
   GLOBAL_RESET_FIELDS,
   groupResettableLsKeysByVscodeKey,
   mapLspSettingsToVscodeSettings,
+  resolveValueAfterGlobalReset,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
 import _ from 'lodash';
 import type { GlobalLsKeyValue } from '../../../languageServer/serverSettingsToLspConfigurationParam';
@@ -112,10 +113,12 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
    * onDidChangeConfiguration event for a no-op write, so this path only writes when there's
    * something to clear. One failure does NOT abort the batch (per-group try/catch).
    *
-   * On success, also updates the last-known-value cache to `undefined` for the vscodeKey, so a
-   * subsequent inbound push's redundancy check compares against the post-reset state rather
-   * than a stale pre-reset value. A write that throws reverts the cache to its pre-reset value —
-   * otherwise the cache would claim a reset VS Code never applied.
+   * On success, also updates the last-known-value cache to the post-clear effective value (the
+   * schema default when one exists, `undefined` otherwise) for the vscodeKey, so a subsequent
+   * inbound push's redundancy check — and a later onDidChangeConfiguration event — compares
+   * against the actual post-reset state rather than a stale pre-reset value or a phantom
+   * `undefined`. A write that throws reverts the cache to its pre-reset value — otherwise the
+   * cache would claim a reset VS Code never applied.
    */
   private async applyVscodeKeyResets(vscodeKeyToLsKeys: Map<string, string[]>): Promise<void> {
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
@@ -135,7 +138,13 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
           // this async function's own continuation resumes — see applySettingsMap's identical
           // ordering fix for why setting the cache first is required to avoid a false explicit
           // mark on a value this class never treats as a user override.
-          this.lastKnownValueCache.set(vscodeKey, undefined);
+          //
+          // Seeded with the post-clear effective value (schema default when one exists), computed
+          // from an inspect taken BEFORE the clearing write below — getConfiguration would still
+          // reflect the about-to-be-cleared override at this point, not the value the write will
+          // actually leave behind.
+          const inspect = this.workspace.inspectConfiguration<unknown>(configurationId, section);
+          this.lastKnownValueCache.set(vscodeKey, resolveValueAfterGlobalReset(inspect));
           try {
             // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
             await this.workspace.updateConfiguration(configurationId, section, undefined, true);

@@ -204,16 +204,18 @@ export function seedExplicitChangesFromExistingSettings(
     // Fan-out: several LS keys share one vscodeKey (severity filters, issue view options).
     // inspect.globalValue/defaultValue are the WHOLE shared object for every sibling, so
     // comparing them directly would seed every sibling whenever any one of them deviates from
-    // default. Project each sibling's own sub-value first (same projection the config-change
-    // path uses) and seed only the sibling whose own value actually differs.
+    // default — project each sibling's own sub-value first and compare that instead (see below).
     const isFanOut = (VSCODE_KEY_TO_LS_KEYS[entry.vscodeKey]?.length ?? 0) > 1;
     if (!isFanOut) {
+      // Global vs default comparison: seed only when the setting's value actually differs.
       if (!isEqual(inspect.globalValue, inspect.defaultValue)) {
         explicitOverrides.setExplicitValue(lsKey, inspect.globalValue);
       }
       continue;
     }
 
+    // Global vs default comparison (fan-out): compare each sibling's own projected sub-value
+    // (same projection the config-change path uses), not the raw shared globalValue/defaultValue.
     const projectedGlobal = projectFanOutSubValue(lsKey, inspect.globalValue, logger);
     const projectedDefault = projectFanOutSubValue(lsKey, inspect.defaultValue, logger);
     if (!isEqual(projectedGlobal, projectedDefault)) {

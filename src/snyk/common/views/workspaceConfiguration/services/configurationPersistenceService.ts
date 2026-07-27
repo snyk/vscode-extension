@@ -109,7 +109,8 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * For each global-resettable LS key whose dialog value is explicitly `null`:
    * - clear the VS Code global override (updateConfiguration → undefined, global scope)
    * - record a reset entry in the explicit-overrides map
-   * - update the last-known-value cache to `undefined` (the override was cleared)
+   * - update the last-known-value cache to the post-clear effective value (the schema default
+   *   when one exists, `undefined` otherwise — NOT unconditionally `undefined`)
    *
    * The webview only sends a field when its value genuinely changed since the form was
    * last presented (client-side dirty-tracking), so every reset field here is acted on
@@ -137,7 +138,10 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
 
         // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
         await this.workspace.updateConfiguration(configurationId, section, undefined, true);
-        this.lastKnownValueCache.set(vscodeKey, undefined);
+        // Seed with the actual post-clear effective value (may be a package.json schema
+        // default, not undefined) so a later onDidChangeConfiguration event recognizes this
+        // as the extension's own write rather than a fresh user override.
+        this.lastKnownValueCache.set(vscodeKey, this.workspace.getConfiguration(configurationId, section));
 
         // Each sibling is recorded independently: a callback failure (e.g. a resolver throw
         // during the D1 cache seed) must not prevent the remaining siblings in the same
