@@ -311,6 +311,35 @@ suite('InboundConfigPersistenceService — persistInbound trusts LS', () => {
     );
   });
 
+  // Reviewer finding (PR #782): the last-known-value cache is set BEFORE the write (see
+  // applySettingsMap's ordering comment) so the live marking listener sees the right value
+  // during the synchronous onDidChangeConfiguration window. A write that then throws must not
+  // leave that optimistic value in the cache — it never reached VS Code.
+  test('a write that throws reverts the last-known-value cache to its pre-write value', async () => {
+    const lastKnownValueCache = new LastKnownValueCache(workspace, []);
+    lastKnownValueCache.set(ADVANCED_ORGANIZATION, 'old-org');
+
+    const service = new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      realScopeService,
+      logger,
+      lastKnownValueCache,
+    );
+
+    updateConfigurationStub.rejects(new Error('VS Code write failed'));
+
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: 'new-org', changed: true } },
+    });
+
+    assert.strictEqual(
+      lastKnownValueCache.get(ADVANCED_ORGANIZATION),
+      'old-org',
+      'a rejected write must not leave the cache holding the optimistic new value',
+    );
+  });
+
   test('persistInbound writes delta setting from global settings', async () => {
     const service = new InboundConfigPersistenceService(
       workspace,
@@ -499,6 +528,34 @@ suite('InboundConfigPersistenceService — global ("Project Defaults") reset', (
       setting,
       { changed: true, value: NOT_NULL },
       'the pre-existing explicit override must remain in place, not turned into a reset entry',
+    );
+  });
+
+  // Reviewer finding (PR #782): applyVscodeKeyResets sets the cache to `undefined` before the
+  // write, for the same reason as applySettingsMap. A rejected reset write must not leave that
+  // guess in place.
+  test('a rejected reset write reverts the last-known-value cache to its pre-reset value', async () => {
+    const lastKnownValueCache = new LastKnownValueCache(workspace, []);
+    lastKnownValueCache.set(ADVANCED_ORGANIZATION, 'old-org');
+
+    const service = new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      scopeDetectionService,
+      logger,
+      lastKnownValueCache,
+    );
+
+    updateConfigurationStub.rejects(new Error('VS Code write failed'));
+
+    await service.persistInboundLspConfiguration({
+      settings: { [LS_GLOBAL_KEY.organization]: { value: null, changed: true } },
+    });
+
+    assert.strictEqual(
+      lastKnownValueCache.get(ADVANCED_ORGANIZATION),
+      'old-org',
+      'a rejected reset write must not leave the cache holding the optimistic undefined',
     );
   });
 

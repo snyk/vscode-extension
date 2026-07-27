@@ -35,6 +35,9 @@ export class ExplicitOverridesMap implements IExplicitOverridesMap {
   /** Serializes Memento writes so rapid set calls don't race at disk level. */
   private writeQueue: Promise<void> = Promise.resolve();
 
+  /** Set while a persist is queued but not yet started, so rapid set calls collapse to one write. */
+  private persistQueued = false;
+
   constructor(private readonly globalState: vscode.Memento) {
     const stored = globalState.get<Record<string, ExplicitOverrideEntry>>(MEMENTO_EXPLICIT_OVERRIDES_MAP) ?? {};
     for (const [lsKey, entry] of Object.entries(stored)) {
@@ -65,11 +68,19 @@ export class ExplicitOverridesMap implements IExplicitOverridesMap {
   }
 
   private persist(): void {
-    const snapshot = Object.fromEntries(this.entries);
+    if (this.persistQueued) {
+      return;
+    }
+    this.persistQueued = true;
     this.writeQueue = this.writeQueue
       .catch(() => {
         /* keep queue alive on prior failure */
       })
-      .then(() => this.globalState.update(MEMENTO_EXPLICIT_OVERRIDES_MAP, snapshot));
+      .then(() => {
+        // Cleared before the update, not after: a mutation landing while this write is in
+        // flight is not covered by the snapshot below and must queue its own write.
+        this.persistQueued = false;
+        return this.globalState.update(MEMENTO_EXPLICIT_OVERRIDES_MAP, Object.fromEntries(this.entries));
+      });
   }
 }

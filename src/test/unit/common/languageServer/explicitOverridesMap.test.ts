@@ -4,6 +4,7 @@
  * written by any production write path.
  */
 import assert from 'assert';
+import sinon from 'sinon';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { MEMENTO_EXPLICIT_OVERRIDES_MAP } from '../../../../snyk/common/constants/explicitLspConfiguration';
 
@@ -156,5 +157,23 @@ suite('ExplicitOverridesMap', () => {
 
     const stored = memento.get<Record<string, unknown>>(MEMENTO_EXPLICIT_OVERRIDES_MAP);
     assert.deepStrictEqual(stored, { organization: { kind: 'value', value: 'acme-corp' } });
+  });
+
+  test('several synchronous set calls collapse into a single Memento write', async () => {
+    const memento = makeMemento();
+    const updateSpy = sinon.spy(memento, 'update');
+    const map = new ExplicitOverridesMap(memento);
+
+    map.setExplicitValue('organization', 'acme-corp');
+    map.setReset('scan_automatic');
+    map.setExplicitValue('cliPath', '/usr/local/bin/snyk');
+    await flushWrites();
+
+    sinon.assert.calledOnce(updateSpy);
+    assert.deepStrictEqual(updateSpy.firstCall.args[1], {
+      organization: { kind: 'value', value: 'acme-corp' },
+      scan_automatic: { kind: 'reset' },
+      cliPath: { kind: 'value', value: '/usr/local/bin/snyk' },
+    });
   });
 });

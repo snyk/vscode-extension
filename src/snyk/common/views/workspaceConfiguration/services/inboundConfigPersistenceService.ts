@@ -114,7 +114,8 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
    *
    * On success, also updates the last-known-value cache to `undefined` for the vscodeKey, so a
    * subsequent inbound push's redundancy check compares against the post-reset state rather
-   * than a stale pre-reset value.
+   * than a stale pre-reset value. A write that throws reverts the cache to its pre-reset value —
+   * otherwise the cache would claim a reset VS Code never applied.
    */
   private async applyVscodeKeyResets(vscodeKeyToLsKeys: Map<string, string[]>): Promise<void> {
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
@@ -128,14 +129,22 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
           'user',
         );
         if (!shouldSkip) {
+          const lastKnown = this.lastKnownValueCache.get(vscodeKey);
           // Cache updated BEFORE the write (not after): a live onDidChangeConfiguration listener
           // (markExplicitLsKeysFromConfigurationChangeEvent) can react to this same write before
           // this async function's own continuation resumes — see applySettingsMap's identical
           // ordering fix for why setting the cache first is required to avoid a false explicit
           // mark on a value this class never treats as a user override.
           this.lastKnownValueCache.set(vscodeKey, undefined);
-          // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
-          await this.workspace.updateConfiguration(configurationId, section, undefined, true);
+          try {
+            // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
+            await this.workspace.updateConfiguration(configurationId, section, undefined, true);
+          } catch (e) {
+            // The write never landed — undo the cache update above, or the cache would claim a
+            // reset VS Code does not have for the rest of the session.
+            this.lastKnownValueCache.set(vscodeKey, lastKnown);
+            throw e;
+          }
         }
         for (const lsKey of lsKeys) {
           this.logger.debug(`Reset global setting: ${lsKey}`);
@@ -149,7 +158,8 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
   /**
    * For each settingKey: merges object values with the current VS Code value (to preserve
    * sibling keys), writes, and updates the last-known-value cache. One failure does NOT abort
-   * the batch (per-key try/catch).
+   * the batch (per-key try/catch). A write that throws reverts the cache to its pre-write
+   * value — otherwise the cache would claim a value VS Code never received.
    *
    * The LS re-applies its full resolved state on every pull, so a value unchanged since the
    * last write to this VS Code key is skipped (redundancy check against the last-known-value
@@ -194,7 +204,14 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
         // cache entry, mistaking this inbound (never-a-user-override) write for one.
         this.lastKnownValueCache.set(settingKey, effectiveValue);
 
-        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
+        try {
+          await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
+        } catch (e) {
+          // The write never landed — undo the cache update above, or the cache would claim a
+          // value VS Code does not have for the rest of the session.
+          this.lastKnownValueCache.set(settingKey, lastKnown);
+          throw e;
+        }
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {
