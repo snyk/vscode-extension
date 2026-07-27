@@ -274,15 +274,16 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     );
   });
 
-  // Regression for PR #782 review residual: apiEndpoint (customEndpoint) has no package.json
-  // `default:`, so without a runtime fallback ANY defined globalValue — including the JS-level
-  // fallback itself, e.g. once written back by an inbound sync — would be mistaken for a user
-  // override (see T_F2, which is the correct behaviour for a key with NO fallback).
-  test('does not seed apiEndpoint when globalValue merely matches its runtime default fallback', () => {
+  // Regression for PR #782 review residual: apiEndpoint (customEndpoint) previously had no
+  // package.json `default:`, so ANY defined globalValue — including the JS-level fallback itself,
+  // e.g. once written back by an inbound sync — was mistaken for a user override. Fixed by
+  // declaring "default": "https://api.snyk.io" in package.json (matching the runtime fallback),
+  // so it's now covered by the same defaultValue comparison as any other setting.
+  test('does not seed apiEndpoint when globalValue matches its declared package.json default', () => {
     const overrides = newOverridesMap();
     const ws = fakeWorkspace({
       snyk: {
-        'advanced.customEndpoint': { globalValue: 'https://api.snyk.io', defaultValue: undefined },
+        'advanced.customEndpoint': { globalValue: 'https://api.snyk.io', defaultValue: 'https://api.snyk.io' },
       },
     });
 
@@ -291,15 +292,15 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     assert.strictEqual(
       overrides.getEntry(LS_GLOBAL_KEY.apiEndpoint),
       undefined,
-      'apiEndpoint should NOT be seeded when globalValue merely matches the runtime default fallback',
+      'apiEndpoint should NOT be seeded when globalValue matches the declared default',
     );
   });
 
-  test('seeds apiEndpoint when globalValue genuinely differs from its runtime default fallback', () => {
+  test('seeds apiEndpoint when globalValue genuinely differs from its declared package.json default', () => {
     const overrides = newOverridesMap();
     const ws = fakeWorkspace({
       snyk: {
-        'advanced.customEndpoint': { globalValue: 'https://app.eu.snyk.io/api', defaultValue: undefined },
+        'advanced.customEndpoint': { globalValue: 'https://app.eu.snyk.io/api', defaultValue: 'https://api.snyk.io' },
       },
     });
 
@@ -307,7 +308,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
 
     assert.ok(
       overrides.getEntry(LS_GLOBAL_KEY.apiEndpoint) !== undefined,
-      'apiEndpoint should be seeded when globalValue genuinely differs from the runtime default fallback',
+      'apiEndpoint should be seeded when globalValue genuinely differs from the declared default',
     );
   });
 

@@ -171,10 +171,8 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
  * - Skips when `inspectConfiguration` returns `undefined` or `globalValue` is `undefined`.
  * - When `defaultValue` is `undefined` (the setting has no package.json `default:` —
  *   e.g. organization, cliPath, additionalParameters), a defined `globalValue` is treated as an
- *   explicit change and seeded. Exception: an entry declaring `noDeclaredDefaultFallback`
- *   (e.g. apiEndpoint) compares against that runtime default instead, so a `globalValue` that
- *   merely matches the JS-level fallback isn't mistaken for a user override.
- * - Uses lodash `isEqual` for deep equality to compare `globalValue` with the effective default.
+ *   explicit change and seeded.
+ * - Uses lodash `isEqual` for deep equality to compare `globalValue` with `defaultValue`.
  */
 export function seedExplicitChangesFromExistingSettings(
   explicitOverrides: IExplicitOverridesMap,
@@ -195,11 +193,6 @@ export function seedExplicitChangesFromExistingSettings(
     // R4: only seed when globalValue is defined and differs from the default (which may be undefined)
     if (inspect === undefined || inspect.globalValue === undefined) continue;
 
-    // No declared package.json default: fall back to the entry's own runtime default (if any)
-    // instead of comparing against an always-undefined defaultValue.
-    const effectiveDefault =
-      inspect.defaultValue !== undefined ? inspect.defaultValue : entry.noDeclaredDefaultFallback;
-
     // Fan-out: several LS keys share one vscodeKey (severity filters, issue view options).
     // inspect.globalValue/defaultValue are the WHOLE shared object for every sibling, so
     // comparing them directly would seed every sibling whenever any one of them deviates from
@@ -207,14 +200,14 @@ export function seedExplicitChangesFromExistingSettings(
     // path uses) and seed only the sibling whose own value actually differs.
     const isFanOut = (VSCODE_KEY_TO_LS_KEYS[entry.vscodeKey]?.length ?? 0) > 1;
     if (!isFanOut) {
-      if (!isEqual(inspect.globalValue, effectiveDefault)) {
+      if (!isEqual(inspect.globalValue, inspect.defaultValue)) {
         explicitOverrides.setExplicitValue(lsKey, inspect.globalValue);
       }
       continue;
     }
 
     const projectedGlobal = projectFanOutSubValue(lsKey, inspect.globalValue, logger);
-    const projectedDefault = projectFanOutSubValue(lsKey, effectiveDefault, logger);
+    const projectedDefault = projectFanOutSubValue(lsKey, inspect.defaultValue, logger);
     if (!isEqual(projectedGlobal, projectedDefault)) {
       explicitOverrides.setExplicitValue(lsKey, projectedGlobal);
     }
