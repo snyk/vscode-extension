@@ -19,9 +19,12 @@ npm run test:integration   # Rebuild + run integration tests (vscode-test-electr
 # Linting
 npm run lint               # ESLint check
 npm run lint:fix           # ESLint auto-fix
+npm run knip               # Unused exports/files/deps check
 ```
 
 Unit tests use Mocha TDD UI (`describe`/`it`) with Sinon for mocking.
+
+Before committing: run `npm run lint:fix` and `npm run knip`.
 
 ## Architecture
 
@@ -49,7 +52,7 @@ The extension communicates with `snyk-ls` (Go binary, downloaded at runtime) via
 - **Outbound**: `workspace/didChangeConfiguration` (push), `workspace/configuration` (pull via middleware)
 - Configuration flows through GAF → snyk-ls ConfigResolver → `LspConfigurationParam` → IDE. See `docs/configuration-gaf-ls-ide-flow.md` for the full merge chain.
 - Middleware in the LanguageClient intercepts configuration requests to convert to `LspConfigurationParam` format.
-- Explicit key tracking (`lsOriginatedKeys`) prevents feedback loops when persisting LS-originated settings.
+- Explicit key tracking (`lastKnownValueCache` + `ExplicitOverridesMap`) prevents feedback loops when persisting LS-originated settings.
 
 Key LS files:
 - `src/snyk/common/languageServer/languageServer.ts` — LanguageClient lifecycle

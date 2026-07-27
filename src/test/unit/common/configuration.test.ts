@@ -16,16 +16,35 @@ import {
   ADVANCED_CUSTOM_ENDPOINT,
   ADVANCED_CUSTOM_LS_PATH,
   ADVANCED_ORGANIZATION,
+  AUTO_CONFIGURE_MCP_SERVER,
+  DELTA_FINDINGS,
   FEATURES_PREVIEW_SETTING,
   SCANNING_MODE,
+  SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
+  TRUSTED_FOLDERS,
   CONFIGURATION_IDENTIFIER,
 } from '../../../snyk/common/constants/settings';
+import type { ILastKnownValueCache } from '../../../snyk/common/languageServer/lastKnownValueCache';
+import type { IExplicitOverridesMap } from '../../../snyk/common/languageServer/explicitOverridesMap';
 import SecretStorageAdapter from '../../../snyk/common/vscode/secretStorage';
 import { extensionContextMock } from '../mocks/extensionContext.mock';
 import { createWorkspaceMockWithInspection, stubWorkspaceConfiguration } from '../mocks/workspace.mock';
 import { extensionContext } from '../../../snyk/common/vscode/extensionContext';
 import { Platform } from '../../../snyk/common/platform';
 import path from 'path';
+
+function fakeLastKnownValueCache(): ILastKnownValueCache & { get: sinon.SinonStub; set: sinon.SinonSpy } {
+  return { get: sinon.stub(), set: sinon.spy() };
+}
+
+function fakeExplicitOverridesMap(): IExplicitOverridesMap & { setExplicitValue: sinon.SinonSpy } {
+  return {
+    setExplicitValue: sinon.spy(),
+    setReset: sinon.spy(),
+    getEntry: sinon.stub(),
+    confirmResetDelivered: sinon.spy(),
+  };
+}
 
 suite('Configuration', () => {
   setup(() => {
@@ -375,6 +394,211 @@ suite('Configuration', () => {
         const fc = makeFolderConfig(undefined, key);
         strictEqual((fc as unknown as Record<string, () => boolean | undefined>)[name](), undefined);
       });
+    });
+  });
+
+  suite('Last-known-value cache updates on direct writes [IDE-2264 ticket 07]', () => {
+    test('setEndpoint updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setEndpoint('https://api.custom.snyk.io');
+
+      sinon.assert.calledOnceWithExactly(cache.set, ADVANCED_CUSTOM_ENDPOINT, 'https://api.custom.snyk.io');
+    });
+
+    test('setCliPath updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setCliPath('/usr/local/bin/snyk');
+
+      sinon.assert.calledOnceWithExactly(cache.set, ADVANCED_CLI_PATH, '/usr/local/bin/snyk');
+    });
+
+    test('setDeltaFindingsEnabled updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setDeltaFindingsEnabled(true);
+
+      sinon.assert.calledOnceWithExactly(cache.set, DELTA_FINDINGS, NEWISSUES);
+    });
+
+    test('setTrustedFolders updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setTrustedFolders(['/a', '/b']);
+
+      sinon.assert.calledOnceWithExactly(cache.set, TRUSTED_FOLDERS, ['/a', '/b']);
+    });
+
+    test('setSecureAtInceptionExecutionFrequency updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setSecureAtInceptionExecutionFrequency('On Code Generation');
+
+      sinon.assert.calledOnceWithExactly(cache.set, SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY, 'On Code Generation');
+    });
+
+    test('setAutoConfigureMcpServer updates the cache after a successful write', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setAutoConfigureMcpServer(true);
+
+      sinon.assert.calledOnceWithExactly(cache.set, AUTO_CONFIGURE_MCP_SERVER, true);
+    });
+
+    test('cache is updated BEFORE the write resolves, not after (IDE-2264: onDidChangeConfiguration fires before updateConfiguration resolves)', async () => {
+      const updateConfiguration = sinon.spy();
+      const workspace = { updateConfiguration } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setCliPath('/usr/local/bin/snyk');
+
+      // If the cache were set after the await (the old ordering), updateConfiguration would be
+      // called first. It must be the other way round so a same-event listener sees the new value.
+      sinon.assert.callOrder(cache.set, updateConfiguration);
+    });
+
+    test('a write that throws reverts the cache to the prior value', async () => {
+      const workspace = {
+        updateConfiguration: sinon.stub().rejects(new Error('write failed')),
+      } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      cache.get.returns('/old/bin/snyk');
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setCliPath('/usr/local/bin/snyk').catch(() => undefined);
+
+      sinon.assert.calledTwice(cache.set);
+      sinon.assert.calledWithExactly(cache.set.firstCall, ADVANCED_CLI_PATH, '/usr/local/bin/snyk');
+      sinon.assert.calledWithExactly(cache.set.secondCall, ADVANCED_CLI_PATH, '/old/bin/snyk');
+    });
+
+    test('setCliReleaseChannel (not a tracked LS key) does not touch the cache', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.setCliReleaseChannel('preview');
+
+      sinon.assert.notCalled(cache.set);
+    });
+
+    test('hideWelcomeNotification (not a tracked LS key) does not touch the cache', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const cache = fakeLastKnownValueCache();
+      const config = new Configuration({}, workspace);
+      config.setLastKnownValueCache(cache);
+
+      await config.hideWelcomeNotification();
+
+      sinon.assert.notCalled(cache.set);
+    });
+  });
+
+  suite('Explicit-override marking on direct writes [IDE-2264 ticket 07]', () => {
+    test('setEndpoint (LS-originated) does not mark an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setEndpoint('https://api.custom.snyk.io');
+
+      sinon.assert.notCalled(overrides.setExplicitValue);
+    });
+
+    test('setCliPath (extension-computed default) does not mark an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setCliPath('/usr/local/bin/snyk');
+
+      sinon.assert.notCalled(overrides.setExplicitValue);
+    });
+
+    test('setTrustedFolders (LS-originated) does not mark an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setTrustedFolders(['/a']);
+
+      sinon.assert.notCalled(overrides.setExplicitValue);
+    });
+
+    test('setDeltaFindingsEnabled (direct user action) marks an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setDeltaFindingsEnabled(true);
+
+      sinon.assert.calledOnceWithExactly(overrides.setExplicitValue, LS_KEY.scanNetNew, true);
+    });
+
+    test('setSecureAtInceptionExecutionFrequency (direct user action) marks an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setSecureAtInceptionExecutionFrequency('On Code Generation');
+
+      sinon.assert.calledOnceWithExactly(
+        overrides.setExplicitValue,
+        LS_KEY.secureAtInceptionExecutionFreq,
+        'On Code Generation',
+      );
+    });
+
+    test('setAutoConfigureMcpServer (direct user action) marks an explicit override', async () => {
+      const workspace = { updateConfiguration: sinon.spy() } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setAutoConfigureMcpServer(true);
+
+      sinon.assert.calledOnceWithExactly(overrides.setExplicitValue, LS_KEY.autoConfigureMcpServer, true);
+    });
+
+    test('a write that throws does not mark an explicit override', async () => {
+      const workspace = {
+        updateConfiguration: sinon.stub().rejects(new Error('write failed')),
+      } as unknown as IVSCodeWorkspace;
+      const overrides = fakeExplicitOverridesMap();
+      const config = new Configuration({}, workspace);
+      config.setExplicitOverridesMap(overrides);
+
+      await config.setDeltaFindingsEnabled(true).catch(() => undefined);
+
+      sinon.assert.notCalled(overrides.setExplicitValue);
     });
   });
 });

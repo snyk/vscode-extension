@@ -56,6 +56,7 @@ snyk.config.local.json
 *_implementation_plan/
 *_implementation_plan.md
 docs/plans/
+docs/IDE-*-spec.md
 /tests.json
 /docs/diagrams/
 CLAUDE.md

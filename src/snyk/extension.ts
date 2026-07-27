@@ -44,7 +44,9 @@ import {
 import { ErrorHandler } from './common/error/errorHandler';
 import { TransientNetworkError, isNetworkConnectivityError } from './common/constants/errors';
 import { ExperimentService } from './common/experiment/services/experimentService';
-import { ExplicitLspConfigurationChangeTracker } from './common/languageServer/explicitLspConfigurationChangeTracker';
+import { ExplicitOverridesMap } from './common/languageServer/explicitOverridesMap';
+import { LastKnownValueCache } from './common/languageServer/lastKnownValueCache';
+import { VSCODE_KEY_TO_LS_KEYS } from './common/languageServer/lsKeyToVscodeKeyMap';
 import { seedExplicitChangesFromExistingSettings } from './common/languageServer/explicitLsKeyTracking';
 import { migrateFolderOrgSettingsIfNeeded } from './common/configuration/folderOrgMigration';
 import { LanguageServer } from './common/languageServer/languageServer';
@@ -97,6 +99,7 @@ import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceC
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
 import { ConfigurationPersistenceService } from './common/views/workspaceConfiguration/services/configurationPersistenceService';
+import { InboundConfigPersistenceService } from './common/views/workspaceConfiguration/services/inboundConfigPersistenceService';
 import { MessageHandlerFactory } from './common/views/workspaceConfiguration/handlers/messageHandlerFactory';
 import { SummaryProviderService } from './base/summary/summaryProviderService';
 import { TreeViewProviderService } from './base/treeView/treeViewProviderService';
@@ -106,7 +109,6 @@ import { MarkdownStringAdapter } from './common/vscode/markdownString';
 import { McpProvider } from './common/vscode/mcpProvider';
 import { SecretsService } from './snykSecrets/secretsService';
 import { SecretsSuggestionWebviewProvider } from './snykSecrets/views/suggestion/secretsSuggestionWebviewProvider';
-import { ConfigFeedbackSuppressor } from './common/languageServer/configFeedbackSuppressor';
 
 class SnykExtension extends SnykLib implements IExtension {
   private workspaceConfigurationProvider?: WorkspaceConfigurationWebviewProvider;
@@ -233,13 +235,12 @@ class SnykExtension extends SnykLib implements IExtension {
       );
     }
 
-    const explicitLspConfigurationChangeTracker = new ExplicitLspConfigurationChangeTracker(vscodeContext.globalState);
-    seedExplicitChangesFromExistingSettings(explicitLspConfigurationChangeTracker, vsCodeWorkspace);
+    const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState, Logger);
+    seedExplicitChangesFromExistingSettings(explicitOverridesMap, vsCodeWorkspace);
 
-    // Shared suppressor: prevents the onDidChangeConfiguration listener in LanguageServer from
-    // calling markExplicitlyChanged (and thus deleting a just-queued pendingReset) while
-    // applyOutboundGlobalResets' own updateConfiguration write is in flight (IDE-2149).
-    const outboundResetSuppressor = new ConfigFeedbackSuppressor();
+    const lastKnownValueCache = new LastKnownValueCache(vsCodeWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
+    configuration.setLastKnownValueCache(lastKnownValueCache);
+    configuration.setExplicitOverridesMap(explicitOverridesMap);
 
     const scopeDetectionService = new ScopeDetectionService(vsCodeWorkspace);
     const configPersistenceService = new ConfigurationPersistenceService(
@@ -248,9 +249,16 @@ class SnykExtension extends SnykLib implements IExtension {
       scopeDetectionService,
       languageClientAdapter,
       Logger,
-      outboundResetSuppressor,
       this.contextService,
-      explicitLspConfigurationChangeTracker,
+      explicitOverridesMap,
+      lastKnownValueCache,
+    );
+    const inboundConfigPersistenceService = new InboundConfigPersistenceService(
+      vsCodeWorkspace,
+      configuration,
+      scopeDetectionService,
+      Logger,
+      lastKnownValueCache,
     );
 
     // Must run before LanguageServer is constructed/started: it seeds in-memory folderConfigs
@@ -283,10 +291,10 @@ class SnykExtension extends SnykLib implements IExtension {
       new MarkdownStringAdapter(),
       vsCodeCommands,
       new DiagnosticsIssueProvider(),
-      explicitLspConfigurationChangeTracker,
-      view => configPersistenceService.persistInboundLspConfiguration(view),
+      view => inboundConfigPersistenceService.persistInboundLspConfiguration(view),
       this.treeViewProviderService,
-      outboundResetSuppressor,
+      explicitOverridesMap,
+      lastKnownValueCache,
     );
 
     const codeSuggestionProvider = new CodeSuggestionWebviewProvider(
@@ -519,7 +527,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
         const category = ['install'];
         const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+        await extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
         analyticsSender.logEvent(pluginInstalledEvent, () => {});
 
         // Check if secure at inception modal was already shown (while holding lock)
