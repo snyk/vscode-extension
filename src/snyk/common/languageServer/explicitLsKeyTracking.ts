@@ -45,12 +45,20 @@ function projectFanOutSubValue(lsKey: string, rawVscodeValue: unknown, logger?: 
  * own `resolve`. Awaiting works uniformly whether `resolve` is sync or returns a Promise (e.g.
  * cliPath) — the explicit-overrides map stores this value directly as the outbound LS value, so
  * an async resolver's real result must not be discarded.
+ *
+ * A throwing resolver is logged rather than silently swallowed, since the caller stores
+ * `undefined` as the explicit override in that case — worth surfacing, not a routine outcome.
  */
-async function resolveCurrentLsValue(lsKey: string, configuration: IConfiguration): Promise<unknown> {
+async function resolveCurrentLsValue(
+  lsKey: string,
+  configuration: IConfiguration,
+  logger?: Pick<ILog, 'error'>,
+): Promise<unknown> {
   const entry = SETTINGS_REGISTRY[lsKey as keyof typeof SETTINGS_REGISTRY];
   try {
     return await entry.resolve(configuration);
-  } catch {
+  } catch (error) {
+    logger?.error(`Resolver for LS key "${lsKey}" threw while reading its current value: ${String(error)}`);
     return undefined;
   }
 }
@@ -141,7 +149,7 @@ export async function markExplicitLsKeysFromConfigurationChangeEvent(
     if (lsKeys.length === 1) {
       // VS Code only fires the event when the value actually changed, and the whole-value
       // compare above already confirmed that — mark unconditionally.
-      explicitOverrides.setExplicitValue(lsKeys[0], await resolveCurrentLsValue(lsKeys[0], configuration));
+      explicitOverrides.setExplicitValue(lsKeys[0], await resolveCurrentLsValue(lsKeys[0], configuration, logger));
       continue;
     }
 

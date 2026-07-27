@@ -507,7 +507,7 @@ suite('seedExplicitChangesFromExistingSettings', () => {
       assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.cliPath), { kind: 'value', value: '/new/cli' });
     });
 
-    test('single-key: a rejected async resolver is treated as value-unknown, not left uncaught', async () => {
+    test('single-key: a rejected async resolver is treated as value-unknown, not left uncaught, and is logged', async () => {
       const overrides = newOverridesMap();
       const cache = new LastKnownValueCache(fakeGetConfigWorkspace({ 'snyk.advanced.cliPath': '/old/cli' }), [
         'snyk.advanced.cliPath',
@@ -517,11 +517,14 @@ suite('seedExplicitChangesFromExistingSettings', () => {
         ...minimalConfig,
         getCliPath: () => Promise.reject(new Error('cliPath resolution boom')),
       } as unknown as IConfiguration;
+      const errors: unknown[] = [];
+      const logger = { error: (message: unknown) => errors.push(message) };
 
       const e = fakeEvent(['snyk.advanced.cliPath']);
-      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, configuration);
+      await markExplicitLsKeysFromConfigurationChangeEvent(e, overrides, cache, newWorkspace, configuration, logger);
 
       assert.deepStrictEqual(overrides.getEntry(LS_GLOBAL_KEY.cliPath), { kind: 'value', value: undefined });
+      assert.strictEqual(errors.length > 0, true, 'a rejected resolver must be logged, not silently swallowed');
     });
   });
 

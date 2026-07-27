@@ -7,6 +7,7 @@ import assert from 'assert';
 import sinon from 'sinon';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { MEMENTO_EXPLICIT_OVERRIDES_MAP } from '../../../../snyk/common/constants/explicitLspConfiguration';
+import { LoggerMock } from '../../mocks/logger.mock';
 
 /** Minimal in-memory Memento that satisfies the interface used by the map. */
 function makeMemento(): import('vscode').Memento {
@@ -22,6 +23,15 @@ function makeMemento(): import('vscode').Memento {
     keys(): readonly string[] {
       return [...store.keys()];
     },
+  };
+}
+
+/** Memento whose every `update` call rejects, to exercise persist()'s failure path. */
+function makeRejectingMemento(): import('vscode').Memento {
+  const memento = makeMemento();
+  return {
+    ...memento,
+    update: (): Thenable<void> => Promise.reject(new Error('quota exceeded')),
   };
 }
 
@@ -174,6 +184,40 @@ suite('ExplicitOverridesMap', () => {
       organization: { kind: 'value', value: 'acme-corp' },
       scan_automatic: { kind: 'reset' },
       cliPath: { kind: 'value', value: '/usr/local/bin/snyk' },
+    });
+  });
+
+  suite('rejected Memento write', () => {
+    test('is logged, and the in-memory entry is kept (not reverted)', async () => {
+      const logger = new LoggerMock();
+      const errorSpy = sinon.spy(logger, 'error');
+      const map = new ExplicitOverridesMap(makeRejectingMemento(), logger);
+
+      map.setExplicitValue('organization', 'acme-corp');
+      await flushWrites();
+
+      sinon.assert.calledOnce(errorSpy);
+      assert.deepStrictEqual(map.getEntry('organization'), { kind: 'value', value: 'acme-corp' });
+    });
+
+    test('does not break the write queue: a later successful write still lands the full map', async () => {
+      const memento = makeMemento();
+      const updateStub = sinon.stub(memento, 'update');
+      updateStub.onFirstCall().returns(Promise.reject(new Error('quota exceeded')));
+      updateStub.callThrough();
+      const logger = new LoggerMock();
+      const map = new ExplicitOverridesMap(memento, logger);
+
+      map.setExplicitValue('organization', 'acme-corp');
+      await flushWrites();
+      map.setReset('scan_automatic');
+      await flushWrites();
+
+      const stored = memento.get<Record<string, unknown>>(MEMENTO_EXPLICIT_OVERRIDES_MAP);
+      assert.deepStrictEqual(stored, {
+        organization: { kind: 'value', value: 'acme-corp' },
+        scan_automatic: { kind: 'reset' },
+      });
     });
   });
 });

@@ -235,7 +235,7 @@ class SnykExtension extends SnykLib implements IExtension {
       );
     }
 
-    const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState);
+    const explicitOverridesMap = new ExplicitOverridesMap(vscodeContext.globalState, Logger);
     seedExplicitChangesFromExistingSettings(explicitOverridesMap, vsCodeWorkspace);
 
     const lastKnownValueCache = new LastKnownValueCache(vsCodeWorkspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
@@ -527,7 +527,7 @@ class SnykExtension extends SnykLib implements IExtension {
 
         const category = ['install'];
         const pluginInstalledEvent = new AnalyticsEvent(this.user.anonymousId, 'plugin installed', category);
-        void extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
+        await extensionContext.updateGlobalStateValue(MEMENTO_ANALYTICS_PLUGIN_INSTALLED_SENT, true);
         analyticsSender.logEvent(pluginInstalledEvent, () => {});
 
         // Check if secure at inception modal was already shown (while holding lock)

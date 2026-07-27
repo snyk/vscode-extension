@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode';
 import { MEMENTO_EXPLICIT_OVERRIDES_MAP } from '../constants/explicitLspConfiguration';
+import type { ILog } from '../logger/interfaces';
 
 /**
  * Either a concrete value the user explicitly set for an LS key, or a reset sentinel
@@ -38,7 +39,7 @@ export class ExplicitOverridesMap implements IExplicitOverridesMap {
   /** Set while a persist is queued but not yet started, so rapid set calls collapse to one write. */
   private persistQueued = false;
 
-  constructor(private readonly globalState: vscode.Memento) {
+  constructor(private readonly globalState: vscode.Memento, private readonly logger?: Pick<ILog, 'error'>) {
     const stored = globalState.get<Record<string, ExplicitOverrideEntry>>(MEMENTO_EXPLICIT_OVERRIDES_MAP) ?? {};
     for (const [lsKey, entry] of Object.entries(stored)) {
       this.entries.set(lsKey, entry);
@@ -73,14 +74,19 @@ export class ExplicitOverridesMap implements IExplicitOverridesMap {
     }
     this.persistQueued = true;
     this.writeQueue = this.writeQueue
-      .catch(() => {
-        /* keep queue alive on prior failure */
-      })
       .then(() => {
         // Cleared before the update, not after: a mutation landing while this write is in
         // flight is not covered by the snapshot below and must queue its own write.
         this.persistQueued = false;
         return this.globalState.update(MEMENTO_EXPLICIT_OVERRIDES_MAP, Object.fromEntries(this.entries));
+      })
+      .catch((error: unknown) => {
+        // Tail-position, so it both keeps the serialized queue alive for the next write and
+        // stops a trailing rejection from surfacing as an unhandled rejection.
+        // ponytail: logged, not reverted — persist() writes the whole map, so the next
+        // successful write heals the divergence. Reverting `entries` would drop a real user
+        // override to match a disk state we failed to write.
+        this.logger?.error(`Failed to persist explicit overrides map: ${String(error)}`);
       });
   }
 }
