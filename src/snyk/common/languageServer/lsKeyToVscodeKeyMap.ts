@@ -267,6 +267,34 @@ export function lsKeyToVscodeKey(lsKey: string): string | undefined {
   return LS_KEY_TO_VSCODE_KEY[lsKey];
 }
 
+/**
+ * Groups already-filtered GLOBAL_RESET_FIELDS lsKeys by their shared vscodeKey, so a
+ * "Project Defaults" reset dedupes writes when several LS keys share one VS Code setting (e.g.
+ * all four severity_filter_*). Shared by the outbound (`ConfigurationPersistenceService`) and
+ * inbound (`InboundConfigPersistenceService`) reset paths, which differ only in how they filter
+ * down to `qualifyingLsKeys`.
+ *
+ * Throws if a qualifying lsKey has no vscodeKey — the GLOBAL_RESET_FIELDS invariant (every
+ * member has one, enforced by the drift guard in lsKeyToVscodeKeyMap.test.ts) is violated, a
+ * programming error that must surface rather than silently miss the reset.
+ */
+export function groupResettableLsKeysByVscodeKey(qualifyingLsKeys: Iterable<string>): Map<string, string[]> {
+  const vscodeKeyToLsKeys = new Map<string, string[]>();
+  for (const lsKey of qualifyingLsKeys) {
+    const vscodeKey = lsKeyToVscodeKey(lsKey);
+    if (!vscodeKey) {
+      throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
+    }
+    const group = vscodeKeyToLsKeys.get(vscodeKey);
+    if (group) {
+      group.push(lsKey);
+    } else {
+      vscodeKeyToLsKeys.set(vscodeKey, [lsKey]);
+    }
+  }
+  return vscodeKeyToLsKeys;
+}
+
 // ── Inbound: LS values → VS Code settings ────────────────────────────
 
 /** Merges object values when multiple LS keys share one vscodeKey (e.g. issueViewOptions). */

@@ -7,7 +7,7 @@ import type { LspConfigSetting, LspConfigurationParam } from '../../../languageS
 import { folderConfigsFromLspParam } from '../../../languageServer/inboundLspFolderSettingsToFolderConfig';
 import {
   GLOBAL_RESET_FIELDS,
-  lsKeyToVscodeKey,
+  groupResettableLsKeysByVscodeKey,
   mapLspSettingsToVscodeSettings,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
 import _ from 'lodash';
@@ -95,32 +95,13 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
    * most once per batch.
    */
   private async applyGlobalResets(settings: Record<string, LspConfigSetting>): Promise<void> {
-    // Group qualifying lsKeys by their shared vscodeKey (dedup writes).
-    // The global "Project Defaults" reset nulls all GLOBAL_RESET_FIELDS together
-    // (all-or-nothing per shared-key group), so clearing the whole shared object is the
-    // intended semantics; the dedupe avoids redundant writes/config-change events.
-    const vscodeKeyToLsKeys = new Map<string, string[]>();
-    for (const [lsKey, setting] of Object.entries(settings)) {
-      if (!this.isGlobalReset(setting)) continue;
-      // Guard: only process keys that belong to the resettable set.
-      if (!GLOBAL_RESET_FIELDS.has(lsKey as GlobalLsKeyValue)) continue;
-
-      const vscodeKey = lsKeyToVscodeKey(lsKey);
-      // GLOBAL_RESET_FIELDS invariant: every member has a vscodeKey.
-      // Enforced at test-time by the drift guard in lsKeyToVscodeKeyMap.test.ts.
-      // If the invariant is ever violated (drift without test coverage), throw rather than
-      // silently skipping — a missing vscodeKey is a programming error, not a recoverable
-      // runtime condition.
-      if (!vscodeKey)
-        throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
-
-      const group = vscodeKeyToLsKeys.get(vscodeKey);
-      if (group) {
-        group.push(lsKey);
-      } else {
-        vscodeKeyToLsKeys.set(vscodeKey, [lsKey]);
-      }
-    }
+    // Only process keys that are both a genuine reset AND belong to the resettable set. Grouping
+    // (and the GLOBAL_RESET_FIELDS invariant throw) is shared with the outbound reset path — see
+    // groupResettableLsKeysByVscodeKey.
+    const qualifyingLsKeys = Object.entries(settings)
+      .filter(([lsKey, setting]) => this.isGlobalReset(setting) && GLOBAL_RESET_FIELDS.has(lsKey as GlobalLsKeyValue))
+      .map(([lsKey]) => lsKey);
+    const vscodeKeyToLsKeys = groupResettableLsKeysByVscodeKey(qualifyingLsKeys);
 
     await this.applyVscodeKeyResets(vscodeKeyToLsKeys);
   }

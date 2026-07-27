@@ -11,7 +11,7 @@ import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import { assertExplicitOverrideDepsPresent } from '../../../languageServer/explicitLsKeyTracking';
 import {
   GLOBAL_RESET_FIELDS,
-  lsKeyToVscodeKey,
+  groupResettableLsKeysByVscodeKey,
   mapConfigToSettings,
   VSCODE_KEY_TO_LS_KEYS,
 } from '../../../languageServer/lsKeyToVscodeKeyMap';
@@ -118,10 +118,6 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * New-structure mutations happen AFTER the VS Code write succeeds, so state is only
    * updated when the write actually completed. On write failure, state is left unchanged.
    *
-   * The GLOBAL_RESET_FIELDS invariant guarantees every member has a vscodeKey
-   * (enforced by the FIX 3 unit test), so the no-vscodeKey branch is unreachable
-   * and has been removed. All reset keys are grouped by their (always-present) vscodeKey.
-   *
    * This is the OUTBOUND counterpart of the inbound `InboundConfigPersistenceService`'s global
    * reset handling (which updates the last-known-value cache but never the explicit-overrides
    * map — that class has no reference to it, structurally). This path writes unconditionally
@@ -129,33 +125,11 @@ export class ConfigurationPersistenceService implements IConfigurationPersistenc
    * guarantees a null field is a genuine reset.
    */
   private async applyOutboundGlobalResets(config: HtmlSettingsData): Promise<void> {
-    // Deduplicate VS Code writes: group lsKeys by their shared vscodeKey.
-    // The global "Project Defaults" reset nulls all GLOBAL_RESET_FIELDS together
-    // (all-or-nothing per shared-key group), so clearing the whole shared object is the
-    // intended semantics; the dedupe avoids redundant writes/config-change events.
-    const vscodeKeyToLsKeys = new Map<string, string[]>();
-
-    for (const lsKey of GLOBAL_RESET_FIELDS) {
-      // Only treat the field as a reset when it is present AND explicitly null.
-      if (!(lsKey in config) || config[lsKey] !== null) continue;
-
-      // GLOBAL_RESET_FIELDS invariant: every member has a vscodeKey.
-      // Enforced at test-time by the drift guard in lsKeyToVscodeKeyMap.test.ts
-      // ('every GLOBAL_RESET_FIELDS member maps to a defined vscodeKey via lsKeyToVscodeKey').
-      // If the invariant is ever violated (drift without test coverage), throw rather than
-      // silently skipping — a missing vscodeKey is a programming error, not a recoverable
-      // runtime condition, and silence would hide the bug until the LS misses the reset signal.
-      const vscodeKey = lsKeyToVscodeKey(lsKey);
-      if (!vscodeKey)
-        throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
-
-      const group = vscodeKeyToLsKeys.get(vscodeKey);
-      if (group) {
-        group.push(lsKey);
-      } else {
-        vscodeKeyToLsKeys.set(vscodeKey, [lsKey]);
-      }
-    }
+    // Only treat a field as a reset when it's present AND explicitly null. Grouping (and the
+    // GLOBAL_RESET_FIELDS invariant throw) is shared with the inbound reset path — see
+    // groupResettableLsKeysByVscodeKey.
+    const qualifyingLsKeys = [...GLOBAL_RESET_FIELDS].filter(lsKey => lsKey in config && config[lsKey] === null);
+    const vscodeKeyToLsKeys = groupResettableLsKeysByVscodeKey(qualifyingLsKeys);
 
     for (const [vscodeKey, lsKeys] of vscodeKeyToLsKeys) {
       try {
