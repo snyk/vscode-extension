@@ -147,11 +147,14 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
           'user',
         );
         if (!shouldSkip) {
+          // Cache updated BEFORE the write (not after): a live onDidChangeConfiguration listener
+          // (markExplicitLsKeysFromConfigurationChangeEvent) can react to this same write before
+          // this async function's own continuation resumes — see applySettingsMap's identical
+          // ordering fix for why setting the cache first is required to avoid a false explicit
+          // mark on a value this class never treats as a user override.
+          this.lastKnownValueCache.set(vscodeKey, undefined);
           // value=undefined removes the override; true → ConfigurationTarget.Global (user scope).
           await this.workspace.updateConfiguration(configurationId, section, undefined, true);
-          // The reset cleared the VS Code override, so the next inbound push for this key
-          // must not be skipped as redundant against the now-stale pre-reset value.
-          this.lastKnownValueCache.set(vscodeKey, undefined);
         }
         for (const lsKey of lsKeys) {
           this.logger.debug(`Reset global setting: ${lsKey}`);
@@ -202,9 +205,15 @@ export class InboundConfigPersistenceService implements IInboundConfigPersistenc
           continue;
         }
 
-        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
-
+        // Cache updated BEFORE the write (not after): VS Code fires onDidChangeConfiguration for
+        // this write synchronously, and the live marking listener
+        // (markExplicitLsKeysFromConfigurationChangeEvent) reads this cache to decide whether the
+        // change is a genuine external edit. Updating it only after the write leaves a window
+        // where that listener observes the just-written new value against a stale (pre-write)
+        // cache entry, mistaking this inbound (never-a-user-override) write for one.
         this.lastKnownValueCache.set(settingKey, effectiveValue);
+
+        await this.workspace.updateConfiguration(configurationId, settingName, effectiveValue, scope !== 'workspace');
 
         this.logger.debug(`Updated setting: ${settingKey} at ${scope} level`);
       } catch (e) {

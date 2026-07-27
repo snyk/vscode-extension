@@ -164,6 +164,12 @@ export const DEFAULT_ISSUE_VIEW_OPTIONS: IssueViewOptions = {
 
 export const DEFAULT_RISK_SCORE_THRESHOLD = 0; // Should match value in package.json.
 
+// snyk.advanced.customEndpoint has no package.json `default:` (it's machine-scoped and
+// deprecated in favour of the Settings page), so this is the JS-level fallback `snykApiEndpoint`
+// resolves to when unset — also used by the explicit-overrides seeding check (see
+// SETTINGS_REGISTRY's apiEndpoint entry) to avoid mistaking this fallback for a user override.
+export const DEFAULT_API_ENDPOINT = 'https://api.snyk.io';
+
 interface SeverityFilter {
   critical: boolean;
   high: boolean;
@@ -299,7 +305,6 @@ export interface IConfiguration {
 
 export class Configuration implements IConfiguration {
   private readonly defaultAuthHost = 'https://app.snyk.io';
-  private readonly defaultApiEndpoint = 'https://api.snyk.io';
   private readonly defaultCliBaseDownloadUrl = 'https://downloads.snyk.io';
   private readonly defaultCliReleaseChannel = 'stable';
 
@@ -497,7 +502,7 @@ export class Configuration implements IConfiguration {
       return this.customEndpoint;
     }
 
-    return this.defaultApiEndpoint;
+    return DEFAULT_API_ENDPOINT;
   }
 
   get snykCodeUrl(): string {

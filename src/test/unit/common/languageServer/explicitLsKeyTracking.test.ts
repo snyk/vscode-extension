@@ -274,6 +274,43 @@ suite('seedExplicitChangesFromExistingSettings', () => {
     );
   });
 
+  // Regression for PR #782 review residual: apiEndpoint (customEndpoint) has no package.json
+  // `default:`, so without a runtime fallback ANY defined globalValue — including the JS-level
+  // fallback itself, e.g. once written back by an inbound sync — would be mistaken for a user
+  // override (see T_F2, which is the correct behaviour for a key with NO fallback).
+  test('does not seed apiEndpoint when globalValue merely matches its runtime default fallback', () => {
+    const overrides = newOverridesMap();
+    const ws = fakeWorkspace({
+      snyk: {
+        'advanced.customEndpoint': { globalValue: 'https://api.snyk.io', defaultValue: undefined },
+      },
+    });
+
+    seedExplicitChangesFromExistingSettings(overrides, ws);
+
+    assert.strictEqual(
+      overrides.getEntry(LS_GLOBAL_KEY.apiEndpoint),
+      undefined,
+      'apiEndpoint should NOT be seeded when globalValue merely matches the runtime default fallback',
+    );
+  });
+
+  test('seeds apiEndpoint when globalValue genuinely differs from its runtime default fallback', () => {
+    const overrides = newOverridesMap();
+    const ws = fakeWorkspace({
+      snyk: {
+        'advanced.customEndpoint': { globalValue: 'https://app.eu.snyk.io/api', defaultValue: undefined },
+      },
+    });
+
+    seedExplicitChangesFromExistingSettings(overrides, ws);
+
+    assert.ok(
+      overrides.getEntry(LS_GLOBAL_KEY.apiEndpoint) !== undefined,
+      'apiEndpoint should be seeded when globalValue genuinely differs from the runtime default fallback',
+    );
+  });
+
   // T8: inspectConfiguration returns undefined → skip without throwing
   test('T8: does not throw when inspectConfiguration returns undefined', () => {
     const overrides = newOverridesMap();

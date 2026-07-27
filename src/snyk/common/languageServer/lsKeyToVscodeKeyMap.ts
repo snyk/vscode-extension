@@ -1,5 +1,5 @@
 import type { IConfiguration } from '../configuration/configuration';
-import { ALLISSUES, NEWISSUES } from '../configuration/configuration';
+import { ALLISSUES, DEFAULT_API_ENDPOINT, NEWISSUES } from '../configuration/configuration';
 import type { LspConfigSetting } from './types';
 import {
   ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING,
@@ -44,6 +44,13 @@ interface SettingsEntry {
   useInFallbackForm?: true;
   /** Skip empty or whitespace-only values for string fields where blank has no valid meaning. */
   skipBlankInbound?: true;
+  /**
+   * Runtime-resolved fallback for a key with no package.json `default:` (so
+   * `inspectConfiguration().defaultValue` is always `undefined`). The explicit-overrides seeding
+   * check (`seedExplicitChangesFromExistingSettings`) compares `globalValue` against this instead,
+   * so a value merely matching the JS-level fallback isn't mistaken for a user override.
+   */
+  noDeclaredDefaultFallback?: unknown;
 }
 
 const AUTH_METHOD_MAP: Record<string, string> = {
@@ -120,6 +127,7 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
   [LS_GLOBAL_KEY.apiEndpoint]: {
     vscodeKey: ADVANCED_CUSTOM_ENDPOINT,
     resolve: c => c.snykApiEndpoint,
+    noDeclaredDefaultFallback: DEFAULT_API_ENDPOINT,
   },
   [LS_GLOBAL_KEY.binaryBaseUrl]: {
     vscodeKey: ADVANCED_CLI_BASE_DOWNLOAD_URL,

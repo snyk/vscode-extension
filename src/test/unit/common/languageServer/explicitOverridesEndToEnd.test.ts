@@ -27,6 +27,7 @@ import { LS_GLOBAL_KEY } from '../../../../snyk/common/languageServer/serverSett
 import { ADVANCED_ORGANIZATION, SEVERITY_FILTER_SETTING } from '../../../../snyk/common/constants/settings';
 import type {
   CancellationToken,
+  ConfigurationChangeEvent,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
 } from '../../../../snyk/common/vscode/types';
@@ -74,6 +75,42 @@ function makeFakeWorkspace(initial: Record<string, unknown> = {}): IVSCodeWorksp
         store.set(key, value);
       }
       return Promise.resolve();
+    },
+    getWorkspaceFolders: () => [],
+    getWorkspaceFolderPaths: () => [],
+  } as unknown as IVSCodeWorkspace;
+}
+
+/**
+ * Same backing store as {@link makeFakeWorkspace}, but also supports `onDidChangeConfiguration`:
+ * every `updateConfiguration` write dispatches synchronously to registered listeners before
+ * returning — matching real VS Code (per the marker's own doc comments: listeners for one write
+ * run synchronously, back-to-back, strictly before the write's own `await` continuation resumes).
+ * Needed to reproduce a real inbound-write race against the live config-change listener.
+ */
+function makeReactiveFakeWorkspace(initial: Record<string, unknown> = {}): IVSCodeWorkspace {
+  const store = new Map<string, unknown>(Object.entries(initial));
+  const listeners: Array<(e: ConfigurationChangeEvent) => unknown> = [];
+  return {
+    getConfiguration: (configId: string, section: string) => store.get(`${configId}.${section}`),
+    inspectConfiguration: (configId: string, section: string) => {
+      const key = `${configId}.${section}`;
+      return { globalValue: store.get(key), defaultValue: undefined };
+    },
+    updateConfiguration: (configId: string, section: string, value: unknown) => {
+      const key = `${configId}.${section}`;
+      if (value === undefined) {
+        store.delete(key);
+      } else {
+        store.set(key, value);
+      }
+      const event = { affectsConfiguration: (k: string) => k === key } as ConfigurationChangeEvent;
+      for (const listener of listeners) listener(event);
+      return Promise.resolve();
+    },
+    onDidChangeConfiguration: (listener: (e: ConfigurationChangeEvent) => unknown) => {
+      listeners.push(listener);
+      return { dispose: () => undefined };
     },
     getWorkspaceFolders: () => [],
     getWorkspaceFolderPaths: () => [],
@@ -383,5 +420,76 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
       false,
       'a sibling untouched by the direct edit must not be marked changed',
     );
+  });
+
+  // Regression for PR #782 review residual: a migration batch that writes several
+  // previously-unset settings to their own resolved defaults must not mark any of them explicit,
+  // even though each individual write fires a real onDidChangeConfiguration event that the
+  // (also real, production-wired) direct-edit marking listener reacts to. Reproduces a race in
+  // InboundConfigPersistenceService.applySettingsMap: it awaits workspace.updateConfiguration
+  // before updating the last-known-value cache, so the marker — invoked synchronously by the
+  // same write, per real VS Code's listener-dispatch order — reads the STALE (pre-write) cache
+  // entry, sees a "genuine" divergence, and wrongly records an explicit override.
+  test('an inbound migration batch writing several previously-unset defaults marks none of them explicit', async () => {
+    const explicitOverridesMap = new ExplicitOverridesMap(makeMemento());
+    const workspace = makeReactiveFakeWorkspace(); // fresh install — nothing configured yet
+    const lastKnownValueCache = new LastKnownValueCache(workspace, Object.keys(VSCODE_KEY_TO_LS_KEYS));
+
+    seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
+
+    const configuration = makeConfiguration({
+      snykApiEndpoint: 'https://api.snyk.io',
+      getAutoConfigureMcpServer: () => false,
+      getSecureAtInceptionExecutionFrequency: () => 'Manual',
+    });
+
+    // Registered once, exactly like languageServer.ts's registerExplicitKeyMarkingListener —
+    // fire-and-forget from the listener's perspective; the test tracks the promises so it can
+    // wait for the (buggy) marking to actually land before asserting.
+    const pendingMarks: Promise<void>[] = [];
+    workspace.onDidChangeConfiguration(e => {
+      pendingMarks.push(
+        markExplicitLsKeysFromConfigurationChangeEvent(
+          e,
+          explicitOverridesMap,
+          lastKnownValueCache,
+          workspace,
+          configuration,
+          new LoggerMockFailOnErrors(),
+        ),
+      );
+    });
+
+    const service = new InboundConfigPersistenceService(
+      workspace,
+      configuration,
+      fakeScopeDetectionService,
+      new LoggerMockFailOnErrors(),
+      lastKnownValueCache,
+    );
+
+    // Simulated migration: the LS resolves and pushes its full state for several settings that
+    // were never previously configured — all at their own defaults, none genuinely changed.
+    await service.persistInboundLspConfiguration({
+      settings: {
+        [LS_GLOBAL_KEY.apiEndpoint]: { value: 'https://api.snyk.io', changed: false },
+        [LS_GLOBAL_KEY.autoConfigureMcpServer]: { value: false, changed: false },
+        [LS_GLOBAL_KEY.secureAtInceptionExecutionFreq]: { value: 'Manual', changed: false },
+      },
+    });
+
+    await Promise.all(pendingMarks);
+
+    for (const lsKey of [
+      LS_GLOBAL_KEY.apiEndpoint,
+      LS_GLOBAL_KEY.autoConfigureMcpServer,
+      LS_GLOBAL_KEY.secureAtInceptionExecutionFreq,
+    ]) {
+      assert.strictEqual(
+        explicitOverridesMap.getEntry(lsKey),
+        undefined,
+        `${lsKey}: an inbound migration write of an untouched default must not be marked explicit`,
+      );
+    }
   });
 });
