@@ -59,6 +59,14 @@
       --border-color: var(--vscode-panel-border, #454545);
       --focus-border: var(--vscode-focusBorder, #007acc);
 
+      /* Buttons */
+      --button-background: var(--vscode-button-background, #0e639c);
+      --button-foreground: var(--vscode-button-foreground, #ffffff);
+      --button-hover-background: var(--vscode-button-hoverBackground, #1177bb);
+      --button-secondary-background: var(--vscode-button-secondaryBackground, #3a3d41);
+      --button-secondary-foreground: var(--vscode-button-secondaryForeground, #ffffff);
+      --button-secondary-hover-background: var(--vscode-button-secondaryHoverBackground, #45494e);
+
       /* Other */
       --border-radius: 4px;
       --border-radius-small: 2px;
@@ -213,6 +221,34 @@
       display: none !important;
     }
 
+    /* Logout control */
+    .logout-status {
+      margin: 0 0 var(--form-group-margin) 0;
+      color: var(--text-color);
+    }
+
+    .logout-button {
+      align-self: flex-start;
+      padding: var(--input-padding) 16px;
+      background-color: var(--button-secondary-background);
+      color: var(--button-secondary-foreground);
+      border: none;
+      border-radius: var(--border-radius-small);
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .logout-button:hover {
+      background-color: var(--button-secondary-hover-background);
+    }
+
+    .logout-button:focus {
+      outline: 1px solid var(--focus-border);
+      outline-offset: 2px;
+    }
+
     /* Info Message */
     .info-message {
       padding: var(--section-padding);
@@ -309,6 +345,11 @@
 </div>
   <div class="section">
     <h2>Authentication</h2>
+
+    <div class="form-group" aria-live="polite">
+      <p id="logout-status" class="logout-status hidden"></p>
+      <button type="button" id="logout-button" class="logout-button">Clear credentials</button>
+    </div>
 
     <div class="form-group half-width">
       <label class="checkbox-label">
@@ -502,10 +543,29 @@
       }
     };
 
+    // Dispatch snyk.logout through the IDE command bridge to clear stored credentials.
+    // Logout is synchronous and idempotent — no in-flight latch or timer needed.
+    function startLogout() {
+      if (typeof window.__ideExecuteCommand__ !== 'function') { return; }
+      var statusEl = get('logout-status');
+      function done() {
+        if (statusEl) {
+          statusEl.className = statusEl.className.replace(/\bhidden\b/, '').trim();
+          statusEl.textContent = 'Signed out.';
+        }
+      }
+      try {
+        window.__ideExecuteCommand__('snyk.logout', [], done);
+      } catch (e) {
+        console.error('Error logging out:', e);
+      }
+    }
+
     window.__isFormDirty__ = function() { return isDirty(); };
     window.collectData = collectData;
     window.collectChangedData = collectChangedData;
     window.markDirty = markDirty;
+    window.startLogout = startLogout;
 
     function repositionTooltip(trigger) {
       var popup = trigger.querySelector('.tooltip-popup');
@@ -565,6 +625,11 @@
 
       get('cli_release_channel_custom').addEventListener('input', validateCliVersion);
       get('cli_release_channel_custom').addEventListener('blur', validateCliVersion);
+
+      var logoutBtn = get('logout-button');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', startLogout);
+      }
 
       var tooltipTriggers = document.querySelectorAll('[data-toggle="tooltip"]');
       for (var k = 0; k < tooltipTriggers.length; k++) {
