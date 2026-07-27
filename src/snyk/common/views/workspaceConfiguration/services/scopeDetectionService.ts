@@ -4,8 +4,11 @@ import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import _ from 'lodash';
 
+/** Where a setting's effective value currently comes from, in VS Code's override precedence order. */
+type SettingScope = 'default' | 'user' | 'workspace' | 'workspaceFolder';
+
 export interface IScopeDetectionService {
-  getSettingScope(settingKey: string): string;
+  getSettingScope(settingKey: string): SettingScope;
   populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
   /**
    * Determines whether a setting update should be skipped (override-aware, NEVER schema-default
@@ -17,13 +20,13 @@ export interface IScopeDetectionService {
    * - 'workspaceFolder': skip iff value === workspaceFolderValue && workspaceFolderValue !== undefined
    * - 'default' (or any other): return false — never skip on schema-default equality alone
    */
-  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean;
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: SettingScope): boolean;
 }
 
 export class ScopeDetectionService implements IScopeDetectionService {
   constructor(private readonly workspace: IVSCodeWorkspace) {}
 
-  getSettingScope(settingKey: string): string {
+  getSettingScope(settingKey: string): SettingScope {
     const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
 
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
@@ -64,7 +67,7 @@ export class ScopeDetectionService implements IScopeDetectionService {
     });
   }
 
-  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: string): boolean {
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: SettingScope): boolean {
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
 
     if (!inspection) {
