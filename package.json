@@ -140,7 +140,7 @@
             "type": "boolean",
             "title": "Snyk Code security issues",
             "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, Snyk Code must be enabled for your organization in Snyk settings.",
-            "default": true,
+            "default": false,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.infrastructureAsCode": {
