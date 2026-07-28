@@ -10,8 +10,9 @@ import type { ExtensionContext } from '../vscode/extensionContext';
 import type { IVSCodeWorkspace } from '../vscode/workspace';
 import type { ILog } from '../logger/interfaces';
 
-// This migration writes these mememtos after it runs. They will be null if the migration has 
-// never run.
+// This migration only reads these mementos; they are written elsewhere, later in activation
+// (see the "do not reorder" notes at downloadService.ts and extension.ts), so they are still
+// undefined on a fresh install's first launch — that is what makes them a reliable upgrade signal.
 const EXISTING_INSTALL_MEMENTOS = [
   MEMENTO_LS_PROTOCOL_VERSION,
   MEMENTO_CLI_VERSION,
