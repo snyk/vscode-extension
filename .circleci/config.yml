@@ -1,7 +1,9 @@
 version: 2.1
 
 orbs:
-  prodsec: snyk/prodsec-orb@1
+  # Trialling the agentic fix from snyk/prodsec-orb#166. Dev orb versions are mutable and
+  # expire after 90 days - switch back to snyk/prodsec-orb@1 once that PR is released.
+  prodsec: snyk/prodsec-orb@dev:3999cf45589c11bb91138d8cb1fee8b38b07c25d
 
 commands:
   install:
@@ -20,6 +22,8 @@ jobs:
       - install
       - prodsec/security_scans:
           mode: auto
+          open-source-scan: high
+          open-source-agentic-fix-enabled: true
           open-source-additional-arguments: --exclude=mocked_data
           iac-scan: disabled
 
@@ -38,4 +42,8 @@ workflows:
                 - main
 
       - security-scans:
-          context: devex_ide
+          context:
+            - devex_ide
+            # LITELLM_API_KEY, LITELLM_BASE_URL, LITELLM_MODEL and REMY_GITHUB_TOKEN for the
+            # agentic fix. Without this the feature skips with a message naming what is missing.
+            - prodsec-orb-runtime
