@@ -23,10 +23,29 @@ gotchas rather than install steps to repeat.
   only, 0 errors), and `npm run test:unit` (mocha over `out/test/unit`, ~446
   passing). Run `npm run build` before `npm run test:unit`: the unit tests execute
   compiled output from `out/`, so a stale build produces misleading results.
-- **`npm run test:integration` cannot run here.** It downloads a full VS Code build
-  from `update.code.visualstudio.com` (which 302-redirects to
-  `vscode.download.prss.microsoft.com`) and needs a display via xvfb. Unless both
-  hosts are allowlisted and a display is available, run it outside Cursor Cloud.
+- **`npm run test:integration` needs two things — check, don't assume.** It downloads
+  a full VS Code build from `update.code.visualstudio.com` (which 302-redirects to
+  `vscode.download.prss.microsoft.com`) and needs a display. Both have been available
+  in cloud VMs — that download host has been reachable, and the VMs have run XFCE on
+  `DISPLAY=:1` — so verify before writing these tests off; only fall back to running
+  them outside Cursor Cloud if a probe shows the host blocked or there is no display.
+- **Driving the extension end-to-end is the strongest proof**, since building and unit
+  tests do not show that the extension works in a running editor. `code` is not
+  installed on the VM: fetch the stable tarball from `update.code.visualstudio.com`,
+  extract it, then launch the extension development host with
+  `DISPLAY=:1 <vscode>/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox <project>`.
+  Set `snyk.advanced.cliPath`, uncheck `snyk.advanced.automaticDependencyManagement`
+  and set `snyk.authenticationMethod` to the token method, then supply the token via
+  the Command Palette (`Snyk: Set Token`). The panel's *Trust folder* button has been
+  unreliable — setting `"snyk.trustedFolders": ["<project>"]` in
+  `<user-data-dir>/User/settings.json` and reloading is the dependable route.
+- **Authentication does not come from the environment.** The extension passes the
+  token it holds in its own settings to the language server, so neither the ambient
+  `SNYK_TOKEN` nor the CLI's `~/.config/configstore` authenticates it — running
+  `snyk auth` in a terminal has no effect here. Use the API-token method rather than
+  OAuth2, whose browser flow times out in this environment. If `cliPath` is left
+  unset the extension downloads its own CLI/LS from `downloads.snyk.io` /
+  `static.snyk.io`, which also works.
 - **This extension is a thin UI over the `snyk-ls` language server.** Scan results,
   configuration merging and product behaviour are implemented there — when
   something looks wrong in the UI, confirm which side owns it before digging here.
