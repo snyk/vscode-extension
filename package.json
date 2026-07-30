@@ -598,7 +598,7 @@
     "@types/vscode": "1.76.0",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
-    "@vscode/test-electron": "^2.4.0",
+    "@vscode/test-electron": "^3.1.0",
     "concurrently": "^7.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.5.0",
@@ -633,9 +633,9 @@
   },
   "overrides": {
     "vscode-languageclient": {
-      "minimatch": "==5.1.9",
-      "brace-expansion": "2.0.3"
+      "minimatch": "==5.1.9"
     },
-    "brace-expansion@>=5.0.0 <5.0.6": "5.0.6"
+    "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+    "brace-expansion@>=5.0.0 <5.0.9": "5.0.9"
   }
 }
