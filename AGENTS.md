@@ -33,12 +33,25 @@ gotchas rather than install steps to repeat.
   tests do not show that the extension works in a running editor. `code` is not
   installed on the VM: fetch the stable tarball from `update.code.visualstudio.com`,
   extract it, then launch the extension development host with
-  `DISPLAY=:1 <vscode>/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox <project>`.
+  `DISPLAY=:1 <vscode>/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox --password-store=basic <project>`.
   Set `snyk.advanced.cliPath`, uncheck `snyk.advanced.automaticDependencyManagement`
   and set `snyk.authenticationMethod` to the token method, then supply the token via
   the Command Palette (`Snyk: Set Token`). The panel's *Trust folder* button has been
   unreliable — setting `"snyk.trustedFolders": ["<project>"]` in
   `<user-data-dir>/User/settings.json` and reloading is the dependable route.
+- **Three headless-Linux launch failures, none of which names its own cause.** They apply
+  to `npm run test:integration` as well, since that drives a real VS Code:
+  - **`--password-store=basic` is required.** Without it there is no keyring for VS Code's
+    secret storage to talk to, so `Snyk: Set Token` cannot persist a token and
+    authentication silently never completes.
+  - **`renderer process gone (reason: crashed, code: 4)` is a `/dev/shm` problem, not an
+    extension bug.** Chromium needs more than the 64 MB some VMs default to, and the real
+    error underneath is `font_data_service_impl.cc: Check failed: No space left on
+    device`. Fix with `sudo mount -o remount,size=2G /dev/shm`, which lasts for the life
+    of that VM only, so it must be re-applied on each new one.
+  - **A silent exit with no output** means a killed instance left a stale
+    `~/.config/Code/code.lock` or `*.sock` behind; remove them before relaunching. Shut
+    the dev host down cleanly, and after any `kill`, clean those up first.
 - **Authentication does not come from the environment.** The extension passes the
   token it holds in its own settings to the language server, so neither the ambient
   `SNYK_TOKEN` nor the CLI's `~/.config/configstore` authenticates it — running
