@@ -3,7 +3,7 @@ version: 2.1
 orbs:
   # Trialling the agentic fix from snyk/prodsec-orb#166. Dev orb versions are mutable and
   # expire after 90 days - switch back to snyk/prodsec-orb@1 once that PR is released.
-  prodsec: snyk/prodsec-orb@dev:28a193d24ef65f0435a474decd529e4c68afeaa1
+  prodsec: snyk/prodsec-orb@dev:9b15d8c812df7518ffdefb34973c63c7213e5b7c
 
 commands:
   install:
