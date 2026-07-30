@@ -634,16 +634,16 @@
   "overrides": {
     "vscode-languageclient": {
       "minimatch": "==5.1.9",
-      "brace-expansion": "2.1.2"
+      "brace-expansion": "==2.1.4"
     },
     "@typescript-eslint/typescript-estree": {
-      "brace-expansion": "2.1.2"
+      "brace-expansion": "==2.1.4"
     },
     "glob": {
-      "brace-expansion": "5.0.9"
+      "brace-expansion": "==5.0.9"
     },
     "eslint-plugin-import": {
-      "brace-expansion": "2.1.2"
+      "brace-expansion": "==2.1.4"
     }
   }
 }
