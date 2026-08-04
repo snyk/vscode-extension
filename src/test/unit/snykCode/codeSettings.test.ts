@@ -17,6 +17,7 @@ suite('Snyk Code Settings', () => {
 
     contextService = {
       setContext: setContextFake,
+      onDidChangeContext: () => ({ dispose: () => undefined }),
       shouldShowCodeAnalysis: false,
       shouldShowOssAnalysis: false,
       shouldShowIacAnalysis: false,

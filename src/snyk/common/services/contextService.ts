@@ -1,9 +1,11 @@
+import * as vscode from 'vscode';
 import { SNYK_CONTEXT } from '../constants/views';
 import { Logger } from '../logger/logger';
 import { setContext } from '../vscode/vscodeCommandsUtils';
 
 export interface IContextService {
   readonly viewContext: { [key: string]: unknown };
+  readonly onDidChangeContext: vscode.Event<{ key: string; value: unknown }>;
   shouldShowCodeAnalysis: boolean;
   shouldShowOssAnalysis: boolean;
   shouldShowIacAnalysis: boolean;
@@ -13,6 +15,8 @@ export interface IContextService {
 
 export class ContextService implements IContextService {
   readonly viewContext: { [key: string]: unknown };
+  private readonly onDidChangeContextEmitter = new vscode.EventEmitter<{ key: string; value: unknown }>();
+  readonly onDidChangeContext = this.onDidChangeContextEmitter.event;
 
   constructor() {
     this.viewContext = {};
@@ -22,6 +26,7 @@ export class ContextService implements IContextService {
     Logger.debug(`Snyk context ${key}: ${value}`);
     this.viewContext[key] = value;
     await setContext(key, value);
+    this.onDidChangeContextEmitter.fire({ key, value });
   }
 
   get shouldShowCodeAnalysis(): boolean {

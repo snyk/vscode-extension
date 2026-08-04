@@ -96,6 +96,7 @@ import {
 } from './common/constants/globalState';
 import { AnalyticsEvent } from './common/analytics/AnalyticsEvent';
 import { SummaryWebviewViewProvider } from './common/views/summaryWebviewProvider';
+import { WelcomeWebviewViewProvider } from './common/views/welcomeWebviewProvider';
 import { WorkspaceConfigurationWebviewProvider } from './common/views/workspaceConfiguration/workspaceConfigurationWebviewProvider';
 import { ScopeDetectionService } from './common/views/workspaceConfiguration/services/scopeDetectionService';
 import { HtmlInjectionService } from './common/views/workspaceConfiguration/services/htmlInjectionService';
@@ -193,6 +194,12 @@ class SnykExtension extends SnykLib implements IExtension {
     this.summaryProviderService = new SummaryProviderService(Logger, summaryWebviewViewProvider);
     vscodeContext.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SNYK_VIEW_SUMMARY, summaryWebviewViewProvider),
+    );
+
+    const welcomeWebviewViewProvider = new WelcomeWebviewViewProvider(this.contextService);
+    vscodeContext.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(SNYK_VIEW_WELCOME, welcomeWebviewViewProvider),
+      this.contextService.onDidChangeContext(() => welcomeWebviewViewProvider.refresh()),
     );
 
     const languageClientAdapter = new LanguageClientAdapter();
@@ -432,9 +439,6 @@ class SnykExtension extends SnykLib implements IExtension {
     vscodeContext.subscriptions.push(vscode.window.registerTreeDataProvider(SNYK_VIEW_SUPPORT, new SupportProvider()));
 
     vscodeContext.subscriptions.push(
-      vscode.window.createTreeView(SNYK_VIEW_WELCOME, {
-        treeDataProvider: new EmptyTreeDataProvider(),
-      }),
       vscode.window.createTreeView(SNYK_VIEW_ANALYSIS_CODE_ENABLEMENT, {
         treeDataProvider: new EmptyTreeDataProvider(),
       }),
