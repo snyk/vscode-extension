@@ -5,7 +5,7 @@ import { IContextService } from '../services/contextService';
 
 export class WelcomeWebviewViewProvider implements vscode.WebviewViewProvider {
   private webviewView: vscode.WebviewView | undefined;
-  private lastRenderedMarkdown: string | undefined;
+  private readonly lastRenderedMarkdownByView = new WeakMap<vscode.WebviewView, string>();
 
   constructor(private readonly contextService: IContextService) {}
 
@@ -24,10 +24,10 @@ export class WelcomeWebviewViewProvider implements vscode.WebviewViewProvider {
     }
 
     const markdown = getWelcomeMarkdown(this.contextService.viewContext);
-    if (markdown === this.lastRenderedMarkdown) {
+    if (this.lastRenderedMarkdownByView.get(this.webviewView) === markdown) {
       return;
     }
-    this.lastRenderedMarkdown = markdown;
+    this.lastRenderedMarkdownByView.set(this.webviewView, markdown);
 
     const nonce = getNonce();
     const body = renderWelcomeHtml(markdown);

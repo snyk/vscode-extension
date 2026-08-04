@@ -1,9 +1,5 @@
 import { SNYK_CONTEXT } from '../constants/views';
 
-export type WelcomeViewContext = {
-  [key: string]: unknown;
-};
-
 const WELCOME_CONTENT = {
   error: `Snyk has encountered a problem. Please restart the extension:
 [Restart](command:snyk.restart 'Restart Snyk')
@@ -32,7 +28,7 @@ By connecting your account with Snyk, you agree to the Snyk [Privacy Policy](htt
   noWorkspace: 'Open a workspace or a folder in Visual Studio Code to start the analysis.',
 } as const;
 
-export function getWelcomeMarkdown(viewContext: WelcomeViewContext): string {
+export function getWelcomeMarkdown(viewContext: { [key: string]: unknown }): string {
   if (viewContext[SNYK_CONTEXT.ERROR]) {
     return WELCOME_CONTENT.error;
   }
@@ -42,11 +38,11 @@ export function getWelcomeMarkdown(viewContext: WelcomeViewContext): string {
   }
 
   if (!viewContext[SNYK_CONTEXT.LOGGEDIN]) {
-    if (viewContext[SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED]) {
-      return WELCOME_CONTENT.authMethodChanged;
-    }
     if (viewContext[SNYK_CONTEXT.AUTHENTICATING]) {
       return WELCOME_CONTENT.authenticating;
+    }
+    if (viewContext[SNYK_CONTEXT.AUTHENTICATION_METHOD_CHANGED]) {
+      return WELCOME_CONTENT.authMethodChanged;
     }
     return WELCOME_CONTENT.connectAndTrust;
   }
