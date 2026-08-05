@@ -20,20 +20,23 @@ gotchas rather than install steps to repeat.
   project builds and tests fine on Node 22.
 - **Standard commands** are in [CLAUDE.md](CLAUDE.md): `npm run build`
   (`tsc -p ./` plus sass, output in `out/`), `npm run lint` (eslint — warnings
-  only, 0 errors), and `npm run test:unit` (mocha over `out/test/unit`, ~446
+  only, 0 errors), and `npm run test:unit` (mocha over `out/test/unit`, ~457
   passing). Run `npm run build` before `npm run test:unit`: the unit tests execute
   compiled output from `out/`, so a stale build produces misleading results.
-- **`npm run test:integration` needs two things — check, don't assume.** It downloads
-  a full VS Code build from `update.code.visualstudio.com` (which 302-redirects to
-  `vscode.download.prss.microsoft.com`) and needs a display. Both have been available
-  in cloud VMs — that download host has been reachable, and the VMs have run XFCE on
-  `DISPLAY=:1` — so verify before writing these tests off; only fall back to running
-  them outside Cursor Cloud if a probe shows the host blocked or there is no display.
+- **`npm run test:integration` should run on a saved GUI environment — do not assume it
+  cannot.** It uses `@vscode/test-electron`, which downloads its **own** VS Code build to
+  `.vscode-test/` from `update.code.visualstudio.com` (302-redirects to
+  `vscode.download.prss.microsoft.com`) — this is separate from the `~/vscode` dev-host
+  install below. It needs a display. On a GUI VM both prerequisites hold (download host
+  reachable, XFCE on `DISPLAY=:1`, and `/dev/shm` remounted to 2G), and the suite passes
+  (confirmed here: 21 passing). Only fall back to running it outside Cursor Cloud if a
+  probe actually shows the host blocked or there is no display.
 - **Driving the extension end-to-end is the strongest proof**, since building and unit
-  tests do not show that the extension works in a running editor. `code` is not
-  installed on the VM: fetch the stable tarball from `update.code.visualstudio.com`,
-  extract it, then launch the extension development host with
-  `DISPLAY=:1 <vscode>/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox --password-store=basic <project>`.
+  tests do not show that the extension works in a running editor. On a saved GUI
+  environment VS Code is already installed by the update script at **`~/vscode/bin/code`**
+  — use that; do **not** download a fresh tarball unless setup failed and the binary is
+  missing (the update script's log will say why). Launch the extension development host with
+  `DISPLAY=:1 ~/vscode/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox --password-store=basic <project>`.
   Set `snyk.advanced.cliPath`, uncheck `snyk.advanced.automaticDependencyManagement`
   and set `snyk.authenticationMethod` to the token method, then supply the token via
   the Command Palette (`Snyk: Set Token`). The panel's *Trust folder* button has been
