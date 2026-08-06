@@ -20,6 +20,7 @@ jobs:
       - install
       - prodsec/security_scans:
           mode: auto
+          open-source-agentic-fix-enabled: true
           open-source-additional-arguments: --exclude=mocked_data
           iac-scan: disabled
 
