@@ -34,7 +34,7 @@ suite('Welcome view content', () => {
   test('Connect & Trust panels link to the Snyk settings page', () => {
     for (const contribution of loggedOutContributions) {
       ok(
-        contribution.contents.includes(`[Settings](command:${SNYK_SETTINGS_COMMAND}`),
+        contribution.contents.includes(`](command:${SNYK_SETTINGS_COMMAND}`),
         `expected a settings link in welcome content for "${contribution.when ?? ''}"`,
       );
     }

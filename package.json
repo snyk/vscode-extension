@@ -442,12 +442,12 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')\nCustom network, authentication or Snyk binary settings? Open [Settings](command:snyk.settings 'Snyk Settings').",
+        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')\nCustom network or Snyk binary configuration? Open [Settings](command:snyk.settings 'Snyk Settings').",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && !snyk:authMethodChanged"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')\nCustom network, authentication or Snyk binary settings? Open [Settings](command:snyk.settings 'Snyk Settings').",
+        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')\nCustom network or Snyk binary configuration? Open [Settings](command:snyk.settings 'Snyk Settings').",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && snyk:authMethodChanged"
       },
       {
