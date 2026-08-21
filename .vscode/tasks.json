@@ -4,30 +4,81 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Watch TS",
-      "type": "npm",
-      "script": "watch",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "never"
-      },
+      "label": "Watch",
+      "dependsOn": ["Compile SCSS", "Watch servers"],
+      "dependsOrder": "sequence",
       "group": {
         "kind": "build",
         "isDefault": true
       }
     },
     {
-      "label": "Watch SCSS & TS",
+      "label": "Watch servers",
+      "dependsOn": ["Watch TS", "Watch SCSS"],
+      "dependsOrder": "parallel"
+    },
+    {
+      "label": "Watch TS",
       "type": "npm",
-      "script": "watch-all",
-      "problemMatcher": []
+      "script": "watch-ts",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Compile SCSS",
+      "type": "npm",
+      "script": "compile-scss",
+      "problemMatcher": {
+        "owner": "sass",
+        "source": "sass",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^\\s*(.+\\.scss)\\s+(\\d+):(\\d+)\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "Watch SCSS",
       "type": "npm",
-      "script": "watch-resources",
-      "problemMatcher": []
+      "script": "watch-scss",
+      "problemMatcher": {
+        "owner": "sass",
+        "source": "sass",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^\\s*(.+\\.scss)\\s+(\\d+):(\\d+)\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": {
+            "regexp": "^(Error:|Compiled )"
+          },
+          "endsPattern": {
+            "regexp": "(root stylesheet|Compiled .* to .*|Sass is watching for changes)"
+          }
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "Watch unit tests",

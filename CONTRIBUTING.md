@@ -57,10 +57,10 @@ Code changes require extension reload when run in debug.
 
 ## Watching changes
 
-- When run in debug, VS Code runs watch for TS files automatically for you.
-- If not in debug, run `npm run watch-all` to track changes in both TS and SCSS files.
-  - If you want to track changes to TS files only, use `npm run watch`.
-  - If you want to track changes to SCSS files only, use `npm run watch-resources`.
+- When run in debug, VS Code runs the **Watch** task automatically (compile SCSS, then TS + SCSS watchers in separate terminals).
+- If not in debug, run **Tasks: Run Build Task** (`Watch`), or run **Watch TS** and **Watch SCSS** in parallel yourself.
+  - If you want to track changes to TS files only, use **Watch TS**.
+  - If you want to track changes to SCSS files only, use **Watch SCSS** (after a one-off `npm run compile-scss` if needed).
 
 ## Run tests and debug
 
