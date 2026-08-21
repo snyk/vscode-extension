@@ -567,7 +567,7 @@
     "build": "npm run vscode:prepublish",
     "clean": "rm -rf ./out",
     "rebuild": "npm run clean && npm run build",
-    "compile-scss": "find media -name '*.css' -delete && sass media --no-source-map --no-error-css --stop-on-error || (find media -name '*.css' -delete && exit 1)",
+    "compile-scss": "node scripts/compile-scss.js",
     "watch-ts": "tsc -watch -p ./",
     "watch-scss": "sass media --no-source-map --no-error-css --watch",
     "pretest": "npm run rebuild",
