@@ -243,14 +243,14 @@
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
-            "scope": "window",
+            "scope": "machine",
             "order": 9,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.advanced.additionalEnvironment": {
             "type": "string",
             "description": "Environment variables for Snyk CLI (semicolon-separated KEY=VALUE pairs, e.g. VAR1=value1;VAR2=value2).",
-            "scope": "window",
+            "scope": "machine",
             "order": 10,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
