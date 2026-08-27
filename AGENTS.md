@@ -89,9 +89,11 @@ No DI framework. Services instantiated in `BaseSnykModule` constructor and passe
 - Use TDD: write/update tests before implementation, iterate until green.
 - Read the Jira issue description/acceptance criteria before starting non-trivial work; for non-trivial work, write an implementation plan first (planning → implementation → review phases with a progress checklist) and get confirmation before starting; never commit the plan or its diagrams. Update the Jira ticket with a progress comment as you go.
 - Make the minimum change needed — don't refactor or optimize beyond the stated goal. Comment on *why*, not *what*.
+- This is not a library: delete unused files instead of deprecating them.
 - Use Sinon for mocking; reuse existing mocks rather than hand-rolling new ones.
 - Run `npm run lint:fix` (fixing only issues in changed files) and the full test suite (`npm run test:unit` and `npm run test:integration`) before committing. Never disable a linter or a test to get past this — only a human may do that.
 - Run Snyk SCA/Code scans against the project's absolute path before committing and after `package.json`/`package-lock.json` changes; fix real findings, don't touch test fixtures. Check third-party package health with Snyk Advisor (`curl`) before adding a new dependency.
+- Before each commit, check for and address feedback from the PR review bot (snyk-pr-review-bot) on any open PR.
 - Add a summary of user-facing changes to the changelog for the next release (usually a minor semver bump); never edit past changelog entries.
 - Keep `./docs` up to date.
 - Never use `--no-verify` or otherwise skip commit hooks, and never amend commits. Use atomic, conventional-commit-style commits; if a Jira ID (`IDE-XXXX`) appears in the branch name, append it to the subject.
