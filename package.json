@@ -243,7 +243,7 @@
           "snyk.advanced.additionalParameters": {
             "type": "string",
             "description": "Parameters to pass to Snyk CLI for Open Source security tests.",
-            "scope": "machine",
+            "scope": "window",
             "order": 9,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
