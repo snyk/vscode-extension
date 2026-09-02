@@ -57,10 +57,9 @@ Code changes require extension reload when run in debug.
 
 ## Watching changes
 
-- When run in debug, VS Code runs the **Watch** task automatically (compile SCSS, then TS + SCSS watchers in separate terminals).
-- If not in debug, run **Tasks: Run Build Task** (`Watch`), or run **Watch TS** and **Watch SCSS** in parallel yourself.
-  - If you want to track changes to TS files only, use **Watch TS**.
-  - If you want to track changes to SCSS files only, use **Watch SCSS** (after a one-off `npm run compile-scss` if needed).
+- When run in debug, VS Code runs the **Watch** task automatically (compiles SCSS, then starts the TypeScript watcher).
+- If you change SCSS, run `npm run compile-scss` and reload the extension window.
+- If not in debug, run `npm run watch` for TypeScript only, or **Tasks: Run Build Task** to compile SCSS and watch TypeScript.
 
 ## Run tests and debug
 

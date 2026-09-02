@@ -8,9 +8,8 @@ Snyk Security VS Code extension — TypeScript extension that integrates Snyk sc
 npm install                # Install dependencies
 npm run build              # Compile TypeScript + SCSS (same as vscode:prepublish)
 npm run rebuild            # Clean + build
-npm run watch-ts           # Watch TypeScript only
-npm run watch-scss         # Watch SCSS only (only reacts to new SCSS file changes since launch)
-npm run compile-scss       # One-shot SCSS compile (validates, wipes CSS on failure)
+npm run watch              # Watch TypeScript only
+npm run compile-scss       # Compile SCSS to CSS under media/
 
 # Testing
 npm run test:unit          # Rebuild + run all unit tests (mocha TDD)
