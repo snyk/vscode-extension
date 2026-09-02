@@ -4,6 +4,27 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Compile SCSS",
+      "type": "npm",
+      "script": "compile-scss",
+      "problemMatcher": {
+        "owner": "sass",
+        "source": "sass",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^\\s*(.+\\.scss)\\s+(\\d+):(\\d+)\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Watch TS",
       "type": "npm",
       "script": "watch",
@@ -11,23 +32,16 @@
       "isBackground": true,
       "presentation": {
         "reveal": "never"
-      },
+      }
+    },
+    {
+      "label": "Watch",
+      "dependsOn": ["Compile SCSS", "Watch TS"],
+      "dependsOrder": "sequence",
       "group": {
         "kind": "build",
         "isDefault": true
       }
-    },
-    {
-      "label": "Watch SCSS & TS",
-      "type": "npm",
-      "script": "watch-all",
-      "problemMatcher": []
-    },
-    {
-      "label": "Watch SCSS",
-      "type": "npm",
-      "script": "watch-resources",
-      "problemMatcher": []
     },
     {
       "label": "Watch unit tests",
