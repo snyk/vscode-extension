@@ -55,13 +55,13 @@ jobs:
         id: nextver
         env:
           INCREMENT_LEVEL: ${{ inputs.incrementLevel }}
+          CURRENT_TAG: ${{ steps.current.outputs.current }}
         run: |
           case "$INCREMENT_LEVEL" in
             patch|minor|major) ;;
             *) echo "::error::invalid incrementLevel: $INCREMENT_LEVEL" >&2; exit 1 ;;
           esac
-          CURRENT="${{ steps.current.outputs.current }}"
-          CURRENT="${CURRENT#v}"
+          CURRENT="${CURRENT_TAG#v}"
           NEXT=$(npx semver "$CURRENT" -i "$INCREMENT_LEVEL")
           if [ -z "$NEXT" ]; then
             echo "::error::computed NEXT version is empty for CURRENT=$CURRENT" >&2
