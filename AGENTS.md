@@ -7,7 +7,7 @@ Snyk Security VS Code extension — TypeScript extension that integrates Snyk sc
 ```bash
 npm install                # Install dependencies
 npm run build              # Compile TypeScript + SCSS (same as vscode:prepublish)
-npm run rebuild             # Clean + build
+npm run rebuild            # Clean + build
 npm run watch-all          # Watch TS + SCSS concurrently
 
 # Testing
@@ -105,10 +105,13 @@ update script already runs `npm ci`, so the items below are setup context and
 gotchas rather than install steps to repeat.
 
 - **Node comes from nvm, not `/exec-daemon/node`.** `/exec-daemon/node` is first on
-  `PATH` but ships **no npm**. Use the nvm-managed `v22.22.3` (which provides npm
-  `11.12.1`) and **always prepend**
-  `PATH="$HOME/.nvm/versions/node/v22.22.3/bin:$PATH"` before any `npm` command —
-  nvm is not auto-sourced in non-interactive shells. `.nvmrc` pins `18.19`, but
+  `PATH` but ships **no npm**. Use the nvm-managed Node install (currently
+  `v22.22.3`, providing npm `11.12.1`) and **always prepend**
+  `PATH="$(ls -d "$HOME"/.nvm/versions/node/v22.* 2>/dev/null | sort -V | tail -1)/bin:$PATH"`
+  before any `npm` command, resolving the installed patch version rather than
+  hardcoding it — nvm is not auto-sourced in non-interactive shells, and a future VM
+  snapshot bumping the patch version would otherwise silently fall through to
+  `/exec-daemon/node`, which has no npm. `.nvmrc` pins `18.19`, but
   `package.json` declares no Node `engines` constraint (only `vscode`), and the
   project builds and tests fine on Node 22.
 - **`npm run test:integration` should run on a saved GUI environment — do not assume it
@@ -117,7 +120,7 @@ gotchas rather than install steps to repeat.
   `vscode.download.prss.microsoft.com`) — this is separate from the `~/vscode` dev-host
   install below. It needs a display. On a GUI VM both prerequisites hold (download host
   reachable, XFCE on `DISPLAY=:1`, and `/dev/shm` remounted to 2G), and the suite passes
-  (confirmed here: 21 passing). Only fall back to running it outside Cursor Cloud if a
+  (confirmed passing previously). Only fall back to running it outside Cursor Cloud if a
   probe actually shows the host blocked or there is no display.
 - **Driving the extension end-to-end is the strongest proof**, since building and unit
   tests do not show that the extension works in a running editor. On a saved GUI
@@ -126,7 +129,7 @@ gotchas rather than install steps to repeat.
   missing (the update script's log will say why). Launch the extension development host with
   `DISPLAY=:1 ~/vscode/bin/code --extensionDevelopmentPath=<repo> --user-data-dir=/tmp/vscode-userdata --no-sandbox --password-store=basic <project>`.
   Set `snyk.advanced.cliPath`, uncheck `snyk.advanced.automaticDependencyManagement`
-  and set `snyk.authenticationMethod` to the token method, then supply the token via
+  and set `snyk.advanced.authenticationMethod` to `"API Token (Legacy)"`, then supply the token via
   the Command Palette (`Snyk: Set Token`). The panel's *Trust folder* button has been
   unreliable — setting `"snyk.trustedFolders": ["<project>"]` in
   `<user-data-dir>/User/settings.json` and reloading is the dependable route.
