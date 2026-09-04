@@ -4,6 +4,15 @@ on:
   workflow_dispatch:
     branches:
       - main
+    inputs:
+      incrementLevel:
+        description: 'Version part to increment'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
   # schedule: TODO: align release schedule with CLI
   #   - cron: '0 9 * * 2' # every Tuesday at 9 am UTC
 
@@ -33,13 +42,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Get Next Version
-        id: semver
+      - name: Get Current Version
+        id: current
         uses: ietf-tools/semver-action@v1
         with:
           token: ${{ github.token }}
           branch: ${{ github.ref_name }}
           skipInvalidTags: true  # Skip non-semver tags
+          noNewCommitBehavior: current  # we only use the `current` output, so don't fail when there's nothing new to bump
+
+      - name: Compute Next Version
+        id: nextver
+        env:
+          INCREMENT_LEVEL: ${{ inputs.incrementLevel }}
+        run: |
+          case "$INCREMENT_LEVEL" in
+            patch|minor|major) ;;
+            *) echo "::error::invalid incrementLevel: $INCREMENT_LEVEL" >&2; exit 1 ;;
+          esac
+          CURRENT="${{ steps.current.outputs.current }}"
+          CURRENT="${CURRENT#v}"
+          NEXT=$(npx semver "$CURRENT" -i "$INCREMENT_LEVEL")
+          if [ -z "$NEXT" ]; then
+            echo "::error::computed NEXT version is empty for CURRENT=$CURRENT" >&2
+            exit 1
+          fi
+          echo "next=v$NEXT" >> "$GITHUB_OUTPUT"
+          echo "nextStrict=$NEXT" >> "$GITHUB_OUTPUT"
 
       - name: Add Credentials
         run: |
@@ -53,25 +82,25 @@ jobs:
 
       - name: Create and push Git tag release
         run: |
-          git tag ${{ steps.semver.outputs.next }}
+          git tag ${{ steps.nextver.outputs.next }}
           git push --tags
 
       - name: Package VSIX
-        run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.semver.outputs.next }}
+        run: echo y | vsce package --no-git-tag-version --no-update-package-json ${{ steps.nextver.outputs.next }}
 
       - name: Create release
         id: create_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create ${{ steps.semver.outputs.next }} --generate-notes $(find . -name '*.vsix')
+        run: gh release create ${{ steps.nextver.outputs.next }} --generate-notes $(find . -name '*.vsix')
 
       - name: Publish to VS Code Marketplace
-        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.semver.outputs.nextStrict }}
+        run: vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --no-update-package-json ${{ steps.nextver.outputs.nextStrict }}
 
       - name: Publish to OpenVSX Marketplace
         run: |
-          VERSION=$(echo ${{ steps.semver.outputs.next }} | sed 's/^v//')
+          VERSION=$(echo ${{ steps.nextver.outputs.next }} | sed 's/^v//')
           echo y | vsce package --no-git-tag-version --no-update-package-json $VERSION
           npx ovsx publish -i snyk-vulnerability-scanner-${VERSION}.vsix -p ${{ secrets.OPENVSX_TOKEN }}
 
