@@ -548,9 +548,12 @@
     function startLogout() {
       if (typeof window.__ideExecuteCommand__ !== 'function') { return; }
       var statusEl = get('logout-status');
-      function done() {
-        if (statusEl) {
-          statusEl.className = statusEl.className.replace(/\bhidden\b/, '').trim();
+      function done(result) {
+        if (!statusEl) { return; }
+        statusEl.className = statusEl.className.replace(/\bhidden\b/, '').trim();
+        if (result && result.error) {
+          statusEl.textContent = 'Failed to sign out: ' + result.error;
+        } else {
           statusEl.textContent = 'Signed out.';
         }
       }
@@ -558,6 +561,7 @@
         window.__ideExecuteCommand__('snyk.logout', [], done);
       } catch (e) {
         console.error('Error logging out:', e);
+        done({ error: String(e) });
       }
     }
 

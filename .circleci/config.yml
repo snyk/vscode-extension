@@ -20,6 +20,7 @@ jobs:
       - install
       - prodsec/security_scans:
           mode: auto
+          open-source-agentic-fix-enabled: true
           open-source-additional-arguments: --exclude=mocked_data
           iac-scan: disabled
 
@@ -31,6 +32,7 @@ workflows:
           name: Scan repository for secrets
           context:
             - snyk-bot-slack
+            - prodsec-orb-runtime
           channel: snyk-on-snyk-devex_ide
           filters:
             branches:
@@ -38,4 +40,6 @@ workflows:
                 - main
 
       - security-scans:
-          context: devex_ide
+          context:
+            - devex_ide
+            - prodsec-orb-runtime

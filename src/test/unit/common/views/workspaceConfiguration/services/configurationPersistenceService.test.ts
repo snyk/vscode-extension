@@ -14,10 +14,12 @@ import { ILanguageClientAdapter } from '../../../../../../snyk/common/vscode/lan
 import { ILog } from '../../../../../../snyk/common/logger/interfaces';
 import {
   ADVANCED_ORGANIZATION,
+  AUTO_CONFIGURE_MCP_SERVER,
   CODE_SECURITY_ENABLED_SETTING,
   CONFIGURATION_IDENTIFIER,
   DELTA_FINDINGS,
   SCANNING_MODE,
+  SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY,
 } from '../../../../../../snyk/common/constants/settings';
 import {
   ALLISSUES,
@@ -1449,6 +1451,61 @@ suite('ConfigurationPersistenceService — outbound concrete-value save records 
       settings: { [LS_GLOBAL_KEY.organization]: { value: 'new-org', changed: false } },
     });
     sinon.assert.notCalled(updateConfigurationStub);
+  });
+
+  test('outbound Secure At Inception HTML values write mapped VS Code settings and explicit overrides', async () => {
+    const service = newService();
+
+    await service.handleSaveConfig(
+      JSON.stringify({
+        isFallbackForm: false,
+        token: 'tok',
+        [LS_GLOBAL_KEY.autoConfigureMcpServer]: true,
+        [LS_GLOBAL_KEY.secureAtInceptionExecutionFreq]: 'Smart Scan',
+      }),
+    );
+
+    assert.strictEqual(AUTO_CONFIGURE_MCP_SERVER, 'snyk.securityAtInception.autoConfigureSnykMcpServer');
+    assert.strictEqual(SECURITY_AT_INCEPTION_EXECUTION_FREQUENCY, 'snyk.securityAtInception.executionFrequency');
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'securityAtInception.autoConfigureSnykMcpServer',
+      true,
+      true,
+    );
+    sinon.assert.calledWith(
+      updateConfigurationStub,
+      CONFIGURATION_IDENTIFIER,
+      'securityAtInception.executionFrequency',
+      'Smart Scan',
+      true,
+    );
+
+    const readConfig = makeReadPathConfiguration({
+      getAutoConfigureMcpServer: () => true,
+      getSecureAtInceptionExecutionFrequency: () => 'Smart Scan',
+    });
+    const autoConfigureSetting = await readPullSetting(
+      readConfig,
+      explicitOverridesMap,
+      LS_GLOBAL_KEY.autoConfigureMcpServer,
+    );
+    assertPullSetting(
+      autoConfigureSetting,
+      { changed: true, value: true },
+      'MCP auto-configuration must surface as an explicit boolean override',
+    );
+    const executionFrequencySetting = await readPullSetting(
+      readConfig,
+      explicitOverridesMap,
+      LS_GLOBAL_KEY.secureAtInceptionExecutionFreq,
+    );
+    assertPullSetting(
+      executionFrequencySetting,
+      { changed: true, value: 'Smart Scan' },
+      'execution frequency must surface as an explicit string override',
+    );
   });
 
   test('a field absent from the payload is never written and never recorded', async () => {

@@ -140,7 +140,7 @@
             "type": "boolean",
             "title": "Snyk Code security issues",
             "description": "Find and fix security issues in your application code in real time.\n\nFor these scans to run, Snyk Code must be enabled for your organization in Snyk settings.",
-            "default": true,
+            "default": false,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           },
           "snyk.features.infrastructureAsCode": {
@@ -250,7 +250,7 @@
           "snyk.advanced.additionalEnvironment": {
             "type": "string",
             "description": "Environment variables for Snyk CLI (semicolon-separated KEY=VALUE pairs, e.g. VAR1=value1;VAR2=value2).",
-            "scope": "window",
+            "scope": "machine",
             "order": 10,
             "markdownDeprecationMessage": "This setting is now managed via the [Snyk Settings page](command:snyk.settings). Use the `Snyk: Settings` command to configure Snyk."
           }
@@ -442,12 +442,12 @@
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project (like dependencies).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')",
+        "contents": "👋 Let's secure your code! \nTo scan your project for issues, Snyk needs to:\n 1. Connect to your Snyk account: This allows us to securely analyse your code.\n2. Trust this workspace: This lets Snyk safely gather information about your project by executing code and configuration (such as invoking the package manager to get dependency information).\nYou should only scan projects you trust. [More info](https://docs.snyk.io/ide-tools/visual-studio-code-extension/workspace-trust)\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Connect with Snyk')\nCustom network or Snyk binary configuration? Open [Settings](command:snyk.settings 'Snyk Settings').",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && !snyk:authMethodChanged"
       },
       {
         "view": "snyk.views.welcome",
-        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')",
+        "contents": "⚠️ Your authentication method has changed.\n\n👉 Please re-authenticate to continue using Snyk\n\nBy connecting your account with Snyk, you agree to the Snyk [Privacy Policy](https://snyk.io/policies/privacy), and the Snyk [Terms of Service](https://snyk.io/policies/terms-of-service).\n\n[Connect & Trust Workspace](command:snyk.initiateLogin 'Re-authenticate')\nCustom network or Snyk binary configuration? Open [Settings](command:snyk.settings 'Snyk Settings').",
         "when": "!snyk:error && snyk:initialized && !snyk:loggedIn && snyk:authMethodChanged"
       },
       {
@@ -598,7 +598,7 @@
     "@types/vscode": "1.76.0",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
-    "@vscode/test-electron": "^2.4.0",
+    "@vscode/test-electron": "^3.1.0",
     "concurrently": "^7.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.5.0",
@@ -633,9 +633,9 @@
   },
   "overrides": {
     "vscode-languageclient": {
-      "minimatch": "==5.1.9",
-      "brace-expansion": "2.0.3"
+      "minimatch": "==5.1.9"
     },
-    "brace-expansion@>=5.0.0 <5.0.6": "5.0.6"
+    "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+    "brace-expansion@>=5.0.0 <5.0.9": "5.0.9"
   }
 }

@@ -20,6 +20,8 @@ import {
   markExplicitLsKeysFromConfigurationChangeEvent,
   seedExplicitChangesFromExistingSettings,
 } from '../../../../snyk/common/languageServer/explicitLsKeyTracking';
+import { migrateCodeEnablementForExistingInstall } from '../../../../snyk/common/languageServer/codeEnablementMigration';
+import { MEMENTO_LS_PROTOCOL_VERSION } from '../../../../snyk/common/constants/globalState';
 import { ExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import { LastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
 import { VSCODE_KEY_TO_LS_KEYS } from '../../../../snyk/common/languageServer/lsKeyToVscodeKeyMap';
@@ -491,5 +493,63 @@ suite('IDE-2264 ticket 09: explicit-overrides map end-to-end (real objects only)
         `${lsKey}: an inbound migration write of an untouched default must not be marked explicit`,
       );
     }
+  });
+});
+
+suite('IDE-2254: codeEnablementMigration must run before the seed on activation', () => {
+  teardown(() => sinon.restore());
+
+  /** Mirrors ExtensionContext's delegation to vscode.ExtensionContext.globalState — same backing
+   * Memento the ExplicitOverridesMap reads from, matching real activation where both share one store. */
+  function makeSharedContext(memento: import('vscode').Memento) {
+    return {
+      getGlobalStateValue: <T>(key: string) => memento.get<T>(key),
+      updateGlobalStateValue: (key: string, value: unknown) => memento.update(key, value),
+    };
+  }
+
+  // Locks the ordering in src/snyk/extension.ts: the seed only records an override when
+  // inspect.globalValue is already defined (explicitLsKeyTracking.ts R4), so the migration must
+  // materialize codeSecurity=true before the seed runs for the seed to ever see it.
+  test('production order: migrating before seeding marks snykCodeEnabled explicit', async () => {
+    const memento = makeMemento();
+    await memento.update(MEMENTO_LS_PROTOCOL_VERSION, 20); // existing install signal
+    const context = makeSharedContext(memento);
+    const workspace = makeFakeWorkspace(); // codeSecurity unset — relying on the pre-2.32.0 default
+    const explicitOverridesMap = new ExplicitOverridesMap(memento);
+
+    await migrateCodeEnablementForExistingInstall(context, workspace, new LoggerMockFailOnErrors());
+    seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
+
+    assert.strictEqual(
+      workspace.inspectConfiguration('snyk', 'features.codeSecurity')?.globalValue,
+      true,
+      'migration must materialize codeSecurity=true',
+    );
+    assert.deepStrictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.snykCodeEnabled),
+      { kind: 'value', value: true },
+      'the seed must record the migrated value so the LS receives changed:true',
+    );
+  });
+
+  // The regression this locks: swapping the two calls silently defeats the PR. The seed observes
+  // codeSecurity still unset and skips it; the LS then receives the newly materialized `true` with
+  // changed:false, letting org governance flip Code back off with no explicit override to protect it.
+  test('reverse order regresses: seeding before migrating leaves snykCodeEnabled unmarked', async () => {
+    const memento = makeMemento();
+    await memento.update(MEMENTO_LS_PROTOCOL_VERSION, 20);
+    const context = makeSharedContext(memento);
+    const workspace = makeFakeWorkspace();
+    const explicitOverridesMap = new ExplicitOverridesMap(memento);
+
+    seedExplicitChangesFromExistingSettings(explicitOverridesMap, workspace);
+    await migrateCodeEnablementForExistingInstall(context, workspace, new LoggerMockFailOnErrors());
+
+    assert.strictEqual(
+      explicitOverridesMap.getEntry(LS_GLOBAL_KEY.snykCodeEnabled),
+      undefined,
+      'reordering must never silently pass — this is what fails if extension.ts is reordered',
+    );
   });
 });
