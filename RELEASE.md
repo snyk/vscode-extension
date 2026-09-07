@@ -17,6 +17,7 @@
   - For the hotfix release, cherry pick the commits you want to go into the hotfix release.
 
 - Trigger the release workflow in GitHub Actions.
+  - Select the appropriate version type (patch, minor, major).
   - If this is a hotfix not off main, select the hotfix branch.
 
 **Marketplace Availability**
