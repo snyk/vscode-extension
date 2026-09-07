@@ -50,6 +50,7 @@ jobs:
           branch: ${{ github.ref_name }}
           skipInvalidTags: true  # Skip non-semver tags
           noNewCommitBehavior: current  # we only use the `current` output, so don't fail when there's nothing new to bump
+          noVersionBumpBehavior: current  # ditto — commits since the last tag not matching a bump prefix (e.g. chore:) shouldn't block a manual release
 
       - name: Compute Next Version
         id: nextver
