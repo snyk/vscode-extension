@@ -90,3 +90,4 @@ CLAUDE.md
 .verify-chunk-diff
 .verify-dedup-findings.json
 .verify-reranked.json
+.verify-report
