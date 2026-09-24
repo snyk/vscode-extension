@@ -9,7 +9,9 @@ import {
 } from '../../../../snyk/common/configuration/configuration';
 import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
-import type { IExplicitLspConfigurationChangeTracker } from '../../../../snyk/common/languageServer/explicitLspConfigurationChangeTracker';
+import type { IExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
+import type { ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
+import { ADVANCED_ORGANIZATION } from '../../../../snyk/common/constants/settings';
 import type {
   CancellationToken,
   ConfigurationParams,
@@ -20,6 +22,7 @@ import type {
 } from '../../../../snyk/common/vscode/types';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 import { IUriAdapter } from '../../../../snyk/common/vscode/uri';
+import type { IVSCodeWorkspace } from '../../../../snyk/common/vscode/workspace';
 import { LanguageServerSettings } from '../../../../snyk/common/languageServer/settings';
 import { defaultFeaturesConfigurationStub } from '../../mocks/configuration.mock';
 import {
@@ -30,6 +33,7 @@ import {
 } from '../../../../snyk/common/languageServer/types';
 import { Subject } from 'rxjs';
 import { LoggerMockFailOnErrors } from '../../mocks/logger.mock';
+import { noopExplicitOverridesMap, noopLastKnownValueCache } from '../../mocks/explicitOverridesMap.mock';
 
 suite('Language Server: Middleware', () => {
   let configuration: IConfiguration;
@@ -83,6 +87,43 @@ suite('Language Server: Middleware', () => {
     sinon.restore();
   });
 
+  // [IDE-2264 ticket 11]: lastKnownValueCache/explicitOverridesMap are required constructor
+  // params — a missing dependency now fails loudly at construction instead of silently
+  // disabling explicit-marking.
+  test('throws at construction when lastKnownValueCache is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageClientMiddleware(
+          new LoggerMockFailOnErrors(),
+          configuration,
+          new Subject<ShowIssueDetailTopicParams>(),
+          {} as IUriAdapter,
+          {} as IVSCodeCommands,
+          undefined,
+          undefined as unknown as ILastKnownValueCache,
+          noopExplicitOverridesMap,
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
+    );
+  });
+
+  test('throws at construction when explicitOverridesMap is omitted', () => {
+    assert.throws(
+      () =>
+        new LanguageClientMiddleware(
+          new LoggerMockFailOnErrors(),
+          configuration,
+          new Subject<ShowIssueDetailTopicParams>(),
+          {} as IUriAdapter,
+          {} as IVSCodeCommands,
+          undefined,
+          noopLastKnownValueCache,
+          undefined as unknown as IExplicitOverridesMap,
+        ),
+      /requires explicitOverridesMap and lastKnownValueCache/,
+    );
+  });
+
   test('Configuration request should translate settings', async () => {
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -90,6 +131,9 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ConfigurationParams = {
       items: [
@@ -135,6 +179,9 @@ suite('Language Server: Middleware', () => {
       new Subject<ShowIssueDetailTopicParams>(),
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ConfigurationParams = {
       items: [
@@ -179,6 +226,9 @@ suite('Language Server: Middleware', () => {
       showIssueDetailTopic$,
       {} as IUriAdapter,
       {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
     const params: ShowDocumentParams = {
       uri: `snyk:///fake/file/path?product=${product.replaceAll(' ', '+')}&issueId=${issueId}&action=${
@@ -206,7 +256,10 @@ suite('Language Server: Middleware', () => {
     });
   });
 
-  test('didChangeConfiguration calls next when not suppressed', async () => {
+  // [IDE-2264 ticket 05]: echo-suppression is computed fresh on every call by comparing every
+  // tracked VS Code key against the last-known-value cache — no batch-scoped flag.
+
+  test('didChangeConfiguration calls next when no vscodeWorkspace is wired (default: never suppress)', async () => {
     const nextStub = sinon.stub().resolves();
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -215,16 +268,105 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
-      () => false,
+      noopLastKnownValueCache,
+      noopExplicitOverridesMap,
     );
 
     await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
     sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
   });
 
-  test('didChangeConfiguration skips next when inbound persistence is active', async () => {
+  test('didChangeConfiguration calls next when a tracked key currently diverges from the last-known-value cache', async () => {
     const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: (configId: string, section: string) =>
+        configId === 'snyk' && section === 'advanced.organization' ? 'new-org' : undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: (vscodeKey: string) => (vscodeKey === ADVANCED_ORGANIZATION ? 'old-org' : undefined),
+      set: sinon.stub(),
+    };
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      vscodeWorkspace,
+      lastKnownValueCache,
+      noopExplicitOverridesMap,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.calledOnceWithExactly(nextStub, ['snyk']);
+  });
+
+  test('didChangeConfiguration skips next when every tracked key matches the last-known-value cache (own echoed write)', async () => {
+    const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: () => undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: () => undefined,
+      set: sinon.stub(),
+    };
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      vscodeWorkspace,
+      lastKnownValueCache,
+      noopExplicitOverridesMap,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.notCalled(nextStub);
+  });
+
+  test('didChangeConfiguration suppresses a delayed event for an already-completed inbound-write batch (no batch-scoped flag to expire)', async () => {
+    // The old boolean flag was reset to false once the whole write batch finished, so a
+    // change event for the LAST key that arrived after the batch completed slipped through
+    // unsuppressed. The cache has no such window: it was updated at write time, so a comparison
+    // run at any later point still finds a match.
+    const nextStub = sinon.stub().resolves();
+    const vscodeWorkspace = {
+      getConfiguration: (configId: string, section: string) =>
+        configId === 'snyk' && section === 'advanced.organization' ? 'inbound-value' : undefined,
+    } as unknown as IVSCodeWorkspace;
+    const lastKnownValueCache: ILastKnownValueCache = {
+      get: (vscodeKey: string) => (vscodeKey === ADVANCED_ORGANIZATION ? 'inbound-value' : undefined),
+      set: sinon.stub(),
+    };
+
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      vscodeWorkspace,
+      lastKnownValueCache,
+      noopExplicitOverridesMap,
+    );
+
+    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
+    sinon.assert.notCalled(nextStub);
+  });
+
+  // [IDE-2264 ticket 09]: the explicit-overrides map is the sole source for `changed` — both
+  // 'value' and 'reset' entries count. Replaces the old tracker-based unmark-on-reset test.
+  test('reads changed:true from the explicit-overrides map for a "value" entry', async () => {
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: sinon.stub(),
+      getEntry: (lsKey: string) => (lsKey === LS_KEY.organization ? { kind: 'value', value: 'acme-corp' } : undefined),
+      confirmResetDelivered: sinon.stub(),
+    };
+
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
       configuration,
@@ -232,43 +374,8 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      undefined,
-      () => true,
-    );
-
-    await middleware.workspace.didChangeConfiguration!.call(undefined, ['snyk'], nextStub);
-    sinon.assert.notCalled(nextStub);
-  });
-
-  test('unmarks explicitly changed keys after emitting a reset (value: null)', async () => {
-    const unmarkStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: unmarkStub,
-      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
-      markPendingReset: sinon.stub(),
-      consumePendingResets: sinon.stub().returns(new Set<string>()),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-    };
-
-    // organization is explicitly changed but value is null → triggers reset (value: null, changed: true)
-    const configWithNullOrg = {
-      ...configuration,
-      organization: null as unknown as string,
-    } as IConfiguration;
-
-    const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
-      configWithNullOrg,
-      new Subject<ShowIssueDetailTopicParams>(),
-      {} as IUriAdapter,
-      {} as IVSCodeCommands,
-      undefined,
-      tracker,
+      noopLastKnownValueCache,
+      explicitOverridesMap,
     );
 
     const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
@@ -277,28 +384,68 @@ suite('Language Server: Middleware', () => {
       onCancellationRequested: sinon.fake(),
     };
 
-    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+    const res = await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+    if (res instanceof Error) {
+      assert.fail('Handler returned an error');
+    }
+    const pullItem = (res as Array<{ settings: LspConfigurationParam }>)[0];
+    const settings = pullItem.settings.settings!;
 
-    assert(unmarkStub.calledWith(LS_KEY.organization), 'Should unmark organization after reset');
+    assert.strictEqual(settings[LS_KEY.organization]?.changed, true, 'organization should be changed:true');
+    assert.strictEqual(settings[LS_KEY.apiEndpoint]?.changed, false, 'untouched key remains changed:false');
   });
 
-  test('re-enqueues pending resets when fromConfiguration rejects', async () => {
-    // Arrange: tracker with one pending reset key.
-    const markPendingResetStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: sinon.stub(),
-      isExplicitlyChanged: () => false,
-      markPendingReset: markPendingResetStub,
-      consumePendingResets: sinon.stub().returns(new Set<string>([LS_KEY.organization])),
-      committedSinceReset: () => false,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
+  // ── [IDE-2264 ticket 06]: reset delivery is driven by the explicit-overrides map's reset
+  // sentinel, read live on every call — never drained into a separate pending-reset queue. A
+  // build failure therefore leaves the sentinel untouched automatically, with no re-enqueue
+  // bookkeeping needed (replaces the old consumePendingResets/markPendingReset/committedSinceReset
+  // mechanism and its ADR-2 race-condition guard, which no longer apply).
+
+  test('delivers {value:null,changed:true} for a key with a pending reset in the explicit-overrides map', async () => {
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: sinon.stub(),
+      getEntry: (lsKey: string) => (lsKey === LS_KEY.organization ? { kind: 'reset' } : undefined),
+      confirmResetDelivered: sinon.stub(),
     };
 
-    // Stub fromConfiguration to reject after consumePendingResets has drained the set.
+    const middleware = new LanguageClientMiddleware(
+      new LoggerMockFailOnErrors(),
+      configuration,
+      new Subject<ShowIssueDetailTopicParams>(),
+      {} as IUriAdapter,
+      {} as IVSCodeCommands,
+      undefined,
+      noopLastKnownValueCache,
+      explicitOverridesMap,
+    );
+
+    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
+    const token: CancellationToken = {
+      isCancellationRequested: false,
+      onCancellationRequested: sinon.fake(),
+    };
+
+    const res = await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
+    if (res instanceof Error) {
+      assert.fail('Handler returned an error');
+    }
+    const pullItem = (res as Array<{ settings: LspConfigurationParam }>)[0];
+    const settings = pullItem.settings.settings!;
+
+    assert.strictEqual(settings[LS_KEY.organization]?.value, null);
+    assert.strictEqual(settings[LS_KEY.organization]?.changed, true);
+  });
+
+  test('leaves the pending-reset entry untouched when fromConfiguration rejects (no premature drain)', async () => {
+    const confirmStub = sinon.stub();
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: sinon.stub(),
+      getEntry: (lsKey: string) => (lsKey === LS_KEY.organization ? { kind: 'reset' } : undefined),
+      confirmResetDelivered: confirmStub,
+    };
+
     const fromConfigError = new Error('fromConfiguration failed');
     sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
 
@@ -309,7 +456,8 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      tracker,
+      noopLastKnownValueCache,
+      explicitOverridesMap,
     );
 
     const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
@@ -318,39 +466,23 @@ suite('Language Server: Middleware', () => {
       onCancellationRequested: sinon.fake(),
     };
 
-    // Act + Assert: must throw (the error propagates), AND the key must be re-enqueued.
     await assert.rejects(
       async () => middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler),
       fromConfigError,
     );
 
-    // The drained key must have been re-enqueued via markPendingReset so the next pull retries.
-    sinon.assert.calledWith(markPendingResetStub, LS_KEY.organization);
+    // Never drained speculatively, so a failed build leaves the sentinel intact for the next pull.
+    sinon.assert.notCalled(confirmStub);
   });
 
-  test('does not re-enqueue a pending reset key that was explicitly changed during the await gap', async () => {
-    // Arrange: two keys pending reset — 'organization' and 'cliPath'.
-    // During the await gap the user re-edits 'organization' (markExplicitlyChanged is called for it),
-    // which simulates the race: consumePendingResets drained the live set, so
-    // pendingResets.delete was a no-op, but isExplicitlyChanged is now true for that key.
-    const markPendingResetStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: sinon.stub(),
-      // Simulate: 'organization' was re-edited during the await gap — it IS explicitly changed.
-      // 'cliPath' was NOT re-edited — it is NOT explicitly changed.
-      isExplicitlyChanged: (key: string) => key === LS_KEY.organization,
-      markPendingReset: markPendingResetStub,
-      consumePendingResets: sinon.stub().returns(new Set<string>([LS_KEY.organization, LS_KEY.cliPath])),
-      committedSinceReset: (key: string) => key === LS_KEY.organization,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
+  test('confirms reset delivery after a successful pull so it is not resent on the next one', async () => {
+    const confirmStub = sinon.stub();
+    const explicitOverridesMap: IExplicitOverridesMap = {
+      setExplicitValue: sinon.stub(),
+      setReset: sinon.stub(),
+      getEntry: (lsKey: string) => (lsKey === LS_KEY.organization ? { kind: 'reset' } : undefined),
+      confirmResetDelivered: confirmStub,
     };
-
-    const fromConfigError = new Error('fromConfiguration failed during race');
-    sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
 
     const middleware = new LanguageClientMiddleware(
       new LoggerMockFailOnErrors(),
@@ -359,7 +491,8 @@ suite('Language Server: Middleware', () => {
       {} as IUriAdapter,
       {} as IVSCodeCommands,
       undefined,
-      tracker,
+      noopLastKnownValueCache,
+      explicitOverridesMap,
     );
 
     const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
@@ -368,118 +501,8 @@ suite('Language Server: Middleware', () => {
       onCancellationRequested: sinon.fake(),
     };
 
-    await assert.rejects(
-      async () => middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler),
-      fromConfigError,
-    );
+    await middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler);
 
-    // 'cliPath' was NOT re-edited → must be re-enqueued so the next pull retries it.
-    sinon.assert.calledWith(markPendingResetStub, LS_KEY.cliPath);
-    // 'organization' WAS re-edited with a concrete value → must NOT be re-enqueued,
-    // or the pending reset would clobber the user's new concrete value on the next pull.
-    sinon.assert.neverCalledWith(markPendingResetStub, LS_KEY.organization);
-  });
-
-  // ── ADR-2: re-enqueue guard uses committedSinceReset, not isExplicitlyChanged ──
-
-  test('ADR-2(b): sibling severity edit during window does NOT suppress re-enqueue for a different severity key', async () => {
-    // Scenario: severity_filter_high is pending reset.
-    // During the await gap the user edits severity_filter_low (a sibling sharing snyk.severity).
-    // Under the old guard (isExplicitlyChanged) fan-out would mark severity_filter_high as
-    // explicitly-changed → the reset would be wrongly suppressed.
-    // Under ADR-2 (committedSinceReset), only severity_filter_low is marked in the windowed
-    // signal → severity_filter_high is NOT committed-since-drain → reset IS re-enqueued.
-    const markPendingResetStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: sinon.stub(),
-      // OLD guard: fan-out marks both siblings → would suppress the reset (wrong)
-      isExplicitlyChanged: (key: string) => key === LS_KEY.severityFilterHigh || key === LS_KEY.severityFilterLow,
-      markPendingReset: markPendingResetStub,
-      consumePendingResets: sinon.stub().returns(new Set<string>([LS_KEY.severityFilterHigh])),
-      // NEW windowed signal: only severity_filter_low was committed by the user this window
-      committedSinceReset: (key: string) => key === LS_KEY.severityFilterLow,
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-    };
-
-    const fromConfigError = new Error('fromConfiguration failed — sibling fan-out test');
-    sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
-
-    const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
-      configuration,
-      new Subject<ShowIssueDetailTopicParams>(),
-      {} as IUriAdapter,
-      {} as IVSCodeCommands,
-      undefined,
-      tracker,
-    );
-
-    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
-    const token: CancellationToken = {
-      isCancellationRequested: false,
-      onCancellationRequested: sinon.fake(),
-    };
-
-    await assert.rejects(
-      async () => middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler),
-      fromConfigError,
-    );
-
-    // severity_filter_high was NOT committed by the user in this window →
-    // the reset MUST be re-enqueued (not suppressed by sibling fan-out).
-    sinon.assert.calledWith(markPendingResetStub, LS_KEY.severityFilterHigh);
-  });
-
-  test('ADR-2(c): inbound write during window does NOT suppress re-enqueue', async () => {
-    // Scenario: organization is pending reset.
-    // During the window an inbound LS-originated write touches the setting (suppressed — marks
-    // neither signal). fromConfiguration rejects → reset MUST be re-enqueued.
-    const markPendingResetStub = sinon.stub();
-    const tracker: IExplicitLspConfigurationChangeTracker = {
-      markExplicitlyChanged: sinon.stub(),
-      unmarkExplicitlyChanged: sinon.stub(),
-      // Even if isExplicitlyChanged returned true due to an inbound write gap,
-      // committedSinceReset is false (suppressor blocked the write).
-      isExplicitlyChanged: () => true, // old guard would suppress — wrong
-      markPendingReset: markPendingResetStub,
-      consumePendingResets: sinon.stub().returns(new Set<string>([LS_KEY.organization])),
-      committedSinceReset: () => false, // correct: inbound write marked neither signal
-      markCommittedSinceReset: sinon.stub(),
-      hasLastKnownValue: () => false,
-      getLastKnownValue: () => undefined,
-      setLastKnownValue: sinon.stub(),
-    };
-
-    const fromConfigError = new Error('fromConfiguration failed — inbound write test');
-    sinon.stub(LanguageServerSettings, 'fromConfiguration').rejects(fromConfigError);
-
-    const middleware = new LanguageClientMiddleware(
-      new LoggerMockFailOnErrors(),
-      configuration,
-      new Subject<ShowIssueDetailTopicParams>(),
-      {} as IUriAdapter,
-      {} as IVSCodeCommands,
-      undefined,
-      tracker,
-    );
-
-    const handler: ConfigurationRequestHandlerSignature = (_params, _token) => [{}];
-    const token: CancellationToken = {
-      isCancellationRequested: false,
-      onCancellationRequested: sinon.fake(),
-    };
-
-    await assert.rejects(
-      async () => middleware.workspace.configuration({ items: [{ section: 'snyk' }] }, token, handler),
-      fromConfigError,
-    );
-
-    // Organization was not committed by the user (inbound write, suppressed) →
-    // the reset MUST be re-enqueued.
-    sinon.assert.calledWith(markPendingResetStub, LS_KEY.organization);
+    sinon.assert.calledWith(confirmStub, LS_KEY.organization);
   });
 });

@@ -42,6 +42,8 @@ interface SettingsEntry {
   alwaysChanged?: true;
   /** Included in fallback  */
   useInFallbackForm?: true;
+  /** Skip empty or whitespace-only values for string fields where blank has no valid meaning. */
+  skipBlankInbound?: true;
 }
 
 const AUTH_METHOD_MAP: Record<string, string> = {
@@ -123,6 +125,7 @@ export const SETTINGS_REGISTRY: Record<GlobalLsKeyValue, SettingsEntry> = {
     vscodeKey: ADVANCED_CLI_BASE_DOWNLOAD_URL,
     resolve: c => c.getCliBaseDownloadUrl(),
     useInFallbackForm: true,
+    skipBlankInbound: true,
   },
   [LS_GLOBAL_KEY.cliPath]: {
     vscodeKey: ADVANCED_CLI_PATH,
@@ -256,6 +259,50 @@ export function lsKeyToVscodeKey(lsKey: string): string | undefined {
   return LS_KEY_TO_VSCODE_KEY[lsKey];
 }
 
+/**
+ * Groups already-filtered GLOBAL_RESET_FIELDS lsKeys by their shared vscodeKey, so a
+ * "Project Defaults" reset dedupes writes when several LS keys share one VS Code setting (e.g.
+ * all four severity_filter_*). Shared by the outbound (`ConfigurationPersistenceService`) and
+ * inbound (`InboundConfigPersistenceService`) reset paths, which differ only in how they filter
+ * down to `qualifyingLsKeys`.
+ *
+ * Throws if a qualifying lsKey has no vscodeKey — the GLOBAL_RESET_FIELDS invariant (every
+ * member has one, enforced by the drift guard in lsKeyToVscodeKeyMap.test.ts) is violated, a
+ * programming error that must surface rather than silently miss the reset.
+ */
+export function groupResettableLsKeysByVscodeKey(qualifyingLsKeys: Iterable<string>): Map<string, string[]> {
+  const vscodeKeyToLsKeys = new Map<string, string[]>();
+  for (const lsKey of qualifyingLsKeys) {
+    const vscodeKey = lsKeyToVscodeKey(lsKey);
+    if (!vscodeKey) {
+      throw new Error(`GLOBAL_RESET_FIELDS invariant violated: '${lsKey}' has no vscodeKey in SETTINGS_REGISTRY`);
+    }
+    const group = vscodeKeyToLsKeys.get(vscodeKey);
+    if (group) {
+      group.push(lsKey);
+    } else {
+      vscodeKeyToLsKeys.set(vscodeKey, [lsKey]);
+    }
+  }
+  return vscodeKeyToLsKeys;
+}
+
+/**
+ * Given an `inspectConfiguration` result captured BEFORE a global-scope override is cleared,
+ * returns the value the setting will resolve to AFTER the clear — VS Code's scope precedence
+ * with the global (user) scope removed: workspaceFolder > workspace > schema default.
+ *
+ * Needed by reset paths that must seed the last-known-value cache with the correct value
+ * before the clearing write lands (see `applyVscodeKeyResets` in
+ * `InboundConfigPersistenceService`), since `undefined` only matches the post-clear effective
+ * value for settings with no package.json `default:`.
+ */
+export function resolveValueAfterGlobalReset<T>(
+  inspect: { workspaceValue?: T; workspaceFolderValue?: T; defaultValue?: T } | undefined,
+): T | undefined {
+  return inspect?.workspaceFolderValue ?? inspect?.workspaceValue ?? inspect?.defaultValue;
+}
+
 // ── Inbound: LS values → VS Code settings ────────────────────────────
 
 /** Merges object values when multiple LS keys share one vscodeKey (e.g. issueViewOptions). */
@@ -312,10 +359,12 @@ export function mapConfigToSettings(config: HtmlSettingsData): Record<string, un
  * Maps inbound LS global settings directly to VS Code settings.
  * Entries without a vscodeKey (token, sendErrorReports, etc.) are skipped.
  *
- * The LS is the source of truth: every reported value is persisted. The IDE keeps the
- * LS's view authoritative by sending user overrides as `changed: true` (tracked from
- * activation onward, even while the LS is down), so the LS resolves and echoes the
- * user's value rather than its own default.
+ * The LS is the source of truth: every reported value is persisted, except null/undefined
+ * (nothing to write) and blank strings for keys marked `skipBlankInbound` (where blank has no
+ * valid meaning). The IDE keeps the LS's view authoritative by sending user overrides as
+ * `changed: true`. Because those overrides are tracked via VS Code configuration events and
+ * persisted in the extension's global state — independently of the LS process — edits made
+ * while the LS is down are still captured and flagged on the next push.
  */
 export function mapLspSettingsToVscodeSettings(
   globalSettings: Record<string, LspConfigSetting>,
@@ -327,6 +376,8 @@ export function mapLspSettingsToVscodeSettings(
 
     const value = globalSettings[lsKey]?.value;
     if (value === undefined || value === null) continue;
+    // Skip empty or whitespace-only values for string fields where blank has no valid meaning.
+    if (entry.skipBlankInbound && typeof value === 'string' && value.trim() === '') continue;
 
     setOrMerge(result, entry.vscodeKey, entry.toVscodeValue ? entry.toVscodeValue(value) : value);
   }

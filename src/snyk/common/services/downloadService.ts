@@ -255,6 +255,9 @@ export class DownloadService {
   }
 
   private async setCurrentLspVersion(): Promise<void> {
+    // Note: codeEnablementMigration treats this memento (among others) as evidence of a prior
+    // install. It is only written on a managed download, so that migration must not rely on it
+    // alone — custom-cliPath / air-gapped installs never reach here.
     await this.extensionContext.updateGlobalStateValue(MEMENTO_LS_PROTOCOL_VERSION, PROTOCOL_VERSION);
   }
 

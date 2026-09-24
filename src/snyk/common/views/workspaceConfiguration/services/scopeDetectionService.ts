@@ -4,44 +4,29 @@ import { Configuration } from '../../../configuration/configuration';
 import { IVSCodeWorkspace } from '../../../vscode/workspace';
 import _ from 'lodash';
 
-/**
- * Sentinel that indicates the LS-resolved effective value is not known for a given key.
- * Used as the `effectiveValue` parameter of `shouldSkipSettingUpdate` when no inbound
- * `$/snyk.configuration` snapshot has been received yet for that key.
- *
- * A plain `undefined` cannot serve as the sentinel because an LS-resolved effective value
- * can legitimately be `undefined`/falsey for some keys. This unique symbol is unambiguous.
- */
-export const EFFECTIVE_VALUE_UNKNOWN: unique symbol = Symbol('effective-value-unknown');
+/** Where a setting's effective value currently comes from, in VS Code's override precedence order. */
+type SettingScope = 'default' | 'user' | 'workspace' | 'workspaceFolder';
 
 export interface IScopeDetectionService {
-  getSettingScope(settingKey: string): string;
+  getSettingScope(settingKey: string): SettingScope;
   populateScopeIndicators(html: string, mapHtmlKey: (key: string) => string | undefined): string;
   /**
-   * Determines whether a setting update should be skipped.
-   *
-   * Predicate (ADR-1):
-   * 1. If `effectiveValue` is known (not `EFFECTIVE_VALUE_UNKNOWN`):
-   *    skip iff `_.isEqual(value, effectiveValue)` — redundant vs the LS-resolved effective state.
-   * 2. If `effectiveValue` is unknown — fallback (override-aware, NEVER schema-default skip):
-   *    - 'workspace':       skip iff value === workspaceValue       && workspaceValue       !== undefined
-   *    - 'user':            skip iff value === globalValue          && globalValue          !== undefined
-   *    - 'workspaceFolder': skip iff value === workspaceFolderValue && workspaceFolderValue !== undefined
-   *    - 'default' (or any other): return false — never skip on schema-default equality alone
+   * Determines whether a setting update should be skipped (override-aware, NEVER schema-default
+   * skip):
+   * - `value === undefined` (a clearing write): skip iff `globalValue` is unset — the write
+   *   is always global-target, so only the global slot's presence determines redundancy.
+   * - 'workspace':       skip iff value === workspaceValue       && workspaceValue       !== undefined
+   * - 'user':            skip iff value === globalValue          && globalValue          !== undefined
+   * - 'workspaceFolder': skip iff value === workspaceFolderValue && workspaceFolderValue !== undefined
+   * - 'default' (or any other): return false — never skip on schema-default equality alone
    */
-  shouldSkipSettingUpdate(
-    configurationId: string,
-    settingName: string,
-    value: unknown,
-    scope: string,
-    effectiveValue: unknown,
-  ): boolean;
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: SettingScope): boolean;
 }
 
 export class ScopeDetectionService implements IScopeDetectionService {
   constructor(private readonly workspace: IVSCodeWorkspace) {}
 
-  getSettingScope(settingKey: string): string {
+  getSettingScope(settingKey: string): SettingScope {
     const { configurationId, section: settingName } = Configuration.getConfigName(settingKey);
 
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
@@ -82,28 +67,25 @@ export class ScopeDetectionService implements IScopeDetectionService {
     });
   }
 
-  shouldSkipSettingUpdate(
-    configurationId: string,
-    settingName: string,
-    value: unknown,
-    scope: string,
-    effectiveValue: unknown,
-  ): boolean {
+  shouldSkipSettingUpdate(configurationId: string, settingName: string, value: unknown, scope: SettingScope): boolean {
     const inspection = this.workspace.inspectConfiguration(configurationId, settingName);
 
     if (!inspection) {
       return false;
     }
 
-    // Step 1 (ADR-1): if the LS-resolved effective value is known, use it as the sole baseline.
-    // Skip only when the proposed value is redundant versus the effective resolution.
-    // The package.json schema default is NEVER the skip baseline for LS-resolved keys.
-    if (effectiveValue !== EFFECTIVE_VALUE_UNKNOWN) {
-      return _.isEqual(value, effectiveValue);
+    // Override-aware comparison. NEVER skip solely because value equals the schema default.
+
+    // A clearing write (value === undefined, e.g. a "reset to project defaults") always targets
+    // the global scope (applyVscodeKeyResets always calls this with scope 'user' and writes to
+    // ConfigurationTarget.Global), so it can only ever clear a globalValue override — a
+    // workspaceValue is untouched by it either way. It is redundant iff no globalValue is set.
+    // Deliberately ignores `scope` (unlike the switch below) since this branch only ever runs
+    // for the global-target reset write.
+    if (value === undefined) {
+      return inspection.globalValue === undefined;
     }
 
-    // Step 2 (ADR-1 fallback): effective value is unknown — use override-aware comparison.
-    // NEVER skip solely because value equals the schema default.
     switch (scope) {
       case 'workspace':
         // Skip iff the value is identical to the existing workspace override (and one exists).

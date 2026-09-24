@@ -15,6 +15,9 @@ export const ADVANCED_ADDITIONAL_PARAMETERS_SETTING = `${CONFIGURATION_IDENTIFIE
 export const ADVANCED_ADDITIONAL_ENVIRONMENT_SETTING = `${CONFIGURATION_IDENTIFIER}.advanced.additionalEnvironment`;
 export const ADVANCED_CUSTOM_ENDPOINT = `${CONFIGURATION_IDENTIFIER}.advanced.customEndpoint`;
 export const ADVANCED_ORGANIZATION = `${CONFIGURATION_IDENTIFIER}.advanced.organization`;
+// Removed from package.json (scope resource -> window); kept as a string constant
+// only to read the legacy per-folder value during folderOrgMigration (IDE-2259).
+export const ADVANCED_AUTO_SELECT_ORGANIZATION = `${CONFIGURATION_IDENTIFIER}.advanced.autoSelectOrganization`;
 export const ADVANCED_AUTOMATIC_DEPENDENCY_MANAGEMENT = `${CONFIGURATION_IDENTIFIER}.advanced.automaticDependencyManagement`;
 export const ADVANCED_CLI_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.cliPath`;
 export const ADVANCED_CUSTOM_LS_PATH = `${CONFIGURATION_IDENTIFIER}.advanced.languageServerPath`;

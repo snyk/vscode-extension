@@ -1,5 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+default_install_hook_types: [pre-commit, pre-merge-commit, commit-msg, pre-push]
 repos:
   - repo: https://github.com/gitguardian/ggshield
     rev: v1.43.0
@@ -7,3 +8,20 @@ repos:
       - id: ggshield
         language_version: python3
         stages: [pre-commit]
+  - repo: local
+    hooks:
+      - id: check-internal-repo-mentions-diff
+        name: Check commit diff for private repo mentions
+        entry: scripts/check-internal-repo-mentions-diff.sh
+        language: script
+        stages: [pre-commit, pre-merge-commit]
+      - id: check-internal-repo-mentions-msg
+        name: Check commit message for private repo mentions
+        entry: scripts/check-internal-repo-mentions-msg.sh
+        language: script
+        stages: [commit-msg]
+      - id: check-internal-repo-mentions-push
+        name: Check push for private repo mentions
+        entry: scripts/check-internal-repo-mentions-push.sh
+        language: script
+        stages: [pre-push]
