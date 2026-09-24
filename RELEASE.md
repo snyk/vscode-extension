@@ -9,7 +9,7 @@
 
 - Trigger or wait for the preview release workflow to build a preview version on the commit that will be used for the release.
   - The preview release workflow runs automatically on pushes to main.
-- Install the preview version from the marketplace and verify that the changes listed in the changelog are present and working correctly.
+- Install the preview version from the marketplace and verify that the changes for this release are present and working correctly.
 
 **Initiate Release**
 
