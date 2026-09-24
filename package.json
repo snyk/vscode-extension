@@ -563,13 +563,12 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./ && sass media --no-source-map",
+    "vscode:prepublish": "tsc -p ./ && npm run compile-scss",
     "build": "npm run vscode:prepublish",
     "clean": "rm -rf ./out",
     "rebuild": "npm run clean && npm run build",
+    "compile-scss": "node scripts/compile-scss.js",
     "watch": "tsc -watch -p ./",
-    "watch-resources": "sass media --no-source-map --watch",
-    "watch-all": "concurrently --kill-others 'npm run watch' 'npm run watch-resources'",
     "pretest": "npm run rebuild",
     "test:unit:single": "mocha --ui tdd --require ts-node/register",
     "test:unit": "npm run rebuild && mocha --ui tdd -c 'out/test/unit/**/*.test.js'",
@@ -599,7 +598,6 @@
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
     "@vscode/test-electron": "^3.1.0",
-    "concurrently": "^7.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "^3.6.1",
