@@ -29,7 +29,8 @@ const config: KnipConfig = {
     // WorkspaceFolderResultSuccess/Failure used in union type on same line — knip false positive.
     'src/snyk/common/services/productService.ts',
   ],
-  ignoreDependencies: ['@types/*', 'yalc'],
+  // sass: CLI dependency for scripts/compile-scss.js (scripts/ is excluded from knip project scope).
+  ignoreDependencies: ['@types/*', 'yalc', 'sass'],
   ignoreBinaries: ['ovsx'],
   exclude: ['enumMembers'],
 };
