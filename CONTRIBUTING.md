@@ -42,6 +42,8 @@ We can instruct you on what to add to the CHANGELOG.md, so please ask.
 
 Clone the repository, then run `npm install && npm run build` in the directory.
 
+You need Node.js 24.15 or newer and npm 11.12.1 or newer. `.nvmrc` pins the exact Node version. The `min-release-age=4` setting in `.npmrc` makes npm skip package versions published less than 4 days ago. Older npm ignores that setting without a warning, so npm refuses to install in this repo with older versions. To install a version younger than 4 days for a reviewed high or critical vulnerability fix, run `npm install <package>@<version> --min-release-age=0` once. Never commit `min-release-age=0`.
+
 - Open repository directory in VS Code and press `F5` to run extension in a new VS Code window.
 - This allows extension debugging within VS Code.
 - You can find output from your extension in the debug console and output channel.
