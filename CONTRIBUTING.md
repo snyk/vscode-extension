@@ -40,13 +40,13 @@ We can instruct you on what to add to the CHANGELOG.md, so please ask.
 
 ## Run extension and debug
 
-You need Node.js 24.15 or newer and npm 11.12.1 or newer. `.nvmrc` pins the exact Node version.
+You need the Node.js version in `.nvmrc` or newer, and an npm version that meets `engines` in `package.json`.
 
 Clone the repository, then run `npm install && npm run build` in the directory.
 
-The `min-release-age=4` setting in `.npmrc` makes npm skip package versions published less than 4 days ago. npm before 11.10 ignores that setting without a warning, so `engine-strict=true` in `.npmrc` makes npm refuse to run in this repo on Node or npm older than the versions above.
+The `min-release-age=4` setting in `.npmrc` makes npm skip package versions published less than 4 days ago.
 
-To install a version younger than 4 days for a reviewed high or critical vulnerability fix, run `npm install <package>@<version> --min-release-age=0` once. Never commit `min-release-age=0`.
+To install a version younger than 4 days for a reviewed high or critical vulnerability fix, run `npm install <package>@<version> --min-release-age=0` once.
 
 `npm ci` installs whatever `package-lock.json` pins, however young. When you review a dependency bump, check the publish date of each new lockfile entry.
 
