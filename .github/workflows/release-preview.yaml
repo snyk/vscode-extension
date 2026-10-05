@@ -13,11 +13,16 @@ jobs:
     environment: Preview
     needs: build
     steps:
-      - name: Setup VSCE
-        run: npm install -g vsce@latest
-
       - name: Fetch sources
         uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Setup VSCE
+        run: npm install -g vsce@2.15.0 --min-release-age=4
 
       - name: Install dependencies
         run: npm ci

@@ -94,6 +94,7 @@ No DI framework. Services instantiated in `BaseSnykModule` constructor and passe
 - Before each commit, check for and address feedback from the PR review bot (snyk-pr-review-bot) on any open PR.
 - Add a summary of user-facing changes to the changelog for the next release (usually a minor semver bump); never edit past changelog entries.
 - Keep `./docs` up to date.
+- Never commit `min-release-age=0` to `.npmrc`. Pass `--min-release-age=0` on the command line for a one-off install instead.
 - Never use `--no-verify` or otherwise skip commit hooks, and never amend commits. Use atomic, conventional-commit-style commits; if a Jira ID (`IDE-XXXX`) appears in the branch name, append it to the subject.
 - Never push without asking first, and never force-push. Regularly fetch `main` and offer to merge it into the working branch.
 - After pushing, offer to open a draft PR using `.github/pull_request_template.md` (or update the existing PR description) with a title/description generated from the diff against `main`.
