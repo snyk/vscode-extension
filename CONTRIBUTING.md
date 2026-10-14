@@ -40,7 +40,15 @@ We can instruct you on what to add to the CHANGELOG.md, so please ask.
 
 ## Run extension and debug
 
+You need the Node.js version in `.nvmrc` or newer, and an npm version that meets `engines` in `package.json`.
+
 Clone the repository, then run `npm install && npm run build` in the directory.
+
+The `min-release-age=4` setting in `.npmrc` makes npm skip package versions published less than 4 days ago.
+
+To install a version younger than 4 days for a reviewed high or critical vulnerability fix, run `npm install <package>@<version> --min-release-age=0` once.
+
+`npm ci` installs whatever `package-lock.json` pins, however young. When you review a dependency bump, check the publish date of each new lockfile entry.
 
 - Open repository directory in VS Code and press `F5` to run extension in a new VS Code window.
 - This allows extension debugging within VS Code.

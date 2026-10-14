@@ -5,7 +5,8 @@ import { CommandsMock } from '../../mocks/commands.mock';
 import { LoggerMock } from '../../mocks/logger.mock';
 import { IVSCodeCommands } from '../../../../snyk/common/vscode/commands';
 
-const commands = new CommandsMock() as unknown as IVSCodeCommands;
+const commandsMock = new CommandsMock();
+const commands = commandsMock as unknown as IVSCodeCommands;
 const logger = new LoggerMock();
 
 suite('TreeViewWebviewProvider', () => {
@@ -13,6 +14,7 @@ suite('TreeViewWebviewProvider', () => {
 
   setup(() => {
     fileReader = sinon.stub();
+    commandsMock.executeCommand.reset();
     (TreeViewWebviewProvider as unknown as { instance: undefined }).instance = undefined;
   });
 
@@ -20,16 +22,22 @@ suite('TreeViewWebviewProvider', () => {
 
   function makeWebviewView() {
     let html = '';
+    let messageHandler: ((msg: unknown) => unknown) | undefined;
     return {
       webview: {
         options: {} as Record<string, unknown>,
-        onDidReceiveMessage: sinon.stub(),
+        onDidReceiveMessage: sinon.stub().callsFake((handler: (msg: unknown) => unknown) => {
+          messageHandler = handler;
+        }),
         postMessage: sinon.stub(),
         get html() {
           return html;
         },
         set html(v: string) {
           html = v;
+        },
+        receiveMessage(msg: unknown) {
+          return messageHandler?.(msg);
         },
       },
     };
@@ -94,5 +102,45 @@ suite('TreeViewWebviewProvider', () => {
 
     sinon.assert.calledOnce(loggerErrorSpy);
     sinon.assert.match(wv.webview.html, sinon.match('init'));
+  });
+
+  ['snyk.dismissFeedbackBanner', 'snyk.feedbackBannerInteracted'].forEach(command => {
+    test(`(e) ${command} is forwarded to the LS instead of being rejected [IDE-2409]`, async () => {
+      fileReader.returns('${nonce} init');
+      commandsMock.executeCommand.resolves(null);
+
+      const provider = TreeViewWebviewProvider.getInstance(extensionContextMock, commands, logger, fileReader)!;
+      const wv = makeWebviewView();
+      provider.resolveWebviewView(wv as never);
+
+      await wv.webview.receiveMessage({ type: 'executeCommand', requestId: 'req-1', command, args: ['foo', 1] });
+
+      sinon.assert.calledWithExactly(commandsMock.executeCommand, command, 'foo', 1);
+      sinon.assert.calledWith(
+        wv.webview.postMessage,
+        sinon.match({ type: 'commandResult', requestId: 'req-1', error: undefined }),
+      );
+    });
+  });
+
+  test('(f) an unlisted command is rejected without reaching the LS', async () => {
+    fileReader.returns('${nonce} init');
+
+    const provider = TreeViewWebviewProvider.getInstance(extensionContextMock, commands, logger, fileReader)!;
+    const wv = makeWebviewView();
+    provider.resolveWebviewView(wv as never);
+
+    await wv.webview.receiveMessage({
+      type: 'executeCommand',
+      requestId: 'req-2',
+      command: 'snyk.notAllowed',
+      args: [],
+    });
+
+    sinon.assert.notCalled(commandsMock.executeCommand);
+    sinon.assert.calledWith(
+      wv.webview.postMessage,
+      sinon.match({ type: 'commandResult', requestId: 'req-2', error: sinon.match('not allowed') }),
+    );
   });
 });

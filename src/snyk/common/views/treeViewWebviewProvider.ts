@@ -20,6 +20,8 @@ const ALLOWED_COMMANDS = new Set([
   'snyk.showScanErrorDetails',
   'snyk.updateFolderConfig',
   'snyk.trustWorkspaceFolders',
+  'snyk.dismissFeedbackBanner',
+  'snyk.feedbackBannerInteracted',
 ]);
 
 export class TreeViewWebviewProvider implements vscode.WebviewViewProvider {

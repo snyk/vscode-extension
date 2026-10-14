@@ -21,6 +21,7 @@ jobs:
       - prodsec/security_scans:
           mode: auto
           open-source-agentic-fix-enabled: true
+          open-source-agentic-fix-base-branch: main
           open-source-additional-arguments: --exclude=mocked_data
           iac-scan: disabled
 
@@ -41,5 +42,5 @@ workflows:
 
       - security-scans:
           context:
-            - devex_ide
+            - endpoint-experience
             - prodsec-orb-runtime
