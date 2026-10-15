@@ -114,15 +114,13 @@ update script already runs `npm ci`, so the items below are setup context and
 gotchas rather than install steps to repeat.
 
 - **Node comes from nvm, not `/exec-daemon/node`.** `/exec-daemon/node` is first on
-  `PATH` but ships **no npm**. Use the nvm-managed Node install (currently
-  `v22.22.3`, providing npm `11.12.1`) and **always prepend**
-  `PATH="$(ls -d "$HOME"/.nvm/versions/node/v22.* 2>/dev/null | sort -V | tail -1)/bin:$PATH"`
-  before any `npm` command, resolving the installed patch version rather than
-  hardcoding it — nvm is not auto-sourced in non-interactive shells, and a future VM
-  snapshot bumping the patch version would otherwise silently fall through to
-  `/exec-daemon/node`, which has no npm. `.nvmrc` pins `18.19`, but
-  `package.json` declares no Node `engines` constraint (only `vscode`), and the
-  project builds and tests fine on Node 22.
+  `PATH` but ships **no npm**. Use the nvm-managed Node version pinned in this
+  repo's own `.nvmrc`, and **always prepend**
+  `. "$HOME/.nvm/nvm.sh" && NODE_BIN="$(nvm which "$(cat .nvmrc)")" && PATH="$(dirname "$NODE_BIN"):$PATH"`
+  before any `npm` command — nvm is not auto-sourced in non-interactive shells, so
+  a plain `npm` call otherwise falls through to `/exec-daemon/node`, which has no
+  npm. Check `.nvmrc` and `package.json`'s `engines.node` for what this repo
+  actually needs; both have changed before and will again.
 - **`npm run test:integration` should run on a saved GUI environment — do not assume it
   cannot.** It uses `@vscode/test-electron`, which downloads its **own** VS Code build to
   `.vscode-test/` from `update.code.visualstudio.com` (302-redirects to
