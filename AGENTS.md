@@ -104,7 +104,7 @@ No DI framework. Services instantiated in `BaseSnykModule` constructor and passe
 This repo is public. Everything committed or posted on GitHub (code comments, commit messages, PR titles and descriptions) is visible to anyone.
 
 - Describe a security fix by the change only, such as which dependency moved to which version. Leave out how the vulnerability is triggered and whether we are exposed. Vaguer is better.
-- Name only public repos. The only private repos you may name are the ones already listed in `cliv2-private/go.mod` in `snyk/cli`.
+- Name only public repos, a private repo mentioned in a public Snyk repo's CI (e.g. `snyk/prodsec-orb`), or one already listed in `cliv2-private/go.mod` in `snyk/cli`.
 - Write comments and PR descriptions that stand on their own. State the fact itself, with no reference to the agent's report, a task, or a conversation the reader can't see.
 
 ## Cursor Cloud specific instructions
