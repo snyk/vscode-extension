@@ -12,6 +12,9 @@ ALLOWED_REPOS=(
   "snyk/remy-cli-extension"
   "snyk/rift-cli-extension"
 
+  # Private, but mentioned in a public repo's CI.
+  "snyk/prodsec-orb"
+
   # Public: snyk/cli itself, plus its extensions/dependencies (from cli's go.mod).
   "snyk/cli"
   "snyk/cli-extension-agent-scan"
