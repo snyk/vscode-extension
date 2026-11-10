@@ -3,7 +3,7 @@
 default_install_hook_types: [pre-commit, pre-merge-commit, commit-msg, pre-push]
 repos:
   - repo: https://github.com/gitguardian/ggshield
-    rev: v1.43.0
+    rev: v1.56.1
     hooks:
       - id: ggshield
         language_version: python3
