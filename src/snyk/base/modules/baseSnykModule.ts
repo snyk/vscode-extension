@@ -8,7 +8,6 @@ import { IClearCacheService } from '../../common/services/CacheService';
 import { ContextService, IContextService } from '../../common/services/contextService';
 import { DownloadService } from '../../common/services/downloadService';
 import { FeatureFlagService } from '../../common/services/featureFlagService';
-import { LearnService } from '../../common/services/learnService';
 import { INotificationService } from '../../common/services/notificationService';
 import { IOpenerService, OpenerService } from '../../common/services/openerService';
 import { IProductService } from '../../common/services/productService';
@@ -63,8 +62,6 @@ export default abstract class BaseSnykModule implements IBaseSnykModule {
   readonly loadingBadge: ILoadingBadge;
   protected user: User;
   protected experimentService: ExperimentService;
-  protected learnService: LearnService;
-
   protected markdownStringAdapter: IMarkdownStringAdapter;
   readonly workspaceTrust: IWorkspaceTrust;
   readonly codeActionKindAdapter: ICodeActionKindAdapter;

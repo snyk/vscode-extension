@@ -7,7 +7,7 @@ import {
   FolderConfig,
   IConfiguration,
 } from '../../../../snyk/common/configuration/configuration';
-import { LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
+import { isSnykLearnCodeAction, LanguageClientMiddleware } from '../../../../snyk/common/languageServer/middleware';
 import { LS_KEY } from '../../../../snyk/common/languageServer/serverSettingsToLspConfigurationParam';
 import type { IExplicitOverridesMap } from '../../../../snyk/common/languageServer/explicitOverridesMap';
 import type { ILastKnownValueCache } from '../../../../snyk/common/languageServer/lastKnownValueCache';
@@ -16,6 +16,8 @@ import type {
   CancellationToken,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
+  CodeAction,
+  Command,
   ResponseError,
   ShowDocumentParams,
   ShowDocumentRequestHandlerSignature,
@@ -85,6 +87,25 @@ suite('Language Server: Middleware', () => {
 
   teardown(() => {
     sinon.restore();
+  });
+
+  test('identifies Snyk Learn code actions without suppressing unrelated actions', () => {
+    const learnAction = {
+      title: 'Learn more about SQL injection (Snyk)',
+      command: {
+        command: 'snyk.open',
+        title: 'Open lesson',
+        arguments: ['https://learn.snyk.io/lesson/sql-injection/'],
+      },
+    } as CodeAction;
+    const unrelatedAction = {
+      title: 'Open Snyk documentation',
+      command: 'snyk.open',
+      arguments: ['https://docs.snyk.io/products/snyk-code'],
+    } as Command;
+
+    assert.strictEqual(isSnykLearnCodeAction(learnAction), true);
+    assert.strictEqual(isSnykLearnCodeAction(unrelatedAction), false);
   });
 
   // [IDE-2264 ticket 11]: lastKnownValueCache/explicitOverridesMap are required constructor

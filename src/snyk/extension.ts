@@ -54,7 +54,6 @@ import { LanguageServer } from './common/languageServer/languageServer';
 import { StaticCliApi } from './cli/staticCliApi';
 import { Logger } from './common/logger/logger';
 import { DownloadService } from './common/services/downloadService';
-import { LearnService } from './common/services/learnService';
 import { NotificationService } from './common/services/notificationService';
 import { User } from './common/user';
 import { CodeActionAdapter } from './common/vscode/codeAction';
@@ -210,7 +209,6 @@ class SnykExtension extends SnykLib implements IExtension {
       vsCodeCommands,
     );
 
-    this.learnService = new LearnService(vsCodeCommands);
     this.cacheService = new ClearCacheService(vsCodeCommands);
 
     this.codeSettings = new CodeSettings(this.contextService, configuration, this.openerService, vsCodeCommands);
@@ -307,7 +305,6 @@ class SnykExtension extends SnykLib implements IExtension {
       Logger,
       vsCodeLanguages,
       vsCodeWorkspace,
-      this.learnService,
       vsCodeCommands,
     );
 

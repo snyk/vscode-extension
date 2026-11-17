@@ -3,9 +3,12 @@ import { SNYK_OPEN_LOCAL_COMMAND } from '../constants/commands';
 import { ILog } from '../logger/interfaces';
 import { productToLsProduct } from '../services/mappings';
 import { isEnumStringValueOf, isThenable } from '../tsUtil';
+import { isSnykLearnUrl } from '../views/issueDescriptionHtml';
 import { IVSCodeCommands } from '../vscode/commands';
 import type {
   CancellationToken,
+  CodeAction,
+  Command,
   ConfigurationParams,
   ConfigurationRequestHandlerSignature,
   Middleware,
@@ -33,6 +36,16 @@ import { Subject } from 'rxjs';
 /** snyk-ls unmarshals the pull response as `[]DidChangeConfigurationParams` where each element is `{ settings: LspConfigurationParam }`. */
 type LspPullResponseItem = { settings: LspConfigurationParam };
 
+const SNYK_LEARN_ACTION_TITLE = /^Learn more about .+ \(Snyk\)$/;
+
+export function isSnykLearnCodeAction(action: CodeAction | Command): boolean {
+  if (SNYK_LEARN_ACTION_TITLE.test(action.title)) return true;
+
+  const commandArguments: unknown =
+    typeof action.command === 'string' ? (action as Command).arguments : (action as CodeAction).command?.arguments;
+  return Array.isArray(commandArguments) && (commandArguments as unknown[]).some(isSnykLearnUrl);
+}
+
 type LanguageClientWorkspaceMiddleware = Partial<WorkspaceMiddleware> & {
   configuration: (
     params: ConfigurationParams,
@@ -59,6 +72,11 @@ export class LanguageClientMiddleware implements Middleware {
     const uri = this.uriAdapter.parse(uriString);
     await this.commands.executeCommand(SNYK_OPEN_LOCAL_COMMAND, uri, selection);
   }
+
+  provideCodeActions: NonNullable<Middleware['provideCodeActions']> = async (document, range, context, token, next) => {
+    const actions = await next(document, range, context, token);
+    return actions?.filter(action => !isSnykLearnCodeAction(action)) ?? actions;
+  };
 
   workspace: LanguageClientWorkspaceMiddleware = {
     configuration: async (

@@ -14,8 +14,7 @@ import { SNYK_VIEW_SUGGESTION_CODE } from '../../../common/constants/views';
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { AutofixUnifiedDiffSuggestion, CodeIssueData, Issue } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
-import { messages as learnMessages } from '../../../common/messages/learn';
-import { LearnService } from '../../../common/services/learnService';
+import { removeSnykLearnContent } from '../../../common/views/issueDescriptionHtml';
 import { getNonce } from '../../../common/views/nonce';
 import { WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
@@ -46,7 +45,6 @@ export class CodeSuggestionWebviewProvider
     protected readonly logger: ILog,
     private readonly languages: IVSCodeLanguages,
     private readonly workspace: IVSCodeWorkspace,
-    private readonly learnService: LearnService,
     private commandExecutor: IVSCodeCommands,
   ) {
     super(context, logger);
@@ -64,27 +62,6 @@ export class CodeSuggestionWebviewProvider
 
   private async postSuggestMessage(message: SuggestionMessage): Promise<void> {
     await this.panel?.webview.postMessage(message);
-  }
-
-  async postLearnLessonMessage(issue: Issue<CodeIssueData>): Promise<void> {
-    try {
-      if (this.panel) {
-        const lesson = await this.learnService.getCodeLesson(issue);
-        if (lesson) {
-          void this.postSuggestMessage({
-            type: 'setLesson',
-            args: { url: lesson.url, title: learnMessages.lessonButtonTitle },
-          });
-        } else {
-          void this.postSuggestMessage({
-            type: 'setLesson',
-            args: null,
-          });
-        }
-      }
-    } catch (e) {
-      ErrorHandler.handle(e, this.logger, learnMessages.getLessonError);
-    }
   }
 
   async showPanel(issue: Issue<CodeIssueData>): Promise<void> {
@@ -119,6 +96,7 @@ export class CodeSuggestionWebviewProvider
       } else {
         html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
       }
+      html = removeSnykLearnContent(html);
       const ideStylePath = vscode.Uri.joinPath(
         vscode.Uri.file(this.context.extensionPath),
         'media',
@@ -166,7 +144,6 @@ export class CodeSuggestionWebviewProvider
         type: 'set',
         args: this.mapToModel(issue),
       });
-      void this.postLearnLessonMessage(issue);
 
       this.issue = issue;
     } catch (e) {

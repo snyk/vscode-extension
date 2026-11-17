@@ -7,6 +7,7 @@ import {
 import { ErrorHandler } from '../../../common/error/errorHandler';
 import { Issue, SecretsIssueData as SecretsIssueData } from '../../../common/languageServer/types';
 import { ILog } from '../../../common/logger/interfaces';
+import { removeSnykLearnContent } from '../../../common/views/issueDescriptionHtml';
 import { getNonce } from '../../../common/views/nonce';
 import { IWebViewProvider, WebviewProvider } from '../../../common/views/webviewProvider';
 import { ExtensionContext } from '../../../common/vscode/extensionContext';
@@ -66,6 +67,7 @@ export class SecretsSuggestionWebviewProvider
 
       let html: string = '';
       html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
+      html = removeSnykLearnContent(html);
       this.panel.webview.html = this.getHtmlFromLanguageServer(html);
 
       this.panel.iconPath = vscode.Uri.joinPath(

@@ -3,6 +3,7 @@ import { SNYK_VIEW_SUGGESTION_OSS } from '../../common/constants/views';
 import { ErrorHandler } from '../../common/error/errorHandler';
 import { Issue, OssIssueData } from '../../common/languageServer/types';
 import { ILog } from '../../common/logger/interfaces';
+import { removeSnykLearnContent } from '../../common/views/issueDescriptionHtml';
 import { getNonce } from '../../common/views/nonce';
 import { WebviewPanelSerializer } from '../../common/views/webviewPanelSerializer';
 import { IWebViewProvider, WebviewProvider } from '../../common/views/webviewProvider';
@@ -68,7 +69,6 @@ export class OssDetailPanelProvider
         ['dark-high-severity', 'svg'],
         ['dark-medium-severity', 'svg'],
         ['dark-low-severity', 'svg'],
-        ['learn-icon', 'svg'],
       ].reduce((accumulator: Record<string, string>, [name, ext]) => {
         const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
         if (!uri) throw new Error('Image missing.');
@@ -82,6 +82,7 @@ export class OssDetailPanelProvider
       } else {
         html = (await this.commandExecutor.executeCommand(SNYK_GENERATE_ISSUE_DESCRIPTION, issue.id)) ?? '';
       }
+      html = removeSnykLearnContent(html);
 
       // Add the style
       const ideStylePath = vscode.Uri.joinPath(
