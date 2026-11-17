@@ -68,7 +68,6 @@ export class OssDetailPanelProvider
         ['dark-high-severity', 'svg'],
         ['dark-medium-severity', 'svg'],
         ['dark-low-severity', 'svg'],
-        ['learn-icon', 'svg'],
       ].reduce((accumulator: Record<string, string>, [name, ext]) => {
         const uri = this.getWebViewUri('media', 'images', `${name}.${ext}`);
         if (!uri) throw new Error('Image missing.');

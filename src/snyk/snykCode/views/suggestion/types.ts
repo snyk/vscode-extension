@@ -1,5 +1,4 @@
 import { AutofixUnifiedDiffSuggestion, ExampleCommitFix, Marker, Point } from '../../../common/languageServer/types';
-import { Lesson } from '../../../common/services/learnService';
 
 export type Suggestion = {
   id: string;
@@ -74,15 +73,6 @@ export type GetSuggestionMessage = {
   type: 'get';
 };
 
-export type SetLessonMessage = {
-  type: 'setLesson';
-  args: Lesson | null;
-};
-
-export type GetLessonMessage = {
-  type: 'getLesson';
-};
-
 export type SetAutofixDiffsMessage = {
   type: 'setAutofixDiffs';
   args: {
@@ -107,7 +97,5 @@ export type SuggestionMessage =
   | FixApplyEditMessage
   | SetSuggestionMessage
   | GetSuggestionMessage
-  | SetLessonMessage
-  | GetLessonMessage
   | SetAutofixDiffsMessage
   | SetAutofixErrorMessage;
